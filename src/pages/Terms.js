@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteFooter from '../components/SiteFooter';
 
 export default function Terms() {
   return (
@@ -130,23 +131,7 @@ export default function Terms() {
         </div>
       </main>
 
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerHeading}>Legal</h4>
-            <Link to="/terms" style={styles.footerLink}>Terms of Service</Link>
-            <Link to="/privacy" style={styles.footerLink}>Privacy Policy</Link>
-          </div>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerHeading}>Company</h4>
-            <Link to="/about" style={styles.footerLink}>About</Link>
-            <Link to="/contact" style={styles.footerLink}>Contact</Link>
-          </div>
-        </div>
-        <div style={styles.footerBottom}>
-          <p>©2025 SignalTrue. All rights reserved.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
@@ -181,10 +166,5 @@ const styles = {
   h2: { fontSize: '1.25rem', fontWeight: '700', color: '#111827', marginBottom: '0.75rem' },
   content: { color: '#4b5563', lineHeight: 1.7 },
 
-  footer: { background: '#111827', color: 'white', padding: '3rem 2rem 2rem', marginTop: '3rem' },
-  footerContent: { maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' },
-  footerSection: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  footerHeading: { fontSize: '1rem', fontWeight: '600', marginBottom: '0.25rem' },
-  footerLink: { color: '#9ca3af', textDecoration: 'none', fontSize: '0.95rem' },
-  footerBottom: { maxWidth: '1000px', margin: '0 auto', paddingTop: '2rem', borderTop: '1px solid #374151', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' },
+  // Footer styles moved to SiteFooter component
 };
