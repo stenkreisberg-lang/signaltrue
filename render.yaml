@@ -7,44 +7,36 @@ services:
     env: node
     region: oregon
     plan: starter
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && node server.js
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 8080
       - key: MONGO_URI
-        sync: false
+        fromSecret: mongo_uri
+      # Optional integrations (create matching Secrets in Render to use these)
       - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-3.5-turbo
+        fromSecret: openai_api_key
       - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: AI_PROVIDER
-        value: openai
+        fromSecret: anthropic_api_key
       - key: SLACK_BOT_TOKEN
-        sync: false
+        fromSecret: slack_bot_token
       - key: GOOGLE_SERVICE_ACCOUNT
-        sync: false
+        fromSecret: google_service_account
       - key: EMAIL_HOST
-        sync: false
+        fromSecret: email_host
       - key: EMAIL_PORT
-        value: 587
+        value: "587"
       - key: EMAIL_USER
-        sync: false
+        fromSecret: email_user
       - key: EMAIL_PASSWORD
-        sync: false
+        fromSecret: email_password
       - key: EMAIL_FROM
-        sync: false
+        fromSecret: email_from
       - key: NOTIFICATION_EMAIL
-        sync: false
+        fromSecret: notification_email
       - key: API_KEY
-        sync: false
-
-databases:
-  - name: signaltrue-mongodb
-    plan: starter
-    ipAllowList: []
+        fromSecret: api_key
+ 

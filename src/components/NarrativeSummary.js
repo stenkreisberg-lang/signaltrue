@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 
 export default function NarrativeSummary({ orgId, dark }) {
   const [narrative, setNarrative] = useState(null);
@@ -10,7 +11,7 @@ export default function NarrativeSummary({ orgId, dark }) {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/narrative/weekly/${orgId}`, {
+      const res = await fetch(`${API_BASE}/api/narrative/weekly/${orgId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

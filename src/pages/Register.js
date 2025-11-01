@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../utils/api';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ function Register() {
     // Fetch available teams
     const fetchTeams = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/teams');
+  const response = await fetch(`${API_BASE}/api/teams`);
         const data = await response.json();
         setTeams(data);
       } catch (err) {
@@ -32,7 +33,7 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

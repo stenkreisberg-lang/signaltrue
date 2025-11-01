@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 
 export default function LeaderDashboard({ teamId, dark }) {
   const [data, setData] = useState(null);
@@ -8,7 +9,7 @@ export default function LeaderDashboard({ teamId, dark }) {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:8080/api/leader/dashboard/${teamId}`, {
+        const res = await fetch(`${API_BASE}/api/leader/dashboard/${teamId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const json = await res.json();

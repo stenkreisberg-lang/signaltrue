@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../utils/api';
 
 function TeamMembers() {
   const [members, setMembers] = useState([]);
@@ -19,7 +20,7 @@ function TeamMembers() {
   const fetchMembers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/team-members', {
+      const response = await fetch(`${API_BASE}/api/team-members`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -41,7 +42,7 @@ function TeamMembers() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/team-members', {
+      const response = await fetch(`${API_BASE}/api/team-members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ function TeamMembers() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/team-members/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/team-members/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -97,7 +98,7 @@ function TeamMembers() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/team-members/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/team-members/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

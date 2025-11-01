@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../utils/api';
 
 function MasterAdminDashboard() {
   const [organizations, setOrganizations] = useState([]);
@@ -25,7 +26,7 @@ function MasterAdminDashboard() {
   const fetchOrganizations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/organizations', {
+      const response = await fetch(`${API_BASE}/api/organizations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -42,14 +43,14 @@ function MasterAdminDashboard() {
       const token = localStorage.getItem('token');
       
       // Fetch teams
-      const teamsRes = await fetch(`http://localhost:8080/api/organizations/${orgId}/teams`, {
+      const teamsRes = await fetch(`${API_BASE}/api/organizations/${orgId}/teams`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const teamsData = await teamsRes.json();
       setTeams(teamsData);
 
       // Fetch users
-      const usersRes = await fetch(`http://localhost:8080/api/organizations/${orgId}/users`, {
+      const usersRes = await fetch(`${API_BASE}/api/organizations/${orgId}/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const usersData = await usersRes.json();
@@ -68,7 +69,7 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/organizations', {
+      const response = await fetch(`${API_BASE}/api/organizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/organizations/${orgId}`, {
+      const response = await fetch(`${API_BASE}/api/organizations/${orgId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -117,7 +118,7 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/team-members/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/team-members/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
