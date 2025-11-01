@@ -7,6 +7,8 @@ import OrgDashboard from './OrgDashboard';
 import TeamMembers from './TeamMembers';
 import TeamHeatmap from './TeamHeatmap';
 import NarrativeSummary from './NarrativeSummary';
+import LeaderDashboard from './LeaderDashboard';
+import ResilienceScore from './ResilienceScore';
 
 export default function Dashboard() {
   const [teams, setTeams] = useState([]);
@@ -247,8 +249,14 @@ export default function Dashboard() {
         {/* Team Members Management */}
         <TeamMembers />
 
+        {/* Leader Dashboard for Team Managers */}
+        {currentUser?.teamId && <LeaderDashboard teamId={currentUser.teamId} dark={dark} />}
+
         {/* AI-Generated Weekly Narrative */}
         {currentUser?.orgId && <NarrativeSummary orgId={currentUser.orgId} dark={dark} />}
+
+        {/* Organizational Resilience Score */}
+        {currentUser?.orgId && <ResilienceScore orgId={currentUser.orgId} dark={dark} />}
 
         {/* Team Heatmap Visualization */}
         <TeamHeatmap teams={teams} />
