@@ -15,28 +15,28 @@ services:
       - key: NODE_ENV
         value: production
       - key: MONGO_URI
-        fromSecret: mongo_uri
-      # Optional integrations (create matching Secrets in Render to use these)
+        sync: false
+      # Optional integrations (set values in Render Dashboard after deploy)
       - key: OPENAI_API_KEY
-        fromSecret: openai_api_key
+        sync: false
       - key: ANTHROPIC_API_KEY
-        fromSecret: anthropic_api_key
+        sync: false
       - key: SLACK_BOT_TOKEN
-        fromSecret: slack_bot_token
+        sync: false
       - key: GOOGLE_SERVICE_ACCOUNT
-        fromSecret: google_service_account
+        sync: false
       - key: EMAIL_HOST
-        fromSecret: email_host
+        sync: false
       - key: EMAIL_PORT
         value: "587"
       - key: EMAIL_USER
-        fromSecret: email_user
+        sync: false
       - key: EMAIL_PASSWORD
-        fromSecret: email_password
+        sync: false
       - key: EMAIL_FROM
-        fromSecret: email_from
+        sync: false
       - key: NOTIFICATION_EMAIL
-        fromSecret: notification_email
+        sync: false
       - key: API_KEY
-        fromSecret: api_key
+        sync: false
  
