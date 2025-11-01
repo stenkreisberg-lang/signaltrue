@@ -1,5 +1,29 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE } from '../utils/api';
+
+async function startTrial(plan) {
+  try {
+    const orgSlug = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('orgSlug')) || undefined;
+    const res = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, orgSlug }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Unable to start checkout.');
+    }
+    const data = await res.json();
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Billing is not configured yet. Please contact support.');
+    }
+  } catch (e) {
+    alert(e.message || 'Could not start trial.');
+  }
+}
 
 function Pricing() {
   return (
@@ -25,6 +49,7 @@ function Pricing() {
           <h1 style={styles.heroTitle}>Simple, Transparent Pricing</h1>
           <p style={styles.heroSubtitle}>
             Choose the plan that fits your team size and needs. All plans include our core burnout detection features.
+            30-day free trial. Credit card required to start the trial.
           </p>
         </div>
       </section>
@@ -50,7 +75,7 @@ function Pricing() {
                 <li>✓ Google/Outlook calendar</li>
                 <li>✓ Email support</li>
               </ul>
-              <Link to="/contact" style={styles.planButton}>Start Free Trial</Link>
+              <button style={styles.planButton} onClick={() => startTrial('starter')}>Start Free Trial</button>
             </div>
 
             {/* Professional Plan */}
@@ -74,7 +99,7 @@ function Pricing() {
                 <li>✓ Historical trend analysis</li>
                 <li>✓ Priority support</li>
               </ul>
-              <Link to="/contact" style={styles.planButtonPrimary}>Start Free Trial</Link>
+              <button style={styles.planButtonPrimary} onClick={() => startTrial('pro')}>Start Free Trial</button>
             </div>
 
             {/* Enterprise Plan */}
@@ -102,7 +127,7 @@ function Pricing() {
           </div>
 
           <div style={styles.trialNote}>
-            <p>All plans include a 14-day free trial. No credit card required.</p>
+            <p>All plans include a 30-day free trial. Credit card required to start.</p>
           </div>
         </div>
       </section>
@@ -167,7 +192,7 @@ function Pricing() {
         <div style={styles.container}>
           <h2 style={{...styles.sectionTitle, color: 'white'}}>Ready to Get Started?</h2>
           <p style={{...styles.heroSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
-            Start your 14-day free trial today. No credit card required.
+            Start your 30-day free trial today. Credit card required to start.
           </p>
           <Link to="/contact" style={{...styles.planButtonPrimary, background: 'white', color: '#6366f1'}}>
             Request A Demo

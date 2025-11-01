@@ -19,7 +19,7 @@ router.post('/billing/create-checkout-session', async (req, res) => {
       return res.status(503).json({ message: 'Billing not configured. Set STRIPE_SECRET_KEY and price IDs.' });
     }
 
-    const { plan = 'starter', email } = req.body || {};
+  const { plan = 'starter', email, orgSlug } = req.body || {};
 
     const priceMap = {
       starter: process.env.STRIPE_PRICE_ID_STARTER,
@@ -44,6 +44,10 @@ router.post('/billing/create-checkout-session', async (req, res) => {
       ],
       subscription_data: {
         trial_period_days: trialDays,
+      },
+      metadata: {
+        plan: String(plan),
+        orgSlug: orgSlug ? String(orgSlug) : undefined,
       },
       success_url: `${process.env.APP_URL || 'http://localhost:3000'}/dashboard?checkout=success`,
       cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/pricing?checkout=cancelled`,

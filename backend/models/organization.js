@@ -41,6 +41,9 @@ const organizationSchema = new mongoose.Schema({
     },
     expiresAt: Date
   },
+  // Stripe billing linkage
+  stripeCustomerId: { type: String, index: true },
+  stripeSubscriptionId: { type: String, index: true },
   settings: {
     allowRegistration: { type: Boolean, default: false },
     maxUsers: { type: Number, default: 10 },

@@ -38,25 +38,76 @@ router.post('/stripe/webhook', async (req, res) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        // TODO: persist mapping between your user/org and session.customer / subscription
-        console.log('✅ Checkout completed:', {
-          customer: session.customer,
-          subscription: session.subscription,
-          mode: session.mode,
-        });
+        // Persist mapping between organization and Stripe IDs, if metadata provided
+        try {
+          const { default: Organization } = await import('../models/organization.js');
+          const meta = session.metadata || {};
+          const rawPlan = (meta.plan || '').toString();
+          const normalizedPlan = rawPlan === 'pro' ? 'professional' : (rawPlan || 'starter');
+          const customerId = session.customer;
+          const subscriptionId = session.subscription;
+          const orgSlug = (meta.orgSlug || 'default').toString().toLowerCase();
+
+          // Upsert organization by slug
+          const update = {
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptionId,
+            subscription: {
+              plan: ['starter', 'professional', 'enterprise', 'trial'].includes(normalizedPlan) ? normalizedPlan : 'starter',
+              status: 'active'
+            }
+          };
+
+          await Organization.findOneAndUpdate(
+            { slug: orgSlug },
+            {
+              $setOnInsert: {
+                name: orgSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Default Org',
+                industry: 'General',
+              },
+              $set: update,
+            },
+            { upsert: true, new: true }
+          );
+        } catch (e) {
+          console.error('Webhook persist error (checkout.session.completed):', e.message);
+        }
+        console.log('✅ Checkout completed:', { customer: session.customer, subscription: session.subscription, mode: session.mode });
         break;
       }
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        // TODO: update subscription status in your DB
-        console.log(`ℹ️ Subscription event (${event.type}):`, {
-          id: sub.id,
-          status: sub.status,
-          customer: sub.customer,
-          current_period_end: sub.current_period_end,
-        });
+        // Update subscription status in your DB
+        try {
+          const { default: Organization } = await import('../models/organization.js');
+          // Map Stripe status to app status
+          const statusMap = {
+            trialing: 'active',
+            active: 'active',
+            past_due: 'inactive',
+            unpaid: 'inactive',
+            canceled: 'inactive',
+            incomplete: 'inactive',
+            incomplete_expired: 'inactive',
+            paused: 'suspended',
+          };
+          const appStatus = statusMap[sub.status] || 'inactive';
+          await Organization.findOneAndUpdate(
+            { stripeCustomerId: sub.customer },
+            {
+              $set: {
+                stripeSubscriptionId: sub.id,
+                'subscription.status': appStatus,
+                'subscription.expiresAt': sub.cancel_at ? new Date(sub.cancel_at * 1000) : undefined,
+              }
+            }
+          );
+        } catch (e) {
+          console.error('Webhook persist error (subscription.*):', e.message);
+        }
+        console.log(`ℹ️ Subscription event (${event.type}):`, { id: sub.id, status: sub.status, customer: sub.customer, current_period_end: sub.current_period_end });
         break;
       }
       default:
