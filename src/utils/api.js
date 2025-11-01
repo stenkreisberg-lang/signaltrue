@@ -29,4 +29,5 @@ export async function del(path) {
   return request("DELETE", path);
 }
 
-export default { API_BASE, get, post, put, del };
+const api = { API_BASE, get, post, put, del };
+export default api;
