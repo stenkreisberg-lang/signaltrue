@@ -100,7 +100,7 @@ function Login() {
         <p style={styles.footer}>
           Don't have an account?{' '}
           <a href="/register" style={styles.link}>
-            Contact your admin
+            Sign up
           </a>
         </p>
       </div>
