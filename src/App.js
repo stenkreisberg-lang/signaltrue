@@ -8,6 +8,15 @@ import Home from './pages/Home';
 import PublicRegister from './pages/PublicRegister';
 import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+// New marketing pages
+import ProductOverview from './pages/ProductOverview';
+import BurnoutDetection from './pages/BurnoutDetection';
+import TeamAnalytics from './pages/TeamAnalytics';
+import CompanyDashboard from './pages/CompanyDashboard';
+import HowItWorks from './pages/HowItWorks';
+import Pricing from './pages/Pricing';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
@@ -15,6 +24,14 @@ export default function App() {
       <ErrorBoundary>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/product" element={<ProductOverview />} />
+        <Route path="/burnout-detection" element={<BurnoutDetection />} />
+        <Route path="/team-analytics" element={<TeamAnalytics />} />
+        <Route path="/company-dashboard" element={<CompanyDashboard />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
         <Route
