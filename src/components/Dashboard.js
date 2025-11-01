@@ -7,6 +7,8 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [integrations, setIntegrations] = useState(null);
+  const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | null
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -43,10 +45,34 @@ function Dashboard() {
     fetchUser();
   }, [navigate]);
 
+  useEffect(() => {
+    const loadIntegrationStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/integrations/status`);
+        if (res.ok) {
+          const data = await res.json();
+          setIntegrations(data);
+        }
+      } catch (e) {
+        // ignore silently — onboarding can still render
+      }
+    };
+    loadIntegrationStatus();
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
+  };
+
+  const openOrGuide = (provider) => {
+    const oauth = integrations?.oauth?.[provider];
+    if (oauth) {
+      window.location.href = `${API_BASE}${oauth}`;
+    } else {
+      setShowHelp(provider);
+    }
   };
 
   if (loading) {
@@ -100,7 +126,7 @@ function Dashboard() {
             <p style={styles.cardText}>
               Import your team's communication patterns and sentiment data
             </p>
-            <button style={styles.cardButton}>
+            <button style={styles.cardButton} onClick={() => openOrGuide('slack')}>
               Connect Workspace
             </button>
           </div>
@@ -111,7 +137,7 @@ function Dashboard() {
             <p style={styles.cardText}>
               Analyze meeting load and focus time patterns
             </p>
-            <button style={styles.cardButton}>
+            <button style={styles.cardButton} onClick={() => openOrGuide('calendar')}>
               Connect Google Calendar
             </button>
           </div>
@@ -134,6 +160,42 @@ function Dashboard() {
             Contact us at <a href="mailto:support@signaltrue.ai" style={styles.link}>support@signaltrue.ai</a>
           </p>
         </div>
+
+        {showHelp && (
+          <div style={styles.modalOverlay} onClick={() => setShowHelp(null)}>
+            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{marginTop:0}}>How to connect {showHelp === 'slack' ? 'Slack' : 'Google Calendar'}</h3>
+              {showHelp === 'slack' ? (
+                <ol style={styles.helpList}>
+                  <li>Ask your workspace admin to install the SignalTrue Slack App.</li>
+                  <li>Approve read-only scopes to analyze public channel activity and sentiment.</li>
+                  <li>After authorization, you'll be redirected back here and your first sync will start.</li>
+                </ol>
+              ) : (
+                <ol style={styles.helpList}>
+                  <li>Choose your work account when prompted by Google.</li>
+                  <li>Approve read-only calendar access so we can compute meeting and focus-time trends.</li>
+                  <li>After authorization, you'll return here and we’ll begin the first analysis.</li>
+                </ol>
+              )}
+              <div style={{display:'flex', gap:12, marginTop:16}}>
+                <button style={styles.secondaryBtn} onClick={() => setShowHelp(null)}>Close</button>
+                {showHelp === 'slack' && integrations?.oauth?.slack && (
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('slack')}>Continue to Slack</button>
+                )}
+                {showHelp === 'calendar' && integrations?.oauth?.calendar && (
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('calendar')}>Continue to Google</button>
+                )}
+              </div>
+              {!integrations?.oauth?.slack && showHelp === 'slack' && (
+                <p style={styles.smallNote}>Admin note: set SLACK_CLIENT_ID/SECRET on the backend to enable one‑click Slack OAuth.</p>
+              )}
+              {!integrations?.oauth?.calendar && showHelp === 'calendar' && (
+                <p style={styles.smallNote}>Admin note: set GOOGLE_CLIENT_ID/SECRET on the backend to enable one‑click Google OAuth.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -250,6 +312,17 @@ const styles = {
     textDecoration: 'none',
     fontWeight: '600',
   },
+  modalOverlay: {
+    position: 'fixed', left: 0, top: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  },
+  modal: {
+    background: 'white', borderRadius: 12, padding: '1.5rem', width: 'min(520px, 92vw)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+  },
+  helpList: { color: '#4b5563', lineHeight: 1.6, paddingLeft: '1.2rem' },
+  secondaryBtn: { padding: '0.6rem 1rem', border: '1px solid #e5e7eb', borderRadius: 8, background: 'white', cursor: 'pointer' },
+  primaryBtn: { padding: '0.6rem 1rem', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', cursor: 'pointer' },
+  smallNote: { color: '#6b7280', fontSize: 12, marginTop: 12 },
   loading: {
     display: 'flex',
     justifyContent: 'center',
