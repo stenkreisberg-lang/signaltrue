@@ -141,7 +141,9 @@ router.post('/register', async (req, res) => {
         resolvedTeamId = team._id;
       } catch (provisionErr) {
         console.error('Auto-provision org/team failed:', provisionErr);
-        return res.status(500).json({ message: 'Could not set up your organization. Please try again later.' });
+        return res.status(500).json({ 
+          message: `Could not set up your organization. ${provisionErr?.message || ''}`.trim()
+        });
       }
     }
 
