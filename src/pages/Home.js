@@ -97,7 +97,8 @@ const styles = {
   heroGrid: { maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '2rem', alignItems: 'center' },
   heroLeft: { color: 'white' },
   heroRight: { display: 'flex', justifyContent: 'center' },
-  heroImg: { width: '100%', height: 380, maxWidth: 520, objectFit: 'cover', objectPosition: 'center right', borderRadius: 16, boxShadow: '0 30px 60px rgba(0,0,0,0.25)' },
+  // Focus further right so the smiling lady is centered in crop
+  heroImg: { width: '100%', height: 420, maxWidth: 560, objectFit: 'cover', objectPosition: '90% center', borderRadius: 16, boxShadow: '0 30px 60px rgba(0,0,0,0.25)' },
   heroTitle: { fontSize: '3rem', fontWeight: 700, color: 'white', marginBottom: '1.5rem', lineHeight: 1.2 },
   heroSubtitle: { fontSize: '1.125rem', color: 'rgba(255,255,255,0.92)', marginBottom: '1.5rem', lineHeight: 1.6 },
   heroCTA: { display: 'flex', gap: '1rem', justifyContent: 'flex-start' },
