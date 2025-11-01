@@ -22,23 +22,27 @@ function Home() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section style={styles.hero}>
-        <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>
-            People Analytics That Actually Help Leaders
-          </h1>
-          <p style={styles.heroSubtitle}>
-            SignalTrue transforms team burnout data into actionable insights. 
-            Know what's really happening with your teams before it's too late.
-          </p>
-          <div style={styles.heroCTA}>
-            <button onClick={() => navigate('/register')} style={styles.primaryButton}>
-              Get Started
-            </button>
-            <button onClick={() => navigate('/login')} style={styles.secondaryButton}>
-              Sign In
-            </button>
+      {/* Hero Section (Scoro-like: split with person image) */}
+      <section style={styles.heroSplit}>
+        <div style={styles.heroGrid}>
+          <div style={styles.heroLeft}>
+            <h1 style={styles.heroTitle}>
+              Run healthier teams with SignalTrue
+            </h1>
+            <p style={styles.heroSubtitle}>
+              Turn signals from Slack and calendars into clear actions. Spot burnout risk early, coach better, and create sustainable performance.
+            </p>
+            <div style={styles.heroCTA}>
+              <button onClick={() => navigate('/register')} style={styles.primaryButton}>
+                Start free trial
+              </button>
+              <button onClick={() => navigate('/login')} style={styles.secondaryButton}>
+                Sign in
+              </button>
+            </div>
+          </div>
+          <div style={styles.heroRight}>
+            <img src="/images/hero-person.svg" alt="Leader illustration" style={styles.heroImg} />
           </div>
         </div>
       </section>
@@ -76,29 +80,19 @@ function Home() {
         </div>
       </section>
 
-      {/* Solutions Section */}
+      {/* Solutions Section (dashboards and numbers) */}
       <section id="solutions" style={{...styles.section, background: '#f9fafb'}}>
         <div style={styles.sectionContent}>
-          <h2 style={styles.sectionTitle}>Why SignalTrue?</h2>
-          <div style={styles.whyGrid}>
-            <div style={styles.whyItem}>
-              <h3>❌ Without SignalTrue</h3>
-              <ul style={styles.list}>
-                <li>Burnout discovered too late</li>
-                <li>Exit interviews reveal preventable issues</li>
-                <li>Gut feelings vs. data-driven decisions</li>
-                <li>Reactive management</li>
-              </ul>
-            </div>
-            <div style={styles.whyItem}>
-              <h3>✅ With SignalTrue</h3>
-              <ul style={styles.list}>
-                <li>Early warning system for team stress</li>
-                <li>Proactive intervention opportunities</li>
-                <li>Industry benchmarking and context</li>
-                <li>Predictive forecasting and trend analysis</li>
-              </ul>
-            </div>
+          <h2 style={styles.sectionTitle}>Clarity for every leader</h2>
+          <div style={styles.metricsGrid}>
+            <div style={styles.metric}><div style={styles.metricValue}>-27%</div><div style={styles.metricLabel}>Burnout incidents</div></div>
+            <div style={styles.metric}><div style={styles.metricValue}>+34%</div><div style={styles.metricLabel}>Focus hours</div></div>
+            <div style={styles.metric}><div style={styles.metricValue}>2.4x</div><div style={styles.metricLabel}>Faster insights</div></div>
+            <div style={styles.metric}><div style={styles.metricValue}>7d</div><div style={styles.metricLabel}>Time to value</div></div>
+          </div>
+
+          <div style={styles.dashboardsRow}>
+            <img src="/images/dashboard-analytics.svg" alt="Analytics overview" style={styles.dashboardImg} />
           </div>
         </div>
       </section>
@@ -248,6 +242,31 @@ const styles = {
     padding: '6rem 2rem',
     textAlign: 'center',
   },
+  heroSplit: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    padding: '5rem 2rem',
+  },
+  heroGrid: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'grid',
+    gridTemplateColumns: '1.1fr 0.9fr',
+    gap: '2rem',
+    alignItems: 'center',
+  },
+  heroLeft: {
+    color: 'white',
+  },
+  heroRight: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  heroImg: {
+    width: '100%',
+    maxWidth: '460px',
+    borderRadius: '16px',
+    boxShadow: '0 30px 60px rgba(0,0,0,0.25)'
+  },
   heroContent: {
     maxWidth: '800px',
     margin: '0 auto',
@@ -331,6 +350,41 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: '2rem',
+  },
+  metricsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '1.5rem',
+    marginBottom: '2.5rem',
+  },
+  metric: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '1.25rem',
+    textAlign: 'center',
+    border: '1px solid #e5e7eb',
+  },
+  metricValue: {
+    fontSize: '2rem',
+    fontWeight: 800,
+    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  metricLabel: {
+    color: '#6b7280',
+    fontWeight: 600,
+  },
+  dashboardsRow: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  dashboardImg: {
+    width: '100%',
+    maxWidth: '900px',
+    borderRadius: '14px',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 16px 40px rgba(0,0,0,0.12)'
   },
   whyItem: {
     padding: '2rem',
