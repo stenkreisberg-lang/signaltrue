@@ -232,6 +232,13 @@ vercel --prod
 ### Admin
 - `GET /api/ai-usage` - View token usage (requires API_KEY)
 
+### Billing / Payments
+- `POST /api/billing/create-checkout-session` → Create Stripe Checkout session for subscription with a free trial. Body: `{ plan: 'starter'|'pro'|'enterprise', email?: string }`. Returns: `{ url }`.
+- `GET /api/billing/portal-session?customerId=cus_xxx&returnUrl=https://...` → Create Stripe Billing Portal session. Returns: `{ url }`.
+- `POST /api/stripe/webhook` → Stripe webhook endpoint (handles `checkout.session.completed` and subscription events). Configure `STRIPE_WEBHOOK_SECRET`.
+
+See `backend/.env.example` for required `STRIPE_*` variables.
+
 ---
 
 ## 🤖 AI Provider Setup

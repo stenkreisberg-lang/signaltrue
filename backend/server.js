@@ -21,6 +21,8 @@ import leaderRoutes from "./routes/leaderRoutes.js";
 import outcomesRoutes from "./routes/outcomesRoutes.js";
 import resilienceRoutes from "./routes/resilienceRoutes.js";
 import integrationsRoutes from "./routes/integrations.js";
+import billingRoutes from "./routes/billing.js";
+import stripeWebhookRoutes from "./routes/stripe-webhook.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
@@ -32,6 +34,8 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
+// Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -81,6 +85,8 @@ app.use("/api/leader", leaderRoutes);
 app.use("/api/outcomes", outcomesRoutes);
 app.use("/api/resilience", resilienceRoutes);
 app.use("/api", integrationsRoutes);
+app.use("/api", billingRoutes);
+app.use("/api", stripeWebhookRoutes);
 
 // Schedule Slack + Calendar data refresh daily at 2 AM
 if (process.env.NODE_ENV !== "test") {
