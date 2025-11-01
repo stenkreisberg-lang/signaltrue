@@ -215,6 +215,7 @@ function Pricing() {
             <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
             <Link to="/contact" style={styles.footerLink}>Contact</Link>
             <Link to="/terms" style={styles.footerLink}>Terms of Service</Link>
+            <Link to="/privacy" style={styles.footerLink}>Privacy Policy</Link>
           </div>
         </div>
         <div style={styles.footerBottom}>

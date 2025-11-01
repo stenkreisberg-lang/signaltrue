@@ -135,7 +135,7 @@ export default function Terms() {
           <div style={styles.footerSection}>
             <h4 style={styles.footerHeading}>Legal</h4>
             <Link to="/terms" style={styles.footerLink}>Terms of Service</Link>
-            <Link to="/privacy" style={styles.footerLink} onClick={(e) => e.preventDefault()}>Privacy (coming soon)</Link>
+            <Link to="/privacy" style={styles.footerLink}>Privacy Policy</Link>
           </div>
           <div style={styles.footerSection}>
             <h4 style={styles.footerHeading}>Company</h4>
