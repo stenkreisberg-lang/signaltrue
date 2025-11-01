@@ -1,0 +1,29 @@
+name: Deploy to Render (backend)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install backend deps
+        run: npm --prefix backend ci
+
+      - name: Run backend tests
+        run: npm --prefix backend test
+
+      - name: Deploy to Render
+        # Requires RENDER_SERVICE_ID and RENDER_API_KEY to be set in repo secrets
+        uses: render-examples/render-deploy-action@v1
+        with:
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          service_id: ${{ secrets.RENDER_SERVICE_ID }}

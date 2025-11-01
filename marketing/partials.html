@@ -1,0 +1,42 @@
+<!-- Reusable header and footer snippets (not included automatically) -->
+<!-- Copy header block into each page for static deploy -->
+<!-- HEADER START -->
+<header>
+  <div class="container nav">
+    <a class="brand" href="/marketing/index.html">
+      <span class="brand-badge"></span>
+      <span>SignalTrue</span>
+    </a>
+    <nav class="navlinks">
+      <a href="/marketing/product.html">Product</a>
+      <a href="/marketing/solutions.html">Solutions</a>
+      <a href="/marketing/pricing.html">Pricing</a>
+      <a href="/marketing/resources.html">Resources</a>
+      <a href="/marketing/about.html">About</a>
+      <a href="/marketing/contact.html">Contact</a>
+    </nav>
+    <div class="cta">
+      <a class="btn" href="https://app.signaltrue.ai/login">Login</a>
+      <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Get started</a>
+    </div>
+  </div>
+  </header>
+<!-- HEADER END -->
+
+<!-- FOOTER START -->
+<footer>
+  <div class="container grid">
+    <div>
+      <strong>SignalTrue</strong>
+      <span class="muted"> — Understand your organization's pulse.</span>
+    </div>
+    <nav>
+      <a href="/marketing/privacy.html">Privacy</a>
+      <a href="/marketing/terms.html">Terms</a>
+      <a href="/marketing/contact.html">Contact</a>
+    </nav>
+  </div>
+  <div class="container muted" style="margin-top:10px">© <span id="year"></span> SignalTrue. All rights reserved.</div>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</footer>
+<!-- FOOTER END -->
