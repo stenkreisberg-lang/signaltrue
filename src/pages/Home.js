@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import heroPerson from '../assets/hero-person.svg';
-import logoFull from '../assets/logo-full.svg';
+import logoIcon from '../assets/logo-icon.svg';
 
 function Home() {
   const navigate = useNavigate();
@@ -10,7 +10,10 @@ function Home() {
     <div style={styles.container}>
       <nav style={styles.nav}>
         <div style={styles.navContent}>
-          <img src={logoFull} alt="Signaltrue" style={styles.logo} />
+          <div style={styles.logoContainer}>
+            <img src={logoIcon} alt="Signaltrue" style={styles.logoIcon} />
+            <span style={styles.logoText}>Signaltrue</span>
+          </div>
           <div style={styles.navLinks}>
             <a href="#product" style={styles.navLink}>Product</a>
             <a href="#solutions" style={styles.navLink}>Solutions</a>
@@ -62,7 +65,10 @@ function Home() {
 
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
-          <img src={logoFull} alt="Signaltrue" style={{...styles.footerLogo, filter: 'brightness(0) invert(1)'}} />
+          <div style={styles.logoContainer}>
+            <img src={logoIcon} alt="Signaltrue" style={{...styles.logoIcon, filter: 'brightness(0) invert(1)'}} />
+            <span style={{...styles.logoText, color: 'white'}}>Signaltrue</span>
+          </div>
           <div style={styles.footerLinks}>
             <a href="mailto:support@signaltrue.ai" style={styles.footerLink}>Support</a>
             <a href="mailto:sales@signaltrue.ai" style={styles.footerLink}>Sales</a>
@@ -80,7 +86,9 @@ const styles = {
   container: { minHeight: '100vh', background: 'white' },
   nav: { background: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100 },
   navContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  logo: { height: '42px', width: 'auto' },
+  logoContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  logoIcon: { height: '36px', width: '36px' },
+  logoText: { fontSize: '1.5rem', fontWeight: 600, color: '#1e3a5f', letterSpacing: '-0.02em' },
   navLinks: { display: 'flex', alignItems: 'center', gap: '2rem' },
   navLink: { color: '#4b5563', textDecoration: 'none', fontWeight: 500 },
   loginButton: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' },
