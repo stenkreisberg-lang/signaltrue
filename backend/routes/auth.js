@@ -76,6 +76,13 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email, password, and name are required' });
     }
 
+    // Optional: block consumer email domains
+    const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
+    const emailDomain = (email.split('@')[1] || '').toLowerCase();
+    if (consumerDomains.has(emailDomain)) {
+      return res.status(400).json({ message: 'Please use your professional work email (consumer domains are not accepted).' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
