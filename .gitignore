@@ -23,3 +23,19 @@ yarn-debug.log*
 yarn-error.log*
 .env
 node_modules
+
+# backend uploads (runtime artifacts)
+backend/uploads
+
+# editor settings
+.vscode
+.idea
+
+# OS files
+Thumbs.db
+
+# tooling caches
+.eslintcache
+
+# deployment metadata
+.vercel
