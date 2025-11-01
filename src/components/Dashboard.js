@@ -6,6 +6,7 @@ import PlaybookSidebar from './PlaybookSidebar';
 import OrgDashboard from './OrgDashboard';
 import TeamMembers from './TeamMembers';
 import TeamHeatmap from './TeamHeatmap';
+import NarrativeSummary from './NarrativeSummary';
 
 export default function Dashboard() {
   const [teams, setTeams] = useState([]);
@@ -245,6 +246,9 @@ export default function Dashboard() {
 
         {/* Team Members Management */}
         <TeamMembers />
+
+        {/* AI-Generated Weekly Narrative */}
+        {currentUser?.orgId && <NarrativeSummary orgId={currentUser.orgId} dark={dark} />}
 
         {/* Team Heatmap Visualization */}
         <TeamHeatmap teams={teams} />

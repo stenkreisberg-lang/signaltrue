@@ -14,6 +14,9 @@ import authRoutes from "./routes/auth.js";
 import teamMembersRoutes from "./routes/teamMembers.js";
 import organizationRoutes from "./routes/organizations.js";
 import benchmarkRoutes from "./routes/benchmarkRoutes.js";
+import narrativeRoutes from "./routes/narrativeRoutes.js";
+import focusRoutes from "./routes/focusRoutes.js";
+import forecastRoutes from "./routes/forecastRoutes.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
@@ -67,6 +70,9 @@ app.use("/api", historyRoutes);
 app.use("/api", calendarRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api/benchmarks", benchmarkRoutes);
+app.use("/api/narrative", narrativeRoutes);
+app.use("/api/focus", focusRoutes);
+app.use("/api/forecast", forecastRoutes);
 
 // Schedule Slack + Calendar data refresh daily at 2 AM
 if (process.env.NODE_ENV !== "test") {

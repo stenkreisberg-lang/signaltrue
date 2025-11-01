@@ -61,6 +61,8 @@ const teamSchema = new mongoose.Schema({
     meetingHoursWeek: { type: Number, default: 0 },
     afterHoursMeetings: { type: Number, default: 0 },
     recoveryScore: { type: Number, default: 0 },
+    focusHoursWeek: { type: Number, default: 0 },
+    focusToMeetingRatio: { type: Number, default: 0 },
   },
 
   // Slack channel ID for integration
