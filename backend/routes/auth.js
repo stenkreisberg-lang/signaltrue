@@ -99,17 +99,34 @@ router.post('/register', async (req, res) => {
         const domain = (email.split('@')[1] || '').split('.')[0];
         const inferredCompany = companyName && companyName.trim() !== '' ? companyName.trim() : (domain ? domain.charAt(0).toUpperCase() + domain.slice(1) : 'Your Company');
 
-        // Find or create organization
-        let org = await Organization.findOne({ name: inferredCompany });
+        // Generate slug exactly like the model pre-save
+        const slugFromName = (n) => n
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        const desiredSlug = slugFromName(inferredCompany);
+
+        // Find or create organization by slug (avoids duplicate key errors)
+        let org = await Organization.findOne({ slug: desiredSlug });
         if (!org) {
           org = new Organization({
             name: inferredCompany,
+            slug: desiredSlug,
             // basic defaults so schema validations pass
             industry: 'General',
             subscription: { plan: 'trial', status: 'active' },
             settings: { allowRegistration: true }
           });
-          await org.save();
+          try {
+            await org.save();
+          } catch (saveErr) {
+            // If a race created the same slug concurrently, reuse existing
+            if (saveErr?.code === 11000) {
+              org = await Organization.findOne({ slug: desiredSlug });
+            } else {
+              throw saveErr;
+            }
+          }
         }
 
         resolvedOrgId = org._id;
