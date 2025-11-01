@@ -1,6 +1,8 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
+import Organization from '../models/organization.js';
+import Team from '../models/team.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -67,7 +69,7 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, role, teamId, orgId } = req.body;
+    const { email, password, name, role, teamId, orgId, companyName } = req.body;
 
     // Validate required fields (teamId and orgId not required for master admin)
     if (!email || !password || !name) {
@@ -80,14 +82,53 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
-    // Create new user
+    let resolvedOrgId = orgId;
+    let resolvedTeamId = teamId;
+
+    // If no org/team provided, auto-provision an Organization and a default Team
+    if (!resolvedOrgId || !resolvedTeamId) {
+      try {
+        // Determine organization name: prefer companyName, else derive from email domain
+        const domain = (email.split('@')[1] || '').split('.')[0];
+        const inferredCompany = companyName && companyName.trim() !== '' ? companyName.trim() : (domain ? domain.charAt(0).toUpperCase() + domain.slice(1) : 'Your Company');
+
+        // Find or create organization
+        let org = await Organization.findOne({ name: inferredCompany });
+        if (!org) {
+          org = new Organization({
+            name: inferredCompany,
+            // basic defaults so schema validations pass
+            industry: 'General',
+            subscription: { plan: 'trial', status: 'active' },
+            settings: { allowRegistration: true }
+          });
+          await org.save();
+        }
+
+        resolvedOrgId = org._id;
+
+        // Find or create a default team within the org
+        let team = await Team.findOne({ orgId: org._id, name: 'General' });
+        if (!team) {
+          team = new Team({ name: 'General', orgId: org._id });
+          await team.save();
+        }
+
+        resolvedTeamId = team._id;
+      } catch (provisionErr) {
+        console.error('Auto-provision org/team failed:', provisionErr);
+        return res.status(500).json({ message: 'Could not set up your organization. Please try again later.' });
+      }
+    }
+
+    // Create new user (default to admin when we had to auto-provision org/team)
     const user = new User({
       email,
       password,
       name,
-      role: role || 'viewer',
-      teamId,
-      orgId
+      role: role || (!orgId && !teamId ? 'admin' : 'viewer'),
+      teamId: resolvedTeamId,
+      orgId: resolvedOrgId
     });
 
     await user.save();

@@ -96,8 +96,8 @@ function PublicRegister() {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           password: formData.password,
-          role: 'leader', // Default role for public signups
-          // companyName stored separately if needed (not in current backend schema)
+          role: 'admin',
+          companyName: formData.companyName,
         }),
       });
 
