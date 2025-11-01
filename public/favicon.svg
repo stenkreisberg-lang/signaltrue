@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Navy blue background -->
+  <rect width="120" height="120" fill="#1e3a5f"/>
+  
+  <!-- Signaltrue logo icon - circles forming a signal/wave pattern -->
+  <g transform="translate(30, 40)">
+    <!-- Outer circle -->
+    <circle cx="20" cy="20" r="18" fill="none" stroke="#3b9ff3" stroke-width="3"/>
+    <!-- Inner circles -->
+    <circle cx="20" cy="20" r="11" fill="none" stroke="#3b9ff3" stroke-width="2.5"/>
+    <circle cx="20" cy="20" r="5" fill="#3b9ff3"/>
+    <!-- Small orbital dot -->
+    <circle cx="10" cy="10" r="3" fill="#3b9ff3"/>
+  </g>
+</svg>

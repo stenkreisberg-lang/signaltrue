@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <!-- Signal circles icon only -->
+  <g transform="translate(5, 5)">
+    <!-- Outer circle -->
+    <circle cx="25" cy="25" r="23" fill="none" stroke="#3b9ff3" stroke-width="3.5"/>
+    <!-- Middle circle -->
+    <circle cx="25" cy="25" r="14" fill="none" stroke="#3b9ff3" stroke-width="3"/>
+    <!-- Inner dot -->
+    <circle cx="25" cy="25" r="6" fill="#3b9ff3"/>
+    <!-- Small orbital dot -->
+    <circle cx="12" cy="12" r="4" fill="#3b9ff3"/>
+  </g>
+</svg>

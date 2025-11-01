@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Icon - signal circles -->
+  <g transform="translate(10, 15)">
+    <!-- Outer circle -->
+    <circle cx="25" cy="25" r="23" fill="none" stroke="#3b9ff3" stroke-width="3.5"/>
+    <!-- Middle circle -->
+    <circle cx="25" cy="25" r="14" fill="none" stroke="#3b9ff3" stroke-width="3"/>
+    <!-- Inner dot -->
+    <circle cx="25" cy="25" r="6" fill="#3b9ff3"/>
+    <!-- Small orbital dot -->
+    <circle cx="12" cy="12" r="4" fill="#3b9ff3"/>
+  </g>
+  
+  <!-- Text "Signaltrue" -->
+  <g transform="translate(75, 0)">
+    <text x="0" y="46" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="36" font-weight="500" fill="#1e3a5f" letter-spacing="-0.5">Signaltrue</text>
+  </g>
+</svg>
