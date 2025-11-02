@@ -28,9 +28,9 @@ function Home() {
       <section style={styles.hero}>
         <div style={styles.heroContent}>
           <div style={styles.badge}>Team-level by default</div>
-          <h1 style={styles.heroTitle}>Your team talks. SignalTrue listens.</h1>
+          <h1 style={styles.heroTitle}>Catch burnout before it happens</h1>
           <p style={styles.heroSubtitle}>
-            Behaviour changes before burnout. SignalTrue connects to Slack and Outlook, learns each team's normal rhythm, then flags early signs of stress or disengagement.
+            SignalTrue connects to Slack, Teams, and Outlook, learns each team's rhythm, then flags early stress signals with actionable insights. Get drift alerts with top contributors and micro-playbooks—so you act fast, with clarity.
           </p>
           <div style={styles.heroCTA}>
             <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
@@ -39,9 +39,11 @@ function Home() {
           
           {/* Signal chips */}
           <div style={styles.chipContainer}>
-            <div style={styles.chip}>📊 Tone</div>
-            <div style={styles.chip}>⏱️ Response time</div>
-            <div style={styles.chip}>📅 Meeting load</div>
+            <div style={styles.chip}>📊 Sentiment shifts</div>
+            <div style={styles.chip}>⏱️ Response latency</div>
+            <div style={styles.chip}>📅 Meeting overload</div>
+            <div style={styles.chip}>🌙 After-hours work</div>
+            <div style={styles.chip}>🎯 Focus time</div>
           </div>
         </div>
       </section>
@@ -51,37 +53,61 @@ function Home() {
         <div style={styles.sectionContent}>
           <p style={styles.trustText}>Private beta with EU teams</p>
         </div>
-      </section>
-
       {/* Why Now */}
       <section style={styles.section}>
         <div style={styles.sectionContent}>
-          <h2 style={styles.sectionTitle}>Great managers act before issues surface</h2>
+          <h2 style={styles.sectionTitle}>8 signals. Clear insights. Faster action.</h2>
           <p style={styles.leadText}>
-            Stress and disengagement show up in small shifts. Messages feel flatter. Replies come later. Meeting accepts drop. These are weak signals. Together they tell a clear story.
+            We focus on proven high-impact metrics: sentiment, response latency, meeting load, after-hours activity, network breadth, focus time, recovery speed, and composite energy. When drift happens, you see exactly what changed and what to do next.
           </p>
           <div style={styles.signalsGrid}>
             <div style={styles.signalCard}>
               <div style={styles.signalIcon}>💬</div>
-              <div style={styles.signalTitle}>Message tone drifts</div>
+              <div style={styles.signalTitle}>Sentiment shifts</div>
+              <p style={styles.signalDetail}>LLM-powered tone analysis</p>
             </div>
             <div style={styles.signalCard}>
               <div style={styles.signalIcon}>⏳</div>
-              <div style={styles.signalTitle}>Replies slow</div>
+              <div style={styles.signalTitle}>Response latency</div>
+              <p style={styles.signalDetail}>Reply delays spike early</p>
             </div>
             <div style={styles.signalCard}>
-              <div style={styles.signalIcon}>❌</div>
-              <div style={styles.signalTitle}>Accepts fall</div>
+              <div style={styles.signalIcon}>📅</div>
+              <div style={styles.signalTitle}>Meeting overload</div>
+              <p style={styles.signalDetail}>Hours per week tracked</p>
             </div>
             <div style={styles.signalCard}>
-              <div style={styles.signalIcon}>📈</div>
-              <div style={styles.signalTitle}>Meeting load rises</div>
+              <div style={styles.signalIcon}>🌙</div>
+              <div style={styles.signalTitle}>After-hours activity</div>
+              <p style={styles.signalDetail}>Off-hours work patterns</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
+            <div style={styles.signalCard}>
+              <div style={styles.signalIcon}>🤝</div>
+              <div style={styles.signalTitle}>Network breadth</div>
+              <p style={styles.signalDetail}>Collaboration shrinking?</p>
+            </div>
+            <div style={styles.signalCard}>
+              <div style={styles.signalIcon}>🎯</div>
+              <div style={styles.signalTitle}>Focus time ratio</div>
+              <p style={styles.signalDetail}>Deep work vs meetings</p>
+            </div>
+            <div style={styles.signalCard}>
+              <div style={styles.signalIcon}>⚡</div>
+              <div style={styles.signalTitle}>Recovery speed</div>
+              <p style={styles.signalDetail}>How fast teams bounce back</p>
+            </div>
+            <div style={styles.signalCard}>
+              <div style={styles.signalIcon}>�</div>
+            <div style={styles.stepCard}>
+              <div style={styles.stepNumber}>3</div>
+              <h3 style={styles.stepTitle}>Detect & Explain</h3>
+              <p style={styles.stepText}>When drift hits, see the top 3 contributors (e.g., "tone ↓15%, meetings ↑22%").</p>
+            </div>
+            <div style={styles.stepCard}>
+              <div style={styles.stepNumber}>4</div>
+              <h3 style={styles.stepTitle}>Act with Micro-Playbooks</h3>
+              <p style={styles.stepText}>Get instant recommendations: "Tone drop → encourage recognition" or "Meeting overload → try no-meeting Fridays."</p>
+            </div>orks */}
       <section style={{...styles.section, background: '#f9fafb'}}>
         <div style={styles.sectionContent}>
           <h2 style={styles.sectionTitle}>How it works</h2>
@@ -89,34 +115,54 @@ function Home() {
             <div style={styles.stepCard}>
               <div style={styles.stepNumber}>1</div>
               <h3 style={styles.stepTitle}>Connect</h3>
-              <p style={styles.stepText}>Link Slack, Teams, or Outlook.</p>
-            </div>
-            <div style={styles.stepCard}>
-              <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>Learn</h3>
-              <p style={styles.stepText}>We build a baseline for tone, response time, and meeting load.</p>
-            </div>
-            <div style={styles.stepCard}>
-              <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Detect</h3>
-              <p style={styles.stepText}>When behaviour drifts from normal, we highlight the change with context.</p>
-            </div>
-            <div style={styles.stepCard}>
-              <div style={styles.stepNumber}>4</div>
-              <h3 style={styles.stepTitle}>Act</h3>
-              <p style={styles.stepText}>You get weekly summaries or real-time alerts with simple next steps.</p>
-            </div>
-          </div>
-          <p style={styles.privacyNote}>
-            💡 We analyse metadata and tone patterns, not message content. Team-level by default.
-          </p>
-        </div>
-      </section>
-
       {/* Key Outcomes */}
       <section style={styles.section}>
         <div style={styles.sectionContent}>
           <h2 style={styles.sectionTitle}>What you get</h2>
+          <div style={styles.outcomesGrid}>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>💯</div>
+              <h3 style={styles.outcomeTitle}>Energy Index (0-100)</h3>
+              <p style={styles.outcomeText}>Auto-tuned composite score blending tone, responsiveness, and collaboration.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>🔍</div>
+              <h3 style={styles.outcomeTitle}>Drift Explainability</h3>
+              <p style={styles.outcomeText}>See top 3 metrics that drove each alert—no guesswork.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>⚠️</div>
+              <h3 style={styles.outcomeTitle}>Smart Alerts</h3>
+              <p style={styles.outcomeText}>Slack/email with acknowledge button, frequency control (daily/weekly/off).</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>📚</div>
+              <h3 style={styles.outcomeTitle}>Micro-Playbooks</h3>
+              <p style={styles.outcomeText}>Instant action recommendations for every drift type.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>📊</div>
+              <h3 style={styles.outcomeTitle}>Program Impact Tracker</h3>
+              <p style={styles.outcomeText}>Tag interventions (Wellness Week, 4-Day Pilot), measure before/after ROI.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>📥</div>
+              <h3 style={styles.outcomeTitle}>CSV Export & API</h3>
+              <p style={styles.outcomeText}>One-click export for BI tools; API keys for enterprise integration.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>🗓️</div>
+              <h3 style={styles.outcomeTitle}>Timeline Events</h3>
+              <p style={styles.outcomeText}>Annotate dashboards with launches, reorgs to explain spikes.</p>
+            </div>
+            <div style={styles.outcomeCard}>
+              <div style={styles.outcomeIcon}>🔐</div>
+              <h3 style={styles.outcomeTitle}>Enterprise Security</h3>
+              <p style={styles.outcomeText}>AES-256 encryption, regional data residency, API key management.</p>
+            </div>
+          </div>
+        </div>
+      </section>yle={styles.sectionTitle}>What you get</h2>
           <div style={styles.outcomesGrid}>
             <div style={styles.outcomeCard}>
               <div style={styles.outcomeIcon}>💯</div>
@@ -177,9 +223,10 @@ const styles = {
   loginButton: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' },
 
   hero: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '6rem 2rem 4rem', textAlign: 'center' },
-  heroContent: { maxWidth: '900px', margin: '0 auto' },
-  badge: { display: 'inline-block', background: 'rgba(255,255,255,0.2)', color: 'white', padding: '0.5rem 1rem', borderRadius: 20, fontSize: '0.875rem', fontWeight: 600, marginBottom: '1.5rem' },
-  heroTitle: { fontSize: '3.5rem', fontWeight: 800, color: 'white', marginBottom: '1.5rem', lineHeight: 1.1 },
+  signalCard: { background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '2rem', textAlign: 'center' },
+  signalIcon: { fontSize: '2.5rem', marginBottom: '1rem' },
+  signalTitle: { fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' },
+  signalDetail: { fontSize: '0.875rem', color: '#6b7280' },ottom: '1.5rem', lineHeight: 1.1 },
   heroSubtitle: { fontSize: '1.25rem', color: 'rgba(255,255,255,0.95)', marginBottom: '2rem', lineHeight: 1.6, maxWidth: '800px', margin: '0 auto 2rem' },
   heroCTA: { display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' },
   primaryButton: { padding: '1rem 2rem', background: 'white', color: '#6366f1', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' },

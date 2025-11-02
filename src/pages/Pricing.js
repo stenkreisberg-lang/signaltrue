@@ -55,8 +55,7 @@ function Pricing() {
         <div style={styles.container}>
           <h1 style={styles.heroTitle}>Simple, Transparent Pricing</h1>
           <p style={styles.heroSubtitle}>
-            Choose the plan that fits your team size and needs. All plans include our core burnout detection features.
-            30-day free trial. Credit card required to start the trial.
+            8 high-impact signals. Drift alerts with explainability. Micro-playbooks. Choose the plan that fits your team. 30-day free trial—credit card required to start.
           </p>
         </div>
       </section>
@@ -77,12 +76,12 @@ function Pricing() {
               <p style={styles.planSubtitle}>For small teams getting started</p>
               <ul style={styles.featureList}>
                 <li>✓ Up to 25 team members</li>
-                <li>✓ Burnout Risk™ Scoring</li>
-                <li>✓ Basic communication analytics</li>
-                <li>✓ Meeting & focus time insights</li>
-                <li>✓ Weekly email reports</li>
-                <li>✓ Slack/Teams integration</li>
-                <li>✓ Google/Outlook calendar</li>
+                <li>✓ 8-signal analytics (Energy Index, sentiment, meetings, latency, after-hours, network, focus, recovery)</li>
+                <li>✓ Team health baselines</li>
+                <li>✓ Basic drift alerts (Slack/email)</li>
+                <li>✓ Weekly brief reports</li>
+                <li>✓ Slack/Google/Microsoft OAuth</li>
+                <li>✓ Regional data residency (EU/US)</li>
                 <li>✓ Email support</li>
               </ul>
               <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
@@ -102,13 +101,13 @@ function Pricing() {
               <ul style={styles.featureList}>
                 <li>✓ Up to 100 team members</li>
                 <li>✓ Everything in Starter, plus:</li>
-                <li>✓ Individual team analytics</li>
-                <li>✓ Company-wide dashboard</li>
-                <li>✓ Advanced sentiment analysis</li>
-                <li>✓ Collaboration network insights</li>
-                <li>✓ Custom alerts & workflows</li>
-                <li>✓ Department comparisons</li>
-                <li>✓ Historical trend analysis</li>
+                <li>✓ Drift explainability (top 3 contributors shown)</li>
+                <li>✓ Micro-playbook recommendations (action suggestions)</li>
+                <li>✓ Timeline event overlay (annotate charts with launches/reorgs)</li>
+                <li>✓ Alert frequency control (daily/weekly/off)</li>
+                <li>✓ Advanced sentiment shift detection</li>
+                <li>✓ Network breadth & collaboration insights</li>
+                <li>✓ Historical trend analysis (3 months)</li>
                 <li>✓ Priority support</li>
               </ul>
               <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
@@ -126,13 +125,15 @@ function Pricing() {
               <ul style={styles.featureList}>
                 <li>✓ Unlimited team members</li>
                 <li>✓ Everything in Professional, plus:</li>
-                <li>✓ Dedicated account manager</li>
+                <li>✓ Program Impact Tracker (before/after energy + ROI)</li>
+                <li>✓ API key management (create/rotate/revoke tokens)</li>
+                <li>✓ CSV export for BI tools (metrics + drift events)</li>
+                <li>✓ REST API endpoints (full access)</li>
                 <li>✓ Custom integrations & HRIS</li>
-                <li>✓ Advanced security controls</li>
                 <li>✓ SSO & SAML authentication</li>
-                <li>✓ Custom data retention policies</li>
+                <li>✓ AES-256 encryption + custom data retention</li>
                 <li>✓ White-label reporting</li>
-                <li>✓ API access</li>
+                <li>✓ Dedicated account manager</li>
                 <li>✓ 24/7 premium support</li>
                 <li>✓ Onboarding & training</li>
               </ul>

@@ -23,19 +23,18 @@ function HowItWorks() {
 
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>How Our Workforce Insights Engine™ Works</h1>
+          <h1 style={styles.heroTitle}>How SignalTrue Works</h1>
           <p style={styles.heroSubtitle}>
-            The technology behind SignalTrue's proactive burnout detection and team health insights.
+            8 signals. Drift explainability. Micro-playbooks. Privacy-first architecture. See team health in 48 hours.
           </p>
         </div>
       </section>
 
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Fast, Frictionless & Hassle-Free Implementation</h2>
+          <h2 style={styles.sectionTitle}>Fast, Frictionless & Hassle-Free Setup</h2>
           <p style={styles.introText}>
-            Getting started with SignalTrue requires no invasive integrations, confidential data access,
-            or time from your IT department. Most companies are fully set up in under 5 minutes.
+            OAuth with Slack, Google, Microsoft. Tokens encrypted (AES-256). Regional data residency (EU/US). Team-level aggregation by default. No IT department needed. Most companies are live in 5 minutes.
           </p>
 
           <div style={styles.stepsGrid}>
@@ -43,85 +42,83 @@ function HowItWorks() {
               <div style={styles.stepNumber}>1</div>
               <h3 style={styles.stepTitle}>Connect Your Tools</h3>
               <p style={styles.stepText}>
-                One-click OAuth integration with Slack, Microsoft Teams, Google Calendar, and Outlook.
-                We only request read-only permissions for metadata analysis.
+                One-click OAuth with Slack, Google, Microsoft. Read-only metadata access. Tokens encrypted (AES-256-GCM) and stored with regional residency (EU/US). No invasive permissions.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>Initial Analysis</h3>
+              <h3 style={styles.stepTitle}>Baseline in 24 Hours</h3>
               <p style={styles.stepText}>
-                Our AI begins analyzing patterns immediately. Within 24 hours, you'll see your first insights
-                and burnout risk scores for your team.
+                Background jobs compute 7-day rolling baselines for 8 core metrics: sentiment, latency, meetings, after-hours, network, focus, recovery, Energy Index. Adaptive thresholds per team.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Continuous Monitoring</h3>
+              <h3 style={styles.stepTitle}>Drift Alerts with Explainability</h3>
               <p style={styles.stepText}>
-                SignalTrue continuously updates insights in real-time, sending proactive alerts when risk
-                scores change or concerning patterns emerge.
+                When Energy Index dips &gt;15%, alerts fire with top 3 contributors (e.g., "tone ↓15%, meetings ↑22%") + micro-playbook recommendation. Alert frequency control: daily/weekly/off.
+              </p>
+            </div>
+
+            <div style={styles.step}>
+              <div style={styles.stepNumber}>4</div>
+              <h3 style={styles.stepTitle}>Measure Program Impact</h3>
+              <p style={styles.stepText}>
+                Tag interventions ("Wellness Week", "4-Day Pilot"), track before/after Energy Index, and prove ROI. Export CSV or pull via API for leadership dashboards.
               </p>
             </div>
           </div>
         </div>
-      </section>
-
-      <section style={{...styles.section, background: '#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>The Secret to Our Algorithm</h2>
+          <h2 style={styles.sectionTitle}>8 Core Signals (Not 15+ Noisy Metrics)</h2>
           <p style={styles.introText}>
-            SignalTrue's proprietary Workforce Insights Engine™ continuously processes behavioral signals
-            to unlock valuable workforce trends and employee-specific burnout risk predictions.
+            SignalTrue tracks 8 proven high-impact metrics. We removed redundant and low-signal metrics (Meeting Accept Rate, Late/Missed Ratio, Message Volume, Negative Emotion Ratio, Polarity Stability, Cross-Team Interaction, Responsiveness Index). What remains: clarity.
           </p>
 
           <div style={styles.dataSourcesGrid}>
             <div style={styles.dataSource}>
               <div style={styles.dataIcon}>💬</div>
-              <h3 style={styles.dataTitle}>Communication Data</h3>
+              <h3 style={styles.dataTitle}>Sentiment & Latency</h3>
               <p style={styles.dataText}>
-                We analyze message frequency, response times, sentiment patterns, and participation rates
-                without reading private message content. Sentiment is calculated using linguistic metadata only.
+                Sentiment average (tone), sentiment shift (day-to-day volatility), response median minutes, response latency trend. Metadata-only analysis—no content read.
               </p>
               <ul style={styles.dataList}>
-                <li>Message timing patterns</li>
-                <li>Response rate trends</li>
-                <li>Sentiment scoring (content-agnostic)</li>
-                <li>Channel participation metrics</li>
-                <li>After-hours activity detection</li>
+                <li>Sentiment scoring (metadata, not content)</li>
+                <li>Response timing patterns</li>
+                <li>Tone shift detection (volatility)</li>
+                <li>Adaptive baseline per team</li>
               </ul>
             </div>
 
             <div style={styles.dataSource}>
               <div style={styles.dataIcon}>📅</div>
-              <h3 style={styles.dataTitle}>Calendar Data</h3>
+              <h3 style={styles.dataTitle}>Meetings & Time</h3>
               <p style={styles.dataText}>
-                Calendar analysis provides insights into meeting load, focus time, and schedule fragmentation.
-                We analyze event metadata only—never reading event titles or descriptions.
+                Meeting load index (total hours weighted), after-hours rate (evenings/weekends), focus time ratio (uninterrupted blocks), recovery days (light-load days). Never reading event titles.
               </p>
               <ul style={styles.dataList}>
                 <li>Meeting hours per week</li>
+                <li>After-hours activity detection</li>
                 <li>Focus time availability</li>
-                <li>Calendar fragmentation</li>
-                <li>After-hours meetings</li>
-                <li>Meeting participant patterns</li>
+                <li>Recovery day tracking</li>
               </ul>
             </div>
 
             <div style={styles.dataSource}>
               <div style={styles.dataIcon}>🤝</div>
-              <h3 style={styles.dataTitle}>Collaboration Patterns</h3>
+              <h3 style={styles.dataTitle}>Network & Energy</h3>
               <p style={styles.dataText}>
-                Network analysis reveals collaboration strength, cross-team relationships, and isolation risks.
-                All comparisons are anonymized to protect individual privacy.
+                Unique contacts (network breadth), network breadth change (isolation risk), Energy Index (0-100 auto-tuned composite). All comparisons team-aggregated for privacy.
               </p>
               <ul style={styles.dataList}>
-                <li>Peer interaction frequency</li>
-                <li>Cross-functional collaboration</li>
-                <li>Social network position</li>
-                <li>Team cohesion metrics</li>
+                <li>Unique contact tracking</li>
+                <li>Network breadth shifts</li>
+                <li>Auto-tuned Energy Index (composite)</li>
+                <li>Team-level aggregation</li>
+              </ul>
+            </div>
+          </div><li>Team cohesion metrics</li>
                 <li>Isolation indicators</li>
               </ul>
             </div>
@@ -138,21 +135,19 @@ function HowItWorks() {
           </p>
 
           <div style={styles.privacyGrid}>
-            <div style={styles.privacyCard}>
-              <div style={styles.privacyIcon}>🔒</div>
-              <h3 style={styles.privacyTitle}>Content-Agnostic Analysis</h3>
-              <p style={styles.privacyText}>
-                We never read message content or event details. Sentiment analysis uses linguistic patterns
-                and metadata only, ensuring complete privacy.
-              </p>
-            </div>
+          <h2 style={styles.sectionTitle}>Privacy & Security First</h2>
+          <p style={styles.introText}>
+            SignalTrue analyzes metadata only—never message content or event details. AES-256 encryption, regional data residency (EU/US), team-level aggregation by default. GDPR-ready from day one.
+          </p>
 
+          <div style={styles.privacyGrid}>
             <div style={styles.privacyCard}>
-              <div style={styles.privacyIcon}>🛡️</div>
-              <h3 style={styles.privacyTitle}>Enterprise Security</h3>
+              <div style={styles.privacyIcon}>�</div>
+              <h3 style={styles.privacyTitle}>Metadata-Only Analysis</h3>
               <p style={styles.privacyText}>
-                SOC 2 Type II compliant infrastructure with end-to-end encryption, role-based access controls,
-                and regular security audits.
+                We never read message content or calendar event details. Sentiment uses linguistic patterns (metadata), not content. Complete privacy.
+              </p>
+            </div>d regular security audits.
               </p>
             </div>
 

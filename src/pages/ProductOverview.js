@@ -26,15 +26,14 @@ function ProductOverview() {
       <section style={styles.hero}>
         <div style={styles.container}>
           <h1 style={styles.heroTitle}>
-            Real-Time Team Health Insights<br />Powered by AI
+            8 Signals. Instant Insights. Actionable Playbooks.
           </h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue delivers proactive burnout detection and team wellness insights to help you retain top talent, 
-            energize your team, and build a thriving workplace culture.
+            SignalTrue focuses on proven high-impact metrics—sentiment, latency, meetings, after-hours, network, focus, recovery, and energy. When drift happens, you see why and what to do next. No noise. Just clarity.
           </p>
           <div style={styles.heroCTA}>
-            <Link to="/contact" style={styles.primaryBtn}>Request A Demo</Link>
-            <Link to="/how-it-works" style={styles.secondaryBtn}>Learn More</Link>
+            <Link to="/contact" style={styles.primaryBtn}>Get Early Access</Link>
+            <Link to="/how-it-works" style={styles.secondaryBtn}>See How It Works</Link>
           </div>
         </div>
       </section>
@@ -42,43 +41,55 @@ function ProductOverview() {
       {/* Core Features */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Proactive Team Health Management</h2>
+          <h2 style={styles.sectionTitle}>What Makes SignalTrue Different</h2>
           
           <div style={styles.featureGrid}>
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🎯</div>
-              <h3 style={styles.featureTitle}>Burnout Risk Detection</h3>
+              <div style={styles.featureIcon}>🔍</div>
+              <h3 style={styles.featureTitle}>Drift Explainability</h3>
               <p style={styles.featureText}>
-                Our AI analyzes communication patterns, meeting load, and work signals to identify team members 
-                at risk of burnout before they reach their breaking point.
+                When alerts fire, see the top 3 contributing metrics instantly: "tone ↓15%, meetings ↑22%, response time ↑30%". No guesswork—just clear, actionable data.
               </p>
-              <Link to="/burnout-detection" style={styles.featureLink}>
-                Learn more about Burnout Detection →
-              </Link>
             </div>
 
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>👥</div>
-              <h3 style={styles.featureTitle}>Individual Team Insights</h3>
+              <div style={styles.featureIcon}>📚</div>
+              <h3 style={styles.featureTitle}>Micro-Playbook Engine</h3>
               <p style={styles.featureText}>
-                Get personalized analytics for each team member including engagement trends, collaboration patterns, 
-                and focus time metrics to support better 1-on-1 conversations.
+                Every drift alert includes a contextual recommendation: "Tone drop → encourage recognition posts" or "Meeting overload → try no-meeting Fridays". Act fast with confidence.
               </p>
-              <Link to="/team-analytics" style={styles.featureLink}>
-                Explore Team Analytics →
-              </Link>
             </div>
 
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📊</div>
-              <h3 style={styles.featureTitle}>Company-Wide Analytics</h3>
+              <div style={styles.featureIcon}>�</div>
+              <h3 style={styles.featureTitle}>Program Impact Tracker</h3>
               <p style={styles.featureText}>
-                Understand organization-wide trends, compare departments, track engagement over time, 
-                and benchmark against industry standards.
+                Tag interventions like "Wellness Week" or "4-Day Pilot", measure before/after Energy Index changes, and prove ROI. Perfect for HR and leadership reporting.
               </p>
-              <Link to="/company-dashboard" style={styles.featureLink}>
-                View Company Analytics →
-              </Link>
+            </div>
+
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>⚙️</div>
+              <h3 style={styles.featureTitle}>Enterprise API & Export</h3>
+              <p style={styles.featureText}>
+                One-click CSV export for BI tools, REST API endpoints, and full API key management—create, rotate, revoke tokens with usage logs. Enterprise-ready integration.
+              </p>
+            </div>
+
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>�️</div>
+              <h3 style={styles.featureTitle}>Timeline Event Overlay</h3>
+              <p style={styles.featureText}>
+                Annotate your dashboards with product launches, reorgs, or policy changes. Understand sentiment dips and spikes in context—no more mystery charts.
+              </p>
+            </div>
+
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>🔐</div>
+              <h3 style={styles.featureTitle}>Security & Compliance</h3>
+              <p style={styles.featureText}>
+                AES-256 encryption at rest, regional data residency (EU/US), alert frequency control, and team-level aggregation by default. GDPR-ready from day one.
+              </p>
             </div>
           </div>
         </div>
@@ -97,26 +108,31 @@ function ProductOverview() {
               <div style={styles.stepNumber}>1</div>
               <h3 style={styles.stepTitle}>Connect Your Tools</h3>
               <p style={styles.stepText}>
-                Integrate Slack, Microsoft Teams, Google Calendar, and your calendar platform in minutes. 
-                No invasive access required.
+                OAuth integration with Slack, Google, Microsoft. Tokens encrypted (AES-256), regional data residency (EU/US), team-level aggregation by default. 5-minute setup.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>AI Analyzes Patterns</h3>
+              <h3 style={styles.stepTitle}>8 Signals Track Health</h3>
               <p style={styles.stepText}>
-                Our AI processes communication sentiment, meeting load, response times, and collaboration patterns 
-                while maintaining complete anonymity.
+                Sentiment, latency, meetings, after-hours, network breadth, focus time, recovery days, and auto-tuned Energy Index. No noisy metrics—only proven high-impact signals.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Get Actionable Insights</h3>
+              <h3 style={styles.stepTitle}>Drift Alerts Explain Why</h3>
               <p style={styles.stepText}>
-                Receive proactive alerts, personalized recommendations, and trend analysis to help you 
-                support your team before issues escalate.
+                When Energy Index dips, see top 3 contributors (e.g., "tone ↓15%, meetings ↑22%") plus a micro-playbook: "encourage recognition posts" or "try no-meeting Fridays".
+              </p>
+            </div>
+
+            <div style={styles.step}>
+              <div style={styles.stepNumber}>4</div>
+              <h3 style={styles.stepTitle}>Measure Program Impact</h3>
+              <p style={styles.stepText}>
+                Tag interventions ("Wellness Week", "4-Day Pilot"), track before/after energy, and prove ROI. Export CSV or pull via API for leadership dashboards.
               </p>
             </div>
           </div>
@@ -136,25 +152,24 @@ function ProductOverview() {
           
           <div style={styles.benefitsGrid}>
             <div style={styles.benefitCard}>
-              <div style={styles.statNumber}>78%</div>
-              <p style={styles.statLabel}>of burnout factors are preventable with early intervention</p>
+              <div style={styles.statNumber}>8</div>
+              <p style={styles.statLabel}>high-impact signals (not 15+ noisy metrics)</p>
             </div>
             
             <div style={styles.benefitCard}>
-              <div style={styles.statNumber}>2x</div>
-              <p style={styles.statLabel}>employee retention improvement with proactive wellness programs</p>
+              <div style={styles.statNumber}>Top 3</div>
+              <p style={styles.statLabel}>contributors shown for every drift alert</p>
             </div>
             
             <div style={styles.benefitCard}>
               <div style={styles.statNumber}>5min</div>
-              <p style={styles.statLabel}>average setup time with no IT department required</p>
+              <p style={styles.statLabel}>setup time with OAuth and encrypted tokens</p>
             </div>
           </div>
 
           <div style={styles.testimonial}>
             <p style={styles.testimonialQuote}>
-              "SignalTrue helped us identify burnout risks before they became turnover. 
-              The insights have transformed how we support our team's wellbeing."
+              "SignalTrue's micro-playbooks turned our drift alerts from 'FYI' into 'do this.' We finally understand why sentiment drops—and what to do about it."
             </p>
             <p style={styles.testimonialAuthor}>
               — VP of People Operations, Tech Startup
@@ -167,15 +182,15 @@ function ProductOverview() {
       <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
         <div style={styles.container}>
           <h2 style={{...styles.sectionTitle, color: 'white'}}>
-            Ready to Build a Healthier Workplace?
+          <h2 style={{...styles.sectionTitle, color: 'white'}}>
+            See Your First Drift Alert in 48 Hours
           </h2>
           <p style={{...styles.sectionSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
-            Free demo. No strings attached.
+            Connect tools today. Get baseline tomorrow. Drift alerts with playbooks by Thursday.
           </p>
           <Link to="/contact" style={{...styles.primaryBtn, background: 'white', color: '#6366f1'}}>
-            Request A Demo
+            Get Early Access
           </Link>
-        </div>
       </section>
 
       <SiteFooter />
