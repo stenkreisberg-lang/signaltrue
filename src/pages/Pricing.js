@@ -1,32 +1,38 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';
+import InlineNotice from '../components/InlineNotice';
 import { API_BASE } from '../utils/api';
-
-async function startTrial(plan) {
-  try {
-    const orgSlug = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('orgSlug')) || undefined;
-    const res = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan, orgSlug }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Unable to start checkout.');
-    }
-    const data = await res.json();
-    if (data?.url) {
-      window.location.href = data.url;
-    } else {
-      alert('Billing is not configured yet. Please contact support.');
-    }
-  } catch (e) {
-    alert(e.message || 'Could not start trial.');
-  }
-}
-
 function Pricing() {
+  const [billingError, setBillingError] = React.useState(null);
+  const [loadingPlan, setLoadingPlan] = React.useState(null);
+
+  async function handleStartTrial(plan) {
+    try {
+      setBillingError(null);
+      setLoadingPlan(plan);
+      const orgSlug = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('orgSlug')) || undefined;
+      const res = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, orgSlug }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Billing is not configured yet. Please contact support.');
+      }
+      const data = await res.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        setBillingError('Billing is not configured yet. Please contact support.');
+      }
+    } catch (e) {
+      setBillingError(e.message || 'Could not start trial.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
@@ -57,6 +63,9 @@ function Pricing() {
 
       <section style={styles.section}>
         <div style={styles.container}>
+          {billingError && (
+            <InlineNotice kind="error" title="Payments temporarily unavailable:">{billingError}</InlineNotice>
+          )}
           <div style={styles.pricingGrid}>
             {/* Starter Plan */}
             <div style={styles.pricingCard}>
@@ -76,7 +85,9 @@ function Pricing() {
                 <li>✓ Google/Outlook calendar</li>
                 <li>✓ Email support</li>
               </ul>
-              <button style={styles.planButton} onClick={() => startTrial('starter')}>Start Free Trial</button>
+              <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
+                {loadingPlan === 'starter' ? 'Starting…' : 'Start Free Trial'}
+              </button>
             </div>
 
             {/* Professional Plan */}
@@ -100,7 +111,9 @@ function Pricing() {
                 <li>✓ Historical trend analysis</li>
                 <li>✓ Priority support</li>
               </ul>
-              <button style={styles.planButtonPrimary} onClick={() => startTrial('pro')}>Start Free Trial</button>
+              <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
+                {loadingPlan === 'pro' ? 'Starting…' : 'Start Free Trial'}
+              </button>
             </div>
 
             {/* Enterprise Plan */}
@@ -149,7 +162,7 @@ function Pricing() {
             <div style={styles.faqCard}>
               <h3 style={styles.faqQuestion}>What's included in the free trial?</h3>
               <p style={styles.faqAnswer}>
-                All plans include a 14-day free trial with full access to features. No credit card required. 
+                All plans include a 30-day free trial with full access to features. Credit card required to start. 
                 Cancel anytime during the trial with no charges.
               </p>
             </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteFooter from '../components/SiteFooter';
 
 function ProductOverview() {
   return (
@@ -177,36 +178,7 @@ function ProductOverview() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerHeading}>Product</h4>
-            <Link to="/product" style={styles.footerLink}>Overview</Link>
-            <Link to="/burnout-detection" style={styles.footerLink}>Burnout Detection</Link>
-            <Link to="/team-analytics" style={styles.footerLink}>Team Analytics</Link>
-            <Link to="/company-dashboard" style={styles.footerLink}>Company Dashboard</Link>
-            <Link to="/how-it-works" style={styles.footerLink}>How It Works</Link>
-          </div>
-          
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerHeading}>Company</h4>
-            <Link to="/about" style={styles.footerLink}>About</Link>
-            <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
-            <Link to="/contact" style={styles.footerLink}>Contact</Link>
-          </div>
-          
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerHeading}>Legal</h4>
-            <a href="/privacy" style={styles.footerLink}>Privacy Policy</a>
-            <a href="/terms" style={styles.footerLink}>Terms of Service</a>
-          </div>
-        </div>
-        
-        <div style={styles.footerBottom}>
-          <p>©2025 SignalTrue. All rights reserved.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
@@ -444,43 +416,7 @@ const styles = {
     color: '#6b7280',
     fontWeight: '600',
   },
-  footer: {
-    background: '#111827',
-    color: 'white',
-    padding: '4rem 2rem 2rem',
-  },
-  footerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '3rem',
-    marginBottom: '3rem',
-  },
-  footerSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-  },
-  footerHeading: {
-    fontSize: '1rem',
-    fontWeight: '600',
-    marginBottom: '0.5rem',
-  },
-  footerLink: {
-    color: '#9ca3af',
-    textDecoration: 'none',
-    fontSize: '0.95rem',
-  },
-  footerBottom: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    paddingTop: '2rem',
-    borderTop: '1px solid #374151',
-    textAlign: 'center',
-    color: '#9ca3af',
-    fontSize: '0.9rem',
-  },
+  // Footer styles moved to shared SiteFooter component
 };
 
 export default ProductOverview;

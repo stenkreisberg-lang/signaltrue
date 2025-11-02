@@ -23,9 +23,21 @@ import resilienceRoutes from "./routes/resilienceRoutes.js";
 import integrationsRoutes from "./routes/integrations.js";
 import billingRoutes from "./routes/billing.js";
 import stripeWebhookRoutes from "./routes/stripe-webhook.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import exportRoutes from "./routes/exportRoutes.js";
+import programRoutes from "./routes/programRoutes.js";
+import timelineRoutes from "./routes/timelineRoutes.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
+import { refreshExpiringIntegrationTokens } from "./services/tokenService.js";
+import { pullAllConnectedOrgs } from "./services/integrationPullService.js";
+import { upsertDailyMetricsFromTeam } from "./services/baselineService.js";
+import { buildBaselinesForAllTeams } from "./services/baselineService.js";
+import { detectDriftForAllTeams } from "./services/driftService.js";
+import { updateEnergyIndexForTeam } from "./services/energyIndexService.js";
+import { sendDriftAlerts } from "./services/alertService.js";
+import Team from "./models/team.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
@@ -87,6 +99,10 @@ app.use("/api/resilience", resilienceRoutes);
 app.use("/api", integrationsRoutes);
 app.use("/api", billingRoutes);
 app.use("/api", stripeWebhookRoutes);
+app.use("/api", adminRoutes);
+app.use("/api", exportRoutes);
+app.use("/api", programRoutes);
+app.use("/api", timelineRoutes);
 
 // Schedule Slack + Calendar data refresh daily at 2 AM
 if (process.env.NODE_ENV !== "test") {
@@ -131,6 +147,43 @@ if (process.env.NODE_ENV !== "test") {
     });
     console.log('⏰ Cron job scheduled: Weekly summaries every Monday at 9 AM');
   }
+
+  // Token refresh for Google/Microsoft every hour
+  if (process.env.GOOGLE_CLIENT_ID || process.env.MS_APP_CLIENT_ID) {
+    cron.schedule('0 * * * *', async () => {
+      console.log('⏰ Running scheduled token refresh for integrations...');
+      try {
+        await refreshExpiringIntegrationTokens();
+      } catch (err) {
+        console.error('❌ Scheduled token refresh failed:', err.message);
+      }
+    });
+    console.log('⏰ Cron job scheduled: Integration token refresh every hour');
+  }
+
+  // Unified daily metrics, baseline, drift, energy, alert job at 3:30 AM
+  cron.schedule('30 3 * * *', async () => {
+    console.log('⏰ Running unified daily metrics, baseline, drift, energy, alert job...');
+    try {
+      // 1. Pull provider data
+      await pullAllConnectedOrgs();
+      // 2. Update daily metrics for all teams
+      const teams = await Team.find({});
+      for (const team of teams) {
+        await upsertDailyMetricsFromTeam(team);
+        await updateEnergyIndexForTeam(team);
+      }
+      // 3. Refresh baselines
+      await buildBaselinesForAllTeams();
+      // 4. Detect drift
+      await detectDriftForAllTeams();
+      // 5. Send drift alerts
+      await sendDriftAlerts();
+    } catch (err) {
+      console.error('❌ Unified daily job failed:', err.message);
+    }
+  });
+  console.log('⏰ Cron job scheduled: Unified daily metrics/baseline/drift/energy/alert at 3:30 AM');
 }
 
 // Listen only when not running under tests

@@ -260,7 +260,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      teamId: user.teamId
+      teamId: user.teamId,
+      orgId: user.orgId
     });
   } catch (error) {
     console.error('Get user error:', error);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE } from '../utils/api';
 
 function Dashboard() {
@@ -8,7 +8,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [integrations, setIntegrations] = useState(null);
-  const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | null
+  const [org, setOrg] = useState(null);
+  const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | 'outlook' | 'teams' | null
+  const [toast, setToast] = useState(null);
+  const [confirmProvider, setConfirmProvider] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -48,7 +51,26 @@ function Dashboard() {
   useEffect(() => {
     const loadIntegrationStatus = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/integrations/status`);
+        // Try to load org and pass along orgId to integrations/status
+        let orgId = null;
+        try {
+          const token = localStorage.getItem('token');
+          const meRes = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (meRes.ok) {
+            const me = await meRes.json();
+            if (me?.orgId) {
+              const orgRes = await fetch(`${API_BASE}/api/organizations/me`, { headers: { Authorization: `Bearer ${token}` } });
+              if (orgRes.ok) {
+                const orgData = await orgRes.json();
+                setOrg(orgData);
+                orgId = me.orgId;
+              }
+            }
+          }
+        } catch {}
+
+        const query = orgId ? `?orgId=${encodeURIComponent(orgId)}` : '';
+        const res = await fetch(`${API_BASE}/api/integrations/status${query}`);
         if (res.ok) {
           const data = await res.json();
           setIntegrations(data);
@@ -72,6 +94,35 @@ function Dashboard() {
       window.location.href = `${API_BASE}${oauth}`;
     } else {
       setShowHelp(provider);
+    }
+  };
+
+  const disconnect = async (provider) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/integrations/${provider}/disconnect`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not disconnect');
+      // Refresh status
+      const meRes = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      let orgId = null;
+      if (meRes.ok) {
+        const me = await meRes.json();
+        orgId = me?.orgId || null;
+      }
+      const query = orgId ? `?orgId=${encodeURIComponent(orgId)}` : '';
+      const st = await fetch(`${API_BASE}/api/integrations/status${query}`);
+      if (st.ok) {
+        setIntegrations(await st.json());
+        setToast({ type: 'success', message: `${provider[0].toUpperCase()+provider.slice(1)} disconnected.` });
+        setTimeout(() => setToast(null), 2500);
+      }
+    } catch (e) {
+      console.error(e);
+      setToast({ type: 'error', message: 'Failed to disconnect. Please try again.' });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -101,7 +152,11 @@ function Dashboard() {
     <div style={styles.container}>
       <nav style={styles.nav}>
         <div style={styles.navContent}>
-          <div style={styles.logo}>SignalTrue</div>
+          <div>
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              <div style={styles.logo}>SignalTrue</div>
+            </Link>
+          </div>
           <div style={styles.navRight}>
             <span style={styles.userName}>{user?.name || user?.email}</span>
             <button onClick={handleLogout} style={styles.logoutButton}>
@@ -122,24 +177,64 @@ function Dashboard() {
         <div style={styles.cardsGrid}>
           <div style={styles.card}>
             <div style={styles.cardIcon}>🔗</div>
-            <h3 style={styles.cardTitle}>Connect Slack</h3>
+            <h3 style={styles.cardTitle}>Connect Slack {integrations?.connected?.slack && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            {integrations?.connected?.slack && integrations?.details?.slack && (
+              <p style={styles.detailLine}>Workspace: {integrations.details.slack.teamName || 'Unknown'} ({integrations.details.slack.teamId || '—'})</p>
+            )}
             <p style={styles.cardText}>
               Import your team's communication patterns and sentiment data
             </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('slack')}>
+            <button style={styles.cardButton} onClick={() => openOrGuide('slack')} disabled={integrations?.connected?.slack}>
               Connect Workspace
             </button>
+            {integrations?.connected?.slack && (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('slack')}>Disconnect</button>
+            )}
           </div>
 
           <div style={styles.card}>
             <div style={styles.cardIcon}>📅</div>
-            <h3 style={styles.cardTitle}>Connect Calendar</h3>
+            <h3 style={styles.cardTitle}>Connect Calendar {integrations?.connected?.calendar && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            {integrations?.connected?.calendar && <p style={styles.detailLine}>Provider: Google (Calendar)</p>}
             <p style={styles.cardText}>
               Analyze meeting load and focus time patterns
             </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('calendar')}>
+            <button style={styles.cardButton} onClick={() => openOrGuide('calendar')} disabled={integrations?.connected?.calendar}>
               Connect Google Calendar
             </button>
+            {integrations?.connected?.calendar && (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('google')}>Disconnect</button>
+            )}
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.cardIcon}>📧</div>
+            <h3 style={styles.cardTitle}>Connect Outlook {integrations?.connected?.outlook && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            {integrations?.connected?.outlook && <p style={styles.detailLine}>Provider: Microsoft (Outlook)</p>}
+            <p style={styles.cardText}>
+              Analyze Outlook/Exchange calendar and email metadata for trends
+            </p>
+            <button style={styles.cardButton} onClick={() => openOrGuide('outlook')} disabled={integrations?.connected?.outlook}>
+              Connect Outlook Account
+            </button>
+            {integrations?.connected?.outlook && (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
+            )}
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.cardIcon}>💼</div>
+            <h3 style={styles.cardTitle}>Connect Microsoft Teams {integrations?.connected?.teams && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            {integrations?.connected?.teams && <p style={styles.detailLine}>Provider: Microsoft (Teams)</p>}
+            <p style={styles.cardText}>
+              Import Teams collaboration patterns to enrich communication insights
+            </p>
+            <button style={styles.cardButton} onClick={() => openOrGuide('teams')} disabled={integrations?.connected?.teams}>
+              Connect Teams Workspace
+            </button>
+            {integrations?.connected?.teams && (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
+            )}
           </div>
 
           <div style={styles.card}>
@@ -164,18 +259,38 @@ function Dashboard() {
         {showHelp && (
           <div style={styles.modalOverlay} onClick={() => setShowHelp(null)}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{marginTop:0}}>How to connect {showHelp === 'slack' ? 'Slack' : 'Google Calendar'}</h3>
-              {showHelp === 'slack' ? (
+              <h3 style={{marginTop:0}}>
+                {showHelp === 'slack' && 'How to connect Slack'}
+                {showHelp === 'calendar' && 'How to connect Google Calendar'}
+                {showHelp === 'outlook' && 'How to connect Outlook'}
+                {showHelp === 'teams' && 'How to connect Microsoft Teams'}
+              </h3>
+              {showHelp === 'slack' && (
                 <ol style={styles.helpList}>
                   <li>Ask your workspace admin to install the SignalTrue Slack App.</li>
                   <li>Approve read-only scopes to analyze public channel activity and sentiment.</li>
                   <li>After authorization, you'll be redirected back here and your first sync will start.</li>
                 </ol>
-              ) : (
+              )}
+              {showHelp === 'calendar' && (
                 <ol style={styles.helpList}>
                   <li>Choose your work account when prompted by Google.</li>
                   <li>Approve read-only calendar access so we can compute meeting and focus-time trends.</li>
                   <li>After authorization, you'll return here and we’ll begin the first analysis.</li>
+                </ol>
+              )}
+              {showHelp === 'outlook' && (
+                <ol style={styles.helpList}>
+                  <li>Sign in with your Microsoft 365 work account.</li>
+                  <li>Approve read-only Outlook and Calendar permissions.</li>
+                  <li>After authorization, you’ll return here and your first sync will start.</li>
+                </ol>
+              )}
+              {showHelp === 'teams' && (
+                <ol style={styles.helpList}>
+                  <li>Ask your tenant admin to approve the SignalTrue Teams app if required.</li>
+                  <li>Approve read-only permissions to analyze channel participation and activity.</li>
+                  <li>After authorization, you’ll return here and your first sync will start.</li>
                 </ol>
               )}
               <div style={{display:'flex', gap:12, marginTop:16}}>
@@ -186,6 +301,12 @@ function Dashboard() {
                 {showHelp === 'calendar' && integrations?.oauth?.calendar && (
                   <button style={styles.primaryBtn} onClick={() => openOrGuide('calendar')}>Continue to Google</button>
                 )}
+                {showHelp === 'outlook' && integrations?.oauth?.outlook && (
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('outlook')}>Continue to Microsoft</button>
+                )}
+                {showHelp === 'teams' && integrations?.oauth?.teams && (
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('teams')}>Continue to Microsoft</button>
+                )}
               </div>
               {!integrations?.oauth?.slack && showHelp === 'slack' && (
                 <p style={styles.smallNote}>Admin note: set SLACK_CLIENT_ID/SECRET on the backend to enable one‑click Slack OAuth.</p>
@@ -193,6 +314,31 @@ function Dashboard() {
               {!integrations?.oauth?.calendar && showHelp === 'calendar' && (
                 <p style={styles.smallNote}>Admin note: set GOOGLE_CLIENT_ID/SECRET on the backend to enable one‑click Google OAuth.</p>
               )}
+              {!integrations?.oauth?.outlook && showHelp === 'outlook' && (
+                <p style={styles.smallNote}>Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click Microsoft OAuth.</p>
+              )}
+              {!integrations?.oauth?.teams && showHelp === 'teams' && (
+                <p style={styles.smallNote}>Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click Microsoft OAuth.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {toast && (
+          <div style={{ position: 'fixed', right: 16, bottom: 16, background: toast.type==='error'?'#FEE2E2':'#ECFDF5', color: toast.type==='error'?'#991B1B':'#065F46', border: '1px solid', borderColor: toast.type==='error'?'#FCA5A5':'#6EE7B7', padding: '0.75rem 1rem', borderRadius: 8, boxShadow: '0 6px 20px rgba(0,0,0,0.15)' }}>
+            {toast.message}
+          </div>
+        )}
+
+        {confirmProvider && (
+          <div style={styles.modalOverlay} onClick={() => setConfirmProvider(null)}>
+            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{marginTop:0}}>Disconnect integration</h3>
+              <p style={{ color: '#6b7280' }}>Are you sure you want to disconnect {confirmProvider === 'google' ? 'Google' : confirmProvider === 'microsoft' ? 'Microsoft' : 'Slack'}? You can reconnect anytime.</p>
+              <div style={{display:'flex', gap:12, marginTop:16, justifyContent:'flex-end'}}>
+                <button style={styles.secondaryBtn} onClick={() => setConfirmProvider(null)}>Cancel</button>
+                <button style={{...styles.primaryBtn, background:'linear-gradient(135deg, #ef4444, #f97316)'}} onClick={() => { const p = confirmProvider; setConfirmProvider(null); disconnect(p); }}>Disconnect</button>
+              </div>
             </div>
           </div>
         )}
@@ -323,6 +469,9 @@ const styles = {
   secondaryBtn: { padding: '0.6rem 1rem', border: '1px solid #e5e7eb', borderRadius: 8, background: 'white', cursor: 'pointer' },
   primaryBtn: { padding: '0.6rem 1rem', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', cursor: 'pointer' },
   smallNote: { color: '#6b7280', fontSize: 12, marginTop: 12 },
+  badgeConnected: { marginLeft: 8, fontSize: 12, padding: '2px 8px', background: '#DCFCE7', color: '#166534', borderRadius: 999 },
+  detailLine: { color: '#6b7280', fontSize: 13, marginTop: 6, marginBottom: 10 },
+  disconnectBtn: { marginTop: 10, background: 'transparent', color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 8, padding: '0.5rem 0.75rem', fontWeight: 600, cursor: 'pointer' },
   loading: {
     display: 'flex',
     justifyContent: 'center',

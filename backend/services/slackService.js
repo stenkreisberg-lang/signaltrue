@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { WebClient } from '@slack/web-api';
 import Team from '../models/team.js';
+import Organization from '../models/organization.js';
 import getProvider from '../utils/aiProvider.js';
 import { createSnapshot } from '../utils/bdiHistory.js';
 
@@ -92,6 +93,23 @@ export async function refreshAllTeamsFromSlack() {
       t.bdi = Math.max(0, Math.min(100, t.bdi + Math.round(sentimentImpact + responseImpact)));
       
       await t.save();
+      // Update organization sync counters
+      if (t.orgId) {
+        try {
+          const org = await Organization.findById(t.orgId);
+          if (org) {
+            org.integrations = org.integrations || {};
+            org.integrations.slack = org.integrations.slack || {};
+            org.integrations.slack.sync = org.integrations.slack.sync || {};
+            org.integrations.slack.sync.messagesAnalyzed = (org.integrations.slack.sync.messagesAnalyzed || 0) + (data.messageCount || 0);
+            org.integrations.slack.sync.lastStatus = 'ok';
+            org.integrations.slack.sync.lastRunAt = new Date();
+            await org.save();
+          }
+        } catch (e) {
+          console.warn('Failed updating org Slack sync counters:', e.message);
+        }
+      }
       
       // Create snapshot after updating BDI
       await createSnapshot(t._id);

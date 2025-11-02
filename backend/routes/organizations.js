@@ -5,6 +5,23 @@ import User from '../models/user.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+// Get the authenticated user's organization (includes integrations)
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user?.orgId) {
+      return res.status(404).json({ message: 'No organization associated with user' });
+    }
+    const org = await Organization.findById(req.user.orgId);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+    return res.json(org);
+  } catch (error) {
+    console.error('Get my organization error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // Middleware to check master admin
 function requireMasterAdmin(req, res, next) {
