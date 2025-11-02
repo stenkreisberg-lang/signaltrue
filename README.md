@@ -1,3 +1,4 @@
+# Trigger redeploy for Vercel
 # 📊 SignalTrue
 
 **Performance rhythm monitoring for modern teams**
@@ -104,6 +105,8 @@ npm start
 npm start
 # Frontend runs on http://localhost:3000
 ```
+
+> Billing is optional and disabled by default. If Stripe environment variables are not set, backend billing endpoints will respond with HTTP 503 and the UI will display a friendly message; this won’t block the rest of the app.
 
 ### 4. Access Dashboard
 
@@ -238,6 +241,8 @@ vercel --prod
 - `POST /api/stripe/webhook` → Stripe webhook endpoint (handles `checkout.session.completed` and subscription events). Configure `STRIPE_WEBHOOK_SECRET`.
 
 See `backend/.env.example` for required `STRIPE_*` variables.
+
+If `STRIPE_SECRET_KEY` is not provided, these endpoints will return `503 Billing not configured`, and the frontend will show a non-blocking notice. You can enable billing any time by adding Stripe keys and price IDs.
 
 ---
 
