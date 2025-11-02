@@ -42,7 +42,7 @@ function Home() {
               src={(process.env.PUBLIC_URL || '') + '/images/hero-team.jpg'}
               alt="People at work"
               style={styles.heroImg}
-              loading="lazy"
+              fetchPriority="high"
               onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = heroPerson; }}
             />
           </div>
