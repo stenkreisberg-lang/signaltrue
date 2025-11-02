@@ -1,7 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import heroPerson from '../assets/hero-person.svg';
 import logoIcon from '../assets/logo-icon.svg';
+import SiteFooter from '../components/SiteFooter';
 
 function Home() {
   const navigate = useNavigate();
@@ -10,15 +11,15 @@ function Home() {
     <div style={styles.container}>
       <nav style={styles.nav}>
         <div style={styles.navContent}>
-          <div style={styles.logoContainer}>
+          <Link to="/" style={{...styles.logoContainer, textDecoration:'none'}}>
             <img src={logoIcon} alt="Signaltrue" style={styles.logoIcon} />
             <span style={styles.logoText}>Signaltrue</span>
-          </div>
+          </Link>
           <div style={styles.navLinks}>
-            <a href="#product" style={styles.navLink}>Product</a>
-            <a href="#solutions" style={styles.navLink}>Solutions</a>
-            <a href="#pricing" style={styles.navLink}>Pricing</a>
-            <a href="#about" style={styles.navLink}>About</a>
+            <Link to="/product" style={styles.navLink}>Product</Link>
+            <Link to="/how-it-works" style={styles.navLink}>Solutions</Link>
+            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
+            <Link to="/about" style={styles.navLink}>About</Link>
             <button onClick={() => navigate('/login')} style={styles.loginButton}>Login</button>
           </div>
         </div>
@@ -42,13 +43,13 @@ function Home() {
               alt="People at work"
               style={styles.heroImg}
               loading="lazy"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = heroPerson; }}
+              onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = heroPerson; }}
             />
           </div>
         </div>
       </section>
 
-      <section id="solutions" style={{...styles.section, background: '#f9fafb'}}>
+      <section style={{...styles.section, background: '#f9fafb'}}>
         <div style={styles.sectionContent}>
           <h2 style={styles.sectionTitle}>Clarity for every leader</h2>
           <div style={styles.metricsGrid}>
@@ -63,21 +64,7 @@ function Home() {
         </div>
       </section>
 
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.logoContainer}>
-            <img src={logoIcon} alt="Signaltrue" style={{...styles.logoIcon, filter: 'brightness(0) invert(1)'}} />
-            <span style={{...styles.logoText, color: 'white'}}>Signaltrue</span>
-          </div>
-          <div style={styles.footerLinks}>
-            <a href="mailto:support@signaltrue.ai" style={styles.footerLink}>Support</a>
-            <a href="mailto:sales@signaltrue.ai" style={styles.footerLink}>Sales</a>
-            <span style={styles.footerLink}>Privacy</span>
-            <span style={styles.footerLink}>Terms</span>
-          </div>
-          <div style={styles.footerCopy}>© 2025 SignalTrue. All rights reserved.</div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
@@ -117,12 +104,7 @@ const styles = {
   dashboardsRow: { display: 'flex', justifyContent: 'center' },
   dashboardImg: { width: '100%', maxWidth: 900, borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 16px 40px rgba(0,0,0,0.12)' },
 
-  footer: { background: '#111827', color: 'white', padding: '3rem 2rem' },
-  footerContent: { maxWidth: '1200px', margin: '0 auto', textAlign: 'center' },
-  footerLogo: { height: '36px', width: 'auto', margin: '0 auto 1rem' },
-  footerLinks: { display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1rem' },
-  footerLink: { color: '#9ca3af', textDecoration: 'none' },
-  footerCopy: { color: '#6b7280', fontSize: '0.875rem' }
+  // Footer moved to shared SiteFooter component
 };
 
 export default Home;
