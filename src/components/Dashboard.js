@@ -167,6 +167,19 @@ function Dashboard() {
       </nav>
 
       <div style={styles.content}>
+        {/* Admin onboarding shortcut */}
+        {['admin','hr_admin','master_admin'].includes(user?.role) && (
+          <div style={{
+            background:'#EEF2FF', border:'1px solid #C7D2FE', borderRadius:12, padding:'1rem 1.25rem',
+            display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.25rem'
+          }}>
+            <div style={{color:'#4338CA', fontWeight:600}}>New: Guided Admin Onboarding</div>
+            <Link to="/admin/onboarding" style={{
+              background:'linear-gradient(135deg, #6366f1, #8b5cf6)', color:'white', textDecoration:'none',
+              borderRadius:8, padding:'0.5rem 0.75rem', fontWeight:700
+            }}>Open</Link>
+          </div>
+        )}
         <div style={styles.hero}>
           <h1 style={styles.title}>Welcome to SignalTrue</h1>
           <p style={styles.subtitle}>

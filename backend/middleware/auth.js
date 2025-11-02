@@ -71,6 +71,18 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
+// Require one of the given roles
+export function requireRoles(roles) {
+  const allowed = Array.isArray(roles) ? roles : [roles];
+  return (req, res, next) => {
+    const role = req.user?.role;
+    if (!role || !allowed.includes(role)) {
+      return res.status(403).json({ message: 'Forbidden: insufficient role', required: allowed, current: role });
+    }
+    next();
+  };
+}
+
 /**
  * Clerk Authentication (Alternative to JWT)
  * 

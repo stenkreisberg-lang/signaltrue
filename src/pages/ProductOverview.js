@@ -182,7 +182,6 @@ function ProductOverview() {
       <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
         <div style={styles.container}>
           <h2 style={{...styles.sectionTitle, color: 'white'}}>
-          <h2 style={{...styles.sectionTitle, color: 'white'}}>
             See Your First Drift Alert in 48 Hours
           </h2>
           <p style={{...styles.sectionSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
@@ -191,6 +190,7 @@ function ProductOverview() {
           <Link to="/contact" style={{...styles.primaryBtn, background: 'white', color: '#6366f1'}}>
             Get Early Access
           </Link>
+        </div>
       </section>
 
       <SiteFooter />

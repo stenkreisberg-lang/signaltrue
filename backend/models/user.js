@@ -21,7 +21,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'viewer', 'master_admin'],
+    // Support legacy roles and new onboarding roles
+    enum: ['admin', 'viewer', 'master_admin', 'hr_admin', 'it_admin', 'team_member'],
     default: 'viewer'
   },
   isMasterAdmin: {

@@ -13,12 +13,13 @@ import ProductOverview from './pages/ProductOverview';
 import BurnoutDetection from './pages/BurnoutDetection';
 import TeamAnalytics from './pages/TeamAnalytics';
 import CompanyDashboard from './pages/CompanyDashboard';
-import HowItWorks from './pages/HowItWorks';
+import HowItWorks from './pages/HowItWorksClean';
 import Pricing from './pages/Pricing';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import AdminOnboarding from './pages/AdminOnboarding';
 
 export default function App() {
   return (
@@ -38,6 +39,14 @@ export default function App() {
   <Route path="/privacy" element={<Privacy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
+        <Route
+          path="/admin/onboarding"
+          element={
+            <ProtectedRoute>
+              <AdminOnboarding />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={

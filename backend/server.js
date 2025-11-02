@@ -27,6 +27,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import exportRoutes from "./routes/exportRoutes.js";
 import programRoutes from "./routes/programRoutes.js";
 import timelineRoutes from "./routes/timelineRoutes.js";
+import onboardingRoutes from "./routes/onboarding.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
@@ -56,13 +57,27 @@ app.get("/", (req, res) => {
   res.send("SignalTrue backend is running 🚀");
 });
 
-// Connect to MongoDB when a connection string is provided and not running tests.
-// Tests manage their own in-memory MongoDB connection to avoid clobbering state.
-if (process.env.MONGO_URI && process.env.NODE_ENV !== "test") {
-  mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB connected"))
-    .catch((err) => console.error("❌ MongoDB connection error:", err));
+// Connect to MongoDB: prefer real MONGO_URI; optionally fall back to in-memory DB for local dev.
+// Tests manage their own in-memory MongoDB connection.
+if (process.env.NODE_ENV !== "test") {
+  if (process.env.MONGO_URI) {
+    mongoose
+      .connect(process.env.MONGO_URI)
+      .then(() => console.log("✅ MongoDB connected"))
+      .catch((err) => console.error("❌ MongoDB connection error:", err));
+  } else if (process.env.USE_IN_MEMORY_DB === "1") {
+    try {
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+      const mem = await MongoMemoryServer.create();
+      const uri = mem.getUri();
+      await mongoose.connect(uri);
+      console.log("✅ In-memory MongoDB started", uri);
+    } catch (err) {
+      console.error("❌ Failed to start in-memory MongoDB:", err);
+    }
+  } else {
+    console.warn("ℹ️ No MONGO_URI provided. Database operations will be unavailable.");
+  }
 }
 
 const PORT = process.env.PORT || 8080;
@@ -103,6 +118,7 @@ app.use("/api", adminRoutes);
 app.use("/api", exportRoutes);
 app.use("/api", programRoutes);
 app.use("/api", timelineRoutes);
+app.use("/api", onboardingRoutes);
 
 // Schedule Slack + Calendar data refresh daily at 2 AM
 if (process.env.NODE_ENV !== "test") {
