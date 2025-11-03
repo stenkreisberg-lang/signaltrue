@@ -28,6 +28,8 @@ import exportRoutes from "./routes/exportRoutes.js";
 import programRoutes from "./routes/programRoutes.js";
 import timelineRoutes from "./routes/timelineRoutes.js";
 import onboardingRoutes from "./routes/onboarding.js";
+import oauthRoutes from "./routes/oauth.js";
+import invitesRoutes from "./routes/invites.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
@@ -94,6 +96,8 @@ await fs.mkdir(uploadsDir, { recursive: true });
 app.use("/uploads", express.static(uploadsDir));
 
 // Mount API routes
+app.use("/auth", oauthRoutes);
+app.use("/api/invites", invitesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/team-members", teamMembersRoutes);
 app.use("/api/organizations", organizationRoutes);

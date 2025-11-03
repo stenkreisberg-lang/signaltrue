@@ -8,25 +8,24 @@ function Home() {
   return (
     <div style={styles.container}>
       {/* Top nav */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.brand}>SignalTrue</Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/how-it-works" style={styles.navLink}>How it works</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <button onClick={() => navigate('/login')} style={styles.loginButton}>Login</button>
+        <section style={styles.hero}>
+          <div style={styles.heroInner}>
+            <div style={styles.badge}>Team‑level by default</div>
+            <h1 style={styles.heroTitle}>Grow engagement. Strengthen culture. Lead with insight.</h1>
+            <p style={styles.heroSubtitle}>
+              SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
+            </p>
+            <div style={styles.ctaRow}>
+              <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
+              <button onClick={() => navigate('/how-it-works')} style={styles.secondaryButton}>See How It Works</button>
+            </div>
+            <div style={styles.chips}>
+              {['Sentiment','Response latency','Meeting load','After‑hours','Focus time','Network','Recovery','Energy Index'].map((c) => (
+                <div key={c} style={styles.chip}>{c}</div>
+              ))}
+            </div>
           </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section style={styles.hero}>
-        <div style={styles.heroInner}>
-          <div style={styles.badge}>Team‑level by default</div>
-          <h1 style={styles.heroTitle}>Catch burnout before it happens</h1>
-          <p style={styles.heroSubtitle}>
+        </section>
             Connect Slack, Teams and Outlook. We learn each team’s rhythm, detect drift, and explain the top drivers.
             Get micro‑playbooks so managers act fast, with clarity.
           </p>

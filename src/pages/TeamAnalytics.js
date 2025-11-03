@@ -25,53 +25,27 @@ function TeamAnalytics() {
       {/* Hero */}
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>
-            Individual Team Member Analytics
-          </h1>
+          <h1 style={styles.heroTitle}>Empower HR to grow engagement — not just measure it.</h1>
           <p style={styles.heroSubtitle}>
-            Get personalized insights for each team member to support better 1-on-1 conversations, 
-            accelerate talent development, and build stronger manager-employee relationships.
+            HR & People Teams: See how engagement evolves across departments and design programs that strengthen belonging and performance.<br />
+            Managers: Receive clear, actionable feedback on how leadership affects team connection.<br />
+            Executives: Get a live view of cultural health and team energy across the organisation.
           </p>
-          <Link to="/contact" style={styles.primaryBtn}>Request A Demo</Link>
+          <Link to="/contact" style={styles.primaryBtn}>Explore the Platform</Link>
         </div>
       </section>
 
-      {/* Overview */}
+      {/* Use Cases */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Personalized Analytics™ About Each Team Member</h2>
-          <p style={styles.introText}>
-            SignalTrue is highly people-centric, with a mission of helping employees thrive in their careers. 
-            Our platform accelerates better talent development with proprietary insights and valuable reports. 
-            SignalTrue consolidates dozens of disparate analytics into an easy-to-use team insights hub.
-          </p>
-
-          <div style={styles.benefitCards}>
-            <div style={styles.benefitCard}>
-              <span style={styles.benefitIcon}>📊</span>
-              <h3 style={styles.benefitTitle}>Better Performance Reviews</h3>
-              <p style={styles.benefitText}>
-                Personalized Analytics™ better prepare each manager ahead of regular performance reviews 
-                with data-driven insights.
-              </p>
-            </div>
-
-            <div style={styles.benefitCard}>
-              <span style={styles.benefitIcon}>🎯</span>
-              <h3 style={styles.benefitTitle}>Targeted Support</h3>
-              <p style={styles.benefitText}>
-                Identify specific areas where team members need support before issues become critical problems.
-              </p>
-            </div>
-
-            <div style={styles.benefitCard}>
-              <span style={styles.benefitIcon}>💬</span>
-              <h3 style={styles.benefitTitle}>Meaningful Conversations</h3>
-              <p style={styles.benefitText}>
-                Have more impactful 1-on-1s with conversation starters based on real behavioral data.
-              </p>
-            </div>
-          </div>
+          <h2 style={styles.sectionTitle}>Use Cases</h2>
+          <ul style={{margin:'16px 0 24px 24px'}}>
+            <li>Monitor growth in engagement after new initiatives.</li>
+            <li>Identify high-performing cultures to learn from.</li>
+            <li>Track cultural alignment after change or restructuring.</li>
+            <li>Recognise emerging leaders and team resilience.</li>
+          </ul>
+          <Link to="/product" style={styles.primaryBtn}>Explore the Platform</Link>
         </div>
       </section>
 

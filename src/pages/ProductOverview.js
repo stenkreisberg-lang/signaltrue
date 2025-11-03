@@ -25,12 +25,11 @@ function ProductOverview() {
       {/* Hero Section */}
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>
-            8 Signals. Instant Insights. Actionable Playbooks.
-          </h1>
+          <h1 style={styles.heroTitle}>Continuous Engagement Insight™</h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue focuses on proven high-impact metrics—sentiment, latency, meetings, after-hours, network, focus, recovery, and energy. When drift happens, you see why and what to do next. No noise. Just clarity.
+            SignalTrue helps HR teams grow engagement, strengthen culture, and guide leaders with continuous insight.
           </p>
+          <div style={{marginTop:12, fontWeight:600}}>Build stronger teams through continuous engagement insight.</div>
           <div style={styles.heroCTA}>
             <Link to="/contact" style={styles.primaryBtn}>Get Early Access</Link>
             <Link to="/how-it-works" style={styles.secondaryBtn}>See How It Works</Link>

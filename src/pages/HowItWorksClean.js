@@ -23,20 +23,20 @@ function HowItWorks() {
 
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>How SignalTrue Works</h1>
-          <p style={styles.heroSubtitle}>8 signals. Drift explainability. Micro‑playbooks. Privacy‑first.</p>
+          <h1 style={styles.heroTitle}>How HR leaders turn collaboration into continuous insight.</h1>
+          <p style={styles.heroSubtitle}>Connect your environment securely. SignalTrue learns your teams’ engagement rhythm. Positive or negative shifts appear in your dashboard automatically. Weekly reports help you guide leaders, recognise improvements, and maintain high energy.</p>
         </div>
       </section>
 
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Fast setup, clear outcomes</h2>
+          <h2 style={styles.sectionTitle}>How It Works</h2>
           <div style={styles.stepsGrid}>
             {[
-              ['1','Connect','One‑click OAuth with Slack, Google or Microsoft (read‑only).'],
-              ['2','Baseline','We learn normal rhythms for each team automatically.'],
-              ['3','Detect & explain','When drift hits, we show the top 3 contributors.'],
-              ['4','Act','Micro‑playbooks help managers respond fast.'],
+              ['1','Connect your environment securely.',''],
+              ['2','SignalTrue learns your teams’ engagement rhythm.',''],
+              ['3','Positive or negative shifts appear in your dashboard automatically.',''],
+              ['4','Weekly reports help you guide leaders, recognise improvements, and maintain high energy.',''],
             ].map(([n,t,txt]) => (
               <div key={n} style={styles.step}>
                 <div style={styles.stepNumber}>{n}</div>

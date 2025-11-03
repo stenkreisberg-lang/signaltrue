@@ -22,8 +22,8 @@ export default function Privacy() {
 
       <header style={styles.header}> 
         <div style={styles.container}> 
-          <h1 style={styles.title}>Privacy Policy</h1>
-          <p style={styles.subtitle}>Effective date: November 1, 2025</p>
+          <h1 style={styles.title}>Trust and transparency by design.</h1>
+          <p style={styles.subtitle}>Team-level only, never individual.<br />No message reading or personal tracking.<br />Clear employee consent and visibility.<br />Regional data residency options.<br />Configurable retention (30–180 days).</p>
         </div>
       </header>
 
@@ -32,10 +32,8 @@ export default function Privacy() {
           <div style={styles.card}> 
             <Block title="Overview">
               <p>
-                This Privacy Policy explains how SignalTrue ("we", "our", or "us") collects, uses, and protects information
-                in connection with our services (the "Services"). Our design is privacy-first: individual outputs are directional
-                (e.g., up/down trends) rather than disclosing exact values or raw message content. Organizational views are
-                aggregated and privacy-preserving.
+                When people feel safe, insight becomes valuable.<br />
+                SignalTrue is designed for trust and transparency: team-level only, never individual. No message reading or personal tracking. Clear employee consent and visibility. Regional data residency options. Configurable retention (30–180 days).
               </p>
             </Block>
 

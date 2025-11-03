@@ -35,10 +35,11 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-  <Route path="/terms" element={<Terms />} />
-  <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
+        <Route path="/onboarding" element={<import('./pages/OnboardingAccept').then(m => m.default) />} />
         <Route
           path="/admin/onboarding"
           element={

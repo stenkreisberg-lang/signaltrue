@@ -53,9 +53,9 @@ function Pricing() {
 
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>Simple, Transparent Pricing</h1>
+          <h1 style={styles.heroTitle}>Simple plans to help you grow culture and engagement.</h1>
           <p style={styles.heroSubtitle}>
-            8 high-impact signals. Drift alerts with explainability. Micro-playbooks. Choose the plan that fits your team. 30-day free trial—credit card required to start.
+            Choose the plan that helps your team build engagement, strengthen culture, and grow with confidence. 30-day free trial—credit card required to start.
           </p>
         </div>
       </section>
@@ -70,45 +70,33 @@ function Pricing() {
             <div style={styles.pricingCard}>
               <div style={styles.planBadge}>Starter</div>
               <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>$499</span>
+                <span style={styles.priceAmount}>€99</span>
                 <span style={styles.pricePeriod}>/month</span>
               </div>
-              <p style={styles.planSubtitle}>For small teams getting started</p>
+              <p style={styles.planSubtitle}>Up to 20 people</p>
               <ul style={styles.featureList}>
-                <li>✓ Up to 25 team members</li>
-                <li>✓ 8-signal analytics (Energy Index, sentiment, meetings, latency, after-hours, network, focus, recovery)</li>
-                <li>✓ Team health baselines</li>
-                <li>✓ Basic drift alerts (Slack/email)</li>
-                <li>✓ Weekly brief reports</li>
-                <li>✓ Slack/Google/Microsoft OAuth</li>
-                <li>✓ Regional data residency (EU/US)</li>
-                <li>✓ Email support</li>
+                <li>✓ Continuous engagement tracking</li>
+                <li>✓ Team Health Score</li>
+                <li>✓ Weekly insight brief</li>
               </ul>
               <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
                 {loadingPlan === 'starter' ? 'Starting…' : 'Start Free Trial'}
               </button>
             </div>
 
-            {/* Professional Plan */}
+            {/* Growth Plan */}
             <div style={{...styles.pricingCard, ...styles.featuredCard}}>
               <div style={styles.popularBadge}>Most Popular</div>
-              <div style={styles.planBadge}>Professional</div>
+              <div style={styles.planBadge}>Growth</div>
               <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>$1,299</span>
+                <span style={styles.priceAmount}>€299</span>
                 <span style={styles.pricePeriod}>/month</span>
               </div>
-              <p style={styles.planSubtitle}>For growing teams</p>
+              <p style={styles.planSubtitle}>Everything in Starter</p>
               <ul style={styles.featureList}>
-                <li>✓ Up to 100 team members</li>
-                <li>✓ Everything in Starter, plus:</li>
-                <li>✓ Drift explainability (top 3 contributors shown)</li>
-                <li>✓ Micro-playbook recommendations (action suggestions)</li>
-                <li>✓ Timeline event overlay (annotate charts with launches/reorgs)</li>
-                <li>✓ Alert frequency control (daily/weekly/off)</li>
-                <li>✓ Advanced sentiment shift detection</li>
-                <li>✓ Network breadth & collaboration insights</li>
-                <li>✓ Historical trend analysis (3 months)</li>
-                <li>✓ Priority support</li>
+                <li>✓ Trend analytics and benchmarks</li>
+                <li>✓ Engagement evolution dashboard</li>
+                <li>✓ Privacy controls and retention settings</li>
               </ul>
               <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
                 {loadingPlan === 'pro' ? 'Starting…' : 'Start Free Trial'}
@@ -118,6 +106,17 @@ function Pricing() {
             {/* Enterprise Plan */}
             <div style={styles.pricingCard}>
               <div style={styles.planBadge}>Enterprise</div>
+              <div style={styles.priceSection}>
+                <span style={styles.priceAmount}>Custom</span>
+              </div>
+              <p style={styles.planSubtitle}>Everything in Growth</p>
+              <ul style={styles.featureList}>
+                <li>✓ Integrations and API access</li>
+                <li>✓ Regional data residency</li>
+                <li>✓ Dedicated success partner</li>
+              </ul>
+              <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Request Pricing</a>
+            </div>
               <div style={styles.priceSection}>
                 <span style={styles.priceAmount}>Custom</span>
               </div>

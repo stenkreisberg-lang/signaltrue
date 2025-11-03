@@ -28,7 +28,7 @@ export default function AdminOnboarding() {
         const iRes = await fetch(`${API_BASE}/api/integrations/status${meData?.orgId ? `?orgId=${meData.orgId}` : ''}`);
         if (iRes.ok) setIntegrations(await iRes.json());
 
-        const listRes = await fetch(`${API_BASE}/api/onboarding/invitations`, { headers: { Authorization: `Bearer ${token}` } });
+        const listRes = await fetch(`${API_BASE}/api/invites/pending`);
         if (listRes.ok) setPendingInvites(await listRes.json());
       } catch (e) {
         navigate('/login');
@@ -37,25 +37,48 @@ export default function AdminOnboarding() {
     load();
   }, [navigate]);
 
+  // OAuth URLs using env vars
+  const SLACK_CLIENT_ID = process.env.REACT_APP_SLACK_CLIENT_ID;
+  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  const OUTLOOK_CLIENT_ID = process.env.REACT_APP_OUTLOOK_CLIENT_ID;
+  const FRONTEND_URL = window.location.origin;
+
+  const slackOAuthUrl = SLACK_CLIENT_ID
+    ? `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${FRONTEND_URL}/auth/slack/callback`
+    : null;
+  const googleOAuthUrl = GOOGLE_CLIENT_ID
+    ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${FRONTEND_URL}/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline`
+    : null;
+  const outlookOAuthUrl = OUTLOOK_CLIENT_ID
+    ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`
+    : null;
+
+  // Modal state for Slack connection
+  const [showSlackModal, setShowSlackModal] = useState(false);
+
   const oauth = (provider) => {
-    const url = integrations?.oauth?.[provider];
-    if (url) window.location.href = `${API_BASE}${url}`;
+    if (provider === 'slack' && slackOAuthUrl) {
+      setShowSlackModal(true);
+    } else if (provider === 'calendar' && googleOAuthUrl) {
+      window.location.href = googleOAuthUrl;
+    } else if (provider === 'outlook' && outlookOAuthUrl) {
+      window.location.href = outlookOAuthUrl;
+    }
   };
 
   const submitInvite = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/api/onboarding/invitations`, {
+      const res = await fetch(`${API_BASE}/api/invites/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invite)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Failed to invite');
       setMsg({ type: 'success', text: `Invite created for ${data.email} (role: ${data.role}). Token: ${data.token}` });
       // refresh list
-      const listRes = await fetch(`${API_BASE}/api/onboarding/invitations`, { headers: { Authorization: `Bearer ${token}` } });
+      const listRes = await fetch(`${API_BASE}/api/invites/pending`);
       if (listRes.ok) setPendingInvites(await listRes.json());
       setInvite({ email: '', role: invite.role });
     } catch (e) {
@@ -97,21 +120,36 @@ export default function AdminOnboarding() {
             {integrations?.connected?.slack ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('slack')} disabled={!integrations?.oauth?.slack}>Connect Slack</button>
+              <button style={styles.btn} onClick={() => oauth('slack')} disabled={!slackOAuthUrl}>Connect Slack</button>
+            )}
+            {showSlackModal && (
+              <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <div style={{background:'white',padding:32,borderRadius:12,maxWidth:400}}>
+                  <h3 style={{marginTop:0}}>Connect Slack</h3>
+                  <ol style={{margin:'12px 0',paddingLeft:20}}>
+                    <li>Click “Authorize Slack Workspace”.</li>
+                    <li>Approve SignalTrue to access your workspace’s public channels (read-only).</li>
+                    <li>You’ll be redirected back here automatically and the first sync will begin.</li>
+                  </ol>
+                  <div style={{marginBottom:12}}>Need help? Contact your IT admin.</div>
+                  <button style={styles.btn} onClick={()=>{window.location.href=slackOAuthUrl}}>Authorize Slack Workspace</button>
+                  <button style={{marginLeft:8,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e7eb',background:'#f3f4f6',color:'#374151'}} onClick={()=>setShowSlackModal(false)}>Cancel</button>
+                </div>
+              </div>
             )}
           </Card>
           <Card title={`Google Calendar ${integrations?.connected?.calendar ? '✓' : ''}`} desc="Meeting load & focus time">
             {integrations?.connected?.calendar ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('calendar')} disabled={!integrations?.oauth?.calendar}>Connect Google</button>
+              <button style={styles.btn} onClick={() => oauth('calendar')} disabled={!googleOAuthUrl}>Connect Google</button>
             )}
           </Card>
           <Card title={`Microsoft Outlook ${integrations?.connected?.outlook ? '✓' : ''}`} desc="Outlook calendar & email metadata">
             {integrations?.connected?.outlook ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('outlook')} disabled={!integrations?.oauth?.outlook}>Connect Outlook</button>
+              <button style={styles.btn} onClick={() => oauth('outlook')} disabled={!outlookOAuthUrl}>Connect Outlook</button>
             )}
           </Card>
         </div>
