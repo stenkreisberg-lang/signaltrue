@@ -20,6 +20,7 @@ import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import AdminOnboarding from './pages/AdminOnboarding';
+import OnboardingAccept from './pages/OnboardingAccept';
 
 export default function App() {
   return (
@@ -39,7 +40,7 @@ export default function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
-        <Route path="/onboarding" element={<import('./pages/OnboardingAccept').then(m => m.default) />} />
+        <Route path="/onboarding" element={<OnboardingAccept />} />
         <Route
           path="/admin/onboarding"
           element={

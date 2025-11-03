@@ -8,26 +8,12 @@ function Home() {
   return (
     <div style={styles.container}>
       {/* Top nav */}
-        <section style={styles.hero}>
-          <div style={styles.heroInner}>
-            <div style={styles.badge}>Team‑level by default</div>
-            <h1 style={styles.heroTitle}>Grow engagement. Strengthen culture. Lead with insight.</h1>
-            <p style={styles.heroSubtitle}>
-              SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
-            </p>
-            <div style={styles.ctaRow}>
-              <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
-              <button onClick={() => navigate('/how-it-works')} style={styles.secondaryButton}>See How It Works</button>
-            </div>
-            <div style={styles.chips}>
-              {['Sentiment','Response latency','Meeting load','After‑hours','Focus time','Network','Recovery','Energy Index'].map((c) => (
-                <div key={c} style={styles.chip}>{c}</div>
-              ))}
-            </div>
-          </div>
-        </section>
-            Connect Slack, Teams and Outlook. We learn each team’s rhythm, detect drift, and explain the top drivers.
-            Get micro‑playbooks so managers act fast, with clarity.
+      <section style={styles.hero}>
+        <div style={styles.heroInner}>
+          <div style={styles.badge}>Team‑level by default</div>
+          <h1 style={styles.heroTitle}>Grow engagement. Strengthen culture. Lead with insight.</h1>
+          <p style={styles.heroSubtitle}>
+            SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
           </p>
           <div style={styles.ctaRow}>
             <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>

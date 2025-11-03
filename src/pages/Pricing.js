@@ -117,27 +117,6 @@ function Pricing() {
               </ul>
               <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Request Pricing</a>
             </div>
-              <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>Custom</span>
-              </div>
-              <p style={styles.planSubtitle}>For large organizations</p>
-              <ul style={styles.featureList}>
-                <li>✓ Unlimited team members</li>
-                <li>✓ Everything in Professional, plus:</li>
-                <li>✓ Program Impact Tracker (before/after energy + ROI)</li>
-                <li>✓ API key management (create/rotate/revoke tokens)</li>
-                <li>✓ CSV export for BI tools (metrics + drift events)</li>
-                <li>✓ REST API endpoints (full access)</li>
-                <li>✓ Custom integrations & HRIS</li>
-                <li>✓ SSO & SAML authentication</li>
-                <li>✓ AES-256 encryption + custom data retention</li>
-                <li>✓ White-label reporting</li>
-                <li>✓ Dedicated account manager</li>
-                <li>✓ 24/7 premium support</li>
-                <li>✓ Onboarding & training</li>
-              </ul>
-              <Link to="/contact" style={styles.planButton}>Contact Sales</Link>
-            </div>
           </div>
 
           <div style={styles.trialNote}>
