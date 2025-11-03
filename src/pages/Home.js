@@ -8,6 +8,22 @@ function Home() {
   return (
     <div style={styles.container}>
       {/* Top nav */}
+      <nav style={styles.nav}>
+        <div style={styles.navContent}>
+          <Link to="/" style={styles.logoLink}>
+            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
+            <span style={styles.logoText}>SignalTrue</span>
+          </Link>
+          <div style={styles.navLinks}>
+            <Link to="/product" style={styles.navLink}>Product</Link>
+            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
+            <Link to="/about" style={styles.navLink}>About</Link>
+            <Link to="/contact" style={styles.navLink}>Contact</Link>
+            <Link to="/login" style={styles.loginBtn}>Login</Link>
+          </div>
+        </div>
+      </nav>
+
       <section style={styles.hero}>
         <div style={styles.heroInner}>
           <div style={styles.badge}>Team‑level by default</div>
@@ -18,11 +34,6 @@ function Home() {
           <div style={styles.ctaRow}>
             <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
             <button onClick={() => navigate('/how-it-works')} style={styles.secondaryButton}>See How It Works</button>
-          </div>
-          <div style={styles.chips}>
-            {['Sentiment','Response latency','Meeting load','After‑hours','Focus time','Network','Recovery','Energy Index'].map((c) => (
-              <div key={c} style={styles.chip}>{c}</div>
-            ))}
           </div>
         </div>
       </section>
@@ -126,21 +137,21 @@ const styles = {
   container:{minHeight:'100vh',background:'white'},
   nav:{background:'white',borderBottom:'1px solid #e5e7eb',padding:'1rem 2rem',position:'sticky',top:0,zIndex:100},
   navContent:{maxWidth:1200,margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center'},
-  brand:{fontWeight:800,fontSize:'1.25rem',textDecoration:'none',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'},
+  logoLink: { display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' },
+  logoImg: { height: '32px', width: '32px' },
+  logoText: { fontSize: '1.25rem', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
   navLinks:{display:'flex',gap:'2rem',alignItems:'center'},
   navLink:{color:'#4b5563',textDecoration:'none',fontWeight:500},
-  loginButton:{padding:'0.5rem 1.25rem',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer'},
+  loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600' },
 
   hero:{background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',padding:'6rem 2rem 4rem',textAlign:'center'},
   heroInner:{maxWidth:950,margin:'0 auto'},
   badge:{display:'inline-block',padding:'6px 12px',borderRadius:999,background:'rgba(255,255,255,0.15)',backdropFilter:'blur(4px)',marginBottom:16},
   heroTitle:{fontSize:'3rem',fontWeight:800,margin:'0 0 12px'},
   heroSubtitle:{fontSize:'1.125rem',opacity:0.95,margin:'0 auto 24px',maxWidth:760,lineHeight:1.6},
-  ctaRow:{display:'flex',gap:12,justifyContent:'center',marginBottom:16,flexWrap:'wrap'},
+  ctaRow:{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'},
   primaryButton:{padding:'0.9rem 1.4rem',background:'white',color:'#6366f1',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer'},
   secondaryButton:{padding:'0.9rem 1.4rem',background:'transparent',color:'white',border:'2px solid white',borderRadius:8,fontWeight:700,cursor:'pointer'},
-  chips:{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginTop:12},
-  chip:{background:'rgba(255,255,255,0.25)',padding:'8px 14px',borderRadius:999},
 
   section:{padding:'4.5rem 2rem'},
   sectionInner:{maxWidth:1100,margin:'0 auto'},

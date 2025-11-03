@@ -192,19 +192,7 @@ export default function AdminOnboarding() {
             {integrations?.connected?.outlook ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('outlook')}>Connect Outlook</button>
-          <Card title={`Google Calendar ${integrations?.connected?.calendar ? '✓' : ''}`} desc="Meeting load & focus time">
-            {integrations?.connected?.calendar ? (
-              <div style={styles.ok}>Connected</div>
-            ) : (
-              <button style={styles.btn} onClick={() => oauth('calendar')} disabled={!googleOAuthUrl}>Connect Google</button>
-            )}
-          </Card>
-          <Card title={`Microsoft Outlook ${integrations?.connected?.outlook ? '✓' : ''}`} desc="Outlook calendar & email metadata">
-            {integrations?.connected?.outlook ? (
-              <div style={styles.ok}>Connected</div>
-            ) : (
-              <button style={styles.btn} onClick={() => oauth('outlook')} disabled={!outlookOAuthUrl}>Connect Outlook</button>
+               <button style={styles.btn} onClick={() => oauth('outlook')}>Connect Outlook</button>
             )}
           </Card>
         </div>
