@@ -28,9 +28,18 @@ export default function AdminOnboarding() {
         const iRes = await fetch(`${API_BASE}/api/integrations/status${meData?.orgId ? `?orgId=${meData.orgId}` : ''}`);
         if (iRes.ok) setIntegrations(await iRes.json());
 
-        const listRes = await fetch(`${API_BASE}/api/invites/pending`);
-        if (listRes.ok) setPendingInvites(await listRes.json());
+        // Try to fetch pending invites, but don't fail if backend unreachable
+        try {
+          const listRes = await fetch(`${API_BASE}/api/invites/pending`);
+          const contentType = listRes.headers.get('content-type');
+          if (listRes.ok && contentType?.includes('application/json')) {
+            setPendingInvites(await listRes.json());
+          }
+        } catch (err) {
+          console.warn('Could not load pending invites:', err);
+        }
       } catch (e) {
+        console.error('Load error:', e);
         navigate('/login');
       }
     };
@@ -57,23 +66,43 @@ export default function AdminOnboarding() {
   const [showSlackModal, setShowSlackModal] = useState(false);
 
   const oauth = (provider) => {
-    if (provider === 'slack' && slackOAuthUrl) {
+    if (provider === 'slack') {
+      if (!slackOAuthUrl) {
+        setMsg({ type: 'error', text: 'Slack OAuth is not configured. Please set REACT_APP_SLACK_CLIENT_ID.' });
+        return;
+      }
       setShowSlackModal(true);
-    } else if (provider === 'calendar' && googleOAuthUrl) {
+    } else if (provider === 'calendar') {
+      if (!googleOAuthUrl) {
+        setMsg({ type: 'error', text: 'Google OAuth is not configured. Please set REACT_APP_GOOGLE_CLIENT_ID.' });
+        return;
+      }
       window.location.href = googleOAuthUrl;
-    } else if (provider === 'outlook' && outlookOAuthUrl) {
+    } else if (provider === 'outlook') {
+      if (!outlookOAuthUrl) {
+        setMsg({ type: 'error', text: 'Outlook OAuth is not configured. Please set REACT_APP_OUTLOOK_CLIENT_ID.' });
+        return;
+      }
       window.location.href = outlookOAuthUrl;
     }
   };
 
   const submitInvite = async (e) => {
     e.preventDefault();
+    setMsg(null);
     try {
       const res = await fetch(`${API_BASE}/api/invites/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invite)
       });
+      
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Backend is not reachable. Please ensure the API server is running.');
+      }
+      
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Failed to invite');
       setMsg({ type: 'success', text: `Invite created for ${data.email} (role: ${data.role}). Token: ${data.token}` });
@@ -99,6 +128,20 @@ export default function AdminOnboarding() {
         <div style={{ color: '#6b7280' }}>Signed in as {me.name || me.email} • Role: <strong>{me.role}</strong></div>
       </div>
 
+      {/* Configuration warning if OAuth not set up */}
+      {(!SLACK_CLIENT_ID || !GOOGLE_CLIENT_ID || !OUTLOOK_CLIENT_ID) && (
+        <div style={{
+          marginBottom: 16,
+          padding: '12px 14px',
+          borderRadius: 8,
+          border: '1px solid #fcd34d',
+          background: '#fef3c7',
+          color: '#78350f'
+        }}>
+          ⚠️ OAuth configuration incomplete. Contact your system administrator to set up integration credentials.
+        </div>
+      )}
+
       {msg && (
         <div style={{
           marginBottom: 16,
@@ -116,20 +159,20 @@ export default function AdminOnboarding() {
         <h2 style={styles.h2}>1) Connect Integrations</h2>
         <p style={styles.p}>Slack is required and at least one calendar provider (Google Calendar or Microsoft Outlook).</p>
         <div style={styles.grid}>
-          <Card title={`Slack ${integrations?.connected?.slack ? '✓' : ''}`} desc="Workspace collaboration insights">
+                    <Card title={`Slack ${integrations?.connected?.slack ? '✓' : ''}`} desc="Workspace collaboration insights">
             {integrations?.connected?.slack ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('slack')} disabled={!slackOAuthUrl}>Connect Slack</button>
+              <button style={styles.btn} onClick={() => oauth('slack')}>Connect Slack</button>
             )}
             {showSlackModal && (
               <div style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.3)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <div style={{background:'white',padding:32,borderRadius:12,maxWidth:400}}>
                   <h3 style={{marginTop:0}}>Connect Slack</h3>
                   <ol style={{margin:'12px 0',paddingLeft:20}}>
-                    <li>Click “Authorize Slack Workspace”.</li>
-                    <li>Approve SignalTrue to access your workspace’s public channels (read-only).</li>
-                    <li>You’ll be redirected back here automatically and the first sync will begin.</li>
+                    <li>Click "Authorize Slack Workspace".</li>
+                    <li>Approve SignalTrue to access your workspace's public channels (read-only).</li>
+                    <li>You'll be redirected back here automatically and the first sync will begin.</li>
                   </ol>
                   <div style={{marginBottom:12}}>Need help? Contact your IT admin.</div>
                   <button style={styles.btn} onClick={()=>{window.location.href=slackOAuthUrl}}>Authorize Slack Workspace</button>
@@ -138,6 +181,18 @@ export default function AdminOnboarding() {
               </div>
             )}
           </Card>
+          <Card title={`Google Calendar ${integrations?.connected?.calendar ? '✓' : ''}`} desc="Meeting load & focus time">
+            {integrations?.connected?.calendar ? (
+              <div style={styles.ok}>Connected</div>
+            ) : (
+              <button style={styles.btn} onClick={() => oauth('calendar')}>Connect Google</button>
+            )}
+          </Card>
+          <Card title={`Microsoft Outlook ${integrations?.connected?.outlook ? '✓' : ''}`} desc="Outlook calendar & email metadata">
+            {integrations?.connected?.outlook ? (
+              <div style={styles.ok}>Connected</div>
+            ) : (
+              <button style={styles.btn} onClick={() => oauth('outlook')}>Connect Outlook</button>
           <Card title={`Google Calendar ${integrations?.connected?.calendar ? '✓' : ''}`} desc="Meeting load & focus time">
             {integrations?.connected?.calendar ? (
               <div style={styles.ok}>Connected</div>
