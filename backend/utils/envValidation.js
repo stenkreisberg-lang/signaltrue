@@ -59,21 +59,40 @@ export function validateOAuthConfig() {
   return warnings.length === 0;
 }
 
+// Helper function to determine configured AI provider
+function getAiProvider() {
+  if (process.env.AI_PROVIDER) {
+    return process.env.AI_PROVIDER;
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return 'openai';
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return 'anthropic';
+  }
+  return '❌ Not configured';
+}
+
+// Helper function to format configuration status
+function getConfigStatus(envVar) {
+  return envVar ? '✅ Configured' : '⚪ Not configured';
+}
+
 export function logEnvironmentStatus() {
   console.log('\n📋 Environment Configuration:');
   console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   PORT: ${process.env.PORT || 8080}`);
   console.log(`   MONGO_URI: ${process.env.MONGO_URI ? '✅ Set' : '❌ Not set'}`);
-  console.log(`   AI Provider: ${process.env.AI_PROVIDER || (process.env.OPENAI_API_KEY ? 'openai' : process.env.ANTHROPIC_API_KEY ? 'anthropic' : '❌ Not configured')}`);
+  console.log(`   AI Provider: ${getAiProvider()}`);
   
   console.log('\n🔗 OAuth Integrations:');
-  console.log(`   Slack: ${process.env.SLACK_CLIENT_ID ? '✅ Configured' : '⚪ Not configured'}`);
-  console.log(`   Google: ${process.env.GOOGLE_CLIENT_ID ? '✅ Configured' : '⚪ Not configured'}`);
-  console.log(`   Microsoft: ${process.env.MS_APP_CLIENT_ID ? '✅ Configured' : '⚪ Not configured'}`);
+  console.log(`   Slack: ${getConfigStatus(process.env.SLACK_CLIENT_ID)}`);
+  console.log(`   Google: ${getConfigStatus(process.env.GOOGLE_CLIENT_ID)}`);
+  console.log(`   Microsoft: ${getConfigStatus(process.env.MS_APP_CLIENT_ID)}`);
   
   console.log('\n🔔 Optional Features:');
-  console.log(`   Email: ${process.env.EMAIL_HOST ? '✅ Configured' : '⚪ Not configured'}`);
-  console.log(`   Stripe: ${process.env.STRIPE_SECRET_KEY ? '✅ Configured' : '⚪ Not configured'}`);
+  console.log(`   Email: ${getConfigStatus(process.env.EMAIL_HOST)}`);
+  console.log(`   Stripe: ${getConfigStatus(process.env.STRIPE_SECRET_KEY)}`);
   console.log(`   S3 Upload: ${process.env.USE_S3 === 'true' ? '✅ Enabled' : '⚪ Disabled'}`);
   console.log('');
 }
