@@ -1,4 +1,7 @@
-export const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+// Read API base from env at build-time; fall back to Render backend in prod if not provided.
+// This guards against accidentally bundling localhost when a stray .env is committed.
+const defaultProd = "https://signaltrue-backend.onrender.com";
+export const API_BASE = process.env.REACT_APP_API_URL || defaultProd;
 
 async function request(method, path, body) {
   const opts = { method, headers: {} };

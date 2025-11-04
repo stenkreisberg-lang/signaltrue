@@ -17,20 +17,20 @@ export default function AdminOnboarding() {
     if (!token) { navigate('/login'); return; }
     const load = async () => {
       try {
-        const meRes = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        const meRes = await fetch(`${safeAPI}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (!meRes.ok) throw new Error('Auth required');
         const meData = await meRes.json();
         setMe(meData);
 
-        const stRes = await fetch(`${API_BASE}/api/onboarding/status`, { headers: { Authorization: `Bearer ${token}` } });
+        const stRes = await fetch(`${safeAPI}/api/onboarding/status`, { headers: { Authorization: `Bearer ${token}` } });
         if (stRes.ok) setStatus(await stRes.json());
 
-        const iRes = await fetch(`${API_BASE}/api/integrations/status${meData?.orgId ? `?orgId=${meData.orgId}` : ''}`);
+        const iRes = await fetch(`${safeAPI}/api/integrations/status${meData?.orgId ? `?orgId=${meData.orgId}` : ''}`);
         if (iRes.ok) setIntegrations(await iRes.json());
 
         // Try to fetch pending invites, but don't fail if backend unreachable
         try {
-          const listRes = await fetch(`${API_BASE}/api/invites/pending`);
+          const listRes = await fetch(`${safeAPI}/api/invites/pending`);
           const contentType = listRes.headers.get('content-type');
           if (listRes.ok && contentType?.includes('application/json')) {
             setPendingInvites(await listRes.json());
@@ -64,6 +64,10 @@ export default function AdminOnboarding() {
 
   // Modal state for Slack connection
   const [showSlackModal, setShowSlackModal] = useState(false);
+  // Safety: ensure any API calls in this component never use localhost in prod
+  const safeAPI = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
+    ? 'https://signaltrue-backend.onrender.com'
+    : API_BASE;
 
   const oauth = (provider) => {
     if (provider === 'slack') {
@@ -91,7 +95,7 @@ export default function AdminOnboarding() {
     e.preventDefault();
     setMsg(null);
     try {
-      const res = await fetch(`${API_BASE}/api/invites/send`, {
+      const res = await fetch(`${safeAPI}/api/invites/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invite)
@@ -107,7 +111,7 @@ export default function AdminOnboarding() {
       if (!res.ok) throw new Error(data?.message || 'Failed to invite');
       setMsg({ type: 'success', text: `Invite created for ${data.email} (role: ${data.role}). Token: ${data.token}` });
       // refresh list
-      const listRes = await fetch(`${API_BASE}/api/invites/pending`);
+      const listRes = await fetch(`${safeAPI}/api/invites/pending`);
       if (listRes.ok) setPendingInvites(await listRes.json());
       setInvite({ email: '', role: invite.role });
     } catch (e) {
@@ -185,7 +189,7 @@ export default function AdminOnboarding() {
             {integrations?.connected?.calendar ? (
               <div style={styles.ok}>Connected</div>
             ) : (
-              <button style={styles.btn} onClick={() => oauth('calendar')}>Connect Google</button>
+              <button style={styles.btn} onClick={() => oauth('calendar')}>Connect Google Calendar</button>
             )}
           </Card>
           <Card title={`Microsoft Outlook ${integrations?.connected?.outlook ? '✓' : ''}`} desc="Outlook calendar & email metadata">
@@ -201,7 +205,6 @@ export default function AdminOnboarding() {
       {/* Step 2: Invite IT Admin (optional) */}
       {isHR && (
         <section style={styles.section}>
-          <h2 style={styles.h2}>2) Invite IT Admin (optional)</h2>
           <p style={styles.p}>If you prefer, invite an IT Admin to complete integrations.</p>
           <form onSubmit={submitInvite} style={styles.formRow}>
             <input type="email" placeholder="it.admin@company.com" value={invite.email} onChange={(e) => setInvite({ ...invite, email: e.target.value })} required style={styles.input} />

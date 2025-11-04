@@ -14,13 +14,17 @@ export default function AuthCallback() {
     // Where to send the browser to complete token exchange
     let target = '';
     const currentRedirect = `${window.location.origin}/auth/${provider}/callback`;
+    // Safety: if API_BASE still points to localhost in prod for any reason, override to Render
+    const apiBase = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
+      ? 'https://signaltrue-backend.onrender.com'
+      : API_BASE;
 
     if (provider === 'slack') {
-      target = `${API_BASE}/api/integrations/slack/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}&redirect_uri=${encodeURIComponent(currentRedirect)}`;
+      target = `${apiBase}/api/integrations/slack/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}&redirect_uri=${encodeURIComponent(currentRedirect)}`;
     } else if (provider === 'google') {
-      target = `${API_BASE}/api/integrations/google/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
+      target = `${apiBase}/api/integrations/google/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
     } else if (provider === 'outlook' || provider === 'microsoft') {
-      target = `${API_BASE}/api/integrations/microsoft/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
+      target = `${apiBase}/api/integrations/microsoft/oauth/callback?code=${encodeURIComponent(code)}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
     }
 
     if (target) {
@@ -31,8 +35,14 @@ export default function AuthCallback() {
 
   return (
     <div style={{padding: 24}}>
-      <h2>Completing { (useParams().provider || 'integration').toString() } connection…</h2>
+      <h2>Completing {(useParams().provider || 'integration').toString()} connection…</h2>
       <p>Please wait a moment. If you are not redirected automatically, you can safely close this tab and return to SignalTrue.</p>
+      {/* Debug hint if API_BASE appears localhost while on production domain */}
+      {API_BASE.includes('localhost') && window.location.hostname !== 'localhost' && (
+        <div style={{marginTop:12,color:'#b45309',background:'#fffbeb',border:'1px solid #f59e0b',padding:12,borderRadius:8}}>
+          Heads up: detected localhost API base in production. Using fallback backend URL automatically.
+        </div>
+      )}
     </div>
   );
 }
