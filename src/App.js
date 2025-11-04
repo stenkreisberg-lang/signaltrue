@@ -21,6 +21,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import AdminOnboarding from './pages/AdminOnboarding';
 import OnboardingAccept from './pages/OnboardingAccept';
+import AuthCallback from './pages/AuthCallback';
 
 export default function App() {
   return (
@@ -41,6 +42,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
         <Route path="/onboarding" element={<OnboardingAccept />} />
+  {/* OAuth callback catcher; forwards code to backend and redirects back */}
+  <Route path="/auth/:provider/callback" element={<AuthCallback />} />
         <Route
           path="/admin/onboarding"
           element={

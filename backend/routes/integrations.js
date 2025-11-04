@@ -117,7 +117,12 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
   try {
     const clientId = process.env.SLACK_CLIENT_ID;
     const clientSecret = process.env.SLACK_CLIENT_SECRET;
-    const redirectUri = process.env.SLACK_REDIRECT_URI;
+    // Allow override of redirect_uri via query to match whatever was used during authorization
+    // This helps when the initial auth used a frontend callback (e.g., https://www.signaltrue.ai/auth/slack/callback)
+    // and the backend needs to pass the exact same value to Slack's token endpoint.
+    const redirectUri = (req.query.redirect_uri && /^https?:\/\//.test(String(req.query.redirect_uri)))
+      ? String(req.query.redirect_uri)
+      : process.env.SLACK_REDIRECT_URI;
     if (!clientId || !clientSecret || !redirectUri) {
       return res.status(503).send('Slack OAuth not configured.');
     }
