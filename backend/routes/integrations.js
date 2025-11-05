@@ -94,6 +94,22 @@ function getAppUrl() {
   return process.env.APP_URL || 'http://localhost:3000';
 }
 
+// Determine the effective backend base URL and Google redirect URI.
+// Falls back to the current request host if env var is missing or clearly wrong.
+function getBackendBaseUrl(req) {
+  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
+  const host = (req.headers['x-forwarded-host'] || req.get('host'));
+  return `${proto}://${host}`;
+}
+
+function getGoogleRedirectUri(req) {
+  const envUri = process.env.GOOGLE_REDIRECT_URI;
+  // If env is provided and does NOT point to a known bad domain, use it.
+  if (envUri && !/\.up\.render\.com/i.test(envUri)) return envUri;
+  // Otherwise, construct from the current request host.
+  return `${getBackendBaseUrl(req)}/api/integrations/google/oauth/callback`;
+}
+
 // --- Slack OAuth ---
 // GET /api/integrations/slack/oauth/start?orgSlug=acme
 router.get('/integrations/slack/oauth/start', async (req, res) => {
@@ -184,7 +200,7 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
 // GET /api/integrations/google/oauth/start?scope=gmail|calendar&orgSlug=acme
 router.get('/integrations/google/oauth/start', async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const redirectUri = getGoogleRedirectUri(req);
   if (!clientId || !redirectUri) {
     return res.status(503).json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI.' });
   }
@@ -210,7 +226,7 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    const redirectUri = getGoogleRedirectUri(req);
     if (!clientId || !clientSecret || !redirectUri) {
       return res.status(503).send('Google OAuth not configured.');
     }

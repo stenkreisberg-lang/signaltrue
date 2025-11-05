@@ -48,6 +48,8 @@ import fs from "fs/promises";
 dotenv.config();
 
 const app = express();
+// Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
+app.set('trust proxy', 1);
 app.use(cors());
 // Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
