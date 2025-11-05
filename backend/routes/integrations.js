@@ -273,15 +273,16 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       await Organization.findOneAndUpdate(
         query,
         {
-          $setOnInsert: { name: orgSlug, industry: 'General' },
+          $setOnInsert: { name: orgSlug, slug: orgSlug, industry: 'General' },
           $set: {
-             'integrations.google': {
-               scope: scopeParam,
-               refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-               accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-               expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-               user: googleUser ? { email: googleUser.email, sub: googleUser.sub } : undefined
-             }
+           'integrations.google': {
+             scope: scopeParam,
+             refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : undefined,
+             accessToken: tokens.access_token ? encryptString(tokens.access_token) : undefined,
+             expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : undefined,
+             email: googleUser?.email || undefined,
+             user: googleUser ? { email: googleUser.email, sub: googleUser.sub } : undefined
+           }
           }
         },
         { upsert: true }
