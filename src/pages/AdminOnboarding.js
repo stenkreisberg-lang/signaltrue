@@ -54,7 +54,7 @@ export default function AdminOnboarding() {
 
   // Safety: ensure backend URL is correct in production
   const backendUrl = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
-    ? 'https://signaltrue-backend-production.up.render.com'
+    ? 'https://signaltrue-backend.onrender.com'
     : API_BASE;
 
   const slackOAuthUrl = SLACK_CLIENT_ID
