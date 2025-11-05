@@ -91,7 +91,10 @@ function b64parse(str) {
 }
 
 function getAppUrl() {
-  return process.env.APP_URL || 'http://localhost:3000';
+  if (process.env.APP_URL) return process.env.APP_URL;
+  // Sensible production default for our deployment
+  if (process.env.NODE_ENV === 'production') return 'https://www.signaltrue.ai';
+  return 'http://localhost:3000';
 }
 
 // Determine the effective backend base URL and Google redirect URI.
