@@ -67,7 +67,8 @@ export default function AdminOnboarding() {
     : null;
   // Use backend's OAuth start endpoint for proper state handling
   const googleOAuthUrl = GOOGLE_CLIENT_ID
-    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=${me?.orgSlug || me?.orgId || 'default'}`
+    // Important: always pass a slug, never an ObjectId. Fallback to stored slug or 'default'.
+    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=${me?.orgSlug || (typeof window!=='undefined' && window.localStorage.getItem('orgSlug')) || 'default'}`
     : null;
   const outlookOAuthUrl = OUTLOOK_CLIENT_ID
     ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`

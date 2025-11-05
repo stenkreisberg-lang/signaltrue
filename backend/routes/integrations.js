@@ -147,8 +147,9 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
     }
 
     const { code, state } = req.query;
-    const parsed = b64parse(state);
-    const orgSlug = String(parsed.orgSlug || 'default');
+  const parsed = b64parse(state);
+  let orgSlug = String(parsed.orgSlug || 'default');
+  const maybeId = /^[0-9a-fA-F]{24}$/; // if state accidentally passed an ObjectId
 
     // Exchange code for token
     const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
@@ -267,8 +268,10 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         }
       } catch {}
 
+      // Find by slug; if orgSlug looks like an ObjectId, try by _id first
+      const query = maybeId.test(orgSlug) ? { _id: orgSlug } : { slug: orgSlug };
       await Organization.findOneAndUpdate(
-        { slug: orgSlug },
+        query,
         {
           $setOnInsert: { name: orgSlug, industry: 'General' },
           $set: {
