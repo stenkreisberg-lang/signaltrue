@@ -275,15 +275,13 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         {
           $setOnInsert: { name: orgSlug, industry: 'General' },
           $set: {
-            integrations: {
-              google: {
-                scope: scopeParam,
-                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-                user: googleUser ? { email: googleUser.email, sub: googleUser.sub } : undefined
-              }
-            }
+             'integrations.google': {
+               scope: scopeParam,
+               refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
+               accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+               expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+               user: googleUser ? { email: googleUser.email, sub: googleUser.sub } : undefined
+             }
           }
         },
         { upsert: true }
