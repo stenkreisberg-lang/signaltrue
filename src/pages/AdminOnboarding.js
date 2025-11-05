@@ -52,11 +52,17 @@ export default function AdminOnboarding() {
   const OUTLOOK_CLIENT_ID = process.env.REACT_APP_OUTLOOK_CLIENT_ID;
   const FRONTEND_URL = window.location.origin;
 
+  // Safety: ensure backend URL is correct in production
+  const backendUrl = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
+    ? 'https://signaltrue-backend-production.up.render.com'
+    : API_BASE;
+
   const slackOAuthUrl = SLACK_CLIENT_ID
     ? `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${FRONTEND_URL}/auth/slack/callback`
     : null;
+  // Use backend's OAuth start endpoint for proper state handling
   const googleOAuthUrl = GOOGLE_CLIENT_ID
-    ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${FRONTEND_URL}/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline`
+    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}`
     : null;
   const outlookOAuthUrl = OUTLOOK_CLIENT_ID
     ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`
