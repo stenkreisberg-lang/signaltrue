@@ -271,8 +271,9 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
 
       // If orgSlug looks like an ObjectId, default to 'default' org to avoid creating duplicate orgs
       const finalSlug = maybeId.test(orgSlug) ? 'default' : orgSlug;
+      console.log('[Google OAuth] Saving to org slug:', finalSlug, 'Original orgSlug:', orgSlug, 'Has refresh token:', !!tokens.refresh_token);
       const query = { slug: finalSlug };
-      await Organization.findOneAndUpdate(
+      const result = await Organization.findOneAndUpdate(
         query,
         {
           $setOnInsert: { name: finalSlug, slug: finalSlug, industry: 'General' },
@@ -287,10 +288,11 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
            }
           }
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
+      console.log('[Google OAuth] Saved successfully. Org ID:', result._id, 'Calendar connected:', !!result.integrations?.google?.accessToken);
     } catch (e) {
-      console.error('Google OAuth persist error:', e.message);
+      console.error('Google OAuth persist error:', e.message, e.stack);
     }
 
     const redirect = `${getAppUrl()}/dashboard?connected=google-${scopeParam}`;
