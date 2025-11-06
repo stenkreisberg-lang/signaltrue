@@ -291,7 +291,8 @@ If `STRIPE_SECRET_KEY` is not provided, these endpoints will return `503 Billing
 
 Admin cleanup of orphan orgs (optional):
 - Endpoint: `GET /api/admin/cleanup/orphan-orgs?dryRun=1` then run without `dryRun` to apply.
-- Requires `ADMIN_CLEANUP_TOKEN` as a header `x-admin-token: <token>` or query param `?token=<token>`.
+- Requires `ADMIN_CLEANUP_TOKEN` as a header `x-admin-token: <token>` or query param `?adminToken=<token>` (also accepts `?token=`).
+- If `ADMIN_CLEANUP_TOKEN` is NOT set, dryRun is allowed for visibility, but destructive runs are blocked.
 - Use this if any organizations were accidentally created with ObjectId-like slugs during earlier OAuth attempts.
 
 ### Email Notifications (Gmail)
