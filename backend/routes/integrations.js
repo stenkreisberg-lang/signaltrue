@@ -443,8 +443,4 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
   }
 });
 
-}
-});
-
-export default router;
 export default router;
