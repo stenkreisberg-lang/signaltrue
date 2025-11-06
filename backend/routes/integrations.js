@@ -476,4 +476,22 @@ router.get('/integrations/debug/org/:slug', async (req, res) => {
   }
 });
 
+// TEMP DEBUG: List all orgs with Google integrations
+router.get('/integrations/debug/orgs-with-google', async (req, res) => {
+  try {
+    const orgs = await Organization.find({ 'integrations.google.accessToken': { $exists: true, $ne: '' } });
+    res.json(orgs.map(o => ({
+      id: o._id,
+      slug: o.slug,
+      name: o.name,
+      googleScope: o.integrations?.google?.scope,
+      googleEmail: o.integrations?.google?.email,
+      hasAccessToken: !!o.integrations?.google?.accessToken,
+      accessTokenLength: o.integrations?.google?.accessToken?.length || 0
+    })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;
