@@ -269,8 +269,9 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         }
       } catch {}
 
-      // If orgSlug looks like an ObjectId, default to 'default' org to avoid creating duplicate orgs
-      const finalSlug = maybeId.test(orgSlug) ? 'default' : orgSlug;
+  // Persist to a single canonical org slug to avoid mismatches during onboarding
+  // Force 'default' so tokens do not end up under accidental ObjectId slugs
+  const finalSlug = 'default';
       console.log('[Google OAuth] Saving to org slug:', finalSlug, 'Original orgSlug:', orgSlug, 'Has refresh token:', !!tokens.refresh_token);
       
       const googleIntegration = {
