@@ -283,6 +283,17 @@ If `STRIPE_SECRET_KEY` is not provided, these endpoints will return `503 Billing
 4. Copy JSON → `GOOGLE_SERVICE_ACCOUNT`
 5. Share calendars with service account email
 
+### Production OAuth (Google) notes
+- Frontend initiates OAuth via backend at: `GET /api/integrations/google/oauth/start?scope=calendar&orgSlug=<slug>`.
+- The authenticated user context is available at `GET /api/auth/me` and now includes `orgSlug` and `orgName` to compose the correct start URL on the client.
+- The callback stores tokens under the organization's slug; ensure your app uses the canonical slug, not a Mongo ObjectId.
+- Status endpoint: `GET /api/integrations/status?orgSlug=<slug>` returns connection booleans and details (e.g., connected.calendar and email).
+
+Admin cleanup of orphan orgs (optional):
+- Endpoint: `GET /api/admin/cleanup/orphan-orgs?dryRun=1` then run without `dryRun` to apply.
+- Requires `ADMIN_CLEANUP_TOKEN` as a header `x-admin-token: <token>` or query param `?token=<token>`.
+- Use this if any organizations were accidentally created with ObjectId-like slugs during earlier OAuth attempts.
+
 ### Email Notifications (Gmail)
 1. Enable 2FA on Google account
 2. Generate app password: Account → Security → App passwords

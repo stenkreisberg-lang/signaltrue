@@ -30,7 +30,11 @@ export default function AdminOnboarding() {
         const stRes = await fetch(`${safeAPI}/api/onboarding/status`, { headers: { Authorization: `Bearer ${token}` } });
         if (stRes.ok) setStatus(await stRes.json());
 
-        const iRes = await fetch(`${safeAPI}/api/integrations/status${meData?.orgId ? `?orgId=${meData.orgId}` : ''}`);
+        // Prefer orgSlug for status if available; fall back to orgId
+        const statusQuery = meData?.orgSlug
+          ? `?orgSlug=${encodeURIComponent(meData.orgSlug)}`
+          : (meData?.orgId ? `?orgId=${meData.orgId}` : '');
+        const iRes = await fetch(`${safeAPI}/api/integrations/status${statusQuery}`);
         if (iRes.ok) setIntegrations(await iRes.json());
 
         // Try to fetch pending invites, but don't fail if backend unreachable
@@ -66,9 +70,9 @@ export default function AdminOnboarding() {
     ? `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${FRONTEND_URL}/auth/slack/callback`
     : null;
   // Use backend's OAuth start endpoint for proper state handling
-  // Always use 'default' as orgSlug to avoid creating duplicate orgs with ObjectId slugs
+  // Prefer canonical orgSlug from /api/auth/me; fall back to 'default' for safety
   const googleOAuthUrl = GOOGLE_CLIENT_ID
-    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=default`
+    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=${encodeURIComponent(me?.orgSlug || 'default')}`
     : null;
   const outlookOAuthUrl = OUTLOOK_CLIENT_ID
     ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`

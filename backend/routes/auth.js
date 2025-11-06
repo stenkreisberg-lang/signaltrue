@@ -255,13 +255,24 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Enrich with organization slug and name for frontend routing/state
+    let orgSlug = null;
+    let orgName = null;
+    if (user.orgId) {
+      const org = await Organization.findById(user.orgId).select({ slug: 1, name: 1 }).catch(() => null);
+      orgSlug = org?.slug || null;
+      orgName = org?.name || null;
+    }
+
     res.json({
       id: user._id,
       email: user.email,
       name: user.name,
       role: user.role,
       teamId: user.teamId,
-      orgId: user.orgId
+      orgId: user.orgId,
+      orgSlug,
+      orgName
     });
   } catch (error) {
     console.error('Get user error:', error);
