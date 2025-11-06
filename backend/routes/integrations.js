@@ -272,20 +272,28 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       // If orgSlug looks like an ObjectId, default to 'default' org to avoid creating duplicate orgs
       const finalSlug = maybeId.test(orgSlug) ? 'default' : orgSlug;
       console.log('[Google OAuth] Saving to org slug:', finalSlug, 'Original orgSlug:', orgSlug, 'Has refresh token:', !!tokens.refresh_token);
+      
+      const googleIntegration = {
+        scope: scopeParam,
+        refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
+        accessToken: tokens.access_token ? encryptString(tokens.access_token) : '',
+        expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+        email: googleUser?.email || '',
+        user: googleUser || {}
+      };
+      
       const query = { slug: finalSlug };
       const result = await Organization.findOneAndUpdate(
         query,
         {
           $setOnInsert: { name: finalSlug, slug: finalSlug, industry: 'General' },
           $set: {
-           'integrations.google': {
-             scope: scopeParam,
-             refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : undefined,
-             accessToken: tokens.access_token ? encryptString(tokens.access_token) : undefined,
-             expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : undefined,
-             email: googleUser?.email || undefined,
-             user: googleUser ? { email: googleUser.email, sub: googleUser.sub } : undefined
-           }
+           'integrations.google.scope': googleIntegration.scope,
+           'integrations.google.refreshToken': googleIntegration.refreshToken,
+           'integrations.google.accessToken': googleIntegration.accessToken,
+           'integrations.google.expiry': googleIntegration.expiry,
+           'integrations.google.email': googleIntegration.email,
+           'integrations.google.user': googleIntegration.user
           }
         },
         { upsert: true, new: true }
