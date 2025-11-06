@@ -269,12 +269,13 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         }
       } catch {}
 
-      // Find by slug; if orgSlug looks like an ObjectId, try by _id first
-      const query = maybeId.test(orgSlug) ? { _id: orgSlug } : { slug: orgSlug };
+      // If orgSlug looks like an ObjectId, default to 'default' org to avoid creating duplicate orgs
+      const finalSlug = maybeId.test(orgSlug) ? 'default' : orgSlug;
+      const query = { slug: finalSlug };
       await Organization.findOneAndUpdate(
         query,
         {
-          $setOnInsert: { name: orgSlug, slug: orgSlug, industry: 'General' },
+          $setOnInsert: { name: finalSlug, slug: finalSlug, industry: 'General' },
           $set: {
            'integrations.google': {
              scope: scopeParam,
@@ -442,13 +443,8 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
   }
 });
 
-// TEMPORARY DEBUG: List all org slugs and their integration status
-router.get('/integrations/debug/orgs', async (req, res) => {
-  try {
-    const orgs = await Organization.find({}, { slug: 1, name: 1, integrations: 1 });
-    res.json(orgs);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+}
 });
+
+export default router;
 export default router;
