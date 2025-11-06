@@ -453,4 +453,27 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
   }
 });
 
+// TEMP DEBUG: Show raw org data for debugging
+router.get('/integrations/debug/org/:slug', async (req, res) => {
+  try {
+    const org = await Organization.findOne({ slug: req.params.slug });
+    if (!org) return res.status(404).json({ message: 'Org not found' });
+    res.json({
+      id: org._id,
+      slug: org.slug,
+      name: org.name,
+      google: {
+        scope: org.integrations?.google?.scope,
+        hasRefreshToken: !!org.integrations?.google?.refreshToken,
+        hasAccessToken: !!org.integrations?.google?.accessToken,
+        accessTokenLength: org.integrations?.google?.accessToken?.length || 0,
+        email: org.integrations?.google?.email,
+        expiry: org.integrations?.google?.expiry
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;
