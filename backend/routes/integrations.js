@@ -1,3 +1,12 @@
+// TEMPORARY DEBUG: List all org slugs and their integration status
+router.get('/integrations/debug/orgs', async (req, res) => {
+  try {
+    const orgs = await Organization.find({}, { slug: 1, name: 1, integrations: 1 });
+    res.json(orgs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 import express from 'express';
 import crypto from 'node:crypto';
 import Organization from '../models/organization.js';
