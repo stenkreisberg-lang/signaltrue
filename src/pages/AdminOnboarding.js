@@ -17,6 +17,7 @@ export default function AdminOnboarding() {
     ? 'https://signaltrue-backend.onrender.com'
     : API_BASE;
 
+  // Always refresh integration status after OAuth redirect or URL change
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/login'); return; }
@@ -53,7 +54,16 @@ export default function AdminOnboarding() {
       }
     };
     load();
-  }, [navigate]);
+    // Listen for URL changes (e.g., after OAuth redirect)
+    const onUrlChange = () => load();
+    window.addEventListener('popstate', onUrlChange);
+    window.addEventListener('hashchange', onUrlChange);
+    return () => {
+      window.removeEventListener('popstate', onUrlChange);
+      window.removeEventListener('hashchange', onUrlChange);
+    };
+    // eslint-disable-next-line
+  }, [navigate, window.location.search, window.location.hash]);
 
   // OAuth URLs using env vars
   const SLACK_CLIENT_ID = process.env.REACT_APP_SLACK_CLIENT_ID;
