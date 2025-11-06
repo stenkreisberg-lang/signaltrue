@@ -1,4 +1,4 @@
-# Trigger redeploy for Vercel
+# Trigger redeploy for Vercel/Render
 # 📊 SignalTrue
 
 **Performance rhythm monitoring for modern teams**
