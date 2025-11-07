@@ -149,6 +149,11 @@ export default function AdminOnboarding() {
 
   return (
     <div style={styles.wrap}>
+      {/* DEBUG: Show raw integrations status for troubleshooting */}
+      <div style={{background:'#f3f4f6',color:'#334155',fontSize:13,padding:8,borderRadius:6,marginBottom:12}}>
+        <strong>Debug: integrations status</strong>
+        <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0}}>{JSON.stringify(integrations, null, 2)}</pre>
+      </div>
       <div style={styles.header}>
         <h1 style={{ margin: 0 }}>Client Admin Onboarding</h1>
         <div style={{ color: '#6b7280' }}>Signed in as {me.name || me.email} • Role: <strong>{me.role}</strong></div>
