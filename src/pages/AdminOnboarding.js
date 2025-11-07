@@ -32,9 +32,8 @@ export default function AdminOnboarding() {
         if (stRes.ok) setStatus(await stRes.json());
 
         // Prefer orgSlug for status if available; fall back to orgId
-        const statusQuery = meData?.orgSlug
-          ? `?orgSlug=${encodeURIComponent(meData.orgSlug)}`
-          : (meData?.orgId ? `?orgId=${meData.orgId}` : '');
+        // FORCE: Always use orgSlug=default to match backend token storage
+        const statusQuery = '?orgSlug=default';
         const statusUrl = `${safeAPI}/api/integrations/status${statusQuery}`;
         window.__lastStatusUrl = statusUrl; // Expose for debug
         const iRes = await fetch(statusUrl);
@@ -83,8 +82,9 @@ export default function AdminOnboarding() {
     : null;
   // Use backend's OAuth start endpoint for proper state handling
   // Prefer canonical orgSlug from /api/auth/me; fall back to 'default' for safety
+  // FORCE: Always use orgSlug=default for Google OAuth
   const googleOAuthUrl = GOOGLE_CLIENT_ID
-    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=${encodeURIComponent(me?.orgSlug || 'default')}`
+    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=default`
     : null;
   const outlookOAuthUrl = OUTLOOK_CLIENT_ID
     ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`
