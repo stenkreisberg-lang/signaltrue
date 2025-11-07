@@ -1,10 +1,13 @@
 import mongoose from 'mongoose';
+import { encryptString, decryptString } from '../utils/crypto.js';
 
 const organizationSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    set: encryptString,
+    get: decryptString
   },
   slug: {
     type: String,
@@ -22,6 +25,19 @@ const organizationSchema = new mongoose.Schema({
   industryAverages: {
     type: Object,
     default: {}
+  },
+  // Privacy & Compliance fields
+  data_region: {
+    type: String,
+    enum: ['EU', 'US', 'Other'],
+    default: 'EU',
+    required: true
+  },
+  data_retention_days: {
+    type: Number,
+    enum: [30, 90, 180],
+    default: 90,
+    required: true
   },
   size: {
     type: String,
@@ -41,20 +57,6 @@ const organizationSchema = new mongoose.Schema({
     },
     expiresAt: Date
   },
-  // Stripe billing linkage
-  stripeCustomerId: { type: String, index: true },
-  stripeSubscriptionId: { type: String, index: true },
-  settings: {
-    allowRegistration: { type: Boolean, default: false },
-    maxUsers: { type: Number, default: 10 },
-    alertFrequency: { type: String, enum: ['daily','weekly','off'], default: 'daily' },
-    features: {
-      calendar: { type: Boolean, default: false },
-      aiPlaybooks: { type: Boolean, default: false },
-      slackIntegration: { type: Boolean, default: true },
-      advancedAnalytics: { type: Boolean, default: false }
-    }
-  },
   integrations: {
     slack: {
       accessToken: { type: String, default: '' },
@@ -67,39 +69,41 @@ const organizationSchema = new mongoose.Schema({
         messagesAnalyzed: { type: Number, default: 0 }
       }
     },
-    google: {
-      scope: { type: String, default: '' },
-      refreshToken: { type: String, default: '' },
-      accessToken: { type: String, default: '' },
-      expiry: { type: Date },
-      email: { type: String, default: '' },
-      user: { type: Object, default: {} },
-      lastPulledAt: { type: Date },
-      eventsCount: { type: Number, default: 0 },
-      sync: {
-        lastStatus: { type: String, enum: ['ok','error','disconnected',''], default: '' },
-        lastRunAt: { type: Date },
-        emailsProcessed: { type: Number, default: 0 }
-      }
-    },
-    microsoft: {
-      scope: { type: String, default: '' },
-      refreshToken: { type: String, default: '' },
-      accessToken: { type: String, default: '' },
-      expiry: { type: Date },
-      accountEmail: { type: String, default: '' },
-      tenant: { type: String, default: '' },
-      lastPulledAt: { type: Date },
-      user: { type: Object, default: {} },
-      tenantId: { type: String, default: '' },
-      eventsCount: { type: Number, default: 0 },
-      teamsCount: { type: Number, default: 0 },
+    }
       sync: {
         lastStatus: { type: String, enum: ['ok','error','disconnected',''], default: '' },
         lastRunAt: { type: Date },
         emailsProcessed: { type: Number, default: 0 }
       }
     }
+  }
+  },
+  // Privacy & Compliance fields
+  data_region: {
+    type: String,
+    enum: ['EU', 'US', 'Other'],
+    default: 'EU',
+    required: true
+  },
+  data_retention_days: {
+    type: Number,
+    enum: [30, 90, 180],
+    default: 90,
+    required: true
+
+  },
+  // Privacy & Compliance fields
+  data_region: {
+    type: String,
+    enum: ['EU', 'US', 'Other'],
+    default: 'EU',
+    required: true
+  },
+  data_retention_days: {
+    type: Number,
+    enum: [30, 90, 180],
+    default: 90,
+    required: true
   }
 }, { timestamps: true });
 

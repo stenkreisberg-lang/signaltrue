@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../utils/api';
+import DriftAlerts from './DriftAlerts';
+import PlaybookRecommendations from './PlaybookRecommendations';
+import OneOnOneTimeline from './OneOnOneTimeline';
+import BenchmarkComparison from './BenchmarkComparison';
 
 export default function LeaderDashboard({ teamId, dark }) {
   const [data, setData] = useState(null);
@@ -52,6 +56,16 @@ export default function LeaderDashboard({ teamId, dark }) {
 
   return (
     <div style={containerStyle}>
+      {/* Engagement Change Alerts (Drift Explainability) */}
+      {teamId && (
+        <>
+          <DriftAlerts teamId={teamId} />
+          <PlaybookRecommendations teamId={teamId} />
+          {/* TODO: Pass managerId/userId from context if available */}
+          <OneOnOneTimeline teamId={teamId} />
+          <BenchmarkComparison teamId={teamId} />
+        </>
+      )}
       <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '16px' }}>
         👨‍💼 Your Leadership Dashboard: {data.teamName}
       </h2>

@@ -144,293 +144,73 @@ function ProductOverview() {
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Benefits Section Title */}
+      <div style={styles.container}>
+        <h2 style={styles.sectionTitle}>Why Companies Choose SignalTrue</h2>
+      </div>
+
+      {/* For HR & People Teams */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Why Companies Choose SignalTrue</h2>
-          
-          <div style={styles.benefitsGrid}>
-            <div style={styles.benefitCard}>
-              <div style={styles.statNumber}>8</div>
-              <p style={styles.statLabel}>high-impact signals (not 15+ noisy metrics)</p>
-            </div>
-            
-            <div style={styles.benefitCard}>
-              <div style={styles.statNumber}>Top 3</div>
-              <p style={styles.statLabel}>contributors shown for every drift alert</p>
-            </div>
-            
-            <div style={styles.benefitCard}>
-              <div style={styles.statNumber}>5min</div>
-              <p style={styles.statLabel}>setup time with OAuth and encrypted tokens</p>
-            </div>
-          </div>
-
-          <div style={styles.testimonial}>
-            <p style={styles.testimonialQuote}>
-              "SignalTrue's micro-playbooks turned our drift alerts from 'FYI' into 'do this.' We finally understand why sentiment drops—and what to do about it."
+            <h2 style={styles.sectionTitle}>Lead culture growth with real-time engagement data.</h2>
+            <p style={styles.introText}>
+              Track how engagement evolves, compare teams, and measure the impact of your programs.<br />
+              Design initiatives based on facts — not assumptions.
             </p>
-            <p style={styles.testimonialAuthor}>
-              — VP of People Operations, Tech Startup
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
+      {/* For Managers */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
         <div style={styles.container}>
-          <h2 style={{...styles.sectionTitle, color: 'white'}}>
-            See Your First Drift Alert in 48 Hours
-          </h2>
-          <p style={{...styles.sectionSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
-            Connect tools today. Get baseline tomorrow. Drift alerts with playbooks by Thursday.
+          <h2 style={styles.sectionTitle}>Support every team with clear, actionable insight.</h2>
+          <p style={styles.introText}>
+            Weekly engagement reports help managers understand team focus, connection, and progress — so they can lead with empathy and precision.
           </p>
-          <Link to="/contact" style={{...styles.primaryBtn, background: 'white', color: '#6366f1'}}>
-            Get Early Access
-          </Link>
         </div>
       </section>
 
-      <SiteFooter />
-    </div>
-  );
-}
+      {/* For Executives */}
+      <section style={styles.section}>
+        <div style={styles.container}>
+          <h2 style={styles.sectionTitle}>Understand culture as a strategic asset.</h2>
+          <p style={styles.introText}>
+            Gain a live overview of organisational energy.<br />
+            Identify teams thriving under pressure and use insight to guide future planning.
+          </p>
+        </div>
+      </section>
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'white',
-  },
-  nav: {
-    background: 'white',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '1rem 2rem',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-  },
-  navContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logoLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    textDecoration: 'none',
-  },
-  logoImg: {
-    height: '32px',
-    width: '32px',
-  },
-  logoText: {
-    fontSize: '1.25rem',
-    fontWeight: '700',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  navLinks: {
-    display: 'flex',
-    gap: '2rem',
-    alignItems: 'center',
-  },
-  navLink: {
-    color: '#4b5563',
-    textDecoration: 'none',
-    fontWeight: '500',
-    transition: 'color 0.2s',
-  },
-  loginBtn: {
-    padding: '0.5rem 1.5rem',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: 'white',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: '600',
-  },
-  hero: {
-    padding: '6rem 2rem',
-    background: 'linear-gradient(to bottom, #f9fafb, white)',
-    textAlign: 'center',
-  },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-  },
-  heroTitle: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: '1.5rem',
-    lineHeight: 1.2,
-  },
-  heroSubtitle: {
-    fontSize: '1.25rem',
-    color: '#6b7280',
-    marginBottom: '2.5rem',
-    maxWidth: '800px',
-    margin: '0 auto 2.5rem',
-    lineHeight: 1.6,
-  },
-  heroCTA: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-  },
-  primaryBtn: {
-    padding: '0.875rem 2rem',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: 'white',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '1rem',
-    display: 'inline-block',
-  },
-  secondaryBtn: {
-    padding: '0.875rem 2rem',
-    background: 'white',
-    color: '#6366f1',
-    border: '2px solid #6366f1',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '1rem',
-    display: 'inline-block',
-  },
-  section: {
-    padding: '5rem 2rem',
-  },
-  sectionTitle: {
-    fontSize: '2.5rem',
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: '1rem',
-  },
-  sectionSubtitle: {
-    fontSize: '1.125rem',
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: '3rem',
-    maxWidth: '700px',
-    margin: '0 auto 3rem',
-  },
-  featureGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '2rem',
-    marginTop: '3rem',
-  },
-  featureCard: {
-    background: 'white',
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
-    padding: '2rem',
-  },
-  featureIcon: {
-    fontSize: '3rem',
-    marginBottom: '1rem',
-  },
-  featureTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '1rem',
-  },
-  featureText: {
-    color: '#6b7280',
-    lineHeight: 1.6,
-    marginBottom: '1.5rem',
-  },
-  featureLink: {
-    color: '#6366f1',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '0.95rem',
-  },
-  stepsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '3rem',
-    marginTop: '3rem',
-  },
-  step: {
-    textAlign: 'center',
-  },
-  stepNumber: {
-    width: '60px',
-    height: '60px',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: 'white',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    margin: '0 auto 1.5rem',
-  },
-  stepTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '0.75rem',
-  },
-  stepText: {
-    color: '#6b7280',
-    lineHeight: 1.6,
-  },
-  benefitsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '2rem',
-    marginBottom: '4rem',
-  },
-  benefitCard: {
-    textAlign: 'center',
-    padding: '2rem',
-    background: '#f9fafb',
-    borderRadius: '12px',
-  },
-  statNumber: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    marginBottom: '0.5rem',
-  },
-  statLabel: {
-    color: '#6b7280',
-    fontSize: '1rem',
-    lineHeight: 1.5,
-  },
-  testimonial: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '3rem',
-    background: '#f9fafb',
-    borderRadius: '12px',
-    textAlign: 'center',
-  },
-  testimonialQuote: {
-    fontSize: '1.25rem',
-    color: '#111827',
-    fontStyle: 'italic',
-    lineHeight: 1.6,
-    marginBottom: '1rem',
-  },
-  testimonialAuthor: {
-    color: '#6b7280',
-    fontWeight: '600',
-  },
-  // Footer styles moved to shared SiteFooter component
-};
+      {/* Use Cases */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.container}>
+          <h2 style={styles.sectionTitle}>How HR teams use SignalTrue every day.</h2>
+          <ul style={{...styles.introText, textAlign:'left', maxWidth:700, margin:'0 auto 28px'}}>
+            <li>Track engagement during high-growth periods</li>
+            <li>Monitor culture alignment after change or reorgs</li>
+            <li>Evaluate leadership program effectiveness</li>
+            <li>Support hybrid team communication</li>
+            <li>Recognise high-performing teams early</li>
+          </ul>
+          <div style={{textAlign:'center',marginTop:32}}>
+            <Link to="/contact" style={styles.primaryBtn}>Explore a Live Demo</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Mention Continuous Engagement Insight™ */}
+      <section style={styles.section}>
+        <div style={styles.container}>
+          <h2 style={styles.sectionTitle}>Continuous Engagement Insight™</h2>
+          <p style={styles.introText}>
+            SignalTrue delivers continuous, people-first engagement insight for HR leaders, managers, and executives.
+          </p>
+        </div>
+      </section>
+
+              <SiteFooter />
+    </div>
+  )
+}
 
 export default ProductOverview;

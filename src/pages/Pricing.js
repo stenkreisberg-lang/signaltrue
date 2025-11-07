@@ -4,197 +4,163 @@ import SiteFooter from '../components/SiteFooter';
 import InlineNotice from '../components/InlineNotice';
 import { API_BASE } from '../utils/api';
 function Pricing() {
-  const [billingError, setBillingError] = React.useState(null);
-  const [loadingPlan, setLoadingPlan] = React.useState(null);
-
-  async function handleStartTrial(plan) {
-    try {
-      setBillingError(null);
-      setLoadingPlan(plan);
-      const orgSlug = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('orgSlug')) || undefined;
-      const res = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, orgSlug }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Billing is not configured yet. Please contact support.');
-      }
-      const data = await res.json();
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        setBillingError('Billing is not configured yet. Please contact support.');
-      }
-    } catch (e) {
-      setBillingError(e.message || 'Could not start trial.');
-    } finally {
-      setLoadingPlan(null);
-    }
-  }
   return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-            <span style={styles.logoText}>SignalTrue</span>
-          </Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <Link to="/contact" style={styles.navLink}>Contact</Link>
-            <Link to="/login" style={styles.loginBtn}>Login</Link>
+    <>
+      <div style={styles.page}>
+        <nav style={styles.nav}>
+          <div style={styles.navContent}>
+            <Link to="/" style={styles.logoLink}>
+              <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
+              <span style={styles.logoText}>SignalTrue</span>
+            </Link>
+            <div style={styles.navLinks}>
+              <Link to="/product" style={styles.navLink}>Product</Link>
+              <Link to="/pricing" style={styles.navLink}>Pricing</Link>
+              <Link to="/about" style={styles.navLink}>About</Link>
+              <Link to="/contact" style={styles.navLink}>Contact</Link>
+              <Link to="/login" style={styles.loginBtn}>Login</Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <section style={styles.hero}>
-        <div style={styles.container}>
-          <h1 style={styles.heroTitle}>Simple plans to help you grow culture and engagement.</h1>
-          <p style={styles.heroSubtitle}>
-            Choose the plan that helps your team build engagement, strengthen culture, and grow with confidence. 30-day free trial—credit card required to start.
-          </p>
-        </div>
-      </section>
+        <section style={styles.hero}>
+          <div style={styles.container}>
+            <h1 style={styles.heroTitle}>Simple plans to help HR grow engagement continuously.</h1>
+            <p style={styles.heroSubtitle}>
+              Continuous Engagement Insight™ for every team size. 30-day free trial — credit card required to start.
+            </p>
+          </div>
+        </section>
 
-      <section style={styles.section}>
-        <div style={styles.container}>
-          {billingError && (
-            <InlineNotice kind="error" title="Payments temporarily unavailable:">{billingError}</InlineNotice>
-          )}
-          <div style={styles.pricingGrid}>
-            {/* Starter Plan */}
-            <div style={styles.pricingCard}>
-              <div style={styles.planBadge}>Starter</div>
-              <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>€99</span>
-                <span style={styles.pricePeriod}>/month</span>
+        <section style={styles.section}>
+          <div style={styles.container}>
+            {billingError && (
+              <InlineNotice kind="error" title="Payments temporarily unavailable:">{billingError}</InlineNotice>
+            )}
+            <div style={styles.pricingGrid}>
+              {/* Starter Plan */}
+              <div style={styles.pricingCard}>
+                <div style={styles.planBadge}>Starter</div>
+                <div style={styles.priceSection}>
+                  <span style={styles.priceAmount}>€99</span>
+                  <span style={styles.pricePeriod}>/month</span>
+                </div>
+                <p style={styles.planSubtitle}>Up to 20 people</p>
+                <ul style={styles.featureList}>
+                  <li>Continuous engagement tracking</li>
+                  <li>Team Health Score</li>
+                  <li>Weekly HR Insight Brief</li>
+                </ul>
+                <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
+                  {loadingPlan === 'starter' ? 'Starting…' : 'Get Early Access'}
+                </button>
               </div>
-              <p style={styles.planSubtitle}>Up to 20 people</p>
-              <ul style={styles.featureList}>
-                <li>✓ Continuous engagement tracking</li>
-                <li>✓ Team Health Score</li>
-                <li>✓ Weekly insight brief</li>
-              </ul>
-              <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
-                {loadingPlan === 'starter' ? 'Starting…' : 'Start Free Trial'}
-              </button>
-            </div>
 
-            {/* Growth Plan */}
-            <div style={{...styles.pricingCard, ...styles.featuredCard}}>
-              <div style={styles.popularBadge}>Most Popular</div>
-              <div style={styles.planBadge}>Growth</div>
-              <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>€299</span>
-                <span style={styles.pricePeriod}>/month</span>
+              {/* Growth Plan */}
+              <div style={{...styles.pricingCard, ...styles.featuredCard}}>
+                <div style={styles.popularBadge}>Most Popular</div>
+                <div style={styles.planBadge}>Growth</div>
+                <div style={styles.priceSection}>
+                  <span style={styles.priceAmount}>€299</span>
+                  <span style={styles.pricePeriod}>/month</span>
+                </div>
+                <p style={styles.planSubtitle}>Everything in Starter</p>
+                <ul style={styles.featureList}>
+                  <li>Trend analytics and benchmarking</li>
+                  <li>Engagement evolution dashboard</li>
+                  <li>Privacy & retention controls</li>
+                </ul>
+                <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
+                  {loadingPlan === 'pro' ? 'Starting…' : 'Get Early Access'}
+                </button>
               </div>
-              <p style={styles.planSubtitle}>Everything in Starter</p>
-              <ul style={styles.featureList}>
-                <li>✓ Trend analytics and benchmarks</li>
-                <li>✓ Engagement evolution dashboard</li>
-                <li>✓ Privacy controls and retention settings</li>
-              </ul>
-              <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
-                {loadingPlan === 'pro' ? 'Starting…' : 'Start Free Trial'}
-              </button>
-            </div>
 
-            {/* Enterprise Plan */}
-            <div style={styles.pricingCard}>
-              <div style={styles.planBadge}>Enterprise</div>
-              <div style={styles.priceSection}>
-                <span style={styles.priceAmount}>Custom</span>
+              {/* Enterprise Plan */}
+              <div style={styles.pricingCard}>
+                <div style={styles.planBadge}>Enterprise</div>
+                <div style={styles.priceSection}>
+                  <span style={styles.priceAmount}>Custom</span>
+                </div>
+                <p style={styles.planSubtitle}>Everything in Growth</p>
+                <ul style={styles.featureList}>
+                  <li>API & BI integrations</li>
+                  <li>Regional data residency</li>
+                  <li>Dedicated success manager</li>
+                </ul>
+                <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Get Early Access</a>
               </div>
-              <p style={styles.planSubtitle}>Everything in Growth</p>
-              <ul style={styles.featureList}>
-                <li>✓ Integrations and API access</li>
-                <li>✓ Regional data residency</li>
-                <li>✓ Dedicated success partner</li>
-              </ul>
-              <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Request Pricing</a>
+            </div>
+
+            <div style={styles.trialNote}>
+              <p>No individual monitoring. All analytics aggregated by team.</p>
             </div>
           </div>
+        </section>
 
-          <div style={styles.trialNote}>
-            <p>All plans include a 30-day free trial. Credit card required to start.</p>
-          </div>
-        </div>
-      </section>
+        <section style={{...styles.section, background: '#f9fafb'}}>
+          <div style={styles.container}>
+            <h2 style={styles.sectionTitle}>Frequently Asked Questions</h2>
 
-      <section style={{...styles.section, background: '#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Frequently Asked Questions</h2>
-
-          <div style={styles.faqGrid}>
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>How is pricing calculated?</h3>
-              <p style={styles.faqAnswer}>
-                Pricing is based on the number of active team members in your organization. 
-                You can add or remove members at any time, and billing adjusts automatically.
-              </p>
-            </div>
-
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>What's included in the free trial?</h3>
-              <p style={styles.faqAnswer}>
-                All plans include a 30-day free trial with full access to features. Credit card required to start. 
-                Cancel anytime during the trial with no charges.
-              </p>
-            </div>
-
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>Can I change plans later?</h3>
-              <p style={styles.faqAnswer}>
-                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, 
-                and billing is prorated.
-              </p>
-            </div>
-
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>What integrations are included?</h3>
-              <p style={styles.faqAnswer}>
-                All plans include Slack, Microsoft Teams, Google Calendar, and Outlook Calendar integrations. 
-                Enterprise plans can add custom HRIS and other integrations.
-              </p>
-            </div>
-
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>Is there a setup fee?</h3>
-              <p style={styles.faqAnswer}>
-                No setup fees for Starter and Professional plans. Enterprise plans may include optional 
-                onboarding and training services.
-              </p>
-            </div>
-
-            <div style={styles.faqCard}>
-              <h3 style={styles.faqQuestion}>What payment methods do you accept?</h3>
-              <p style={styles.faqAnswer}>
-                We accept all major credit cards, ACH transfers, and can accommodate wire transfers for 
-                Enterprise customers.
-              </p>
+            <div style={styles.faqGrid}>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>How is pricing calculated?</h3>
+                <p style={styles.faqAnswer}>
+                  Pricing is based on the number of active team members in your organization. You can add or remove members at any time, and billing adjusts automatically.
+                </p>
+              </div>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>What's included in the free trial?</h3>
+                <p style={styles.faqAnswer}>
+                  All plans include a 30-day free trial with full access to features. Credit card required to start. Cancel anytime during the trial with no charges.
+                </p>
+              </div>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>Can I change plans later?</h3>
+                <p style={styles.faqAnswer}>
+                  Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and billing is prorated.
+                </p>
+              </div>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>Is it GDPR compliant?</h3>
+                <p style={styles.faqAnswer}>
+                  Yes. Regional storage, encryption, and retention control are built in.
+                </p>
+              </div>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>Does SignalTrue monitor individuals?</h3>
+                <p style={styles.faqAnswer}>
+                  No. All data is team-level and anonymised.
+                </p>
+              </div>
+              <div style={styles.faqCard}>
+                <h3 style={styles.faqQuestion}>What makes SignalTrue different?</h3>
+                <p style={styles.faqAnswer}>
+                  It provides continuous insight, not one-off survey results.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
-        <div style={styles.container}>
-          <h2 style={{...styles.sectionTitle, color: 'white'}}>Ready to Get Started?</h2>
-          <p style={{...styles.heroSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
-            Start your 30-day free trial today. Credit card required to start.
-          </p>
-          <Link to="/contact" style={{...styles.planButtonPrimary, background: 'white', color: '#6366f1'}}>
-            Request A Demo
-          </Link>
-        </div>
-      </section>
+        <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
+          <div style={styles.container}>
+            <h2 style={{...styles.sectionTitle, color: 'white'}}>Ready to Get Started?</h2>
+            <p style={{...styles.heroSubtitle, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
+              Discover how Continuous Engagement Insight™ helps HR build thriving teams.
+            </p>
+            <Link to="/contact" style={{...styles.planButtonPrimary, background: 'white', color: '#6366f1'}}>
+              Get Early Access
+            </Link>
+          </div>
+        </section>
 
-      <SiteFooter />
-    </div>
+        <footer style={{background:'#f9fafb',padding:'2rem 0',textAlign:'center'}}>
+          <span style={{color:'#6b7280',fontSize:'1rem'}}>Privacy-first: SignalTrue analyzes patterns, not private content. <Link to="/privacy" style={styles.navLink}>Learn more</Link>.</span>
+        </footer>
+
+        <SiteFooter />
+      </div>
+    </>
   );
 }
 

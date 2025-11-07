@@ -72,7 +72,10 @@ export async function detectDriftForAllTeams({ windowDays = 7, thresholdMap = nu
           magnitude: Math.abs(percentChange),
           basis: 'percent',
           details: { avg, baseline, percentChange, zscore, threshold },
-          topContributors: contributions.sort((a,b) => Math.abs(b.change) - Math.abs(a.change)).slice(0,3).map(c => ({ metric: c.metric, change: c.change })),
+          drivers: contributions
+            .sort((a,b) => Math.abs(b.change) - Math.abs(a.change))
+            .slice(0,3)
+            .map(c => ({ metric: c.metric, delta: c.change, direction: c.change > 0 ? 'up' : 'down' })),
           recommendation,
         });
       }

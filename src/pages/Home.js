@@ -24,9 +24,9 @@ function Home() {
         </div>
       </nav>
 
+      {/* Section 1 — Hero */}
       <section style={styles.hero}>
         <div style={styles.heroInner}>
-          <div style={styles.badge}>Team‑level by default</div>
           <h1 style={styles.heroTitle}>Grow engagement. Strengthen culture. Lead with insight.</h1>
           <p style={styles.heroSubtitle}>
             SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
@@ -38,95 +38,119 @@ function Home() {
         </div>
       </section>
 
-      {/* Signals */}
+      {/* Section 2 — The New Way to See Engagement */}
       <section style={styles.section}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.h2}>8 signals. Clear insights. Faster action.</h2>
+          <h2 style={styles.h2}>Finally, a real-time view of your organisation’s energy.</h2>
           <p style={styles.lead}>
-            We track sentiment, response latency, meeting load, after‑hours, network breadth, focus time, recovery speed, and a composite Energy Index.
+            Surveys capture moments in time. SignalTrue captures momentum.<br />
+            See how engagement evolves — celebrate progress, support leaders, and strengthen connection across every team.
           </p>
-          <div style={styles.grid4}>
-            {[
-              ['💬','Sentiment shifts','LLM‑powered tone analysis'],
-              ['⏳','Response latency','Reply delays spike early'],
-              ['📅','Meeting overload','Hours per week tracked'],
-              ['🌙','After‑hours activity','Off‑hours work patterns'],
-              ['🤝','Network breadth','Collaboration shrinking?'],
-              ['🎯','Focus time ratio','Deep work vs meetings'],
-              ['⚡','Recovery speed','How fast teams bounce back'],
-              ['💯','Energy Index','0–100 composite score'],
-            ].map(([icon, title, detail]) => (
-              <div key={title} style={styles.card}>
-                <div style={styles.icon}>{icon}</div>
-                <div style={styles.cardTitle}>{title}</div>
-                <div style={styles.muted}>{detail}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* How it works */}
+      {/* Section 3 — How It Works */}
       <section style={{...styles.section, background:'#f9fafb'}}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.h2}>How it works</h2>
+          <h2 style={styles.h2}>From everyday collaboration to continuous insight.</h2>
           <div style={styles.grid4}>
             {[
-              ['1','Connect','Secure OAuth for Slack, Google, or Microsoft'],
-              ['2','Learn baseline','We auto‑tune per‑team norms'],
-              ['3','Detect & explain','See top 3 contributors for each drift'],
-              ['4','Act fast','Micro‑playbooks with practical steps'],
-            ].map(([num, title, text]) => (
+              ['1','Connect your work environment securely.'],
+              ['2','SignalTrue learns each team’s engagement rhythm.'],
+              ['3','See engagement evolve through real-time insight.'],
+              ['4','Lead with foresight using weekly reports and actionable guidance.'],
+            ].map(([num, text]) => (
               <div key={num} style={styles.step}>
                 <div style={styles.stepNum}>{num}</div>
-                <div style={styles.cardTitle}>{title}</div>
                 <div style={styles.muted}>{text}</div>
               </div>
             ))}
           </div>
+          <div style={{textAlign:'center',marginTop:32}}>
+            <button onClick={() => navigate('/how-it-works')} style={styles.secondaryButton}>Explore How It Works</button>
+          </div>
         </div>
       </section>
 
-      {/* Outcomes */}
+      {/* Section 4 — What You Gain */}
       <section style={styles.section}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.h2}>What you get</h2>
-          <div style={styles.grid4}>
-            {[
-              ['💯','Energy Index (0‑100)','Blends tone, responsiveness, and collaboration'],
-              ['🔍','Drift explainability','Top 3 metrics that drove each alert'],
-              ['⚠️','Smart alerts','Slack/email, frequency control'],
-              ['📚','Micro‑playbooks','Actionable suggestions per drift type'],
-              ['📊','Program Impact Tracker','Measure change before/after'],
-              ['📥','CSV Export & API','For BI tools and integrations'],
-              ['🗓️','Timeline events','Annotate launches and reorgs'],
-              ['🔐','Enterprise security','AES‑256, data residency, API keys'],
-            ].map(([icon, title, text]) => (
-              <div key={title} style={styles.outcome}>
-                <div style={styles.icon}>{icon}</div>
-                <div style={styles.cardTitle}>{title}</div>
-                <div style={styles.muted}>{text}</div>
-              </div>
-            ))}
+          <h2 style={styles.h2}>Clarity. Confidence. Connection.</h2>
+          <ul style={{...styles.lead, textAlign:'left', maxWidth:700, margin:'0 auto 28px'}}>
+            <li>See engagement rise or dip in real time.</li>
+            <li>Recognise leadership styles that build strong teams.</li>
+            <li>Track program impact with measurable engagement data.</li>
+            <li>Coach managers with insight that feels human.</li>
+            <li>Demonstrate HR’s strategic impact across the company.</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* Section 5 — For HR Leaders */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>Design the workplace people choose to stay in.</h2>
+          <p style={styles.lead}>
+            Understand how your teams collaborate and focus, and design initiatives that boost energy, trust, and motivation.<br />
+            SignalTrue helps you lead engagement growth — not chase disengagement.
+          </p>
+        </div>
+      </section>
+
+      {/* Section 6 — Key Capabilities */}
+      <section style={styles.section}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>Everything you need to grow engagement continuously.</h2>
+          <ul style={{...styles.lead, textAlign:'left', maxWidth:700, margin:'0 auto 28px'}}>
+            <li><b>Team Health Score:</b> one number that captures team energy and focus.</li>
+            <li><b>Positive Trend Tracking:</b> see where culture and collaboration thrive.</li>
+            <li><b>Engagement Insight Brief:</b> weekly summary of progress and opportunities.</li>
+            <li><b>Leadership Coaching View:</b> insights into which teams respond best to management style.</li>
+            <li><b>Privacy-First Analytics:</b> team-level aggregation only.</li>
+            <li><b>Regional Data Residency:</b> GDPR-aligned storage and retention controls.</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* Section 7 — Culture Impact */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>The clearer you see, the stronger your teams grow.</h2>
+          <p style={styles.lead}>
+            When HR and leadership share one live view of engagement, alignment accelerates.<br />
+            SignalTrue helps you build momentum — sustaining culture and performance over time.
+          </p>
+          <div style={{textAlign:'center',marginTop:32}}>
+            <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
           </div>
         </div>
       </section>
 
-      {/* Privacy */}
-      <section style={{...styles.section, background:'#f9fafb'}}>
+      {/* Section 8 — Trust */}
+      <section style={styles.section}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.h2}>Privacy by design</h2>
-          <p style={styles.lead}>We analyze patterns, not private content. Aggregated at team level by default. Read our <Link to="/privacy" style={styles.link}>Privacy</Link>.</p>
+          <h2 style={styles.h2}>Insight built for people. Data built for safety.</h2>
+          <p style={styles.lead}>
+            SignalTrue analyses collaboration patterns, not private content.<br />
+            All insights are aggregated, encrypted, and transparent to employees.<br />
+            Empathy and ethics are built into every layer.
+          </p>
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Section 9 — Final CTA */}
       <section style={styles.cta}> 
         <div style={styles.sectionInner}>
-          <h2 style={{...styles.h2,color:'white'}}>See your team’s signals</h2>
+          <h2 style={{...styles.h2,color:'white'}}>Lead with foresight. Grow with confidence.</h2>
+          <p style={{color:'white',fontSize:'1.25rem',margin:'0 0 2rem'}}>Discover how Continuous Engagement Insight™ helps HR build thriving teams.</p>
           <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
         </div>
       </section>
+
+      {/* Privacy Notice (always visible) */}
+      <footer style={{background:'#f9fafb',padding:'2rem 0',textAlign:'center'}}>
+        <span style={{color:'#6b7280',fontSize:'1rem'}}>Privacy-first: SignalTrue analyzes patterns, not private content. <Link to="/privacy" style={styles.link}>Learn more</Link>.</span>
+      </footer>
 
       <SiteFooter />
     </div>

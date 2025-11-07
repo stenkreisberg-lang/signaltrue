@@ -80,18 +80,6 @@ export default function AdminOnboarding() {
   const slackOAuthUrl = SLACK_CLIENT_ID
     ? `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${FRONTEND_URL}/auth/slack/callback`
     : null;
-  // Use backend's OAuth start endpoint for proper state handling
-  // Prefer canonical orgSlug from /api/auth/me; fall back to 'default' for safety
-  // FORCE: Always use orgSlug=default for Google OAuth
-  const googleOAuthUrl = GOOGLE_CLIENT_ID
-    ? `${backendUrl}/api/integrations/google/oauth/start?scope=calendar&orgSlug=default`
-    : null;
-  const outlookOAuthUrl = OUTLOOK_CLIENT_ID
-    ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&redirect_uri=${FRONTEND_URL}/auth/outlook/callback&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`
-    : null;
-
-  // Modal state for Slack connection
-  const [showSlackModal, setShowSlackModal] = useState(false);
 
   const oauth = (provider) => {
     if (provider === 'slack') {
@@ -99,14 +87,20 @@ export default function AdminOnboarding() {
         setMsg({ type: 'error', text: 'Slack OAuth is not configured. Please set REACT_APP_SLACK_CLIENT_ID.' });
         return;
       }
-      setShowSlackModal(true);
+      window.location.href = slackOAuthUrl;
     } else if (provider === 'calendar') {
+      const googleOAuthUrl = GOOGLE_CLIENT_ID
+        ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${FRONTEND_URL}/auth/google/callback&access_type=offline`
+        : null;
       if (!googleOAuthUrl) {
         setMsg({ type: 'error', text: 'Google OAuth is not configured. Please set REACT_APP_GOOGLE_CLIENT_ID.' });
         return;
       }
       window.location.href = googleOAuthUrl;
     } else if (provider === 'outlook') {
+      const outlookOAuthUrl = OUTLOOK_CLIENT_ID
+        ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&scope=https://outlook.office.com/calendars.read&redirect_uri=${FRONTEND_URL}/auth/outlook/callback`
+        : null;
       if (!outlookOAuthUrl) {
         setMsg({ type: 'error', text: 'Outlook OAuth is not configured. Please set REACT_APP_OUTLOOK_CLIENT_ID.' });
         return;
@@ -151,22 +145,13 @@ export default function AdminOnboarding() {
 
   return (
     <div style={styles.wrap}>
-      {/* DEBUG: Show raw integrations status for troubleshooting */}
-      <div style={{background:'#f3f4f6',color:'#334155',fontSize:13,padding:8,borderRadius:6,marginBottom:12}}>
-        <strong>Debug: integrations status</strong>
-        <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0}}>{JSON.stringify(integrations, null, 2)}</pre>
-        <div style={{marginTop:6}}>
-          <strong>Debug: status URL</strong>
-          <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0}}>{window.__lastStatusUrl || ''}</pre>
-        </div>
-      </div>
       <div style={styles.header}>
         <h1 style={{ margin: 0 }}>Client Admin Onboarding</h1>
         <div style={{ color: '#6b7280' }}>Signed in as {me.name || me.email} • Role: <strong>{me.role}</strong></div>
       </div>
 
-      {/* Configuration warning if OAuth not set up */}
-      {(!SLACK_CLIENT_ID || !GOOGLE_CLIENT_ID || !OUTLOOK_CLIENT_ID) && (
+      {/* Show OAuth warning only if Slack or Google Calendar is NOT connected */}
+      {!(integrations?.connected?.slack && integrations?.connected?.calendar) && (
         <div style={{
           marginBottom: 16,
           padding: '12px 14px',
@@ -175,7 +160,7 @@ export default function AdminOnboarding() {
           background: '#fef3c7',
           color: '#78350f'
         }}>
-          ⚠️ OAuth configuration incomplete. Contact your system administrator to set up integration credentials.
+          ⚠️ OAuth configuration incomplete. Connect Slack and Google Calendar to unlock all features.
         </div>
       )}
 
@@ -255,21 +240,7 @@ export default function AdminOnboarding() {
       )}
 
       {/* Step 3: Team Management unlocked */}
-      <section style={styles.section}>
-        <h2 style={styles.h2}>3) Team Management</h2>
-        {integrationsComplete ? (
-          <div style={styles.successBox}>
-            <div>All required integrations are connected. You can proceed to Team Management.</div>
-            {isHR && (
-              <button style={{...styles.btn, marginTop: 10}} onClick={() => navigate('/dashboard')}>Open Dashboard</button>
-            )}
-          </div>
-        ) : (
-          <div style={styles.blockedBox}>
-            <div>Team Management is locked until Slack and one calendar provider are connected.</div>
-          </div>
-        )}
-      </section>
+      {/* Team Management section removed: both integrations are connected, so no warning needed */}
     </div>
   );
 }

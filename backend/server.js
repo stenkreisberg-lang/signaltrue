@@ -1,4 +1,9 @@
 import express from "express";
+import auditConsent from "./middleware/consentAudit.js";
+import consentAuditRoutes from "./routes/consentAudit.js";
+import driftEventsRoutes from "./routes/driftEvents.js";
+app.use('/api/drift-events', driftEventsRoutes);
+app.use('/api/consent-audit', consentAuditRoutes);
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
@@ -34,6 +39,13 @@ import invitesRoutes from "./routes/invites.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
+import playbookRoutes from "./routes/playbook.js";
+import oneOnOneRoutes from "./routes/oneOnOne.js";
+import benchmarksRoutes from "./routes/benchmarks.js";
+import adminExportRoutes from "./routes/adminExport.js";
+import weeklyBriefRoutes from "./routes/weeklyBrief.js";
+import { sendWeeklyBrief } from "./services/weeklyBriefService.js";
+import Organization from "./models/organization.js";
 import { refreshExpiringIntegrationTokens } from "./services/tokenService.js";
 import { pullAllConnectedOrgs } from "./services/integrationPullService.js";
 import { upsertDailyMetricsFromTeam } from "./services/baselineService.js";
@@ -52,10 +64,14 @@ const app = express();
 // Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
 app.set('trust proxy', 1);
 app.use(cors());
+
 // Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Consent audit logging (after auth middleware in production)
+app.use(auditConsent);
 
 // Simple test route
 app.get("/", (req, res) => {
@@ -99,6 +115,11 @@ await fs.mkdir(uploadsDir, { recursive: true });
 app.use("/uploads", express.static(uploadsDir));
 
 // Mount API routes
+app.use("/api/admin-export", adminExportRoutes);
+app.use("/api/benchmarks", benchmarksRoutes);
+app.use("/api/oneonone", oneOnOneRoutes);
+app.use("/api/playbook", playbookRoutes);
+app.use("/api/weekly-brief", weeklyBriefRoutes);
 app.use("/auth", oauthRoutes);
 app.use("/api/invites", invitesRoutes);
 app.use("/api/auth", authRoutes);
@@ -156,21 +177,19 @@ if (process.env.NODE_ENV !== "test") {
     console.log('⏰ Cron job scheduled: Calendar refresh daily at 2 AM');
   }
 
-  // Weekly summaries (every Monday at 9 AM)
-  if (process.env.SLACK_BOT_TOKEN || process.env.EMAIL_HOST) {
-    cron.schedule('0 9 * * 1', async () => {
-      console.log('⏰ Running scheduled weekly summaries...');
-      try {
-        await sendWeeklySummaries({
-          includeSlack: !!process.env.SLACK_BOT_TOKEN,
-          includeEmail: !!process.env.EMAIL_HOST,
-        });
-      } catch (err) {
-        console.error('❌ Scheduled weekly summaries failed:', err.message);
+  // Weekly HR Brief (every Monday at 8:30 AM)
+  cron.schedule('30 8 * * 1', async () => {
+    console.log('⏰ Running scheduled Weekly HR Briefs...');
+    try {
+      const orgs = await Organization.find({});
+      for (const org of orgs) {
+        await sendWeeklyBrief(org._id);
       }
-    });
-    console.log('⏰ Cron job scheduled: Weekly summaries every Monday at 9 AM');
-  }
+    } catch (err) {
+      console.error('❌ Scheduled Weekly HR Briefs failed:', err.message);
+    }
+  });
+  console.log('⏰ Cron job scheduled: Weekly HR Briefs every Monday at 8:30 AM');
 
   // Token refresh for Google/Microsoft every hour
   if (process.env.GOOGLE_CLIENT_ID || process.env.MS_APP_CLIENT_ID) {

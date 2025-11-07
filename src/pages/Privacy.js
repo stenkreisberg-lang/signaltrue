@@ -4,139 +4,47 @@ import SiteFooter from '../components/SiteFooter';
 
 export default function Privacy() {
   return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-            <span style={styles.logoText}>SignalTrue</span>
-          </Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <Link to="/contact" style={styles.navLink}>Contact</Link>
+    <>
+      <div style={styles.page}>
+        <nav style={styles.nav}>
+          <div style={styles.navContent}>
+            <Link to="/" style={styles.logoLink}>
+              <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
+              <span style={styles.logoText}>SignalTrue</span>
+            </Link>
+            <div style={styles.navLinks}>
+              <Link to="/product" style={styles.navLink}>Product</Link>
+              <Link to="/pricing" style={styles.navLink}>Pricing</Link>
+              <Link to="/about" style={styles.navLink}>About</Link>
+              <Link to="/contact" style={styles.navLink}>Contact</Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <header style={styles.header}> 
-        <div style={styles.container}> 
-          <h1 style={styles.title}>Trust and transparency by design.</h1>
-          <p style={styles.subtitle}>Team-level only, never individual.<br />No message reading or personal tracking.<br />Clear employee consent and visibility.<br />Regional data residency options.<br />Configurable retention (30–180 days).</p>
-        </div>
-      </header>
-
-      <main style={styles.section}> 
-        <div style={styles.container}> 
-          <div style={styles.card}> 
-            <Block title="Overview">
-              <p>
-                When people feel safe, insight becomes valuable.<br />
-                SignalTrue is designed for trust and transparency: team-level only, never individual. No message reading or personal tracking. Clear employee consent and visibility. Regional data residency options. Configurable retention (30–180 days).
-              </p>
-            </Block>
-
-            <Block title="Information We Collect">
-              <ul>
-                <li><b>Account & Organization Data</b>: name, email, organization name/slug, role, and settings you provide.</li>
-                <li><b>Integration Data</b>: metadata from connected systems (e.g., Slack, calendars), such as timestamps and volumes.
-                  We avoid storing raw message content by default and never expose verbatim content in outputs.</li>
-                <li><b>Usage Data</b>: app interactions, device/browser information, and diagnostics to improve reliability.</li>
-                <li><b>Billing Data</b>: payment method and subscription details are processed by our payment provider (e.g., Stripe).
-                  We do not store full card numbers.</li>
-              </ul>
-            </Block>
-
-            <Block title="How We Use Information">
-              <ul>
-                <li>Provide and improve the Services, including analytics, dashboards, and wellness insights.</li>
-                <li>Generate <b>directional, per-person indicators</b> (e.g., measures trending up/down vs. prior periods).</li>
-                <li>Create <b>aggregated</b> organizational views that do not reveal exact employer-specific metrics.</li>
-                <li>Maintain security, prevent abuse, and ensure service reliability.</li>
-                <li>Communicate important updates, feature changes, and support notices.</li>
-              </ul>
-            </Block>
-
-            <Block title="No Exact Employer-Specific Disclosures">
-              <ul>
-                <li>No raw message content is exposed in outputs.</li>
-                <li>No exact counts, verbatim content, or precise employer-specific metrics are disclosed to end users.</li>
-                <li>Per-person outputs are directional (up/down) and comparative to the individual’s own prior baselines.</li>
-                <li>No cross-employer comparisons are provided.</li>
-              </ul>
-            </Block>
-
-            <Block title="Legal Bases (where applicable)">
-              <ul>
-                <li>Performance of a contract (to deliver the Services).</li>
-                <li>Legitimate interests (to improve, secure, and provide insights responsibly).</li>
-                <li>Consent (for optional features or data sources where required).</li>
-                <li>Compliance with legal obligations.</li>
-              </ul>
-            </Block>
-
-            <Block title="Data Sharing & Processors">
-              <ul>
-                <li><b>Service Providers</b>: we use trusted sub-processors for hosting, email, analytics, and payments (e.g., Stripe).
-                  These parties are bound by confidentiality and data protection obligations.</li>
-                <li><b>Legal & Safety</b>: we may disclose information if required by law or to protect rights, safety, or integrity of the Services.</li>
-                <li>We do not sell personal information.</li>
-              </ul>
-            </Block>
-
-            <Block title="Security">
-              <ul>
-                <li>Industry-standard technical and organizational measures are applied to protect information.</li>
-                <li>Access is restricted to authorized personnel and secure authentication is enforced for integrations.</li>
-              </ul>
-            </Block>
-
-            <Block title="Data Retention">
-              <ul>
-                <li>We retain information for as long as necessary to provide the Services and meet legal obligations.</li>
-                <li>Aggregated/De-Identified data may be retained to improve models and benchmarks without identifying individuals or employers.</li>
-              </ul>
-            </Block>
-
-            <Block title="Your Choices & Rights">
-              <ul>
-                <li>Access, correction, deletion: contact us to exercise rights under applicable laws.</li>
-                <li>Integrations may be disconnected at any time by an authorized admin.</li>
-                <li>Marketing communications: you can opt out via unsubscribe links in emails.</li>
-              </ul>
-            </Block>
-
-            <Block title="International Transfers">
-              <p>
-                If information is transferred across borders, we use appropriate safeguards such as standard contractual clauses and
-                data processing agreements with sub-processors.
-              </p>
-            </Block>
-
-            <Block title="Children’s Data">
-              <p>
-                The Services are not directed to children under 16 and we do not knowingly collect their personal information.
-              </p>
-            </Block>
-
-            <Block title="Changes to this Policy">
-              <p>
-                We may update this Privacy Policy from time to time. We will post the updated version with a new effective date.
-              </p>
-            </Block>
-
-            <Block title="Contact Us">
-              <p>
-                Questions about this policy? Contact: privacy@signaltrue.com
-              </p>
-            </Block>
+        <header style={styles.header}> 
+          <div style={styles.container}> 
+            <h1 style={styles.title}>Transparency and trust — built in from day one.</h1>
+            <p style={styles.subtitle}>SignalTrue is designed for insight, not oversight.<br />We measure trends, not people.<br />All analytics are aggregated at team level, with configurable retention periods and region-specific data residency.</p>
           </div>
-        </div>
-      </main>
+        </header>
 
-      <SiteFooter />
-    </div>
+        <main style={styles.section}> 
+          <div style={styles.container}> 
+            <div style={styles.card}> 
+              <h2 style={{fontSize:'1.5rem',fontWeight:700,marginBottom:16}}>Continuous Engagement Insight™</h2>
+              <p style={{marginBottom:24}}>All analytics are aggregated, encrypted, and transparent to employees. Empathy and ethics are built into every layer.</p>
+              <h3 style={{fontSize:'1.2rem',fontWeight:600,margin:'24px 0 8px'}}>When employees trust the system, HR can trust the data.</h3>
+            </div>
+          </div>
+        </main>
+
+        <footer style={{background:'#f9fafb',padding:'2rem 0',textAlign:'center'}}>
+          <span style={{color:'#6b7280',fontSize:'1rem'}}>Privacy-first: SignalTrue analyzes patterns, not private content. <Link to="/" style={styles.navLink}>Back to Home</Link>.</span>
+        </footer>
+
+        <SiteFooter />
+      </div>
+    </>
   );
 }
 
