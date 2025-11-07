@@ -51,25 +51,8 @@ function Dashboard() {
   useEffect(() => {
     const loadIntegrationStatus = async () => {
       try {
-        // Try to load org and pass along orgId to integrations/status
-        let orgId = null;
-        try {
-          const token = localStorage.getItem('token');
-          const meRes = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-          if (meRes.ok) {
-            const me = await meRes.json();
-            if (me?.orgId) {
-              const orgRes = await fetch(`${API_BASE}/api/organizations/me`, { headers: { Authorization: `Bearer ${token}` } });
-              if (orgRes.ok) {
-                const orgData = await orgRes.json();
-                setOrg(orgData);
-                orgId = me.orgId;
-              }
-            }
-          }
-        } catch {}
-
-        const query = orgId ? `?orgId=${encodeURIComponent(orgId)}` : '';
+        // FORCE: Always use orgSlug=default for integrations status
+        const query = '?orgSlug=default';
         const res = await fetch(`${API_BASE}/api/integrations/status${query}`);
         if (res.ok) {
           const data = await res.json();
@@ -89,6 +72,11 @@ function Dashboard() {
   };
 
   const openOrGuide = (provider) => {
+    // FORCE: Always use orgSlug=default for Google Calendar OAuth
+    if (provider === 'calendar') {
+      window.location.href = `${API_BASE}/api/integrations/google/oauth/start?scope=calendar&orgSlug=default`;
+      return;
+    }
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
       window.location.href = `${API_BASE}${oauth}`;
