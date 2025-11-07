@@ -35,7 +35,9 @@ export default function AdminOnboarding() {
         const statusQuery = meData?.orgSlug
           ? `?orgSlug=${encodeURIComponent(meData.orgSlug)}`
           : (meData?.orgId ? `?orgId=${meData.orgId}` : '');
-        const iRes = await fetch(`${safeAPI}/api/integrations/status${statusQuery}`);
+        const statusUrl = `${safeAPI}/api/integrations/status${statusQuery}`;
+        window.__lastStatusUrl = statusUrl; // Expose for debug
+        const iRes = await fetch(statusUrl);
         if (iRes.ok) setIntegrations(await iRes.json());
 
         // Try to fetch pending invites, but don't fail if backend unreachable
@@ -153,6 +155,10 @@ export default function AdminOnboarding() {
       <div style={{background:'#f3f4f6',color:'#334155',fontSize:13,padding:8,borderRadius:6,marginBottom:12}}>
         <strong>Debug: integrations status</strong>
         <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0}}>{JSON.stringify(integrations, null, 2)}</pre>
+        <div style={{marginTop:6}}>
+          <strong>Debug: status URL</strong>
+          <pre style={{whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0}}>{window.__lastStatusUrl || ''}</pre>
+        </div>
       </div>
       <div style={styles.header}>
         <h1 style={{ margin: 0 }}>Client Admin Onboarding</h1>
