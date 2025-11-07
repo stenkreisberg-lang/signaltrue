@@ -1,0 +1,72 @@
+openapi: 3.0.0
+info:
+  title: SignalTrue Privacy & Compliance API
+  version: 1.0.0
+paths:
+  /api/consent-audit/download:
+    get:
+      summary: Download Consent & Access Audit Log (PDF)
+      tags: [Privacy]
+      responses:
+        '200':
+          description: PDF file containing audit log
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: No org context
+        '500':
+          description: Failed to generate PDF
+  /api/export:
+    get:
+      summary: Export data (CSV/ZIP)
+      tags: [Export]
+      responses:
+        '200':
+          description: Data export
+  /api/key:
+    post:
+      summary: Create API token
+      tags: [API]
+      responses:
+        '200':
+          description: Token created
+    delete:
+      summary: Revoke API token
+      tags: [API]
+      responses:
+        '200':
+          description: Token revoked
+components:
+  schemas:
+    ConsentAudit:
+      type: object
+      properties:
+        org_id:
+          type: string
+        user_id:
+          type: string
+        action:
+          type: string
+        endpoint:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        ip:
+          type: string
+        user_agent:
+          type: string
+        details:
+          type: object
+    Organization:
+      type: object
+      properties:
+        data_region:
+          type: string
+          enum: [EU, US, Other]
+        data_retention_days:
+          type: integer
+          enum: [30, 90, 180]

@@ -21,63 +21,69 @@ function HowItWorks() {
         </div>
       </nav>
 
+      {/* Hero Section */}
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>How SignalTrue Works</h1>
-          <p style={styles.heroSubtitle}>8 signals. Drift explainability. Micro‑playbooks. Privacy‑first.</p>
+          <h1 style={styles.heroTitle}>How Continuous Engagement Insight™ works.</h1>
+          <p style={styles.heroSubtitle}>From connection to clarity in four simple steps.</p>
         </div>
       </section>
 
+      {/* Steps Section */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Fast setup, clear outcomes</h2>
+          <h2 style={styles.sectionTitle}>How it works</h2>
           <div style={styles.stepsGrid}>
             {[
-              ['1','Connect','One‑click OAuth with Slack, Google or Microsoft (read‑only).'],
-              ['2','Baseline','We learn normal rhythms for each team automatically.'],
-              ['3','Detect & explain','When drift hits, we show the top 3 contributors.'],
-              ['4','Act','Micro‑playbooks help managers respond fast.'],
-            ].map(([n,t,txt]) => (
+              ['1','Connect your work environment.'],
+              ['2','SignalTrue learns your team’s healthy engagement pattern.'],
+              ['3','Engagement insights update automatically each week.'],
+              ['4','HR receives clear reports and next-step recommendations.'],
+            ].map(([n,txt]) => (
               <div key={n} style={styles.step}>
                 <div style={styles.stepNumber}>{n}</div>
-                <h3 style={styles.stepTitle}>{t}</h3>
                 <p style={styles.stepText}>{txt}</p>
               </div>
             ))}
           </div>
+          <div style={{textAlign:'center',marginTop:32}}>
+            <Link to="/contact" style={styles.primaryBtn}>Start Your Free Demo</Link>
+          </div>
         </div>
       </section>
 
+      {/* FAQ Section */}
       <section style={{...styles.section, background:'#f9fafb'}}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Privacy & Security</h2>
-          <div style={styles.privacyGrid}>
-            <div style={styles.privacyCard}>
-              <div style={styles.privacyIcon}>🔒</div>
-              <h3 style={styles.privacyTitle}>Metadata‑only</h3>
-              <p style={styles.privacyText}>No message content or event details are read—patterns only.</p>
+          <h2 style={styles.sectionTitle}>Common questions. Clear answers.</h2>
+          <div style={styles.faqGrid}>
+            <div style={styles.faqCard}>
+              <h3 style={styles.faqQuestion}>Does SignalTrue monitor individuals?</h3>
+              <p style={styles.faqAnswer}>No. All data is team-level and anonymised.</p>
             </div>
-            <div style={styles.privacyCard}>
-              <div style={styles.privacyIcon}>🧭</div>
-              <h3 style={styles.privacyTitle}>Team‑level by default</h3>
-              <p style={styles.privacyText}>All insights are aggregated at team level for privacy.</p>
+            <div style={styles.faqCard}>
+              <h3 style={styles.faqQuestion}>Is it GDPR compliant?</h3>
+              <p style={styles.faqAnswer}>Yes. Regional storage, encryption, and retention control are built in.</p>
             </div>
-            <div style={styles.privacyCard}>
-              <div style={styles.privacyIcon}>🛡️</div>
-              <h3 style={styles.privacyTitle}>Encryption</h3>
-              <p style={styles.privacyText}>Tokens encrypted at rest (AES‑256). Regional data residency.</p>
+            <div style={styles.faqCard}>
+              <h3 style={styles.faqQuestion}>What makes SignalTrue different?</h3>
+              <p style={styles.faqAnswer}>It provides continuous insight, not one-off survey results.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section style={{...styles.section, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', color:'white'}}>
+      {/* Privacy Section */}
+      <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={{...styles.sectionTitle, color:'white'}}>Ready to see it?</h2>
-          <p style={{...styles.introText,color:'rgba(255,255,255,0.9)'}}>Most companies are live in 5 minutes.</p>
-          <Link to="/contact" style={{...styles.primaryBtn, background:'white', color:'#6366f1'}}>Request a demo</Link>
+          <h2 style={styles.sectionTitle}>Privacy-first by design</h2>
+          <p style={styles.introText}>SignalTrue analyzes collaboration data, not private content. All analytics are aggregated at team level, with regional data residency and configurable retention.</p>
         </div>
       </section>
+
+      <footer style={{background:'#f9fafb',padding:'2rem 0',textAlign:'center'}}>
+        <span style={{color:'#6b7280',fontSize:'1rem'}}>Continuous Engagement Insight™ for HR leaders. <Link to="/privacy" style={styles.navLink}>Learn more</Link>.</span>
+      </footer>
 
       <SiteFooter />
     </div>

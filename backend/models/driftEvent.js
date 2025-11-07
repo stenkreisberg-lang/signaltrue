@@ -10,8 +10,8 @@ const driftEventSchema = new mongoose.Schema({
   basis: { type: String, enum: ['percent','zscore'], default: 'percent' },
   details: { type: Object, default: {} },
   acknowledged: { type: Boolean, default: false },
-  // Explainability: top contributing metrics
-  topContributors: [{ metric: String, change: Number }],
+  // Explainability: top 3 metric deltas
+  drivers: [{ metric: String, delta: Number, direction: String }],
   // Micro-playbook recommendation
   recommendation: { type: String, default: '' },
 }, { timestamps: true });

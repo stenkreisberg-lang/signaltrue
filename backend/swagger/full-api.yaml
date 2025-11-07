@@ -1,0 +1,135 @@
+openapi: 3.0.0
+info:
+  title: SignalTrue API
+  version: 1.0.0
+  description: Full API documentation for all modules (privacy, drift, playbooks, 1:1s, benchmarks, admin export, etc)
+servers:
+  - url: http://localhost:8080/api
+paths:
+  /drift-events/{teamId}:
+    get:
+      summary: Get drift events for a team
+      parameters:
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of drift events
+  /playbook/{teamId}:
+    get:
+      summary: Get AI playbook for a team
+      parameters:
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Playbook array
+  /oneonone:
+    get:
+      summary: List 1:1s for a team or user
+      parameters:
+        - in: query
+          name: teamId
+          schema:
+            type: string
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of 1:1s
+    post:
+      summary: Create a new 1:1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamId:
+                  type: string
+                managerId:
+                  type: string
+                employeeId:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Created 1:1
+  /oneonone/{id}/feedback:
+    post:
+      summary: Add feedback to a 1:1
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                authorId:
+                  type: string
+                text:
+                  type: string
+      responses:
+        '200':
+          description: Updated 1:1
+  /benchmarks/team/{teamId}:
+    get:
+      summary: Get team benchmarks
+      parameters:
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Team/org benchmark
+  /benchmarks/org/{orgId}:
+    get:
+      summary: Get org peer comparisons
+      parameters:
+        - in: path
+          name: orgId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Peer teams
+  /admin-export/users:
+    get:
+      summary: List all users
+      responses:
+        '200':
+          description: List of users
+  /admin-export/users/export:
+    get:
+      summary: Export users as CSV
+      responses:
+        '200':
+          description: CSV file
+  /admin-export/teams/export:
+    get:
+      summary: Export teams as CSV
+      responses:
+        '200':
+          description: CSV file

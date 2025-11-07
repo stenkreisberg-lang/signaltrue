@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { encryptString, decryptString } from '../utils/crypto.js';
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -7,7 +8,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    set: encryptString,
+    get: decryptString
   },
   password: {
     type: String,
@@ -17,7 +20,9 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    set: encryptString,
+    get: decryptString
   },
   role: {
     type: String,
@@ -63,9 +68,9 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Don't return password in JSON
+// Don't return password in JSON, and apply getters for encrypted fields
 userSchema.methods.toJSON = function() {
-  const obj = this.toObject();
+  const obj = this.toObject({ getters: true });
   delete obj.password;
   return obj;
 };

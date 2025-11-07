@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import DriftAlerts from './DriftAlerts';
+import PlaybookRecommendations from './PlaybookRecommendations';
+import OneOnOneTimeline from './OneOnOneTimeline';
+import BenchmarkComparison from './BenchmarkComparison';
+import AdminExportPanel from './AdminExportPanel';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE } from '../utils/api';
 
@@ -136,6 +141,9 @@ function Dashboard() {
     );
   }
 
+  // Determine teamId for DriftAlerts (if user is in a team)
+  const teamId = user?.teamId || user?.team?.id || null;
+
   return (
     <div style={styles.container}>
       <nav style={styles.nav}>
@@ -155,6 +163,20 @@ function Dashboard() {
       </nav>
 
       <div style={styles.content}>
+        {/* Engagement Change Alerts (Drift Explainability) */}
+        {teamId && (
+          <>
+            <DriftAlerts teamId={teamId} />
+            <PlaybookRecommendations teamId={teamId} />
+            <OneOnOneTimeline teamId={teamId} userId={user?._id} />
+            <BenchmarkComparison teamId={teamId} orgId={user?.orgId} />
+          </>
+        )}
+
+        {/* Admin/HR Controls & Data Export */}
+        {['admin','hr_admin','master_admin'].includes(user?.role) && (
+          <AdminExportPanel />
+        )}
         {/* Admin onboarding shortcut */}
         {['admin','hr_admin','master_admin'].includes(user?.role) && (
           <div style={{
@@ -244,8 +266,8 @@ function Dashboard() {
             <p style={styles.cardText}>
               Once connected, see real-time burnout detection and insights
             </p>
-            <button style={styles.cardButton} disabled>
-              Coming Soon
+            <button style={styles.cardButton} onClick={() => navigate('/team-analytics')}>
+              Open Analytics Dashboard
             </button>
           </div>
         </div>
