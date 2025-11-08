@@ -11,7 +11,7 @@ function Home() {
       <nav style={styles.nav}>
         <div style={styles.navContent}>
           <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
+          <img src="/images/logo.png" alt="SignalTrue" style={styles.logoImg} />
             <span style={styles.logoText}>SignalTrue</span>
           </Link>
           <div style={styles.navLinks}>
@@ -127,6 +127,41 @@ function Home() {
           <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
         </div>
       </section>
+
+      {/* Personalization & Flexibility */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>Customizable Dashboards & KPIs</h2>
+          <p style={styles.lead}>
+            Every organization is unique. SignalTrue lets you tailor dashboards, metrics, and alerts to your team’s goals—track what matters most, from engineering focus to wellbeing, compliance, or engagement drivers.
+          </p>
+          <div style={styles.grid4}>
+            <div style={styles.card}>
+              <div style={styles.icon}>📊</div>
+              <div style={styles.cardTitle}>Custom Widgets</div>
+              <div style={styles.muted}>Drag-and-drop dashboard widgets for your KPIs.</div>
+            </div>
+            <div style={styles.card}>
+              <div style={styles.icon}>⚙️</div>
+              <div style={styles.cardTitle}>Flexible Alerts</div>
+              <div style={styles.muted}>Set thresholds, get notified only when it matters.</div>
+            </div>
+            <div style={styles.card}>
+              <div style={styles.icon}>🧩</div>
+              <div style={styles.cardTitle}>Integrations</div>
+              <div style={styles.muted}>Connect Slack, Teams, Google, HRIS, and more.</div>
+            </div>
+            <div style={styles.card}>
+              <div style={styles.icon}>🎨</div>
+              <div style={styles.cardTitle}>Personalized Views</div>
+              <div style={styles.muted}>Filter by team, location, or role for relevant insights.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Industry Solutions */}
+      {require('../components/IndustrySolutions').default()}
 
       <SiteFooter />
     </div>

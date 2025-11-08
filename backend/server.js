@@ -34,6 +34,20 @@ import invitesRoutes from "./routes/invites.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
+import energyIndexRoutes from "./routes/energyIndex.js";
+import focusInterruptionRoutes from "./routes/focusInterruption.js";
+import { aggregateTeamEnergyIndex } from "./services/teamEnergyIndexService.js";
+import { aggregateFocusInterruption } from "./services/focusInterruptionService.js";
+import commHygieneRoutes from "./routes/commHygiene.js";
+import recognitionMetricsRoutes from "./routes/recognitionMetrics.js";
+import runAdvancedMetricsCrons from "./services/advancedMetricsCron.js";
+import cultureExperimentRoutes from "./routes/cultureExperiment.js";
+import { runCultureExperimentAggregation } from "./services/cultureExperimentCron.js";
+import readinessForecastRoutes from "./routes/readinessForecast.js";
+import { runReadinessForecastAggregation } from "./services/readinessForecastCron.js";
+import deiEsgReportRoutes from "./routes/deiEsgReport.js";
+import { runDeiEsgReportAggregation } from "./services/deiEsgReportCron.js";
+import slackNudgeRoutes from "./routes/slackNudge.js";
 import { refreshExpiringIntegrationTokens } from "./services/tokenService.js";
 import { pullAllConnectedOrgs } from "./services/integrationPullService.js";
 import { upsertDailyMetricsFromTeam } from "./services/baselineService.js";
@@ -99,6 +113,11 @@ await fs.mkdir(uploadsDir, { recursive: true });
 app.use("/uploads", express.static(uploadsDir));
 
 // Mount API routes
+app.use("/api/comm-hygiene", commHygieneRoutes);
+app.use("/api/recognition-metrics", recognitionMetricsRoutes);
+app.use("/api/culture-experiments", cultureExperimentRoutes);
+app.use("/api/energy-index", energyIndexRoutes);
+app.use("/api/focus-interruption", focusInterruptionRoutes);
 app.use("/auth", oauthRoutes);
 app.use("/api/invites", invitesRoutes);
 app.use("/api/auth", authRoutes);
@@ -117,6 +136,8 @@ app.use("/api/focus", focusRoutes);
 app.use("/api/forecast", forecastRoutes);
 app.use("/api/leader", leaderRoutes);
 app.use("/api/outcomes", outcomesRoutes);
+app.use("/api/dei-esg-reports", deiEsgReportRoutes);
+app.use("/api/slack-nudges", slackNudgeRoutes);
 app.use("/api/resilience", resilienceRoutes);
 app.use("/api", integrationsRoutes);
 app.use("/api", billingRoutes);
@@ -203,11 +224,23 @@ if (process.env.NODE_ENV !== "test") {
       await detectDriftForAllTeams();
       // 5. Send drift alerts
       await sendDriftAlerts();
+      // 6. Aggregate Team Energy Index
+      await aggregateTeamEnergyIndex();
+      // 7. Aggregate Focus Interruption Index
+      await aggregateFocusInterruption();
+      // 8. Aggregate advanced metrics (comm hygiene, recognition)
+      await runAdvancedMetricsCrons();
+  // 9. Aggregate culture experiments
+  await runCultureExperimentAggregation();
+  // 10. Aggregate readiness forecasts
+  await runReadinessForecastAggregation();
+  // 11. Aggregate DEI/ESG reports
+  await runDeiEsgReportAggregation();
     } catch (err) {
       console.error('❌ Unified daily job failed:', err.message);
     }
   });
-  console.log('⏰ Cron job scheduled: Unified daily metrics/baseline/drift/energy/alert at 3:30 AM');
+  console.log('⏰ Cron job scheduled: Unified daily metrics/baseline/drift/energy/alert/energyIndex/focusInterruption/cultureExperiment at 3:30 AM');
 }
 
 // Listen only when not running under tests

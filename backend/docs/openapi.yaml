@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: SignalTrue API
+  version: 1.0.0
+  description: >-
+    OpenAPI documentation for all backend endpoints in SignalTrue, including advanced analytics, DEI/ESG, and Slack nudges.
+servers:
+  - url: http://localhost:8080/api
+paths:
+  /projects:
+    get:
+      summary: List all projects
+      responses:
+        '200':
+          description: List of projects
+    post:
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Project created
+  /energy-index:
+    get:
+      summary: Get Team Energy Index
+      responses:
+        '200':
+          description: Team Energy Index data
+  /focus-interruption:
+    get:
+      summary: Get Focus Interruption Index
+      responses:
+        '200':
+          description: Focus Interruption Index data
+  /comm-hygiene:
+    get:
+      summary: Get Communication Hygiene Score
+      responses:
+        '200':
+          description: Communication Hygiene Score data
+  /recognition-metrics:
+    get:
+      summary: Get Recognition Metrics
+      responses:
+        '200':
+          description: Recognition Metrics data
+  /culture-experiments:
+    get:
+      summary: Get Culture Experiments
+      responses:
+        '200':
+          description: Culture Experiments data
+  /readiness-forecast:
+    get:
+      summary: Get Readiness Forecast
+      responses:
+        '200':
+          description: Readiness Forecast data
+  /dei-esg-reports:
+    get:
+      summary: Get DEI/ESG Reports
+      responses:
+        '200':
+          description: DEI/ESG Reports data
+  /slack-nudges:
+    get:
+      summary: Get Slack Nudges
+      responses:
+        '200':
+          description: Slack Nudges data

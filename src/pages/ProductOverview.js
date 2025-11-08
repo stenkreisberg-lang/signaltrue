@@ -9,7 +9,7 @@ function ProductOverview() {
       <nav style={styles.nav}>
         <div style={styles.navContent}>
           <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
+            <img src="/images/logo.png" alt="SignalTrue" style={styles.logoImg} />
             <span style={styles.logoText}>SignalTrue</span>
           </Link>
           <div style={styles.navLinks}>
@@ -21,6 +21,40 @@ function ProductOverview() {
           </div>
         </div>
       </nav>
+      {/* Customization & Flexibility */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.container}>
+          <h2 style={styles.sectionTitle}>Customizable Dashboards & KPIs</h2>
+          <p style={styles.sectionSubtitle}>
+            Every organization is unique. SignalTrue lets you tailor dashboards, metrics, and alerts to your team’s goals—track what matters most, from engineering focus to wellbeing, compliance, or engagement drivers.
+          </p>
+          <div style={styles.featureGrid}>
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>📊</div>
+              <h3 style={styles.featureTitle}>Custom Widgets</h3>
+              <p style={styles.featureText}>Drag-and-drop dashboard widgets for your KPIs.</p>
+            </div>
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>⚙️</div>
+              <h3 style={styles.featureTitle}>Flexible Alerts</h3>
+              <p style={styles.featureText}>Set thresholds, get notified only when it matters.</p>
+            </div>
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>🧩</div>
+              <h3 style={styles.featureTitle}>Integrations</h3>
+              <p style={styles.featureText}>Connect Slack, Teams, Google, HRIS, and more.</p>
+            </div>
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>🎨</div>
+              <h3 style={styles.featureTitle}>Personalized Views</h3>
+              <p style={styles.featureText}>Filter by team, location, or role for relevant insights.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Industry Solutions */}
+      {require('../components/IndustrySolutions').default()}
 
       {/* Hero Section */}
       <section style={styles.hero}>
