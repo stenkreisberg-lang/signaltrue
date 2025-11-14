@@ -191,7 +191,10 @@ REACT_APP_DEFAULT_MODEL=gpt-3.5-turbo
 
 ## 🌐 Deployment
 
-Full deployment guide: **[DEPLOYMENT.md](DEPLOYMENT.md)**
+### Deployment Guides
+- **📘 [Complete Deployment Guide](DEPLOYMENT.md)** - Step-by-step instructions for Render + Vercel
+- **🔐 [OAuth Setup](VERCEL_OAUTH_SETUP.md)** - Configure Slack, Google, Microsoft OAuth integrations
+- **✅ [Deployment Checklist](DEPLOYMENT_CHECKLIST.md)** - Pre-flight checklist
 
 ### Quick Deploy
 
@@ -199,11 +202,25 @@ Full deployment guide: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 1. Push to GitHub
 2. Connect repo to Render
 3. Deploy using `render.yaml` blueprint
-4. Add environment variables
+4. Add environment variables (see `backend/.env.example`)
 
 **Frontend (Vercel):**
 ```bash
 vercel --prod
+```
+
+**Required Environment Variables:**
+
+Backend (Render):
+```bash
+MONGO_URI=mongodb+srv://...
+OPENAI_API_KEY=sk-...
+APP_URL=https://your-frontend.vercel.app
+```
+
+Frontend (Vercel):
+```bash
+REACT_APP_API_URL=https://your-backend.onrender.com
 ```
 
 **Estimated Cost:** ~$7-15/month (Render Starter + AI API usage)

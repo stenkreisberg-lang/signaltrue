@@ -16,15 +16,41 @@ services:
         value: production
       - key: MONGO_URI
         sync: false
-      # Optional integrations (set values in Render Dashboard after deploy)
+      - key: APP_URL
+        sync: false
+      # AI Providers (choose one or both)
       - key: OPENAI_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Slack OAuth Integration
+      - key: SLACK_CLIENT_ID
+        sync: false
+      - key: SLACK_CLIENT_SECRET
+        sync: false
+      - key: SLACK_REDIRECT_URI
+        sync: false
       - key: SLACK_BOT_TOKEN
+        sync: false
+      # Google OAuth Integration
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
         sync: false
       - key: GOOGLE_SERVICE_ACCOUNT
         sync: false
+      # Microsoft OAuth Integration
+      - key: MS_APP_CLIENT_ID
+        sync: false
+      - key: MS_APP_CLIENT_SECRET
+        sync: false
+      - key: MS_APP_TENANT
+        value: "common"
+      - key: MS_APP_REDIRECT_URI
+        sync: false
+      # Email Notifications
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
@@ -37,6 +63,7 @@ services:
         sync: false
       - key: NOTIFICATION_EMAIL
         sync: false
+      # Admin Security
       - key: API_KEY
         sync: false
  
