@@ -32,8 +32,8 @@ function Home() {
             SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
           </p>
           <div style={styles.ctaRow}>
-            <button onClick={() => navigate('/contact')} style={styles.primaryButton}>Get Early Access</button>
-            <button onClick={() => navigate('/how-it-works')} style={styles.secondaryButton}>See How It Works</button>
+            <Link to="/contact" style={styles.primaryButton}>Get Early Access</Link>
+            <Link to="/how-it-works" style={styles.secondaryButton}>See How It Works</Link>
           </div>
         </div>
       </section>
