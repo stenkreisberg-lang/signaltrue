@@ -1,15 +1,6 @@
 {
   "version": 2,
   "name": "signaltrue-frontend",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
   "routes": [
     {
       "src": "/static/(.*)",

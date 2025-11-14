@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';
+
+// Minimal styles object for Pricing page
 import InlineNotice from '../components/InlineNotice';
 import { API_BASE } from '../utils/api';
 function Pricing() {

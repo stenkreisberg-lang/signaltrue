@@ -1,17 +1,1 @@
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'>
-  <defs>
-    <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%' stop-color='#667eea'/>
-      <stop offset='100%' stop-color='#764ba2'/>
-    </linearGradient>
-  </defs>
-  <rect width='400' height='400' rx='24' fill='url(#bg)'/>
-  <g transform='translate(200,180)'>
-    <circle cx='0' cy='-70' r='46' fill='#fff'/>
-    <rect x='-70' y='-10' width='140' height='140' rx='18' fill='#ffffff' opacity='0.9'/>
-    <rect x='-60' y='0' width='120' height='12' rx='6' fill='#c7d2fe'/>
-    <rect x='-60' y='22' width='90' height='12' rx='6' fill='#d8b4fe'/>
-    <rect x='-60' y='44' width='105' height='12' rx='6' fill='#c7d2fe'/>
-    <rect x='-60' y='66' width='70' height='12' rx='6' fill='#d8b4fe'/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/></linearGradient></defs><rect width="400" height="400" rx="24" fill="url(#a)"/><g transform="translate(200 180)"><circle cy="-70" r="46" fill="#fff"/><rect x="-70" y="-10" width="140" height="140" rx="18" fill="#fff" opacity=".9"/><rect x="-60" width="120" height="12" rx="6" fill="#c7d2fe"/><rect x="-60" y="22" width="90" height="12" rx="6" fill="#d8b4fe"/><rect x="-60" y="44" width="105" height="12" rx="6" fill="#c7d2fe"/><rect x="-60" y="66" width="70" height="12" rx="6" fill="#d8b4fe"/></g></svg>

@@ -1,3 +1,4 @@
+// This file is deprecated. Use HowItWorks.js instead.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';

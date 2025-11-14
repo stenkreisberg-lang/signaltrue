@@ -1,6 +1,40 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';
+import { Link } from 'react-router-dom';
+
+// Minimal styles object to prevent runtime errors and provide basic layout/colors
+const styles = {
+  page: { fontFamily: 'Inter, Poppins, sans-serif', background: '#f8fafc', color: '#111827', minHeight: '100vh' },
+  nav: { background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.5rem 0' },
+  navContent: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1200, margin: '0 auto', padding: '0 2rem' },
+  logoLink: { display: 'flex', alignItems: 'center', textDecoration: 'none' },
+  logoImg: { height: 32, marginRight: 10 },
+  logoText: { fontSize: '1.25rem', fontWeight: 700, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  navLinks: { display: 'flex', gap: 24, alignItems: 'center' },
+  navLink: { color: '#4b5563', textDecoration: 'none', fontWeight: 500 },
+  loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #ff6f61, #ff9472)', color: 'white', borderRadius: 6, textDecoration: 'none', fontWeight: 600 },
+  hero: { background: 'linear-gradient(135deg,#667eea,#764ba2)', color: 'white', padding: '6rem 2rem 4rem', textAlign: 'center' },
+  container: { maxWidth: 1100, margin: '0 auto', padding: '0 2rem' },
+  heroTitle: { fontSize: '3rem', fontWeight: 800, margin: '0 0 12px' },
+  heroSubtitle: { fontSize: '1.25rem', opacity: 0.95, margin: '0 auto 24px', maxWidth: 760, lineHeight: 1.6 },
+  heroCTA: { display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24 },
+  primaryBtn: { padding: '0.9rem 1.4rem', background: 'white', color: '#6366f1', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
+  secondaryBtn: { padding: '0.9rem 1.4rem', background: 'transparent', color: 'white', border: '2px solid white', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
+  section: { padding: '4rem 0' },
+  sectionTitle: { fontSize: '2.25rem', fontWeight: 800, margin: '0 0 28px', color: '#111827', textAlign: 'center' },
+  introText: { textAlign: 'center', color: '#4b5563', maxWidth: 850, margin: '0 auto 28px', lineHeight: 1.6 },
+  featureGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32, marginTop: 32 },
+  featureCard: { background: 'white', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', padding: 28, textAlign: 'center' },
+  featureIcon: { fontSize: '2.5rem', marginBottom: 12 },
+  featureTitle: { fontWeight: 700, fontSize: '1.2rem', marginBottom: 8 },
+  featureText: { color: '#374151', fontSize: '1rem', marginBottom: 0 },
+  stepsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 28, marginTop: 32 },
+  step: { background: 'white', borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.03)', padding: 22, textAlign: 'center' },
+  stepNumber: { width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, margin: '0 auto 10px' },
+  stepTitle: { fontWeight: 700, marginBottom: 6, color: '#111827' },
+  stepText: { color: '#6b7280', fontSize: '1rem' },
+  sectionSubtitle: { color: '#6b7280', fontSize: '1.125rem', marginBottom: 18 },
+};
 
 function ProductOverview() {
   return (
