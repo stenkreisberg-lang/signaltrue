@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 import { encryptString, decryptString } from '../utils/crypto.js';
 
@@ -21,12 +22,10 @@ const organizationSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  // Placeholder for future industry averages (for analytics)
   industryAverages: {
     type: Object,
     default: {}
   },
-  // Privacy & Compliance fields
   data_region: {
     type: String,
     enum: ['EU', 'US', 'Other'],
@@ -66,48 +65,13 @@ const organizationSchema = new mongoose.Schema({
       sync: {
         lastStatus: { type: String, enum: ['ok','error','disconnected',''], default: '' },
         lastRunAt: { type: Date },
-        messagesAnalyzed: { type: Number, default: 0 }
-      }
-    },
-    }
-      sync: {
-        lastStatus: { type: String, enum: ['ok','error','disconnected',''], default: '' },
-        lastRunAt: { type: Date },
+        messagesAnalyzed: { type: Number, default: 0 },
         emailsProcessed: { type: Number, default: 0 }
       }
     }
   }
-  },
-  // Privacy & Compliance fields
-  data_region: {
-    type: String,
-    enum: ['EU', 'US', 'Other'],
-    default: 'EU',
-    required: true
-  },
-  data_retention_days: {
-    type: Number,
-    enum: [30, 90, 180],
-    default: 90,
-    required: true
-
-  },
-  // Privacy & Compliance fields
-  data_region: {
-    type: String,
-    enum: ['EU', 'US', 'Other'],
-    default: 'EU',
-    required: true
-  },
-  data_retention_days: {
-    type: Number,
-    enum: [30, 90, 180],
-    default: 90,
-    required: true
-  }
 }, { timestamps: true });
 
-// Generate slug from name if not provided
 organizationSchema.pre('save', function(next) {
   if (!this.slug || this.isModified('name')) {
     this.slug = this.name
