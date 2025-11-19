@@ -1,4 +1,4 @@
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import { decryptString, encryptString } from '../utils/crypto.js';
 
 // Refresh Google access token using refresh token

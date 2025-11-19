@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import DriftEvent from '../models/driftEvent.js';
 import EnergyConfig from '../models/energyConfig.js';

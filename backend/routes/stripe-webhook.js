@@ -40,7 +40,7 @@ router.post('/stripe/webhook', async (req, res) => {
         const session = event.data.object;
         // Persist mapping between organization and Stripe IDs, if metadata provided
         try {
-          const { default: Organization } = await import('../models/organization.js');
+          const { default: Organization } = await import('../models/organizationModel.js');
           const meta = session.metadata || {};
           const rawPlan = (meta.plan || '').toString();
           const normalizedPlan = rawPlan === 'pro' ? 'professional' : (rawPlan || 'starter');
@@ -81,7 +81,7 @@ router.post('/stripe/webhook', async (req, res) => {
         const sub = event.data.object;
         // Update subscription status in your DB
         try {
-          const { default: Organization } = await import('../models/organization.js');
+          const { default: Organization } = await import('../models/organizationModel.js');
           // Map Stripe status to app status
           const statusMap = {
             trialing: 'active',

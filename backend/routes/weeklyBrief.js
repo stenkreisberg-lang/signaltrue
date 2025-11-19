@@ -1,6 +1,6 @@
 import express from 'express';
 import { sendWeeklyBrief, generateWeeklyBrief } from '../services/weeklyBriefService.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
 

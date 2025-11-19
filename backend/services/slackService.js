@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { WebClient } from '@slack/web-api';
 import Team from '../models/team.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import getProvider from '../utils/aiProvider.js';
 import { createSnapshot } from '../utils/bdiHistory.js';
 

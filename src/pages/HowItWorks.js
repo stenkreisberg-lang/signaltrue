@@ -89,7 +89,10 @@ function HowItWorks() {
       <SiteFooter />
     </div>
   );
+<<<<<<< HEAD
 // ...existing code...
+=======
+>>>>>>> bdda7d4 (Remove old organization.js and add organizationModel.js)
 }
 const styles = {
   page: { minHeight: '100vh', background: 'white' },

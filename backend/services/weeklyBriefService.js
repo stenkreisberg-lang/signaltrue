@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import DriftEvent from '../models/driftEvent.js';
 

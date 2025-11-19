@@ -1,5 +1,5 @@
 import express from 'express';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
 import { authenticateToken } from '../middleware/auth.js';

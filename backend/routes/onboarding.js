@@ -2,7 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
 import Invitation from '../models/invitation.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import Team from '../models/team.js';
 

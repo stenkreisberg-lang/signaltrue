@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import ApiKey from '../models/apiKey.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
 

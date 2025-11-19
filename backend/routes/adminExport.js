@@ -1,6 +1,6 @@
 import express from 'express';
 import User from '../models/user.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import { Parser } from 'json2csv';
 

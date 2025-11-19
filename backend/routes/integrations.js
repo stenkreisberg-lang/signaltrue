@@ -1,7 +1,7 @@
 
 import express from 'express';
 import crypto from 'node:crypto';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
 

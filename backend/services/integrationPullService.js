@@ -1,4 +1,4 @@
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import { decryptString } from '../utils/crypto.js';
 
 // Placeholder: In a future iteration, pull real data from Google APIs using org.integrations.google.accessToken

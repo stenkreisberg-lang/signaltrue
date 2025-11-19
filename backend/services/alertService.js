@@ -1,6 +1,6 @@
 import DriftEvent from '../models/driftEvent.js';
 import Team from '../models/team.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import { WebClient } from '@slack/web-api';
 import nodemailer from 'nodemailer';
 

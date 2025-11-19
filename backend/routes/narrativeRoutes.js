@@ -1,6 +1,6 @@
 import express from 'express';
 import Team from '../models/team.js';
-import Organization from '../models/organization.js';
+import Organization from '../models/organizationModel.js';
 import getProvider from '../utils/aiProvider.js';
 import { authenticateToken } from '../middleware/auth.js';
 

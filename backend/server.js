@@ -45,7 +45,7 @@ import benchmarksRoutes from "./routes/benchmarks.js";
 import adminExportRoutes from "./routes/adminExport.js";
 import weeklyBriefRoutes from "./routes/weeklyBrief.js";
 import { sendWeeklyBrief } from "./services/weeklyBriefService.js";
-import Organization from "./models/organization.js";
+import Organization from "./models/organizationModel.js";
 import { refreshExpiringIntegrationTokens } from "./services/tokenService.js";
 import { pullAllConnectedOrgs } from "./services/integrationPullService.js";
 import { upsertDailyMetricsFromTeam } from "./services/baselineService.js";
