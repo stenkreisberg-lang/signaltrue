@@ -5,7 +5,7 @@ import driftEventsRoutes from "./routes/driftEvents.js";
 // ...existing code...
 dotenv.config();
 
-const app = express();
+// const app = express(); // (removed duplicate)
 // Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
 app.set('trust proxy', 1);
 app.use(cors());
