@@ -1,24 +1,71 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import auditConsent from "./middleware/consentAudit.js";
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
 // ...existing code...
-dotenv.config();
 
-// const app = express(); // (removed duplicate)
-// Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
+import cors from "cors";
+import mongoose from "mongoose";
+import cron from "node-cron";
+import projectRoutes from "./routes/projects.js";
+import analyticsRoutes from "./routes/analytics.js";
+import teamRoutes from "./routes/teamRoutes.js";
+import slackRoutes from "./routes/slackRoutes.js";
+import historyRoutes from "./routes/historyRoutes.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import authRoutes from "./routes/auth.js";
+import teamMembersRoutes from "./routes/teamMembers.js";
+import organizationRoutes from "./routes/organizations.js";
+import benchmarkRoutes from "./routes/benchmarkRoutes.js";
+import narrativeRoutes from "./routes/narrativeRoutes.js";
+import focusRoutes from "./routes/focusRoutes.js";
+import forecastRoutes from "./routes/forecastRoutes.js";
+import leaderRoutes from "./routes/leaderRoutes.js";
+import outcomesRoutes from "./routes/outcomesRoutes.js";
+import resilienceRoutes from "./routes/resilienceRoutes.js";
+import integrationsRoutes from "./routes/integrations.js";
+import billingRoutes from "./routes/billing.js";
+import stripeWebhookRoutes from "./routes/stripe-webhook.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import exportRoutes from "./routes/exportRoutes.js";
+import adminCleanupRoutes from "./routes/adminCleanup.js";
+import programRoutes from "./routes/programRoutes.js";
+import timelineRoutes from "./routes/timelineRoutes.js";
+import onboardingRoutes from "./routes/onboarding.js";
+import oauthRoutes from "./routes/oauth.js";
+import invitesRoutes from "./routes/invites.js";
+import { refreshAllTeamsFromSlack } from "./services/slackService.js";
+import { refreshAllTeamsCalendars } from "./services/calendarService.js";
+import { sendWeeklySummaries } from "./services/notificationService.js";
+import playbookRoutes from "./routes/playbook.js";
+import oneOnOneRoutes from "./routes/oneOnOne.js";
+import benchmarksRoutes from "./routes/benchmarks.js";
+import adminExportRoutes from "./routes/adminExport.js";
+import weeklyBriefRoutes from "./routes/weeklyBrief.js";
+import { sendWeeklyBrief } from "./services/weeklyBriefService.js";
+import Organization from "./models/organizationModel.js";
+import { refreshExpiringIntegrationTokens } from "./services/tokenService.js";
+import { pullAllConnectedOrgs } from "./services/integrationPullService.js";
+import { upsertDailyMetricsFromTeam } from "./services/baselineService.js";
+import { buildBaselinesForAllTeams } from "./services/baselineService.js";
+import { detectDriftForAllTeams } from "./services/driftService.js";
+import { updateEnergyIndexForTeam } from "./services/energyIndexService.js";
+import { sendDriftAlerts } from "./services/alertService.js";
+import Team from "./models/team.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs/promises";
+
+const app = express();
 app.set('trust proxy', 1);
 app.use(cors());
-
-// Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Consent audit logging (after auth middleware in production)
 app.use(auditConsent);
-
-// Mount routes (moved after app is defined)
 app.use('/api/drift-events', driftEventsRoutes);
 app.use('/api/consent-audit', consentAuditRoutes);
 import cors from "cors";
