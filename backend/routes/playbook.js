@@ -1,13 +1,15 @@
 import express from 'express';
-import { generatePlaybook } from '../services/playbookService.js';
+import { getRecommendation } from '../services/playbookService.js';
 
 const router = express.Router();
 
-// GET /api/playbook/:teamId — get AI playbook for a team
-router.get('/:teamId', async (req, res) => {
+
+// GET /api/playbook/:metric/:direction — get recommendation for a metric and direction
+router.get('/:metric/:direction', (req, res) => {
   try {
-    const playbook = await generatePlaybook(req.params.teamId);
-    res.json(playbook);
+    const { metric, direction } = req.params;
+    const recommendation = getRecommendation(metric, direction);
+    res.json({ recommendation });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
