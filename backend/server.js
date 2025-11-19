@@ -2,6 +2,23 @@ import express from "express";
 import auditConsent from "./middleware/consentAudit.js";
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
+// ...existing code...
+dotenv.config();
+
+const app = express();
+// Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
+app.set('trust proxy', 1);
+app.use(cors());
+
+// Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Consent audit logging (after auth middleware in production)
+app.use(auditConsent);
+
+// Mount routes (moved after app is defined)
 app.use('/api/drift-events', driftEventsRoutes);
 app.use('/api/consent-audit', consentAuditRoutes);
 import cors from "cors";
@@ -63,16 +80,6 @@ dotenv.config();
 const app = express();
 // Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
 app.set('trust proxy', 1);
-app.use(cors());
-
-// Stripe webhook requires the raw body; register raw parser BEFORE json parser for that path only
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Consent audit logging (after auth middleware in production)
-app.use(auditConsent);
-
 // Simple test route
 app.get("/", (req, res) => {
   res.send("SignalTrue backend is running 🚀");
