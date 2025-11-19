@@ -57,8 +57,16 @@ import Team from "./models/team.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
+import { validateRequiredEnvVars, validateOAuthConfig, logEnvironmentStatus } from "./utils/envValidation.js";
 
 dotenv.config();
+
+// Validate environment configuration
+if (process.env.NODE_ENV !== "test") {
+  validateRequiredEnvVars();
+  validateOAuthConfig();
+  logEnvironmentStatus();
+}
 
 const app = express();
 // Ensure correct protocol/host detection behind proxies (Render, Cloudflare)
