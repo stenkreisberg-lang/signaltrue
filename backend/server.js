@@ -38,6 +38,7 @@ import onboardingRoutes from "./routes/onboarding.js";
 import oauthRoutes from "./routes/oauth.js";
 import invitesRoutes from "./routes/invites.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
+import auditConsent from "./middleware/consentAudit.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
 import playbookRoutes from "./routes/playbook.js";
