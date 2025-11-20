@@ -128,8 +128,6 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api", teamRoutes);
 app.use("/api", slackRoutes);
 app.use("/api", historyRoutes);
-app.use("/api", calendarRoutes);
-app.use("/api", notificationRoutes);
 app.use("/api/narrative", narrativeRoutes);
 app.use("/api/focus", focusRoutes);
 app.use("/api/forecast", forecastRoutes);
