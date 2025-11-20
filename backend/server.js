@@ -1,4 +1,4 @@
-mongodb+srv://sten.kreisberg@gmail.com:Onumbe_79!!!@cluster0.4olk5ma.mongodb.net/signaltrue?retryWrites=true&w=majority// --- Startup check for required environment variables ---
+// --- Startup check for required environment variables ---
 const REQUIRED_ENV_VARS = [
   'MONGO_URI',
   'JWT_SECRET',
