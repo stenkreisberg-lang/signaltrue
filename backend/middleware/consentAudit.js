@@ -7,6 +7,10 @@ import ConsentAudit from '../models/consentAudit.js';
 export default async function auditConsent(req, res, next) {
   try {
     const user = req.user || {};
+    if (!user.orgId || !user._id) {
+      // Skip logging if required fields are missing
+      return next();
+    }
     await ConsentAudit.create({
       org_id: user.orgId,
       user_id: user._id,
