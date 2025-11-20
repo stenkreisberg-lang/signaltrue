@@ -1,4 +1,4 @@
-// --- Startup check for required environment variables ---
+mongodb+srv://sten.kreisberg@gmail.com:Onumbe_79!!!@cluster0.4olk5ma.mongodb.net/signaltrue?retryWrites=true&w=majority// --- Startup check for required environment variables ---
 const REQUIRED_ENV_VARS = [
   'MONGO_URI',
   'JWT_SECRET',
@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
-import benchmarkRoutes from "./routes/benchmarkRoutes.js";
+import benchmarksRoutes from "./routes/benchmarks.js";
 import narrativeRoutes from "./routes/narrativeRoutes.js";
 import focusRoutes from "./routes/focusRoutes.js";
 import forecastRoutes from "./routes/forecastRoutes.js";
@@ -79,6 +79,7 @@ app.get("/", (req, res) => {
 // Tests manage their own in-memory MongoDB connection.
 if (process.env.NODE_ENV !== "test") {
   if (process.env.MONGO_URI) {
+    console.log("MONGO_URI at runtime:", process.env.MONGO_URI);
     mongoose
       .connect(process.env.MONGO_URI)
       .then(() => console.log("✅ MongoDB connected"))
@@ -129,7 +130,6 @@ app.use("/api", slackRoutes);
 app.use("/api", historyRoutes);
 app.use("/api", calendarRoutes);
 app.use("/api", notificationRoutes);
-app.use("/api/benchmarks", benchmarkRoutes);
 app.use("/api/narrative", narrativeRoutes);
 app.use("/api/focus", focusRoutes);
 app.use("/api/forecast", forecastRoutes);
