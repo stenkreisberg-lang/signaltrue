@@ -45,6 +45,7 @@ import oauthRoutes from "./routes/oauth.js";
 import invitesRoutes from "./routes/invites.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import auditConsent from "./middleware/consentAudit.js";
+import { authenticateToken } from "./middleware/auth.js";
 import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
 import playbookRoutes from "./routes/playbook.js";
@@ -69,9 +70,8 @@ app.use(cors());
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(auditConsent);
 app.use('/api/drift-events', driftEventsRoutes);
-app.use('/api/consent-audit', consentAuditRoutes);
+app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
 app.get("/", (req, res) => {
   res.send("SignalTrue backend is running 🚀");
 });
