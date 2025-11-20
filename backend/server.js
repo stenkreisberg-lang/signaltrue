@@ -16,6 +16,7 @@ if (missingVars.length > 0) {
 }
 import dotenv from "dotenv";
 import cors from "cors";
+import mongoose from "mongoose";
 import express from "express";
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
