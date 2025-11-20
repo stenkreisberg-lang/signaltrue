@@ -18,6 +18,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
 import benchmarkRoutes from "./routes/benchmarkRoutes.js";
