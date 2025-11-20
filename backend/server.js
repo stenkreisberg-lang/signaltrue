@@ -35,6 +35,7 @@ import billingRoutes from "./routes/billing.js";
 import stripeWebhookRoutes from "./routes/stripe-webhook.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import exportRoutes from "./routes/exportRoutes.js";
+import adminExportRoutes from "./routes/adminExport.js";
 import adminCleanupRoutes from "./routes/adminCleanup.js";
 import programRoutes from "./routes/programRoutes.js";
 import timelineRoutes from "./routes/timelineRoutes.js";
@@ -47,6 +48,15 @@ import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { sendWeeklySummaries } from "./services/notificationService.js";
 import playbookRoutes from "./routes/playbook.js";
 import oneOnOneRoutes from "./routes/oneOnOne.js";
+import weeklyBriefRoutes from "./routes/weeklyBrief.js";
+import authRoutes from "./routes/auth.js";
+import teamMembersRoutes from "./routes/teamMembers.js";
+import organizationRoutes from "./routes/organizations.js";
+import projectRoutes from "./routes/projects.js";
+import analyticsRoutes from "./routes/analytics.js";
+import teamRoutes from "./routes/teamRoutes.js";
+import slackRoutes from "./routes/slackRoutes.js";
+import historyRoutes from "./routes/historyRoutes.js";
 // ...existing code...
 // ...existing code...
 
