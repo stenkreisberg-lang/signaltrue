@@ -1,19 +1,31 @@
 import cron from "node-cron";
-// --- Startup check for required environment variables ---
+// --- Startup check for environment variables ---
+// Essential variables that will cause the server to exit if missing.
 const REQUIRED_ENV_VARS = [
   'MONGO_URI',
   'JWT_SECRET',
+];
+
+// Optional variables for specific features. The server will run but log a warning if they are missing.
+const OPTIONAL_ENV_VARS = [
   'SMTP_HOST',
   'SMTP_USER',
   'SMTP_PASS',
   'SLACK_BOT_TOKEN',
   'GOOGLE_SERVICE_ACCOUNT',
-  'STRIPE_SECRET_KEY'
+  'STRIPE_SECRET_KEY',
+  'FRONTEND_URL'
 ];
-const missingVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
-if (missingVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingVars.join(', '));
+
+const missingRequired = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+if (missingRequired.length > 0) {
+  console.error('❌ Missing REQUIRED environment variables, server cannot start:', missingRequired.join(', '));
   process.exit(1);
+}
+
+const missingOptional = OPTIONAL_ENV_VARS.filter((key) => !process.env[key]);
+if (missingOptional.length > 0) {
+  console.warn('⚠️ Missing OPTIONAL environment variables, some features may be disabled:', missingOptional.join(', '));
 }
 import dotenv from "dotenv";
 import cors from "cors";
@@ -65,8 +77,42 @@ import historyRoutes from "./routes/historyRoutes.js";
 dotenv.config();
 
 const app = express();
+
+// --- CORS Configuration ---
+// By default, allow all origins. If FRONTEND_URL is set, restrict to that origin.
+const corsOptions = {
+  origin: (origin, callback) => {
+    const frontendUrl = process.env.FRONTEND_URL;
+    console.log(`CORS Check: Request from origin "${origin}", Allowed origin is "${frontendUrl}"`);
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('CORS OK: No origin provided.');
+      return callback(null, true);
+    }
+    
+    if (frontendUrl) {
+      if (origin === frontendUrl) {
+        console.log('CORS OK: Origin matches FRONTEND_URL.');
+        callback(null, true);
+      } else {
+        console.error(`CORS Blocked: Origin "${origin}" does not match "${frontendUrl}".`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    } else {
+      // Fallback for development if FRONTEND_URL is not set
+      console.warn('CORS OK: No FRONTEND_URL set, allowing all origins (dev mode).');
+      callback(null, true);
+    }
+  },
+  credentials: true,
+};
+
+// Handle pre-flight requests for all routes
+app.options('*', cors(corsOptions)); 
+app.use(cors(corsOptions));
+
 app.set('trust proxy', 1);
-app.use(cors());
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

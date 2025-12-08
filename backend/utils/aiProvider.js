@@ -1,8 +1,8 @@
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import dotenv from 'dotenv';
+// ...existing code...
 
-dotenv.config();
+// ...existing code...
 
 // Minimal provider adapter. Returns { generate: async ({ prompt, model }) }
 function openaiAdapter() {

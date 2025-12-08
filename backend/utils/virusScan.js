@@ -1,8 +1,8 @@
-import dotenv from "dotenv";
+// ...existing code...
 import { execFile } from "node:child_process";
 import { promisify } from "util";
 
-dotenv.config();
+// ...existing code...
 
 const execFileAsync = promisify(execFile);
 

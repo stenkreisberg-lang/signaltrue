@@ -1,11 +1,11 @@
-import dotenv from 'dotenv';
+// ...existing code...
 import { WebClient } from '@slack/web-api';
 import Team from '../models/team.js';
 import Organization from '../models/organizationModel.js';
 import getProvider from '../utils/aiProvider.js';
 import { createSnapshot } from '../utils/bdiHistory.js';
 
-dotenv.config();
+// ...existing code...
 
 const token = process.env.SLACK_BOT_TOKEN;
 let client = null;

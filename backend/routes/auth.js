@@ -202,8 +202,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Find user
-    const user = await User.findOne({ email });
+    // Find user by iterating and decrypting, since email is encrypted with a non-deterministic IV
+    // This is less performant but necessary due to the encryption strategy.
+    const users = await User.find().select('+password'); // Fetch all users and include password
+    const user = users.find(u => u.email === email);
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }

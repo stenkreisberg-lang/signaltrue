@@ -1,9 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
 import readline from 'readline';
 
-dotenv.config();
 
 // Simple User model for script
 const userSchema = new mongoose.Schema({

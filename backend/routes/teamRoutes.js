@@ -1,11 +1,7 @@
+dotenv.config();
 import express from 'express';
 import Team from '../models/team.js';
-import dotenv from 'dotenv';
-import getProvider from '../utils/aiProvider.js';
-import apiKeyAuth from '../middleware/apiKey.js';
-import { incrementUsage, readUsage } from '../utils/aiUsage.js';
 
-dotenv.config();
 const router = express.Router();
 
 // PATCH /api/teams/:teamId/drivers

@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
+// ...existing code...
 
-dotenv.config();
+// ...existing code...
 
 export default function apiKeyAuth(req, res, next) {
   const expected = process.env.API_KEY;

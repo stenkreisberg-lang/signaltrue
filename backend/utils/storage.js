@@ -1,8 +1,8 @@
 import path from "path";
 import fs from "fs/promises";
-import dotenv from "dotenv";
+// ...existing code...
 
-dotenv.config();
+// ...existing code...
 
 const USE_S3 = !!process.env.USE_S3;
 

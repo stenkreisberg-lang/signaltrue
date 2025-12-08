@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteFooter from '../components/SiteFooter';
 
 // Minimal styles object for HowItWorks page
 
@@ -89,10 +90,6 @@ function HowItWorks() {
       <SiteFooter />
     </div>
   );
-<<<<<<< HEAD
-// ...existing code...
-=======
->>>>>>> bdda7d4 (Remove old organization.js and add organizationModel.js)
 }
 const styles = {
   page: { minHeight: '100vh', background: 'white' },
