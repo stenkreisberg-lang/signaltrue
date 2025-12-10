@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 // Admin onboarding flow for HR Admin and IT Admin
 export default function AdminOnboarding() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
-  const [status, setStatus] = useState(null);
   const [integrations, setIntegrations] = useState(null);
   const [invite, setInvite] = useState({ email: '', role: 'it_admin' });
   const [pendingInvites, setPendingInvites] = useState([]);
   const [msg, setMsg] = useState(null);
+  const [showSlackModal, setShowSlackModal] = useState(false);
 
-  // Safety: ensure any API calls in this component never use localhost in prod
-  const safeAPI = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
-    ? 'https://signaltrue-backend.onrender.com'
-    : API_BASE;
+  
 
   // Always refresh integration status after OAuth redirect or URL change
   useEffect(() => {
@@ -23,28 +20,28 @@ export default function AdminOnboarding() {
     if (!token) { navigate('/login'); return; }
     const load = async () => {
       try {
-        const meRes = await fetch(`${safeAPI}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-        if (!meRes.ok) throw new Error('Auth required');
-        const meData = await meRes.json();
+        const meRes = await api.get('/auth/me');
+        if (meRes.status !== 200) throw new Error('Auth required');
+        const meData = meRes.data;
         setMe(meData);
 
-        const stRes = await fetch(`${safeAPI}/api/onboarding/status`, { headers: { Authorization: `Bearer ${token}` } });
-        if (stRes.ok) setStatus(await stRes.json());
+        const stRes = await api.get('/onboarding/status');
+        if (stRes.status === 200) setIntegrations(stRes.data);
 
         // Prefer orgSlug for status if available; fall back to orgId
         // FORCE: Always use orgSlug=default to match backend token storage
         const statusQuery = '?orgSlug=default';
-        const statusUrl = `${safeAPI}/api/integrations/status${statusQuery}`;
+        const statusUrl = `${api.defaults.baseURL}/integrations/status${statusQuery}`;
         window.__lastStatusUrl = statusUrl; // Expose for debug
-        const iRes = await fetch(statusUrl);
-        if (iRes.ok) setIntegrations(await iRes.json());
+        const iRes = await api.get(`/integrations/status${statusQuery}`);
+        if (iRes.status === 200) setIntegrations(iRes.data);
 
         // Try to fetch pending invites, but don't fail if backend unreachable
         try {
-          const listRes = await fetch(`${safeAPI}/api/invites/pending`);
-          const contentType = listRes.headers.get('content-type');
-          if (listRes.ok && contentType?.includes('application/json')) {
-            setPendingInvites(await listRes.json());
+          const listRes = await api.get('/invites/pending');
+          const contentType = listRes.headers['content-type'];
+          if (listRes.status === 200 && contentType?.includes('application/json')) {
+            setPendingInvites(listRes.data);
           }
         } catch (err) {
           console.warn('Could not load pending invites:', err);
@@ -73,9 +70,9 @@ export default function AdminOnboarding() {
   const FRONTEND_URL = window.location.origin;
 
   // Safety: ensure backend URL is correct in production
-  const backendUrl = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
-    ? 'https://signaltrue-backend.onrender.com'
-    : API_BASE;
+  // const backendUrl = (API_BASE.includes('localhost') && window.location.hostname !== 'localhost')
+  //   ? 'https://signaltrue-backend.onrender.com'
+  //   : API_BASE;
 
   const slackOAuthUrl = SLACK_CLIENT_ID
     ? `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${FRONTEND_URL}/auth/slack/callback`
@@ -113,24 +110,20 @@ export default function AdminOnboarding() {
     e.preventDefault();
     setMsg(null);
     try {
-      const res = await fetch(`${safeAPI}/api/invites/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invite)
-      });
+      const res = await api.post('/invites/send', invite);
       
       // Check if response is JSON before parsing
-      const contentType = res.headers.get('content-type');
+      const contentType = res.headers['content-type'];
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Backend is not reachable. Please ensure the API server is running.');
       }
       
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || 'Failed to invite');
+      const data = res.data;
+      if (res.status !== 200) throw new Error(data?.message || 'Failed to invite');
       setMsg({ type: 'success', text: `Invite created for ${data.email} (role: ${data.role}). Token: ${data.token}` });
       // refresh list
-      const listRes = await fetch(`${safeAPI}/api/invites/pending`);
-      if (listRes.ok) setPendingInvites(await listRes.json());
+      const listRes = await api.get('/invites/pending');
+      if (listRes.status === 200) setPendingInvites(listRes.data);
       setInvite({ email: '', role: invite.role });
     } catch (e) {
       setMsg({ type: 'error', text: e.message });
@@ -139,9 +132,9 @@ export default function AdminOnboarding() {
 
   if (!me) return null;
 
-  const isHR = ['admin','hr_admin','master_admin'].includes(me.role);
-  const isIT = me.role === 'it_admin';
-  const integrationsComplete = !!status?.integrationsComplete;
+  // const isHR = ['admin','hr_admin','master_admin'].includes(me.role);
+  // const isIT = me.role === 'it_admin';
+  // const integrationsComplete = !!status?.integrationsComplete;
 
   return (
     <div style={styles.wrap}>
@@ -221,7 +214,7 @@ export default function AdminOnboarding() {
       </section>
 
       {/* Step 2: Invite IT Admin (optional) */}
-      {isHR && (
+      {['admin','hr_admin','master_admin'].includes(me.role) && (
         <section style={styles.section}>
           <p style={styles.p}>If you prefer, invite an IT Admin to complete integrations.</p>
           <form onSubmit={submitInvite} style={styles.formRow}>

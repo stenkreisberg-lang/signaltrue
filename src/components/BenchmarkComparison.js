@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 export default function BenchmarkComparison({ teamId, orgId }) {
   const [bench, setBench] = useState(null);
@@ -10,12 +10,12 @@ export default function BenchmarkComparison({ teamId, orgId }) {
     async function fetchBenchmarks() {
       try {
         if (teamId) {
-          const res = await fetch(`${API_BASE}/api/benchmarks/team/${teamId}`);
-          setBench(await res.json());
+          const res = await api.get(`/benchmarks/team/${teamId}`);
+          setBench(res.data);
         }
         if (orgId) {
-          const res = await fetch(`${API_BASE}/api/benchmarks/org/${orgId}`);
-          const data = await res.json();
+          const res = await api.get(`/benchmarks/org/${orgId}`);
+          const data = res.data;
           setPeers(data.peers || []);
         }
       } finally {

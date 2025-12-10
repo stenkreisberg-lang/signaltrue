@@ -1,30 +1,71 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
-
-// Minimal styles object for Pricing page
 import InlineNotice from '../components/InlineNotice';
-import { API_BASE } from '../utils/api';
-function Pricing() {
-  return (
-    <>
-      <div style={styles.page}>
-        <nav style={styles.nav}>
-          <div style={styles.navContent}>
-            <Link to="/" style={styles.logoLink}>
-              <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-              <span style={styles.logoText}>SignalTrue</span>
-            </Link>
-            <div style={styles.navLinks}>
-              <Link to="/product" style={styles.navLink}>Product</Link>
-              <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-              <Link to="/about" style={styles.navLink}>About</Link>
-              <Link to="/contact" style={styles.navLink}>Contact</Link>
-              <Link to="/login" style={styles.loginBtn}>Login</Link>
-            </div>
-          </div>
-        </nav>
+import api from '../utils/api';
 
+const tiers = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    priceId: 'price_1N...',
+    features: [
+      'Continuous engagement tracking',
+      'Team Health Score',
+      'Weekly HR Insight Brief',
+    ],
+  },
+  {
+    id: 'growth',
+    name: 'Growth',
+    priceId: 'price_1N...',
+    features: [
+      'Everything in Starter',
+      'Trend analytics and benchmarking',
+      'Engagement evolution dashboard',
+      'Privacy & retention controls',
+    ],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    priceId: null,
+    features: [
+      'Everything in Growth',
+      'API & BI integrations',
+      'Regional data residency',
+      'Dedicated success manager',
+    ],
+  },
+];
+
+const Pricing = () => {
+  const [loadingPlan, setLoadingPlan] = useState('');
+  const [billingError, setBillingError] = useState(null);
+
+  const handleStartTrial = async (plan) => {
+    setLoadingPlan(plan.id);
+    setBillingError(null);
+    try {
+      const response = await api.post('/billing/create-checkout-session', { priceId: plan.priceId, trial: true });
+      const session = response.data;
+      if (response.ok) {
+        window.location.href = session.url;
+      } else {
+        setBillingError(session.message || 'An error occurred.');
+      }
+    } catch (error) {
+      setBillingError('An error occurred.');
+    } finally {
+      setLoadingPlan('');
+    }
+  };
+
+  return (
+    <div className="bg-gray-900">
+      <SiteHeader />
+      <div style={styles.page}>
         <section style={styles.hero}>
           <div style={styles.container}>
             <h1 style={styles.heroTitle}>Simple plans to help HR grow engagement continuously.</h1>
@@ -162,7 +203,7 @@ function Pricing() {
 
         <SiteFooter />
       </div>
-    </>
+    </div>
   );
 }
 

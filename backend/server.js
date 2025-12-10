@@ -1,21 +1,25 @@
 import cron from "node-cron";
-// --- Startup check for environment variables ---
-// Essential variables that will cause the server to exit if missing.
-const REQUIRED_ENV_VARS = [
-  'MONGO_URI',
-  'JWT_SECRET',
-];
+import cors from "cors";
+import mongoose from "mongoose";
+import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs/promises";
+import dotenv from 'dotenv';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
-// Optional variables for specific features. The server will run but log a warning if they are missing.
-const OPTIONAL_ENV_VARS = [
-  'SMTP_HOST',
-  'SMTP_USER',
-  'SMTP_PASS',
-  'SLACK_BOT_TOKEN',
-  'GOOGLE_SERVICE_ACCOUNT',
-  'STRIPE_SECRET_KEY',
-  'FRONTEND_URL'
-];
+// --- ESM-friendly __dirname and __filename ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --- Load Environment Variables ---
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// --- Environment Variable Validation ---
+const REQUIRED_ENV_VARS = ['JWT_SECRET'];
+if (process.env.USE_IN_MEMORY_DB !== '1') {
+  REQUIRED_ENV_VARS.push('MONGO_URI');
+}
 
 const missingRequired = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
 if (missingRequired.length > 0) {
@@ -23,17 +27,16 @@ if (missingRequired.length > 0) {
   process.exit(1);
 }
 
+const OPTIONAL_ENV_VARS = [
+  'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SLACK_BOT_TOKEN',
+  'GOOGLE_SERVICE_ACCOUNT', 'STRIPE_SECRET_KEY', 'FRONTEND_URL'
+];
 const missingOptional = OPTIONAL_ENV_VARS.filter((key) => !process.env[key]);
 if (missingOptional.length > 0) {
   console.warn('⚠️ Missing OPTIONAL environment variables, some features may be disabled:', missingOptional.join(', '));
 }
-import dotenv from "dotenv";
-import cors from "cors";
-import mongoose from "mongoose";
-import express from "express";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import fs from "node:fs/promises";
+
+// --- Route Imports ---
 import consentAuditRoutes from "./routes/consentAudit.js";
 import driftEventsRoutes from "./routes/driftEvents.js";
 import benchmarksRoutes from "./routes/benchmarks.js";
@@ -55,11 +58,6 @@ import timelineRoutes from "./routes/timelineRoutes.js";
 import onboardingRoutes from "./routes/onboarding.js";
 import oauthRoutes from "./routes/oauth.js";
 import invitesRoutes from "./routes/invites.js";
-import { refreshAllTeamsFromSlack } from "./services/slackService.js";
-import auditConsent from "./middleware/consentAudit.js";
-import { authenticateToken } from "./middleware/auth.js";
-import { refreshAllTeamsCalendars } from "./services/calendarService.js";
-import { sendWeeklySummaries } from "./services/notificationService.js";
 import playbookRoutes from "./routes/playbook.js";
 import oneOnOneRoutes from "./routes/oneOnOne.js";
 import weeklyBriefRoutes from "./routes/weeklyBrief.js";
@@ -71,212 +69,130 @@ import analyticsRoutes from "./routes/analytics.js";
 import teamRoutes from "./routes/teamRoutes.js";
 import slackRoutes from "./routes/slackRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
-// ...existing code...
-// ...existing code...
 
-dotenv.config();
+// --- Middleware Imports ---
+import { authenticateToken } from "./middleware/auth.js";
+import auditConsent from "./middleware/consentAudit.js";
+
+// --- Service Imports ---
+import { refreshAllTeamsFromSlack } from "./services/slackService.js";
+import { seedMasterAdmin } from './scripts/seed.js';
 
 const app = express();
-
-// --- CORS Configuration ---
-// By default, allow all origins. If FRONTEND_URL is set, restrict to that origin.
-const corsOptions = {
-  origin: (origin, callback) => {
-    const frontendUrl = process.env.FRONTEND_URL;
-    console.log(`CORS Check: Request from origin "${origin}", Allowed origin is "${frontendUrl}"`);
-
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      console.log('CORS OK: No origin provided.');
-      return callback(null, true);
-    }
-    
-    if (frontendUrl) {
-      if (origin === frontendUrl) {
-        console.log('CORS OK: Origin matches FRONTEND_URL.');
-        callback(null, true);
-      } else {
-        console.error(`CORS Blocked: Origin "${origin}" does not match "${frontendUrl}".`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    } else {
-      // Fallback for development if FRONTEND_URL is not set
-      console.warn('CORS OK: No FRONTEND_URL set, allowing all origins (dev mode).');
-      callback(null, true);
-    }
-  },
-  credentials: true,
-};
-
-// Handle pre-flight requests for all routes
-app.options('*', cors(corsOptions)); 
-app.use(cors(corsOptions));
-
-app.set('trust proxy', 1);
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/api/drift-events', driftEventsRoutes);
-app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
-app.get("/", (req, res) => {
-  res.send("SignalTrue backend is running 🚀");
-});
-
-// Connect to MongoDB: prefer real MONGO_URI; optionally fall back to in-memory DB for local dev.
-// Tests manage their own in-memory MongoDB connection.
-if (process.env.NODE_ENV !== "test") {
-  if (process.env.MONGO_URI) {
-    console.log("MONGO_URI at runtime:", process.env.MONGO_URI);
-    mongoose
-      .connect(process.env.MONGO_URI)
-      .then(() => console.log("✅ MongoDB connected"))
-      .catch((err) => console.error("❌ MongoDB connection error:", err));
-  } else if (process.env.USE_IN_MEMORY_DB === "1") {
-    try {
-      const { MongoMemoryServer } = await import('mongodb-memory-server');
-      const mem = await MongoMemoryServer.create();
-      const uri = mem.getUri();
-      await mongoose.connect(uri);
-      console.log("✅ In-memory MongoDB started", uri);
-    } catch (err) {
-      console.error("❌ Failed to start in-memory MongoDB:", err);
-    }
-  } else {
-    console.warn("ℹ️ No MONGO_URI provided. Database operations will be unavailable.");
-  }
-}
-
 const PORT = process.env.PORT || 8080;
 
-// Set up __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "uploads");
-await fs.mkdir(uploadsDir, { recursive: true });
-
-// Serve static files from uploads directory
-app.use("/uploads", express.static(uploadsDir));
-
-// Mount API routes
-app.use("/api/admin-export", adminExportRoutes);
-app.use("/api/benchmarks", benchmarksRoutes);
-app.use("/api/oneonone", oneOnOneRoutes);
-app.use("/api/playbook", playbookRoutes);
-app.use("/api/weekly-brief", weeklyBriefRoutes);
-app.use("/auth", oauthRoutes);
-app.use("/api/invites", invitesRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/team-members", teamMembersRoutes);
-app.use("/api/organizations", organizationRoutes);
-app.use("/api/projects", projectRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api", teamRoutes);
-app.use("/api", slackRoutes);
-app.use("/api", historyRoutes);
-app.use("/api/narrative", narrativeRoutes);
-app.use("/api/focus", focusRoutes);
-app.use("/api/forecast", forecastRoutes);
-app.use("/api/leader", leaderRoutes);
-app.use("/api/outcomes", outcomesRoutes);
-app.use("/api/resilience", resilienceRoutes);
-app.use("/api", integrationsRoutes);
-app.use("/api", billingRoutes);
-app.use("/api", stripeWebhookRoutes);
-app.use("/api", adminRoutes);
-app.use("/api", exportRoutes);
-app.use("/api", adminCleanupRoutes);
-app.use("/api", programRoutes);
-app.use("/api", timelineRoutes);
-app.use("/api", onboardingRoutes);
-
-// Schedule Slack + Calendar data refresh daily at 2 AM
-if (process.env.NODE_ENV !== "test") {
-  // Slack refresh (if configured)
-  if (process.env.SLACK_BOT_TOKEN) {
-    cron.schedule('0 2 * * *', async () => {
-      console.log('⏰ Running scheduled Slack data refresh...');
-      try {
-        await refreshAllTeamsFromSlack();
-      } catch (err) {
-        console.error('❌ Scheduled Slack refresh failed:', err.message);
+async function main() {
+  try {
+    // --- Database Connection ---
+    if (process.env.NODE_ENV !== "test") {
+      if (process.env.USE_IN_MEMORY_DB === "1") {
+        console.log("Attempting to start in-memory MongoDB...");
+        const mem = await MongoMemoryServer.create();
+        const uri = mem.getUri();
+        await mongoose.connect(uri);
+        console.log("✅ In-memory MongoDB started and connected.");
+        mongoose.connection.on('error', err => {
+          console.error('Mongoose connection error:', err);
+        });
+      } else if (process.env.MONGO_URI) {
+        console.log("Attempting to connect to MongoDB Atlas...");
+        await mongoose.connect(process.env.MONGO_URI, {
+          serverSelectionTimeoutMS: 30000, // 30 seconds
+          socketTimeoutMS: 45000, // 45 seconds
+          family: 4, // Force IPv4
+          monitorCommands: true,
+        });
+        mongoose.connection.on('command', (event) => {
+          console.debug(JSON.stringify(event, null, 2));
+        });
+        console.log("✅ MongoDB connected");
+        mongoose.connection.on('error', err => {
+          console.error('Mongoose connection error:', err);
+        });
+      } else {
+        console.error("❌ No MONGO_URI provided and USE_IN_MEMORY_DB is not '1'. Database connection failed.");
+        process.exit(1);
       }
-    });
-    console.log('⏰ Cron job scheduled: Slack refresh daily at 2 AM');
-  }
-
-  // Calendar refresh (if configured)
-  if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-    cron.schedule('0 2 * * *', async () => {
-      console.log('⏰ Running scheduled Calendar data refresh...');
-      try {
-        await refreshAllTeamsCalendars();
-      } catch (err) {
-        console.error('❌ Scheduled Calendar refresh failed:', err.message);
-      }
-    });
-    console.log('⏰ Cron job scheduled: Calendar refresh daily at 2 AM');
-  }
-
-  // Weekly HR Brief (every Monday at 8:30 AM)
-  cron.schedule('30 8 * * 1', async () => {
-    console.log('⏰ Running scheduled Weekly HR Briefs...');
-    try {
-      const orgs = await Organization.find({});
-      for (const org of orgs) {
-        await sendWeeklyBrief(org._id);
-      }
-    } catch (err) {
-      console.error('❌ Scheduled Weekly HR Briefs failed:', err.message);
     }
-  });
-  console.log('⏰ Cron job scheduled: Weekly HR Briefs every Monday at 8:30 AM');
 
-  // Token refresh for Google/Microsoft every hour
-  if (process.env.GOOGLE_CLIENT_ID || process.env.MS_APP_CLIENT_ID) {
-    cron.schedule('0 * * * *', async () => {
-      console.log('⏰ Running scheduled token refresh for integrations...');
-      try {
-        await refreshExpiringIntegrationTokens();
-      } catch (err) {
-        console.error('❌ Scheduled token refresh failed:', err.message);
-      }
-    });
-    console.log('⏰ Cron job scheduled: Integration token refresh every hour');
-  }
-
-  // Unified daily metrics, baseline, drift, energy, alert job at 3:30 AM
-  cron.schedule('30 3 * * *', async () => {
-    console.log('⏰ Running unified daily metrics, baseline, drift, energy, alert job...');
-    try {
-      // 1. Pull provider data
-      await pullAllConnectedOrgs();
-      // 2. Update daily metrics for all teams
-      const teams = await Team.find({});
-      for (const team of teams) {
-        await upsertDailyMetricsFromTeam(team);
-        await updateEnergyIndexForTeam(team);
-      }
-      // 3. Refresh baselines
-      await buildBaselinesForAllTeams();
-      // 4. Detect drift
-      await detectDriftForAllTeams();
-      // 5. Send drift alerts
-      await sendDriftAlerts();
-    } catch (err) {
-      console.error('❌ Unified daily job failed:', err.message);
+    // --- Seed Database (for development) ---
+    if (process.env.NODE_ENV !== 'production') {
+      await seedMasterAdmin();
     }
-  });
-  console.log('⏰ Cron job scheduled: Unified daily metrics/baseline/drift/energy/alert at 3:30 AM');
+
+    // --- Express Middleware ---
+    app.use(cors({ origin: '*' })); // Allow all origins for development
+    app.set('trust proxy', 1);
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+
+    // --- Static Assets ---
+    const uploadsDir = path.join(__dirname, "uploads");
+    await fs.mkdir(uploadsDir, { recursive: true });
+    app.use("/uploads", express.static(uploadsDir));
+
+    // --- API Routes ---
+    app.get("/", (req, res) => res.send("SignalTrue backend is running 🚀"));
+    app.use("/api/admin-export", adminExportRoutes);
+    app.use("/api/benchmarks", benchmarksRoutes);
+    app.use("/api/oneonone", oneOnOneRoutes);
+    app.use("/api/playbook", playbookRoutes);
+    app.use("/api/weekly-brief", weeklyBriefRoutes);
+    app.use("/auth", oauthRoutes);
+    app.use("/api/invites", invitesRoutes);
+    app.use("/api/auth", authRoutes);
+    app.use("/api/team-members", teamMembersRoutes);
+    app.use("/api/organizations", organizationRoutes);
+    app.use("/api/projects", projectRoutes);
+    app.use("/api/analytics", analyticsRoutes);
+    app.use("/api/teams", teamRoutes);
+    app.use("/api/slack", slackRoutes);
+    app.use("/api/history", historyRoutes);
+    app.use("/api/narrative", narrativeRoutes);
+    app.use("/api/focus", focusRoutes);
+    app.use("/api/forecast", forecastRoutes);
+    app.use("/api/leader", leaderRoutes);
+    app.use("/api/outcomes", outcomesRoutes);
+    app.use("/api/resilience", resilienceRoutes);
+    app.use("/api", integrationsRoutes);
+    app.use("/api", billingRoutes);
+    app.use("/api", stripeWebhookRoutes);
+    app.use("/api", adminRoutes);
+    app.use("/api", exportRoutes);
+    app.use("/api", adminCleanupRoutes);
+    app.use("/api", programRoutes);
+    app.use("/api", timelineRoutes);
+    app.use("/api", onboardingRoutes);
+    app.use('/api/drift-events', driftEventsRoutes);
+    app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
+
+    // --- Cron Jobs ---
+    if (process.env.NODE_ENV !== "test") {
+      if (process.env.SLACK_BOT_TOKEN) {
+        cron.schedule('0 2 * * *', async () => {
+          console.log('⏰ Running scheduled Slack data refresh...');
+          try {
+            await refreshAllTeamsFromSlack();
+          } catch (err) {
+            console.error('❌ Scheduled Slack refresh failed:', err.message);
+          }
+        });
+        console.log('⏰ Cron job scheduled: Slack refresh daily at 2 AM');
+      }
+    }
+
+    // --- Start Server ---
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("❌ Server startup failed:", error);
+    process.exit(1);
+  }
 }
 
-// Listen only when not running under tests
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`✅ Uploads directory: ${uploadsDir}`);
-  });
-}
+main();
 
 export default app;

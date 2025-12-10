@@ -1,6 +1,7 @@
-dotenv.config();
 import express from 'express';
 import Team from '../models/team.js';
+import { requireApiKey } from '../middleware/auth.js';
+import dotenv from 'dotenv';
 
 const router = express.Router();
 
@@ -134,7 +135,7 @@ router.post('/analyze', async (req, res) => {
 });
 
 // GET /api/ai-usage - protected by API key
-router.get('/ai-usage', apiKeyAuth, async (req, res) => {
+router.get('/ai-usage', requireApiKey, async (req, res) => {
   try {
     const data = await readUsage();
     res.json(data);

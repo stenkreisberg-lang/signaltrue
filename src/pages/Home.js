@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 
 function Home() {
@@ -7,22 +8,7 @@ function Home() {
 
   return (
     <div style={styles.container}>
-      {/* Top nav */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-            <span style={styles.logoText}>SignalTrue</span>
-          </Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <Link to="/contact" style={styles.navLink}>Contact</Link>
-            <Link to="/login" style={styles.loginBtn}>Login</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Section 1 — Hero */}
       <section style={styles.hero}>

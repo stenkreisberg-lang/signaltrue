@@ -1,36 +1,24 @@
-// Read API base from env at build-time; fall back to Render backend in prod if not provided.
-// This guards against accidentally bundling localhost when a stray .env is committed.
-const defaultProd = "https://signaltrue-backend.onrender.com";
-export const API_BASE = process.env.REACT_APP_API_URL || defaultProd;
+import axios from 'axios';
 
-async function request(method, path, body) {
-  const opts = { method, headers: {} };
-  if (body !== undefined) {
-    opts.headers["Content-Type"] = "application/json";
-    opts.body = JSON.stringify(body);
+// In development, we rely on the 'proxy' setting in package.json to route requests.
+// The base URL can be relative ('/api').
+// In production, REACT_APP_API_URL should be set to the absolute URL of your backend.
+const api = axios.create({
+  baseURL: process.env.NODE_ENV === 'development' ? '/api' : process.env.REACT_APP_API_URL,
+});
+
+// Add an interceptor to include the auth token from localStorage in requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  const res = await fetch(`${API_BASE}${path}`, opts);
-  return res;
-}
-
-export async function get(path) {
-  const res = await request("GET", path);
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
-  return res.json();
-}
-
-export async function post(path, body) {
-  return request("POST", path, body);
-}
-
-export async function put(path, body) {
-  return request("PUT", path, body);
-}
-
-export async function del(path) {
-  return request("DELETE", path);
-}
-
-const api = { API_BASE, get, post, put, del };
 export default api;

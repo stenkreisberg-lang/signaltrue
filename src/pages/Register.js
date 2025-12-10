@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -16,8 +16,8 @@ function Register() {
     // Fetch available teams
     const fetchTeams = async () => {
       try {
-  const response = await fetch(`${API_BASE}/api/teams`);
-        const data = await response.json();
+  const response = await api.get('/teams');
+        const data = response.data;
         setTeams(data);
       } catch (err) {
         console.error('Error fetching teams:', err);
@@ -33,17 +33,11 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name, teamId }),
-      });
+      const response = await api.post('/auth/register', { email, password, name, teamId });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
+      if (response.status !== 201) {
         throw new Error(data.message || 'Registration failed');
       }
 

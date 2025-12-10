@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 export default function DriftAlerts({ teamId }) {
   const [events, setEvents] = useState([]);
@@ -9,11 +9,8 @@ export default function DriftAlerts({ teamId }) {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/api/drift-events/${teamId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const json = await res.json();
-        setEvents(json);
+        const res = await api.get(`/drift-events/${teamId}`);
+        setEvents(res.data);
       } catch (err) {
         setEvents([]);
       } finally {

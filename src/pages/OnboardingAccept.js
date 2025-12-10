@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 export default function OnboardingAccept() {
   const [searchParams] = useSearchParams();
@@ -19,13 +19,9 @@ export default function OnboardingAccept() {
     setLoading(true);
     setMsg(null);
     try {
-      const res = await fetch(`${API_BASE}/api/onboarding/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, ...form })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || 'Failed to accept invite');
+      const res = await api.post('/onboarding/accept', { token, ...form });
+      const data = res.data;
+      if (res.status !== 200) throw new Error(data?.message || 'Failed to accept invite');
       setMsg({ type: 'success', text: 'Invitation accepted! You can now log in.' });
       localStorage.setItem('token', data.token);
       setTimeout(() => navigate('/dashboard'), 1500);

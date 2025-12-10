@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 export default function OneOnOneTimeline({ teamId, userId }) {
   const [list, setList] = useState([]);
@@ -9,12 +9,11 @@ export default function OneOnOneTimeline({ teamId, userId }) {
     const fetchList = async () => {
       try {
         const token = localStorage.getItem('token');
-        let url = `${API_BASE}/api/oneonone?`;
+        let url = `/oneonone?`;
         if (teamId) url += `teamId=${teamId}&`;
         if (userId) url += `userId=${userId}`;
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-        const json = await res.json();
-        setList(json);
+        const res = await api.get(url);
+        setList(res.data);
       } catch (err) {
         setList([]);
       } finally {

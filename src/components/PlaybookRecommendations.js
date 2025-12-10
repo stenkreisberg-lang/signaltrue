@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 export default function PlaybookRecommendations({ teamId }) {
   const [playbook, setPlaybook] = useState([]);
@@ -9,11 +9,8 @@ export default function PlaybookRecommendations({ teamId }) {
     const fetchPlaybook = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/api/playbook/${teamId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const json = await res.json();
-        setPlaybook(json);
+        const res = await api.get(`/playbook/${teamId}`);
+        setPlaybook(res.data);
       } catch (err) {
         setPlaybook([]);
       } finally {

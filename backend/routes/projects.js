@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
-import apiKeyAuth from "../middleware/apiKey.js";
+import { requireApiKey } from "../middleware/auth.js";
 import { scanFile } from "../utils/virusScan.js";
 import { saveFileLocal, saveFileS3 } from "../utils/storage.js";
 
@@ -153,7 +153,7 @@ router.delete("/:id", async (req, res) => {
 
 // POST - Upload attachment for a project
 // Protect attachment endpoints with API key auth (optional via API_KEY env)
-router.post("/:id/attachments", apiKeyAuth, async (req, res) => {
+router.post("/:id/attachments", requireApiKey, async (req, res) => {
   try {
     // Handle file upload with proper error catching
     await new Promise((resolve, reject) => {
@@ -272,7 +272,7 @@ router.post("/:id/attachments", apiKeyAuth, async (req, res) => {
 });
 
 // DELETE - Remove an attachment from a project and delete the file
-router.delete("/:id/attachments/:filename", apiKeyAuth, async (req, res) => {
+router.delete("/:id/attachments/:filename", requireApiKey, async (req, res) => {
   try {
   const { id, filename } = req.params;
   const project = await Project.findById(id);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteFooter from '../components/SiteFooter';
 
 // Minimal styles object for Privacy page
 
@@ -46,15 +47,6 @@ export default function Privacy() {
         <SiteFooter />
       </div>
     </>
-  );
-}
-
-function Block({ title, children }) {
-  return (
-    <section style={styles.sectionBlock}>
-      <h2 style={styles.h2}>{title}</h2>
-      <div style={styles.content}>{children}</div>
-    </section>
   );
 }
 

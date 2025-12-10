@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 function PublicRegister() {
   const navigate = useNavigate();
@@ -89,17 +89,13 @@ function PublicRegister() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+const response = await api.post('/auth/register', {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           password: formData.password,
           role: 'admin',
           companyName: formData.companyName,
-        }),
-      });
+        });
 
       const data = await response.json();
 

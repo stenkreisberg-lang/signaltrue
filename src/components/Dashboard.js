@@ -5,7 +5,7 @@ import OneOnOneTimeline from './OneOnOneTimeline';
 import BenchmarkComparison from './BenchmarkComparison';
 import AdminExportPanel from './AdminExportPanel';
 import { useNavigate, Link } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -13,7 +13,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [integrations, setIntegrations] = useState(null);
-  const [org, setOrg] = useState(null);
   const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | 'outlook' | 'teams' | null
   const [toast, setToast] = useState(null);
   const [confirmProvider, setConfirmProvider] = useState(null);
@@ -27,17 +26,13 @@ function Dashboard() {
           return;
         }
 
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await api.get('/auth/me');
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error('Session expired');
         }
 
-        const data = await response.json();
+        const data = response.data;
         setUser(data);
       } catch (err) {
         console.error('Fetch user error:', err);
@@ -58,9 +53,9 @@ function Dashboard() {
       try {
         // FORCE: Always use orgSlug=default for integrations status
         const query = '?orgSlug=default';
-        const res = await fetch(`${API_BASE}/api/integrations/status${query}`);
-        if (res.ok) {
-          const data = await res.json();
+        const res = await api.get('/integrations/status' + query);
+        if (res.status === 200) {
+          const data = res.data;
           setIntegrations(data);
         }
       } catch (e) {
@@ -79,12 +74,12 @@ function Dashboard() {
   const openOrGuide = (provider) => {
     // FORCE: Always use orgSlug=default for Google Calendar OAuth
     if (provider === 'calendar') {
-      window.location.href = `${API_BASE}/api/integrations/google/oauth/start?scope=calendar&orgSlug=default`;
+      window.location.href = `${api.defaults.baseURL}/integrations/google/oauth/start?scope=calendar&orgSlug=default`;
       return;
     }
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
-      window.location.href = `${API_BASE}${oauth}`;
+      window.location.href = `${api.defaults.baseURL}${oauth}`;
     } else {
       setShowHelp(provider);
     }
@@ -93,22 +88,19 @@ function Dashboard() {
   const disconnect = async (provider) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/api/integrations/${provider}/disconnect`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Could not disconnect');
+      const res = await api.post(`/integrations/${provider}/disconnect`);
+      if (res.status !== 200) throw new Error('Could not disconnect');
       // Refresh status
-      const meRes = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const meRes = await api.get('/auth/me');
       let orgId = null;
-      if (meRes.ok) {
-        const me = await meRes.json();
+      if (meRes.status === 200) {
+        const me = meRes.data;
         orgId = me?.orgId || null;
       }
       const query = orgId ? `?orgId=${encodeURIComponent(orgId)}` : '';
-      const st = await fetch(`${API_BASE}/api/integrations/status${query}`);
-      if (st.ok) {
-        setIntegrations(await st.json());
+      const st = await api.get(`/integrations/status${query}`);
+      if (st.status === 200) {
+        setIntegrations(st.data);
         setToast({ type: 'success', message: `${provider[0].toUpperCase()+provider.slice(1)} disconnected.` });
         setTimeout(() => setToast(null), 2500);
       }

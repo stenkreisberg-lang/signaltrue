@@ -4,6 +4,7 @@ import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
+import { encryptString } from '../utils/crypto.js';
 
 const router = express.Router();
 
@@ -193,56 +194,52 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
+// POST /api/auth/login
+// Body: { email, password }
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Find user by iterating and decrypting, since email is encrypted with a non-deterministic IV
-    // This is less performant but necessary due to the encryption strategy.
-    const users = await User.find().select('+password'); // Fetch all users and include password
-    const user = users.find(u => u.email === email);
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
-      { 
-        userId: user._id, 
-        email: user.email, 
-        role: user.role, 
+      {
+        userId: user._id,
+        email: user.email, // Note: this is the encrypted email
+        role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
+        isMasterAdmin: user.isMasterAdmin,
       },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({
-      message: 'Login successful',
       token,
       user: {
         id: user._id,
-        email: user.email,
+        email: user.email, // Send back encrypted email
         name: user.name,
         role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
-      }
+        isMasterAdmin: user.isMasterAdmin,
+      },
     });
   } catch (error) {
     console.error('Login error:', error);

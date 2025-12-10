@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE } from '../utils/api';
+import api from '../utils/api';
 
 function MasterAdminDashboard() {
   const [organizations, setOrganizations] = useState([]);
@@ -26,12 +26,10 @@ function MasterAdminDashboard() {
   const fetchOrganizations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/organizations`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await api.get('/organizations');
 
-      if (!response.ok) throw new Error('Failed to fetch organizations');
-      const data = await response.json();
+      if (response.status !== 200) throw new Error('Failed to fetch organizations');
+      const data = response.data;
       setOrganizations(data);
     } catch (err) {
       setError(err.message);
@@ -43,17 +41,13 @@ function MasterAdminDashboard() {
       const token = localStorage.getItem('token');
       
       // Fetch teams
-      const teamsRes = await fetch(`${API_BASE}/api/organizations/${orgId}/teams`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const teamsData = await teamsRes.json();
+      const teamsRes = await api.get(`/organizations/${orgId}/teams`);
+      const teamsData = teamsRes.data;
       setTeams(teamsData);
 
       // Fetch users
-      const usersRes = await fetch(`${API_BASE}/api/organizations/${orgId}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const usersData = await usersRes.json();
+      const usersRes = await api.get(`/organizations/${orgId}/users`);
+      const usersData = usersRes.data;
       setUsers(usersData);
 
       setSelectedOrg(orgId);
@@ -69,16 +63,9 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/organizations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newOrg)
-      });
+      const response = await api.post('/organizations', newOrg);
 
-      if (!response.ok) throw new Error('Failed to create organization');
+      if (response.status !== 201) throw new Error('Failed to create organization');
 
       setNewOrg({ name: '', industry: '', size: '' });
       setShowAddOrgForm(false);
@@ -97,12 +84,9 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/organizations/${orgId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await api.delete(`/organizations/${orgId}`);
 
-      if (!response.ok) throw new Error('Failed to delete organization');
+      if (response.status !== 200) throw new Error('Failed to delete organization');
 
       setSelectedOrg(null);
       setTeams([]);
@@ -118,12 +102,9 @@ function MasterAdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/team-members/${userId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await api.delete(`/team-members/${userId}`);
 
-      if (!response.ok) throw new Error('Failed to delete user');
+      if (response.status !== 200) throw new Error('Failed to delete user');
 
       if (selectedOrg) {
         fetchOrgDetails(selectedOrg);
