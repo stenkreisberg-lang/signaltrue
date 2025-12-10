@@ -4,7 +4,9 @@ import axios from 'axios';
 // The base URL can be relative ('/api').
 // In production, REACT_APP_API_URL should be set to the absolute URL of your backend.
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'development' ? '/api' : process.env.REACT_APP_API_URL,
+  baseURL: process.env.NODE_ENV === 'development' 
+    ? '/api' 
+    : `${process.env.REACT_APP_API_URL}/api`,
 });
 
 // Add an interceptor to include the auth token from localStorage in requests
