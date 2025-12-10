@@ -69,11 +69,13 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 
 // Register new user
 router.post('/register', async (req, res) => {
+  console.log('Register endpoint hit. Body:', req.body);
   try {
     const { email, password, name, role, teamId, orgId, companyName } = req.body;
 
     // Validate required fields (teamId and orgId not required for master admin)
     if (!email || !password || !name) {
+      console.log('Validation failed: missing email, password, or name.');
       return res.status(400).json({ message: 'Email, password, and name are required' });
     }
 
@@ -81,12 +83,15 @@ router.post('/register', async (req, res) => {
     const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
     const emailDomain = (email.split('@')[1] || '').toLowerCase();
     if (consumerDomains.has(emailDomain)) {
+      console.log(`Registration blocked for consumer domain: ${emailDomain}`);
       return res.status(400).json({ message: 'Please use your professional work email (consumer domains are not accepted).' });
     }
 
     // Check if user already exists
+    console.log(`Checking for existing user with email: ${email}`);
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log('User already exists.');
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
@@ -95,72 +100,51 @@ router.post('/register', async (req, res) => {
 
     // If no org/team provided, auto-provision an Organization and a default Team
     if (!resolvedOrgId || !resolvedTeamId) {
+      console.log('No orgId or teamId provided, starting auto-provisioning.');
       try {
         // Determine organization name: prefer companyName, else derive from email domain
         const domain = (email.split('@')[1] || '').split('.')[0];
-        const inferredCompany = companyName && companyName.trim() !== '' ? companyName.trim() : (domain ? domain.charAt(0).toUpperCase() + domain.slice(1) : 'Your Company');
+        const orgName = companyName || domain.charAt(0).toUpperCase() + domain.slice(1);
+        
+        console.log(`Creating new organization with name: ${orgName}`);
+        const newOrg = new Organization({ name: orgName, domain });
+        await newOrg.save();
+        resolvedOrgId = newOrg._id;
+        console.log(`New organization created with ID: ${resolvedOrgId}`);
 
-        // Generate slug exactly like the model pre-save
-        const slugFromName = (n) => n
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
-        const desiredSlug = slugFromName(inferredCompany);
-
-        // Find or create organization by slug (avoids duplicate key errors)
-        let org = await Organization.findOne({ slug: desiredSlug });
-        if (!org) {
-          org = new Organization({
-            name: inferredCompany,
-            slug: desiredSlug,
-            // basic defaults so schema validations pass
-            industry: 'General',
-            subscription: { plan: 'trial', status: 'active' },
-            settings: { allowRegistration: true }
-          });
-          try {
-            await org.save();
-          } catch (saveErr) {
-            // If a race created the same slug concurrently, reuse existing
-            if (saveErr?.code === 11000) {
-              org = await Organization.findOne({ slug: desiredSlug });
-            } else {
-              throw saveErr;
-            }
-          }
-        }
-
-        resolvedOrgId = org._id;
-
-        // Find or create a default team within the org
-        let team = await Team.findOne({ orgId: org._id, name: 'General' });
-        if (!team) {
-          team = new Team({ name: 'General', orgId: org._id });
-          await team.save();
-        }
-
-        resolvedTeamId = team._id;
-      } catch (provisionErr) {
-        console.error('Auto-provision org/team failed:', provisionErr);
-        return res.status(500).json({ 
-          message: `Could not set up your organization. ${provisionErr?.message || ''}`.trim()
+        // Create a default "General" team for this new organization
+        console.log(`Creating default team for org ID: ${resolvedOrgId}`);
+        const defaultTeam = new Team({
+          name: 'General',
+          organizationId: resolvedOrgId,
         });
+        await defaultTeam.save();
+        resolvedTeamId = defaultTeam._id;
+        console.log(`Default team created with ID: ${resolvedTeamId}`);
+
+      } catch (provisionError) {
+        console.error('Error during org/team auto-provisioning:', provisionError);
+        return res.status(500).json({ message: 'Failed to provision new organization/team.' });
       }
     }
 
-    // Create new user (default to admin when we had to auto-provision org/team)
+    // Create new user
+    console.log('Creating new user object.');
     const user = new User({
       email,
       password,
       name,
-      role: role || (!orgId && !teamId ? 'admin' : 'viewer'),
+      role: role || 'user', // Default to 'user'
       teamId: resolvedTeamId,
-      orgId: resolvedOrgId
+      orgId: resolvedOrgId,
     });
 
+    console.log('Saving new user...');
     await user.save();
+    console.log('User saved successfully. ID:', user._id);
 
-    // Generate JWT token
+    // Generate JWT
+    console.log('Generating JWT for new user.');
     const token = jwt.sign(
       { 
         userId: user._id, 
@@ -174,8 +158,9 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    console.log('Registration successful. Sending response.');
     res.status(201).json({
-      message: 'User created successfully',
+      message: 'User registered successfully',
       token,
       user: {
         id: user._id,
@@ -184,12 +169,11 @@ router.post('/register', async (req, res) => {
         role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
-      }
+      },
     });
   } catch (error) {
-    console.error('Full registration error:', error);
-    res.status(500).json({ message: `Server error during registration: ${error.message}` });
+    console.error('Error in /register endpoint:', error);
+    res.status(500).json({ message: 'An internal server error occurred during registration.' });
   }
 });
 
