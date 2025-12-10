@@ -6,8 +6,12 @@ const organizationSchema = new mongoose.Schema(
     name: { type: String, required: true },
     domain: { type: String },
     logo: { type: String },
-    industry: { type: String },
+    industry: { type: String, default: "Other" },
     size: { type: String },
+    subscription: {
+      plan: { type: String, default: "free" },
+      status: { type: String, default: "active" },
+    },
     integrations: {
       slack: {
         teamId: String,
@@ -23,9 +27,7 @@ const organizationSchema = new mongoose.Schema(
     },
     settings: {
       onboardingComplete: { type: Boolean, default: false },
-      // ...add other settings fields as needed
     },
-    // ...add other organization fields as needed
   },
   { timestamps: true }
 );
