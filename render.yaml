@@ -10,7 +10,7 @@ services:
     rootDir: backend
     buildCommand: ./render-build.sh
     startCommand: node server.js
-    healthCheckPath: /
+    healthCheckPath: / # Force redeploy 1
     envVars:
       - key: NODE_ENV
         value: production
