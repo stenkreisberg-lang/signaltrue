@@ -8,7 +8,8 @@ services:
     region: oregon
     plan: starter
     rootDir: backend
-    buildCommand: npm ci
+    # **THIS IS THE FIX: Use 'npm ci' for a clean, reliable install**
+    buildCommand: npm ci 
     startCommand: node server.js
     healthCheckPath: /
     envVars:
