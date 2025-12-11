@@ -39,4 +39,5 @@ services:
         sync: false
       - key: API_KEY
         sync: false
- 
+      # Re-deploy trigger
+
