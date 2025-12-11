@@ -7,8 +7,9 @@ services:
     env: node
     region: oregon
     plan: starter
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && node server.js
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: node server.js
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
