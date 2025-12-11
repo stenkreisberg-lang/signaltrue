@@ -69,13 +69,11 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 
 // Register new user
 router.post('/register', async (req, res) => {
-  console.log('Register endpoint hit. Body:', req.body);
   try {
     const { email, password, name, role, teamId, orgId, companyName } = req.body;
 
     // Validate required fields (teamId and orgId not required for master admin)
     if (!email || !password || !name) {
-      console.log('Validation failed: missing email, password, or name.');
       return res.status(400).json({ message: 'Email, password, and name are required' });
     }
 
@@ -83,15 +81,12 @@ router.post('/register', async (req, res) => {
     const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
     const emailDomain = (email.split('@')[1] || '').toLowerCase();
     if (consumerDomains.has(emailDomain)) {
-      console.log(`Registration blocked for consumer domain: ${emailDomain}`);
       return res.status(400).json({ message: 'Please use your professional work email (consumer domains are not accepted).' });
     }
 
     // Check if user already exists
-    console.log(`Checking for existing user with email: ${email}`);
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log('User already exists.');
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
@@ -100,27 +95,22 @@ router.post('/register', async (req, res) => {
 
     // If no org/team provided, auto-provision an Organization and a default Team
     if (!resolvedOrgId || !resolvedTeamId) {
-      console.log('No orgId or teamId provided, starting auto-provisioning.');
       try {
         // Determine organization name: prefer companyName, else derive from email domain
         const domain = (email.split('@')[1] || '').split('.')[0];
         const orgName = companyName || domain.charAt(0).toUpperCase() + domain.slice(1);
         
-        console.log(`Creating new organization with name: ${orgName}`);
         const newOrg = new Organization({ name: orgName, domain });
         await newOrg.save();
         resolvedOrgId = newOrg._id;
-        console.log(`New organization created with ID: ${resolvedOrgId}`);
 
         // Create a default "General" team for this new organization
-        console.log(`Creating default team for org ID: ${resolvedOrgId}`);
         const defaultTeam = new Team({
           name: 'General',
           organizationId: resolvedOrgId,
         });
         await defaultTeam.save();
         resolvedTeamId = defaultTeam._id;
-        console.log(`Default team created with ID: ${resolvedTeamId}`);
 
       } catch (provisionError) {
         console.error('Error during org/team auto-provisioning:', provisionError);
@@ -129,36 +119,31 @@ router.post('/register', async (req, res) => {
     }
 
     // Create new user
-    console.log('Creating new user object.');
     const user = new User({
       email,
       password,
       name,
-      role: role || 'user', // Default to 'user'
+      role: role || 'viewer', // Default to 'viewer' to match schema
       teamId: resolvedTeamId,
       orgId: resolvedOrgId,
+      isMasterAdmin: false, // Explicitly set for new users
     });
 
-    console.log('Saving new user...');
     await user.save();
-    console.log('User saved successfully. ID:', user._id);
 
     // Generate JWT
-    console.log('Generating JWT for new user.');
     const token = jwt.sign(
-      { 
-        userId: user._id, 
-        email: user.email, 
-        role: user.role, 
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin 
       },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log('Registration successful. Sending response.');
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -188,16 +173,17 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password').populate('teamId').populate('orgId');
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      // Note: Specific error messages can be a security risk (user enumeration), but are used here for better UX as requested.
+      return res.status(404).json({ message: 'No account found with that email address.' });
     }
 
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Incorrect password. Please try again.' });
     }
 
     const token = jwt.sign(

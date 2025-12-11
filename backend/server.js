@@ -96,12 +96,7 @@ async function main() {
         });
       } else if (process.env.MONGO_URI) {
         console.log("Attempting to connect to MongoDB Atlas...");
-        await mongoose.connect(process.env.MONGO_URI, {
-          serverSelectionTimeoutMS: 30000, // 30 seconds
-          socketTimeoutMS: 45000, // 45 seconds
-          family: 4, // Force IPv4
-          monitorCommands: true,
-        });
+        await mongoose.connect(process.env.MONGO_URI);
         mongoose.connection.on('command', (event) => {
           console.debug(JSON.stringify(event, null, 2));
         });
