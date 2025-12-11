@@ -8,9 +8,9 @@ services:
     region: oregon
     plan: starter
     rootDir: backend
-    buildCommand: ./render-build.sh
+    buildCommand: npm ci
     startCommand: node server.js
-    healthCheckPath: / # Force redeploy 1
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
