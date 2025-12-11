@@ -104,10 +104,10 @@ router.post('/register', async (req, res) => {
         await newOrg.save();
         resolvedOrgId = newOrg._id;
 
-        // **THIS IS THE FIX: Use 'orgId' instead of 'organizationId'**
+        // Create a default "General" team for this new organization
         const defaultTeam = new Team({
           name: 'General',
-          orgId: resolvedOrgId, 
+          orgId: resolvedOrgId,
         });
         await defaultTeam.save();
         resolvedTeamId = defaultTeam._id;
