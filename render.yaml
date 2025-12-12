@@ -8,7 +8,7 @@ services:
     region: oregon
     plan: starter
     rootDir: backend
-    buildCommand: npm install --no-workspaces
+    buildCommand: rm -rf node_modules && npm install
     startCommand: node server.js
     healthCheckPath: /
     envVars:
