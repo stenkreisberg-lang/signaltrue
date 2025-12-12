@@ -221,7 +221,7 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
 });
 
 // --- Google OAuth (Gmail/Calendar) ---
-// GET /api/integrations/google/oauth/start?scope=gmail|calendar&orgSlug=acme
+// GET /api/integrations/google/oauth/start?scope=gmail|calendar&orgId=xxx
 router.get('/integrations/google/oauth/start', async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = getGoogleRedirectUri(req);
@@ -233,7 +233,12 @@ router.get('/integrations/google/oauth/start', async (req, res) => {
   const scopes = scopeParam === 'gmail'
     ? ['https://www.googleapis.com/auth/gmail.readonly', ...scopesCore]
     : ['https://www.googleapis.com/auth/calendar.readonly', ...scopesCore];
-  const state = b64({ orgSlug: req.query.orgSlug || 'default', scope: scopeParam, nonce: crypto.randomBytes(8).toString('hex') });
+  const state = b64({ 
+    orgId: req.query.orgId || null,
+    orgSlug: req.query.orgSlug || null, 
+    scope: scopeParam, 
+    nonce: crypto.randomBytes(8).toString('hex') 
+  });
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', redirectUri);
@@ -256,8 +261,11 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
     }
     const { code, state } = req.query;
     const parsed = b64parse(state);
-    const orgSlug = String(parsed.orgSlug || 'default');
+    const orgId = parsed.orgId || null;
+    const orgSlug = parsed.orgSlug || null;
     const scopeParam = String(parsed.scope || 'calendar');
+    
+    console.log('Google OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug, 'scope:', scopeParam);
 
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -288,37 +296,41 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         }
       } catch {}
 
-  // Persist to a single canonical org slug to avoid mismatches during onboarding
-  // Force 'default' so tokens do not end up under accidental ObjectId slugs
-  const finalSlug = 'default';
-      console.log('[Google OAuth] Saving to org slug:', finalSlug, 'Original orgSlug:', orgSlug, 'Has refresh token:', !!tokens.refresh_token);
+      // Find org by ID first, then by slug/domain
+      let org = null;
+      if (orgId) {
+        org = await Organization.findById(orgId);
+      }
+      if (!org && orgSlug) {
+        org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
+      }
       
-      const googleIntegration = {
-        scope: scopeParam,
-        refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
-        accessToken: tokens.access_token ? encryptString(tokens.access_token) : '',
-        expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
-        email: googleUser?.email || '',
-        user: googleUser || {}
-      };
-      
-      const query = { slug: finalSlug };
-      const result = await Organization.findOneAndUpdate(
-        query,
-        {
-          $setOnInsert: { name: finalSlug, slug: finalSlug, industry: 'General' },
+      if (org) {
+        console.log('[Google OAuth] Saving to org:', org._id, 'scope:', scopeParam);
+        
+        const googleIntegration = {
+          scope: scopeParam,
+          refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
+          accessToken: tokens.access_token ? encryptString(tokens.access_token) : '',
+          expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+          email: googleUser?.email || '',
+          user: googleUser || {}
+        };
+        
+        await Organization.findByIdAndUpdate(org._id, {
           $set: {
-           'integrations.google.scope': googleIntegration.scope,
-           'integrations.google.refreshToken': googleIntegration.refreshToken,
-           'integrations.google.accessToken': googleIntegration.accessToken,
-           'integrations.google.expiry': googleIntegration.expiry,
-           'integrations.google.email': googleIntegration.email,
-           'integrations.google.user': googleIntegration.user
+            'integrations.google.scope': googleIntegration.scope,
+            'integrations.google.refreshToken': googleIntegration.refreshToken,
+            'integrations.google.accessToken': googleIntegration.accessToken,
+            'integrations.google.expiry': googleIntegration.expiry,
+            'integrations.google.email': googleIntegration.email,
+            'integrations.google.user': googleIntegration.user
           }
-        },
-        { upsert: true, new: true }
-      );
-      console.log('[Google OAuth] Saved successfully. Org ID:', result._id, 'Calendar connected:', !!result.integrations?.google?.accessToken);
+        });
+        console.log('[Google OAuth] Saved successfully to org:', org._id);
+      } else {
+        console.error('[Google OAuth] No org found for orgId:', orgId, 'orgSlug:', orgSlug);
+      }
     } catch (e) {
       console.error('Google OAuth persist error:', e.message, e.stack);
     }
