@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
@@ -252,18 +252,10 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
-// Email transporter for password reset
-const getEmailTransporter = () => {
-  if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT) || 587,
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+// Resend client for password reset emails
+const getResendClient = () => {
+  if (process.env.RESEND_API_KEY) {
+    return new Resend(process.env.RESEND_API_KEY);
   }
   return null;
 };
@@ -296,11 +288,11 @@ router.post('/forgot-password', async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-    // Send email
-    const transporter = getEmailTransporter();
-    if (transporter) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    // Send email via Resend
+    const resend = getResendClient();
+    if (resend) {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
         to: email,
         subject: 'SignalTrue - Password Reset Request',
         html: `
@@ -314,8 +306,9 @@ router.post('/forgot-password', async (req, res) => {
           </div>
         `
       });
+      console.log('Password reset email sent to:', email);
     } else {
-      console.log('Email not configured. Reset URL:', resetUrl);
+      console.log('Resend not configured. Reset URL:', resetUrl);
     }
 
     res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
