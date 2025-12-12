@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import PublicRegister from './pages/PublicRegister';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 // New marketing pages
@@ -43,6 +45,8 @@ export default function App() {
   <Route path="/privacy-settings" element={<PrivacySettingsPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/onboarding" element={<OnboardingAccept />} />
   {/* OAuth callback catcher; forwards code to backend and redirects back */}
   <Route path="/auth/:provider/callback" element={<AuthCallback />} />

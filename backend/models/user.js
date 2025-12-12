@@ -45,6 +45,14 @@ const userSchema = new mongoose.Schema({
     required: function() {
       return !this.isMasterAdmin; // Only required if not master admin
     }
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
   }
 }, { timestamps: true });
 

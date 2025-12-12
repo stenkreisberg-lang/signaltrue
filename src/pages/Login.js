@@ -94,6 +94,12 @@ function Login() {
           </button>
         </form>
 
+        <p style={styles.forgotPassword}>
+          <a href="/forgot-password" style={styles.link}>
+            Forgot your password?
+          </a>
+        </p>
+
         <p style={styles.footer}>
           Don't have an account?{' '}
           <a href="/register" style={styles.link}>
@@ -185,8 +191,13 @@ const styles = {
     opacity: 0.6,
     cursor: 'not-allowed',
   },
+  forgotPassword: {
+    marginTop: '1rem',
+    textAlign: 'center',
+    fontSize: '0.875rem',
+  },
   footer: {
-    marginTop: '1.5rem',
+    marginTop: '1rem',
     textAlign: 'center',
     color: '#6b7280',
     fontSize: '0.875rem',
