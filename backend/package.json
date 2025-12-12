@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "ls -la node_modules/semver && cat node_modules/semver/package.json | head -5"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

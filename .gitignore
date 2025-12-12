@@ -45,3 +45,4 @@ Thumbs.db
 
 # deployment metadata
 .vercel
+node_modules
