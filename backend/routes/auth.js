@@ -291,22 +291,27 @@ router.post('/forgot-password', async (req, res) => {
     // Send email via Resend
     const resend = getResendClient();
     if (resend) {
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
-        to: email,
-        subject: 'SignalTrue - Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #6366f1;">Reset Your Password</h2>
-            <p>You requested a password reset for your SignalTrue account.</p>
-            <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
-            <a href="${resetUrl}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Reset Password</a>
-            <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
-            <p style="color: #666; font-size: 12px;">Or copy this link: ${resetUrl}</p>
-          </div>
-        `
-      });
-      console.log('Password reset email sent to:', email);
+      try {
+        const result = await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
+          to: email,
+          subject: 'SignalTrue - Password Reset Request',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #6366f1;">Reset Your Password</h2>
+              <p>You requested a password reset for your SignalTrue account.</p>
+              <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
+              <a href="${resetUrl}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Reset Password</a>
+              <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+              <p style="color: #666; font-size: 12px;">Or copy this link: ${resetUrl}</p>
+            </div>
+          `
+        });
+        console.log('Password reset email sent to:', email, 'Result:', JSON.stringify(result));
+      } catch (emailError) {
+        console.error('Resend email error:', emailError);
+        // Don't fail the request - still return success to prevent email enumeration
+      }
     } else {
       console.log('Resend not configured. Reset URL:', resetUrl);
     }
