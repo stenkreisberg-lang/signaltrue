@@ -6,17 +6,23 @@ const router = express.Router();
 
 // Helper: get redirect URL for dashboard with message
 function dashboardRedirect(success = true) {
+  const frontendUrl = process.env.FRONTEND_URL || "https://www.signaltrue.ai";
   const msg = success
     ? encodeURIComponent("Integration connected successfully. SignalTrue will now start analyzing data.")
     : encodeURIComponent("Integration failed. Please try again.");
-  return `/dashboard?integrationStatus=${success ? "success" : "error"}&msg=${msg}`;
+  return `${frontendUrl}/dashboard?integrationStatus=${success ? "success" : "error"}&msg=${msg}`;
+}
+
+// Get backend URL for OAuth callbacks
+function getBackendUrl() {
+  return process.env.BACKEND_URL || "https://signaltrue-backend.onrender.com";
 }
 
 // Slack OAuth entry
 router.get("/auth/slack", (req, res) => {
   const clientId = process.env.SLACK_CLIENT_ID;
-  const redirectUri = `${process.env.FRONTEND_URL || "https://app.signaltrue.ai"}/auth/slack/callback`;
-  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${redirectUri}`;
+  const redirectUri = `${getBackendUrl()}/auth/slack/callback`;
+  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}`;
   res.redirect(url);
 });
 
@@ -32,8 +38,8 @@ router.get("/auth/slack/callback", async (req, res) => {
 // Google OAuth entry
 router.get("/auth/google", (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = `${process.env.FRONTEND_URL || "https://app.signaltrue.ai"}/auth/google/callback`;
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline`;
+  const redirectUri = `${getBackendUrl()}/auth/google/callback`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline`;
   res.redirect(url);
 });
 
@@ -48,8 +54,8 @@ router.get("/auth/google/callback", async (req, res) => {
 // Outlook OAuth entry
 router.get("/auth/outlook", (req, res) => {
   const clientId = process.env.OUTLOOK_CLIENT_ID;
-  const redirectUri = `${process.env.FRONTEND_URL || "https://app.signaltrue.ai"}/auth/outlook/callback`;
-  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`;
+  const redirectUri = `${getBackendUrl()}/auth/outlook/callback`;
+  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`;
   res.redirect(url);
 });
 
