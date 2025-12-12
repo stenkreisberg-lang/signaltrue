@@ -208,8 +208,8 @@ router.post('/login', async (req, res) => {
         email: user.email, // Send back encrypted email
         name: user.name,
         role: user.role,
-        teamId: user.teamId,
-        orgId: user.orgId,
+        teamId: user.teamId?._id || user.teamId,
+        orgId: user.orgId?._id || user.orgId,
         isMasterAdmin: user.isMasterAdmin,
       },
     });
