@@ -51,8 +51,10 @@ function Dashboard() {
   useEffect(() => {
     const loadIntegrationStatus = async () => {
       try {
-        // FORCE: Always use orgSlug=default for integrations status
-        const query = '?orgSlug=default';
+        // Use user's orgId for integrations status
+        const userStr = localStorage.getItem('user');
+        const userData = userStr ? JSON.parse(userStr) : null;
+        const query = userData?.orgId ? `?orgId=${userData.orgId}` : '';
         const res = await api.get('/integrations/status' + query);
         if (res.status === 200) {
           const data = res.data;
