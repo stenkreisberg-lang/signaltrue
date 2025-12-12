@@ -57,11 +57,11 @@ router.get('/integrations/status', async (req, res) => {
     };
 
     const oauth = {
-      slack: available.slack ? `/api/integrations/slack/oauth/start${org?.slug ? `?orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      teams: available.teams ? `/api/integrations/microsoft/oauth/start?scope=teams${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      gmail: available.gmail ? `/api/integrations/google/oauth/start?scope=gmail${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      outlook: available.outlook ? `/api/integrations/microsoft/oauth/start?scope=outlook${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      calendar: available.calendar ? `/api/integrations/google/oauth/start?scope=calendar${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      slack: available.slack ? `/integrations/slack/oauth/start${org?.slug ? `?orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      gmail: available.gmail ? `/integrations/google/oauth/start?scope=gmail${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      calendar: available.calendar ? `/integrations/google/oauth/start?scope=calendar${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
       hris: null
     };
 
