@@ -155,9 +155,12 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
     }
 
     const { code, state } = req.query;
+    console.log('Slack OAuth callback - raw state:', state);
     const parsed = b64parse(state);
+    console.log('Slack OAuth callback - parsed state:', JSON.stringify(parsed));
     const orgId = parsed.orgId || null;
     const orgSlug = parsed.orgSlug || null;
+    console.log('Slack OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug);
 
     // Exchange code for token
     const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
