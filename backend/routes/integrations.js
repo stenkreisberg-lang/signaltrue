@@ -56,12 +56,14 @@ router.get('/integrations/status', async (req, res) => {
       hris: false
     };
 
+    // Build OAuth URLs - prefer orgId over slug for reliability
+    const orgParam = org?._id ? `orgId=${encodeURIComponent(org._id)}` : (org?.slug ? `orgSlug=${encodeURIComponent(org.slug)}` : (org?.domain ? `orgSlug=${encodeURIComponent(org.domain)}` : ''));
     const oauth = {
-      slack: available.slack ? `/integrations/slack/oauth/start${org?.slug ? `?orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      gmail: available.gmail ? `/integrations/google/oauth/start?scope=gmail${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
-      calendar: available.calendar ? `/integrations/google/oauth/start?scope=calendar${org?.slug ? `&orgSlug=${encodeURIComponent(org.slug)}` : ''}` : null,
+      slack: available.slack ? `/integrations/slack/oauth/start${orgParam ? `?${orgParam}` : ''}` : null,
+      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams${orgParam ? `&${orgParam}` : ''}` : null,
+      gmail: available.gmail ? `/integrations/google/oauth/start?scope=gmail${orgParam ? `&${orgParam}` : ''}` : null,
+      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook${orgParam ? `&${orgParam}` : ''}` : null,
+      calendar: available.calendar ? `/integrations/google/oauth/start?scope=calendar${orgParam ? `&${orgParam}` : ''}` : null,
       hris: null
     };
 
@@ -115,14 +117,19 @@ function getGoogleRedirectUri(req) {
 }
 
 // --- Slack OAuth ---
-// GET /api/integrations/slack/oauth/start?orgSlug=acme
+// GET /api/integrations/slack/oauth/start?orgId=xxx or ?orgSlug=acme
 router.get('/integrations/slack/oauth/start', async (req, res) => {
   const clientId = process.env.SLACK_CLIENT_ID;
   const redirectUri = process.env.SLACK_REDIRECT_URI;
   if (!clientId || !redirectUri) {
     return res.status(503).json({ message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.' });
   }
-  const state = b64({ orgSlug: req.query.orgSlug || 'default', nonce: crypto.randomBytes(8).toString('hex') });
+  // Support both orgId and orgSlug for flexibility
+  const state = b64({ 
+    orgId: req.query.orgId || null,
+    orgSlug: req.query.orgSlug || null, 
+    nonce: crypto.randomBytes(8).toString('hex') 
+  });
   const url = new URL('https://slack.com/oauth/v2/authorize');
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('scope', 'channels:history,channels:read,chat:write');
@@ -148,9 +155,9 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
     }
 
     const { code, state } = req.query;
-  const parsed = b64parse(state);
-  let orgSlug = String(parsed.orgSlug || 'default');
-  const maybeId = /^[0-9a-fA-F]{24}$/; // if state accidentally passed an ObjectId
+    const parsed = b64parse(state);
+    const orgId = parsed.orgId || null;
+    const orgSlug = parsed.orgSlug || null;
 
     // Exchange code for token
     const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
@@ -170,25 +177,34 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
     }
 
     // Persist minimal info to Organization.integrations.slack
+    // Try to find org by ID first, then by slug, then by domain
     try {
-      await Organization.findOneAndUpdate(
-        { slug: orgSlug },
-        {
-          $setOnInsert: { name: orgSlug, industry: 'General' },
+      let org = null;
+      if (orgId) {
+        org = await Organization.findById(orgId);
+      }
+      if (!org && orgSlug) {
+        org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
+      }
+      
+      if (org) {
+        await Organization.findByIdAndUpdate(org._id, {
           $set: {
             'settings.features.slackIntegration': true,
-            integrations: {
-              slack: {
-                accessToken: encryptString(data.access_token),
-                botUserId: data.bot_user_id,
-                team: data.team,
-                authedUser: data.authed_user
-              }
+            'integrations.slack': {
+              accessToken: encryptString(data.access_token),
+              botUserId: data.bot_user_id,
+              team: data.team,
+              authedUser: data.authed_user,
+              installed: true,
+              sync: { enabled: true }
             }
           }
-        },
-        { upsert: true }
-      );
+        });
+        console.log('Slack OAuth: saved token for org', org._id);
+      } else {
+        console.error('Slack OAuth: no org found for orgId:', orgId, 'orgSlug:', orgSlug);
+      }
     } catch (e) {
       console.error('Slack OAuth persist error:', e.message);
     }
