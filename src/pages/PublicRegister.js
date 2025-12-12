@@ -89,21 +89,18 @@ function PublicRegister() {
     }
 
     try {
-const response = await api.post('/auth/register', {
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          password: formData.password,
-          role: 'admin',
-          companyName: formData.companyName,
-        });
+      const response = await api.post('/auth/register', {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        role: 'admin',
+        companyName: formData.companyName,
+      });
 
-      const data = await response.json();
+      // Axios puts parsed JSON in response.data
+      const data = response.data;
 
-      if (!response.ok) {
-        setError(data.message || 'Registration failed. Please try again.');
-        return;
-      }
-
+      // If we get here, the request was successful (axios throws on non-2xx)
       setSuccess(true);
       setTimeout(() => {
         navigate('/login', { 
@@ -112,7 +109,14 @@ const response = await api.post('/auth/register', {
       }, 2000);
     } catch (err) {
       console.error('Registration error:', err);
-      setError('An error occurred during registration. Please try again.');
+      // Axios error - extract message from response
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('An error occurred during registration. Please try again.');
+      }
     }
   };
 

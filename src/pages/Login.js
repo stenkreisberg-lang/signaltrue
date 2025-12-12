@@ -19,10 +19,6 @@ function Login() {
 
       const data = response.data;
 
-      if (response.status !== 200) {
-        throw new Error(data.message || 'Login failed');
-      }
-
       // Store token and user info
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -34,7 +30,14 @@ function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.message);
+      // Axios error - extract message from response
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
