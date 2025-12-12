@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import dotenv from 'dotenv';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// mongodb-memory-server is now loaded dynamically only when USE_IN_MEMORY_DB=1
 
 // --- ESM-friendly __dirname and __filename ---
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +88,8 @@ async function main() {
     if (process.env.NODE_ENV !== "test") {
       if (process.env.USE_IN_MEMORY_DB === "1") {
         console.log("Attempting to start in-memory MongoDB...");
+        // Dynamic import - only loads the package when actually needed
+        const { MongoMemoryServer } = await import('mongodb-memory-server');
         const mem = await MongoMemoryServer.create();
         const uri = mem.getUri();
         await mongoose.connect(uri);
