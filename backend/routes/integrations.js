@@ -37,6 +37,10 @@ router.get('/integrations/status', async (req, res) => {
     } else if (orgSlug) {
       org = await Organization.findOne({ slug: orgSlug }).catch(() => null);
     }
+    // DEBUG: Log Google integration for troubleshooting
+    if (org && org.integrations && org.integrations.google) {
+      console.log('[DEBUG] org.integrations.google:', JSON.stringify(org.integrations.google));
+    }
     const available = {
       slack: !!process.env.SLACK_CLIENT_ID,
       teams: !!process.env.MS_APP_CLIENT_ID,
