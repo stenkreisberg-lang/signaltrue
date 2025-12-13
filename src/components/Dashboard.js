@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DriftAlerts from './DriftAlerts';
 import PlaybookRecommendations from './PlaybookRecommendations';
 import OneOnOneTimeline from './OneOnOneTimeline';
@@ -17,6 +17,25 @@ function Dashboard() {
   const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | 'outlook' | 'teams' | null
   const [toast, setToast] = useState(null);
   const [confirmProvider, setConfirmProvider] = useState(null);
+
+  const loadIntegrationStatus = useCallback(async () => {
+    try {
+      // Use user's orgId for integrations status
+      const userStr = localStorage.getItem('user');
+      const userData = userStr ? JSON.parse(userStr) : null;
+      const query = userData?.orgId ? `?orgId=${userData.orgId}` : '';
+      const res = await api.get('/integrations/status' + query);
+      if (res.status === 200) {
+        const data = res.data;
+        setIntegrations(data);
+        setToast({ type: 'success', message: 'Connection status updated.' });
+        setTimeout(() => setToast(null), 2500);
+      }
+    } catch (e) {
+      setToast({ type: 'error', message: 'Could not refresh status.' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -50,22 +69,6 @@ function Dashboard() {
   }, [navigate]);
 
   useEffect(() => {
-    const loadIntegrationStatus = async () => {
-      try {
-        // Use user's orgId for integrations status
-        const userStr = localStorage.getItem('user');
-        const userData = userStr ? JSON.parse(userStr) : null;
-        const query = userData?.orgId ? `?orgId=${userData.orgId}` : '';
-        const res = await api.get('/integrations/status' + query);
-        if (res.status === 200) {
-          const data = res.data;
-          setIntegrations(data);
-        }
-      } catch (e) {
-        // ignore silently — onboarding can still render
-      }
-    };
-
     const searchParams = new URLSearchParams(window.location.search);
     // Always reload if coming back from an OAuth flow (Google or Slack)
     if (searchParams.has('integrationStatus') || searchParams.has('connected')) {
@@ -74,7 +77,7 @@ function Dashboard() {
     
     // Also run on initial mount
     loadIntegrationStatus();
-  }, []);
+  }, [loadIntegrationStatus]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -201,6 +204,12 @@ function Dashboard() {
           <p style={styles.subtitle}>
             Let's get you set up to start tracking team health
           </p>
+        </div>
+
+        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+          <button onClick={loadIntegrationStatus} style={{...styles.cardButton, width: 'auto', background: 'white', color: '#4f46e5', border: '1px solid #c7d2fe'}}>
+            Refresh Connection Status
+          </button>
         </div>
 
         <div style={styles.cardsGrid}>
