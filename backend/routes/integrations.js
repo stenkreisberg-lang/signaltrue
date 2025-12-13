@@ -94,6 +94,7 @@ function b64parse(str) {
 
 function getAppUrl() {
   if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
   // Sensible production default for our deployment
   if (process.env.NODE_ENV === 'production') return 'https://www.signaltrue.ai';
   return 'http://localhost:3000';
