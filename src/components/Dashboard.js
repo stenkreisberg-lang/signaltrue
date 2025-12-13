@@ -206,18 +206,12 @@ function Dashboard() {
           </p>
         </div>
 
-        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-          <button onClick={loadIntegrationStatus} style={{...styles.cardButton, width: 'auto', background: 'white', color: '#4f46e5', border: '1px solid #c7d2fe'}}>
-            Refresh Connection Status
-          </button>
-        </div>
-
         <div style={styles.cardsGrid}>
           <div style={styles.card}>
             <div style={styles.cardIcon}>🔗</div>
             <h3 style={styles.cardTitle}>Connect Slack {integrations?.connected?.slack && <span style={styles.badgeConnected}>Connected</span>}</h3>
             {integrations?.connected?.slack && integrations?.details?.slack && (
-              <p style={styles.detailLine}>Workspace: {integrations.details.slack.teamName || 'Unknown'} ({integrations.details.slack.teamId || '—'})</p>
+              <p style={styles.detailLine}>Workspace: {integrations.details.slack.teamName || 'Unknown'}</p>
             )}
             <p style={styles.cardText}>
               Import your team's communication patterns and sentiment data
@@ -231,7 +225,7 @@ function Dashboard() {
           </div>
 
           <div style={styles.card}>
-            <GoogleCalendarConnect />
+            <GoogleCalendarConnect integrations={integrations} />
           </div>
 
           <div style={styles.card}>

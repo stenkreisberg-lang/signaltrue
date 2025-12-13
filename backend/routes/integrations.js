@@ -1,7 +1,7 @@
-
 import express from 'express';
 import crypto from 'node:crypto';
 import Organization from '../models/organizationModel.js';
+import User from '../models/user.js'; // Import User model
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
 
@@ -23,68 +23,56 @@ router.get('/integrations/metrics', authenticateToken, async (req, res) => {
   }
 });
 
-// Simple status endpoint to power onboarding UI until full OAuth is wired
-// Returns which providers are theoretically available (env configured)
-// and a minimal connected=false placeholder so frontend can render.
-router.get('/integrations/status', async (req, res) => {
+// GET /api/integrations/status - returns consolidated status for the logged-in user
+router.get('/integrations/status', authenticateToken, async (req, res) => {
   try {
-    // Optionally compute connected state from Organization.integrations if org is provided
-    const orgSlug = req.query.orgSlug ? String(req.query.orgSlug) : null;
-    const orgId = req.query.orgId ? String(req.query.orgId) : null;
-    let org = null;
-    if (orgId) {
-      org = await Organization.findById(orgId).catch(() => null);
-    } else if (orgSlug) {
-      org = await Organization.findOne({ slug: orgSlug }).catch(() => null);
+    const { userId, orgId } = req.user;
+
+    if (!userId || !orgId) {
+      return res.status(400).json({ message: 'Missing user or organization ID from token.' });
     }
-    // DEBUG: Log Google integration for troubleshooting
-    if (org && org.integrations && org.integrations.google) {
-      console.log('[DEBUG] org.integrations.google:', JSON.stringify(org.integrations.google));
+
+    // Fetch user and organization in parallel
+    const [user, organization] = await Promise.all([
+      User.findById(userId).lean(),
+      Organization.findById(orgId).lean()
+    ]);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
     }
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found.' });
+    }
+
+    // --- Check Available Integrations (based on environment variables) ---
     const available = {
       slack: !!process.env.SLACK_CLIENT_ID,
-      teams: !!process.env.MS_APP_CLIENT_ID,
-      gmail: !!process.env.GOOGLE_CLIENT_ID,
-      outlook: !!process.env.MS_APP_CLIENT_ID,
-      calendar: !!process.env.GOOGLE_CLIENT_ID,
-      hris: !!(process.env.BAMBOOHR_API_KEY || process.env.PERSONIO_CLIENT_ID || process.env.HIBOB_TOKEN || process.env.GUSTO_TOKEN)
+      google: !!process.env.GOOGLE_CLIENT_ID,
     };
 
-    // Placeholder connection state until tokens are stored in DB
+    // --- Check Connected Status (based on data in DB) ---
     const connected = {
-      slack: !!org?.integrations?.slack?.accessToken,
-      teams: org?.integrations?.microsoft?.scope === 'teams' && !!org?.integrations?.microsoft?.accessToken,
-      gmail: org?.integrations?.google?.scope === 'gmail' && !!org?.integrations?.google?.accessToken,
-      outlook: org?.integrations?.microsoft?.scope === 'outlook' && !!org?.integrations?.microsoft?.accessToken,
-      calendar: org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken,
-      hris: false
+      slack: !!organization.integrations?.slack?.accessToken,
+      google: !!user.google?.accessToken,
     };
 
-    // Build OAuth URLs - prefer orgId over slug for reliability
-    const orgParam = org?._id ? `orgId=${encodeURIComponent(org._id)}` : (org?.slug ? `orgSlug=${encodeURIComponent(org.slug)}` : (org?.domain ? `orgSlug=${encodeURIComponent(org.domain)}` : ''));
-    const oauth = {
-      slack: available.slack ? `/integrations/slack/oauth/start${orgParam ? `?${orgParam}` : ''}` : null,
-      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams${orgParam ? `&${orgParam}` : ''}` : null,
-      gmail: available.gmail ? `/integrations/google/oauth/start?scope=gmail${orgParam ? `&${orgParam}` : ''}` : null,
-      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook${orgParam ? `&${orgParam}` : ''}` : null,
-      calendar: available.calendar ? `/integrations/google/oauth/start?scope=calendar${orgParam ? `&${orgParam}` : ''}` : null,
-      hris: null
-    };
-
+    // --- Provide Connection Details ---
     const details = {
       slack: connected.slack ? {
-        teamName: org?.integrations?.slack?.teamName || undefined,
-        teamId: org?.integrations?.slack?.teamId || undefined,
+        teamName: organization.integrations.slack.teamName,
+        teamId: organization.integrations.slack.teamId,
       } : null,
-      gmail: connected.gmail ? { scope: 'gmail', email: org?.integrations?.google?.user?.email || org?.integrations?.google?.email } : null,
-      calendar: connected.calendar ? { scope: 'calendar', email: org?.integrations?.google?.user?.email || org?.integrations?.google?.email } : null,
-      outlook: connected.outlook ? { scope: 'outlook', upn: org?.integrations?.microsoft?.user?.upn || org?.integrations?.microsoft?.accountEmail, tenantId: org?.integrations?.microsoft?.tenantId || org?.integrations?.microsoft?.tenant } : null,
-      teams: connected.teams ? { scope: 'teams', upn: org?.integrations?.microsoft?.user?.upn || org?.integrations?.microsoft?.accountEmail, tenantId: org?.integrations?.microsoft?.tenantId || org?.integrations?.microsoft?.tenant } : null,
+      google: connected.google ? {
+        email: user.email,
+      } : null,
     };
 
-    res.json({ available, connected, oauth, details });
+    res.json({ available, connected, details });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error in /integrations/status:', err);
+    res.status(500).json({ message: 'An internal server error occurred.' });
   }
 });
 

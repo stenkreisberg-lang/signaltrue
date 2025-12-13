@@ -1,43 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import api from '../utils/api';
 
-const GoogleCalendarConnect = () => {
+const GoogleCalendarConnect = ({ integrations }) => {
   const [isConnected, setIsConnected] = useState(false);
-  const [events, setEvents] = useState([]);
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await api.get('/calendar/events');
-        if (res.status === 200) {
-          setIsConnected(true);
-          setEvents(res.data);
-        }
-      } catch (error) {
-        setIsConnected(false);
-      }
-    };
-    checkConnection();
-  }, []);
+    const googleConnected = integrations?.connected?.google || false;
+    setIsConnected(googleConnected);
+    if (googleConnected) {
+      setUserEmail(integrations.details?.google?.email || '');
+    }
+  }, [integrations]);
 
   const handleConnect = () => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Pass the token as a query parameter
       window.location.href = `https://signaltrue-backend.onrender.com/api/auth/google?token=${token}`;
     } else {
-      // Handle case where user is not logged in
       alert('You must be logged in to connect your calendar.');
     }
   };
 
-  const handleDisconnect = () => {
-    // Placeholder for disconnect logic
-    setIsConnected(false);
-    setEvents([]);
-    alert('Disconnect logic not fully implemented on the frontend yet.');
+  const handleDisconnect = async () => {
+    try {
+      await api.post('/integrations/google/disconnect');
+      setIsConnected(false);
+      setUserEmail('');
+      alert('Google Calendar disconnected. The dashboard will update on the next refresh.');
+    } catch (error) {
+      console.error('Failed to disconnect Google Calendar', error);
+      alert('Could not disconnect Google Calendar. Please try again.');
+    }
   };
 
   return (
@@ -47,21 +41,11 @@ const GoogleCalendarConnect = () => {
       
       {isConnected ? (
         <>
-          <p style={styles.detailLine}>Provider: Google (Calendar)</p>
+          <p style={styles.detailLine}>Account: {userEmail}</p>
           <p style={styles.cardText}>
             Your Google Calendar is connected.
           </p>
           <button style={styles.disconnectBtn} onClick={handleDisconnect}>Disconnect</button>
-          {events.length > 0 && (
-            <div style={{textAlign: 'left', marginTop: '1rem'}}>
-              <h4 style={{margin: '0 0 0.5rem 0'}}>Upcoming Events:</h4>
-              <ul style={{paddingLeft: '1.2rem', margin: 0, fontSize: '14px', color: '#6b7280'}}>
-                {events.map(event => (
-                  <li key={event.id}>{event.summary} ({new Date(event.start.dateTime || event.start.date).toLocaleString()})</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </>
       ) : (
         <>
@@ -104,30 +88,29 @@ const styles = {
     cursor: 'pointer',
     width: '100%',
   },
-  badgeConnected: { 
-    marginLeft: 8, 
-    fontSize: 12, 
-    padding: '2px 8px', 
-    background: '#DCFCE7', 
-    color: '#166534', 
-    borderRadius: 999 
+  badgeConnected: {
+    marginLeft: 8,
+    fontSize: 12,
+    padding: '2px 8px',
+    background: '#DCFCE7',
+    color: '#166534',
+    borderRadius: 999
   },
-  detailLine: { 
-    color: '#6b7280', 
-    fontSize: 13, 
-    marginTop: 6, 
-    marginBottom: 10 
+  detailLine: {
+    color: '#6b7280',
+    fontSize: 13,
+    marginTop: 6,
+    marginBottom: 10
   },
-  disconnectBtn: { 
-    marginTop: 10, 
-    background: 'transparent', 
-    color: '#EF4444', 
-    border: '1px solid #FCA5A5', 
-    borderRadius: 8, 
-    padding: '0.5rem 0.75rem', 
-    fontWeight: 600, 
-    cursor: 'pointer',
-    width: '100%'
+  disconnectBtn: {
+    marginTop: 10,
+    background: 'transparent',
+    color: '#EF4444',
+    border: '1px solid #FCA5A5',
+    borderRadius: 8,
+    padding: '0.5rem 0.75rem',
+    fontWeight: 600,
+    cursor: 'pointer'
   },
 };
 
