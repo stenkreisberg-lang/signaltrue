@@ -65,11 +65,14 @@ function Dashboard() {
         // ignore silently — onboarding can still render
       }
     };
-    // Always reload if ?connected= is present in the URL (after OAuth)
-    if (window.location.search.includes('connected=')) {
+
+    const searchParams = new URLSearchParams(window.location.search);
+    // Always reload if coming back from an OAuth flow (Google or Slack)
+    if (searchParams.has('integrationStatus') || searchParams.has('connected')) {
       loadIntegrationStatus();
     }
-    // Also run on mount
+    
+    // Also run on initial mount
     loadIntegrationStatus();
   }, []);
 
