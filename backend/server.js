@@ -137,7 +137,7 @@ async function main() {
     app.use("/api/oneonone", oneOnOneRoutes);
     app.use("/api/playbook", playbookRoutes);
     app.use("/api/weekly-brief", weeklyBriefRoutes);
-    app.use("/auth", oauthRoutes);
+    app.use("/api", oauthRoutes);
     app.use("/api/invites", invitesRoutes);
     app.use("/api/auth", authRoutes);
     app.use("/api/team-members", teamMembersRoutes);

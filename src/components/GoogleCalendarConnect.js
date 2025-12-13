@@ -25,7 +25,7 @@ const GoogleCalendarConnect = () => {
   const handleConnect = () => {
     // Use the full backend URL for the OAuth redirect
     const backendUrl = api.defaults.baseURL || 'https://signaltrue-backend.onrender.com';
-    window.location.href = `${backendUrl}/auth/google`;
+    window.location.href = `${backendUrl}/api/auth/google`;
   };
 
   const handleDisconnect = () => {
