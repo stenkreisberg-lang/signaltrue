@@ -1,7 +1,22 @@
 import express from 'express';
 import { refreshTeamCalendar, refreshAllTeamsCalendars } from '../services/calendarService.js';
+import { getCalendarEvents } from '../services/googleCalendarService.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/calendar/events
+ * Get calendar events for the authenticated user
+ */
+router.get('/calendar/events', authenticateToken, async (req, res) => {
+  try {
+    const events = await getCalendarEvents(req.user.userId);
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 /**
  * POST /api/calendar/refresh/:id

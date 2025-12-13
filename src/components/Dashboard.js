@@ -4,6 +4,7 @@ import PlaybookRecommendations from './PlaybookRecommendations';
 import OneOnOneTimeline from './OneOnOneTimeline';
 import BenchmarkComparison from './BenchmarkComparison';
 import AdminExportPanel from './AdminExportPanel';
+import GoogleCalendarConnect from './GoogleCalendarConnect';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -210,18 +211,7 @@ function Dashboard() {
           </div>
 
           <div style={styles.card}>
-            <div style={styles.cardIcon}>📅</div>
-            <h3 style={styles.cardTitle}>Connect Calendar {integrations?.connected?.calendar && <span style={styles.badgeConnected}>Connected</span>}</h3>
-            {integrations?.connected?.calendar && <p style={styles.detailLine}>Provider: Google (Calendar)</p>}
-            <p style={styles.cardText}>
-              Analyze meeting load and focus time patterns
-            </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('calendar')} disabled={integrations?.connected?.calendar}>
-              Connect Google Calendar
-            </button>
-            {integrations?.connected?.calendar && (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('google')}>Disconnect</button>
-            )}
+            <GoogleCalendarConnect />
           </div>
 
           <div style={styles.card}>

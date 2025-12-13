@@ -53,6 +53,11 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
     default: null
+  },
+  google: {
+    accessToken: { type: String, set: encryptString, get: decryptString },
+    refreshToken: { type: String, set: encryptString, get: decryptString },
+    expiry_date: { type: Number }
   }
 }, { timestamps: true });
 

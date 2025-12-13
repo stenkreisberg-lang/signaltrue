@@ -1,4 +1,8 @@
 import express from "express";
+import { google } from "googleapis";
+import jwt from "jsonwebtoken";
+import User from "../models/user.js";
+import { authenticateToken } from "../middleware/auth.js";
 import { v4 as uuidv4 } from "uuid";
 
 
@@ -36,19 +40,54 @@ router.get("/auth/slack/callback", async (req, res) => {
 });
 
 // Google OAuth entry
-router.get("/auth/google", (req, res) => {
+router.get("/auth/google", authenticateToken, (req, res) => {
+  const { userId } = req.user;
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = `${getBackendUrl()}/auth/google/callback`;
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline`;
+  const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent&state=${state}`;
   res.redirect(url);
 });
 
 router.get("/auth/google/callback", async (req, res) => {
-  // TODO: Exchange code for token, store connection
-  // For now, simulate success
-  // Record connection in DB here
-  // ...
-  res.redirect(dashboardRedirect(true));
+  const { code, state } = req.query;
+
+  if (!code || !state) {
+    return res.redirect(dashboardRedirect(false));
+  }
+
+  try {
+    const decodedState = jwt.verify(state, process.env.JWT_SECRET);
+    const { userId } = decodedState;
+
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      `${getBackendUrl()}/auth/google/callback`
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.redirect(dashboardRedirect(false));
+    }
+
+    user.google = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiry_date: tokens.expiry_date,
+    };
+
+    await user.save();
+
+    res.redirect(dashboardRedirect(true));
+  } catch (error) {
+    console.error("Google OAuth callback error:", error);
+    res.redirect(dashboardRedirect(false));
+  }
 });
 
 // Outlook OAuth entry
