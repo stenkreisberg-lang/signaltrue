@@ -3,6 +3,8 @@ import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { WebClient } from "@slack/web-api";
+import Organization from "../models/organizationModel.js";
 import { v4 as uuidv4 } from "uuid";
 
 
@@ -23,20 +25,59 @@ function getBackendUrl() {
 }
 
 // Slack OAuth entry
-router.get("/auth/slack", (req, res) => {
+router.get("/auth/slack", authenticateToken, (req, res) => {
   const clientId = process.env.SLACK_CLIENT_ID;
   const redirectUri = `${getBackendUrl()}/api/auth/slack/callback`;
-  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const state = jwt.sign({ orgId: req.user.orgId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
   res.redirect(url);
 });
 
 // Slack OAuth callback
 router.get("/auth/slack/callback", async (req, res) => {
-  // TODO: Exchange code for token, store connection
-  // For now, simulate success
-  // Record connection in DB here
-  // ...
-  res.redirect(dashboardRedirect(true));
+  const { code, state } = req.query;
+
+  if (!code || !state) {
+    return res.redirect(dashboardRedirect(false));
+  }
+
+  try {
+    const decodedState = jwt.verify(state, process.env.JWT_SECRET);
+    const { orgId } = decodedState;
+
+    const slackClient = new WebClient();
+    const oauthResponse = await slackClient.oauth.v2.access({
+      client_id: process.env.SLACK_CLIENT_ID,
+      client_secret: process.env.SLACK_CLIENT_SECRET,
+      code,
+      redirect_uri: `${getBackendUrl()}/api/auth/slack/callback`,
+    });
+
+    if (!oauthResponse.ok) {
+      throw new Error(oauthResponse.error);
+    }
+
+    const { access_token, team } = oauthResponse;
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.redirect(dashboardRedirect(false));
+    }
+
+    org.integrations.slack = {
+      accessToken: access_token,
+      teamId: team.id,
+      teamName: team.name,
+      installed: true,
+    };
+
+    await org.save();
+
+    res.redirect(dashboardRedirect(true));
+  } catch (error) {
+    console.error("Slack OAuth callback error:", error);
+    res.redirect(dashboardRedirect(false));
+  }
 });
 
 // Google OAuth entry

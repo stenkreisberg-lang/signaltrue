@@ -73,8 +73,8 @@ router.get('/integrations/status', async (req, res) => {
 
     const details = {
       slack: connected.slack ? {
-        teamName: org?.integrations?.slack?.team?.name || undefined,
-        teamId: org?.integrations?.slack?.team?.id || undefined,
+        teamName: org?.integrations?.slack?.teamName || undefined,
+        teamId: org?.integrations?.slack?.teamId || undefined,
       } : null,
       gmail: connected.gmail ? { scope: 'gmail', email: org?.integrations?.google?.user?.email || org?.integrations?.google?.email } : null,
       calendar: connected.calendar ? { scope: 'calendar', email: org?.integrations?.google?.user?.email || org?.integrations?.google?.email } : null,
