@@ -20,8 +20,12 @@ function dashboardRedirect(success = true) {
 }
 
 // Get backend URL for OAuth callbacks
-function getBackendUrl() {
-  return process.env.BACKEND_URL || "https://signaltrue-backend.onrender.com";
+function getBackendUrl(req) {
+  if (process.env.BACKEND_URL) return process.env.BACKEND_URL;
+  // Fallback: construct from request headers (works on Render/Railway/Heroku)
+  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
+  const host = (req.headers['x-forwarded-host'] || req.get('host'));
+  return `${proto}://${host}`;
 }
 
 // Slack OAuth entry
@@ -38,7 +42,7 @@ router.get("/auth/slack", (req, res) => {
     }
 
     const clientId = process.env.SLACK_CLIENT_ID;
-    const redirectUri = `${getBackendUrl()}/api/auth/slack/callback`;
+    const redirectUri = `${getBackendUrl(req)}/api/auth/slack/callback`;
     // Pass the orgId in the state parameter to link the Slack install to the org
     const state = jwt.sign({ orgId: user.orgId }, process.env.JWT_SECRET, { expiresIn: '15m' });
     const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
@@ -63,7 +67,7 @@ router.get("/auth/slack/callback", async (req, res) => {
       client_id: process.env.SLACK_CLIENT_ID,
       client_secret: process.env.SLACK_CLIENT_SECRET,
       code,
-      redirect_uri: `${getBackendUrl()}/api/auth/slack/callback`,
+      redirect_uri: `${getBackendUrl(req)}/api/auth/slack/callback`,
     });
 
     if (!oauthResponse.ok) {
@@ -108,7 +112,7 @@ router.get("/auth/google", (req, res) => {
 
     const { userId } = user;
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = `${getBackendUrl()}/api/auth/google/callback`;
+    const redirectUri = `${getBackendUrl(req)}/api/auth/google/callback`;
     const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent&state=${state}`;
@@ -130,7 +134,7 @@ router.get("/auth/google/callback", async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${getBackendUrl()}/api/auth/google/callback`
+      `${getBackendUrl(req)}/api/auth/google/callback`
     );
 
     const { tokens } = await oauth2Client.getToken(code);
@@ -159,7 +163,7 @@ router.get("/auth/google/callback", async (req, res) => {
 // Outlook OAuth entry
 router.get("/auth/outlook", (req, res) => {
   const clientId = process.env.OUTLOOK_CLIENT_ID;
-  const redirectUri = `${getBackendUrl()}/api/auth/outlook/callback`;
+  const redirectUri = `${getBackendUrl(req)}/api/auth/outlook/callback`;
   const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`;
   res.redirect(url);
 });
