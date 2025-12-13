@@ -68,7 +68,14 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       } : null,
     };
 
-    res.json({ available, connected, details });
+    // --- OAuth Start URLs ---
+    // Frontend expects these to accept ?token=...
+    const oauth = {
+      slack: available.slack ? '/auth/slack' : null,
+      google: available.google ? '/auth/google' : null,
+    };
+
+    res.json({ available, connected, details, oauth });
 
   } catch (err) {
     console.error('Error in /integrations/status:', err);
