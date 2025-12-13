@@ -64,6 +64,11 @@ function Dashboard() {
         // ignore silently — onboarding can still render
       }
     };
+    // Always reload if ?connected= is present in the URL (after OAuth)
+    if (window.location.search.includes('connected=')) {
+      loadIntegrationStatus();
+    }
+    // Also run on mount
     loadIntegrationStatus();
   }, []);
 
