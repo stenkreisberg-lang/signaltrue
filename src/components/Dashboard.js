@@ -80,9 +80,17 @@ function Dashboard() {
   };
 
   const openOrGuide = (provider) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Authentication error. Please log in again.');
+      return;
+    }
+
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
-      window.location.href = `${api.defaults.baseURL}${oauth}`;
+      // Append the token to the OAuth URL
+      const url = `${api.defaults.baseURL}${oauth}?token=${token}`;
+      window.location.href = url;
     } else {
       setShowHelp(provider);
     }

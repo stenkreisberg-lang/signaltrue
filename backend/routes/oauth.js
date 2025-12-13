@@ -25,12 +25,25 @@ function getBackendUrl() {
 }
 
 // Slack OAuth entry
-router.get("/auth/slack", authenticateToken, (req, res) => {
-  const clientId = process.env.SLACK_CLIENT_ID;
-  const redirectUri = `${getBackendUrl()}/api/auth/slack/callback`;
-  const state = jwt.sign({ orgId: req.user.orgId }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-  res.redirect(url);
+router.get("/auth/slack", (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized: No token provided in query." });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Forbidden: Invalid token." });
+    }
+
+    const clientId = process.env.SLACK_CLIENT_ID;
+    const redirectUri = `${getBackendUrl()}/api/auth/slack/callback`;
+    // Pass the orgId in the state parameter to link the Slack install to the org
+    const state = jwt.sign({ orgId: user.orgId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+    res.redirect(url);
+  });
 });
 
 // Slack OAuth callback
@@ -81,14 +94,26 @@ router.get("/auth/slack/callback", async (req, res) => {
 });
 
 // Google OAuth entry
-router.get("/auth/google", authenticateToken, (req, res) => {
-  const { userId } = req.user;
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = `${getBackendUrl()}/api/auth/google/callback`;
-  const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+router.get("/auth/google", (req, res) => {
+  const { token } = req.query;
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent&state=${state}`;
-  res.redirect(url);
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized: No token provided in query." });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Forbidden: Invalid token." });
+    }
+
+    const { userId } = user;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = `${getBackendUrl()}/api/auth/google/callback`;
+    const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent&state=${state}`;
+    res.redirect(url);
+  });
 });
 
 router.get("/auth/google/callback", async (req, res) => {

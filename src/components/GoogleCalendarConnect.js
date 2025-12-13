@@ -23,9 +23,14 @@ const GoogleCalendarConnect = () => {
   }, []);
 
   const handleConnect = () => {
-    // The base URL from the api utility already includes /api.
-    // We just need to append the specific auth path.
-    window.location.href = `${api.defaults.baseURL}/auth/google`;
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Pass the token as a query parameter
+      window.location.href = `https://signaltrue-backend.onrender.com/api/auth/google?token=${token}`;
+    } else {
+      // Handle case where user is not logged in
+      alert('You must be logged in to connect your calendar.');
+    }
   };
 
   const handleDisconnect = () => {
