@@ -74,11 +74,6 @@ function Dashboard() {
   };
 
   const openOrGuide = (provider) => {
-    // FORCE: Always use orgSlug=default for Google Calendar OAuth
-    if (provider === 'calendar') {
-      window.location.href = `${api.defaults.baseURL}/integrations/google/oauth/start?scope=calendar&orgSlug=default`;
-      return;
-    }
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
       window.location.href = `${api.defaults.baseURL}${oauth}`;
