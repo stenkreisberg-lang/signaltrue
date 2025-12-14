@@ -216,10 +216,11 @@ function Dashboard() {
             <p style={styles.cardText}>
               Import your team's communication patterns and sentiment data
             </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('slack')} disabled={integrations?.connected?.slack}>
-              Connect Workspace
-            </button>
-            {integrations?.connected?.slack && (
+            {!integrations?.connected?.slack ? (
+              <button style={styles.cardButton} onClick={() => openOrGuide('slack')}>
+                Connect Workspace
+              </button>
+            ) : (
               <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('slack')}>Disconnect</button>
             )}
           </div>
@@ -235,10 +236,11 @@ function Dashboard() {
             <p style={styles.cardText}>
               Analyze Outlook/Exchange calendar and email metadata for trends
             </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('outlook')} disabled={integrations?.connected?.outlook}>
-              Connect Outlook Account
-            </button>
-            {integrations?.connected?.outlook && (
+            {!integrations?.connected?.outlook ? (
+              <button style={styles.cardButton} onClick={() => openOrGuide('outlook')}>
+                Connect Outlook Account
+              </button>
+            ) : (
               <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
             )}
           </div>
@@ -250,10 +252,11 @@ function Dashboard() {
             <p style={styles.cardText}>
               Import Teams collaboration patterns to enrich communication insights
             </p>
-            <button style={styles.cardButton} onClick={() => openOrGuide('teams')} disabled={integrations?.connected?.teams}>
-              Connect Teams Workspace
-            </button>
-            {integrations?.connected?.teams && (
+            {!integrations?.connected?.teams ? (
+              <button style={styles.cardButton} onClick={() => openOrGuide('teams')}>
+                Connect Teams Workspace
+              </button>
+            ) : (
               <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
             )}
           </div>
