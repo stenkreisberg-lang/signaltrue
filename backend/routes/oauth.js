@@ -115,7 +115,7 @@ router.get("/auth/google", (req, res) => {
     const redirectUri = `${getBackendUrl(req)}/api/auth/google/callback`;
     const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent&state=${state}`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&access_type=offline&prompt=consent&state=${state}`;
     res.redirect(url);
   });
 });
