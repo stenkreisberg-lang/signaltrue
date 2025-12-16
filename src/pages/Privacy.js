@@ -26,55 +26,98 @@ export default function Privacy() {
         <header style={styles.header}> 
           <div style={styles.container}> 
             <h1 style={styles.title}>Privacy Policy</h1>
-            <p style={styles.subtitle}>Effective Date: 16.12.2025 | Last Updated: 16.12.2025</p>
+            <p style={styles.subtitle}>Last updated: 16 December 2025</p>
           </div>
         </header>
 
         <main style={styles.section}> 
           <div style={styles.container}> 
             <div style={styles.card}> 
-              <p style={styles.content}>SignalTrue (“we”, “us”, “our”) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, store, share, and protect data, including Google user data, when you use the SignalTrue website, platform, and services. This policy applies to all visitors and users of SignalTrue.</p>
+              <p style={styles.content}>SignalTrue is a business-to-business software service designed to help organizations understand team-level collaboration patterns and engagement signals. SignalTrue provides aggregated, derived insights to managers, HR, and leadership teams to support healthier team operations and better leadership decisions.</p>
+              <p style={styles.content}>SignalTrue connects to a company’s Google Workspace environment using Google Calendar read-only access. SignalTrue does not monitor individual employees, does not track personal behavior, does not access meeting content, and does not provide data or insights to third parties.</p>
 
-              <h3 style={styles.h2}>Data Collected and Accessed</h3>
-              <p style={styles.content}>We collect only the minimum data necessary to operate SignalTrue.</p>
+              <h3 style={styles.h2}>DATA CONTROLLER</h3>
+              <p style={styles.content}>SignalTrue OÜ<br />
+              Asula 4, 11312 Tallinn, Estonia<br />
+              Email: <a href="mailto:privacy@signaltrue.ai" style={{color:'#6366f1'}}>privacy@signaltrue.ai</a></p>
 
-              <h3 style={styles.h2}>Personal Data</h3>
-              <p style={styles.content}>We collect personal data that you provide directly when you create an account, sign in, or contact us. This includes your name, email address, and Google Workspace email address when Google authentication is used. We do not collect job titles, phone numbers, physical addresses, or unnecessary profile information.</p>
+              <h3 style={styles.h2}>SCOPE OF THIS PRIVACY POLICY</h3>
+              <p style={styles.content}>This Privacy Policy explains how SignalTrue accesses, uses, stores, protects, and deletes data, including Google user data, in compliance with the Google API Services User Data Policy, Google APIs Terms of Service, and applicable data protection laws.</p>
 
-              <h3 style={styles.h2}>Google User Data</h3>
-              <p style={styles.content}>When you authenticate with Google or connect Google services, SignalTrue accesses certain Google user data only with your explicit consent. This data is limited to Google Calendar and Google Workspace metadata required to generate team-level collaboration signals. This may include event start and end times, meeting duration, organizers, attendee lists, RSVP and attendance status, and recurring event information. We do not access, store, or process email content, message bodies, chat messages, document contents, files, contact lists beyond calendar attendee metadata, device information, location data, keystrokes, screen activity, or browsing activity.</p>
+              <h3 style={styles.h2}>DATA ACCESSED (GOOGLE USER DATA)</h3>
+              <p style={styles.content}>SignalTrue accesses Google Calendar data only. No other Google services or APIs are accessed.</p>
+              <p style={styles.content}>SignalTrue uses a Google Calendar read-only OAuth scope.</p>
+              <p style={styles.content}>SignalTrue does not access the following Google Calendar data:</p>
+              <ul style={{...styles.content, paddingLeft:'20px'}}>
+                <li>Event titles or summaries</li>
+                <li>Event descriptions</li>
+                <li>Event start or end times</li>
+                <li>Attendee lists</li>
+                <li>Organizer information</li>
+                <li>Meeting content or attachments</li>
+              </ul>
+              <p style={styles.content}>SignalTrue accesses only the minimum calendar response metadata required to calculate meeting invitation acceptance timing and response behavior trends. This includes metadata related to when calendar invitations are accepted or declined.</p>
+              <p style={styles.content}>SignalTrue does not access historical Google Calendar data. Data collection begins only after a user explicitly connects their Google Calendar account to SignalTrue.</p>
 
-              <h3 style={styles.h2}>How We Use Your Data</h3>
-              <p style={styles.content}>SignalTrue uses collected data solely to provide, operate, and improve the platform. We use calendar and collaboration metadata to generate aggregated, team-level signals such as engagement patterns, meeting load trends, focus and recovery indicators, and early warning signals related to burnout risk or culture drift. Google user data is also used to authenticate users securely and maintain connected integrations.</p>
-              <p style={styles.content}>We may use aggregated and anonymized data to improve product functionality, reliability, and performance. We use data to respond to support requests and to communicate important service-related updates.</p>
-              <p style={styles.content}>SignalTrue does not use data to monitor individual employees, evaluate individual performance, conduct surveillance, or automate employment decisions. All insights are derived from patterns at the team level and are intended to support leadership understanding and human decision-making.</p>
+              <h3 style={styles.h2}>DATA USAGE</h3>
+              <p style={styles.content}>SignalTrue uses Google Calendar data solely to generate derived, aggregated behavioral signals at team level.</p>
+              <p style={styles.content}>Examples of derived signals include:</p>
+              <ul style={{...styles.content, paddingLeft:'20px'}}>
+                <li>Meeting invitation acceptance speed trends</li>
+                <li>Changes in response behavior over time</li>
+              </ul>
+              <p style={styles.content}>SignalTrue does not display raw Google Calendar data to users. SignalTrue does not expose individual-level calendar activity. All insights are aggregated and presented at team level only.</p>
+              <p style={styles.content}>Google Calendar data is used exclusively to provide SignalTrue’s user-facing features and to support team-level leadership and HR decision-making.</p>
 
-              <h3 style={styles.h2}>Data Sharing</h3>
-              <p style={styles.content}>SignalTrue does not sell, rent, or trade personal data or Google user data. We do not share Google user data with third parties for advertising or marketing purposes.</p>
-              <p style={styles.content}>We may share data with trusted service providers that support the operation of SignalTrue, such as cloud hosting providers, database and storage services, analytics and monitoring tools, and email delivery services. These providers are contractually obligated to protect data and to use it only for providing services to SignalTrue.</p>
-              <p style={styles.content}>We may disclose data if required to comply with applicable laws, legal processes, or governmental requests, or to protect the rights, safety, and security of SignalTrue, its users, or the public.</p>
+              <h3 style={styles.h2}>DATA STORAGE</h3>
+              <p style={styles.content}>SignalTrue does not store raw Google Calendar event data.</p>
+              <p style={styles.content}>Only derived signals generated from calendar response metadata are stored.</p>
+              <p style={styles.content}>All data is stored in a tenant-isolated manner. Data from one customer organization is logically separated from data belonging to other customers.</p>
 
-              <h3 style={styles.h2}>Data Storage and Protection</h3>
-              <p style={styles.content}>SignalTrue stores data on secure servers hosted by cloud infrastructure providers in the European Union. We use industry-standard security measures to protect data, including encryption in transit using TLS, encryption at rest where supported, strict access controls, authentication mechanisms, and regular security reviews. Access to data is limited to authorized personnel and systems necessary to operate and maintain the service.</p>
+              <h3 style={styles.h2}>DATA SHARING</h3>
+              <p style={styles.content}>SignalTrue does not sell, rent, license, or otherwise provide Google user data or derived insights to third parties.</p>
+              <p style={styles.content}>SignalTrue does not share Google user data for advertising, profiling, analytics, or marketing purposes.</p>
+              <p style={styles.content}>SignalTrue does not use Google user data to train artificial intelligence or machine learning models.</p>
+              <p style={styles.content}>SignalTrue may use infrastructure providers (such as cloud hosting services) strictly as data processors to operate the service. These providers do not access or use data for their own purposes.</p>
 
-              <h3 style={styles.h2}>Data Retention and Deletion</h3>
-              <p style={styles.content}>SignalTrue retains personal data and team-level metadata for as long as an account remains active or as necessary to provide services and comply with legal obligations. Users may request deletion of their data at any time by emailing <a href="mailto:privacy@signaltrue.ai" style={{color:'#6366f1'}}>privacy@signaltrue.ai</a> with the subject line “Data Deletion Request” and including the account email address.</p>
-              <p style={styles.content}>We will acknowledge deletion requests within five business days and complete deletion from active systems within thirty days. Data will also be removed from backups within a reasonable period in accordance with our backup retention policies.</p>
+              <h3 style={styles.h2}>DATA RETENTION</h3>
+              <p style={styles.content}>SignalTrue retains data while the customer account is active.</p>
+              <p style={styles.content}>If Google Calendar access is disconnected, SignalTrue stops collecting new data. Existing derived signals may be retained unless deletion is requested.</p>
 
-              <h3 style={styles.h2}>Your Choices and Controls</h3>
-              <p style={styles.content}>You may review and update your account information where available. You may revoke or modify Google OAuth permissions at any time through your Google Account settings under Security and Third-party apps with account access, or by disconnecting Google integrations within SignalTrue.</p>
+              <h3 style={styles.h2}>DATA DELETION</h3>
+              <p style={styles.content}>Customers may request deletion of all stored data via an administrator-level request.</p>
+              <p style={styles.content}>Upon a valid deletion request:</p>
+              <ul style={{...styles.content, paddingLeft:'20px'}}>
+                <li>All derived signals and stored data associated with the customer organization are permanently deleted.</li>
+              </ul>
+              <p style={styles.content}>Individual employee deletion requests are not applicable, as SignalTrue stores only aggregated, team-level signals and does not store individual user data.</p>
 
-              <h3 style={styles.h2}>Cookies and Tracking Technologies</h3>
-              <p style={styles.content}>SignalTrue uses cookies and similar technologies to enable website functionality, analyze usage patterns, and improve performance. You may control cookies through your browser settings.</p>
+              <h3 style={styles.h2}>DATA SECURITY</h3>
+              <p style={styles.content}>SignalTrue applies industry-standard security practices to protect data, including:</p>
+              <ul style={{...styles.content, paddingLeft:'20px'}}>
+                <li>Encryption in transit using TLS</li>
+                <li>Encryption at rest</li>
+                <li>Strict tenant isolation</li>
+              </ul>
+              <p style={styles.content}>Access to production data is restricted to authorized superadmin personnel only and is limited to what is necessary to operate and support the service.</p>
 
-              <h3 style={styles.h2}>Children’s Privacy</h3>
-              <p style={styles.content}>SignalTrue does not knowingly collect personal data from children under the age of 16.</p>
+              <h3 style={styles.h2}>USER RIGHTS</h3>
+              <p style={styles.content}>Where applicable under data protection laws, customers may request access to, correction of, or deletion of their organization’s data through an authorized administrator.</p>
 
-              <h3 style={styles.h2}>Changes to This Privacy Policy</h3>
-              <p style={styles.content}>We may update this Privacy Policy from time to time to reflect changes in legal requirements, technology, or our services. Any updates will be indicated by updating the “Last Updated” date at the top of this page.</p>
+              <h3 style={styles.h2}>COMPLIANCE WITH GOOGLE API SERVICES USER DATA POLICY</h3>
+              <p style={styles.content}>SignalTrue’s use of Google user data complies with the Google API Services User Data Policy, including Limited Use requirements.</p>
+              <p style={styles.content}>Google user data is:</p>
+              <ul style={{...styles.content, paddingLeft:'20px'}}>
+                <li>Used only to provide SignalTrue’s user-facing features</li>
+                <li>Not sold</li>
+                <li>Not used for advertising</li>
+                <li>Not used for profiling</li>
+                <li>Not used for surveillance</li>
+                <li>Not used for AI or machine learning model training</li>
+              </ul>
 
-              <h3 style={styles.h2}>Contact Information</h3>
-              <p style={styles.content}>If you have questions, concerns, or requests related to privacy or data protection, you may contact us at <a href="mailto:privacy@signaltrue.ai" style={{color:'#6366f1'}}>privacy@signaltrue.ai</a> or at Asula 4, 11312 Tallinn, Estonia.</p>
+              <h3 style={styles.h2}>CONTACT</h3>
+              <p style={styles.content}>For privacy, data protection, or deletion requests, authorized administrators may contact: <a href="mailto:privacy@signaltrue.ai" style={{color:'#6366f1'}}>privacy@signaltrue.ai</a></p>
             </div>
           </div>
         </main>
