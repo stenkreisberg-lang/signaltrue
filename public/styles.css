@@ -85,3 +85,20 @@ footer nav a:hover { color: var(--text); }
   .navlinks { display: none; }
   .cta { margin-left: auto; }
 }
+
+/* New Elements */
+.icp-clarity {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border-left: 4px solid var(--brand);
+}
+
+.step-card {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--panel);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}

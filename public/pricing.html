@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pricing — SignalTrue</title>
+    <meta name="description" content="Simple plans for organizations of any size. Start with a free trial." />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container nav">
+    <a class="brand" href="/">
+          <span class="brand-badge"></span>
+          <span>SignalTrue</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/product">Product</a>
+          <a href="/pricing" aria-current="page">Pricing</a>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <div class="cta">
+          <a class="btn" href="https://app.signaltrue.ai/login">Login</a>
+          <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Get started</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container section-header">
+          <h1>Pricing that scales with impact</h1>
+          
+          <div style="max-width: 600px; margin: 0 auto 40px auto; text-align: center;">
+            <p style="font-size: 1.1em; color: var(--text);">Designed for leaders responsible for team health and outcomes.</p>
+            <p class="muted">Our pricing reflects the value of early detection—preventing burnout, reducing overload, and spotting disengagement before it becomes turnover.</p>
+          </div>
+
+        </div>
+        <div class="container pricing">
+          <div class="plan">
+            <h3>Explorer</h3>
+            <div class="price">$0</div>
+            <ul class="features">
+              <li>Baseline visibility</li>
+              <li>Up to 2 teams</li>
+              <li>Slack + Calendar basics</li>
+              <li>Weekly email summary</li>
+            </ul>
+            <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Start free</a>
+          </div>
+
+          <div class="plan popular">
+            <h3>Growth</h3>
+            <div class="price">$6<span class="muted">/user/mo</span></div>
+            <ul class="features">
+              <li>Early warnings + impact tracking</li>
+              <li>Unlimited teams</li>
+              <li>Advanced org signals</li>
+              <li>Manager coaching</li>
+              <li>Email + Slack summaries</li>
+            </ul>
+            <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Try Growth</a>
+          </div>
+
+          <div class="plan">
+            <h3>Enterprise</h3>
+            <div class="price">Custom</div>
+            <ul class="features">
+              <li>Governance, API, compliance</li>
+              <li>SAML/SSO</li>
+              <li>Data retention controls</li>
+              <li>Dedicated success</li>
+              <li>Security review</li>
+            </ul>
+            <a class="btn" href="/contact">Talk to sales</a>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="container center">
+          <h3>What is an active team member?</h3>
+          <p class="muted">An active team member is a user whose collaboration data contributes to team-level signals during the billing period. SignalTrue does not bill inactive or disconnected users.</p>
+        </div>
+      </section>
+
+      <section>
+        <div class="container section-header">
+          <h2>Why teams invest in SignalTrue</h2>
+        </div>
+        <div class="container grid-3">
+          <div class="panel">
+            <strong>Fewer surprise burnout cases</strong>
+            <p class="muted">Catch early warning signs before they become resignations.</p>
+          </div>
+          <div class="panel">
+            <strong>Reduced meeting overload</strong>
+            <p class="muted">Reclaim focus time and improve team velocity.</p>
+          </div>
+          <div class="panel">
+            <strong>Faster validation of leadership initiatives</strong>
+            <p class="muted">Know if your culture programs are actually working.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container grid">
+        <div>
+          <strong>SignalTrue</strong>
+          <span class="muted"> — Understand your organization's pulse.</span>
+        </div>
+        <nav>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/about">About</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+        </nav>
+      </div>
+      <div class="container muted" style="margin-top:10px">© <span id="year"></span> SignalTrue. All rights reserved.</div>
+      <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    </footer>
+  </body>
+</html>
