@@ -32,15 +32,15 @@
     <main>
       <section class="hero">
         <div class="container">
-          <h1>Privacy Policy</h1>
+          <h1>PRIVACY POLICY – SIGNALTRUE</h1>
           <p class="muted">Last updated: 16 December 2025</p>
         </div>
       </section>
 
       <section>
         <div class="container panel">
-          <p>SignalTrue is a business-to-business software service designed to help organizations understand team-level collaboration patterns and engagement signals. SignalTrue provides aggregated, derived insights to managers, HR, and leadership teams to support healthier team operations and better leadership decisions.</p>
-          <p>SignalTrue connects to a company’s Google Workspace environment using Google Calendar read-only access. SignalTrue does not monitor individual employees, does not track personal behavior, does not access meeting content, and does not provide data or insights to third parties.</p>
+          <p>SignalTrue is a business-to-business software platform designed to help organizations understand team-level collaboration patterns, engagement signals, and operational rhythms. SignalTrue provides aggregated, derived insights to managers, HR, and leadership teams to support healthier team operations and better leadership decisions.</p>
+          <p>SignalTrue processes only metadata from integrated workplace tools and does not monitor individual employees, does not expose individual-level behavior, and does not provide raw data or insights to third parties.</p>
 
           <h3>DATA CONTROLLER</h3>
           <p>SignalTrue OÜ<br>
@@ -50,80 +50,55 @@
           <h3>SCOPE OF THIS PRIVACY POLICY</h3>
           <p>This Privacy Policy explains how SignalTrue accesses, uses, stores, protects, and deletes data, including Google user data, in compliance with the Google API Services User Data Policy, Google APIs Terms of Service, and applicable data protection laws.</p>
 
-          <h3>DATA ACCESSED (GOOGLE USER DATA)</h3>
-          <p>SignalTrue accesses Google Calendar data only. No other Google services or APIs are accessed.</p>
-          <p>SignalTrue uses a Google Calendar read-only OAuth scope.</p>
-          <p>SignalTrue does not access the following Google Calendar data:</p>
-          <ul>
-            <li>Event titles or summaries</li>
-            <li>Event descriptions</li>
-            <li>Event start or end times</li>
-            <li>Attendee lists</li>
-            <li>Organizer information</li>
-            <li>Meeting content or attachments</li>
-          </ul>
-          <p>SignalTrue accesses only the minimum calendar response metadata required to calculate meeting invitation acceptance timing and response behavior trends. This includes metadata related to when calendar invitations are accepted or declined.</p>
-          <p>SignalTrue does not access historical Google Calendar data. Data collection begins only after a user explicitly connects their Google Calendar account to SignalTrue.</p>
+          <h3>INTEGRATIONS AND DATA SOURCES</h3>
+          <p>SignalTrue may integrate with organizational workplace tools such as Google Workspace (Google Calendar), Slack, and Microsoft 365. Each integration uses read-only access and processes metadata only. Message bodies, file contents, and meeting content are not stored or displayed.</p>
+
+          <h3>GOOGLE USER DATA ACCESSED</h3>
+          <p>SignalTrue accesses Google Calendar data only via a read-only OAuth scope.</p>
+          <p>SignalTrue may process limited calendar metadata required to compute aggregated team-level metrics, including metadata related to meeting timing and invitation response behavior.</p>
+          <p>SignalTrue does not store or display raw Google Calendar events and does not access or persist the following as standalone data: event titles or summaries, event descriptions, meeting content or attachments, attendee lists as individual-level records, or organizer identity as a personal profile.</p>
+          <p>SignalTrue does not access historical Google Calendar data. Data collection begins only after a user explicitly connects their Google Calendar account.</p>
+
+          <h3>OTHER METADATA PROCESSED</h3>
+          <p>When connected, SignalTrue may process metadata from collaboration tools such as Slack or Microsoft 365, including message timestamps, response timing metadata, and channel-level activity signals.</p>
+          <p>SignalTrue may perform aggregated sentiment or tone analysis on public or work-related channels to detect team-level shifts. Raw message content is not stored, displayed, or made available to users.</p>
 
           <h3>DATA USAGE</h3>
-          <p>SignalTrue uses Google Calendar data solely to generate derived, aggregated behavioral signals at team level.</p>
-          <p>Examples of derived signals include:</p>
-          <ul>
-            <li>Meeting invitation acceptance speed trends</li>
-            <li>Changes in response behavior over time</li>
-          </ul>
-          <p>SignalTrue does not display raw Google Calendar data to users. SignalTrue does not expose individual-level calendar activity. All insights are aggregated and presented at team level only.</p>
-          <p>Google Calendar data is used exclusively to provide SignalTrue’s user-facing features and to support team-level leadership and HR decision-making.</p>
+          <p>SignalTrue uses all processed data solely to generate derived, aggregated signals at team level. Examples include meeting load indicators, response latency trends, after-hours activity rates, focus time ratios, collaboration breadth indicators, engagement drift detection, and composite team health or energy scores.</p>
+          <p>SignalTrue uses these derived signals to provide dashboards, alerts, and contextual recommendations intended to support leadership and HR decision-making. No raw event data or individual-level activity data is exposed.</p>
 
           <h3>DATA STORAGE</h3>
-          <p>SignalTrue does not store raw Google Calendar event data.</p>
-          <p>Only derived signals generated from calendar response metadata are stored.</p>
-          <p>All data is stored in a tenant-isolated manner. Data from one customer organization is logically separated from data belonging to other customers.</p>
+          <p>SignalTrue does not store raw calendar events or raw message content.</p>
+          <p>Only derived metrics, aggregated trend data, alerts, and contextual annotations are stored. All stored data is tenant-isolated and logically separated per customer organization.</p>
 
           <h3>DATA SHARING</h3>
           <p>SignalTrue does not sell, rent, license, or otherwise provide Google user data or derived insights to third parties.</p>
-          <p>SignalTrue does not share Google user data for advertising, profiling, analytics, or marketing purposes.</p>
-          <p>SignalTrue does not use Google user data to train artificial intelligence or machine learning models.</p>
-          <p>SignalTrue may use infrastructure providers (such as cloud hosting services) strictly as data processors to operate the service. These providers do not access or use data for their own purposes.</p>
+          <p>SignalTrue does not share data for advertising, profiling, or marketing purposes and does not use Google user data to train artificial intelligence or machine learning models.</p>
+          <p>Notifications and alerts may be delivered via integrated platforms such as Slack or email. No data is provided to those platforms beyond what is required to deliver the notification.</p>
+          <p>Infrastructure providers used to operate the service act solely as data processors and do not use data for their own purposes.</p>
 
           <h3>DATA RETENTION</h3>
-          <p>SignalTrue retains data while the customer account is active.</p>
-          <p>If Google Calendar access is disconnected, SignalTrue stops collecting new data. Existing derived signals may be retained unless deletion is requested.</p>
+          <p>Data is retained while the customer account is active.</p>
+          <p>If an integration is disconnected, SignalTrue stops collecting new data from that source. Previously generated derived signals may be retained unless deletion is requested.</p>
 
           <h3>DATA DELETION</h3>
           <p>Customers may request deletion of all stored data via an administrator-level request.</p>
-          <p>Upon a valid deletion request:</p>
-          <ul>
-            <li>All derived signals and stored data associated with the customer organization are permanently deleted.</li>
-          </ul>
-          <p>Individual employee deletion requests are not applicable, as SignalTrue stores only aggregated, team-level signals and does not store individual user data.</p>
+          <p>Upon a valid deletion request, all derived metrics, alerts, and stored data associated with the customer organization are permanently deleted.</p>
+          <p>Individual employee deletion requests are not applicable, as SignalTrue stores only aggregated, team-level signals and does not store individual user profiles or raw activity logs.</p>
 
           <h3>DATA SECURITY</h3>
-          <p>SignalTrue applies industry-standard security practices to protect data, including:</p>
-          <ul>
-            <li>Encryption in transit using TLS</li>
-            <li>Encryption at rest</li>
-            <li>Strict tenant isolation</li>
-          </ul>
-          <p>Access to production data is restricted to authorized superadmin personnel only and is limited to what is necessary to operate and support the service.</p>
+          <p>SignalTrue applies industry-standard security practices, including encryption in transit using TLS, encryption at rest, and strict tenant isolation.</p>
+          <p>Access to production data is restricted to authorized superadmin personnel only and limited to what is necessary to operate and support the service.</p>
 
           <h3>USER RIGHTS</h3>
           <p>Where applicable under data protection laws, customers may request access to, correction of, or deletion of their organization’s data through an authorized administrator.</p>
 
           <h3>COMPLIANCE WITH GOOGLE API SERVICES USER DATA POLICY</h3>
           <p>SignalTrue’s use of Google user data complies with the Google API Services User Data Policy, including Limited Use requirements.</p>
-          <p>Google user data is:</p>
-          <ul>
-            <li>Used only to provide SignalTrue’s user-facing features</li>
-            <li>Not sold</li>
-            <li>Not used for advertising</li>
-            <li>Not used for profiling</li>
-            <li>Not used for surveillance</li>
-            <li>Not used for AI or machine learning model training</li>
-          </ul>
+          <p>Google user data is used only to provide SignalTrue’s user-facing features. Google user data is not sold, not used for advertising, not used for profiling, not used for surveillance, and not used for AI or machine learning model training.</p>
 
           <h3>CONTACT</h3>
-          <p>For privacy, data protection, or deletion requests, authorized administrators may contact: <a href="mailto:privacy@signaltrue.ai">privacy@signaltrue.ai</a></p>
+          <p>For privacy, data protection, or deletion requests, authorized administrators may contact <a href="mailto:privacy@signaltrue.ai">privacy@signaltrue.ai</a></p>
         </div>
       </section>
     </main>
