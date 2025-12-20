@@ -1,7 +1,7 @@
 import express from 'express';
 import Action from '../models/action.js';
 import Signal from '../models/signal.js';
-import auth from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
  * GET /api/actions/org/:orgId
  * Get all actions for an organization
  */
-router.get('/org/:orgId', auth, async (req, res) => {
+router.get('/org/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const { status, owner } = req.query;
@@ -36,7 +36,7 @@ router.get('/org/:orgId', auth, async (req, res) => {
  * GET /api/actions/user/:userId
  * Get all actions assigned to a specific user
  */
-router.get('/user/:userId', auth, async (req, res) => {
+router.get('/user/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const { status } = req.query;
@@ -60,7 +60,7 @@ router.get('/user/:userId', auth, async (req, res) => {
  * GET /api/actions/signal/:signalId
  * Get all actions for a specific signal
  */
-router.get('/signal/:signalId', auth, async (req, res) => {
+router.get('/signal/:signalId', authenticateToken, async (req, res) => {
   try {
     const { signalId } = req.params;
     
@@ -80,7 +80,7 @@ router.get('/signal/:signalId', auth, async (req, res) => {
  * POST /api/actions
  * Create a new action
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const actionData = req.body;
     
@@ -128,7 +128,7 @@ router.post('/', auth, async (req, res) => {
  * PUT /api/actions/:id
  * Update an action
  */
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { status, dueDate, blockedReason, notes } = req.body;
     
@@ -178,7 +178,7 @@ router.put('/:id', auth, async (req, res) => {
  * POST /api/actions/:id/outcome
  * Record outcome for a completed action
  */
-router.post('/:id/outcome', auth, async (req, res) => {
+router.post('/:id/outcome', authenticateToken, async (req, res) => {
   try {
     const { 
       rating, 
@@ -254,7 +254,7 @@ router.post('/:id/outcome', auth, async (req, res) => {
  * POST /api/actions/:id/metrics
  * Add post-action metric measurement
  */
-router.post('/:id/metrics', auth, async (req, res) => {
+router.post('/:id/metrics', authenticateToken, async (req, res) => {
   try {
     const { metricName, value } = req.body;
     
@@ -287,7 +287,7 @@ router.post('/:id/metrics', auth, async (req, res) => {
  * DELETE /api/actions/:id
  * Delete an action
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const action = await Action.findById(req.params.id);
     if (!action) {

@@ -2,7 +2,7 @@ import express from 'express';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import Baseline from '../models/baseline.js';
-import auth from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * GET /api/calibration/status/:orgId
  * Get calibration status for an organization
  */
-router.get('/status/:orgId', auth, async (req, res) => {
+router.get('/status/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const org = await Organization.findById(orgId);
@@ -51,7 +51,7 @@ router.get('/status/:orgId', auth, async (req, res) => {
  * POST /api/calibration/start/:orgId
  * Start calibration period for an organization
  */
-router.post('/start/:orgId', auth, async (req, res) => {
+router.post('/start/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const org = await Organization.findById(orgId);
@@ -91,7 +91,7 @@ router.post('/start/:orgId', auth, async (req, res) => {
  * POST /api/calibration/connect-source/:orgId
  * Register a data source connection during calibration
  */
-router.post('/connect-source/:orgId', auth, async (req, res) => {
+router.post('/connect-source/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const { source } = req.body; // 'slack', 'google-calendar', etc.
@@ -141,7 +141,7 @@ router.post('/connect-source/:orgId', auth, async (req, res) => {
  * POST /api/calibration/complete/:orgId
  * Complete calibration and unlock features
  */
-router.post('/complete/:orgId', auth, async (req, res) => {
+router.post('/complete/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const org = await Organization.findById(orgId);
@@ -203,7 +203,7 @@ router.post('/complete/:orgId', auth, async (req, res) => {
  * GET /api/calibration/progress/:orgId
  * Get detailed calibration progress
  */
-router.get('/progress/:orgId', auth, async (req, res) => {
+router.get('/progress/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const org = await Organization.findById(orgId);

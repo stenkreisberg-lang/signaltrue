@@ -2,7 +2,7 @@ import express from 'express';
 import Signal from '../models/signal.js';
 import Action from '../models/action.js';
 import Organization from '../models/organizationModel.js';
-import auth from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * GET /api/signals/org/:orgId
  * Get all signals for an organization with filtering
  */
-router.get('/org/:orgId', auth, async (req, res) => {
+router.get('/org/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const { severity, status, teamId } = req.query;
@@ -46,7 +46,7 @@ router.get('/org/:orgId', auth, async (req, res) => {
  * GET /api/signals/team/:teamId
  * Get all signals for a specific team
  */
-router.get('/team/:teamId', auth, async (req, res) => {
+router.get('/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const { status } = req.query;
@@ -69,7 +69,7 @@ router.get('/team/:teamId', auth, async (req, res) => {
  * GET /api/signals/:id
  * Get a specific signal with full details
  */
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const signal = await Signal.findById(req.params.id)
       .populate('teamId', 'name')
@@ -96,7 +96,7 @@ router.get('/:id', auth, async (req, res) => {
  * POST /api/signals
  * Create a new signal (typically called by signal generation service)
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const signalData = req.body;
     
@@ -120,7 +120,7 @@ router.post('/', auth, async (req, res) => {
  * PUT /api/signals/:id
  * Update a signal (status, owner, etc.)
  */
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { status, owner, dueDate, selectedAction, actionStartDate } = req.body;
     
@@ -160,7 +160,7 @@ router.put('/:id', auth, async (req, res) => {
  * POST /api/signals/:id/outcome
  * Record outcome for a resolved signal
  */
-router.post('/:id/outcome', auth, async (req, res) => {
+router.post('/:id/outcome', authenticateToken, async (req, res) => {
   try {
     const { rating, timeToNormalization, notes } = req.body;
     
@@ -189,7 +189,7 @@ router.post('/:id/outcome', auth, async (req, res) => {
  * GET /api/signals/org/:orgId/ignored
  * Get all ignored signals for visibility
  */
-router.get('/org/:orgId/ignored', auth, async (req, res) => {
+router.get('/org/:orgId/ignored', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     
@@ -212,7 +212,7 @@ router.get('/org/:orgId/ignored', auth, async (req, res) => {
  * GET /api/signals/org/:orgId/summary
  * Get signal summary for weekly digest
  */
-router.get('/org/:orgId/summary', auth, async (req, res) => {
+router.get('/org/:orgId/summary', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     
