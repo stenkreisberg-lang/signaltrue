@@ -59,12 +59,16 @@ function ProductOverview() {
       {/* Hero Section */}
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>A leadership decision support system for team health</h1>
+          <h1 style={styles.heroTitle}>A Leadership Operating System for Team Health</h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue helps leaders make better calls by turning collaboration patterns into explainable signals and clear next steps.
+            SignalTrue detects team health drift before it becomes crisis. Baseline calibration → deviation intelligence → risk signals → decision guidance → outcome tracking.
           </p>
           <div style={styles.heroCTA}>
-            <Link to="/register" style={styles.primaryBtn}>Request early access</Link>
+            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
+            <Link to="#how-it-works" style={styles.secondaryBtn}>See Sample Signals</Link>
+          </div>
+          <div style={{marginTop: '2rem', fontSize: '0.9rem', color: '#94a3b8'}}>
+            No message content. Only metadata. Aggregated at team level. GDPR-aligned.
           </div>
         </div>
       </section>
@@ -72,106 +76,139 @@ function ProductOverview() {
       {/* Core Features */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>What Makes SignalTrue Different</h2>
+          <h2 style={styles.sectionTitle}>From Signal to Decision</h2>
           
           <div style={styles.featureGrid}>
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🔍</div>
-              <h3 style={styles.featureTitle}>Drift Explainability</h3>
-              <p style={styles.featureText}>
-                When alerts fire, see the top 3 contributing metrics instantly: "tone ↓15%, meetings ↑22%, response time ↑30%". No guesswork—just clear, actionable data.
-              </p>
-            </div>
-
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📚</div>
-              <h3 style={styles.featureTitle}>Micro-Playbook Engine</h3>
-              <p style={styles.featureText}>
-                Every drift alert includes a contextual recommendation: "Tone drop → encourage recognition posts" or "Meeting overload → try no-meeting Fridays". Act fast with confidence.
-              </p>
-            </div>
-
-            <div style={styles.featureCard}>
               <div style={styles.featureIcon}>�</div>
-              <h3 style={styles.featureTitle}>Program Impact Tracker</h3>
+              <h3 style={styles.featureTitle}>Baseline Intelligence</h3>
               <p style={styles.featureText}>
-                Tag interventions like "Wellness Week" or "4-Day Pilot", measure before/after Energy Index changes, and prove ROI. Perfect for HR and leadership reporting.
+                Your organization's patterns become the benchmark. Internal baseline (primary), role-based comparison (secondary), external context (optional, off by default).
               </p>
             </div>
 
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>⚙️</div>
-              <h3 style={styles.featureTitle}>Enterprise API & Export</h3>
+              <div style={styles.featureIcon}>⚠️</div>
+              <h3 style={styles.featureTitle}>Risk Signals</h3>
               <p style={styles.featureText}>
-                One-click CSV export for BI tools, REST API endpoints, and full API key management—create, rotate, revoke tokens with usage logs. Enterprise-ready integration.
+                Signals include severity (Critical/Risk/Informational), confidence level, deviation magnitude, and consequence statements like "This pattern tends to precede focus erosion."
               </p>
             </div>
 
             <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>�️</div>
-              <h3 style={styles.featureTitle}>Timeline Event Overlay</h3>
+              <div style={styles.featureIcon}>🎯</div>
+              <h3 style={styles.featureTitle}>Decision Guidance</h3>
               <p style={styles.featureText}>
-                Annotate your dashboards with product launches, reorgs, or policy changes. Understand sentiment dips and spikes in context—no more mystery charts.
+                No vague suggestions. Each signal presents 2-3 trade-off actions with expected effects, effort levels, and visible inaction costs. You decide, we track outcomes.
+              </p>
+            </div>
+
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>🔍</div>
+              <h3 style={styles.featureTitle}>Signal Drivers</h3>
+              <p style={styles.featureText}>
+                See the top 2-3 contributing factors for every signal. "Meeting load ↑35%, after-hours activity ↑18%, recovery time ↓22%." Know exactly what changed.
+              </p>
+            </div>
+
+            <div style={styles.featureCard}>
+              <div style={styles.featureIcon}>📈</div>
+              <h3 style={styles.featureTitle}>Outcome Tracking</h3>
+              <p style={styles.featureText}>
+                Post-action learning loop: record what worked, measure time-to-normalization, feed results back into recommendation quality. Your data improves your decisions.
               </p>
             </div>
 
             <div style={styles.featureCard}>
               <div style={styles.featureIcon}>🔐</div>
-              <h3 style={styles.featureTitle}>Security & Compliance</h3>
+              <h3 style={styles.featureTitle}>Privacy by Design</h3>
               <p style={styles.featureText}>
-                AES-256 encryption at rest, regional data residency (EU/US), alert frequency control, and team-level aggregation by default. GDPR-ready from day one.
+                No individual tracking. Team-level signals only. No message content stored. Metadata aggregation with minimum group size enforcement. GDPR-aligned from day one.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Preview */}
-      <section style={{...styles.section, background: '#f9fafb'}}>
+      {/* How It Works - 5 Steps */}
+      <section style={{...styles.section, background: '#f9fafb'}} id="how-it-works">
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>How SignalTrue Works</h2>
+          <h2 style={styles.sectionTitle}>How It Works</h2>
           <p style={styles.sectionSubtitle}>
-            Simple integration. Powerful insights. Privacy-first approach.
+            From baseline to breakthrough decisions in 5 clear steps
           </p>
 
           <div style={styles.stepsGrid}>
             <div style={styles.step}>
               <div style={styles.stepNumber}>1</div>
-              <h3 style={styles.stepTitle}>Connect Your Tools</h3>
+              <h3 style={styles.stepTitle}>Connect Data Sources</h3>
               <p style={styles.stepText}>
-                OAuth integration with Slack, Google, Microsoft. Tokens encrypted (AES-256), regional data residency (EU/US), team-level aggregation by default. 5-minute setup.
+                OAuth integration with Slack and Google Calendar. Secure, read-only metadata access. No message content stored.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>8 Signals Track Health</h3>
+              <h3 style={styles.stepTitle}>30-Day Baseline Calibration</h3>
               <p style={styles.stepText}>
-                Sentiment, latency, meetings, after-hours, network breadth, focus time, recovery days, and auto-tuned Energy Index. No noisy metrics—only proven high-impact signals.
+                <strong>FREE calibration period.</strong> We establish your organization's baseline patterns. No recommendations shown until calibration completes.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Drift Alerts Explain Why</h3>
+              <h3 style={styles.stepTitle}>Detect Deviations & Risk Signals</h3>
               <p style={styles.stepText}>
-                When Energy Index dips, see top 3 contributors (e.g., "tone ↓15%, meetings ↑22%") plus a micro-playbook: "encourage recognition posts" or "try no-meeting Fridays".
+                When team patterns drift from baseline, signals fire with severity (Critical/Risk/Informational), confidence level, and time-to-impact estimate.
               </p>
             </div>
 
             <div style={styles.step}>
               <div style={styles.stepNumber}>4</div>
-              <h3 style={styles.stepTitle}>Measure Program Impact</h3>
+              <h3 style={styles.stepTitle}>Prescribe Trade-Off Decisions</h3>
               <p style={styles.stepText}>
-                Tag interventions ("Wellness Week", "4-Day Pilot"), track before/after energy, and prove ROI. Export CSV or pull via API for leadership dashboards.
+                Each signal includes 2-3 mutually exclusive actions with expected effects and effort levels. Inaction cost is visible as an option.
+              </p>
+            </div>
+
+            <div style={styles.step}>
+              <div style={styles.stepNumber}>5</div>
+              <h3 style={styles.stepTitle}>Track Outcomes Over Time</h3>
+              <p style={styles.stepText}>
+                Record action results (Worked/Partially Worked/Did Not Work), measure time-to-normalization, and improve future recommendations.
               </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div style={{textAlign: 'center', marginTop: '3rem'}}>
-            <Link to="/how-it-works" style={styles.primaryBtn}>
-              Learn More About Our Technology
-            </Link>
+      {/* Benefits Section Title */}
+      <div style={styles.container}>
+        <h2 style={styles.sectionTitle}>Trusted By</h2>
+        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4rem', margin: '2rem auto', maxWidth: 700, opacity: 0.7}}>
+          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Sharewell</div>
+          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Cleveron</div>
+          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Toggl</div>
+        </div>
+      </div>
+
+      {/* Case Example */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.container}>
+          <h2 style={styles.sectionTitle}>Real-World Impact (Example)</h2>
+          <div style={{maxWidth: 700, margin: '0 auto', background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 2px 12px rgba(0,0,0,0.04)'}}>
+            <div style={{fontSize: '1.1rem', color: '#374151', marginBottom: 16, lineHeight: 1.6}}>
+              <strong>Signal detected:</strong> Meeting load spike (+35% vs baseline) for Product team
+            </div>
+            <div style={{fontSize: '1.1rem', color: '#374151', marginBottom: 16, lineHeight: 1.6}}>
+              <strong>Action taken:</strong> Removed 2 recurring meetings, converted 30% of meetings to async updates
+            </div>
+            <div style={{fontSize: '1.1rem', color: '#059669', fontWeight: 700}}>
+              <strong>Outcome:</strong> Meeting load normalized in 3 weeks. Focus time increased 18%.
+            </div>
+            <div style={{marginTop: 16, fontSize: '0.9rem', color: '#6b7280', fontStyle: 'italic'}}>
+              Note: Example for illustrative purposes. Your results will vary based on your organization's baseline and actions taken.
+            </div>
           </div>
         </div>
       </section>
@@ -184,10 +221,10 @@ function ProductOverview() {
       {/* For HR & People Teams */}
       <section style={styles.section}>
         <div style={styles.container}>
-            <h2 style={styles.sectionTitle}>Lead culture growth with real-time engagement data.</h2>
+            <h2 style={styles.sectionTitle}>You don't pay for data. You pay for avoiding slow organizational decay.</h2>
             <p style={styles.introText}>
-              Track how engagement evolves, compare teams, and measure the impact of your programs.<br />
-              Design initiatives based on facts — not assumptions.
+              SignalTrue helps leaders detect team health drift before it becomes crisis.<br />
+              Baseline calibration → deviation intelligence → recommended leadership decisions → outcome tracking.
             </p>
         </div>
       </section>
@@ -195,9 +232,9 @@ function ProductOverview() {
       {/* For Managers */}
       <section style={{...styles.section, background:'#f9fafb'}}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Support every team with clear, actionable insight.</h2>
+          <h2 style={styles.sectionTitle}>Built for leaders who make hard calls.</h2>
           <p style={styles.introText}>
-            Weekly engagement reports help managers understand team focus, connection, and progress — so they can lead with empathy and precision.
+            Every signal shows you what usually breaks next, what to do now, and tracks whether it worked. Decision guidance, not vague dashboards.
           </p>
         </div>
       </section>
@@ -216,27 +253,30 @@ function ProductOverview() {
       {/* Use Cases */}
       <section style={{...styles.section, background:'#f9fafb'}}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>How HR teams use SignalTrue every day.</h2>
+          <h2 style={styles.sectionTitle}>Common Use Cases</h2>
           <ul style={{...styles.introText, textAlign:'left', maxWidth:700, margin:'0 auto 28px'}}>
-            <li>Track engagement during high-growth periods</li>
-            <li>Monitor culture alignment after change or reorgs</li>
-            <li>Evaluate leadership program effectiveness</li>
-            <li>Support hybrid team communication</li>
-            <li>Recognise high-performing teams early</li>
+            <li>Detect meeting overload before burnout sets in</li>
+            <li>Track after-hours creep and prevent team exhaustion</li>
+            <li>Measure program impact (wellness initiatives, policy changes)</li>
+            <li>Monitor team health during high-growth or reorganization</li>
+            <li>Identify focus erosion and decision delays early</li>
           </ul>
           <div style={{textAlign:'center',marginTop:32}}>
-            <Link to="/contact" style={styles.primaryBtn}>Explore a Live Demo</Link>
+            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
           </div>
         </div>
       </section>
 
-      {/* Mention Continuous Engagement Insight™ */}
+      {/* Final Section */}
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Continuous Engagement Insight™</h2>
+          <h2 style={styles.sectionTitle}>Start with Baseline Calibration</h2>
           <p style={styles.introText}>
-            SignalTrue delivers continuous, people-first engagement insight for HR leaders, managers, and executives.
+            Month 1 is free. We establish your baseline patterns. Signal Intelligence unlocks when calibration completes.
           </p>
+          <div style={{textAlign:'center', marginTop: 32}}>
+            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
+          </div>
         </div>
       </section>
 

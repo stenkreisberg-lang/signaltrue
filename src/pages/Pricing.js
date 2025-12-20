@@ -68,10 +68,13 @@ const Pricing = () => {
       <div style={styles.page}>
         <section style={styles.hero}>
           <div style={styles.container}>
-            <h1 style={styles.heroTitle}>Prevent burnout, disengagement, and overload before they cost you people</h1>
+            <h1 style={styles.heroTitle}>Month 1 = Baseline Calibration Period (Free)</h1>
             <p style={styles.heroSubtitle}>
-              Pricing scales with insight depth and governance — not surveillance.
+              You don't pay for data. You pay for avoiding slow organizational decay.
             </p>
+            <div style={{marginTop: '1.5rem', fontSize: '0.95rem', color: '#94a3b8', maxWidth: 700, margin: '1.5rem auto 0'}}>
+              <strong>Privacy-first:</strong> No message content. Only metadata. Aggregated at team level. GDPR-aligned from day one.
+            </div>
           </div>
         </section>
 
@@ -177,9 +180,9 @@ const Pricing = () => {
                 </p>
               </div>
               <div style={styles.faqCard}>
-                <h3 style={styles.faqQuestion}>What's included in the free trial?</h3>
+                <h3 style={styles.faqQuestion}>What's the calibration period?</h3>
                 <p style={styles.faqAnswer}>
-                  All plans include a 30-day free trial with full access to features. Credit card required to start. Cancel anytime during the trial with no charges.
+                  First 30 days are free baseline calibration. We establish your organization's normal patterns. Signal Intelligence (deviation detection + decision guidance) unlocks when calibration completes. No credit card required to start.
                 </p>
               </div>
               <div style={styles.faqCard}>

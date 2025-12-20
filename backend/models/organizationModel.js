@@ -28,6 +28,25 @@ const organizationSchema = new mongoose.Schema(
     settings: {
       onboardingComplete: { type: Boolean, default: false },
     },
+    
+    // Calibration state
+    calibration: {
+      isInCalibration: { type: Boolean, default: true },
+      calibrationStartDate: { type: Date },
+      calibrationEndDate: { type: Date },
+      calibrationDay: { type: Number, default: 0 }, // 0-30
+      calibrationProgress: { type: Number, default: 0 }, // 0-100
+      calibrationConfidence: { 
+        type: String, 
+        enum: ['Low', 'Medium', 'High'], 
+        default: 'Low' 
+      },
+      dataSourcesConnected: [{
+        source: { type: String }, // 'slack', 'google-calendar', etc.
+        connectedAt: { type: Date }
+      }],
+      featuresUnlocked: { type: Boolean, default: false }
+    },
   },
   { timestamps: true }
 );

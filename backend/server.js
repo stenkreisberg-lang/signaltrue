@@ -70,6 +70,9 @@ import analyticsRoutes from "./routes/analytics.js";
 import teamRoutes from "./routes/teamRoutes.js";
 import slackRoutes from "./routes/slackRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
+import calibrationRoutes from "./routes/calibration.js";
+import signalsRoutes from "./routes/signals.js";
+import actionsRoutes from "./routes/actions.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -147,6 +150,9 @@ async function main() {
     app.use("/api/teams", teamRoutes);
     app.use("/api/slack", slackRoutes);
     app.use("/api/history", historyRoutes);
+    app.use("/api/calibration", calibrationRoutes);
+    app.use("/api/signals", signalsRoutes);
+    app.use("/api/actions", actionsRoutes);
     app.use("/api/narrative", narrativeRoutes);
     app.use("/api/focus", focusRoutes);
     app.use("/api/forecast", forecastRoutes);

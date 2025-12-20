@@ -25,6 +25,10 @@ import PrivacySettingsPage from './pages/PrivacySettingsPage';
 import AdminOnboarding from './pages/AdminOnboarding';
 import OnboardingAccept from './pages/OnboardingAccept';
 import AuthCallback from './pages/AuthCallback';
+import DashboardMockup from './components/DashboardMockup';
+// New app pages
+import Overview from './pages/app/Overview';
+import Signals from './pages/app/Signals';
 
 export default function App() {
   return (
@@ -48,6 +52,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/onboarding" element={<OnboardingAccept />} />
+        <Route path="/dashboard-concept" element={<DashboardMockup />} />
   {/* OAuth callback catcher; forwards code to backend and redirects back */}
   <Route path="/auth/:provider/callback" element={<AuthCallback />} />
         <Route
@@ -63,6 +68,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/overview"
+          element={
+            <ProtectedRoute>
+              <Overview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/signals"
+          element={
+            <ProtectedRoute>
+              <Signals />
             </ProtectedRoute>
           }
         />

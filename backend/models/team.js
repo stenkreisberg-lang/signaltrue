@@ -12,6 +12,19 @@ const teamSchema = new mongoose.Schema({
   bdi: { type: Number, default: 50 },
   trend: { type: Number, default: 0 }, // percent change (calculated from history)
   favorite: { type: Boolean, default: false },
+  
+  // Team metadata for role-based benchmarking
+  metadata: {
+    function: { 
+      type: String, 
+      enum: ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Support', 'Operations', 'Other'] 
+    },
+    sizeBand: { 
+      type: String, 
+      enum: ['1-5', '6-10', '11-20', '21-50', '50+'] 
+    },
+    actualSize: { type: Number }
+  },
 
   // Baseline for comparison
   baseline: {

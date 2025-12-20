@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';
+import DashboardMockup from '../components/DashboardMockup';
 
 // Minimal styles object for HowItWorks page
 
@@ -51,6 +52,17 @@ function HowItWorks() {
           <div style={{textAlign:'center',marginTop:32}}>
             <Link to="/contact" style={styles.primaryBtn}>Start Your Free Demo</Link>
           </div>
+        </div>
+      </section>
+
+      {/* Dashboard Example Section */}
+      <section style={{...styles.section, padding: 0, overflow: 'hidden'}}>
+        <div style={{textAlign: 'center', padding: '60px 20px 40px', background: '#f8fafc'}}>
+          <h2 style={styles.sectionTitle}>See the decision support system in action</h2>
+          <p style={styles.introText}>Real-time signals, 3-month benchmarks, and actionable playbooks—all in one view.</p>
+        </div>
+        <div style={{borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0'}}>
+           <DashboardMockup />
         </div>
       </section>
 

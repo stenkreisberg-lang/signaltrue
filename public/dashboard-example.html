@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalTrue Dashboard Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #020617; /* Darker background for contrast */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .dashboard-container {
+            background-color: #0f172a;
+            width: 1200px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+        .dashboard-content {
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        /* Utility classes for the mockup */
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+        .card { background-color: #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .btn { border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background-color: #059669; color: white; }
+        .btn-secondary { background-color: transparent; color: #94a3b8; border: 1px solid #475569; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="dashboard-content">
+            
+            <!-- HEADER -->
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid #1e293b; padding-bottom: 20px;">
+                <div>
+                    <h1 style="font-size: 24px; font-weight: 700; margin: 0; color: white;">Team Execution Signals</h1>
+                    <p style="margin: 5px 0 0; color: #94a3b8; font-size: 14px;">
+                        3 Teams Monitored • Last updated: Today, 9:00 AM
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Org Energy Index</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #34d399;">Stable (7.2/10)</div>
+                </div>
+            </header>
+
+            <div class="grid">
+                
+                <!-- LEFT COLUMN -->
+                <div>
+                    <h2 style="font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 20px;">
+                        Priority Signals & Recommendations
+                    </h2>
+
+                    <!-- CARD 1: DRIFT -->
+                    <div class="card" style="border-left: 4px solid #f59e0b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">EXECUTION DRIFT INDICATOR</span>
+                                <span style="color: #cbd5e1; font-weight: 600;">Engineering Team</span>
+                            </div>
+                            <span style="color: #64748b; font-size: 13px;">Detected 2 days ago</span>
+                        </div>
+
+                        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 15px; font-style: italic;">
+                            This signal reflects aggregated changes in how work is coordinated, not individual performance.
+                        </div>
+
+                        <h3 style="font-size: 20px; font-weight: 700; color: white; margin: 0 0 15px 0;">
+                            Focus Time Erosion
+                        </h3>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">The Signal (vs 3-Month Benchmark)</div>
+                                <div style="font-size: 15px;">
+                                    Deep work blocks dropped by <span style="color: #f87171; font-weight: 700;">-40%</span> compared to Q3 average.
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">The Context</div>
+                                <div style="font-size: 15px;">
+                                    <span style="background-color: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">Reorganization (2 weeks ago)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MICRO PLAYBOOK -->
+                        <div style="background-color: rgba(15, 23, 42, 0.5); border: 1px solid #334155; border-radius: 8px; padding: 16px;">
+                            <div style="color: #34d399; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                                Possible ways to reduce friction
+                            </div>
+                            <p style="margin: 0 0 15px 0; font-size: 14px; line-height: 1.5;">
+                                Initiate a "Meeting Audit" for the Engineering team. Consider implementing a "No-Meeting Wednesday" to restore focus blocks.
+                            </p>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary">Add to Action Plan</button>
+                                <button class="btn btn-secondary">Dismiss (False Positive)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: POSITIVE -->
+                    <div class="card" style="border-left: 4px solid #34d399;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="background-color: rgba(52, 211, 153, 0.1); color: #34d399; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">IMPROVEMENT</span>
+                                <span style="color: #cbd5e1; font-weight: 600;">Sales Team</span>
+                            </div>
+                            <span style="color: #64748b; font-size: 13px;">Detected today</span>
+                        </div>
+
+                        <h3 style="font-size: 20px; font-weight: 700; color: white; margin: 0 0 15px 0;">
+                            After-Hours Recovery
+                        </h3>
+
+                        <div style="font-size: 15px; line-height: 1.5; margin-bottom: 15px;">
+                            After-hours messaging volume has decreased by <span style="color: #34d399; font-weight: 700;">15%</span> following the "Disconnect Policy" rollout.
+                        </div>
+                        
+                        <div style="font-size: 13px; color: #94a3b8;">
+                            <em>SignalTrue Note: This suggests the policy is being adopted successfully.</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div>
+                    <h2 style="font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 20px;">
+                        Team Metrics
+                    </h2>
+
+                    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; font-size: 14px; color: white;">Meeting Load (Hours/Week)</h4>
+                        <!-- Mock Chart Bar -->
+                        <div style="display: flex; align-items: flex-end; height: 60px; gap: 8px; margin-bottom: 10px;">
+                            <div style="width: 20%; height: 40%; background: #334155; border-radius: 2px;"></div>
+                            <div style="width: 20%; height: 50%; background: #334155; border-radius: 2px;"></div>
+                            <div style="width: 20%; height: 45%; background: #334155; border-radius: 2px;"></div>
+                            <div style="width: 20%; height: 70%; background: #334155; border-radius: 2px;"></div>
+                            <div style="width: 20%; height: 85%; background: #f87171; border-radius: 2px;"></div>
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; text-align: right;">Trending Up (+25%)</div>
+                    </div>
+
+                    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; font-size: 14px; color: white;">Response Latency</h4>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 24px; font-weight: 700;">24m</span>
+                            <span style="color: #34d399; font-size: 13px;">-5m vs last week</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 20px; border: 1px dashed #334155; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #94a3b8;">Privacy & Aggregation</h4>
+                        <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0;">
+                            All data displayed is aggregated at the team level (min. group size: 5). No individual messages or calendar events are accessible.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
