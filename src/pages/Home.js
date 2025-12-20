@@ -13,21 +13,130 @@ function Home() {
       {/* Section 1 — Hero */}
       <section style={styles.hero}>
         <div style={styles.heroInner}>
-          <h1 style={styles.heroTitle}>Grow engagement. Strengthen culture. Lead with insight.</h1>
+          <h1 style={styles.heroTitle}>See early warning signs in team health.</h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue gives HR leaders a continuous view of how teams connect, collaborate, and thrive — helping you build resilient, high-energy workplaces every day.
+            Before burnout, disengagement, or overload becomes visible.
           </p>
+          <p style={{...styles.heroSubtitle, fontSize:'1rem', marginTop:'1rem'}}>
+            SignalTrue turns collaboration metadata into team-level health signals that help leaders decide when to intervene and when to wait.
+          </p>
+          
+          <div style={{marginTop:20, display:'flex', gap:20, fontSize:'0.9em', color:'rgba(255,255,255,0.9)', justifyContent:'center', flexWrap:'wrap'}}>
+            <span>✓ No surveys.</span>
+            <span>✓ No individual tracking.</span>
+            <span>✓ No content monitoring.</span>
+          </div>
+          
           <div style={styles.ctaRow}>
-            <Link to="/contact" style={styles.primaryButton}>Get Early Access</Link>
-            <Link to="/how-it-works" style={styles.secondaryButton}>See How It Works</Link>
+            <Link to="/register" style={styles.primaryButton}>Request early access</Link>
+          </div>
+          
+          <p style={{fontSize:'0.85rem', color:'rgba(255,255,255,0.7)', marginTop:'1.5rem'}}>
+            No individual tracking. Team-level signals only. GDPR-aligned.
+          </p>
+        </div>
+      </section>
+
+      {/* Section 2 — Trusted By */}
+      <section style={{padding:'2.5rem 2rem', borderBottom:'1px solid #e5e7eb', background:'white'}}>
+        <div style={styles.sectionInner}>
+          <p style={{fontSize:'0.9em', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:20, textAlign:'center'}}>Trusted by teams building calm, high-performing workplaces</p>
+          <div style={{display:'flex', justifyContent:'center', gap:60, alignItems:'center', opacity:0.7, flexWrap:'wrap'}}>
+            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8', letterSpacing:'-1px'}}>Sharewell</div>
+            <div style={{fontWeight:700, fontSize:22, color:'#94a3b8', letterSpacing:'1px'}}>CLEVERON</div>
+            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8'}}>toggl</div>
           </div>
         </div>
       </section>
 
-      {/* Section 2 — The New Way to See Engagement */}
+      {/* Section 3 — What It Is / What It's Not */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>SignalTrue measures patterns, not people</h2>
+          <p style={styles.lead}>
+            SignalTrue analyzes how teams work together over time using aggregated metadata from tools like Slack and Calendar. It surfaces sustained overload, engagement drift, and focus erosion early — before problems show up in surveys, performance reviews, or resignations.
+          </p>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:24, marginTop:32}}>
+            <div style={{background:'white', borderLeft:'4px solid #ef4444', padding:24, borderRadius:8}}>
+              <h3 style={{fontSize:'1.25rem', fontWeight:700, marginBottom:12}}>What SignalTrue is NOT</h3>
+              <ul style={{listStyle:'none', padding:0, margin:0}}>
+                <li style={{padding:'4px 0'}}>✗ Not time tracking</li>
+                <li style={{padding:'4px 0'}}>✗ Not employee surveillance</li>
+                <li style={{padding:'4px 0'}}>✗ Not performance scoring</li>
+                <li style={{padding:'4px 0'}}>✗ Not sentiment spying</li>
+              </ul>
+            </div>
+            <div style={{background:'white', borderLeft:'4px solid #6366f1', padding:24, borderRadius:8}}>
+              <h3 style={{fontSize:'1.25rem', fontWeight:700, marginBottom:12}}>What SignalTrue IS</h3>
+              <ul style={{listStyle:'none', padding:0, margin:0}}>
+                <li style={{padding:'4px 0'}}>✓ Team-level aggregation only</li>
+                <li style={{padding:'4px 0'}}>✓ Early-warning system for drift and overload</li>
+                <li style={{padding:'4px 0'}}>✓ Leadership decision support, not automation</li>
+                <li style={{padding:'4px 0'}}>✓ Built for trust in modern, remote teams</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 4 — How It Works Diagram */}
+      <section style={{...styles.section, background:'#0f172a', color:'white'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={{...styles.h2, color:'white', marginBottom:40}}>How SignalTrue Works</h2>
+          <div style={{display:'flex', justifyContent:'center', alignItems:'center', gap:20, flexWrap:'wrap'}}>
+            <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, textAlign:'center'}}>
+              <div style={{fontSize:24, marginBottom:10}}>🔌</div>
+              <div style={{fontWeight:700, color:'white', marginBottom:5}}>Tools</div>
+              <div style={{fontSize:13, color:'#94a3b8'}}>Slack, Calendar, Jira metadata</div>
+            </div>
+            <div style={{color:'#64748b', fontSize:24}}>→</div>
+            <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, textAlign:'center'}}>
+              <div style={{fontSize:24, marginBottom:10}}>📊</div>
+              <div style={{fontWeight:700, color:'white', marginBottom:5}}>Signals</div>
+              <div style={{fontSize:13, color:'#94a3b8'}}>Drift, Overload, Focus Erosion</div>
+            </div>
+            <div style={{color:'#64748b', fontSize:24}}>→</div>
+            <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, textAlign:'center'}}>
+              <div style={{fontSize:24, marginBottom:10}}>🧠</div>
+              <div style={{fontWeight:700, color:'white', marginBottom:5}}>Context</div>
+              <div style={{fontSize:13, color:'#94a3b8'}}>Events, Launches, Reorgs</div>
+            </div>
+            <div style={{color:'#64748b', fontSize:24}}>→</div>
+            <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, borderBottom:'4px solid #34d399', textAlign:'center'}}>
+              <div style={{fontSize:24, marginBottom:10}}>⚡️</div>
+              <div style={{fontWeight:700, color:'white', marginBottom:5}}>Action</div>
+              <div style={{fontSize:13, color:'#94a3b8'}}>Micro-playbooks & Decisions</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 5 — Feature-by-Effect */}
       <section style={styles.section}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.h2}>Finally, a real-time view of your organisation’s energy.</h2>
+          <h2 style={styles.h2}>From raw activity to clear decisions</h2>
+          <p style={styles.lead}>Traditional tools show what already happened. SignalTrue shows what is starting to go wrong.</p>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:24, marginTop:32}}>
+            <div style={styles.card}>
+              <h3 style={{fontSize:'1.1rem', fontWeight:700, marginBottom:8}}>Detect burnout risk early</h3>
+              <p style={{color:'#6b7280', fontSize:'0.95rem'}}>See sustained after-hours work and focus fragmentation before people quit.</p>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{fontSize:'1.1rem', fontWeight:700, marginBottom:8}}>Avoid meeting overload</h3>
+              <p style={{color:'#6b7280', fontSize:'0.95rem'}}>Identify teams where meeting load is displacing deep work and slowing execution.</p>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{fontSize:'1.1rem', fontWeight:700, marginBottom:8}}>Support data-driven decisions</h3>
+              <p style={{color:'#6b7280', fontSize:'0.95rem'}}>Answer "Is this a bad week or a real problem?" with trends, context, and recommendations.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 6 — The New Way to See Engagement */}
+      <section style={{...styles.section, background:'#f9fafb'}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.h2}>Finally, a real-time view of your organisation's energy.</h2>
           <p style={styles.lead}>
             Surveys capture moments in time. SignalTrue captures momentum.<br />
             See how engagement evolves — celebrate progress, support leaders, and strengthen connection across every team.
@@ -35,8 +144,8 @@ function Home() {
         </div>
       </section>
 
-      {/* Section 3 — How It Works */}
-      <section style={{...styles.section, background:'#f9fafb'}}>
+      {/* Section 7 — How It Works */}
+      <section style={styles.section}>
         <div style={styles.sectionInner}>
           <h2 style={styles.h2}>From everyday collaboration to continuous insight.</h2>
           <div style={styles.grid4}>
@@ -154,14 +263,14 @@ const styles = {
   navLink:{color:'#4b5563',textDecoration:'none',fontWeight:500},
   loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600' },
 
-  hero:{background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',padding:'6rem 2rem 4rem',textAlign:'center'},
+  hero:{background:'#0f172a',color:'white',padding:'6rem 2rem 4rem',textAlign:'center'},
   heroInner:{maxWidth:950,margin:'0 auto'},
   badge:{display:'inline-block',padding:'6px 12px',borderRadius:999,background:'rgba(255,255,255,0.15)',backdropFilter:'blur(4px)',marginBottom:16},
   heroTitle:{fontSize:'3rem',fontWeight:800,margin:'0 0 12px'},
   heroSubtitle:{fontSize:'1.125rem',opacity:0.95,margin:'0 auto 24px',maxWidth:760,lineHeight:1.6},
-  ctaRow:{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'},
-  primaryButton:{padding:'0.9rem 1.4rem',background:'white',color:'#6366f1',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer'},
-  secondaryButton:{padding:'0.9rem 1.4rem',background:'transparent',color:'white',border:'2px solid white',borderRadius:8,fontWeight:700,cursor:'pointer'},
+  ctaRow:{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap', marginTop:32},
+  primaryButton:{padding:'0.9rem 1.4rem',background:'#059669',color:'white',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',textDecoration:'none',display:'inline-block'},
+  secondaryButton:{padding:'0.9rem 1.4rem',background:'transparent',color:'white',border:'2px solid white',borderRadius:8,fontWeight:700,cursor:'pointer',textDecoration:'none',display:'inline-block'},
 
   section:{padding:'4.5rem 2rem'},
   sectionInner:{maxWidth:1100,margin:'0 auto'},
@@ -175,8 +284,8 @@ const styles = {
   step:{background:'white',border:'2px solid #e5e7eb',borderRadius:12,padding:16,textAlign:'center'},
   stepNum:{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,margin:'0 auto 10px'},
   outcome:{background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:12,padding:16},
-  link:{color:'#6366f1',textDecoration:'none',fontWeight:700},
-  cta:{background:'linear-gradient(135deg,#667eea,#764ba2)',padding:'4.5rem 2rem',textAlign:'center'}
+  link:{color:'#059669',textDecoration:'none',fontWeight:700},
+  cta:{background:'#0f172a',padding:'4.5rem 2rem',textAlign:'center'}
 };
 
 export default Home;

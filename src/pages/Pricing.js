@@ -68,9 +68,9 @@ const Pricing = () => {
       <div style={styles.page}>
         <section style={styles.hero}>
           <div style={styles.container}>
-            <h1 style={styles.heroTitle}>Simple plans to help HR grow engagement continuously.</h1>
+            <h1 style={styles.heroTitle}>Prevent burnout, disengagement, and overload before they cost you people</h1>
             <p style={styles.heroSubtitle}>
-              Continuous Engagement Insight™ for every team size. 30-day free trial — credit card required to start.
+              Pricing scales with insight depth and governance — not surveillance.
             </p>
           </div>
         </section>
@@ -84,18 +84,20 @@ const Pricing = () => {
               {/* Starter Plan */}
               <div style={styles.pricingCard}>
                 <div style={styles.planBadge}>Starter</div>
+                <div style={{fontSize:12, textTransform:'uppercase', color:'#94a3b8', marginBottom:5, fontWeight:700}}>Best For</div>
+                <p style={styles.planSubtitle}>Small teams wanting early warning</p>
                 <div style={styles.priceSection}>
                   <span style={styles.priceAmount}>€99</span>
                   <span style={styles.pricePeriod}>/month</span>
                 </div>
-                <p style={styles.planSubtitle}>Up to 20 people</p>
                 <ul style={styles.featureList}>
-                  <li>Continuous engagement tracking</li>
-                  <li>Team Health Score</li>
-                  <li>Weekly HR Insight Brief</li>
+                  <li>Weekly team health summaries</li>
+                  <li>Drift detection</li>
+                  <li>Slack & Calendar integration</li>
+                  <li>Privacy-first defaults</li>
                 </ul>
                 <button style={styles.planButton} onClick={() => handleStartTrial('starter')} disabled={loadingPlan === 'starter'}>
-                  {loadingPlan === 'starter' ? 'Starting…' : 'Get Early Access'}
+                  {loadingPlan === 'starter' ? 'Starting…' : 'Request early access'}
                 </button>
               </div>
 
@@ -103,39 +105,62 @@ const Pricing = () => {
               <div style={{...styles.pricingCard, ...styles.featuredCard}}>
                 <div style={styles.popularBadge}>Most Popular</div>
                 <div style={styles.planBadge}>Growth</div>
+                <div style={{fontSize:12, textTransform:'uppercase', color:'#94a3b8', marginBottom:5, fontWeight:700}}>Best For</div>
+                <p style={styles.planSubtitle}>Scaling teams in change</p>
                 <div style={styles.priceSection}>
                   <span style={styles.priceAmount}>€299</span>
                   <span style={styles.pricePeriod}>/month</span>
                 </div>
-                <p style={styles.planSubtitle}>Everything in Starter</p>
                 <ul style={styles.featureList}>
-                  <li>Trend analytics and benchmarking</li>
-                  <li>Engagement evolution dashboard</li>
-                  <li>Privacy & retention controls</li>
+                  <li>Advanced drift explainability</li>
+                  <li>Micro playbook recommendations</li>
+                  <li>Program impact tracking</li>
+                  <li>Manager-level insights</li>
                 </ul>
                 <button style={styles.planButtonPrimary} onClick={() => handleStartTrial('pro')} disabled={loadingPlan === 'pro'}>
-                  {loadingPlan === 'pro' ? 'Starting…' : 'Get Early Access'}
+                  {loadingPlan === 'pro' ? 'Starting…' : 'Request early access'}
                 </button>
               </div>
 
               {/* Enterprise Plan */}
               <div style={styles.pricingCard}>
                 <div style={styles.planBadge}>Enterprise</div>
+                <div style={{fontSize:12, textTransform:'uppercase', color:'#94a3b8', marginBottom:5, fontWeight:700}}>Best For</div>
+                <p style={styles.planSubtitle}>Distributed or regulated orgs</p>
                 <div style={styles.priceSection}>
                   <span style={styles.priceAmount}>Custom</span>
                 </div>
-                <p style={styles.planSubtitle}>Everything in Growth</p>
                 <ul style={styles.featureList}>
-                  <li>API & BI integrations</li>
-                  <li>Regional data residency</li>
-                  <li>Dedicated success manager</li>
+                  <li>Custom aggregation rules</li>
+                  <li>Data exports & API</li>
+                  <li>Advanced compliance controls</li>
+                  <li>Dedicated onboarding</li>
                 </ul>
-                <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Get Early Access</a>
+                <a href="mailto:sales@signaltrue.ai" style={styles.planButton}>Contact Sales</a>
+              </div>
+            </div>
+
+            <div style={{marginTop:48, display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, maxWidth:800, margin:'48px auto 0'}}>
+              <div style={{background:'white', padding:24, borderRadius:8, borderLeft:'4px solid #ef4444'}}>
+                <h3 style={{fontSize:'1.25rem', fontWeight:700, marginBottom:12}}>What you are not paying for</h3>
+                <ul style={{listStyle:'none', padding:0, margin:0}}>
+                  <li>✗ Employee monitoring</li>
+                  <li>✗ Productivity scoring</li>
+                  <li>✗ Individual rankings</li>
+                </ul>
+              </div>
+              <div style={{background:'white', padding:24, borderRadius:8, borderLeft:'4px solid #059669'}}>
+                <h3 style={{fontSize:'1.25rem', fontWeight:700, marginBottom:12}}>What you are paying for</h3>
+                <ul style={{listStyle:'none', padding:0, margin:0}}>
+                  <li>✓ Early detection</li>
+                  <li>✓ Better leadership decisions</li>
+                  <li>✓ Healthier teams that last</li>
+                </ul>
               </div>
             </div>
 
             <div style={styles.trialNote}>
-              <p>No individual monitoring. All analytics aggregated by team.</p>
+              <p>No individual tracking. Team-level signals only. GDPR-aligned.</p>
             </div>
           </div>
         </section>

@@ -13,12 +13,12 @@ const styles = {
   navLinks: { display: 'flex', gap: 24, alignItems: 'center' },
   navLink: { color: '#4b5563', textDecoration: 'none', fontWeight: 500 },
   loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #ff6f61, #ff9472)', color: 'white', borderRadius: 6, textDecoration: 'none', fontWeight: 600 },
-  hero: { background: 'linear-gradient(135deg,#667eea,#764ba2)', color: 'white', padding: '6rem 2rem 4rem', textAlign: 'center' },
+  hero: { background: '#0f172a', color: 'white', padding: '6rem 2rem 4rem', textAlign: 'center' },
   container: { maxWidth: 1100, margin: '0 auto', padding: '0 2rem' },
   heroTitle: { fontSize: '3rem', fontWeight: 800, margin: '0 0 12px' },
   heroSubtitle: { fontSize: '1.25rem', opacity: 0.95, margin: '0 auto 24px', maxWidth: 760, lineHeight: 1.6 },
   heroCTA: { display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24 },
-  primaryBtn: { padding: '0.9rem 1.4rem', background: 'white', color: '#6366f1', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
+  primaryBtn: { padding: '0.9rem 1.4rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
   secondaryBtn: { padding: '0.9rem 1.4rem', background: 'transparent', color: 'white', border: '2px solid white', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
   section: { padding: '4rem 0' },
   sectionTitle: { fontSize: '2.25rem', fontWeight: 800, margin: '0 0 28px', color: '#111827', textAlign: 'center' },
@@ -59,14 +59,12 @@ function ProductOverview() {
       {/* Hero Section */}
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>Continuous Engagement Insight™</h1>
+          <h1 style={styles.heroTitle}>A leadership decision support system for team health</h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue helps HR teams grow engagement, strengthen culture, and guide leaders with continuous insight.
+            SignalTrue helps leaders make better calls by turning collaboration patterns into explainable signals and clear next steps.
           </p>
-          <div style={{marginTop:12, fontWeight:600}}>Build stronger teams through continuous engagement insight.</div>
           <div style={styles.heroCTA}>
-            <Link to="/contact" style={styles.primaryBtn}>Get Early Access</Link>
-            <Link to="/how-it-works" style={styles.secondaryBtn}>See How It Works</Link>
+            <Link to="/register" style={styles.primaryBtn}>Request early access</Link>
           </div>
         </div>
       </section>

@@ -25,29 +25,73 @@ function About() {
 
       <section style={styles.hero}>
         <div style={styles.container}>
-          <h1 style={styles.heroTitle}>About SignalTrue</h1>
+          <h1 style={styles.heroTitle}>Why SignalTrue exists</h1>
           <p style={styles.heroSubtitle}>
-            We're on a mission to help companies build healthier workplaces where teams thrive.
+            We watched talented people burn out. Not because leaders didn't care. But because the warning signs came too late.
           </p>
         </div>
       </section>
 
       <section style={styles.section}>
         <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Our Mission</h2>
-          <p style={styles.missionText}>
-            SignalTrue was founded on the belief that preventing burnout is better than reacting to turnover. 
-            We combine AI, behavioral science, and deep respect for privacy to help companies support their 
-            teams proactively—before small issues become big problems.
-          </p>
-          <p style={styles.missionText}>
-            Every day, talented people leave jobs they once loved because burnout went unnoticed. Every day, 
-            managers wish they had seen the warning signs earlier. We're here to change that.
-          </p>
+          {/* Visual Grounding */}
+          <div style={{width:'100%', maxWidth:800, height:300, background:'#1e293b', borderRadius:12, margin:'0 auto 40px', display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b', border:'1px dashed #334155'}}>
+            [Founder / Team Photo Placeholder]
+          </div>
+
+          <div style={{maxWidth:700, margin:'0 auto'}}>
+            <p style={styles.missionText}>
+              Surveys were slow. Dashboards were backward-looking. Monitoring tools destroyed trust.
+            </p>
+            <p style={styles.missionText}>
+              So we built something different.
+            </p>
+            
+            <h3 style={{marginTop:30, fontSize:'1.5rem', fontWeight:700}}>The data to prevent burnout already exists</h3>
+            <p style={styles.missionText}>
+              It's hidden in how teams collaborate over time. Not in what people say — but in patterns.
+            </p>
+
+            <p style={{...styles.missionText, marginTop:30, fontStyle:'italic', color:'#6b7280'}}>
+              Our product turns collaboration data into early warning signals leaders can act on.
+            </p>
+          </div>
+
+          <h3 style={{marginTop:60, marginBottom:30, textAlign:'center', fontSize:'1.75rem', fontWeight:700}}>Our Principles</h3>
+          
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:24, maxWidth:1000, margin:'0 auto'}}>
+            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
+              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Trust over surveillance</h4>
+              <p style={{fontSize:'0.9em', color:'#4b5563'}}>We never show individual data. We build for leaders who want to support their teams, not spy on them.</p>
+            </div>
+            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
+              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Teams over individuals</h4>
+              <p style={{fontSize:'0.9em', color:'#4b5563'}}>Work happens in groups. We measure the friction and flow of the team unit, not the person.</p>
+            </div>
+            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
+              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Context over raw metrics</h4>
+              <p style={{fontSize:'0.9em', color:'#4b5563'}}>A number without context is dangerous. We always overlay events like launches or reorgs.</p>
+            </div>
+            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
+              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Judgment over automation</h4>
+              <p style={{fontSize:'0.9em', color:'#4b5563'}}>We provide signals and micro-playbooks, but we trust human leaders to make the final call.</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section style={{...styles.section, background: '#f9fafb'}}>
+      {/* Secondary Trusted Companies */}
+      <section style={{padding:'40px 0', borderTop:'1px solid #e5e7eb', background:'#f9fafb'}}>
+        <div style={styles.container}>
+          <div style={{display:'flex', justifyContent:'center', gap:40, alignItems:'center', opacity:0.5, transform:'scale(0.8)', flexWrap:'wrap'}}>
+            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8', letterSpacing:'-1px'}}>Sharewell</div>
+            <div style={{fontWeight:700, fontSize:22, color:'#94a3b8', letterSpacing:'1px'}}>CLEVERON</div>
+            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8'}}>toggl</div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{...styles.section, background:'white'}}>
         <div style={styles.container}>
           <h2 style={styles.sectionTitle}>Our Values</h2>
 
