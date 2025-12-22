@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product — SignalTrue Early Warning System</title>
-  <meta name="description" content="SignalTrue is an early-warning system for organizational overload. Detect behavioral drift before burnout, disengagement, and execution slowdown appear." />
+  <title>Product — SignalTrue Organizational Instrumentation</title>
+  <meta name="description" content="Turn coordination patterns into early signals. See Decision Latency, Meeting Trust, Focus Fragmentation, and Signal-to-Noise — before friction becomes visible." />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -22,7 +22,7 @@
       </nav>
       <div class="cta">
         <a class="btn" href="https://app.signaltrue.ai/login">Login</a>
-        <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Start baseline calibration</a>
+        <a class="btn btn-primary" href="/contact">Request demo</a>
       </div>
     </div>
   </header>
@@ -31,33 +31,113 @@
     <!-- Hero -->
     <section class="hero">
       <div class="container center">
-        <div class="eyebrow">Product</div>
-        <h1>An early-warning system for organizational overload</h1>
-        <p class="muted" style="max-width: 700px; margin: 0 auto;">SignalTrue helps leaders detect behavioral drift before burnout, disengagement, and execution slowdown appear.</p>
+        <h1>What SignalTrue sees</h1>
+        <p class="muted" style="max-width: 700px; margin: 0 auto;">Early signals of coordination friction — measured from the everyday tools your team already uses.</p>
       </div>
     </section>
 
-    <!-- Baseline Calibration Comes First -->
+    <!-- Metrics Grid -->
     <section>
-      <div class="container section-header">
-        <h2>Baseline calibration comes first</h2>
-        <p>The first month builds the foundation for accurate risk detection</p>
-      </div>
       <div class="container">
-        <div class="baseline-explainer">
-          <div class="baseline-grid">
-            <div class="baseline-item">
-              <div class="baseline-number">1</div>
-              <h3>First month builds the reference model</h3>
-              <p>SignalTrue observes your team's normal work rhythm across 6 full weeks. This establishes baseline patterns for recovery time, meeting load, response norms, and collaboration distribution.</p>
+        <div class="metrics-showcase-grid">
+          <div class="metric-tile">
+            <div class="metric-icon">⏱️</div>
+            <h3>Decision Latency Index</h3>
+            <p class="metric-definition">How long decisions stay open based on invite responses and reschedules. Shows where uncertainty and hesitation build.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,30 25,28 50,32 75,25 100,20 125,18 150,22 175,15 200,12" fill="none" stroke="#fb923c" stroke-width="2"/>
+                <line x1="0" y1="25" x2="200" y2="25" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Rising trend = growing hesitation</span>
             </div>
-            <div class="baseline-item">
-              <div class="baseline-number">2</div>
-              <h3>No recommendations during calibration</h3>
-              <p>You won't see risk signals during the baseline period. This prevents false alarms and ensures accuracy. The system is learning what "normal" means for your organization.</p>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> Slow decision-making cascades into missed deadlines, rework, and frustration.
             </div>
-            <div class="baseline-item">
-              <div class="baseline-number">3</div>
+          </div>
+
+          <div class="metric-tile">
+            <div class="metric-icon">📊</div>
+            <h3>Meeting Trust Index</h3>
+            <p class="metric-definition">How reliably meetings lead to decisions. High load + low trust = coordination drag.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,15 25,16 50,18 75,22 100,25 125,28 150,30 175,32 200,35" fill="none" stroke="#ef4444" stroke-width="2"/>
+                <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Falling trend = meeting overload without outcomes</span>
+            </div>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> Teams spend more time coordinating than executing when trust is low.
+            </div>
+          </div>
+
+          <div class="metric-tile">
+            <div class="metric-icon">🧩</div>
+            <h3>Focus Fragmentation Score</h3>
+            <p class="metric-definition">How interrupted the workday is due to meeting density and switches. Measures availability of uninterrupted blocks for deep work.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,12 25,14 50,12 75,10 100,12 125,14 150,16 175,18 200,20" fill="none" stroke="#fb923c" stroke-width="2"/>
+                <line x1="0" y1="15" x2="200" y2="15" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Rising trend = shrinking focus time</span>
+            </div>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> Loss of focus time predicts delays, rework, and cognitive fatigue.
+            </div>
+          </div>
+
+          <div class="metric-tile">
+            <div class="metric-icon">⚡</div>
+            <h3>Async Confidence Index</h3>
+            <p class="metric-definition">Whether teams trust async collaboration (threading, delayed but confident replies). Low confidence drives synchronous overload.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,25 25,23 50,20 75,18 100,20 125,22 150,20 175,18 200,16" fill="none" stroke="#6ee7b7" stroke-width="2"/>
+                <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Stable or improving = healthy async habits</span>
+            </div>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> Low async confidence increases meeting load and response pressure.
+            </div>
+          </div>
+
+          <div class="metric-tile">
+            <div class="metric-icon">📡</div>
+            <h3>Signal-to-Noise Ratio</h3>
+            <p class="metric-definition">How much communication actually drives outcomes. High noise = lots of activity, low progress.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,20 25,18 50,16 75,14 100,16 125,18 150,16 175,14 200,13" fill="none" stroke="#60a5fa" stroke-width="2"/>
+                <line x1="0" y1="18" x2="200" y2="18" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Improving trend = better communication efficiency</span>
+            </div>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> Too much noise creates exhaustion without impact.
+            </div>
+          </div>
+
+          <div class="metric-tile">
+            <div class="metric-icon">🔄</div>
+            <h3>Execution Drag Index</h3>
+            <p class="metric-definition">Coordination cost between intent and action. Measures delays from decision to execution.</p>
+            <div class="metric-sparkline">
+              <svg width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <polyline points="0,15 25,17 50,20 75,22 100,25 125,23 150,26 175,28 200,30" fill="none" stroke="#fb923c" stroke-width="2"/>
+                <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(110, 231, 183, 0.3)" stroke-width="1" stroke-dasharray="4,4"/>
+              </svg>
+              <span class="metric-note">Rising trend = growing coordination tax</span>
+            </div>
+            <div class="why-matters">
+              <strong>Why it matters:</strong> High drag slows velocity and frustrates high performers.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
               <h3>Drift matters more than comparison</h3>
               <p>SignalTrue compares your teams against their own historical baseline, not against other companies. External benchmarks are optional context, not performance scores.</p>
             </div>
@@ -69,105 +149,177 @@
       </div>
     </section>
 
-    <!-- Signals Section -->
-    <section>
+    <!-- Why Signals Matter -->
+    <section class="scenarios-section">
       <div class="container section-header">
-        <h2>Five early warning signals</h2>
-        <p>Each signal follows the same structure: what changes, why it matters, what leaders can do</p>
+        <h2>Why signals matter</h2>
+        <p>Real scenarios where early detection prevents breakdown</p>
       </div>
-
-      <!-- Recovery Gap Index -->
       <div class="container">
-        <div class="signal-detail">
-          <div class="signal-detail-header">
-            <span class="severity-badge severity-info">Signal Type</span>
-            <h3>Recovery Gap Index</h3>
+        <div class="scenario-timeline">
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-icon">🚀</div>
+              <h3>Product launches</h3>
+            </div>
+            <div class="scenario-timeline-content">
+              <div class="timeline-moment">
+                <span class="timeline-label">Week -2</span>
+                <p>Decision Latency increases from 1.8d → 2.6d</p>
+              </div>
+              <div class="timeline-moment">
+                <span class="timeline-label">Week -1</span>
+                <p>Meeting Trust drops from 78% → 65%</p>
+              </div>
+              <div class="timeline-moment critical">
+                <span class="timeline-label">Launch week</span>
+                <p>Focus Fragmentation peaks — team has <2hrs of uninterrupted time daily</p>
+              </div>
+            </div>
+            <div class="scenario-signal">
+              <strong>Early signal allowed:</strong> Leadership reduced status meetings, created decision fast-track protocol, protected focus blocks for critical work.
+            </div>
           </div>
-          <div class="signal-detail-grid">
-            <div>
-              <h4>What changes</h4>
-              <p>Hours between last activity and first activity next day. When recovery windows shrink consistently, exhaustion risk increases.</p>
+
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-icon">🔄</div>
+              <h3>Reorganizations</h3>
             </div>
-            <div>
-              <h4>Why it matters</h4>
-              <p>Sustained recovery loss reduces cognitive resilience. Teams with shrinking recovery gaps show higher rates of errors, rework, and disengagement within 2-5 weeks.</p>
+            <div class="scenario-timeline-content">
+              <div class="timeline-moment">
+                <span class="timeline-label">Month 1</span>
+                <p>Signal-to-Noise ratio drops from 0.72 → 0.54</p>
+              </div>
+              <div class="timeline-moment">
+                <span class="timeline-label">Month 2</span>
+                <p>Execution Drag rises +40% — delays between decision and action</p>
+              </div>
+              <div class="timeline-moment critical">
+                <span class="timeline-label">Month 3</span>
+                <p>Async Confidence collapses — team resorts to synchronous escalation</p>
+              </div>
             </div>
-            <div>
-              <h4>What leaders can do</h4>
-              <ul>
-                <li>Enforce quiet hours for messages and meetings</li>
-                <li>Remove or shift late recurring meetings</li>
-                <li>Introduce protected recovery policy on critical days</li>
-              </ul>
+            <div class="scenario-signal">
+              <strong>Early signal allowed:</strong> Leadership clarified decision owners, reduced cross-functional meetings, established async communication norms.
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-icon">📈</div>
+              <h3>Hiring bursts</h3>
+            </div>
+            <div class="scenario-timeline-content">
+              <div class="timeline-moment">
+                <span class="timeline-label">Week 2</span>
+                <p>Meeting load increases +2.5 hrs/week per existing team member</p>
+              </div>
+              <div class="timeline-moment">
+                <span class="timeline-label">Week 4</span>
+                <p>Decision Latency rises as onboarding questions slow progress</p>
+              </div>
+              <div class="timeline-moment critical">
+                <span class="timeline-label">Week 6</span>
+                <p>Focus Fragmentation critical — existing team has minimal execution time</p>
+              </div>
+            </div>
+            <div class="scenario-signal">
+              <strong>Early signal allowed:</strong> Leadership created dedicated onboarding hours, reduced whole-team meetings, paired new hires with specific mentors.
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-icon">🏠</div>
+              <h3>Remote/hybrid changes</h3>
+            </div>
+            <div class="scenario-timeline-content">
+              <div class="timeline-moment">
+                <span class="timeline-label">Week 1</span>
+                <p>Meeting Trust stable but meeting count increases +30%</p>
+              </div>
+              <div class="timeline-moment">
+                <span class="timeline-label">Week 3</span>
+                <p>Async Confidence drops — team defaults to video calls for quick questions</p>
+              </div>
+              <div class="timeline-moment critical">
+                <span class="timeline-label">Week 5</span>
+                <p>Execution Drag spikes — coordination overhead replaces productive time</p>
+              </div>
+            </div>
+            <div class="scenario-signal">
+              <strong>Early signal allowed:</strong> Leadership reinforced async-first norms, established "focus time" blocks, created decision documentation templates.
             </div>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Focus Fragmentation -->
+    <!-- Decisions Not Verdicts -->
+    <section>
       <div class="container">
-        <div class="signal-detail">
-          <div class="signal-detail-header">
-            <span class="severity-badge severity-info">Signal Type</span>
-            <h3>Focus Fragmentation Score</h3>
+        <div class="decisions-block">
+          <h2>Decisions — not verdicts</h2>
+          <p class="decisions-intro">SignalTrue doesn't prescribe solutions. It gives leaders a second opinion on team health and clarity on where friction is real.</p>
+          
+          <div class="decisions-grid">
+            <div class="decision-item">
+              <div class="decision-icon">🎯</div>
+              <h3>A second opinion on team health</h3>
+              <p>See what behavioral data says about coordination patterns — independent of surveys, gut feeling, or anecdotal reports.</p>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">⏳</div>
+              <h3>Confidence to wait or intervene</h3>
+              <p>Know whether friction is temporary (launch week) or systemic (sustained drift). Avoid premature reactions or delayed interventions.</p>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">🔍</div>
+              <h3>Clarity on where friction is real</h3>
+              <p>Distinguish between perceived overload and measurable coordination drag. Focus energy where it matters most.</p>
+            </div>
+            <div class="decision-item">
+              <div class="decision-icon">⚙️</div>
+              <h3>Suggested micro-plays (no HR jargon)</h3>
+              <p>Actionable interventions: adjust meeting cadence, create focus blocks, clarify decision owners — not generic team-building exercises.</p>
+            </div>
           </div>
-          <div class="signal-detail-grid">
-            <div>
-              <h4>What changes</h4>
-              <p>Percentage of days with at least one 90-minute uninterrupted block. Loss of focus time signals cognitive load increase and execution capacity loss.</p>
+
+          <div class="suggested-actions-example">
+            <div class="action-example-header">
+              <strong>Example suggested next steps:</strong>
             </div>
-            <div>
-              <h4>Why it matters</h4>
-              <p>Deep work requires sustained attention. When fragmentation increases, decision quality declines and throughput slows. Expect delays and rework within 1-3 weeks.</p>
-            </div>
-            <div>
-              <h4>What leaders can do</h4>
-              <ul>
-                <li>Introduce two no-meeting blocks per week</li>
-                <li>Collapse recurring meetings. Remove lowest-value 1–2</li>
-                <li>Set meeting default to 25/50 minutes to create gaps</li>
-              </ul>
+            <div class="action-cards-grid">
+              <div class="action-card">
+                <div class="action-title">Reduce status meetings</div>
+                <div class="action-meta">
+                  <span class="action-effort">Low effort</span>
+                  <span class="action-impact">High impact</span>
+                </div>
+                <p class="action-description">Convert 2 weekly status meetings to async updates. Free 3-4 hours per week.</p>
+              </div>
+              <div class="action-card">
+                <div class="action-title">Introduce no-meeting blocks</div>
+                <div class="action-meta">
+                  <span class="action-effort">Medium effort</span>
+                  <span class="action-impact">High impact</span>
+                </div>
+                <p class="action-description">Protect Tue/Thu 9-11am for focus work. Reduces fragmentation by 40%.</p>
+              </div>
+              <div class="action-card">
+                <div class="action-title">Clarify decision owners</div>
+                <div class="action-meta">
+                  <span class="action-effort">Medium effort</span>
+                  <span class="action-impact">Medium impact</span>
+                </div>
+                <p class="action-description">Document who decides what. Reduces decision latency by eliminating approval loops.</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Meeting Load Drift -->
-      <div class="container">
-        <div class="signal-detail">
-          <div class="signal-detail-header">
-            <span class="severity-badge severity-info">Signal Type</span>
-            <h3>Meeting Load Drift</h3>
-          </div>
-          <div class="signal-detail-grid">
-            <div>
-              <h4>What changes</h4>
-              <p>Sustained upward trend in meeting hours per person over 4+ weeks. Meeting creep reduces autonomy and available execution time.</p>
-            </div>
-            <div>
-              <h4>Why it matters</h4>
-              <p>Incremental meeting additions compound quickly. Teams experiencing sustained meeting drift show reduced throughput and increased execution delays within 3-5 weeks.</p>
-            </div>
-            <div>
-              <h4>What leaders can do</h4>
-              <ul>
-                <li>Remove 1–2 low-impact recurring meetings</li>
-                <li>Cap attendee count. Require agenda for >=8 attendees</li>
-                <li>Convert status meetings to async updates</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Responsiveness Pressure -->
-      <div class="container">
-        <div class="signal-detail">
-          <div class="signal-detail-header">
-            <span class="severity-badge severity-info">Signal Type</span>
-            <h3>Responsiveness Pressure Index</h3>
-          </div>
-          <div class="signal-detail-grid">
+    </section>
             <div>
               <h4>What changes</h4>
               <p>Median response time decreasing and response variance tightening. Indicates escalating reactivity norms and urgency creep.</p>
@@ -329,22 +481,271 @@
 
   <footer>
     <div class="container grid">
-      <div>&copy; 2025 SignalTrue. Built for leaders, not surveillance.</div>
+      <div>&copy; 2025 SignalTrue. Organizational instrumentation, not employee monitoring.</div>
       <nav>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
+        <a href="/product">Product</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy Policy</a>
         <a href="/contact">Contact</a>
       </nav>
     </div>
   </footer>
 
   <style>
-    /* Baseline Explainer */
-    .baseline-explainer {
+    /* Metrics Showcase Grid */
+    .metrics-showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .metric-tile {
       background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 32px;
+      padding: 28px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .metric-tile:hover {
+      transform: translateY(-2px);
+      border-color: var(--brand);
+    }
+
+    .metric-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+    }
+
+    .metric-tile h3 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .metric-definition {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0 0 20px;
+    }
+
+    .metric-sparkline {
+      margin: 20px 0;
+      padding: 16px;
+      background: rgba(11, 18, 32, 0.6);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .metric-note {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    .why-matters {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Scenarios Section */
+    .scenarios-section {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.1));
+    }
+
+    .scenario-timeline {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .scenario-card {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    .scenario-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scenario-icon {
+      font-size: 32px;
+    }
+
+    .scenario-header h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .scenario-timeline-content {
+      margin-bottom: 20px;
+    }
+
+    .timeline-moment {
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      background: rgba(11, 18, 32, 0.4);
+      border-left: 3px solid rgba(110, 231, 183, 0.3);
+      border-radius: 4px;
+    }
+
+    .timeline-moment.critical {
+      border-left-color: #fb923c;
+      background: rgba(251, 146, 60, 0.08);
+    }
+
+    .timeline-label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--brand);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .timeline-moment p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .scenario-signal {
+      padding: 16px;
+      background: rgba(110, 231, 183, 0.08);
+      border: 1px solid rgba(110, 231, 183, 0.2);
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Decisions Block */
+    .decisions-block {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+    }
+
+    .decisions-block h2 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      text-align: center;
+    }
+
+    .decisions-intro {
+      text-align: center;
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 700px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .decisions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .decision-item {
+      text-align: center;
+    }
+
+    .decision-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .decision-item h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .decision-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Suggested Actions Example */
+    .suggested-actions-example {
+      background: rgba(11, 18, 32, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .action-example-header {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: var(--brand);
+    }
+
+    .action-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .action-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .action-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .action-meta {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .action-effort,
+    .action-impact {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .action-effort {
+      background: rgba(96, 165, 250, 0.15);
+      color: var(--accent);
+    }
+
+    .action-impact {
+      background: rgba(110, 231, 183, 0.15);
+      color: var(--brand);
+    }
+
+    .action-description {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
     .baseline-grid {
@@ -539,6 +940,13 @@
 
     /* Responsive */
     @media (max-width: 960px) {
+      .metrics-showcase-grid,
+      .scenario-timeline,
+      .decisions-grid,
+      .action-cards-grid {
+        grid-template-columns: 1fr;
+      }
+
       .baseline-grid,
       .signal-detail-grid,
       .benchmark-grid,
