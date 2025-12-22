@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SignalTrue — Early Warning System for Organizational Overload</title>
-  <meta name="description" content="See early signs of overload before your organization slows down or burns out. SignalTrue establishes your team's baseline, then detects behavioral changes linked to burnout and execution breakdown." />
+  <title>SignalTrue — Early Signals for Organizational Friction</title>
+  <meta name="description" content="Work doesn't break because people stop caring. It breaks because coordination becomes invisible. SignalTrue turns everyday work behavior into early signals of friction." />
   <link rel="stylesheet" href="/styles.css" />
-  <meta property="og:title" content="SignalTrue — Early Warning System for Organizational Overload" />
-  <meta property="og:description" content="Baseline calibration. Deviation detection. Risk signals. Decision guidance." />
+  <meta property="og:title" content="SignalTrue — Early Signals for Organizational Friction" />
+  <meta property="og:description" content="Turn everyday work behavior into early signals of friction — before performance and engagement metrics fail." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://signaltrue.ai/" />
 </head>
@@ -26,7 +26,7 @@
       </nav>
       <div class="cta">
         <a class="btn" href="https://app.signaltrue.ai/login">Login</a>
-        <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Start baseline calibration</a>
+        <a class="btn btn-primary" href="/contact">Request demo</a>
       </div>
     </div>
   </header>
@@ -36,32 +36,64 @@
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">Early Warning System</div>
-          <h1>See early signs of overload before your organization slows down or burns out</h1>
-          <p>SignalTrue establishes your team's normal work rhythm, then detects early behavioral changes linked to burnout, overload, and execution breakdown.</p>
-          <div class="trust-line">No message content. No individual surveillance. Only aggregated team patterns.</div>
+          <h1 class="hero-headline">Work doesn't break because people stop caring.<br>It breaks because coordination becomes invisible.</h1>
+          <p class="hero-subheadline">SignalTrue turns everyday work behavior into early signals of friction — before performance, engagement, and morale show cracks.</p>
+          
+          <div class="trust-line-hero">
+            No content scanning. No individual scoring. Aggregated behavioral signals only.
+          </div>
+          
           <div class="cta" style="margin-top: 24px;">
-            <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Start baseline calibration</a>
-            <a class="btn" href="#how-it-works">See how it works</a>
+            <a class="btn btn-primary" href="/contact">Request demo</a>
+            <a class="btn" href="/product">See product overview</a>
           </div>
         </div>
         <div>
-          <div class="hero-card">
-            <span class="pill">Risk Signal Example</span>
-            <div class="signal-preview">
-              <div class="signal-header">
-                <span class="severity-badge severity-risk">RISK</span>
-                <span class="signal-title">Recovery Gap Index</span>
+          <div class="hero-dashboard-mock">
+            <div class="mock-header">
+              <span class="mock-logo">SignalTrue</span>
+              <span class="mock-date">Last 30 days</span>
+            </div>
+            <div class="metric-grid-mock">
+              <div class="metric-card-mock">
+                <div class="metric-label">Decision Latency</div>
+                <div class="metric-value">2.4 days</div>
+                <div class="metric-trend">
+                  <svg width="100" height="30" viewBox="0 0 100 30">
+                    <polyline points="0,20 20,18 40,22 60,15 80,10 100,8" fill="none" stroke="#fb923c" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="metric-status status-warning">+0.6d from baseline</div>
               </div>
-              <div class="signal-metric">
-                <div class="label">Average recovery time</div>
-                <div class="value">9.2 hours <span class="delta">-2.1h from baseline</span></div>
+              <div class="metric-card-mock">
+                <div class="metric-label">Meeting Trust</div>
+                <div class="metric-value">68%</div>
+                <div class="metric-trend">
+                  <svg width="100" height="30" viewBox="0 0 100 30">
+                    <polyline points="0,15 20,14 40,16 60,18 80,20 100,22" fill="none" stroke="#ef4444" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="metric-status status-critical">-12% from baseline</div>
               </div>
-              <div class="signal-consequence">
-                Sustained recovery loss increases exhaustion risk and reduces cognitive resilience.
+              <div class="metric-card-mock">
+                <div class="metric-label">Focus Fragmentation</div>
+                <div class="metric-value">3.2 hrs</div>
+                <div class="metric-trend">
+                  <svg width="100" height="30" viewBox="0 0 100 30">
+                    <polyline points="0,10 20,12 40,10 60,8 80,10 100,12" fill="none" stroke="#6ee7b7" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="metric-status status-good">Stable</div>
               </div>
-              <div class="signal-action">
-                <strong>Recommended:</strong> Enforce quiet hours for messages and meetings
+              <div class="metric-card-mock">
+                <div class="metric-label">Signal-to-Noise</div>
+                <div class="metric-value">0.72</div>
+                <div class="metric-trend">
+                  <svg width="100" height="30" viewBox="0 0 100 30">
+                    <polyline points="0,18 20,16 40,14 60,12 80,14 100,13" fill="none" stroke="#60a5fa" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="metric-status status-info">+0.08 from baseline</div>
               </div>
             </div>
           </div>
@@ -69,86 +101,127 @@
       </div>
     </section>
 
-    <!-- How It Works -->
-    <section id="how-it-works">
-      <div class="container section-header">
-        <h2>How it works</h2>
-        <p>SignalTrue operates in five steps, starting with baseline calibration</p>
-      </div>
-      <div class="container">
-        <div class="timeline">
-          <div class="timeline-step">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <h3>Connect tools</h3>
-              <p>Link your calendar and collaboration platforms (metadata only).</p>
-            </div>
-          </div>
-          <div class="timeline-step">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Baseline calibration</h3>
-              <p>First month builds your team's normal rhythm (free, no signals yet).</p>
-            </div>
-          </div>
-          <div class="timeline-step">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Detect sustained deviation</h3>
-              <p>System watches for behavioral changes that persist across weeks.</p>
-            </div>
-          </div>
-          <div class="timeline-step">
-            <div class="step-number">4</div>
-            <div class="step-content">
-              <h3>Surface risk signals</h3>
-              <p>You see what changed, why it matters, and what usually breaks next.</p>
-            </div>
-          </div>
-          <div class="timeline-step">
-            <div class="step-number">5</div>
-            <div class="step-content">
-              <h3>Guide decisions and track recovery</h3>
-              <p>Choose actions, track results, learn what works for your organization.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- What SignalTrue Measures -->
+    <!-- Data Sources -->
     <section>
       <div class="container section-header">
-        <h2>What SignalTrue actually measures</h2>
-        <p>Five early warning signals, not diagnoses</p>
+        <h2>Data sources you already use — now readable as signals</h2>
       </div>
-      <div class="container cards">
-        <div class="card">
-          <h3>Recovery time</h3>
-          <p>Hours between last activity and first activity next day. Shrinking recovery windows signal exhaustion risk.</p>
+      <div class="container data-sources-grid">
+        <div class="data-source-card">
+          <div class="data-source-icon">📅</div>
+          <h3>Calendar metadata</h3>
+          <p>Response timing, meeting load, decision latency, focus gaps</p>
         </div>
-        <div class="card">
-          <h3>Focus fragmentation</h3>
-          <p>Availability of uninterrupted blocks for deep work. Loss of focus time predicts delays and rework.</p>
+        <div class="data-source-card">
+          <div class="data-source-icon">💬</div>
+          <h3>Slack metadata</h3>
+          <p>Response pressure, async confidence, interrupt density</p>
         </div>
-        <div class="card">
-          <h3>Meeting load drift</h3>
-          <p>Sustained increases in meeting hours per person. Creeping overload reduces autonomy and throughput.</p>
+        <div class="data-source-card">
+          <div class="data-source-icon">👥</div>
+          <h3>Teams metadata</h3>
+          <p>Presence integrity, hybrid friction</p>
         </div>
-        <div class="card">
-          <h3>Responsiveness pressure</h3>
-          <p>Tightening response-time norms. Increasing reactivity reduces strategic thinking capacity.</p>
-        </div>
-        <div class="card">
-          <h3>Participation imbalance</h3>
-          <p>Concentration of collaboration load. Asymmetry often precedes disengagement and team friction.</p>
+        <div class="data-source-card">
+          <div class="data-source-icon">✉️</div>
+          <h3>Email metadata</h3>
+          <p>Escalation load, after-hours cognitive burden</p>
         </div>
       </div>
       <div class="container center" style="margin-top: 32px;">
-        <p class="muted" style="font-size: 15px; max-width: 600px; margin: 0 auto;">
-          <strong>These are early warning signals. Not diagnoses.</strong><br>
-          They indicate when team patterns are drifting from baseline, not individual performance or intent.
-        </p>
+        <div class="metadata-flow">
+          <span class="flow-label">Metadata</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-label">Behavioral patterns</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-label">Early signals</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Signals -->
+    <section>
+      <div class="container section-header">
+        <h2>Early signals of friction before it becomes noise</h2>
+      </div>
+      <div class="container signals-grid">
+        <div class="signal-item">
+          <div class="signal-icon">⏱️</div>
+          <h3>Slowing meeting acceptance</h3>
+          <p class="signal-metric">Decision Latency</p>
+        </div>
+        <div class="signal-item">
+          <div class="signal-icon">📊</div>
+          <h3>Growing meeting load</h3>
+          <p class="signal-metric">Meeting Trust</p>
+        </div>
+        <div class="signal-item">
+          <div class="signal-icon">🧩</div>
+          <h3>Fragmented focus blocks</h3>
+          <p class="signal-metric">Focus Fragmentation</p>
+        </div>
+        <div class="signal-item">
+          <div class="signal-icon">⚡</div>
+          <h3>Rising response pressure in chat</h3>
+          <p class="signal-metric">Async Confidence</p>
+        </div>
+        <div class="signal-item">
+          <div class="signal-icon">🌙</div>
+          <h3>After-hours communication spikes</h3>
+          <p class="signal-metric">Recovery Deficit</p>
+        </div>
+        <div class="signal-item">
+          <div class="signal-icon">🔄</div>
+          <h3>Coordination drift across tools</h3>
+          <p class="signal-metric">Execution Drag</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Helps Leaders -->
+    <section class="helps-section">
+      <div class="container">
+        <div class="helps-block">
+          <h2>Signals matter only if you can act</h2>
+          <p class="helps-intro">SignalTrue doesn't tell you what to do. It tells you what's happening — early enough to act. You decide where to focus your team energy.</p>
+          
+          <div class="benefits-grid">
+            <div class="benefit-item">
+              <div class="benefit-icon">🎯</div>
+              <h3>See coordination drag before performance drops</h3>
+              <p>Detect rising decision latency and meeting overload weeks before they show up in velocity metrics or engagement surveys.</p>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-icon">🔍</div>
+              <h3>Understand why signals change</h3>
+              <p>Context annotations for launches, reorgs, hiring bursts — so you know whether friction is temporary or systemic.</p>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-icon">⚙️</div>
+              <h3>Micro-playbooks to reduce friction, not guilt</h3>
+              <p>Suggested interventions based on patterns: adjust meeting cadence, create focus blocks, clarify decision owners — not generic team-building exercises.</p>
+            </div>
+          </div>
+
+          <div class="insight-carousel">
+            <div class="insight-card">
+              <div class="insight-period">Before Product Launch</div>
+              <div class="insight-metrics">
+                <span class="metric-pill">Decision Latency: 1.8d</span>
+                <span class="metric-pill">Meeting Trust: 78%</span>
+              </div>
+              <div class="insight-arrow">↓</div>
+              <div class="insight-period">During Launch (Week 3)</div>
+              <div class="insight-metrics">
+                <span class="metric-pill critical">Decision Latency: 3.2d</span>
+                <span class="metric-pill warning">Meeting Trust: 62%</span>
+              </div>
+              <div class="insight-action">
+                <strong>Suggested:</strong> Reduce status meetings, create decision fast-track process
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -162,23 +235,23 @@
           <div class="trust-grid">
             <div class="trust-item">
               <div class="trust-icon">🔒</div>
-              <h3>Metadata only</h3>
-              <p>We never see message content, file contents, or individual work artifacts. Only timestamps, participant counts, and event types.</p>
+              <h3>No content scanning</h3>
+              <p>We never read message content, email bodies, or document text. Only metadata: timestamps, participant counts, response patterns.</p>
             </div>
             <div class="trust-item">
-              <div class="trust-icon">👥</div>
-              <h3>Aggregated at team level</h3>
-              <p>All signals are computed for groups, never individuals. You see team patterns, not person-by-person tracking.</p>
-            </div>
-            <div class="trust-item">
-              <div class="trust-icon">🛡️</div>
-              <h3>Minimum group sizes enforced</h3>
-              <p>Signals require at least 8 active team members. Below that threshold, data is automatically redacted for privacy.</p>
-            </div>
-            <div class="trust-item">
-              <div class="trust-icon">🚫</div>
+              <div class="trust-icon">�</div>
               <h3>No individual scoring</h3>
-              <p>SignalTrue does not rank, rate, or score people. It detects system-level risk, not individual behavior.</p>
+              <p>SignalTrue does not track, rank, or score individuals. All metrics are computed at team or org level with minimum group sizes enforced.</p>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">�</div>
+              <h3>Aggregated behavioral signals only</h3>
+              <p>Patterns require minimum 8 active members and 60% data coverage. Sparse data is automatically redacted for privacy.</p>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">�️</div>
+              <h3>Built for prevention, not surveillance</h3>
+              <p>Designed to detect system-level friction early, not to monitor individual productivity or create performance pressure.</p>
             </div>
           </div>
         </div>
@@ -213,159 +286,351 @@
     <!-- Final CTA -->
     <section class="cta-section">
       <div class="container center">
-        <h2>Start with baseline calibration</h2>
-        <p class="muted" style="max-width: 600px; margin: 16px auto 24px;">The first month is free and builds the foundation for accurate risk detection. No credit card required.</p>
-        <a class="btn btn-primary btn-large" href="https://app.signaltrue.ai/register">Start baseline calibration</a>
+        <h2>See friction before it breaks</h2>
+        <p class="muted" style="max-width: 600px; margin: 16px auto 24px;">Request a demo to see how your organization's coordination patterns translate into actionable signals.</p>
+        <a class="btn btn-primary btn-large" href="/contact">Request demo</a>
       </div>
     </section>
   </main>
 
   <footer>
     <div class="container grid">
-      <div>&copy; 2025 SignalTrue. Built for leaders, not surveillance.</div>
+      <div>&copy; 2025 SignalTrue. Organizational instrumentation, not employee monitoring.</div>
       <nav>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
+        <a href="/product">Product</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy Policy</a>
         <a href="/contact">Contact</a>
       </nav>
     </div>
   </footer>
 
   <style>
-    /* Additional styles for new components */
-    .trust-line {
-      color: var(--brand);
-      font-weight: 600;
-      font-size: 15px;
-      margin-top: 16px;
-      padding: 12px 16px;
-      background: rgba(110, 231, 183, 0.1);
+    /* Hero Updates */
+    .hero-headline {
+      font-size: clamp(32px, 4.2vw, 52px);
+      line-height: 1.15;
+      margin: 0 0 20px;
+      font-weight: 800;
+    }
+
+    .hero-subheadline {
+      font-size: clamp(17px, 2vw, 20px);
+      color: var(--muted);
+      margin: 0 0 20px;
+      line-height: 1.5;
+    }
+
+    .trust-line-hero {
+      background: rgba(110, 231, 183, 0.12);
       border-left: 3px solid var(--brand);
+      padding: 12px 16px;
       border-radius: 4px;
-    }
-
-    .signal-preview {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--brand);
       margin-top: 16px;
-      background: rgba(11, 18, 32, 0.6);
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid var(--border);
     }
 
-    .signal-header {
+    /* Dashboard Mock */
+    .hero-dashboard-mock {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(11, 18, 32, 0.98));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .mock-header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mock-logo {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .mock-date {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metric-grid-mock {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
       gap: 12px;
+    }
+
+    .metric-card-mock {
+      background: rgba(11, 18, 32, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .metric-trend {
+      margin-bottom: 8px;
+    }
+
+    .metric-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .status-good {
+      background: rgba(110, 231, 183, 0.15);
+      color: var(--brand);
+    }
+
+    .status-info {
+      background: rgba(96, 165, 250, 0.15);
+      color: var(--accent);
+    }
+
+    .status-warning {
+      background: rgba(251, 146, 60, 0.15);
+      color: #fb923c;
+    }
+
+    .status-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    /* Data Sources */
+    .data-sources-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .data-source-card {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .data-source-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--brand);
+    }
+
+    .data-source-icon {
+      font-size: 40px;
       margin-bottom: 12px;
     }
 
-    .severity-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
+    .data-source-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
     }
 
-    .severity-risk {
-      background: rgba(251, 146, 60, 0.2);
-      color: #fb923c;
-      border: 1px solid rgba(251, 146, 60, 0.3);
+    .data-source-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    .signal-title {
+    .metadata-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .flow-label {
       font-weight: 600;
       font-size: 14px;
     }
 
-    .signal-metric {
-      margin: 12px 0;
-    }
-
-    .signal-metric .label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
-    .signal-metric .value {
+    .flow-arrow {
+      color: var(--brand);
       font-size: 20px;
+    }
+
+    /* Signals Grid */
+    .signals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .signal-item {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .signal-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .signal-item h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .signal-metric {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--brand);
       font-weight: 700;
     }
 
-    .signal-metric .delta {
-      font-size: 13px;
-      color: #fb923c;
-      font-weight: 600;
-      margin-left: 8px;
+    /* Helps Section */
+    .helps-section {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.1));
     }
 
-    .signal-consequence {
-      font-size: 13px;
+    .helps-block {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(11, 18, 32, 0.8));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+    }
+
+    .helps-block h2 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      text-align: center;
+    }
+
+    .helps-intro {
+      text-align: center;
       color: var(--muted);
-      padding: 12px;
-      background: rgba(251, 146, 60, 0.05);
-      border-left: 2px solid #fb923c;
-      border-radius: 4px;
-      margin: 12px 0;
+      font-size: 17px;
+      max-width: 700px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
     }
 
-    .signal-action {
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .benefit-item {
+      text-align: center;
+    }
+
+    .benefit-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .benefit-item h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .benefit-item p {
+      margin: 0;
+      color: var(--muted);
       font-size: 13px;
-      color: var(--text);
-      padding: 10px 12px;
-      background: rgba(110, 231, 183, 0.08);
-      border-radius: 6px;
-      border: 1px solid rgba(110, 231, 183, 0.2);
+      line-height: 1.6;
     }
 
-    /* Timeline */
-    .timeline {
-      max-width: 800px;
+    /* Insight Carousel */
+    .insight-carousel {
+      max-width: 600px;
       margin: 0 auto;
     }
 
-    .timeline-step {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 32px;
-      position: relative;
+    .insight-card {
+      background: rgba(11, 18, 32, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
     }
 
-    .timeline-step:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      left: 19px;
-      top: 50px;
-      width: 2px;
-      height: calc(100% + 12px);
-      background: linear-gradient(180deg, var(--brand), transparent);
-    }
-
-    .step-number {
-      flex-shrink: 0;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--brand), var(--accent));
-      color: #0b1220;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 18px;
-      box-shadow: 0 4px 12px rgba(110, 231, 183, 0.3);
-    }
-
-    .step-content h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
-    }
-
-    .step-content p {
-      margin: 0;
+    .insight-period {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--muted);
-      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .insight-metrics {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .metric-pill {
+      background: rgba(110, 231, 183, 0.1);
+      color: var(--brand);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .metric-pill.warning {
+      background: rgba(251, 146, 60, 0.1);
+      color: #fb923c;
+    }
+
+    .metric-pill.critical {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .insight-arrow {
+      font-size: 24px;
+      color: var(--muted);
+      margin: 12px 0;
+    }
+
+    .insight-action {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
     }
 
     /* Trust Section */
@@ -421,17 +686,24 @@
 
     /* Responsive */
     @media (max-width: 960px) {
+      .hero-grid,
+      .data-sources-grid,
+      .signals-grid,
+      .benefits-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid-mock {
+        grid-template-columns: 1fr;
+      }
+
+      .metadata-flow {
+        flex-direction: column;
+      }
+
       .trust-grid {
         grid-template-columns: 1fr;
         gap: 24px;
-      }
-
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .cards {
-        grid-template-columns: 1fr;
       }
     }
   </style>
