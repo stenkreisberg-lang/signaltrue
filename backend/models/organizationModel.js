@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const organizationSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    slug: { type: String, unique: true, sparse: true }, // URL-friendly identifier
     domain: { type: String },
     logo: { type: String },
     industry: { type: String, default: "Other" },
@@ -23,6 +24,25 @@ const organizationSchema = new mongoose.Schema(
           enabled: { type: Boolean, default: false },
           lastSync: Date,
         },
+      },
+      google: {
+        scope: String, // 'calendar' or 'gmail'
+        refreshToken: String, // encrypted
+        accessToken: String, // encrypted
+        expiry: Date,
+        email: String,
+        user: mongoose.Schema.Types.Mixed, // Google user info
+        eventsCount: Number,
+      },
+      microsoft: {
+        scope: String, // 'outlook' or 'teams'
+        refreshToken: String, // encrypted
+        accessToken: String, // encrypted
+        expiry: Date,
+        email: String,
+        user: mongoose.Schema.Types.Mixed,
+        eventsCount: Number,
+        teamsCount: Number,
       },
     },
     settings: {
@@ -50,5 +70,6 @@ const organizationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
 
 export default mongoose.model("Organization", organizationSchema);

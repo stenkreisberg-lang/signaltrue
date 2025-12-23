@@ -83,14 +83,18 @@ export default function AdminOnboarding() {
       }
       window.location.href = slackOAuthUrl;
     } else if (provider === 'calendar') {
-      const googleOAuthUrl = GOOGLE_CLIENT_ID
-        ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${FRONTEND_URL}/auth/google/callback&access_type=offline`
-        : null;
-      if (!googleOAuthUrl) {
-        setMsg({ type: 'error', text: 'Google OAuth is not configured. Please set REACT_APP_GOOGLE_CLIENT_ID.' });
+      // Use backend-initiated OAuth to ensure orgId is passed correctly
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMsg({ type: 'error', text: 'You must be logged in to connect Google Calendar.' });
         return;
       }
-      window.location.href = googleOAuthUrl;
+      
+      // Get orgSlug from me data
+      const orgSlug = me?.organization?.slug || me?.orgSlug || 'default';
+      const backendUrl = api.defaults.baseURL;
+      const oauthUrl = `${backendUrl}/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}`;
+      window.location.href = oauthUrl;
     } else if (provider === 'outlook') {
       const outlookOAuthUrl = OUTLOOK_CLIENT_ID
         ? `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${OUTLOOK_CLIENT_ID}&response_type=code&scope=https://outlook.office.com/calendars.read&redirect_uri=${FRONTEND_URL}/auth/outlook/callback`
