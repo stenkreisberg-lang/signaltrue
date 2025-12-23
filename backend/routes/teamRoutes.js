@@ -1,6 +1,7 @@
 import express from 'express';
 import Team from '../models/team.js';
 import { requireApiKey } from '../middleware/auth.js';
+import { getExpandedEnergyIndex } from '../services/energyIndexService.js';
 import dotenv from 'dotenv';
 
 const router = express.Router();
@@ -140,6 +141,25 @@ router.get('/ai-usage', requireApiKey, async (req, res) => {
     const data = await readUsage();
     res.json(data);
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/teams/:teamId/energy-expanded
+// Returns expanded Energy Index with capability indicators breakdown
+router.get('/teams/:teamId/energy-expanded', async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const team = await Team.findById(teamId);
+    
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    const expandedEnergy = await getExpandedEnergyIndex(team);
+    res.json(expandedEnergy);
+  } catch (err) {
+    console.error('Error fetching expanded energy:', err);
     res.status(500).json({ message: err.message });
   }
 });

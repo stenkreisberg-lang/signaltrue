@@ -13,6 +13,20 @@ const teamSchema = new mongoose.Schema({
   trend: { type: Number, default: 0 }, // percent change (calculated from history)
   favorite: { type: Boolean, default: false },
   
+  // Energy Index (computed from capability indicators)
+  energyIndex: { type: Number, default: 50 },
+  
+  // Capability Indicators (NEW FRAMEWORK)
+  resilienceScore: { type: Number, default: 50 }, // was Recovery
+  executionCapacityScore: { type: Number, default: 50 }, // was Focus
+  decisionSpeedScore: { type: Number, default: 50 }, // was Response Time
+  structuralHealthScore: { type: Number, default: 50 }, // was Collaboration
+  // Decision Closure Rate is stored separately in DCR model
+  
+  // Drift detection
+  drift: { type: String }, // human-readable drift explanation
+  recommendedAction: { type: String }, // AI-recommended action
+  
   // Team metadata for role-based benchmarking
   metadata: {
     function: { 

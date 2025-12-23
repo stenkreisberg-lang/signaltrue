@@ -1,36 +1,11 @@
-[dotenv@17.2.3] injecting env (1) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
-[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
-[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
-[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+⚠️ Missing OPTIONAL environment variables, some features may be disabled: SMTP_HOST, SMTP_USER, SMTP_PASS, SLACK_BOT_TOKEN, GOOGLE_SERVICE_ACCOUNT, STRIPE_SECRET_KEY, FRONTEND_URL
+Attempting to start in-memory MongoDB...
+(node:16105) [MONGOOSE] Warning: Duplicate schema index on {"signalId":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✅ In-memory MongoDB started and connected.
+🌱 Seeding initial user...
+Created seed organization.
+Created seed team.
+✅ Successfully seeded initial admin user.
 🚀 Server running on http://localhost:8080
-✅ Uploads directory: /Users/helenkreisberg/Desktop/signaltrue/backend/uploads
-✅ MongoDB connected
-Create organization error: Error: Organization validation failed: slug: Path `slug` is required.
-    at ValidationError.inspect (/Users/helenkreisberg/Desktop/signaltrue/backend/node_modules/mongoose/lib/error/validation.js:52:26)
-    at formatValue (node:internal/util/inspect:897:19)
-    at inspect (node:internal/util/inspect:409:10)
-    at formatWithOptionsInternal (node:internal/util/inspect:2592:40)
-    at formatWithOptions (node:internal/util/inspect:2454:10)
-    at console.value (node:internal/console/constructor:356:14)
-    at console.error (node:internal/console/constructor:423:61)
-    at file:///Users/helenkreisberg/Desktop/signaltrue/backend/routes/organizations.js:89:13
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
-  errors: {
-    slug: ValidatorError: Path `slug` is required.
-        at validate (/Users/helenkreisberg/Desktop/signaltrue/backend/node_modules/mongoose/lib/schemaType.js:1417:13)
-        at SchemaType.doValidate (/Users/helenkreisberg/Desktop/signaltrue/backend/node_modules/mongoose/lib/schemaType.js:1401:7)
-        at /Users/helenkreisberg/Desktop/signaltrue/backend/node_modules/mongoose/lib/document.js:3115:18
-        at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {
-      properties: [Object],
-      kind: 'required',
-      path: 'slug',
-      value: undefined,
-      reason: undefined,
-      Symbol(mongoose#validatorError): true
-    }
-  },
-  _message: 'Organization validation failed'
-}
