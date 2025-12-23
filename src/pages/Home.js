@@ -37,16 +37,45 @@ function Home() {
         </div>
       </section>
 
-      {/* Section 2 — Trusted By */}
-      <section style={{padding:'2.5rem 2rem', borderBottom:'1px solid #e5e7eb', background:'white'}}>
+      {/* Section 2 — Teams We've Worked With */}
+      <section style={{padding:'3rem 2rem', borderBottom:'1px solid #e5e7eb', background:'#f9fafb'}}>
         <div style={styles.sectionInner}>
-          <p style={{fontSize:'0.9em', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:20, textAlign:'center'}}>Trusted by teams building calm, high-performing workplaces</p>
-          <div style={{display:'flex', justifyContent:'center', gap:60, alignItems:'center', opacity:0.7, flexWrap:'wrap'}}>
-            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8', letterSpacing:'-1px'}}>Sharewell</div>
-            <div style={{fontWeight:700, fontSize:22, color:'#94a3b8', letterSpacing:'1px'}}>CLEVERON</div>
-            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8'}}>toggl</div>
+          <h2 style={{fontSize:'1.5rem', fontWeight:700, color:'#1e293b', textAlign:'center', marginBottom:8}}>Teams we've worked with</h2>
+          <p style={{fontSize:'0.95rem', color:'#64748b', textAlign:'center', marginBottom:40}}>Early pilots, partners, and teams we've collaborated with across Europe.</p>
+          
+          <div style={{overflow:'hidden', position:'relative'}}>
+            <div style={{
+              display:'flex',
+              gap:80,
+              alignItems:'center',
+              animation:'scroll-carousel 30s linear infinite',
+              paddingLeft:'100%'
+            }}>
+              {/* First set */}
+              <img src="/images/logos/supermetrics.svg" alt="Supermetrics" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/supermetrics.png'} />
+              <img src="/images/logos/netguru.svg" alt="Netguru" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/netguru.png'} />
+              <img src="/images/logos/synthesia.svg" alt="Synthesia" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/synthesia.png'} />
+              <img src="/images/logos/toggl.svg" alt="Toggl" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/toggl.png'} />
+              <img src="/images/logos/sharewell.svg" alt="Sharewell" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/sharewell.png'} />
+              <img src="/images/logos/cleveron.svg" alt="Cleveron" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/cleveron.png'} />
+              <img src="/images/logos/rutwol.svg" alt="Rutwol" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/rutwol.png'} />
+              {/* Duplicate set for infinite loop */}
+              <img src="/images/logos/supermetrics.svg" alt="Supermetrics" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/supermetrics.png'} />
+              <img src="/images/logos/netguru.svg" alt="Netguru" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/netguru.png'} />
+              <img src="/images/logos/synthesia.svg" alt="Synthesia" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/synthesia.png'} />
+              <img src="/images/logos/toggl.svg" alt="Toggl" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/toggl.png'} />
+              <img src="/images/logos/sharewell.svg" alt="Sharewell" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/sharewell.png'} />
+              <img src="/images/logos/cleveron.svg" alt="Cleveron" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/cleveron.png'} />
+              <img src="/images/logos/rutwol.svg" alt="Rutwol" style={{height:32, filter:'grayscale(100%)', opacity:0.4}} onError={(e) => e.target.src='/images/logos/rutwol.png'} />
+            </div>
           </div>
         </div>
+        <style>{`
+          @keyframes scroll-carousel {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}</style>
       </section>
 
       {/* Section 3 — What It Is / What It's Not */}
