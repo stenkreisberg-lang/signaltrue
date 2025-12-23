@@ -1,124 +1,441 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-32VLC15W5G');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — SignalTrue</title>
+  <meta name="description" content="Pay for risk coverage, not features. Free visibility, €99 for detection, €199 for impact proof." />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    :root {
+      --primary: #475569;
+      --accent: #3b82f6;
+      --bg: #0f172a;
+      --bg-elevated: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 48px;
+    }
+    
+    .pricing-card {
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .pricing-card.featured {
+      border-color: var(--accent);
+      position: relative;
+    }
+    
+    .pricing-card.featured::before {
+      content: "MOST POPULAR";
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    
+    .pricing-card h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+    
+    .pricing-card .tagline {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0 0 24px 0;
+    }
+    
+    .pricing-card .price {
+      font-size: 48px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+    
+    .pricing-card .price-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 32px 0;
+    }
+    
+    .pricing-card .features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 32px 0;
+      flex-grow: 1;
+    }
+    
+    .pricing-card .features li {
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: start;
+      gap: 8px;
+    }
+    
+    .pricing-card .features li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    
+    .pricing-card .btn {
+      background: var(--accent);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    
+    .pricing-card .btn:hover {
+      background: #2563eb;
+    }
+    
+    .pricing-card.free .btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    
+    .pricing-card.free .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .comparison-table {
+      margin-top: 80px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .comparison-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .comparison-table th {
+      background: var(--bg);
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .comparison-table td {
+      color: var(--text-muted);
+    }
+    
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <header style="border-bottom: 1px solid var(--border); padding: 20px 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="/" style="font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none;">SignalTrue</a>
+      <nav style="display: flex; gap: 32px; align-items: center;">
+        <a href="/product" style="color: var(--text-muted); text-decoration: none;">Product</a>
+        <a href="/pricing" style="color: var(--text); text-decoration: none;">Pricing</a>
+        <a href="/about" style="color: var(--text-muted); text-decoration: none;">About</a>
+        <a href="https://app.signaltrue.ai/register" style="background: var(--accent); color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">Start Free Trial</a>
+      </nav>
+    </div>
+  </header>
 
-      gtag('config', 'G-32VLC15W5G');
-    </script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pricing — SignalTrue</title>
-    <meta name="description" content="Simple plans for organizations of any size. Start with a free trial." />
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <header>
-      <div class="container nav">
-    <a class="brand" href="/">
-          <span class="brand-badge"></span>
-          <span>SignalTrue</span>
-        </a>
-        <nav class="navlinks">
-          <a href="/product">Product</a>
-          <a href="/pricing" aria-current="page">Pricing</a>
-          <a href="/about">About</a>
-          <a href="https://app.signaltrue.ai/register" class="btn btn-primary">Request early access</a>
-        </nav>
+  <main>
+    <!-- Hero -->
+    <section style="padding: 80px 0; text-align: center;">
+      <div class="container">
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px;">Pricing</div>
+        <h1 style="font-size: 48px; font-weight: 800; margin: 0 0 24px 0;">Pay for risk coverage, not features</h1>
+        <p style="font-size: 20px; color: var(--text-muted); max-width: 700px; margin: 0 auto;">
+          Choose your level of drift detection and impact measurement.
+        </p>
       </div>
-    </header>
+    </section>
 
-    <main>
-      <section class="hero">
-        <div class="container section-header">
-          <h1>Prevent burnout, disengagement, and overload before they cost you people</h1>
+    <!-- Pricing Cards -->
+    <section style="padding: 0 0 80px 0;">
+      <div class="container">
+        <div class="pricing-grid">
+          <!-- Free Tier -->
+          <div class="pricing-card free">
+            <h3>Visibility</h3>
+            <p class="tagline">See what's happening</p>
+            <div class="price">€0</div>
+            <p class="price-note">Forever free • Up to 3 teams</p>
+            
+            <ul class="features">
+              <li>5 Capability Indicators (read-only)</li>
+              <li>Weekly energy snapshots</li>
+              <li>Basic drift alerts (no explanations)</li>
+              <li>Team-level aggregation</li>
+              <li>Slack + Google Calendar integration</li>
+            </ul>
+            
+            <a href="https://app.signaltrue.ai/register?plan=free" class="btn">Start Free</a>
+          </div>
+
+          <!-- Detection Tier -->
+          <div class="pricing-card featured">
+            <h3>Detection</h3>
+            <p class="tagline">Know why drift happens</p>
+            <div class="price">€99</div>
+            <p class="price-note">Per month • Unlimited teams</p>
+            
+            <ul class="features">
+              <li>Everything in Visibility, plus:</li>
+              <li>Drift explanations (top 3 drivers)</li>
+              <li>AI-powered playbook recommendations</li>
+              <li>Baseline comparison & trend analysis</li>
+              <li>Custom alerts & thresholds</li>
+              <li>Email + Slack notifications</li>
+              <li>Microsoft Teams integration</li>
+            </ul>
+            
+            <a href="https://app.signaltrue.ai/register?plan=detection" class="btn">Start 30-Day Trial</a>
+          </div>
+
+          <!-- Impact Proof Tier -->
+          <div class="pricing-card">
+            <h3>Impact Proof</h3>
+            <p class="tagline">Measure intervention effectiveness</p>
+            <div class="price">€199</div>
+            <p class="price-note">Per month • Unlimited teams</p>
+            
+            <ul class="features">
+              <li>Everything in Detection, plus:</li>
+              <li>Before/after intervention tracking</li>
+              <li>Quarterly capability reports</li>
+              <li>Export data for board presentations</li>
+              <li>API access for custom integrations</li>
+              <li>Priority support (24h response)</li>
+              <li>Custom benchmarking</li>
+            </ul>
+            
+            <a href="https://app.signaltrue.ai/register?plan=impact" class="btn">Start 30-Day Trial</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Value Proposition -->
+    <section style="padding: 60px 0; background: var(--bg-elevated); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+      <div class="container">
+        <h2 style="text-align: center; font-size: 32px; margin: 0 0 48px 0;">Why tier by risk coverage?</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px;">
+          <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">👀</div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Visibility</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
+              You know <strong>something</strong> changed, but not why or what to do.
+            </p>
+          </div>
           
-          <div style="max-width: 600px; margin: 0 auto 40px auto; text-align: center;">
-            <p class="muted">Pricing scales with insight depth and governance — not surveillance.</p>
+          <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Detection</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
+              You understand <strong>why</strong> it happened and have clear recommended actions.
+            </p>
           </div>
-
-        </div>
-        <div class="container pricing">
-          <div class="plan">
-            <h3>Starter</h3>
-            <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; margin-bottom: 5px; font-weight: 700;">Best For</div>
-            <p class="muted" style="margin-bottom: 20px;">Small teams wanting early warning.</p>
-            <ul class="features">
-              <li>Weekly team health summaries</li>
-              <li>Drift detection</li>
-              <li>Slack & Calendar integration</li>
-              <li>Privacy-first defaults</li>
-            </ul>
-            <a class="btn btn-primary btn-block" href="https://app.signaltrue.ai/register">Request early access</a>
-          </div>
-          <div class="plan" style="border: 2px solid var(--brand);">
-            <h3>Growth</h3>
-            <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; margin-bottom: 5px; font-weight: 700;">Best For</div>
-            <p class="muted" style="margin-bottom: 20px;">Scaling teams in change.</p>
-            <ul class="features">
-              <li>Advanced drift explainability</li>
-              <li>Micro playbook recommendations</li>
-              <li>Program impact tracking</li>
-              <li>Manager-level insights</li>
-            </ul>
-            <a class="btn btn-primary btn-block" href="https://app.signaltrue.ai/register">Request early access</a>
-          </div>
-          <div class="plan">
-            <h3>Enterprise</h3>
-            <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; margin-bottom: 5px; font-weight: 700;">Best For</div>
-            <p class="muted" style="margin-bottom: 20px;">Distributed or regulated orgs.</p>
-            <ul class="features">
-              <li>Custom aggregation rules</li>
-              <li>Data exports & API</li>
-              <li>Advanced compliance controls</li>
-              <li>Dedicated onboarding</li>
-            </ul>
-            <a class="btn btn-block" href="/contact">Contact Sales</a>
+          
+          <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Impact Proof</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
+              You can <strong>prove</strong> your interventions created sustainable change.
+            </p>
           </div>
         </div>
-      </section>
-
-      <section>
-        <div class="container grid-2">
-          <div class="panel" style="border-left: 4px solid var(--danger);">
-            <h3>What you are not paying for</h3>
-            <ul class="features">
-              <li>Employee monitoring</li>
-              <li>Productivity scoring</li>
-              <li>Individual rankings</li>
-            </ul>
-          </div>
-          <div class="panel" style="border-left: 4px solid var(--brand);">
-            <h3>What you are paying for</h3>
-            <ul class="features">
-              <li>Early detection</li>
-              <li>Better leadership decisions</li>
-              <li>Healthier teams that last</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="container grid">
-        <div>
-          <strong>SignalTrue</strong>
-          <span class="muted"> — Understand your organization's pulse.</span>
-        </div>
-        <nav>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/product">Product</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/about">About</a>
-        </nav>
       </div>
-      <div class="container muted" style="margin-top:10px">© <span id="year"></span> SignalTrue. All rights reserved.</div>
-      <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-    </footer>
-  </body>
+    </section>
+
+    <!-- Comparison Table -->
+    <section style="padding: 80px 0;">
+      <div class="container">
+        <h2 style="text-align: center; font-size: 32px; margin: 0 0 48px 0;">Feature Comparison</h2>
+        
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Visibility</th>
+                <th>Detection</th>
+                <th>Impact Proof</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>5 Capability Indicators</strong></td>
+                <td>✓ Read-only</td>
+                <td>✓ Full access</td>
+                <td>✓ Full access</td>
+              </tr>
+              <tr>
+                <td><strong>Drift Alerts</strong></td>
+                <td>✓ Basic (no details)</td>
+                <td>✓ With explanations</td>
+                <td>✓ With explanations</td>
+              </tr>
+              <tr>
+                <td><strong>AI Playbook Recommendations</strong></td>
+                <td>—</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td><strong>Team Count</strong></td>
+                <td>Up to 3 teams</td>
+                <td>Unlimited</td>
+                <td>Unlimited</td>
+              </tr>
+              <tr>
+                <td><strong>Integrations</strong></td>
+                <td>Slack + Google</td>
+                <td>+ Microsoft Teams</td>
+                <td>+ API access</td>
+              </tr>
+              <tr>
+                <td><strong>Before/After Tracking</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td><strong>Quarterly Reports</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td><strong>Export Data</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>✓ CSV + PDF</td>
+              </tr>
+              <tr>
+                <td><strong>Support</strong></td>
+                <td>Community</td>
+                <td>Email (48h)</td>
+                <td>Priority (24h)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section style="padding: 60px 0; background: var(--bg-elevated); border-top: 1px solid var(--border);">
+      <div class="container" style="max-width: 800px;">
+        <h2 style="text-align: center; font-size: 32px; margin: 0 0 48px 0;">Frequently Asked Questions</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 32px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">What counts as a "team"?</h3>
+            <p style="color: var(--text-muted); margin: 0;">
+              A team is a distinct Slack channel or group of people who collaborate regularly. Most organizations have 5-15 teams.
+            </p>
+          </div>
+          
+          <div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Can I try Detection or Impact Proof for free?</h3>
+            <p style="color: var(--text-muted); margin: 0;">
+              Yes! All paid plans include a 30-day free trial. No credit card required.
+            </p>
+          </div>
+          
+          <div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">What if I need more than 3 teams on the free plan?</h3>
+            <p style="color: var(--text-muted); margin: 0;">
+              Upgrade to Detection (€99/mo) for unlimited teams and full drift explanations.
+            </p>
+          </div>
+          
+          <div>
+            <h3 style="font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Do you offer discounts for nonprofits or educators?</h3>
+            <p style="color: var(--text-muted); margin: 0;">
+              Yes. Contact us at <a href="mailto:hello@signaltrue.ai" style="color: var(--accent);">hello@signaltrue.ai</a> for 50% off Detection or Impact Proof.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="padding: 80px 0; text-align: center;">
+      <div class="container">
+        <h2 style="font-size: 40px; margin: 0 0 24px 0;">Start detecting drift today</h2>
+        <p style="color: var(--text-muted); font-size: 18px; margin: 0 0 32px 0;">
+          Free for 30 days. Upgrade anytime.
+        </p>
+        <a href="https://app.signaltrue.ai/register" style="background: var(--accent); color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 18px;">Start Free Trial</a>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px;">
+    <div class="container">
+      <p>&copy; 2025 SignalTrue. Behavioral signal detection for organizational capability.</p>
+    </div>
+  </footer>
+</body>
 </html>
