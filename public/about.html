@@ -1,123 +1,308 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-32VLC15W5G');
-    </script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About — SignalTrue</title>
-    <meta name="description" content="Our mission is to make organizations healthier by turning everyday work signals into insight and action." />
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-32VLC15W5G');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — SignalTrue</title>
+  <meta name="description" content="We build privacy-by-design organizational intelligence. Detect capability drift before it becomes outcome damage." />
   <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <header>
-      <div class="container nav">
-  <a class="brand" href="/">
-          <span class="brand-badge"></span>
-          <span>SignalTrue</span>
-        </a>
-        <nav class="navlinks">
-          <a href="/product">Product</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/about" aria-current="page">About</a>
-          <a href="https://app.signaltrue.ai/register" class="btn btn-primary">Request early access</a>
-        </nav>
+  <style>
+    :root {
+      --primary: #475569;
+      --accent: #3b82f6;
+      --bg: #0f172a;
+      --bg-elevated: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .manifesto {
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.8;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+    
+    .manifesto p {
+      margin-bottom: 24px;
+    }
+    
+    .manifesto strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    .principles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 48px;
+    }
+    
+    .principle-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    
+    .principle-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      color: var(--accent);
+    }
+    
+    .principle-card p {
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+    
+    .trust-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px;
+      margin-top: 60px;
+    }
+    
+    .trust-section h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 24px 0;
+      text-align: center;
+      color: var(--text);
+    }
+    
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 32px;
+    }
+    
+    .trust-item {
+      text-align: center;
+    }
+    
+    .trust-item h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 12px 0 8px 0;
+      color: var(--text);
+    }
+    
+    .trust-item p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <header style="border-bottom: 1px solid var(--border); padding: 20px 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="/" style="font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none;">SignalTrue</a>
+      <nav style="display: flex; gap: 32px; align-items: center;">
+        <a href="/product" style="color: var(--text-muted); text-decoration: none;">Product</a>
+        <a href="/pricing" style="color: var(--text-muted); text-decoration: none;">Pricing</a>
+        <a href="/about" style="color: var(--text); text-decoration: none;">About</a>
+        <a href="https://app.signaltrue.ai/register" style="background: var(--accent); color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">Start Free Trial</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section style="padding: 80px 0; text-align: center;">
+      <div class="container">
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px;">About</div>
+        <h1 style="font-size: 48px; font-weight: 800; margin: 0 0 24px 0;">Why SignalTrue exists</h1>
+        <p style="font-size: 20px; color: var(--text-muted); max-width: 700px; margin: 0 auto;">
+          Organizations fail quietly before they fail visibly. We built a system to detect the quiet failures.
+        </p>
       </div>
-    </header>
+    </section>
 
-    <main>
-      <section class="hero">
-        <div class="container">
-          <div class="eyebrow">About</div>
-          <h1>Why SignalTrue exists</h1>
-          <p class="muted">We watched talented people burn out. Not because leaders didn’t care. But because the warning signs came too late.</p>
+    <!-- Manifesto -->
+    <section style="padding: 60px 0;">
+      <div class="container">
+        <div class="manifesto">
+          <p>
+            <strong>Most organizational intelligence tools measure the past.</strong> They tell you what already happened: attrition rates, survey results, revenue dips. By the time these metrics move, the structural damage is done.
+          </p>
+          
+          <p>
+            <strong>We measure the present.</strong> Specifically, we detect when organizational capabilities—Resilience, Execution Capacity, Decision Speed, Structural Health, and Decision Closure Rate—start to degrade. These are leading indicators. They show what's breaking before outcomes slip.
+          </p>
+          
+          <p>
+            <strong>But here's the problem:</strong> Most behavioral analytics tools destroy trust. They track individuals, read message content, create surveillance dashboards. Leaders become watchers. Teams become anxious.
+          </p>
+          
+          <p>
+            <strong>That's not how we build.</strong>
+          </p>
+          
+          <p>
+            SignalTrue is privacy-by-design. We measure team-level aggregated patterns, never individuals. We analyze metadata (meeting frequency, response times, calendar density), never content. We detect structural risk, not personal performance.
+          </p>
+          
+          <p>
+            <strong>Our purpose is simple:</strong> Give leaders the earliest possible signal that something structural is changing—without violating trust, without creating fear, without turning work into surveillance.
+          </p>
+          
+          <p>
+            Organizations need leading indicators. But they need them built the right way.
+          </p>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section>
-        <div class="container section-header">
-          <div style="max-width: 800px; margin: 0 auto;">
-            
-            <!-- Visual Grounding -->
-            <div style="width: 100%; height: 300px; background: #1e293b; border-radius: 12px; margin-bottom: 40px; display: flex; align-items: center; justify-content: center; color: #64748b; border: 1px dashed #334155;">
-              [Founder / Team Photo Placeholder]
-            </div>
-
-            <div style="text-align: left; max-width: 700px; margin: 0 auto;">
-              <p style="font-size: 1.2em; font-weight: 500;">Surveys were slow. Dashboards were backward-looking. Monitoring tools destroyed trust.</p>
-              <p>So we built something different.</p>
-              
-              <h3 style="margin-top: 30px;">The data to prevent burnout already exists</h3>
-              <p>It’s hidden in how teams collaborate over time. Not in what people say — but in patterns.</p>
-            </div>
-
-            <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">Our Principles</h3>
-            
-            <div class="grid-2" style="text-align: left;">
-              <div class="panel">
-                <h4 style="color: var(--brand);">Trust over surveillance</h4>
-                <p style="font-size: 0.9em;">We never show individual data. We build for leaders who want to support their teams, not spy on them.</p>
-              </div>
-              <div class="panel">
-                <h4 style="color: var(--brand);">Teams over individuals</h4>
-                <p style="font-size: 0.9em;">Work happens in groups. We measure the friction and flow of the team unit, not the person.</p>
-              </div>
-              <div class="panel">
-                <h4 style="color: var(--brand);">Context over raw metrics</h4>
-                <p style="font-size: 0.9em;">A number without context is dangerous. We always overlay events like launches or reorgs.</p>
-              </div>
-              <div class="panel">
-                <h4 style="color: var(--brand);">Judgment over automation</h4>
-                <p style="font-size: 0.9em;">We provide signals and micro-playbooks, but we trust human leaders to make the final call.</p>
-              </div>
-            </div>
-
+    <!-- Principles -->
+    <section style="padding: 60px 0; border-top: 1px solid var(--border);">
+      <div class="container">
+        <h2 style="text-align: center; font-size: 32px; margin: 0 0 48px 0;">Our Principles</h2>
+        
+        <div class="principles-grid">
+          <div class="principle-card">
+            <h3>Privacy-by-Design</h3>
+            <p>
+              Team-level aggregation only. No individual tracking, no content monitoring, no surveillance dashboards. We never show who sent a message or attended a meeting—only that the team's patterns changed.
+            </p>
+          </div>
+          
+          <div class="principle-card">
+            <h3>Leading, Not Lagging</h3>
+            <p>
+              We measure capability drift in real-time, not outcomes after the fact. By the time attrition or burnout shows up, you've lost people. We detect the structural issues before they cascade.
+            </p>
+          </div>
+          
+          <div class="principle-card">
+            <h3>Context, Not Just Numbers</h3>
+            <p>
+              A metric without context is dangerous. Every drift alert includes the drivers (meeting load, focus erosion, after-hours creep), the context (recent reorg, product launch), and recommended actions.
+            </p>
+          </div>
+          
+          <div class="principle-card">
+            <h3>Support Leaders, Don't Replace Them</h3>
+            <p>
+              We provide signals and playbook recommendations, but humans make the decisions. Automation works for factories. Organizations need judgment, empathy, and trust.
+            </p>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Secondary Trusted Companies -->
-      <section style="padding: 40px 0; border-top: 1px solid var(--border);">
-        <div class="container" style="text-align: center;">
-          <div style="display: flex; justify-content: center; gap: 40px; align-items: center; opacity: 0.5; transform: scale(0.8);">
-            <div style="font-weight: 800; font-size: 24px; color: #94a3b8; letter-spacing: -1px;">Sharewell</div>
-            <div style="font-weight: 700; font-size: 22px; color: #94a3b8; letter-spacing: 1px;">CLEVERON</div>
-            <div style="font-weight: 800; font-size: 24px; color: #94a3b8;">toggl</div>
+    <!-- Trust Section -->
+    <section style="padding: 60px 0;">
+      <div class="container">
+        <div class="trust-section">
+          <h3>How We Protect Trust</h3>
+          <p style="text-align: center; color: var(--text-muted); max-width: 600px; margin: 0 auto 32px auto;">
+            Privacy isn't a feature. It's a design constraint.
+          </p>
+          
+          <div class="trust-grid">
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">🔒</div>
+              <h4>Team-Level Aggregation</h4>
+              <p>Minimum 5 people per team. Individual patterns are never exposed.</p>
+            </div>
+            
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">🚫</div>
+              <h4>No Content Monitoring</h4>
+              <p>We analyze metadata only. Never message text, meeting recordings, or email content.</p>
+            </div>
+            
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">🔐</div>
+              <h4>Encrypted at Rest</h4>
+              <p>All team data is encrypted using AES-256-GCM. Access is role-based and audited.</p>
+            </div>
+            
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">👁️</div>
+              <h4>No Third-Party Sharing</h4>
+              <p>Your data is yours. We never sell, share, or train AI models on your patterns.</p>
+            </div>
+            
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">✓</div>
+              <h4>GDPR Compliant</h4>
+              <p>Full data portability, right to deletion, and transparent consent management.</p>
+            </div>
+            
+            <div class="trust-item">
+              <div style="font-size: 40px; margin-bottom: 8px;">📋</div>
+              <h4>Audit Logs</h4>
+              <p>Every data access is logged. Leaders can see exactly who viewed which team's data.</p>
+            </div>
           </div>
         </div>
-      </section>
-
-      <section class="cta-section">
-        <div class="container">
-          <h2>SignalTrue does not replace leadership. It supports it.</h2>
-          <p>Better teams don’t need more monitoring. They need earlier understanding.</p>
-          <a class="btn btn-primary" href="https://app.signaltrue.ai/register">Request early access</a>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="container grid">
-        <div>
-          <strong>SignalTrue</strong>
-          <span class="muted"> — Understand your organization's pulse.</span>
-        </div>
-        <nav>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/product">Product</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/about">About</a>
-        </nav>
       </div>
-      <div class="container muted" style="margin-top:10px">© <span id="year"></span> SignalTrue. All rights reserved.</div>
-      <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-    </footer>
-  </body>
+    </section>
+
+    <!-- Who We Are -->
+    <section style="padding: 60px 0; border-top: 1px solid var(--border);">
+      <div class="container" style="max-width: 800px; text-align: center;">
+        <h2 style="font-size: 32px; margin: 0 0 24px 0;">Who We Are</h2>
+        <p style="color: var(--text-muted); font-size: 18px; line-height: 1.8; margin: 0 auto;">
+          We're a small team that's seen talented people burn out—not because leaders didn't care, but because the warning signs came too late. We watched surveys lag by 6 weeks. We saw dashboards measure the past, not the present. We built SignalTrue because organizations deserve better.
+        </p>
+        <p style="color: var(--text-muted); font-size: 18px; line-height: 1.8; margin: 24px auto 0 auto;">
+          If you believe that leadership should be supported with real-time signals—not replaced by automation—we built this for you.
+        </p>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="padding: 80px 0; text-align: center; background: var(--bg-elevated); border-top: 1px solid var(--border);">
+      <div class="container">
+        <h2 style="font-size: 40px; margin: 0 0 24px 0;">Ready to detect drift before it becomes damage?</h2>
+        <p style="color: var(--text-muted); font-size: 18px; margin: 0 0 32px 0;">
+          Free for 30 days. Privacy-by-design. No surveillance.
+        </p>
+        <a href="https://app.signaltrue.ai/register" style="background: var(--accent); color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 18px;">Start Free Trial</a>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px;">
+    <div class="container">
+      <p>&copy; 2025 SignalTrue. Behavioral signal detection for organizational capability.</p>
+      <div style="margin-top: 16px;">
+        <a href="/privacy" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">Privacy</a>
+        <a href="/terms" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">Terms</a>
+        <a href="mailto:hello@signaltrue.ai" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">Contact</a>
+      </div>
+    </div>
+  </footer>
+</body>
 </html>
