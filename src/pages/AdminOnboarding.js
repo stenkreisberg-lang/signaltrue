@@ -28,11 +28,8 @@ export default function AdminOnboarding() {
         const stRes = await api.get('/onboarding/status');
         if (stRes.status === 200) setIntegrations(stRes.data);
 
-        // Prefer orgSlug for status if available; fall back to orgId
-        // FORCE: Always use orgSlug=default to match backend token storage
+        // Use orgSlug=default for integration status
         const statusQuery = '?orgSlug=default';
-        const statusUrl = `${api.defaults.baseURL}/integrations/status${statusQuery}`;
-        window.__lastStatusUrl = statusUrl; // Expose for debug
         const iRes = await api.get(`/integrations/status${statusQuery}`);
         if (iRes.status === 200) setIntegrations(iRes.data);
 

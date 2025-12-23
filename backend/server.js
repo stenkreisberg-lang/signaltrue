@@ -103,9 +103,6 @@ async function main() {
       } else if (process.env.MONGO_URI) {
         console.log("Attempting to connect to MongoDB Atlas...");
         await mongoose.connect(process.env.MONGO_URI);
-        mongoose.connection.on('command', (event) => {
-          console.debug(JSON.stringify(event, null, 2));
-        });
         console.log("✅ MongoDB connected");
         mongoose.connection.on('error', err => {
           console.error('Mongoose connection error:', err);
@@ -187,9 +184,11 @@ async function main() {
     }
 
     // --- Start Server ---
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
+    if (process.env.NODE_ENV !== "test") {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    }
 
   } catch (error) {
     console.error("❌ Server startup failed:", error);
