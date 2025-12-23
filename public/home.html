@@ -266,6 +266,83 @@
       margin: 0;
     }
     
+    /* Teams Carousel */
+    .teams-carousel-section {
+      padding: 60px 0;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+    
+    .teams-carousel-section h2 {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+    
+    .teams-carousel-section .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 40px 0;
+    }
+    
+    .carousel-container {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .carousel-track-wrapper {
+      overflow: hidden;
+      mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    }
+    
+    .carousel-track {
+      display: flex;
+      gap: 80px;
+      animation: scroll-carousel 30s linear infinite;
+      width: fit-content;
+    }
+    
+    .carousel-track:hover {
+      animation-play-state: paused;
+    }
+    
+    .carousel-logo {
+      flex-shrink: 0;
+      height: 32px;
+      opacity: 0.4;
+      transition: opacity 0.3s ease;
+      filter: grayscale(100%);
+    }
+    
+    .carousel-logo:hover {
+      opacity: 0.6;
+    }
+    
+    @keyframes scroll-carousel {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .carousel-track {
+        gap: 60px;
+      }
+      
+      .carousel-logo {
+        height: 28px;
+      }
+    }
+    
     footer {
       border-top: 1px solid var(--border);
       padding: 40px 0;
@@ -304,6 +381,37 @@
         <p style="margin-top: 24px; color: var(--text-muted); font-size: 14px;">
           ✓ No surveys • ✓ No individual tracking • ✓ Privacy-by-design
         </p>
+      </div>
+    </section>
+
+    <!-- Teams We've Worked With Carousel -->
+    <section class="teams-carousel-section">
+      <div class="container">
+        <h2>Teams we've worked with</h2>
+        <p class="subtitle">Early pilots, partners, and teams we've collaborated with across Europe.</p>
+      </div>
+      
+      <div class="carousel-container">
+        <div class="carousel-track-wrapper">
+          <div class="carousel-track">
+            <!-- First set of logos -->
+            <img src="/images/logos/supermetrics.svg" alt="Supermetrics" class="carousel-logo" onerror="this.src='/images/logos/supermetrics.png'">
+            <img src="/images/logos/netguru.svg" alt="Netguru" class="carousel-logo" onerror="this.src='/images/logos/netguru.png'">
+            <img src="/images/logos/synthesia.svg" alt="Synthesia" class="carousel-logo" onerror="this.src='/images/logos/synthesia.png'">
+            <img src="/images/logos/toggl.svg" alt="Toggl" class="carousel-logo" onerror="this.src='/images/logos/toggl.png'">
+            <img src="/images/logos/sharewell.svg" alt="Sharewell" class="carousel-logo" onerror="this.src='/images/logos/sharewell.png'">
+            <img src="/images/logos/cleveron.svg" alt="Cleveron" class="carousel-logo" onerror="this.src='/images/logos/cleveron.png'">
+            <img src="/images/logos/rutwol.svg" alt="Rutwol" class="carousel-logo" onerror="this.src='/images/logos/rutwol.png'">
+            <!-- Duplicate set for infinite loop -->
+            <img src="/images/logos/supermetrics.svg" alt="Supermetrics" class="carousel-logo" onerror="this.src='/images/logos/supermetrics.png'">
+            <img src="/images/logos/netguru.svg" alt="Netguru" class="carousel-logo" onerror="this.src='/images/logos/netguru.png'">
+            <img src="/images/logos/synthesia.svg" alt="Synthesia" class="carousel-logo" onerror="this.src='/images/logos/synthesia.png'">
+            <img src="/images/logos/toggl.svg" alt="Toggl" class="carousel-logo" onerror="this.src='/images/logos/toggl.png'">
+            <img src="/images/logos/sharewell.svg" alt="Sharewell" class="carousel-logo" onerror="this.src='/images/logos/sharewell.png'">
+            <img src="/images/logos/cleveron.svg" alt="Cleveron" class="carousel-logo" onerror="this.src='/images/logos/cleveron.png'">
+            <img src="/images/logos/rutwol.svg" alt="Rutwol" class="carousel-logo" onerror="this.src='/images/logos/rutwol.png'">
+          </div>
+        </div>
       </div>
     </section>
 
