@@ -1,228 +1,451 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
-
-// Minimal styles object for About page
+import Button from '../components/Button';
+import { colors, typography, spacing, radius, shadows } from '../styles/tokens';
 
 function About() {
-  return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-            <span style={styles.logoText}>SignalTrue</span>
-          </Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <Link to="/contact" style={styles.navLink}>Contact</Link>
-            <Link to="/login" style={styles.loginBtn}>Login</Link>
-          </div>
-        </div>
-      </nav>
+  const styles = {
+    // Hero Section
+    hero: {
+      background: colors.bgDark,
+      color: colors.textInverse,
+      padding: `${spacing['4xl']} ${spacing.xl} ${spacing['3xl']}`,
+      textAlign: 'center',
+    },
+    heroInner: {
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto',
+    },
+    heroTitle: {
+      fontSize: typography.hero,
+      fontWeight: typography.weightBold,
+      lineHeight: typography.lineHeightTight,
+      margin: `0 0 ${spacing.lg}`,
+      fontFamily: typography.sans,
+    },
+    heroSubtitle: {
+      fontSize: typography.bodyLarge,
+      color: colors.textInverseSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+      margin: `0 auto`,
+      maxWidth: '700px',
+    },
+    
+    // Section styles
+    section: {
+      padding: `${spacing['3xl']} ${spacing.xl}`,
+    },
+    sectionInner: {
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto',
+    },
+    sectionTitle: {
+      fontSize: typography.h2,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+      lineHeight: typography.lineHeightTight,
+    },
+    
+    // Philosophy section
+    philosophyText: {
+      fontSize: typography.bodyLarge,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+      maxWidth: '700px',
+      margin: `0 auto ${spacing.lg}`,
+    },
+    emphasisText: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      lineHeight: typography.lineHeightNormal,
+      maxWidth: '700px',
+      margin: `${spacing['2xl']} auto`,
+      textAlign: 'center',
+    },
+    
+    // Grid layouts
+    grid2: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+      gap: spacing.xl,
+      marginTop: spacing['2xl'],
+    },
+    
+    // Cards
+    card: {
+      background: colors.surface,
+      border: `1px solid ${colors.border}`,
+      borderRadius: radius.lg,
+      padding: spacing.xl,
+    },
+    cardTitle: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.primary,
+      marginBottom: spacing.sm,
+    },
+    cardDesc: {
+      fontSize: typography.body,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+    },
+    
+    // Safeguards section
+    safeguardItem: {
+      background: colors.bgSubtle,
+      border: `1px solid ${colors.border}`,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    safeguardTitle: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+      display: 'flex',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    safeguardIcon: {
+      fontSize: '1.5rem',
+    },
+    safeguardDesc: {
+      fontSize: typography.body,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+    },
+    
+    // "Not For" section
+    notForSection: {
+      background: colors.surface,
+      border: `3px solid ${colors.warning}`,
+      borderRadius: radius.lg,
+      padding: spacing['2xl'],
+      maxWidth: '800px',
+      margin: `${spacing['2xl']} auto 0`,
+    },
+    notForTitle: {
+      fontSize: typography.h2,
+      fontWeight: typography.weightBold,
+      color: colors.warning,
+      marginBottom: spacing.lg,
+      textAlign: 'center',
+    },
+    notForList: {
+      listStyle: 'none',
+      padding: 0,
+      margin: 0,
+    },
+    notForItem: {
+      padding: `${spacing.md} 0`,
+      fontSize: typography.body,
+      color: colors.textPrimary,
+      lineHeight: typography.lineHeightNormal,
+      borderBottom: `1px solid ${colors.border}`,
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+    },
+    notForIcon: {
+      color: colors.warning,
+      fontWeight: typography.weightBold,
+      fontSize: '1.25rem',
+      flexShrink: 0,
+    },
+  };
 
+  return (
+    <div style={{ minHeight: '100vh', background: colors.bgLight }}>
+      <SiteHeader theme="light" />
+
+      {/* SPECIFICATION REQUIREMENT: Philosophy First */}
       <section style={styles.hero}>
-        <div style={styles.container}>
-          <h1 style={styles.heroTitle}>Why SignalTrue exists</h1>
+        <div style={styles.heroInner}>
+          <h1 style={styles.heroTitle}>
+            Why SignalTrue exists
+          </h1>
           <p style={styles.heroSubtitle}>
-            We watched talented people burn out. Not because leaders didn't care. But because the warning signs came too late.
+            We watched talented people burn out. Not because leaders didn't care — but because the warning signs came too late.
           </p>
         </div>
       </section>
 
-      <section style={styles.section}>
-        <div style={styles.container}>
-          {/* Visual Grounding */}
-          <div style={{width:'100%', maxWidth:800, height:300, background:'#1e293b', borderRadius:12, margin:'0 auto 40px', display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b', border:'1px dashed #334155'}}>
-            [Founder / Team Photo Placeholder]
-          </div>
-
-          <div style={{maxWidth:700, margin:'0 auto'}}>
-            <p style={styles.missionText}>
+      {/* Philosophy Section */}
+      <section style={{...styles.section, background: colors.bgLight}}>
+        <div style={styles.sectionInner}>
+          <div style={{maxWidth: '700px', margin: '0 auto'}}>
+            <p style={styles.philosophyText}>
               Surveys were slow. Dashboards were backward-looking. Monitoring tools destroyed trust.
             </p>
-            <p style={styles.missionText}>
+            <p style={styles.philosophyText}>
               So we built something different.
             </p>
             
-            <h3 style={{marginTop:30, fontSize:'1.5rem', fontWeight:700}}>The data to prevent burnout already exists</h3>
-            <p style={styles.missionText}>
-              It's hidden in how teams collaborate over time. Not in what people say — but in patterns.
+            <p style={styles.emphasisText}>
+              The data to prevent burnout already exists. It's hidden in how teams collaborate over time.
             </p>
-
-            <p style={{...styles.missionText, marginTop:30, fontStyle:'italic', color:'#6b7280'}}>
-              Our product turns collaboration data into early warning signals leaders can act on.
+            
+            <p style={styles.philosophyText}>
+              Not in what people say in surveys. Not in individual productivity scores. But in patterns: How response times drift. How meeting load creeps. How after-hours work becomes the norm.
+            </p>
+            
+            <p style={{...styles.philosophyText, fontStyle: 'italic', marginTop: spacing['2xl']}}>
+              SignalTrue turns collaboration metadata into early warning signals leaders can act on — before problems become crises.
             </p>
           </div>
+        </div>
+      </section>
 
-          <h3 style={{marginTop:60, marginBottom:30, textAlign:'center', fontSize:'1.75rem', fontWeight:700}}>Our Principles</h3>
+      {/* What We Refuse to Solve - SPECIFICATION REQUIREMENT */}
+      <section style={{...styles.section, background: colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>What We Refuse to Solve</h2>
+          <p style={{
+            fontSize: typography.bodyLarge,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            maxWidth: '700px',
+            margin: `0 auto ${spacing['2xl']}`,
+            lineHeight: typography.lineHeightRelaxed,
+          }}>
+            SignalTrue is not surveillance. We deliberately exclude capabilities that would undermine trust.
+          </p>
           
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:24, maxWidth:1000, margin:'0 auto'}}>
-            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
-              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Trust over surveillance</h4>
-              <p style={{fontSize:'0.9em', color:'#4b5563'}}>We never show individual data. We build for leaders who want to support their teams, not spy on them.</p>
-            </div>
-            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
-              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Teams over individuals</h4>
-              <p style={{fontSize:'0.9em', color:'#4b5563'}}>Work happens in groups. We measure the friction and flow of the team unit, not the person.</p>
-            </div>
-            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
-              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Context over raw metrics</h4>
-              <p style={{fontSize:'0.9em', color:'#4b5563'}}>A number without context is dangerous. We always overlay events like launches or reorgs.</p>
-            </div>
-            <div style={{background:'white', padding:24, borderRadius:8, border:'1px solid #e5e7eb'}}>
-              <h4 style={{color:'#059669', fontSize:'1.25rem', fontWeight:700, marginBottom:8}}>Judgment over automation</h4>
-              <p style={{fontSize:'0.9em', color:'#4b5563'}}>We provide signals and micro-playbooks, but we trust human leaders to make the final call.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Secondary Trusted Companies */}
-      <section style={{padding:'40px 0', borderTop:'1px solid #e5e7eb', background:'#f9fafb'}}>
-        <div style={styles.container}>
-          <div style={{display:'flex', justifyContent:'center', gap:40, alignItems:'center', opacity:0.5, transform:'scale(0.8)', flexWrap:'wrap'}}>
-            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8', letterSpacing:'-1px'}}>Sharewell</div>
-            <div style={{fontWeight:700, fontSize:22, color:'#94a3b8', letterSpacing:'1px'}}>CLEVERON</div>
-            <div style={{fontWeight:800, fontSize:24, color:'#94a3b8'}}>toggl</div>
-          </div>
-        </div>
-      </section>
-
-      <section style={{...styles.section, background:'white'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Our Values</h2>
-
-          <div style={styles.valuesGrid}>
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>🔒</div>
-              <h3 style={styles.valueTitle}>Privacy First</h3>
-              <p style={styles.valueText}>
-                We analyze patterns without reading private content. Team member privacy is non-negotiable.
+          <div style={styles.grid2}>
+            <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>
+              <h3 style={{...styles.cardTitle, color: colors.error}}>❌ Individual Performance Tracking</h3>
+              <p style={styles.cardDesc}>
+                We will never show you which employee sent the most messages, worked the longest hours, or had the fastest response times. This creates toxic comparison dynamics.
               </p>
             </div>
 
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>🤝</div>
-              <h3 style={styles.valueTitle}>People-Centric</h3>
-              <p style={styles.valueText}>
-                Our technology exists to help people thrive, not to surveil or micromanage.
+            <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>
+              <h3 style={{...styles.cardTitle, color: colors.error}}>❌ Content Surveillance</h3>
+              <p style={styles.cardDesc}>
+                We will never read message text, email bodies, or document content. We only access timestamps, thread lengths, and meeting durations — metadata, not meaning.
               </p>
             </div>
 
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>⚖️</div>
-              <h3 style={styles.valueTitle}>Fairness & Equity</h3>
-              <p style={styles.valueText}>
-                We deliberately ignore demographic data to enable equitable team health management for all.
+            <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>
+              <h3 style={{...styles.cardTitle, color: colors.error}}>❌ Productivity Scoring</h3>
+              <p style={styles.cardDesc}>
+                We will never assign scores to individuals or rank team members. Output is a terrible proxy for health, and rankings destroy psychological safety.
               </p>
             </div>
 
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>🔬</div>
-              <h3 style={styles.valueTitle}>Science-Backed</h3>
-              <p style={styles.valueText}>
-                Our algorithms are grounded in peer-reviewed research on burnout, engagement, and organizational behavior.
-              </p>
-            </div>
-
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>🚀</div>
-              <h3 style={styles.valueTitle}>Action-Oriented</h3>
-              <p style={styles.valueText}>
-                Insights are only valuable if they lead to action. We design for implementation, not just awareness.
-              </p>
-            </div>
-
-            <div style={styles.valueCard}>
-              <div style={styles.valueIcon}>🌱</div>
-              <h3 style={styles.valueTitle}>Continuous Growth</h3>
-              <p style={styles.valueText}>
-                We're constantly learning and improving, both as individuals and as a company.
+            <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>
+              <h3 style={{...styles.cardTitle, color: colors.error}}>❌ Automated Interventions</h3>
+              <p style={styles.cardDesc}>
+                We will never automatically send warnings, reassign work, or trigger HR processes. Humans must decide when and how to act on signals.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section style={styles.section}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Why We Built SignalTrue</h2>
-          <div style={styles.storySection}>
-            <p style={styles.storyText}>
-              The idea for SignalTrue came from personal experience. Our founders watched talented colleagues 
-              burn out and leave companies that didn't see the warning signs. Performance reviews came too late. 
-              Exit interviews revealed problems that could have been addressed months earlier.
-            </p>
-            <p style={styles.storyText}>
-              We realized that the data to predict burnout already exists—hidden in communication patterns, 
-              meeting schedules, and collaboration behaviors. The challenge was building technology that could 
-              surface these insights while respecting privacy and avoiding surveillance.
-            </p>
-            <p style={styles.storyText}>
-              Today, SignalTrue helps companies across industries identify burnout risks early and support 
-              their teams proactively. We're proud to be part of building healthier workplaces where people 
-              can do their best work without sacrificing their wellbeing.
-            </p>
-          </div>
-
-          <div style={styles.quoteBox}>
-            <p style={styles.quote}>
-              "Companies can't thrive without strong employee retention and a deep understanding of their workforce. 
-              SignalTrue gives leaders the insights they need to support their teams before issues escalate."
-            </p>
-            <p style={styles.quoteAuthor}>— SignalTrue Founding Team</p>
-          </div>
-        </div>
-      </section>
-
-      <section style={{...styles.section, background: '#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Backed by Research</h2>
-          <p style={styles.introText}>
-            Our approach is grounded in decades of research on workplace burnout, organizational psychology, 
-            and predictive analytics.
+      {/* SPECIFICATION REQUIREMENT: Trust & Safeguards */}
+      <section style={{...styles.section, background: colors.bgLight}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Trust & Technical Safeguards</h2>
+          <p style={{
+            fontSize: typography.bodyLarge,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            maxWidth: '700px',
+            margin: `0 auto ${spacing['2xl']}`,
+            lineHeight: typography.lineHeightRelaxed,
+          }}>
+            Privacy isn't just policy — it's enforced by architecture.
           </p>
-
-          <div style={styles.researchGrid}>
-            <div style={styles.researchCard}>
-              <h3 style={styles.researchTitle}>Burnout Science</h3>
-              <p style={styles.researchText}>
-                We build on foundational research from Christina Maslach, Herbert Freudenberger, and modern 
-                organizational psychologists studying work-related exhaustion.
+          
+          <div style={{maxWidth: '800px', margin: '0 auto'}}>
+            <div style={styles.safeguardItem}>
+              <h3 style={styles.safeguardTitle}>
+                <span style={styles.safeguardIcon}>🔒</span>
+                Aggregation Logic
+              </h3>
+              <p style={styles.safeguardDesc}>
+                All metrics require minimum 5 people per team. Smaller teams cannot be monitored. Individual contributions are mathematically obscured in team-level aggregates.
               </p>
             </div>
 
-            <div style={styles.researchCard}>
-              <h3 style={styles.researchTitle}>Predictive Analytics</h3>
-              <p style={styles.researchText}>
-                Our AI models incorporate proven methodologies from academic research on employee retention, 
-                engagement prediction, and organizational network analysis.
+            <div style={styles.safeguardItem}>
+              <h3 style={styles.safeguardTitle}>
+                <span style={styles.safeguardIcon}>✓</span>
+                GDPR Alignment
+              </h3>
+              <p style={styles.safeguardDesc}>
+                Data minimization: we only collect metadata needed for health signals. Purpose limitation: data is never used for performance evaluation. Right to erasure: auto-delete after retention period (30–90 days, configurable).
               </p>
             </div>
 
-            <div style={styles.researchCard}>
-              <h3 style={styles.researchTitle}>Privacy by Design</h3>
-              <p style={styles.researchText}>
-                We follow privacy frameworks from GDPR, differential privacy research, and ethical AI principles 
-                to ensure responsible data use.
+            <div style={styles.safeguardItem}>
+              <h3 style={styles.safeguardTitle}>
+                <span style={styles.safeguardIcon}>🔐</span>
+                OAuth & Encryption
+              </h3>
+              <p style={styles.safeguardDesc}>
+                We never ask for passwords. All integrations use OAuth 2.0 with minimal scopes (metadata read-only). Data encrypted at rest (AES-256) and in transit (TLS 1.3).
+              </p>
+            </div>
+
+            <div style={styles.safeguardItem}>
+              <h3 style={styles.safeguardTitle}>
+                <span style={styles.safeguardIcon}>🌍</span>
+                Regional Data Residency
+              </h3>
+              <p style={styles.safeguardDesc}>
+                Enterprise plans support EU or US data residency. Data never crosses regions. SOC 2 Type II compliance in progress.
+              </p>
+            </div>
+
+            <div style={styles.safeguardItem}>
+              <h3 style={styles.safeguardTitle}>
+                <span style={styles.safeguardIcon}>⏰</span>
+                Automatic Deletion
+              </h3>
+              <p style={styles.safeguardDesc}>
+                Metadata is auto-deleted after retention period (30/90 days standard, up to 2 years for Enterprise with explicit consent). No indefinite storage.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section style={{...styles.section, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white'}}>
-        <div style={styles.container}>
-          <h2 style={{...styles.sectionTitle, color: 'white'}}>Join Us in Building Healthier Workplaces</h2>
-          <p style={{...styles.introText, color: 'rgba(255,255,255,0.9)', marginBottom: '2rem'}}>
-            Whether you're interested in our product, want to join our team, or just want to learn more, we'd love to hear from you.
+      {/* SPECIFICATION REQUIREMENT: Who It's Not For */}
+      <section style={{...styles.section, background: colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <div style={styles.notForSection}>
+            <h2 style={styles.notForTitle}>Who SignalTrue Is NOT For</h2>
+            <p style={{
+              fontSize: typography.body,
+              color: colors.textSecondary,
+              textAlign: 'center',
+              marginBottom: spacing.lg,
+            }}>
+              We believe in clarity about fit. If your goal is any of the following, SignalTrue is the wrong tool.
+            </p>
+            <ul style={styles.notForList}>
+              <li style={styles.notForItem}>
+                <span style={styles.notForIcon}>⚠</span>
+                <div>
+                  <strong>Micromanagement:</strong> If you want to track who's online, monitor individual work hours, or measure personal productivity, use time-tracking software instead.
+                </div>
+              </li>
+              <li style={styles.notForItem}>
+                <span style={styles.notForIcon}>⚠</span>
+                <div>
+                  <strong>Performance Rankings:</strong> If you want to rank employees by output or identify "low performers," use performance management software instead.
+                </div>
+              </li>
+              <li style={styles.notForItem}>
+                <span style={styles.notForIcon}>⚠</span>
+                <div>
+                  <strong>Content Monitoring:</strong> If you want to read employee messages, emails, or documents, use compliance/eDiscovery tools instead.
+                </div>
+              </li>
+              <li style={styles.notForItem}>
+                <span style={styles.notForIcon}>⚠</span>
+                <div>
+                  <strong>Automated Enforcement:</strong> If you want software to automatically reassign work, block after-hours access, or send warnings, use workforce automation tools instead.
+                </div>
+              </li>
+              <li style={{...styles.notForItem, borderBottom: 'none'}}>
+                <span style={styles.notForIcon}>⚠</span>
+                <div>
+                  <strong>Individual Attribution:</strong> If your culture requires knowing "who did what," SignalTrue won't give you that data. We only show team-level patterns.
+                </div>
+              </li>
+            </ul>
+          </div>
+          
+          <p style={{
+            fontSize: typography.body,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            maxWidth: '600px',
+            margin: `${spacing['2xl']} auto 0`,
+            fontStyle: 'italic',
+          }}>
+            SignalTrue is for leaders who trust their teams and want early warning systems — not surveillance infrastructure.
           </p>
-          <Link to="/contact" style={{...styles.primaryBtn, background: 'white', color: '#6366f1'}}>
-            Get in Touch
-          </Link>
+        </div>
+      </section>
+
+      {/* Principles */}
+      <section style={{...styles.section, background: colors.bgLight}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Our Principles</h2>
+          <div style={styles.grid2}>
+            <div style={styles.card}>
+              <h3 style={styles.cardTitle}>Trust over surveillance</h3>
+              <p style={styles.cardDesc}>
+                We never show individual data. We build for leaders who want to support their teams, not spy on them.
+              </p>
+            </div>
+
+            <div style={styles.card}>
+              <h3 style={styles.cardTitle}>Teams over individuals</h3>
+              <p style={styles.cardDesc}>
+                Work happens in groups. We measure the friction and flow of the team unit, not the person.
+              </p>
+            </div>
+
+            <div style={styles.card}>
+              <h3 style={styles.cardTitle}>Context over raw metrics</h3>
+              <p style={styles.cardDesc}>
+                A number without context is dangerous. We always explain what changed and why it might matter.
+              </p>
+            </div>
+
+            <div style={styles.card}>
+              <h3 style={styles.cardTitle}>Judgment over automation</h3>
+              <p style={styles.cardDesc}>
+                We provide signals and guidance, but we trust human leaders to make the final call on when and how to act.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section style={{...styles.section, textAlign:'center', background:colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <h2 style={{
+            fontSize: typography.h2,
+            fontWeight: typography.weightBold,
+            color: colors.textPrimary,
+            marginBottom: spacing.md,
+          }}>
+            Ready to build trust-first team health monitoring?
+          </h2>
+          <p style={{
+            fontSize: typography.bodyLarge,
+            color: colors.textSecondary,
+            maxWidth: '600px',
+            margin: `0 auto ${spacing.xl}`,
+          }}>
+            Start with a free baseline calibration.
+          </p>
+          <div style={{
+            display: 'flex',
+            gap: spacing.md,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}>
+            <Button as={Link} to="/register" variant="primary">
+              Request early access
+            </Button>
+            <Button as={Link} to="/product" variant="secondary">
+              See how it works
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -230,41 +453,5 @@ function About() {
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: '100vh', background: 'white' },
-  nav: { background: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100 },
-  navContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  logoLink: { display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' },
-  logoImg: { height: '32px', width: '32px' },
-  logoText: { fontSize: '1.25rem', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  navLinks: { display: 'flex', gap: '2rem', alignItems: 'center' },
-  navLink: { color: '#4b5563', textDecoration: 'none', fontWeight: '500' },
-  loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontWeight: '600' },
-  hero: { padding: '5rem 2rem', background: 'linear-gradient(to bottom, #f9fafb, white)', textAlign: 'center' },
-  container: { maxWidth: '1200px', margin: '0 auto' },
-  heroTitle: { fontSize: '3rem', fontWeight: '700', color: '#111827', marginBottom: '1.5rem' },
-  heroSubtitle: { fontSize: '1.25rem', color: '#6b7280', lineHeight: 1.6, maxWidth: '800px', margin: '0 auto' },
-  section: { padding: '5rem 2rem' },
-  sectionTitle: { fontSize: '2.5rem', fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: '2rem' },
-  missionText: { fontSize: '1.25rem', color: '#4b5563', lineHeight: 1.8, maxWidth: '900px', margin: '0 auto 1.5rem', textAlign: 'center' },
-  introText: { fontSize: '1.125rem', color: '#6b7280', lineHeight: 1.7, maxWidth: '900px', margin: '0 auto 3rem', textAlign: 'center' },
-  valuesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginTop: '3rem' },
-  valueCard: { background: 'white', borderRadius: '12px', padding: '2rem', textAlign: 'center', border: '1px solid #e5e7eb' },
-  valueIcon: { fontSize: '3rem', marginBottom: '1rem' },
-  valueTitle: { fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.75rem' },
-  valueText: { color: '#6b7280', lineHeight: 1.6 },
-  storySection: { maxWidth: '900px', margin: '0 auto' },
-  storyText: { fontSize: '1.125rem', color: '#4b5563', lineHeight: 1.8, marginBottom: '1.5rem' },
-  quoteBox: { maxWidth: '800px', margin: '3rem auto 0', padding: '3rem', background: '#eef2ff', borderRadius: '12px', borderLeft: '4px solid #6366f1' },
-  quote: { fontSize: '1.25rem', color: '#4338ca', lineHeight: 1.7, fontStyle: 'italic', marginBottom: '1rem' },
-  quoteAuthor: { color: '#6b7280', fontWeight: '600', textAlign: 'right' },
-  researchGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginTop: '3rem' },
-  researchCard: { background: 'white', borderRadius: '12px', padding: '2rem', border: '1px solid #e5e7eb' },
-  researchTitle: { fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' },
-  researchText: { color: '#6b7280', lineHeight: 1.7 },
-  primaryBtn: { padding: '0.875rem 2rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '1rem', display: 'inline-block' },
-  // Footer styles moved to shared SiteFooter component
-};
 
 export default About;

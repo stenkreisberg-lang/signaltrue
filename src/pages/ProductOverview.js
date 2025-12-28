@@ -1,288 +1,418 @@
 import React from 'react';
-import SiteFooter from '../components/SiteFooter';
 import { Link } from 'react-router-dom';
-
-// Minimal styles object to prevent runtime errors and provide basic layout/colors
-const styles = {
-  page: { fontFamily: 'Inter, Poppins, sans-serif', background: '#f8fafc', color: '#111827', minHeight: '100vh' },
-  nav: { background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0.5rem 0' },
-  navContent: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1200, margin: '0 auto', padding: '0 2rem' },
-  logoLink: { display: 'flex', alignItems: 'center', textDecoration: 'none' },
-  logoImg: { height: 32, marginRight: 10 },
-  logoText: { fontSize: '1.25rem', fontWeight: 700, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  navLinks: { display: 'flex', gap: 24, alignItems: 'center' },
-  navLink: { color: '#4b5563', textDecoration: 'none', fontWeight: 500 },
-  loginBtn: { padding: '0.5rem 1.5rem', background: 'linear-gradient(135deg, #ff6f61, #ff9472)', color: 'white', borderRadius: 6, textDecoration: 'none', fontWeight: 600 },
-  hero: { background: '#0f172a', color: 'white', padding: '6rem 2rem 4rem', textAlign: 'center' },
-  container: { maxWidth: 1100, margin: '0 auto', padding: '0 2rem' },
-  heroTitle: { fontSize: '3rem', fontWeight: 800, margin: '0 0 12px' },
-  heroSubtitle: { fontSize: '1.25rem', opacity: 0.95, margin: '0 auto 24px', maxWidth: 760, lineHeight: 1.6 },
-  heroCTA: { display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24 },
-  primaryBtn: { padding: '0.9rem 1.4rem', background: '#059669', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
-  secondaryBtn: { padding: '0.9rem 1.4rem', background: 'transparent', color: 'white', border: '2px solid white', borderRadius: 8, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' },
-  section: { padding: '4rem 0' },
-  sectionTitle: { fontSize: '2.25rem', fontWeight: 800, margin: '0 0 28px', color: '#111827', textAlign: 'center' },
-  introText: { textAlign: 'center', color: '#4b5563', maxWidth: 850, margin: '0 auto 28px', lineHeight: 1.6 },
-  featureGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32, marginTop: 32 },
-  featureCard: { background: 'white', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', padding: 28, textAlign: 'center' },
-  featureIcon: { fontSize: '2.5rem', marginBottom: 12 },
-  featureTitle: { fontWeight: 700, fontSize: '1.2rem', marginBottom: 8 },
-  featureText: { color: '#374151', fontSize: '1rem', marginBottom: 0 },
-  stepsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 28, marginTop: 32 },
-  step: { background: 'white', borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.03)', padding: 22, textAlign: 'center' },
-  stepNumber: { width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, margin: '0 auto 10px' },
-  stepTitle: { fontWeight: 700, marginBottom: 6, color: '#111827' },
-  stepText: { color: '#6b7280', fontSize: '1rem' },
-  sectionSubtitle: { color: '#6b7280', fontSize: '1.125rem', marginBottom: 18 },
-};
+import SiteHeader from '../components/SiteHeader';
+import SiteFooter from '../components/SiteFooter';
+import Button from '../components/Button';
+import { colors, typography, spacing, radius, shadows } from '../styles/tokens';
 
 function ProductOverview() {
+  const styles = {
+    // Hero Section
+    hero: {
+      background: colors.bgDark,
+      color: colors.textInverse,
+      padding: `${spacing['4xl']} ${spacing.xl} ${spacing['3xl']}`,
+      textAlign: 'center',
+    },
+    heroInner: {
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto',
+    },
+    heroTitle: {
+      fontSize: typography.hero,
+      fontWeight: typography.weightBold,
+      lineHeight: typography.lineHeightTight,
+      margin: `0 0 ${spacing.lg}`,
+      fontFamily: typography.sans,
+    },
+    heroSubtitle: {
+      fontSize: typography.bodyLarge,
+      color: colors.textInverseSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+      margin: `0 auto ${spacing.xl}`,
+      maxWidth: '700px',
+    },
+    ctaRow: {
+      display: 'flex',
+      gap: spacing.md,
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      marginTop: spacing.xl,
+    },
+    
+    // Section styles
+    section: {
+      padding: `${spacing['3xl']} ${spacing.xl}`,
+      borderBottom: `1px solid ${colors.border}`,
+    },
+    sectionInner: {
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto',
+    },
+    sectionTitle: {
+      fontSize: typography.h2,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.md,
+      lineHeight: typography.lineHeightTight,
+    },
+    sectionLead: {
+      fontSize: typography.bodyLarge,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: '700px',
+      margin: `0 auto ${spacing['2xl']}`,
+      lineHeight: typography.lineHeightRelaxed,
+    },
+    
+    // Timeline
+    timeline: {
+      maxWidth: '800px',
+      margin: '0 auto',
+      padding: `${spacing.xl} 0`,
+    },
+    timelineStep: {
+      display: 'flex',
+      gap: spacing.xl,
+      marginBottom: spacing['2xl'],
+      alignItems: 'flex-start',
+    },
+    timelineNumber: {
+      width: '48px',
+      height: '48px',
+      borderRadius: radius.full,
+      background: colors.primary,
+      color: colors.textInverse,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: typography.weightBold,
+      fontSize: typography.h3,
+      flexShrink: 0,
+    },
+    timelineContent: {
+      flex: 1,
+      paddingTop: spacing.xs,
+    },
+    timelineTitle: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    timelineDesc: {
+      fontSize: typography.body,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+      marginBottom: spacing.sm,
+    },
+    timelineMeta: {
+      fontSize: typography.bodySmall,
+      color: colors.textMuted,
+      fontStyle: 'italic',
+    },
+    
+    // Grid layouts
+    grid3: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: spacing.xl,
+      marginTop: spacing['2xl'],
+    },
+    
+    // Cards
+    card: {
+      background: colors.surface,
+      border: `1px solid ${colors.border}`,
+      borderRadius: radius.lg,
+      padding: spacing.xl,
+    },
+    cardIcon: {
+      fontSize: '2.5rem',
+      marginBottom: spacing.md,
+    },
+    cardTitle: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    cardDesc: {
+      fontSize: typography.body,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+    },
+    
+    // "We Do NOT" section
+    notSection: {
+      background: colors.surface,
+      border: `3px solid ${colors.error}`,
+      borderRadius: radius.lg,
+      padding: spacing['2xl'],
+      marginTop: spacing['2xl'],
+    },
+    notTitle: {
+      fontSize: typography.h2,
+      fontWeight: typography.weightBold,
+      color: colors.error,
+      marginBottom: spacing.lg,
+      textAlign: 'center',
+    },
+    notGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: spacing.lg,
+    },
+    notItem: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+    },
+    notIcon: {
+      fontSize: '1.5rem',
+      color: colors.error,
+      flexShrink: 0,
+    },
+    notText: {
+      fontSize: typography.body,
+      color: colors.textPrimary,
+      lineHeight: typography.lineHeightNormal,
+    },
+    
+    // Dark section
+    darkSection: {
+      background: colors.bgDark,
+      color: colors.textInverse,
+      padding: `${spacing['3xl']} ${spacing.xl}`,
+    },
+  };
+
   return (
-    <div style={styles.page}>
-      {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logoLink}>
-            <img src="/logo-icon.svg" alt="SignalTrue" style={styles.logoImg} />
-            <span style={styles.logoText}>SignalTrue</span>
-          </Link>
-          <div style={styles.navLinks}>
-            <Link to="/product" style={styles.navLink}>Product</Link>
-            <Link to="/pricing" style={styles.navLink}>Pricing</Link>
-            <Link to="/about" style={styles.navLink}>About</Link>
-            <Link to="/contact" style={styles.navLink}>Contact</Link>
-            <Link to="/login" style={styles.loginBtn}>Login</Link>
-          </div>
-        </div>
-      </nav>
+    <div style={{ minHeight: '100vh', background: colors.bgLight }}>
+      <SiteHeader theme="light" />
 
-      {/* Hero Section */}
+      {/* Hero Section - SIMPLIFIED JARGON */}
       <section style={styles.hero}>
-        <div style={styles.container}>
-          <h1 style={styles.heroTitle}>A Leadership Operating System for Team Health</h1>
+        <div style={styles.heroInner}>
+          <h1 style={styles.heroTitle}>
+            Detect team health drift early
+          </h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue detects team health drift before it becomes crisis. Baseline calibration → deviation intelligence → risk signals → decision guidance → outcome tracking.
+            Understand what changed and what to do next — before burnout, turnover, or performance issues become visible.
           </p>
-          <div style={styles.heroCTA}>
-            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
-            <Link to="#how-it-works" style={styles.secondaryBtn}>See Sample Signals</Link>
-          </div>
-          <div style={{marginTop: '2rem', fontSize: '0.9rem', color: '#94a3b8'}}>
-            No message content. Only metadata. Aggregated at team level. GDPR-aligned.
+          <div style={styles.ctaRow}>
+            <Button as={Link} to="/register" variant="primary">
+              Request early access
+            </Button>
+            <Button as={Link} to="#how-it-works" variant="secondary" inverse>
+              See how it works
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Core Features */}
-      <section style={styles.section}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>From Signal to Decision</h2>
+      {/* How It Works - TIME-BASED STEPS */}
+      <section style={{...styles.section, background: colors.bgLight}} id="how-it-works">
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>How SignalTrue Works</h2>
+          <p style={styles.sectionLead}>
+            From connection to actionable signals in 5 clear steps
+          </p>
           
-          <div style={styles.featureGrid}>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>�</div>
-              <h3 style={styles.featureTitle}>Baseline Intelligence</h3>
-              <p style={styles.featureText}>
-                Your organization's patterns become the benchmark. Internal baseline (primary), role-based comparison (secondary), external context (optional, off by default).
-              </p>
+          <div style={styles.timeline}>
+            {/* Step 1 */}
+            <div style={styles.timelineStep}>
+              <div style={styles.timelineNumber}>1</div>
+              <div style={styles.timelineContent}>
+                <h3 style={styles.timelineTitle}>Connect tools</h3>
+                <p style={styles.timelineDesc}>
+                  Connect Slack, Google Calendar, or Microsoft Teams using OAuth. No message content is accessed — only metadata like timestamps, thread lengths, and meeting durations.
+                </p>
+                <p style={styles.timelineMeta}>⏱ 5 minutes</p>
+              </div>
             </div>
 
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>⚠️</div>
-              <h3 style={styles.featureTitle}>Risk Signals</h3>
-              <p style={styles.featureText}>
-                Signals include severity (Critical/Risk/Informational), confidence level, deviation magnitude, and consequence statements like "This pattern tends to precede focus erosion."
-              </p>
+            {/* Step 2 */}
+            <div style={styles.timelineStep}>
+              <div style={styles.timelineNumber}>2</div>
+              <div style={styles.timelineContent}>
+                <h3 style={styles.timelineTitle}>Baseline calibration (7–14 days)</h3>
+                <p style={styles.timelineDesc}>
+                  SignalTrue observes your team's normal collaboration patterns: typical meeting load, response times, after-hours activity, thread depth. This creates your unique baseline.
+                </p>
+                <p style={styles.timelineMeta}>⏱ 7–14 days passive observation</p>
+              </div>
             </div>
 
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🎯</div>
-              <h3 style={styles.featureTitle}>Decision Guidance</h3>
-              <p style={styles.featureText}>
-                No vague suggestions. Each signal presents 2-3 trade-off actions with expected effects, effort levels, and visible inaction costs. You decide, we track outcomes.
-              </p>
+            {/* Step 3 */}
+            <div style={styles.timelineStep}>
+              <div style={styles.timelineNumber}>3</div>
+              <div style={styles.timelineContent}>
+                <h3 style={styles.timelineTitle}>Drift detection</h3>
+                <p style={styles.timelineDesc}>
+                  Once calibrated, SignalTrue monitors for sustained deviations from baseline. When patterns shift (e.g., after-hours load up 30% for 10+ days), a signal is generated.
+                </p>
+                <p style={styles.timelineMeta}>⏱ Continuous monitoring</p>
+              </div>
             </div>
 
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🔍</div>
-              <h3 style={styles.featureTitle}>Signal Drivers</h3>
-              <p style={styles.featureText}>
-                See the top 2-3 contributing factors for every signal. "Meeting load ↑35%, after-hours activity ↑18%, recovery time ↓22%." Know exactly what changed.
-              </p>
+            {/* Step 4 */}
+            <div style={styles.timelineStep}>
+              <div style={styles.timelineNumber}>4</div>
+              <div style={styles.timelineContent}>
+                <h3 style={styles.timelineTitle}>Signal explanation</h3>
+                <p style={styles.timelineDesc}>
+                  Each signal includes: what changed, by how much, over what timeframe, and probable cause (e.g., "Meeting duration increased 25% after Product-Alpha launch sprint began").
+                </p>
+                <p style={styles.timelineMeta}>⏱ Delivered in real-time dashboard</p>
+              </div>
             </div>
 
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📈</div>
-              <h3 style={styles.featureTitle}>Outcome Tracking</h3>
-              <p style={styles.featureText}>
-                Post-action learning loop: record what worked, measure time-to-normalization, feed results back into recommendation quality. Your data improves your decisions.
-              </p>
-            </div>
-
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🔐</div>
-              <h3 style={styles.featureTitle}>Privacy by Design</h3>
-              <p style={styles.featureText}>
-                No individual tracking. Team-level signals only. No message content stored. Metadata aggregation with minimum group size enforcement. GDPR-aligned from day one.
-              </p>
+            {/* Step 5 */}
+            <div style={styles.timelineStep}>
+              <div style={styles.timelineNumber}>5</div>
+              <div style={styles.timelineContent}>
+                <h3 style={styles.timelineTitle}>Recommended actions</h3>
+                <p style={styles.timelineDesc}>
+                  Signals include guidance: "Consider: Async-first protocols for next sprint" or "Schedule: Retrospective on meeting overhead." You decide when to act.
+                </p>
+                <p style={styles.timelineMeta}>⏱ Your decision, your timing</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works - 5 Steps */}
-      <section style={{...styles.section, background: '#f9fafb'}} id="how-it-works">
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>How It Works</h2>
-          <p style={styles.sectionSubtitle}>
-            From baseline to breakthrough decisions in 5 clear steps
+      {/* Key Capabilities */}
+      <section style={{...styles.section, background: colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>What SignalTrue Detects</h2>
+          <p style={styles.sectionLead}>
+            Five core capabilities for team health monitoring
           </p>
-
-          <div style={styles.stepsGrid}>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>1</div>
-              <h3 style={styles.stepTitle}>Connect Data Sources</h3>
-              <p style={styles.stepText}>
-                OAuth integration with Slack and Google Calendar. Secure, read-only metadata access. No message content stored.
+          
+          <div style={styles.grid3}>
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>📉</div>
+              <h3 style={styles.cardTitle}>Engagement Drift</h3>
+              <p style={styles.cardDesc}>
+                Declining participation, slower response times, reduced async contribution. Early indicators of disengagement before surveys catch it.
               </p>
             </div>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>30-Day Baseline Calibration</h3>
-              <p style={styles.stepText}>
-                <strong>FREE calibration period.</strong> We establish your organization's baseline patterns. No recommendations shown until calibration completes.
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>⚡</div>
+              <h3 style={styles.cardTitle}>Overload Signals</h3>
+              <p style={styles.cardDesc}>
+                Sustained after-hours activity, meeting load creep, context-switching patterns. Burnout risk before resignations.
               </p>
             </div>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Detect Deviations & Risk Signals</h3>
-              <p style={styles.stepText}>
-                When team patterns drift from baseline, signals fire with severity (Critical/Risk/Informational), confidence level, and time-to-impact estimate.
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>🎯</div>
+              <h3 style={styles.cardTitle}>Focus Erosion</h3>
+              <p style={styles.cardDesc}>
+                Fragmented work blocks, increased interruptions, declining deep work windows. Productivity loss before output drops.
               </p>
             </div>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>4</div>
-              <h3 style={styles.stepTitle}>Prescribe Trade-Off Decisions</h3>
-              <p style={styles.stepText}>
-                Each signal includes 2-3 mutually exclusive actions with expected effects and effort levels. Inaction cost is visible as an option.
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>💬</div>
+              <h3 style={styles.cardTitle}>Communication Fragmentation</h3>
+              <p style={styles.cardDesc}>
+                Thread complexity rising, decision closure declining, coordination overhead increasing. Collaboration friction before project delays.
               </p>
             </div>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>5</div>
-              <h3 style={styles.stepTitle}>Track Outcomes Over Time</h3>
-              <p style={styles.stepText}>
-                Record action results (Worked/Partially Worked/Did Not Work), measure time-to-normalization, and improve future recommendations.
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>📊</div>
+              <h3 style={styles.cardTitle}>Baseline Deviation</h3>
+              <p style={styles.cardDesc}>
+                Any sustained change from your team's normal patterns. Custom thresholds per team, not industry averages.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section Title */}
-      <div style={styles.container}>
-        <h2 style={styles.sectionTitle}>Trusted By</h2>
-        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4rem', margin: '2rem auto', maxWidth: 700, opacity: 0.7}}>
-          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Sharewell</div>
-          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Cleveron</div>
-          <div style={{fontSize: '1.5rem', fontWeight: 700, color: '#64748b'}}>Toggl</div>
-        </div>
-      </div>
-
-      {/* Case Example */}
-      <section style={{...styles.section, background:'#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Real-World Impact (Example)</h2>
-          <div style={{maxWidth: 700, margin: '0 auto', background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 2px 12px rgba(0,0,0,0.04)'}}>
-            <div style={{fontSize: '1.1rem', color: '#374151', marginBottom: 16, lineHeight: 1.6}}>
-              <strong>Signal detected:</strong> Meeting load spike (+35% vs baseline) for Product team
-            </div>
-            <div style={{fontSize: '1.1rem', color: '#374151', marginBottom: 16, lineHeight: 1.6}}>
-              <strong>Action taken:</strong> Removed 2 recurring meetings, converted 30% of meetings to async updates
-            </div>
-            <div style={{fontSize: '1.1rem', color: '#059669', fontWeight: 700}}>
-              <strong>Outcome:</strong> Meeting load normalized in 3 weeks. Focus time increased 18%.
-            </div>
-            <div style={{marginTop: 16, fontSize: '0.9rem', color: '#6b7280', fontStyle: 'italic'}}>
-              Note: Example for illustrative purposes. Your results will vary based on your organization's baseline and actions taken.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section Title */}
-      <div style={styles.container}>
-        <h2 style={styles.sectionTitle}>Why Companies Choose SignalTrue</h2>
-      </div>
-
-      {/* For HR & People Teams */}
+      {/* EXPLICIT "WE DO NOT" SECTION - SPECIFICATION REQUIREMENT */}
       <section style={styles.section}>
-        <div style={styles.container}>
-            <h2 style={styles.sectionTitle}>You don't pay for data. You pay for avoiding slow organizational decay.</h2>
-            <p style={styles.introText}>
-              SignalTrue helps leaders detect team health drift before it becomes crisis.<br />
-              Baseline calibration → deviation intelligence → recommended leadership decisions → outcome tracking.
-            </p>
-        </div>
-      </section>
+        <div style={styles.sectionInner}>
+          <div style={styles.notSection}>
+            <h2 style={styles.notTitle}>We Do NOT</h2>
+            <div style={styles.notGrid}>
+              <div style={styles.notItem}>
+                <span style={styles.notIcon}>✗</span>
+                <div>
+                  <strong style={styles.notText}>No individual dashboards</strong>
+                  <p style={{...styles.notText, fontSize: typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs}}>
+                    Signals are team-level only. No per-person metrics, ever.
+                  </p>
+                </div>
+              </div>
 
-      {/* For Managers */}
-      <section style={{...styles.section, background:'#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Built for leaders who make hard calls.</h2>
-          <p style={styles.introText}>
-            Every signal shows you what usually breaks next, what to do now, and tracks whether it worked. Decision guidance, not vague dashboards.
-          </p>
-        </div>
-      </section>
+              <div style={styles.notItem}>
+                <span style={styles.notIcon}>✗</span>
+                <div>
+                  <strong style={styles.notText}>No message content</strong>
+                  <p style={{...styles.notText, fontSize: typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs}}>
+                    We never read Slack messages, emails, or document content. Metadata only.
+                  </p>
+                </div>
+              </div>
 
-      {/* For Executives */}
-      <section style={styles.section}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Understand culture as a strategic asset.</h2>
-          <p style={styles.introText}>
-            Gain a live overview of organisational energy.<br />
-            Identify teams thriving under pressure and use insight to guide future planning.
-          </p>
-        </div>
-      </section>
+              <div style={styles.notItem}>
+                <span style={styles.notIcon}>✗</span>
+                <div>
+                  <strong style={styles.notText}>No surveillance</strong>
+                  <p style={{...styles.notText, fontSize: typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs}}>
+                    This is not employee monitoring software. No screenshots, no keystroke logging, no location tracking.
+                  </p>
+                </div>
+              </div>
 
-      {/* Use Cases */}
-      <section style={{...styles.section, background:'#f9fafb'}}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Common Use Cases</h2>
-          <ul style={{...styles.introText, textAlign:'left', maxWidth:700, margin:'0 auto 28px'}}>
-            <li>Detect meeting overload before burnout sets in</li>
-            <li>Track after-hours creep and prevent team exhaustion</li>
-            <li>Measure program impact (wellness initiatives, policy changes)</li>
-            <li>Monitor team health during high-growth or reorganization</li>
-            <li>Identify focus erosion and decision delays early</li>
-          </ul>
-          <div style={{textAlign:'center',marginTop:32}}>
-            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
+              <div style={styles.notItem}>
+                <span style={styles.notIcon}>✗</span>
+                <div>
+                  <strong style={styles.notText}>No performance scoring</strong>
+                  <p style={{...styles.notText, fontSize: typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs}}>
+                    No productivity scores, no individual rankings, no "top performers" lists.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{marginTop: spacing.xl, padding: spacing.lg, background: colors.bgSubtle, borderRadius: radius.md}}>
+              <p style={{fontSize: typography.body, color: colors.textPrimary, textAlign: 'center', margin: 0}}>
+                <strong>Privacy by design:</strong> All data aggregated at team level (minimum 5 people). OAuth-only access. GDPR-compliant. No PII storage.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Final Section */}
-      <section style={styles.section}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Start with Baseline Calibration</h2>
-          <p style={styles.introText}>
-            Month 1 is free. We establish your baseline patterns. Signal Intelligence unlocks when calibration completes.
+      {/* CTA Section */}
+      <section style={{...styles.section, textAlign:'center', background:colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Ready to detect drift early?</h2>
+          <p style={styles.sectionLead}>
+            Join teams using SignalTrue to see problems before they become crises.
           </p>
-          <div style={{textAlign:'center', marginTop: 32}}>
-            <Link to="/register" style={styles.primaryBtn}>Start Baseline Calibration</Link>
+          <div style={styles.ctaRow}>
+            <Button as={Link} to="/register" variant="primary">
+              Request early access
+            </Button>
+            <Button as={Link} to="/pricing" variant="secondary">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>
 
-              <SiteFooter />
+      <SiteFooter />
     </div>
-  )
+  );
 }
 
 export default ProductOverview;
