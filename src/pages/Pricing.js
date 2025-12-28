@@ -167,7 +167,7 @@ function Pricing() {
       id: 'detection',
       name: 'Detection',
       subtitle: 'Early warning for small teams',
-      price: '€299',
+      price: '€99',
       period: '/month',
       badge: 'Most Popular',
       features: [
@@ -198,7 +198,7 @@ function Pricing() {
       id: 'impact-proof',
       name: 'Impact Proof',
       subtitle: 'For growing organizations',
-      price: '€799',
+      price: '€199',
       period: '/month',
       featured: true,
       features: [
