@@ -2,8 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
-import Button from '../components/Button';
-import { colors, typography, spacing, radius, shadows } from '../styles/tokens';
+import ButtonUnified from '../components/ButtonUnified';
+import { spacing, typography, colors, radius, layout } from '../styles/designSystem';
+
+/**
+ * PRODUCT PAGE - RESTRUCTURED WITH DESIGN SYSTEM
+ * 
+ * Structure: Hero → Signal blocks (alternating layout) → "We Do NOT" section → CTA
+ * Signal blocks: Repeatable structure with name, sentence, example insight, example action
+ * Layout alternation: Block 1 (text left, visual right), Block 2 (visual left, text right), etc.
+ */
 
 function ProductOverview() {
   const styles = {
@@ -11,12 +19,14 @@ function ProductOverview() {
     hero: {
       background: colors.bgDark,
       color: colors.textInverse,
-      padding: `${spacing['4xl']} ${spacing.xl} ${spacing['3xl']}`,
+      padding: `${spacing['4xl']} ${spacing.containerPaddingDesktop} ${spacing['3xl']}`,
       textAlign: 'center',
     },
     heroInner: {
       maxWidth: spacing.containerMaxWidth,
       margin: '0 auto',
+      paddingLeft: spacing.containerPaddingDesktop,
+      paddingRight: spacing.containerPaddingDesktop,
     },
     heroTitle: {
       fontSize: typography.hero,
@@ -24,13 +34,14 @@ function ProductOverview() {
       lineHeight: typography.lineHeightTight,
       margin: `0 0 ${spacing.lg}`,
       fontFamily: typography.sans,
+      color: colors.textInverse,
     },
     heroSubtitle: {
       fontSize: typography.bodyLarge,
       color: colors.textInverseSecondary,
       lineHeight: typography.lineHeightRelaxed,
       margin: `0 auto ${spacing.xl}`,
-      maxWidth: '700px',
+      maxWidth: typography.maxWidthParagraph,
     },
     ctaRow: {
       display: 'flex',
@@ -42,8 +53,7 @@ function ProductOverview() {
     
     // Section styles
     section: {
-      padding: `${spacing['3xl']} ${spacing.xl}`,
-      borderBottom: `1px solid ${colors.border}`,
+      padding: `${spacing.sectionPaddingDesktop} ${spacing.containerPaddingDesktop}`,
     },
     sectionInner: {
       maxWidth: spacing.containerMaxWidth,
@@ -61,87 +71,71 @@ function ProductOverview() {
       fontSize: typography.bodyLarge,
       color: colors.textSecondary,
       textAlign: 'center',
-      maxWidth: '700px',
-      margin: `0 auto ${spacing['2xl']}`,
+      maxWidth: typography.maxWidthParagraph,
+      margin: `0 auto ${spacing.xl}`,
       lineHeight: typography.lineHeightRelaxed,
     },
     
-    // Timeline
-    timeline: {
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: `${spacing.xl} 0`,
-    },
-    timelineStep: {
-      display: 'flex',
-      gap: spacing.xl,
-      marginBottom: spacing['2xl'],
-      alignItems: 'flex-start',
-    },
-    timelineNumber: {
-      width: '48px',
-      height: '48px',
-      borderRadius: radius.full,
-      background: colors.primary,
-      color: colors.textInverse,
-      display: 'flex',
+    // Signal Block - Repeatable structure
+    signalBlock: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: spacing['3xl'],
       alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: typography.weightBold,
-      fontSize: typography.h3,
-      flexShrink: 0,
+      marginBottom: spacing['4xl'],
     },
-    timelineContent: {
-      flex: 1,
-      paddingTop: spacing.xs,
+    signalBlockReverse: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: spacing['3xl'],
+      alignItems: 'center',
+      marginBottom: spacing['4xl'],
+      direction: 'rtl', // Reverse layout
     },
-    timelineTitle: {
+    signalContent: {
+      direction: 'ltr', // Reset text direction
+    },
+    signalTitle: {
       fontSize: typography.h3,
       fontWeight: typography.weightBold,
       color: colors.textPrimary,
       marginBottom: spacing.sm,
     },
-    timelineDesc: {
+    signalSentence: {
       fontSize: typography.body,
       color: colors.textSecondary,
       lineHeight: typography.lineHeightRelaxed,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.lg,
     },
-    timelineMeta: {
-      fontSize: typography.bodySmall,
-      color: colors.textMuted,
-      fontStyle: 'italic',
-    },
-    
-    // Grid layouts
-    grid3: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: spacing.xl,
-      marginTop: spacing['2xl'],
-    },
-    
-    // Cards
-    card: {
-      background: colors.surface,
-      border: `1px solid ${colors.border}`,
-      borderRadius: radius.lg,
-      padding: spacing.xl,
-    },
-    cardIcon: {
-      fontSize: '2.5rem',
+    signalExample: {
+      padding: spacing.md,
+      background: colors.bgSubtle,
+      borderRadius: radius.md,
+      borderLeft: `3px solid ${colors.primary}`,
       marginBottom: spacing.md,
     },
-    cardTitle: {
-      fontSize: typography.h3,
-      fontWeight: typography.weightBold,
+    signalExampleTitle: {
+      fontSize: typography.bodySmall,
+      fontWeight: typography.weightSemibold,
       color: colors.textPrimary,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
-    cardDesc: {
-      fontSize: typography.body,
+    signalExampleText: {
+      fontSize: typography.bodySmall,
       color: colors.textSecondary,
       lineHeight: typography.lineHeightRelaxed,
+    },
+    signalVisual: {
+      background: colors.bgLight,
+      borderRadius: radius.lg,
+      padding: spacing.xl,
+      textAlign: 'center',
+      border: `1px solid ${colors.border}`,
+      direction: 'ltr', // Reset direction for visual
+    },
+    signalIcon: {
+      fontSize: '4rem',
+      marginBottom: spacing.md,
     },
     
     // "We Do NOT" section
@@ -150,7 +144,6 @@ function ProductOverview() {
       border: `3px solid ${colors.error}`,
       borderRadius: radius.lg,
       padding: spacing['2xl'],
-      marginTop: spacing['2xl'],
     },
     notTitle: {
       fontSize: typography.h2,
@@ -179,20 +172,13 @@ function ProductOverview() {
       color: colors.textPrimary,
       lineHeight: typography.lineHeightNormal,
     },
-    
-    // Dark section
-    darkSection: {
-      background: colors.bgDark,
-      color: colors.textInverse,
-      padding: `${spacing['3xl']} ${spacing.xl}`,
-    },
   };
 
   return (
     <div style={{ minHeight: '100vh', background: colors.bgLight }}>
-      <SiteHeader theme="light" />
+      <SiteHeader />
 
-      {/* Hero Section - SIMPLIFIED JARGON */}
+      {/* HERO SECTION */}
       <section style={styles.hero}>
         <div style={styles.heroInner}>
           <h1 style={styles.heroTitle}>
@@ -202,142 +188,168 @@ function ProductOverview() {
             SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
           </p>
           <div style={styles.ctaRow}>
-            <Button as={Link} to="/register" variant="primary">
+            <ButtonUnified as={Link} to="/register" variant="primary" size="lg">
               Request early access
-            </Button>
-            <Button as={Link} to="#how-it-works" variant="secondary" inverse>
-              See how it works
-            </Button>
+            </ButtonUnified>
+            <ButtonUnified as={Link} to="#signals" variant="inverse" size="lg">
+              See signals
+            </ButtonUnified>
           </div>
         </div>
       </section>
 
-      {/* How It Works - TIME-BASED STEPS */}
-      <section style={{...styles.section, background: colors.bgLight}} id="how-it-works">
-        <div style={styles.sectionInner}>
-          <h2 style={styles.sectionTitle}>How SignalTrue Works</h2>
-          <p style={styles.sectionLead}>
-            From connection to actionable signals in 5 clear steps
-          </p>
-          
-          <div style={styles.timeline}>
-            {/* Step 1 */}
-            <div style={styles.timelineStep}>
-              <div style={styles.timelineNumber}>1</div>
-              <div style={styles.timelineContent}>
-                <h3 style={styles.timelineTitle}>Connect tools</h3>
-                <p style={styles.timelineDesc}>
-                  Connect Slack, Google Calendar, or Microsoft Teams using OAuth. No message content is accessed — only metadata like timestamps, thread lengths, and meeting durations.
-                </p>
-                <p style={styles.timelineMeta}>⏱ 5 minutes</p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div style={styles.timelineStep}>
-              <div style={styles.timelineNumber}>2</div>
-              <div style={styles.timelineContent}>
-                <h3 style={styles.timelineTitle}>Baseline calibration (7–14 days)</h3>
-                <p style={styles.timelineDesc}>
-                  SignalTrue observes your team's normal collaboration patterns: typical meeting load, response times, after-hours activity, thread depth. This creates your unique baseline.
-                </p>
-                <p style={styles.timelineMeta}>⏱ 7–14 days passive observation</p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div style={styles.timelineStep}>
-              <div style={styles.timelineNumber}>3</div>
-              <div style={styles.timelineContent}>
-                <h3 style={styles.timelineTitle}>Drift detection</h3>
-                <p style={styles.timelineDesc}>
-                  Once calibrated, SignalTrue monitors for sustained deviations from baseline. When patterns shift (e.g., after-hours load up 30% for 10+ days), a signal is generated.
-                </p>
-                <p style={styles.timelineMeta}>⏱ Continuous monitoring</p>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div style={styles.timelineStep}>
-              <div style={styles.timelineNumber}>4</div>
-              <div style={styles.timelineContent}>
-                <h3 style={styles.timelineTitle}>Signal explanation</h3>
-                <p style={styles.timelineDesc}>
-                  Each signal includes: what changed, by how much, over what timeframe, and probable cause (e.g., "Meeting duration increased 25% after Product-Alpha launch sprint began").
-                </p>
-                <p style={styles.timelineMeta}>⏱ Delivered in real-time dashboard</p>
-              </div>
-            </div>
-
-            {/* Step 5 */}
-            <div style={styles.timelineStep}>
-              <div style={styles.timelineNumber}>5</div>
-              <div style={styles.timelineContent}>
-                <h3 style={styles.timelineTitle}>Recommended actions</h3>
-                <p style={styles.timelineDesc}>
-                  Signals include guidance: "Consider: Async-first protocols for next sprint" or "Schedule: Retrospective on meeting overhead." You decide when to act.
-                </p>
-                <p style={styles.timelineMeta}>⏱ Your decision, your timing</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Key Capabilities */}
-      <section style={{...styles.section, background: colors.bgSubtle}}>
+      {/* SIGNAL BLOCKS - Alternating Layout */}
+      <section style={{...styles.section, background: colors.bgWhite}} id="signals">
         <div style={styles.sectionInner}>
           <h2 style={styles.sectionTitle}>What SignalTrue Detects</h2>
           <p style={styles.sectionLead}>
-            Early-warning signals that predict breakdown before it becomes visible
+            Five categories of early-warning signals, each predicting specific organizational risks.
           </p>
-          
-          <div style={styles.grid3}>
-            <div style={styles.card}>
-              <div style={styles.cardIcon}>📉</div>
-              <h3 style={styles.cardTitle}>Morale Volatility</h3>
-              <p style={styles.cardDesc}>
+
+          {/* SIGNAL 1: Drift Signals (Text Left, Visual Right) */}
+          <div style={styles.signalBlock}>
+            <div style={styles.signalContent}>
+              <h3 style={styles.signalTitle}>Drift Signals</h3>
+              <p style={styles.signalSentence}>
                 Declining participation, slower response times, reduced async contribution. Predicts disengagement before surveys detect it.
               </p>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>📊 Example Insight</div>
+                <div style={styles.signalExampleText}>
+                  "Team Product-Alpha: Slack response latency +45% over 14 days. Participation in #general down 30%."
+                </div>
+              </div>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>🎯 Example Action</div>
+                <div style={styles.signalExampleText}>
+                  "Schedule 1-on-1s with team leads to understand workload distribution and identify blockers."
+                </div>
+              </div>
             </div>
+            <div style={styles.signalVisual}>
+              <div style={styles.signalIcon}>🔍</div>
+              <div style={{fontSize: typography.bodySmall, color: colors.textSecondary}}>
+                Engagement trend visualization
+              </div>
+            </div>
+          </div>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcon}>⚡</div>
-              <h3 style={styles.cardTitle}>Overload Signals</h3>
-              <p style={styles.cardDesc}>
+          {/* SIGNAL 2: Overload Signals (Visual Left, Text Right) */}
+          <div style={styles.signalBlockReverse}>
+            <div style={styles.signalVisual}>
+              <div style={styles.signalIcon}>⚡</div>
+              <div style={{fontSize: typography.bodySmall, color: colors.textSecondary}}>
+                Workload pattern analysis
+              </div>
+            </div>
+            <div style={styles.signalContent}>
+              <h3 style={styles.signalTitle}>Overload Signals</h3>
+              <p style={styles.signalSentence}>
                 Sustained after-hours activity, meeting load creep, context-switching patterns. Burnout risk before resignations.
               </p>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>📊 Example Insight</div>
+                <div style={styles.signalExampleText}>
+                  "Team Engineering-Core: After-hours Slack activity +60% vs baseline. Meeting hours +25% (now 22hr/week avg)."
+                </div>
+              </div>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>🎯 Example Action</div>
+                <div style={styles.signalExampleText}>
+                  "Implement 'no-meeting Fridays' and audit recurring meetings for necessity."
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcon}>🎯</div>
-              <h3 style={styles.cardTitle}>Focus Erosion</h3>
-              <p style={styles.cardDesc}>
+          {/* SIGNAL 3: Focus Erosion (Text Left, Visual Right) */}
+          <div style={styles.signalBlock}>
+            <div style={styles.signalContent}>
+              <h3 style={styles.signalTitle}>Focus Erosion</h3>
+              <p style={styles.signalSentence}>
                 Fragmented work blocks, increased interruptions, declining deep work windows. Productivity loss before output drops.
               </p>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>📊 Example Insight</div>
+                <div style={styles.signalExampleText}>
+                  "Team Design: Average uninterrupted work block decreased from 2.5hrs to 45min. Context switches +80%."
+                </div>
+              </div>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>🎯 Example Action</div>
+                <div style={styles.signalExampleText}>
+                  "Establish 'focus hours' (9-12am) with async-first communication norms."
+                </div>
+              </div>
             </div>
+            <div style={styles.signalVisual}>
+              <div style={styles.signalIcon}>🎯</div>
+              <div style={{fontSize: typography.bodySmall, color: colors.textSecondary}}>
+                Focus time fragmentation
+              </div>
+            </div>
+          </div>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcon}>💬</div>
-              <h3 style={styles.cardTitle}>Communication Fragmentation</h3>
-              <p style={styles.cardDesc}>
+          {/* SIGNAL 4: Communication Fragmentation (Visual Left, Text Right) */}
+          <div style={styles.signalBlockReverse}>
+            <div style={styles.signalVisual}>
+              <div style={styles.signalIcon}>💬</div>
+              <div style={{fontSize: typography.bodySmall, color: colors.textSecondary}}>
+                Thread complexity metrics
+              </div>
+            </div>
+            <div style={styles.signalContent}>
+              <h3 style={styles.signalTitle}>Communication Fragmentation</h3>
+              <p style={styles.signalSentence}>
                 Thread complexity rising, decision closure declining, coordination overhead increasing. Collaboration friction before project delays.
               </p>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>📊 Example Insight</div>
+                <div style={styles.signalExampleText}>
+                  "Team Product-Beta: Average Slack thread depth +40%. Threads with {'>'}15 messages doubled in 2 weeks."
+                </div>
+              </div>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>🎯 Example Action</div>
+                <div style={styles.signalExampleText}>
+                  "Move complex decisions to synchronous 30min decision-making sessions instead of async Slack."
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcon}>📊</div>
-              <h3 style={styles.cardTitle}>Baseline Deviation</h3>
-              <p style={styles.cardDesc}>
+          {/* SIGNAL 5: Baseline Deviation (Text Left, Visual Right) */}
+          <div style={styles.signalBlock}>
+            <div style={styles.signalContent}>
+              <h3 style={styles.signalTitle}>Baseline Deviation</h3>
+              <p style={styles.signalSentence}>
                 Any sustained change from your team's normal patterns. Custom thresholds per team, not industry averages.
               </p>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>📊 Example Insight</div>
+                <div style={styles.signalExampleText}>
+                  "Team Sales: Typical pattern is 5 meetings/day, 2hr blocks. Now 9 meetings/day, 30min blocks. 400% deviation from baseline."
+                </div>
+              </div>
+              <div style={styles.signalExample}>
+                <div style={styles.signalExampleTitle}>🎯 Example Action</div>
+                <div style={styles.signalExampleText}>
+                  "Review meeting culture: Are all these meetings necessary? Can some be batched or async?"
+                </div>
+              </div>
+            </div>
+            <div style={styles.signalVisual}>
+              <div style={styles.signalIcon}>📊</div>
+              <div style={{fontSize: typography.bodySmall, color: colors.textSecondary}}>
+                Pattern deviation tracking
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* EXPLICIT "WE DO NOT" SECTION - SPECIFICATION REQUIREMENT */}
-      <section style={styles.section}>
+      {/* "WE DO NOT" SECTION */}
+      <section style={{...styles.section, background: colors.bgLight}}>
         <div style={styles.sectionInner}>
           <div style={styles.notSection}>
             <h2 style={styles.notTitle}>We Do NOT</h2>
@@ -392,20 +404,20 @@ function ProductOverview() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section style={{...styles.section, textAlign:'center', background:colors.bgSubtle}}>
+      {/* CTA SECTION */}
+      <section style={{...styles.section, textAlign:'center', background: colors.bgWhite}}>
         <div style={styles.sectionInner}>
           <h2 style={styles.sectionTitle}>Ready to detect drift early?</h2>
           <p style={styles.sectionLead}>
             Join teams using SignalTrue to see problems before they become crises.
           </p>
           <div style={styles.ctaRow}>
-            <Button as={Link} to="/register" variant="primary">
+            <ButtonUnified as={Link} to="/register" variant="primary" size="lg">
               Request early access
-            </Button>
-            <Button as={Link} to="/pricing" variant="secondary">
+            </ButtonUnified>
+            <ButtonUnified as={Link} to="/pricing" variant="secondary" size="lg">
               See pricing
-            </Button>
+            </ButtonUnified>
           </div>
         </div>
       </section>
