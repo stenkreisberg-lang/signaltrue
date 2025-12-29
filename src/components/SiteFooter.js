@@ -1,43 +1,113 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { spacing, typography, colors } from '../styles/designSystem';
+
+/**
+ * Site Footer Component - UNIFIED DESIGN SYSTEM
+ * 
+ * MANDATORY RULES:
+ * - Must include: Privacy, Terms, Contact, Security/Data usage link
+ * - Visually identical across ALL pages
+ * - No per-page variations allowed
+ */
 
 export default function SiteFooter() {
   const year = new Date().getFullYear();
+  
+  const styles = {
+    footer: { 
+      background: colors.bgDark, 
+      color: colors.textInverse, 
+      padding: `${spacing['3xl']} ${spacing.lg} ${spacing.xl}`,
+      marginTop: spacing['4xl']
+    },
+    footerContent: { 
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto', 
+      paddingLeft: spacing.containerPaddingDesktop,
+      paddingRight: spacing.containerPaddingDesktop,
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+      gap: spacing.xl,
+      marginBottom: spacing.xl
+    },
+    footerSection: { 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: spacing.md
+    },
+    footerHeading: { 
+      fontSize: typography.body,
+      fontWeight: typography.weightSemibold,
+      marginBottom: spacing.xs,
+      color: colors.textInverse
+    },
+    footerLink: { 
+      color: colors.textInverseSecondary,
+      textDecoration: 'none', 
+      fontSize: typography.bodySmall,
+      transition: 'color 0.2s ease'
+    },
+    footerLinkHover: {
+      color: colors.textInverse
+    },
+    footerBottom: { 
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto', 
+      paddingLeft: spacing.containerPaddingDesktop,
+      paddingRight: spacing.containerPaddingDesktop,
+      paddingTop: spacing.xl,
+      borderTop: `1px solid ${colors.gray700}`,
+      textAlign: 'center', 
+      color: colors.textInverseSecondary,
+      fontSize: typography.bodySmall
+    },
+  };
+  
+  const [hoveredLink, setHoveredLink] = React.useState(null);
+  
+  const FooterLink = ({ to, children }) => (
+    <Link 
+      to={to} 
+      style={{
+        ...styles.footerLink,
+        ...(hoveredLink === to ? styles.footerLinkHover : {})
+      }}
+      onMouseEnter={() => setHoveredLink(to)}
+      onMouseLeave={() => setHoveredLink(null)}
+    >
+      {children}
+    </Link>
+  );
+  
   return (
     <footer style={styles.footer}>
       <div style={styles.footerContent}>
         <div style={styles.footerSection}>
           <h4 style={styles.footerHeading}>Product</h4>
-          <Link to="/product" style={styles.footerLink}>Overview</Link>
-          <Link to="/burnout-detection" style={styles.footerLink}>Burnout Detection</Link>
-          <Link to="/team-analytics" style={styles.footerLink}>Team Analytics</Link>
-          <Link to="/company-dashboard" style={styles.footerLink}>Company Dashboard</Link>
-          <Link to="/how-it-works" style={styles.footerLink}>How It Works</Link>
+          <FooterLink to="/product">Overview</FooterLink>
+          <FooterLink to="/how-it-works">How It Works</FooterLink>
+          <FooterLink to="/pricing">Pricing</FooterLink>
         </div>
+        
         <div style={styles.footerSection}>
           <h4 style={styles.footerHeading}>Company</h4>
-          <Link to="/about" style={styles.footerLink}>About</Link>
-          <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
-          <Link to="/contact" style={styles.footerLink}>Contact</Link>
+          <FooterLink to="/about">About</FooterLink>
+          <FooterLink to="/contact">Contact</FooterLink>
         </div>
+        
         <div style={styles.footerSection}>
-          <h4 style={styles.footerHeading}>Legal</h4>
-          <Link to="/terms" style={styles.footerLink}>Terms of Service</Link>
-          <Link to="/privacy" style={styles.footerLink}>Privacy Policy</Link>
+          <h4 style={styles.footerHeading}>Legal & Privacy</h4>
+          <FooterLink to="/terms">Terms of Service</FooterLink>
+          <FooterLink to="/privacy">Privacy Policy</FooterLink>
+          <FooterLink to="/app/privacy">Data Usage & Security</FooterLink>
         </div>
       </div>
+      
       <div style={styles.footerBottom}>
-        <p>©{year} SignalTrue. All rights reserved.</p>
+        <p>© {year} SignalTrue. All rights reserved.</p>
       </div>
     </footer>
   );
 }
 
-const styles = {
-  footer: { background: '#111827', color: 'white', padding: '3rem 2rem 2rem', marginTop: '3rem' },
-  footerContent: { maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' },
-  footerSection: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  footerHeading: { fontSize: '1rem', fontWeight: '600', marginBottom: '0.25rem' },
-  footerLink: { color: '#9ca3af', textDecoration: 'none', fontSize: '0.95rem' },
-  footerBottom: { maxWidth: '1200px', margin: '0 auto', paddingTop: '2rem', borderTop: '1px solid #374151', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' },
-};

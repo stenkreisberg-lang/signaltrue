@@ -1,17 +1,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { colors, typography, spacing } from '../styles/tokens';
-import Button from './Button';
+import { spacing, typography, colors } from '../styles/designSystem';
+import ButtonUnified from './ButtonUnified';
 
 /**
- * Shared Site Header Component
+ * Shared Site Header Component - UNIFIED DESIGN SYSTEM
  * 
- * CRITICAL RULES:
- * - Same logo SVG across ALL pages
- * - Login is ALWAYS tertiary variant (never colored like CTA)
- * - Same layout and spacing everywhere
- * - Theme can be 'dark' or 'light' based on page background
- * - Active nav links get subtle underline indicator
+ * MANDATORY RULES:
+ * - Same logo asset, size, padding on ALL pages
+ * - Same navigation order everywhere
+ * - Same primary CTA everywhere
+ * - Active route styles ONLY on nav links, NEVER on buttons
+ * - No per-page variations allowed
  */
 
 function SiteHeader({ theme = 'dark' }) {
@@ -21,9 +21,12 @@ function SiteHeader({ theme = 'dark' }) {
   
   const styles = {
     nav: {
-      backgroundColor: isDark ? colors.bgDark : colors.bgLight,
-      borderBottom: isDark ? 'none' : `1px solid ${colors.border}`,
-      padding: `${spacing.md} ${spacing.xl}`,
+      backgroundColor: isDark ? colors.bgDark : colors.white,
+      borderBottom: isDark ? 'none' : `1px solid ${colors.gray200}`,
+      padding: `${spacing.base} ${spacing.lg}`,
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
     },
     navContent: {
       display: 'flex',
@@ -31,23 +34,25 @@ function SiteHeader({ theme = 'dark' }) {
       alignItems: 'center',
       maxWidth: spacing.containerMaxWidth,
       margin: '0 auto',
+      paddingLeft: spacing.containerPaddingDesktop,
+      paddingRight: spacing.containerPaddingDesktop,
     },
     logoLink: {
       display: 'flex',
       alignItems: 'center',
       textDecoration: 'none',
+      gap: spacing.sm,
     },
     logoText: {
       color: isDark ? colors.textInverse : colors.textPrimary,
       fontSize: typography.h3,
       fontWeight: typography.weightBold,
       fontFamily: typography.sans,
-      marginLeft: spacing.sm,
     },
     navLinks: {
       display: 'flex',
       alignItems: 'center',
-      gap: spacing.lg,
+      gap: spacing.xl,
     },
     navLink: (isActive) => ({
       color: isDark ? colors.textInverseSecondary : colors.textSecondary,
@@ -55,8 +60,8 @@ function SiteHeader({ theme = 'dark' }) {
       fontSize: typography.body,
       fontWeight: typography.weightMedium,
       fontFamily: typography.sans,
-      padding: `${spacing.xs} ${spacing.sm}`,
-      borderBottom: isActive ? `2px solid ${isDark ? colors.textInverse : colors.primary}` : '2px solid transparent',
+      padding: `${spacing.sm} 0`,
+      borderBottom: isActive ? `2px solid ${isDark ? colors.white : colors.primary}` : '2px solid transparent',
       transition: 'all 200ms ease',
     }),
     navLinkHover: {
@@ -89,9 +94,9 @@ function SiteHeader({ theme = 'dark' }) {
     <nav style={styles.nav}>
       <div style={styles.navContent}>
         <Link to="/" style={styles.logoLink}>
-          {/* CRITICAL: Same logo SVG on ALL pages - no variations */}
+          {/* MANDATORY: Same logo SVG on ALL pages - exact same size */}
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="32" height="32" rx="6" fill={isDark ? colors.primary : colors.primary}/>
+            <rect width="32" height="32" rx="6" fill={colors.primary}/>
             <path d="M16 8L22 12V20L16 24L10 20V12L16 8Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <circle cx="16" cy="16" r="3" fill="white"/>
           </svg>
@@ -99,20 +104,30 @@ function SiteHeader({ theme = 'dark' }) {
         </Link>
         
         <div style={styles.navLinks}>
+          {/* MANDATORY: Same navigation order on ALL pages */}
           <NavLink to="/product">Product</NavLink>
           <NavLink to="/pricing">Pricing</NavLink>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/contact">Contact</NavLink>
           
-          {/* CRITICAL: Login must ALWAYS be tertiary variant */}
-          <Button
+          {/* CRITICAL: CTA buttons use ButtonUnified - NEVER inherits active state */}
+          <ButtonUnified
             as={Link}
             to="/login"
-            variant="tertiary"
-            inverse={isDark}
+            variant="ghost"
+            size="md"
           >
             Login
-          </Button>
+          </ButtonUnified>
+          
+          <ButtonUnified
+            as={Link}
+            to="/register"
+            variant="primary"
+            size="md"
+          >
+            Get Started
+          </ButtonUnified>
         </div>
       </div>
     </nav>
