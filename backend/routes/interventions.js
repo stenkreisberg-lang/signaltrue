@@ -8,6 +8,7 @@ import Intervention from '../models/intervention.js';
 import SignalV2 from '../models/signalV2.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { requireTier } from '../middleware/checkTier.js';
 
 const router = express.Router();
 
@@ -15,8 +16,9 @@ const router = express.Router();
  * POST /api/interventions
  * Log a new intervention (user takes action on a signal)
  * Body: { signalId, actionTaken, actionType, expectedEffect, effort, timeframe, metricBefore }
+ * REQUIRES: Detection tier or higher
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
     const { signalId, actionTaken, actionType, expectedEffect, effort, timeframe, metricBefore } = req.body;
     
@@ -60,8 +62,9 @@ router.post('/', authenticateToken, async (req, res) => {
 /**
  * GET /api/interventions/pending
  * Get interventions needing recheck (recheckDate passed, status=active or pending-recheck)
+ * REQUIRES: Detection tier or higher
  */
-router.get('/pending', authenticateToken, async (req, res) => {
+router.get('/pending', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
     const now = new Date();
     
@@ -88,8 +91,9 @@ router.get('/pending', authenticateToken, async (req, res) => {
 /**
  * GET /api/interventions/team/:teamId
  * Get all interventions for a team
+ * REQUIRES: Detection tier or higher (30-day history) or Impact Proof (90-day)
  */
-router.get('/team/:teamId', authenticateToken, async (req, res) => {
+router.get('/team/:teamId', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
     const { teamId } = req.params;
     const { status } = req.query;

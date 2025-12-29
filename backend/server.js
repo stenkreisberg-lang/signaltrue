@@ -77,6 +77,7 @@ import dcrRoutes from "./routes/dcr.js";
 import firstSignalRoutes from "./routes/firstSignal.js";
 import interventionsRoutes from "./routes/interventions.js";
 import privacyRoutes from "./routes/privacy.js";
+import comparisonsRoutes from "./routes/comparisons.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -158,6 +159,7 @@ async function main() {
     app.use("/api/first-signal", firstSignalRoutes);
     app.use("/api/interventions", interventionsRoutes);
     app.use("/api/privacy", privacyRoutes);
+    app.use("/api/comparisons", comparisonsRoutes);
     app.use("/api/narrative", narrativeRoutes);
     app.use("/api/focus", focusRoutes);
     app.use("/api/forecast", forecastRoutes);

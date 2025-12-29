@@ -1,18 +1,36 @@
 import express from 'express';
 import Team from '../models/team.js';
 import { getHistoryRange, calculateTrend, setBaseline, compareToBaseline, createSnapshot } from '../utils/bdiHistory.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { requireTier, attachTierLimits } from '../middleware/checkTier.js';
 
 const router = express.Router();
 
 // GET /api/teams/:id/history?days=30
-router.get('/teams/:id/history', async (req, res) => {
+// REQUIRES: Detection tier (30 days) or Impact Proof tier (90 days)
+router.get('/teams/:id/history', authenticateToken, attachTierLimits, async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
+    
+    // Enforce tier limits
+    const maxDays = req.tierLimits.historyDays;
+    const limitedDays = Math.min(days, maxDays);
+    
+    if (days > maxDays) {
+      console.log(`[History] User requested ${days} days but tier ${req.currentTier} allows ${maxDays}`);
+    }
+    
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
-    const history = getHistoryRange(team, days);
-    res.json(history);
+    const history = getHistoryRange(team, limitedDays);
+    res.json({
+      history,
+      tierLimit: maxDays,
+      requestedDays: days,
+      returnedDays: limitedDays,
+      upgrade: days > maxDays
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { requireTier } from '../middleware/checkTier.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import DriftEvent from '../models/driftEvent.js';
 import Team from '../models/team.js';
@@ -7,7 +8,8 @@ import Team from '../models/team.js';
 const router = express.Router();
 
 // GET /api/export/metrics-csv - Export team metrics as CSV
-router.get('/export/metrics-csv', authenticateToken, async (req, res) => {
+// REQUIRES: Impact Proof tier
+router.get('/export/metrics-csv', authenticateToken, requireTier('impact_proof'), async (req, res) => {
   try {
     const orgId = req.user?.orgId;
     if (!orgId) return res.status(400).json({ message: 'Missing orgId' });
@@ -45,7 +47,8 @@ router.get('/export/metrics-csv', authenticateToken, async (req, res) => {
 });
 
 // GET /api/export/drift-csv - Export drift events as CSV
-router.get('/export/drift-csv', authenticateToken, async (req, res) => {
+// REQUIRES: Impact Proof tier
+router.get('/export/drift-csv', authenticateToken, requireTier('impact_proof'), async (req, res) => {
   try {
     const orgId = req.user?.orgId;
     if (!orgId) return res.status(400).json({ message: 'Missing orgId' });
