@@ -25,14 +25,14 @@ export default function FirstSignal() {
 
       if (data.alreadyShown) {
         // Already shown this signal, redirect to Risk Feed
-        navigate('/app/signals');
+        navigate('/app/risk-feed');
         return;
       }
 
       if (!data.signal) {
-        // No drift detected, proceed to dashboard
-        console.log('[FirstSignal] No drift detected, redirecting to dashboard');
-        navigate('/dashboard');
+        // No drift detected, proceed to Risk Feed (new default)
+        console.log('[FirstSignal] No drift detected, redirecting to risk feed');
+        navigate('/app/risk-feed');
         return;
       }
 
@@ -52,9 +52,9 @@ export default function FirstSignal() {
 
       // Navigate based on user choice
       if (action === 'see-why') {
-        navigate('/app/signals');
+        navigate('/app/risk-feed'); // Risk Feed is new default
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard'); // Or let them go to old dashboard
       }
     } catch (err) {
       console.error('[FirstSignal] Error acknowledging signal:', err);

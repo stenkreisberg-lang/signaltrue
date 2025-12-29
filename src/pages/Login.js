@@ -26,8 +26,12 @@ function Login() {
       // Redirect based on role
       if (data?.user?.isMasterAdmin) {
         navigate('/master-admin');
+      } else if (!data.user.firstSignalShown) {
+        // Check if user has seen first signal - if not, send there
+        navigate('/first-signal');
       } else {
-        navigate('/dashboard');
+        // Default: Risk Feed (new landing page)
+        navigate('/app/risk-feed');
       }
     } catch (err) {
       // Axios error - extract message from response

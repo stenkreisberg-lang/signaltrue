@@ -30,6 +30,7 @@ import FirstSignal from './components/FirstSignal';
 // New app pages
 import Overview from './pages/app/Overview';
 import Signals from './pages/app/Signals';
+import RiskFeed from './pages/app/RiskFeed';
 
 export default function App() {
   return (
@@ -69,6 +70,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AdminOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/risk-feed"
+          element={
+            <ProtectedRoute>
+              <RiskFeed />
             </ProtectedRoute>
           }
         />
