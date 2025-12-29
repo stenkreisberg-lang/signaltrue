@@ -58,6 +58,32 @@ const userSchema = new mongoose.Schema({
     accessToken: { type: String, set: encryptString, get: decryptString },
     refreshToken: { type: String, set: encryptString, get: decryptString },
     expiry_date: { type: Number }
+  },
+  
+  // First Signal tracking (for "Moment of Unease" onboarding)
+  firstSignalShown: {
+    type: Boolean,
+    default: false
+  },
+  firstSignalData: {
+    signalType: String, // 'coordination-risk' | 'boundary-erosion' | 'execution-drag'
+    metricName: String,
+    value: Number,
+    baseline: Number,
+    delta: Number,
+    statement: String,
+    context: String,
+    severity: String,
+    detectedAt: Date,
+    userAction: String, // 'see-why' | 'continue-to-dashboard'
+    acknowledgedAt: Date
+  },
+  
+  // Subscription tier (for pricing gates)
+  subscriptionTier: {
+    type: String,
+    enum: ['free', 'detection', 'impact_proof'],
+    default: 'free'
   }
 }, { timestamps: true });
 

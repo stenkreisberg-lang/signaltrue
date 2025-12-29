@@ -1,10 +1,15 @@
 /**
  * Signal Templates
  * Defines consequence statements and recommended actions for each signal type
+ * NEW NAMING: Risk-based terminology (Coordination Risk, Boundary Erosion, etc.)
  */
 
 export const signalTemplates = {
-  'meeting-load-spike': {
+  // NEW: Coordination Risk (was: meeting-load-spike)
+  'coordination-risk': {
+    whatIsChanging: 'Meeting load is increasing beyond team baseline',
+    whyItMatters: 'Excessive coordination reduces focus time and slows decision-making',
+    whatBreaksIfIgnored: 'Focus loss, delivery delays, team burnout within 4-6 weeks',
     consequence: 'This pattern tends to precede focus erosion and decision delays.',
     actions: [
       {
@@ -39,7 +44,11 @@ export const signalTemplates = {
     ]
   },
   
-  'after-hours-creep': {
+  // NEW: Boundary Erosion (was: after-hours-creep)
+  'boundary-erosion': {
+    whatIsChanging: 'After-hours work is trending upward beyond normal baseline',
+    whyItMatters: 'Shrinking recovery time increases burnout risk and disengagement',
+    whatBreaksIfIgnored: 'Chronic burnout, attrition risk doubles within 4-6 weeks',
     consequence: 'This pattern tends to precede burnout risk and disengagement.',
     actions: [
       {
@@ -74,7 +83,11 @@ export const signalTemplates = {
     ]
   },
   
+  // KEEP: Focus Erosion (unchanged per spec)
   'focus-erosion': {
+    whatIsChanging: 'Uninterrupted focus time is declining below baseline',
+    whyItMatters: 'Fragmented attention reduces deep work quality and delivery speed',
+    whatBreaksIfIgnored: 'Delivery delays, quality issues, 15-20% reduction in output within 1 month',
     consequence: 'This pattern tends to precede delivery delays and quality issues.',
     actions: [
       {
@@ -109,7 +122,11 @@ export const signalTemplates = {
     ]
   },
   
-  'response-delay-increase': {
+  // NEW: Execution Drag (was: response-delay-increase)
+  'execution-drag': {
+    whatIsChanging: 'Response times are lengthening beyond team baseline',
+    whyItMatters: 'Slower decisions create bottlenecks and frustrate team execution',
+    whatBreaksIfIgnored: 'Decision-making speed drops 20% per week, velocity plummets',
     consequence: 'This pattern tends to precede decision bottlenecks and team frustration.',
     actions: [
       {
@@ -144,7 +161,11 @@ export const signalTemplates = {
     ]
   },
   
-  'message-volume-drop': {
+  // NEW: Dependency Spread (was: message-volume-drop - reinterpreted)
+  'dependency-spread': {
+    whatIsChanging: 'Cross-team dependencies are increasing beyond baseline',
+    whyItMatters: 'More handoffs slow delivery and increase coordination overhead',
+    whatBreaksIfIgnored: 'Delivery cycle time increases 15% per month, bottlenecks compound',
     consequence: 'This pattern tends to precede communication breakdown and team fragmentation.',
     actions: [
       {
@@ -179,42 +200,11 @@ export const signalTemplates = {
     ]
   },
   
-  'recovery-deficit': {
-    consequence: 'This pattern tends to precede chronic fatigue and increased error rates.',
-    actions: [
-      {
-        action: 'Mandate minimum 2 consecutive days off per week (no after-hours work)',
-        expectedEffect: 'Increase recovery score by 40-50%, reduce fatigue',
-        effort: 'Medium',
-        timeframe: '1 week',
-        isInactionOption: false
-      },
-      {
-        action: 'Reduce sprint intensity or scope to allow recovery periods',
-        expectedEffect: 'Improve sustainable pace, reduce burnout risk by 30%',
-        effort: 'High',
-        timeframe: '2 weeks',
-        isInactionOption: false
-      },
-      {
-        action: 'Introduce "recovery Fridays" (half-day or async-only work)',
-        expectedEffect: 'Increase weekly recovery by 20-30%',
-        effort: 'Low',
-        timeframe: '1 week',
-        isInactionOption: false
-      },
-      {
-        action: 'Do nothing (monitor for 2 more weeks)',
-        expectedEffect: 'Chronic fatigue sets in, error rates increase, attrition risk rises',
-        effort: 'Low',
-        timeframe: 'N/A',
-        isInactionOption: true,
-        inactionCost: 'Burnout probability increases by 25% per month; attrition risk doubles'
-      }
-    ]
-  },
-  
-  'sentiment-decline': {
+  // NEW: Morale Volatility (was: sentiment-decline)
+  'morale-volatility': {
+    whatIsChanging: 'Team sentiment is showing unusual fluctuations or sustained decline',
+    whyItMatters: 'Unstable morale predicts decreased engagement and attrition',
+    whatBreaksIfIgnored: 'Attrition risk increases 10% per month, recruiting costs spike',
     consequence: 'This pattern tends to precede decreased morale and increased attrition risk.',
     actions: [
       {
@@ -249,7 +239,49 @@ export const signalTemplates = {
     ]
   },
   
+  // Keep existing signals with interpretation framework added
+  'recovery-deficit': {
+    whatIsChanging: 'Recovery windows are shrinking below healthy baseline',
+    whyItMatters: 'Inadequate recovery leads to chronic fatigue and increased errors',
+    whatBreaksIfIgnored: 'Burnout probability increases 25% per month, attrition risk doubles',
+    consequence: 'This pattern tends to precede chronic fatigue and increased error rates.',
+    actions: [
+      {
+        action: 'Mandate minimum 2 consecutive days off per week (no after-hours work)',
+        expectedEffect: 'Increase recovery score by 40-50%, reduce fatigue',
+        effort: 'Medium',
+        timeframe: '1 week',
+        isInactionOption: false
+      },
+      {
+        action: 'Reduce sprint intensity or scope to allow recovery periods',
+        expectedEffect: 'Improve sustainable pace, reduce burnout risk by 30%',
+        effort: 'High',
+        timeframe: '2 weeks',
+        isInactionOption: false
+      },
+      {
+        action: 'Introduce "recovery Fridays" (half-day or async-only work)',
+        expectedEffect: 'Increase weekly recovery by 20-30%',
+        effort: 'Low',
+        timeframe: '1 week',
+        isInactionOption: false
+      },
+      {
+        action: 'Do nothing (monitor for 2 more weeks)',
+        expectedEffect: 'Chronic fatigue sets in, error rates increase, attrition risk rises',
+        effort: 'Low',
+        timeframe: 'N/A',
+        isInactionOption: true,
+        inactionCost: 'Burnout probability increases by 25% per month; attrition risk doubles'
+      }
+    ]
+  },
+  
   'handoff-bottleneck': {
+    whatIsChanging: 'Cross-team handoffs are slowing down beyond normal baseline',
+    whyItMatters: 'Slow handoffs create delivery delays and cross-team friction',
+    whatBreaksIfIgnored: 'Delivery cycle time increases 15% per month, customer impact grows',
     consequence: 'This pattern tends to precede delivery delays and cross-team friction.',
     actions: [
       {
@@ -282,6 +314,28 @@ export const signalTemplates = {
         inactionCost: 'Delivery cycle time increases by ~15% per month; customer impact grows'
       }
     ]
+  },
+  
+  // Legacy compatibility - keep old names pointing to new ones
+  'meeting-load-spike': {
+    deprecated: true,
+    useInstead: 'coordination-risk'
+  },
+  'after-hours-creep': {
+    deprecated: true,
+    useInstead: 'boundary-erosion'
+  },
+  'response-delay-increase': {
+    deprecated: true,
+    useInstead: 'execution-drag'
+  },
+  'sentiment-decline': {
+    deprecated: true,
+    useInstead: 'morale-volatility'
+  },
+  'message-volume-drop': {
+    deprecated: true,
+    useInstead: 'dependency-spread'
   }
 };
 

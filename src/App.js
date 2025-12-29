@@ -26,6 +26,7 @@ import AdminOnboarding from './pages/AdminOnboarding';
 import OnboardingAccept from './pages/OnboardingAccept';
 import AuthCallback from './pages/AuthCallback';
 import DashboardMockup from './components/DashboardMockup';
+import FirstSignal from './components/FirstSignal';
 // New app pages
 import Overview from './pages/app/Overview';
 import Signals from './pages/app/Signals';
@@ -55,6 +56,14 @@ export default function App() {
         <Route path="/dashboard-concept" element={<DashboardMockup />} />
   {/* OAuth callback catcher; forwards code to backend and redirects back */}
   <Route path="/auth/:provider/callback" element={<AuthCallback />} />
+        <Route
+          path="/first-signal"
+          element={
+            <ProtectedRoute>
+              <FirstSignal />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin/onboarding"
           element={

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-32VLC15W5G');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignalTrue — Organizations fail quietly before they fail visibly</title>
+  <meta name="description" content="Detect structural risk before it becomes an outcome problem. Behavioral signal detection for organizational capability." />
+  <link rel="stylesheet" href="/styles.css" />
+  <meta property="og:title" content="SignalTrue — Detect structural risk before outcomes suffer" />
+  <meta property="og:description" content="Organizations fail quietly before they fail visibly. See capability drift in real-time." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://signaltrue.ai/" />
+  <style>
+    /* New Design System - Muted Blue/Slate */
+    :root {
+      --primary: #475569; /* Muted slate */
+      --primary-dark: #334155;
+      --accent: #3b82f6; /* Clear blue for CTAs */
+      --bg: #0f172a;
+      --bg-elevated: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .brand {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    
+    .navlinks {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    
+    .navlinks a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .navlinks a:hover {
+      color: var(--text);
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    
+    .btn-primary:hover {
+      background: #2563eb;
+      color: white;
+    }
+    
+    .hero {
+      padding: 80px 0 120px 0;
+      text-align: center;
+    }
+    
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 24px 0;
+      color: var(--text);
+    }
+    
+    .hero .subtitle {
+      font-size: 24px;
+      color: var(--text-muted);
+      margin: 0 auto 40px auto;
+      max-width: 700px;
+    }
+    
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .problem-section {
+      background: var(--bg-elevated);
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .problem-section h2 {
+      font-size: 36px;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 48px 0;
+    }
+    
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    
+    .problem-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px;
+    }
+    
+    .problem-box h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 16px 0;
+      color: var(--danger);
+    }
+    
+    .problem-box.solution h3 {
+      color: var(--success);
+    }
+    
+    .problem-box ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-muted);
+    }
+    
+    .problem-box ul li {
+      margin-bottom: 8px;
+    }
+    
+    .metrics-section {
+      padding: 80px 0;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    
+    .metric-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    
+    .metric-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+    
+    .metric-card .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    
+    .metric-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 8px 0 0 0;
+    }
+    
+    .trust-section {
+      background: var(--bg-elevated);
+      padding: 60px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 40px;
+    }
+    
+    .trust-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .trust-icon {
+      font-size: 32px;
+    }
+    
+    .trust-item h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text);
+    }
+    
+    .trust-item p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="/">SignalTrue</a>
+      <nav class="navlinks">
+        <a href="/product">Product</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="https://app.signaltrue.ai/register" class="btn-primary">Start Free Trial</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <h1>Organizations fail quietly<br/>before they fail visibly</h1>
+        <p class="subtitle">
+          By the time you see outcomes slip, the structural damage is done.<br/>
+          Detect capability drift before it becomes an outcome problem.
+        </p>
+        <div class="cta-group">
+          <a href="https://app.signaltrue.ai/register" class="btn-primary">See Drift in Real-Time — Free for 30 Days</a>
+          <a href="/product" class="btn-secondary">How It Works</a>
+        </div>
+        <p style="margin-top: 24px; color: var(--text-muted); font-size: 14px;">
+          ✓ No surveys • ✓ No individual tracking • ✓ Privacy-by-design
+        </p>
+      </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem-section">
+      <div class="container">
+        <h2>The Problem With Measuring Outcomes</h2>
+        <div class="problem-grid">
+          <div class="problem-box">
+            <h3>❌ Lagging Indicators Lie</h3>
+            <p style="color: var(--text-muted); margin-bottom: 16px;">
+              Most organizations measure what already happened:
+            </p>
+            <ul>
+              <li>Quarterly surveys catch burnout 6 weeks too late</li>
+              <li>Attrition shows up after you've lost key people</li>
+              <li>Revenue dips reflect structural issues from months ago</li>
+              <li>Performance reviews measure outputs, not capacity</li>
+            </ul>
+            <p style="color: var(--text-muted); font-style: italic; margin-top: 16px;">
+              By the time these metrics move, the underlying capability has already degraded.
+            </p>
+          </div>
+          
+          <div class="problem-box solution">
+            <h3>✓ Leading Indicators Tell The Truth</h3>
+            <p style="color: var(--text-muted); margin-bottom: 16px;">
+              SignalTrue detects structural risk in real-time:
+            </p>
+            <ul>
+              <li>Decision Speed slowing → bottlenecks forming</li>
+              <li>Execution Capacity dropping → context overload rising</li>
+              <li>Resilience declining → team can't absorb disruption</li>
+              <li>Decision Closure Rate falling → coordination theater</li>
+            </ul>
+            <p style="color: var(--text-muted); font-style: italic; margin-top: 16px;">
+              Capability indicators show what's breaking before outcomes slip.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Capability Indicators Section -->
+    <section class="metrics-section">
+      <div class="container">
+        <h2 style="text-align: center; font-size: 36px; margin: 0 0 16px 0;">5 Capability Indicators</h2>
+        <p style="text-align: center; color: var(--text-muted); max-width: 700px; margin: 0 auto 48px auto;">
+          These aren't activity scores. They're structural health signals derived from aggregated behavioral patterns.
+        </p>
+        
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="label">Capability Indicator</div>
+            <h3>Resilience</h3>
+            <p>Can the team restore capacity after disruption?</p>
+          </div>
+          
+          <div class="metric-card">
+            <div class="label">Capability Indicator</div>
+            <h3>Execution Capacity</h3>
+            <p>Can people do cognitively demanding work?</p>
+          </div>
+          
+          <div class="metric-card">
+            <div class="label">Capability Indicator</div>
+            <h3>Decision Speed</h3>
+            <p>How quickly can the team make and communicate decisions?</p>
+          </div>
+          
+          <div class="metric-card">
+            <div class="label">Capability Indicator</div>
+            <h3>Structural Health</h3>
+            <p>Are dependencies and handoffs clean?</p>
+          </div>
+          
+          <div class="metric-card">
+            <div class="label">NEW • Capability Indicator</div>
+            <h3>Decision Closure Rate</h3>
+            <p>Does collaboration produce outcomes with clarity?</p>
+          </div>
+          
+          <div class="metric-card" style="background: transparent; border: 2px dashed var(--border);">
+            <div class="label">NEVER SHOWN ALONE</div>
+            <h3>Energy Index</h3>
+            <p style="font-size: 13px;">Composite score always expanded to show top 3 indicators + drift + action</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="trust-section">
+      <div class="container">
+        <h2 style="font-size: 28px; margin: 0 0 8px 0;">Built for Trust</h2>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+          We measure organizational capability, not individual performance.
+        </p>
+        
+        <div class="trust-grid">
+          <div class="trust-item">
+            <div class="trust-icon">🔒</div>
+            <h4>Privacy-by-Design</h4>
+            <p>Team-level aggregation only. No individual tracking or content monitoring.</p>
+          </div>
+          
+          <div class="trust-item">
+            <div class="trust-icon">📊</div>
+            <h4>Behavioral Signals</h4>
+            <p>Metadata patterns, not message content. Detects "how" teams work, not "what" they say.</p>
+          </div>
+          
+          <div class="trust-item">
+            <div class="trust-icon">🎯</div>
+            <h4>Leader Support, Not Automation</h4>
+            <p>Signals inform decisions, they don't make them. You stay in control.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="padding: 80px 0; text-align: center;">
+      <div class="container">
+        <h2 style="font-size: 40px; margin: 0 0 24px 0;">See what's breaking before it shows up in outcomes</h2>
+        <p style="color: var(--text-muted); font-size: 18px; margin: 0 0 32px 0;">
+          Free for 30 days. No credit card required.
+        </p>
+        <a href="https://app.signaltrue.ai/register" class="btn-primary" style="font-size: 18px; padding: 14px 32px;">Start Free Trial</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 SignalTrue. Behavioral signal detection for organizational capability.</p>
+      <div style="margin-top: 16px;">
+        <a href="/privacy" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">Privacy</a>
+        <a href="/terms" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">Terms</a>
+        <a href="/about" style="color: var(--text-muted); text-decoration: none; margin: 0 16px;">About</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

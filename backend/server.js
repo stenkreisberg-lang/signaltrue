@@ -74,6 +74,7 @@ import calibrationRoutes from "./routes/calibration.js";
 import signalsRoutes from "./routes/signals.js";
 import actionsRoutes from "./routes/actions.js";
 import dcrRoutes from "./routes/dcr.js";
+import firstSignalRoutes from "./routes/firstSignal.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -152,6 +153,7 @@ async function main() {
     app.use("/api/signals", signalsRoutes);
     app.use("/api/actions", actionsRoutes);
     app.use("/api/dcr", dcrRoutes);
+    app.use("/api/first-signal", firstSignalRoutes);
     app.use("/api/narrative", narrativeRoutes);
     app.use("/api/focus", focusRoutes);
     app.use("/api/forecast", forecastRoutes);
