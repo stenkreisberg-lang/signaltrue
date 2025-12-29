@@ -134,6 +134,9 @@ export default function RiskFeed() {
             <Link to="/app/overview" style={styles.navLink}>
               Overview
             </Link>
+            <Link to="/app/privacy" style={styles.navLink}>
+              Privacy
+            </Link>
             {user && (
               <div style={styles.userMenu}>
                 <span style={styles.userName}>{user.name || user.email}</span>

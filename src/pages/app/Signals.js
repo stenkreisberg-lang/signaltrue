@@ -114,6 +114,9 @@ const Signals = () => {
             <Link to="/app/actions" className="text-slate-300 hover:text-white transition-colors">
               Actions
             </Link>
+            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
+              Privacy
+            </Link>
             <Link to="/app/settings" className="text-slate-300 hover:text-white transition-colors">
               Settings
             </Link>

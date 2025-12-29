@@ -31,6 +31,7 @@ import FirstSignal from './components/FirstSignal';
 import Overview from './pages/app/Overview';
 import Signals from './pages/app/Signals';
 import RiskFeed from './pages/app/RiskFeed';
+import AppPrivacy from './pages/app/Privacy';
 
 export default function App() {
   return (
@@ -102,6 +103,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Signals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/privacy"
+          element={
+            <ProtectedRoute>
+              <AppPrivacy />
             </ProtectedRoute>
           }
         />
