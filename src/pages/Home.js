@@ -189,10 +189,10 @@ function Home() {
       <section style={styles.hero}>
         <div style={styles.heroInner}>
           <h1 style={styles.heroTitle}>
-            See early warning signs in team health.
+            Detect organizational drift before it becomes damage.
           </h1>
           <p style={styles.heroSubtitle}>
-            Before burnout, disengagement, or overload becomes visible.
+            SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
           </p>
           
           {/* SPECIFICATION REQUIREMENT: Concrete inputs explanation */}
@@ -294,9 +294,9 @@ function Home() {
       {/* What It Is / What It's NOT Section */}
       <section style={{...styles.section, background: colors.bgLight}}>
         <div style={styles.sectionInner}>
-          <h2 style={styles.sectionTitle}>SignalTrue measures patterns, not people</h2>
+          <h2 style={styles.sectionTitle}>Early-warning signals, not retrospective analytics</h2>
           <p style={styles.sectionLead}>
-            SignalTrue analyzes how teams work together over time using aggregated metadata from tools like Slack and Calendar. It surfaces sustained overload, engagement drift, and focus erosion early — before problems show up in surveys, performance reviews, or resignations.
+            SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact. Built from aggregated metadata only. No message content, no individual surveillance, team-level signals only.
           </p>
           <div style={styles.grid2}>
             <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>

@@ -196,10 +196,10 @@ function ProductOverview() {
       <section style={styles.hero}>
         <div style={styles.heroInner}>
           <h1 style={styles.heroTitle}>
-            Detect team health drift early
+            Detect organizational drift before it becomes damage.
           </h1>
           <p style={styles.heroSubtitle}>
-            Understand what changed and what to do next — before burnout, turnover, or performance issues become visible.
+            SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
           </p>
           <div style={styles.ctaRow}>
             <Button as={Link} to="/register" variant="primary">
@@ -289,15 +289,15 @@ function ProductOverview() {
         <div style={styles.sectionInner}>
           <h2 style={styles.sectionTitle}>What SignalTrue Detects</h2>
           <p style={styles.sectionLead}>
-            Five core capabilities for team health monitoring
+            Early-warning signals that predict breakdown before it becomes visible
           </p>
           
           <div style={styles.grid3}>
             <div style={styles.card}>
               <div style={styles.cardIcon}>📉</div>
-              <h3 style={styles.cardTitle}>Engagement Drift</h3>
+              <h3 style={styles.cardTitle}>Morale Volatility</h3>
               <p style={styles.cardDesc}>
-                Declining participation, slower response times, reduced async contribution. Early indicators of disengagement before surveys catch it.
+                Declining participation, slower response times, reduced async contribution. Predicts disengagement before surveys detect it.
               </p>
             </div>
 

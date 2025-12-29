@@ -196,7 +196,7 @@ function About() {
             </p>
             
             <p style={{...styles.philosophyText, fontStyle: 'italic', marginTop: spacing['2xl']}}>
-              SignalTrue turns collaboration metadata into early warning signals leaders can act on — before problems become crises.
+              SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
             </p>
           </div>
         </div>
@@ -423,7 +423,7 @@ function About() {
             color: colors.textPrimary,
             marginBottom: spacing.md,
           }}>
-            Ready to build trust-first team health monitoring?
+            Detect organizational drift before it becomes damage.
           </h2>
           <p style={{
             fontSize: typography.bodyLarge,
