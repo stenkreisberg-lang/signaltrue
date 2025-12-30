@@ -404,6 +404,143 @@ function ProductOverview() {
         </div>
       </section>
 
+      {/* SHOW ME HOW IT WORKS - Concrete Examples */}
+      <section style={{...styles.section, background: colors.bgWhite}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Show Me How It Works</h2>
+          <p style={styles.sectionLead}>
+            Four stages from detection to proof. Concrete examples at each step.
+          </p>
+
+          {/* Example 1: Behavioral Signal */}
+          <div style={{marginBottom: spacing['2xl'], padding: spacing.xl, background: colors.bgLight, borderRadius: radius.lg, borderLeft: `4px solid ${colors.primary}`}}>
+            <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+              1. Behavioral Signal Detected
+            </h3>
+            <p style={{fontSize: typography.body, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: typography.lineHeightRelaxed}}>
+              Work patterns shift. System detects deviation from baseline.
+            </p>
+            <div style={{padding: spacing.md, background: colors.bgWhite, borderRadius: radius.md, fontFamily: typography.mono, fontSize: typography.bodySmall}}>
+              <strong>Example:</strong> "Team Engineering-Core: After-hours Slack activity +32% sustained for 3 weeks. Meeting load +18% (now 24hr/week average)."
+            </div>
+          </div>
+
+          {/* Example 2: Capability Indicator */}
+          <div style={{marginBottom: spacing['2xl'], padding: spacing.xl, background: colors.bgLight, borderRadius: radius.lg, borderLeft: `4px solid ${colors.warning}`}}>
+            <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+              2. Capacity Indicator Calculated
+            </h3>
+            <p style={{fontSize: typography.body, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: typography.lineHeightRelaxed}}>
+              Resilience and execution capacity measured against thresholds.
+            </p>
+            <div style={{padding: spacing.md, background: colors.bgWhite, borderRadius: radius.md, fontFamily: typography.mono, fontSize: typography.bodySmall}}>
+              <strong>Example:</strong> "Execution capacity: Yellow (drifting). Meeting load above healthy threshold. Focus blocks decreased from 2.5hr to 45min average."
+            </div>
+          </div>
+
+          {/* Example 3: Recommendation */}
+          <div style={{marginBottom: spacing['2xl'], padding: spacing.xl, background: colors.bgLight, borderRadius: radius.lg, borderLeft: `4px solid ${colors.primary}`}}>
+            <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+              3. Recommendation Generated
+            </h3>
+            <p style={{fontSize: typography.body, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: typography.lineHeightRelaxed}}>
+              System recommends specific actions based on signal type.
+            </p>
+            <div style={{padding: spacing.md, background: colors.bgWhite, borderRadius: radius.md, fontFamily: typography.mono, fontSize: typography.bodySmall}}>
+              <strong>Example:</strong> "Recommended action: Freeze new recurring meetings for 2 weeks. Establish 'focus hours' 9-12am (async-first). Audit existing meeting necessity."
+            </div>
+          </div>
+
+          {/* Example 4: Impact Tracking */}
+          <div style={{marginBottom: spacing['2xl'], padding: spacing.xl, background: colors.bgLight, borderRadius: radius.lg, borderLeft: `4px solid ${colors.success}`}}>
+            <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+              4. Impact Tracking (Proof It Worked)
+            </h3>
+            <p style={{fontSize: typography.body, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: typography.lineHeightRelaxed}}>
+              After actions taken, system shows before/after metrics.
+            </p>
+            <div style={{padding: spacing.md, background: colors.bgWhite, borderRadius: radius.md, fontFamily: typography.mono, fontSize: typography.bodySmall}}>
+              <strong>Example:</strong> "14 days after action: After-hours activity returned to baseline (-28% vs alert period). Response latency improved 15%. Execution capacity: Green (stable)."
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* APPLICABILITY - Who It's For */}
+      <section style={{...styles.section, background: colors.bgSubtle}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Who Is This For?</h2>
+          <div style={{padding: spacing.xl, background: colors.bgWhite, borderRadius: radius.lg, border: `2px solid ${colors.primary}`}}>
+            <p style={{fontSize: typography.bodyLarge, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.md, lineHeight: typography.lineHeightRelaxed}}>
+              <strong>Built for teams of 10 to 5,000.</strong>
+            </p>
+            <p style={{fontSize: typography.body, color: colors.textSecondary, textAlign: 'center', margin: 0, lineHeight: typography.lineHeightRelaxed}}>
+              Flat organizations welcome. No "leader hierarchy" required. HR, founders, and managers use the same early warning signals.
+            </p>
+          </div>
+
+          {/* Mode Toggle */}
+          <div style={{marginTop: spacing.xl, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.lg}}>
+            <div style={{padding: spacing.lg, background: colors.bgWhite, borderRadius: radius.md, border: `1px solid ${colors.border}`}}>
+              <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.primary, marginBottom: spacing.sm}}>
+                Team View (Default)
+              </h3>
+              <p style={{fontSize: typography.bodySmall, color: colors.textSecondary, lineHeight: typography.lineHeightRelaxed}}>
+                For organizations with multiple teams. Each team gets individual drift signals and recommendations.
+              </p>
+            </div>
+
+            <div style={{padding: spacing.lg, background: colors.bgWhite, borderRadius: radius.md, border: `1px solid ${colors.border}`}}>
+              <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.primary, marginBottom: spacing.sm}}>
+                Org Snapshot
+              </h3>
+              <p style={{fontSize: typography.bodySmall, color: colors.textSecondary, lineHeight: typography.lineHeightRelaxed}}>
+                For small teams or flat orgs. Fewer layers, company-wide snapshots. Same signals, simplified structure.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CADENCE - Flexibility */}
+      <section style={{...styles.section, background: colors.bgWhite}}>
+        <div style={styles.sectionInner}>
+          <h2 style={styles.sectionTitle}>Flexible Cadence</h2>
+          <p style={styles.sectionLead}>
+            Always-on for large organizations. Snapshots for small teams. You choose the rhythm.
+          </p>
+
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: spacing.lg}}>
+            <div style={{padding: spacing.lg, background: colors.bgLight, borderRadius: radius.md, textAlign: 'center'}}>
+              <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+                Always-On
+              </h3>
+              <p style={{fontSize: typography.bodySmall, color: colors.textSecondary, lineHeight: typography.lineHeightRelaxed}}>
+                Real-time signals. Alerts when drift detected. For teams that need continuous monitoring.
+              </p>
+            </div>
+
+            <div style={{padding: spacing.lg, background: colors.bgLight, borderRadius: radius.md, textAlign: 'center'}}>
+              <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+                Weekly/Monthly
+              </h3>
+              <p style={{fontSize: typography.bodySmall, color: colors.textSecondary, lineHeight: typography.lineHeightRelaxed}}>
+                Scheduled reviews. Summary reports. For teams that prefer batch processing.
+              </p>
+            </div>
+
+            <div style={{padding: spacing.lg, background: colors.bgLight, borderRadius: radius.md, textAlign: 'center'}}>
+              <h3 style={{fontSize: typography.h3, fontWeight: typography.weightBold, color: colors.textPrimary, marginBottom: spacing.sm}}>
+                Quarterly Snapshots
+              </h3>
+              <p style={{fontSize: typography.bodySmall, color: colors.textSecondary, lineHeight: typography.lineHeightRelaxed}}>
+                Point-in-time checks. For small teams or periodic audits. Kaidi-approved 😊
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA SECTION */}
       <section style={{...styles.section, textAlign:'center', background: colors.bgWhite}}>
         <div style={styles.sectionInner}>
