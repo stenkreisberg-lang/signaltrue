@@ -106,9 +106,11 @@ function SiteHeader({ theme = 'dark' }) {
         <div style={styles.navLinks}>
           {/* MANDATORY: Same navigation order on ALL pages */}
           <NavLink to="/product">Product</NavLink>
+          <NavLink to="/how-it-works">How it works</NavLink>
           <NavLink to="/pricing">Pricing</NavLink>
+          <NavLink to="/trust">Trust</NavLink>
+          <NavLink to="/demo">Demo</NavLink>
           <NavLink to="/about">About</NavLink>
-          <NavLink to="/contact">Contact</NavLink>
           
           {/* CRITICAL: CTA buttons use ButtonUnified - NEVER inherits active state */}
           <ButtonUnified

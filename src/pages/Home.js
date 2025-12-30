@@ -173,6 +173,41 @@ function Home() {
       lineHeight: typography.lineHeightRelaxed,
     },
     
+    // 3-step strip (must be above fold)
+    threeStepStrip: {
+      background: colors.bgWhite,
+      padding: `${spacing['2xl']} ${spacing.containerPaddingDesktop}`,
+      borderBottom: `1px solid ${colors.border}`,
+    },
+    threeStepInner: {
+      maxWidth: spacing.containerMaxWidth,
+      margin: '0 auto',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: spacing.xl,
+    },
+    stepBox: {
+      textAlign: 'center',
+      padding: spacing.lg,
+    },
+    stepNumber: {
+      fontSize: typography.h3,
+      fontWeight: typography.weightBold,
+      color: colors.primary,
+      marginBottom: spacing.sm,
+    },
+    stepTitle: {
+      fontSize: typography.body,
+      fontWeight: typography.weightSemibold,
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    stepDesc: {
+      fontSize: typography.bodySmall,
+      color: colors.textSecondary,
+      lineHeight: typography.lineHeightRelaxed,
+    },
+    
     // What IS / NOT cards
     gridTwo: {
       display: 'grid',
@@ -201,35 +236,35 @@ function Home() {
           {/* Left column: Headline, subhead, explanation, CTAs */}
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>
-              Detect organizational drift before it becomes damage.
+              Catch burnout and execution breakdown early.
             </h1>
             <p style={styles.heroSubtitle}>
-              SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
+              SignalTrue detects behavioral drift across Slack and calendars before people feel the impact. It recommends what to do next and tracks whether it worked.
             </p>
             
             <div style={styles.heroExplanation}>
-              <strong>Built from calendar load, response latency, after-hours activity, and collaboration patterns.</strong>
+              <strong>Works for flat teams and leaders.</strong>
               <br />
-              No surveys. No content monitoring. Team-level signals only.
+              HR, founders, and managers use the same early warning signals. No hierarchy required.
             </div>
             
             <div style={styles.checkmarks}>
-              <span>✓ No individual tracking</span>
-              <span>✓ Team-level signals only</span>
-              <span>✓ GDPR-aligned</span>
+              <span>✓ Privacy-first by default</span>
+              <span>✓ Team-level signals</span>
+              <span>✓ Built for GDPR</span>
             </div>
             
             <div style={styles.ctaRow}>
-              <ButtonUnified as={Link} to="/register" variant="primary" size="lg">
-                Request early access
+              <ButtonUnified as={Link} to="/demo" variant="primary" size="lg">
+                See live demo
               </ButtonUnified>
-              <ButtonUnified as={Link} to="/product" variant="inverse" size="lg">
-                See how it works
+              <ButtonUnified as={Link} to="/trust" variant="inverse" size="lg">
+                Trust and Privacy
               </ButtonUnified>
             </div>
             
             <p style={styles.ctaMicrocopy}>
-              Signals typically appear after 7–14 days • Requires Slack or Calendar connection
+              Predict burnout, overload, and execution breakdown before people feel the impact.
             </p>
           </div>
 
@@ -254,6 +289,35 @@ function Home() {
             
             <div style={styles.proofExplanation}>
               <strong>Why this changed:</strong> Increased urgency tags in Slack threads. Meeting durations +20% over 14 days. Suggests coordination overhead rising.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3-STEP STRIP - Category promise (must be above fold) */}
+      <section style={styles.threeStepStrip}>
+        <div style={styles.threeStepInner}>
+          <div style={styles.stepBox}>
+            <div style={styles.stepNumber}>1</div>
+            <div style={styles.stepTitle}>Behavioral signals</div>
+            <div style={styles.stepDesc}>
+              Work patterns shift. Detect drift early.
+            </div>
+          </div>
+          
+          <div style={styles.stepBox}>
+            <div style={styles.stepNumber}>2</div>
+            <div style={styles.stepTitle}>Capacity indicators</div>
+            <div style={styles.stepDesc}>
+              Resilience and execution capacity measured.
+            </div>
+          </div>
+          
+          <div style={styles.stepBox}>
+            <div style={styles.stepNumber}>3</div>
+            <div style={styles.stepTitle}>Recommendations + impact tracking</div>
+            <div style={styles.stepDesc}>
+              Actions recommended. Proof it worked.
             </div>
           </div>
         </div>
