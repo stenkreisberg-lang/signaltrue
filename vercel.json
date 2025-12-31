@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "signaltrue-app",
+  "name": "signaltrue-v2",
   "builds": [
     {
       "src": "package.json",
@@ -8,38 +8,16 @@
       "config": { "distDir": "build" }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/home.html"
+      "handle": "filesystem"
     },
     {
-      "source": "/product",
-      "destination": "/product.html"
-    },
-    {
-      "source": "/pricing",
-      "destination": "/pricing.html"
-    },
-    {
-      "source": "/about",
-      "destination": "/about.html"
-    },
-    {
-      "source": "/contact",
-      "destination": "/contact.html"
-    },
-    {
-      "source": "/how-it-works",
-      "destination": "/how-it-works.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://signaltrue-api.vercel.app"
+  }
 }
