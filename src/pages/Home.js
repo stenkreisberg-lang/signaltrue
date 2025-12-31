@@ -236,7 +236,7 @@ function Home() {
           {/* Left column: Headline, subhead, explanation, CTAs */}
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>
-              Catch burnout and execution breakdown early.
+              Catch capacity risk and execution breakdown early.
             </h1>
             <p style={styles.heroSubtitle}>
               SignalTrue detects behavioral drift across Slack and calendars before people feel the impact. It recommends what to do next and tracks whether it worked.
@@ -264,7 +264,7 @@ function Home() {
             </div>
             
             <p style={styles.ctaMicrocopy}>
-              Predict burnout, overload, and execution breakdown before people feel the impact.
+              Predict sustained overload and execution breakdown before people feel the impact.
             </p>
           </div>
 
@@ -384,7 +384,7 @@ function Home() {
               <div style={styles.cardIcon}>🔌</div>
               <h3 style={styles.cardTitle}>Connect tools</h3>
               <p style={styles.cardBody}>
-                Slack, Calendar, Jira metadata. No message content, no individual surveillance, team-level signals only.
+                Slack and Calendar metadata only. No message content, no individual surveillance, team-level signals only.
               </p>
             </div>
             
@@ -392,7 +392,7 @@ function Home() {
               <div style={styles.cardIcon}>📊</div>
               <h3 style={styles.cardTitle}>Signals detected</h3>
               <p style={styles.cardBody}>
-                Drift, Overload, Focus Erosion. Early behavioral signals that predict burnout and execution breakdown.
+                Drift, Overload, Focus Erosion. Early behavioral signals that predict capacity risk and execution breakdown.
               </p>
             </div>
             
@@ -412,7 +412,7 @@ function Home() {
         <div style={styles.sectionInner}>
           <h2 style={styles.sectionTitle}>Early-warning signals, not retrospective analytics</h2>
           <p style={styles.sectionLead}>
-            SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact. Built from aggregated metadata only. No message content, no individual surveillance, team-level signals only.
+            SignalTrue detects early behavioral signals that predict sustained overload and execution breakdown before leaders feel the impact. Built from aggregated metadata only. No message content, no individual surveillance, team-level signals only.
           </p>
           <div style={styles.gridTwo}>
             <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>

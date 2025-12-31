@@ -108,6 +108,7 @@ function SiteHeader({ theme = 'dark' }) {
           <NavLink to="/product">Product</NavLink>
           <NavLink to="/how-it-works">How it works</NavLink>
           <NavLink to="/pricing">Pricing</NavLink>
+          <NavLink to="/features">Features</NavLink>
           <NavLink to="/trust">Trust</NavLink>
           <NavLink to="/demo">Demo</NavLink>
           <NavLink to="/about">About</NavLink>

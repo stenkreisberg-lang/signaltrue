@@ -50,7 +50,7 @@ function CompanyDashboard() {
             <div style={styles.featureCard}>
               <span style={styles.icon}>🏢</span>
               <h3 style={styles.featureTitle}>Departmental Comparisons</h3>
-              <p style={styles.featureText}>Compare burnout risk, engagement, and health metrics across departments and teams.</p>
+              <p style={styles.featureText}>Compare capacity risk, engagement, and health metrics across departments and teams.</p>
             </div>
             <div style={styles.featureCard}>
               <span style={styles.icon}>📍</span>
@@ -70,7 +70,7 @@ function CompanyDashboard() {
             <div style={styles.featureCard}>
               <span style={styles.icon}>🎯</span>
               <h3 style={styles.featureTitle}>Risk Analysis</h3>
-              <p style={styles.featureText}>See which teams and departments have the highest burnout risk and need support.</p>
+              <p style={styles.featureText}>See which teams and departments have the highest capacity risk and need support.</p>
             </div>
           </div>
         </div>
@@ -84,8 +84,8 @@ function CompanyDashboard() {
             <div style={styles.insightRow}>
               <div style={styles.insightIcon}>⚠️</div>
               <div style={styles.insightContent}>
-                <h3 style={styles.insightTitle}>Burnout Risk Overview</h3>
-                <p style={styles.insightText}>Distribution of burnout risk across the company with breakdown by department, role, and tenure.</p>
+                <h3 style={styles.insightTitle}>Capacity Risk Overview</h3>
+                <p style={styles.insightText}>Distribution of capacity risk across the company with breakdown by department, role, and tenure.</p>
               </div>
             </div>
 
@@ -143,7 +143,7 @@ function CompanyDashboard() {
             </div>
             <div style={styles.useCase}>
               <h3 style={styles.useCaseTitle}>Departmental Planning</h3>
-              <p style={styles.useCaseText}>Identify which departments need additional resources or intervention based on burnout and engagement data.</p>
+              <p style={styles.useCaseText}>Identify which departments need additional resources or intervention based on capacity risk and engagement data.</p>
             </div>
             <div style={styles.useCase}>
               <h3 style={styles.useCaseTitle}>Culture Initiatives</h3>

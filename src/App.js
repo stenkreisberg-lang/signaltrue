@@ -12,7 +12,7 @@ import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 // New marketing pages
 import ProductOverview from './pages/ProductOverview';
-import BurnoutDetection from './pages/BurnoutDetection';
+import CapacityRiskDetection from './pages/CapacityRiskDetection';
 import TeamAnalytics from './pages/TeamAnalytics';
 import CompanyDashboard from './pages/CompanyDashboard';
 import HowItWorks from './pages/HowItWorks';
@@ -21,6 +21,9 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import Trust from './pages/Trust';
+import Demo from './pages/Demo';
+import Features from './pages/Features';
 import PrivacySettingsPage from './pages/PrivacySettingsPage';
 import AdminOnboarding from './pages/AdminOnboarding';
 import OnboardingAccept from './pages/OnboardingAccept';
@@ -40,7 +43,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/product" element={<ProductOverview />} />
-        <Route path="/burnout-detection" element={<BurnoutDetection />} />
+        <Route path="/capacity-risk-detection" element={<CapacityRiskDetection />} />
+        <Route path="/burnout-detection" element={<CapacityRiskDetection />} /> {/* Legacy redirect */}
         <Route path="/team-analytics" element={<TeamAnalytics />} />
         <Route path="/company-dashboard" element={<CompanyDashboard />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
@@ -49,6 +53,9 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms" element={<Terms />} />
   <Route path="/privacy" element={<Privacy />} />
+  <Route path="/trust" element={<Trust />} />
+  <Route path="/demo" element={<Demo />} />
+  <Route path="/features" element={<Features />} />
   <Route path="/privacy-settings" element={<PrivacySettingsPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<PublicRegister />} />

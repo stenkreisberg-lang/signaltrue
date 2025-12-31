@@ -141,8 +141,13 @@ export function addOrgFilter(req) {
 // const teams = await Team.find(addOrgFilter(req));
 */
 
+// Alias for backwards compatibility
+export const requireAuth = authenticateToken;
+
 export default {
   requireApiKey,
-  // requireAuth,  // Uncomment when JWT enabled
-  // requireClerkAuth,  // Uncomment when Clerk enabled
+  requireAuth,
+  authenticateToken,
+  requireAdmin,
+  requireRoles
 };

@@ -1,9 +1,9 @@
 # Trigger redeploy for Vercel/Render
 # 📊 SignalTrue
 
-**Performance rhythm monitoring for modern teams**
+**Early-warning system for behavioral drift in teams**
 
-SignalTrue helps organizations detect and prevent team burnout by analyzing Slack communication, calendar patterns, and work signals. Get AI-powered insights and actionable recommendations to maintain healthy team performance.
+SignalTrue is an early-warning system that detects behavioral drift in teams, explains why it matters, and recommends safe, reversible actions before capacity, delivery, or retention are impacted. Built from aggregated metadata only. No message content, no individual surveillance, team-level signals only.
 
 ![SignalTrue Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![React](https://img.shields.io/badge/React-19.2.0-blue)
@@ -14,32 +14,40 @@ SignalTrue helps organizations detect and prevent team burnout by analyzing Slac
 
 ## ✨ Features
 
-### 📈 **Multi-Signal BDI Tracking**
-- **Burn-Down Index (BDI)** calculation from 4 factors:
-  - Workload (30%): Message volume analysis
-  - Sentiment (25%): AI-powered tone detection
-  - Responsiveness (25%): Response time patterns
-  - Recovery (20%): Meeting load & work-life balance
-- **Zone classification**: Recovery → Stable → Watch → Surge
-- **Historical tracking**: 90-day snapshot history with baseline comparison
+### 📈 **Behavioral Drift Index (BDI)**
+- **Primary metric** for team health tracking
+- **6 input signals**: Meeting load, after-hours activity, response time, async participation, focus time, collaboration breadth
+- **4 drift states**: Stable → Early Drift → Developing Drift → Critical Drift
+- **Confidence scoring**: Based on number of confirming signals
+- **Historical tracking**: 90-day baseline comparison with deviation analysis
 
-### 🎯 **Organization Dashboard**
-- Expandable org-level overview
-- Zone distribution pie chart
-- Team comparison bar charts
-- Real-time metrics: Avg BDI, at-risk teams
+### 🔄 **Coordination Load Index (CLI)**
+- Reframes meetings as system coordination cost
+- Formula: (Meeting Time + Back-to-Back + Cross-Team Sync) / Available Focus Time
+- **4 states**: Balanced (<30%), Moderate (30-50%), High (50-75%), Critical (>75%)
+- Identifies when teams spend more time coordinating than executing
 
-### 📊 **Timeline Visualization**
-- Interactive 30-day BDI trend graphs
-- Configurable time ranges (7/14/30/60/90 days)
-- Baseline reference lines
-- Trend calculations with percentage changes
+### 🧠 **Bandwidth Tax Indicator (BTI)**
+- Detects cognitive overload masked by responsiveness
+- **Triggers**: Response paradox, after-hours work, focus degradation, interruptions
+- **Impact risks**: Decision quality, sustainability, capacity strain
+- Weighted scoring across multiple cognitive load factors
 
-### 🤖 **AI-Powered Insights**
-- **Multi-provider support**: OpenAI (GPT-3.5/4) or Anthropic (Claude)
-- **Smart playbooks**: Context-aware recommendations per team
-- **Weekly summaries**: Automated health assessments via email/Slack
-- **Sentiment analysis**: Understand team communication tone
+### � **Silence Risk Indicator (SRI)**
+- Highlights reduced voice and communication friction
+- **4 proxies**: Declining contributions, narrowing network, slower upward responses, flattening sentiment
+- Team-level aggregated detection without claiming psychological safety
+
+### ⚡ **Enhanced Capacity Status**
+- **Always shows drivers**: Top 3 factors with icons and percentages
+- **One-sentence explanation**: Auto-generated contextual summary
+- Green/Yellow/Red thresholds with trend indicators
+
+### 📋 **Drift Response Playbooks**
+- **5 default templates**: Standard, safe, reversible actions
+- Applicability rules based on drift states and indices
+- Expected effects and reversibility tracked
+- Usage monitoring for effectiveness analysis
 
 ### 🔗 **Integrations**
 - **Slack**: Message volume, response times, sentiment

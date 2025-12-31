@@ -46,7 +46,7 @@ export default function Terms() {
               <ul>
                 <li>Per-person indicators are directional only (e.g., "up" or "down" compared to their own prior period) — not raw message counts, verbatim content, or exact employer-specific metrics.</li>
                 <li>We do not disclose exact data values attributable to any employer, team, or individual. Organizational views are aggregated and privacy-preserving.</li>
-                <li>Individual feedback focuses on trend movement and high-level categories (e.g., burnout risk rising/falling) without exposing granular message content or precise volumes.</li>
+                <li>Individual feedback focuses on trend movement and high-level categories (e.g., capacity risk rising/falling) without exposing granular message content or precise volumes.</li>
                 <li>Cross-employer comparisons are never disclosed.</li>
               </ul>
             </Section>

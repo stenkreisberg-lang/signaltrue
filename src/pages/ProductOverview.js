@@ -185,7 +185,7 @@ function ProductOverview() {
             Detect organizational drift before it becomes damage.
           </h1>
           <p style={styles.heroSubtitle}>
-            SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
+            SignalTrue detects early behavioral signals that predict sustained overload and execution breakdown before leaders feel the impact.
           </p>
           <div style={styles.ctaRow}>
             <ButtonUnified as={Link} to="/register" variant="primary" size="lg">
@@ -245,7 +245,7 @@ function ProductOverview() {
             <div style={styles.signalContent}>
               <h3 style={styles.signalTitle}>Overload Signals</h3>
               <p style={styles.signalSentence}>
-                Sustained after-hours activity, meeting load creep, context-switching patterns. Burnout risk before resignations.
+                Sustained after-hours activity, meeting load creep, context-switching patterns. Capacity risk before resignations.
               </p>
               <div style={styles.signalExample}>
                 <div style={styles.signalExampleTitle}>📊 Example Insight</div>

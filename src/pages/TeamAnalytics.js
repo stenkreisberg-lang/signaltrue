@@ -60,10 +60,10 @@ function TeamAnalytics() {
             <div style={styles.insightCard}>
               <div style={styles.insightHeader}>
                 <span style={styles.insightIcon}>⚠️</span>
-                <h3 style={styles.insightTitle}>Burnout Risk™ Score</h3>
+                <h3 style={styles.insightTitle}>Capacity Risk Score</h3>
               </div>
               <p style={styles.insightText}>
-                Real-time burnout risk assessment ranging from 1-99%, updated continuously based on 
+                Real-time capacity risk assessment ranging from 1-99%, updated continuously based on 
                 communication patterns, meeting load, and work signals.
               </p>
               <ul style={styles.insightList}>

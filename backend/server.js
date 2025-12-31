@@ -78,6 +78,7 @@ import firstSignalRoutes from "./routes/firstSignal.js";
 import interventionsRoutes from "./routes/interventions.js";
 import privacyRoutes from "./routes/privacy.js";
 import comparisonsRoutes from "./routes/comparisons.js";
+import bdiRoutes from "./routes/bdiRoutes.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -160,6 +161,12 @@ async function main() {
     app.use("/api/interventions", interventionsRoutes);
     app.use("/api/privacy", privacyRoutes);
     app.use("/api/comparisons", comparisonsRoutes);
+    app.use("/api/bdi", bdiRoutes);
+    app.use("/api/indices", bdiRoutes);
+    app.use("/api/capacity", bdiRoutes);
+    app.use("/api/timeline", bdiRoutes);
+    app.use("/api/playbooks", bdiRoutes);
+    app.use("/api/dashboard", bdiRoutes);
     app.use("/api/narrative", narrativeRoutes);
     app.use("/api/focus", focusRoutes);
     app.use("/api/forecast", forecastRoutes);

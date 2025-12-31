@@ -188,7 +188,7 @@ function About() {
             </p>
             
             <p style={styles.emphasisText}>
-              The data to prevent burnout already exists. It's hidden in how teams collaborate over time.
+              The data to prevent capacity risk already exists. It's hidden in how teams collaborate over time.
             </p>
             
             <p style={styles.philosophyText}>
@@ -196,7 +196,7 @@ function About() {
             </p>
             
             <p style={{...styles.philosophyText, fontStyle: 'italic', marginTop: spacing['2xl']}}>
-              SignalTrue detects early behavioral signals that predict burnout, overload, and execution breakdown before leaders feel the impact.
+              SignalTrue detects early behavioral signals that predict sustained overload and execution breakdown before leaders feel the impact.
             </p>
           </div>
         </div>
@@ -235,7 +235,7 @@ function About() {
             <div style={{...styles.card, borderLeft: `4px solid ${colors.error}`}}>
               <h3 style={{...styles.cardTitle, color: colors.error}}>❌ Productivity Scoring</h3>
               <p style={styles.cardDesc}>
-                We will never assign scores to individuals or rank team members. Output is a terrible proxy for health, and rankings destroy psychological safety.
+                We will never assign scores to individuals or rank team members. Output is a terrible proxy for health, and rankings destroy trust and openness.
               </p>
             </div>
 

@@ -223,10 +223,10 @@ Created:
 Suggested next steps:
 1. **Multi-org support** - Implement JWT or Clerk auth
 2. **User management** - Teams, roles, permissions
-3. **Advanced analytics** - Predictive burnout models
+3. **Advanced analytics** - Predictive capacity models
 4. **Mobile app** - React Native version
 5. **Custom alerts** - Configurable thresholds
-6. **Integrations** - Jira, GitHub, Microsoft Teams
+6. **Integrations** - Microsoft Teams, additional calendar providers
 7. **Reporting** - PDF exports, custom dashboards
 
 ---

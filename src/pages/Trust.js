@@ -198,7 +198,7 @@ function Trust() {
                 </td>
               </tr>
               <tr>
-                <td style={styles.tableCell}><strong>Jira / Linear</strong></td>
+                <td style={styles.tableCell}><strong>Not Integrated</strong></td>
                 <td style={styles.tableCell}>
                   Task status changes, assignment patterns, cycle time, comment frequency
                 </td>

@@ -219,7 +219,7 @@ function Pricing() {
           privacy: 'Team-level guidance',
         },
         {
-          text: 'Jira + Linear integration',
+          text: 'Advanced calendar analytics',
           privacy: 'Task metadata only',
         },
         {

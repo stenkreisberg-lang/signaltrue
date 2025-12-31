@@ -118,7 +118,7 @@ function Home() {
             <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, textAlign:'center'}}>
               <div style={{fontSize:24, marginBottom:10}}>🔌</div>
               <div style={{fontWeight:700, color:'white', marginBottom:5}}>Tools</div>
-              <div style={{fontSize:13, color:'#94a3b8'}}>Slack, Calendar, Jira metadata</div>
+              <div style={{fontSize:13, color:'#94a3b8'}}>Slack and Calendar metadata only</div>
             </div>
             <div style={{color:'#64748b', fontSize:24}}>→</div>
             <div style={{background:'#1e293b', padding:20, borderRadius:8, border:'1px solid #334155', width:200, textAlign:'center'}}>
