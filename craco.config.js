@@ -2,11 +2,14 @@ const path = require('path');
 
 module.exports = {
   style: {
-    postcssOptions: {
-      plugins: [
-        require('tailwindcss')(path.resolve(__dirname, 'tailwind.config.cjs')),
-        require('autoprefixer'),
-      ],
+    postcss: {
+      mode: 'extends',
+      loaderOptions: {
+        postcssOptions: {
+          ident: 'postcss',
+          config: path.resolve(__dirname, 'postcss.config.js'),
+        },
+      },
     },
   },
 };
