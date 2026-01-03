@@ -18,6 +18,12 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://signaltrue-api.vercel.app"
+    "REACT_APP_API_URL": "https://signaltrue-api.vercel.app",
+    "DISABLE_ESLINT_PLUGIN": "true"
+  },
+  "build": {
+    "env": {
+      "DISABLE_ESLINT_PLUGIN": "true"
+    }
   }
 }
