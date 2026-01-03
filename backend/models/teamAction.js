@@ -1,0 +1,72 @@
+import mongoose from 'mongoose';
+
+/**
+ * Team Action Model
+ * Recommended or active interventions for teams
+ */
+const teamActionSchema = new mongoose.Schema({
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: true,
+    index: true
+  },
+  createdWeek: {
+    type: Date,
+    required: true,
+    index: true
+  },
+  linkedRisk: {
+    type: String,
+    required: true,
+    enum: ['overload', 'execution', 'retention_strain']
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  whyThisAction: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ['suggested', 'active', 'dismissed', 'completed'],
+    default: 'suggested'
+  },
+  duration: {
+    type: Number, // weeks
+    default: 2
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  dismissedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  dismissedAt: {
+    type: Date
+  },
+  dismissalReason: {
+    type: String
+  }
+}, {
+  timestamps: true
+});
+
+// Ensure only ONE active action per team
+teamActionSchema.index({ teamId: 1, status: 1 });
+
+// Method to check if team has active action
+teamActionSchema.statics.hasActiveAction = async function(teamId) {
+  const count = await this.countDocuments({ 
+    teamId, 
+    status: 'active' 
+  });
+  return count > 0;
+};
+
+export default mongoose.model('TeamAction', teamActionSchema);

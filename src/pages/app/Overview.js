@@ -15,7 +15,6 @@ import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
  * Shows calibration progress OR behavioral drift insights depending on org state
  */
 const Overview = () => {
-  const [orgData, setOrgData] = useState(null);
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [signalSummary, setSignalSummary] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -151,6 +150,22 @@ const Overview = () => {
         {/* NEW: Behavioral Drift Dashboard (if calibration complete) */}
         {!calibrationStatus?.isInCalibration && dashboardData && (
           <div className="space-y-8">
+            {/* Quick Actions Banner */}
+            <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-4 border border-blue-700/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-100 mb-1">🎯 Team Insights Available</h3>
+                  <p className="text-sm text-slate-300">View AI-powered diagnosis, risk analysis, and recommended actions for your team</p>
+                </div>
+                <Link 
+                  to={`/app/insights/${teamId}`}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg"
+                >
+                  View Insights →
+                </Link>
+              </div>
+            </div>
+            
             {/* 1. BEHAVIORAL DRIFT INDEX - PRIMARY METRIC */}
             <div>
               <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">

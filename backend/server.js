@@ -79,6 +79,7 @@ import interventionsRoutes from "./routes/interventions.js";
 import privacyRoutes from "./routes/privacy.js";
 import comparisonsRoutes from "./routes/comparisons.js";
 import bdiRoutes from "./routes/bdiRoutes.js";
+import insightsRoutes from "./routes/insights.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -87,6 +88,7 @@ import auditConsent from "./middleware/consentAudit.js";
 // --- Service Imports ---
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { seedMasterAdmin } from './scripts/seed.js';
+import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -184,6 +186,7 @@ async function main() {
     app.use("/api", onboardingRoutes);
     app.use('/api/drift-events', driftEventsRoutes);
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
+    app.use('/api/insights', insightsRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {
@@ -198,6 +201,9 @@ async function main() {
         });
         console.log('⏰ Cron job scheduled: Slack refresh daily at 2 AM');
       }
+      
+      // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
+      scheduleWeeklyJob();
     }
 
     // --- Start Server ---
