@@ -1,36 +1,8 @@
 {
-  "version": 2,
-  "name": "signaltrue-v2",
-  "builds": [
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "/backend/server.js"
-    },
-    {
-      "source": "/:match((?!api/|favicon.ico|logo192.png).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "env": {
-    "REACT_APP_API_URL": "https://signaltrue.ai",
-    "DISABLE_ESLINT_PLUGIN": "true"
-  },
-  "build": {
-    "env": {
-      "DISABLE_ESLINT_PLUGIN": "true"
-    }
-  }
+  ]
 }
