@@ -127,7 +127,17 @@ async function main() {
     }
 
     // --- Express Middleware ---
-    app.use(cors({ origin: '*' })); // Allow all origins for development
+    const whitelist = ['https://signaltrue.ai', 'https://www.signaltrue.ai'];
+    const corsOptions = {
+      origin: function (origin, callback) {
+        if (process.env.NODE_ENV !== 'production' || !origin || whitelist.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
+    };
+    app.use(cors(corsOptions));
     app.set('trust proxy', 1);
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
