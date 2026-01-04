@@ -1,4 +1,4 @@
-import { Button } from "../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Users, Lock } from "lucide-react";
 import DriftAlertCard from "./DriftAlertCard";
 

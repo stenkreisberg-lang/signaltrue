@@ -1,11 +1,12 @@
-import { Button } from "../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const navItems = [
-  { label: "Product", href: "#product" },
-  { label: "How it Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "About", href: "#about" },
+  { label: "Product", href: "/product" },
+  { label: "How it Works", href: "/how-it-works" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/about" },
 ];
 
 const Navbar = () => {
@@ -14,7 +15,7 @@ const Navbar = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Activity className="w-5 h-5 text-primary-foreground" />
@@ -24,18 +25,18 @@ const Navbar = () => {
             <span className="text-xl font-display font-bold text-foreground">
               SignalTrue
             </span>
-          </a>
+          </Link>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
+                to={item.href}
                 className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
 

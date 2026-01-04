@@ -1,10 +1,10 @@
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
-import SocialProofStats from "../components/SocialProofStats";
-import Features from "../components/Features";
-import HowItWorks from "../components/HowItWorks";
-import CTASection from "../components/CTASection";
-import Footer from "../components/Footer";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import SocialProofStats from "@/components/SocialProofStats";
+import Features from "@/components/Features";
+import HowItWorks from "@/components/HowItWorks";
+import CTASection from "@/components/CTASection";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
