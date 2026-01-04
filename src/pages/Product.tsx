@@ -1,7 +1,7 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import DriftAlertCard from "@/components/DriftAlertCard";
-import { Button } from "@/components/ui/button";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import DriftAlertCard from "../components/DriftAlertCard";
+import { Button } from "../components/ui/button";
 import { 
   Shield, 
   Zap, 
