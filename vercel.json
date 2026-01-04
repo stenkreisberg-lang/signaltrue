@@ -3,12 +3,22 @@
   "name": "signaltrue-v2",
   "builds": [
     {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
+      "config": {
+        "distDir": "build"
+      }
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js"
+    },
     {
       "handle": "filesystem"
     },
@@ -18,7 +28,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://signaltrue-api.vercel.app",
+    "REACT_APP_API_URL": "https://signaltrue.ai",
     "DISABLE_ESLINT_PLUGIN": "true"
   },
   "build": {
