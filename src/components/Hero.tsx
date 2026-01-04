@@ -13,59 +13,56 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left content */}
           <div className="animate-slide-up">
-            {/* Trust badges - Moved UP as recommended */}
+            {/* Trust badges */}
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Lock className="w-3.5 h-3.5 text-success" />
-                <span className="text-xs font-medium text-muted-foreground">Privacy-first</span>
+                <Users className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-muted-foreground">Team-level analytics</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Users className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">Team-level signals</span>
+                <Lock className="w-3.5 h-3.5 text-success" />
+                <span className="text-xs font-medium text-muted-foreground">No message content access</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">GDPR Compliant</span>
+                <span className="text-xs font-medium text-muted-foreground">GDPR-first</span>
               </div>
             </div>
 
-            {/* Main headline - HR-friendly language */}
+            {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-              Know which teams are heading toward{" "}
-              <span className="text-gradient">burnout</span>
+              See which teams are drifting toward{" "}
+              <span className="text-gradient">overload</span>
               <br />
-              <span className="text-muted-foreground">before they quit.</span>
+              <span className="text-muted-foreground">before it becomes attrition.</span>
             </h1>
 
-            {/* Subheadline - Clear value proposition */}
+            {/* Subheadline */}
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              SignalTrue detects early warning signs from Slack and calendars — 
-              giving HR leaders the insights to prevent turnover and protect team performance.
+              SignalTrue turns collaboration and calendar patterns into team-level signals. 
+              HR can spot meeting overload, after-hours creep, and coordination drag early, 
+              then guide managers to intervene and track recovery.
             </p>
 
-            {/* CTA buttons - Clear hierarchy */}
+            {/* CTA buttons */}
             <div className="flex flex-wrap gap-4 mb-12">
               <Button variant="hero" size="xl">
-                Book a Demo
+                Get a Demo
                 <ArrowRight className="w-5 h-5" />
               </Button>
               <Button variant="hero-outline" size="xl">
-                Watch 2-min Overview
+                See How It Works
               </Button>
             </div>
 
-            {/* Social proof - Companies */}
+            {/* Social proof */}
             <div className="pt-8 border-t border-border/50">
-              <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider">
-                Trusted by HR teams at
+              <p className="text-sm font-semibold text-foreground mb-2">
+                Designed for HR teams who need leading indicators, not another survey.
               </p>
-              <div className="flex flex-wrap items-center gap-8 opacity-60">
-                {["Stripe", "Notion", "Linear", "Vercel", "Figma"].map((company) => (
-                  <span key={company} className="text-lg font-display font-semibold text-foreground/70">
-                    {company}
-                  </span>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Works best for organizations using Slack or Teams plus Google or Outlook calendars.
+              </p>
             </div>
           </div>
 

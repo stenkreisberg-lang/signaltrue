@@ -17,11 +17,10 @@ const steps = [
   {
     number: "01",
     icon: Link2,
-    title: "Connect Your Tools",
-    description: "Securely connect Slack and Google Calendar. SignalTrue uses OAuth — we never see your passwords.",
+    title: "Connect your tools",
+    description: "Connect Slack or Teams and your calendar using OAuth. SignalTrue never sees your passwords.",
     details: [
-      "5-minute setup with OAuth",
-      "No IT involvement needed",
+      "Fast OAuth setup",
       "Works with existing permissions",
       "Add more tools anytime",
     ],
@@ -29,46 +28,43 @@ const steps = [
   {
     number: "02",
     icon: Brain,
-    title: "AI Learns Your Baselines",
-    description: "Our AI analyzes 2-4 weeks of team patterns to understand what 'healthy' looks like for your unique organization.",
+    title: "Establish baselines",
+    description: "SignalTrue builds a baseline for each team so alerts are based on change, not generic benchmarks.",
     details: [
-      "Custom baselines per team",
-      "No generic benchmarks",
-      "Adapts to your culture",
-      "Learns seasonal patterns",
+      "Baselines per team",
+      "Trend comparison over time",
+      "Adjusts as patterns evolve",
     ],
   },
   {
     number: "03",
     icon: Bell,
-    title: "Get Proactive Alerts",
-    description: "Receive actionable alerts when patterns shift. Know which teams need support before problems escalate.",
+    title: "Detect meaningful shifts",
+    description: "Signals trigger when patterns deviate from baseline in a way that often precedes overload, disengagement, or coordination breakdown.",
     details: [
-      "Email + Slack alerts",
-      "Severity-based routing",
-      "Actionable recommendations",
-      "Snooze or escalate options",
+      "Weekly signals",
+      "Severity-based alerts",
+      "Clear 'what changed' summaries",
     ],
   },
   {
     number: "04",
     icon: TrendingUp,
-    title: "Track & Improve",
-    description: "Monitor how your interventions impact team health over time. Build data-driven people strategies.",
+    title: "Intervene and measure",
+    description: "Choose an intervention, assign an owner, and track before/after changes to prove impact.",
     details: [
-      "Before/after comparisons",
       "Intervention tracking",
-      "ROI reporting",
-      "Executive dashboards",
+      "Before/after comparisons",
+      "Executive-ready summaries",
     ],
   },
 ];
 
 const integrations = [
-  { name: "Slack", description: "Communication patterns & response times" },
-  { name: "Google Calendar", description: "Meeting load & focus time" },
-  { name: "Microsoft Teams", description: "Coming soon" },
-  { name: "Outlook Calendar", description: "Coming soon" },
+  { name: "Slack", description: "Team-level collaboration patterns" },
+  { name: "Google Calendar", description: "Meeting load and focus-time signals" },
+  { name: "Microsoft Teams", description: "Planned" },
+  { name: "Outlook Calendar", description: "Planned" },
 ];
 
 const HowItWorksPage = () => {
@@ -82,15 +78,14 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                How It Works
+                How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From setup to insight in{" "}
-                <span className="text-gradient">under a week</span>
+                From setup to useful signals in{" "}
+                <span className="text-gradient">7 days</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                No complex implementation. No training required. Just connect your tools 
-                and start getting insights.
+                Connect your tools, establish team baselines, detect shifts, and measure whether interventions work.
               </p>
             </div>
           </div>
@@ -155,7 +150,7 @@ const HowItWorksPage = () => {
                 Works with tools you already use
               </h2>
               <p className="text-muted-foreground">
-                Simple OAuth connections. No API keys or IT support needed.
+                Simple OAuth connections. No API keys required.
               </p>
             </div>
 
@@ -186,7 +181,7 @@ const HowItWorksPage = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-16">
                 <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                  Built on Trust
+                  Built on trust
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
                   Privacy is non-negotiable
@@ -199,10 +194,10 @@ const HowItWorksPage = () => {
                     <Shield className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="font-display font-semibold text-foreground mb-2">
-                    No Individual Tracking
+                    Team-level only
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    We never identify individual employees. All signals are aggregated at the team level.
+                    Signals are aggregated at team level with minimum thresholds.
                   </p>
                 </div>
                 <div className="text-center">
@@ -210,10 +205,10 @@ const HowItWorksPage = () => {
                     <Clock className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="font-display font-semibold text-foreground mb-2">
-                    No Message Reading
+                    No message content access
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    We analyze patterns and metadata only. We never read the content of any messages.
+                    We analyze patterns and metadata only, never message content.
                   </p>
                 </div>
                 <div className="text-center">
@@ -221,10 +216,10 @@ const HowItWorksPage = () => {
                     <BarChart3 className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="font-display font-semibold text-foreground mb-2">
-                    Transparent to Employees
+                    Transparent rollout
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Employees can see exactly what data is collected. We encourage transparency announcements.
+                    We provide employee-facing explanations so HR can launch with clarity and trust.
                   </p>
                 </div>
               </div>
@@ -238,14 +233,14 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See SignalTrue in action
+                See the workflow in a real demo
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Book a personalized demo and we'll show you exactly how it works with your tools.
+                We'll show you the signals, privacy model, and how interventions are tracked.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button variant="hero" size="xl">
-                  Book a Demo
+                  Get a Demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button variant="hero-outline" size="xl">

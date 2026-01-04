@@ -19,54 +19,54 @@ import {
 const features = [
   {
     icon: MessageSquareWarning,
-    title: "Communication Health",
-    description: "Detect fragmentation, urgency spikes, and coordination bottlenecks across team channels.",
+    title: "Meeting Load and Fragmentation",
+    description: "See when meeting volume and back-to-back scheduling start squeezing execution time.",
   },
   {
     icon: CalendarClock,
-    title: "Workload Patterns",
-    description: "Track meeting density, after-hours work, and focus time erosion automatically.",
+    title: "After-hours Load",
+    description: "Track late-night and weekend activity trends that often precede sustained burnout risk.",
+  },
+  {
+    icon: Shield,
+    title: "Focus Time Erosion",
+    description: "Detect shrinking uninterrupted blocks during working hours before delivery slows down.",
+  },
+  {
+    icon: Zap,
+    title: "Response Drag",
+    description: "Spot rising response times that signal overload or breakdowns in coordination.",
+  },
+  {
+    icon: Users2,
+    title: "Participation Drift",
+    description: "Identify drops in team contribution patterns and uneven load distribution at team level.",
   },
   {
     icon: BarChart3,
     title: "Team Comparisons",
-    description: "Benchmark teams against healthy baselines and identify which need intervention first.",
-  },
-  {
-    icon: Zap,
-    title: "Early Warning System",
-    description: "Get alerts 2-4 weeks before burnout symptoms become visible to managers.",
-  },
-  {
-    icon: Shield,
-    title: "Privacy by Design",
-    description: "No individual tracking. No message content reading. Only anonymized team-level signals.",
-  },
-  {
-    icon: Users2,
-    title: "Works for Any Team",
-    description: "Flat teams, hierarchies, remote or hybrid — SignalTrue adapts to your structure.",
+    description: "Prioritize support by showing which teams deviate most from their own baselines.",
   },
 ];
 
 const capabilities = [
   {
     icon: Eye,
-    title: "Visibility Without Surveillance",
-    description: "See team health patterns without reading messages or tracking individuals. Privacy-first design that employees can trust.",
-    features: ["Team-level signals only", "No message content access", "Anonymized data aggregation", "Employee-friendly transparency"],
+    title: "Visibility without surveillance",
+    description: "See team health patterns without reading messages or tracking individuals.",
+    features: ["Team-level signals only", "No message content access", "Minimum team-size thresholds", "Employee-friendly transparency"],
   },
   {
     icon: LineChart,
-    title: "Predictive Analytics",
-    description: "Our AI learns what healthy looks like for your organization and flags deviations before they become problems.",
-    features: ["Custom baselines per team", "Trend analysis over time", "Risk scoring algorithms", "Seasonal pattern recognition"],
+    title: "Baseline deviation detection and trend alerts",
+    description: "SignalTrue flags meaningful shifts versus each team's baseline, then tracks trends over time.",
+    features: ["Baselines per team", "Trend analysis and alerts", "Change detection vs baseline", "Seasonality-aware patterns"],
   },
   {
     icon: Lock,
-    title: "Enterprise-Grade Security",
-    description: "SOC 2 Type II certified with GDPR compliance. Your data stays secure and under your control.",
-    features: ["SOC 2 Type II certified", "GDPR compliant", "Data residency options", "SSO integration"],
+    title: "Security and compliance foundations",
+    description: "Designed for GDPR-first organizations with clear data handling and access controls.",
+    features: ["Encryption in transit and at rest", "Role-based access", "Data retention and deletion controls", "SSO/SCIM available"],
   },
 ];
 
@@ -84,12 +84,13 @@ const Product = () => {
                 The Product
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Team health insights that{" "}
-                <span className="text-gradient">HR can trust</span>
+                Team Health Intelligence.{" "}
+                <span className="text-gradient">Built for HR. Safe for employees.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                SignalTrue connects to your existing tools and surfaces early warning signs 
-                of burnout, disengagement, and team dysfunction.
+                SignalTrue connects to your existing tools and surfaces team-level signals 
+                of overload risk and collaboration breakdown, then guides action with a 
+                diagnose-and-measure workflow.
               </p>
             </div>
 
@@ -105,13 +106,13 @@ const Product = () => {
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                What SignalTrue Detects
+                Signals
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                Early warning signs that matter to HR
+                What SignalTrue measures
               </h2>
               <p className="text-muted-foreground">
-                We translate complex behavioral data into actionable insights you can act on today.
+                Every signal is explainable. No black-box individual scoring. No message content access.
               </p>
             </div>
 
@@ -142,7 +143,7 @@ const Product = () => {
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                Capabilities
+                How it helps
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
                 Built for HR, trusted by employees
@@ -191,14 +192,14 @@ const Product = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                Ready to see SignalTrue in action?
+                See SignalTrue in action
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Book a personalized demo and see how we can help protect your teams.
+                Book a demo and we'll walk you through signals, privacy model, and the action workflow.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button variant="hero" size="xl">
-                  Book a Demo
+                  Get a Demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button variant="hero-outline" size="xl">

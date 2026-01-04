@@ -10,33 +10,33 @@ import {
 const features = [
   {
     icon: MessageSquareWarning,
-    title: "Communication Health",
-    description: "Detect fragmentation, urgency spikes, and coordination bottlenecks across team channels.",
+    title: "Meeting Load and Fragmentation",
+    description: "See when meeting volume and back-to-back scheduling start squeezing execution time.",
   },
   {
     icon: CalendarClock,
-    title: "Workload Patterns",
-    description: "Track meeting density, after-hours work, and focus time erosion automatically.",
+    title: "After-hours Load",
+    description: "Track late-night and weekend activity trends that often precede sustained burnout risk.",
+  },
+  {
+    icon: Shield,
+    title: "Focus Time Erosion",
+    description: "Detect shrinking uninterrupted blocks during working hours before delivery slows down.",
+  },
+  {
+    icon: Zap,
+    title: "Response Drag",
+    description: "Spot rising response times that signal overload or breakdowns in coordination.",
+  },
+  {
+    icon: Users2,
+    title: "Participation Drift",
+    description: "Identify drops in team contribution patterns and uneven load distribution at team level.",
   },
   {
     icon: BarChart3,
     title: "Team Comparisons",
-    description: "Benchmark teams against healthy baselines and identify which need intervention first.",
-  },
-  {
-    icon: Zap,
-    title: "Early Warning System",
-    description: "Get alerts 2-4 weeks before burnout symptoms become visible to managers.",
-  },
-  {
-    icon: Shield,
-    title: "Privacy by Design",
-    description: "No individual tracking. No message content reading. Only anonymized team-level signals.",
-  },
-  {
-    icon: Users2,
-    title: "Works for Any Team",
-    description: "Flat teams, hierarchies, remote or hybrid — SignalTrue adapts to your structure.",
+    description: "Prioritize support by showing which teams deviate most from their own baselines.",
   },
 ];
 
@@ -47,13 +47,13 @@ const Features = () => {
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-            What SignalTrue Detects
+            Signals
           </p>
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-            Early warning signs that matter to HR
+            Leading indicators HR can act on
           </h2>
           <p className="text-muted-foreground">
-            We translate complex behavioral data into actionable insights you can act on today.
+            We measure team-level patterns only. No individual dashboards. No message content.
           </p>
         </div>
 

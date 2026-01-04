@@ -4,26 +4,26 @@ const steps = [
   {
     number: "01",
     icon: Link2,
-    title: "Connect Your Tools",
-    description: "Securely connect Slack and Google Calendar. No individual tracking — only team-level patterns.",
+    title: "Connect your tools",
+    description: "Connect Slack or Teams and your calendar using OAuth. We never see your passwords.",
   },
   {
     number: "02",
     icon: Brain,
-    title: "AI Analyzes Patterns",
-    description: "Our AI learns healthy baselines for your teams and detects early warning signs of overload.",
+    title: "Establish a baseline",
+    description: "SignalTrue builds a baseline for each team so changes are measured against what is normal for them.",
   },
   {
     number: "03",
     icon: Bell,
-    title: "Get Proactive Alerts",
-    description: "Receive actionable alerts before problems become visible. Know which teams need support.",
+    title: "Review signals",
+    description: "See which teams shifted, what changed, and where the risk is building.",
   },
   {
     number: "04",
     icon: TrendingUp,
-    title: "Track Improvements",
-    description: "See how interventions impact team health over time. Build a culture of sustainable performance.",
+    title: "Take action and track impact",
+    description: "Choose an intervention, assign an owner, and track whether signals improve over time.",
   },
 ];
 
@@ -34,13 +34,13 @@ const HowItWorks = () => {
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-            How It Works
+            How it works
           </p>
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-            From connection to clarity in four simple steps
+            Detect. Diagnose. Intervene. Measure.
           </h2>
           <p className="text-muted-foreground">
-            Get started in minutes, not months. No complex setup or training required.
+            A repeatable team health workflow HR and managers can actually run.
           </p>
         </div>
 

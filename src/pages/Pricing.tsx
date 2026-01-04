@@ -6,51 +6,50 @@ import { CheckCircle, ArrowRight, HelpCircle } from "lucide-react";
 const plans = [
   {
     name: "Starter",
-    description: "For small teams getting started with team health monitoring",
+    description: "For small pilots getting started with team health signals",
     price: "€99",
     period: "/month",
     highlight: false,
     features: [
       "Up to 50 employees",
       "Slack integration",
-      "Weekly health reports",
+      "Weekly signals and reports",
       "Email alerts",
       "Basic dashboards",
       "Email support",
     ],
-    cta: "Start Free Trial",
+    cta: "Start Pilot",
   },
   {
     name: "Professional",
-    description: "For growing organizations that need deeper insights",
+    description: "For growing organizations that need deeper signals and comparisons",
     price: "€199",
     period: "/month",
     highlight: true,
     features: [
       "Up to 250 employees",
       "Slack + Google Calendar",
-      "Real-time monitoring",
+      "Weekly signals and trend monitoring",
       "Custom alert thresholds",
-      "Team comparison benchmarks",
+      "Team comparisons",
       "API access",
       "Priority support",
     ],
-    cta: "Start Free Trial",
+    cta: "Start Pilot",
   },
   {
     name: "Enterprise",
-    description: "For large organizations with advanced security needs",
+    description: "For larger organizations with advanced security and rollout needs",
     price: "Custom",
     period: "",
     highlight: false,
     features: [
       "Unlimited employees",
-      "All integrations",
-      "Predictive analytics",
+      "All integrations available",
       "Custom reporting",
       "SSO & SCIM",
-      "Dedicated CSM",
-      "SLA guarantee",
+      "Dedicated support",
+      "SLA options",
       "On-premise option",
     ],
     cta: "Contact Sales",
@@ -59,24 +58,24 @@ const plans = [
 
 const faqs = [
   {
-    question: "How does the free trial work?",
-    answer: "You get 14 days of full access to all features in your chosen plan. No credit card required. Cancel anytime with no obligation.",
+    question: "Do you track individuals?",
+    answer: "No. SignalTrue shows team-level analytics only and enforces minimum team-size thresholds.",
+  },
+  {
+    question: "Do you read message content?",
+    answer: "No. We analyze patterns and metadata, not message content.",
   },
   {
     question: "What data do you collect?",
-    answer: "We only collect team-level behavioral patterns from Slack and Calendar. We never read message content or track individuals. All data is anonymized and aggregated.",
+    answer: "Team-level collaboration and calendar patterns needed to compute signals like meeting load, after-hours activity, focus time, and response trends.",
   },
   {
     question: "Is SignalTrue GDPR compliant?",
-    answer: "Yes. We're fully GDPR compliant with data processing agreements, EU data residency options, and the right to deletion for all data.",
+    answer: "SignalTrue is built for GDPR-first organizations. We provide clear data processing terms and deletion controls.",
   },
   {
     question: "Can I change plans later?",
-    answer: "Absolutely. You can upgrade or downgrade your plan at any time. Changes take effect on your next billing cycle.",
-  },
-  {
-    question: "Do you offer discounts for non-profits?",
-    answer: "Yes! Non-profits and educational institutions get 30% off all plans. Contact us to apply the discount.",
+    answer: "Yes. You can upgrade or downgrade at any time. Changes apply from the next billing cycle.",
   },
 ];
 
@@ -94,12 +93,11 @@ const Pricing = () => {
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Simple, transparent{" "}
-                <span className="text-gradient">pricing</span>
+                Pricing that scales with rollout,{" "}
+                <span className="text-gradient">not surveillance</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                Start free, scale as you grow. All plans include a 14-day free trial 
-                with no credit card required.
+                Start with a pilot, then expand. All plans include privacy-first team-level analytics.
               </p>
             </div>
           </div>
@@ -166,6 +164,21 @@ const Pricing = () => {
           </div>
         </section>
 
+        {/* Pilot Recommendation Section */}
+        <section className="py-16 bg-secondary/10">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold mb-4">
+                Recommended pilot approach
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Most teams start with a 4-week pilot across 2 to 4 teams to establish baselines 
+                and test interventions with measurable outcomes.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-6">
@@ -207,10 +220,10 @@ const Pricing = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                Still have questions?
+                Need help choosing a plan?
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Our team is happy to walk you through SignalTrue and answer any questions.
+                We'll recommend a pilot size and rollout approach based on your tools and org structure.
               </p>
               <Button variant="hero" size="xl">
                 Schedule a Call

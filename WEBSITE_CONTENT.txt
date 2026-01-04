@@ -1,0 +1,442 @@
+SIGNALTRUE WEBSITE CONTENT
+==========================
+
+CATEGORY: TEAM HEALTH INTELLIGENCE
+WORKFLOW: DETECT → DIAGNOSE → INTERVENE → MEASURE
+
+═══════════════════════════════════════════════════════
+PAGE: HOMEPAGE (/)
+═══════════════════════════════════════════════════════
+
+TRUST BADGES:
+- Team-level analytics
+- No message content access
+- GDPR-first
+
+HEADING 1:
+See which teams are drifting toward overload before it becomes attrition.
+
+SUBHEADING:
+SignalTrue turns collaboration and calendar patterns into team-level signals. HR can spot meeting overload, after-hours creep, and coordination drag early, then guide managers to intervene and track recovery.
+
+CTA BUTTONS:
+- Get a Demo
+- See How It Works
+
+SOCIAL PROOF:
+HEADING: Designed for HR teams who need leading indicators, not another survey.
+SUPPORTING LINE: Works best for organizations using Slack or Teams plus Google or Outlook calendars.
+
+---
+
+SECTION: WHAT YOU GET EACH WEEK
+
+HEADING:
+What you get each week
+
+BULLETS:
+- A simple team health snapshot across the organization
+- The top signals that changed vs each team's baseline
+- Recommended interventions managers can execute
+- Before/after tracking to show whether changes worked
+
+---
+
+SIGNALS SECTION:
+
+SECTION LABEL: Signals
+HEADING 2: Leading indicators HR can act on
+SUBHEADING: We measure team-level patterns only. No individual dashboards. No message content.
+
+SIGNAL 1:
+Meeting Load and Fragmentation
+See when meeting volume and back-to-back scheduling start squeezing execution time.
+
+SIGNAL 2:
+After-hours Load
+Track late-night and weekend activity trends that often precede sustained burnout risk.
+
+SIGNAL 3:
+Focus Time Erosion
+Detect shrinking uninterrupted blocks during working hours before delivery slows down.
+
+SIGNAL 4:
+Response Drag
+Spot rising response times that signal overload or breakdowns in coordination.
+
+SIGNAL 5:
+Participation Drift
+Identify drops in team contribution patterns and uneven load distribution at team level.
+
+SIGNAL 6:
+Team Comparisons
+Prioritize support by showing which teams deviate most from their own baselines.
+
+---
+
+HOW IT WORKS SECTION:
+
+SECTION LABEL: How it works
+HEADING 2: Detect. Diagnose. Intervene. Measure.
+SUBHEADING: A repeatable team health workflow HR and managers can actually run.
+
+STEP 01:
+Connect your tools
+Connect Slack or Teams and your calendar using OAuth. We never see your passwords.
+
+STEP 02:
+Establish a baseline
+SignalTrue builds a baseline for each team so changes are measured against what is normal for them.
+
+STEP 03:
+Review signals
+See which teams shifted, what changed, and where the risk is building.
+
+STEP 04:
+Take action and track impact
+Choose an intervention, assign an owner, and track whether signals improve over time.
+
+---
+
+CTA SECTION:
+
+HEADING 2: Protect performance without breaking trust
+SUBHEADING: Get team-level early warnings, guide practical interventions, and show outcomes leadership can understand.
+
+CTA BUTTONS:
+- Get a Demo
+- View Product
+
+BENEFITS:
+- Setup in minutes
+- Team-level signals only
+- No message content access
+- GDPR-first approach
+
+
+═══════════════════════════════════════════════════════
+PAGE: PRODUCT (/product)
+═══════════════════════════════════════════════════════
+
+SECTION LABEL: The Product
+HEADING 1: Team Health Intelligence. Built for HR. Safe for employees.
+SUBHEADING: SignalTrue connects to your existing tools and surfaces team-level signals of overload risk and collaboration breakdown, then guides action with a diagnose-and-measure workflow.
+
+---
+
+SIGNALS SECTION:
+
+SECTION LABEL: Signals
+HEADING 2: What SignalTrue measures
+SUBHEADING: Every signal is explainable. No black-box individual scoring. No message content access.
+
+SIGNAL 1:
+Meeting Load and Fragmentation
+See when meeting volume and back-to-back scheduling start squeezing execution time.
+
+SIGNAL 2:
+After-hours Load
+Track late-night and weekend activity trends that often precede sustained burnout risk.
+
+SIGNAL 3:
+Focus Time Erosion
+Detect shrinking uninterrupted blocks during working hours before delivery slows down.
+
+SIGNAL 4:
+Response Drag
+Spot rising response times that signal overload or breakdowns in coordination.
+
+SIGNAL 5:
+Participation Drift
+Identify drops in team contribution patterns and uneven load distribution at team level.
+
+SIGNAL 6:
+Team Comparisons
+Prioritize support by showing which teams deviate most from their own baselines.
+
+---
+
+CAPABILITIES SECTION:
+
+SECTION LABEL: How it helps
+HEADING 2: Built for HR, trusted by employees
+
+CAPABILITY 1:
+Visibility without surveillance
+See team health patterns without reading messages or tracking individuals.
+- Team-level signals only
+- No message content access
+- Minimum team-size thresholds
+- Employee-friendly transparency
+
+CAPABILITY 2:
+Baseline deviation detection and trend alerts
+SignalTrue flags meaningful shifts versus each team's baseline, then tracks trends over time.
+- Baselines per team
+- Trend analysis and alerts
+- Change detection vs baseline
+- Seasonality-aware patterns
+
+CAPABILITY 3:
+Security and compliance foundations
+Designed for GDPR-first organizations with clear data handling and access controls.
+- Encryption in transit and at rest
+- Role-based access
+- Data retention and deletion controls
+- SSO/SCIM available
+
+---
+
+CTA SECTION:
+
+HEADING 2: See SignalTrue in action
+SUBHEADING: Book a demo and we'll walk you through signals, privacy model, and the action workflow.
+
+CTA BUTTONS:
+- Get a Demo
+- View Pricing
+
+
+═══════════════════════════════════════════════════════
+PAGE: PRICING (/pricing)
+═══════════════════════════════════════════════════════
+
+SECTION LABEL: Pricing
+HEADING 1: Pricing that scales with rollout, not surveillance
+SUBHEADING: Start with a pilot, then expand. All plans include privacy-first team-level analytics.
+
+---
+
+PRICING PLANS:
+
+PLAN 1: Starter
+For small pilots getting started with team health signals
+€99/month
+- Up to 50 employees
+- Slack integration
+- Weekly signals and reports
+- Email alerts
+- Basic dashboards
+- Email support
+CTA: Start Pilot
+
+PLAN 2: Professional (Most Popular)
+For growing organizations that need deeper signals and comparisons
+€199/month
+- Up to 250 employees
+- Slack + Google Calendar
+- Weekly signals and trend monitoring
+- Custom alert thresholds
+- Team comparisons
+- API access
+- Priority support
+CTA: Start Pilot
+
+PLAN 3: Enterprise
+For larger organizations with advanced security and rollout needs
+Custom
+- Unlimited employees
+- All integrations available
+- Custom reporting
+- SSO & SCIM
+- Dedicated support
+- SLA options
+- On-premise option
+CTA: Contact Sales
+
+---
+
+PILOT RECOMMENDATION SECTION:
+
+HEADING 2: Recommended pilot approach
+BODY: Most teams start with a 4-week pilot across 2 to 4 teams to establish baselines and test interventions with measurable outcomes.
+
+---
+
+FAQ SECTION:
+
+SECTION LABEL: FAQ
+HEADING 2: Frequently asked questions
+
+Q1: Do you track individuals?
+A: No. SignalTrue shows team-level analytics only and enforces minimum team-size thresholds.
+
+Q2: Do you read message content?
+A: No. We analyze patterns and metadata, not message content.
+
+Q3: What data do you collect?
+A: Team-level collaboration and calendar patterns needed to compute signals like meeting load, after-hours activity, focus time, and response trends.
+
+Q4: Is SignalTrue GDPR compliant?
+A: SignalTrue is built for GDPR-first organizations. We provide clear data processing terms and deletion controls.
+
+Q5: Can I change plans later?
+A: Yes. You can upgrade or downgrade at any time. Changes apply from the next billing cycle.
+
+---
+
+CTA SECTION:
+
+HEADING 2: Need help choosing a plan?
+SUBHEADING: We'll recommend a pilot size and rollout approach based on your tools and org structure.
+CTA: Schedule a Call
+
+
+═══════════════════════════════════════════════════════
+PAGE: HOW IT WORKS (/how-it-works)
+═══════════════════════════════════════════════════════
+
+SECTION LABEL: How it works
+HEADING 1: From setup to useful signals in 7 days
+SUBHEADING: Connect your tools, establish team baselines, detect shifts, and measure whether interventions work.
+
+---
+
+TIMELINE STEPS:
+
+STEP 01: Connect your tools
+Connect Slack or Teams and your calendar using OAuth. SignalTrue never sees your passwords.
+- Fast OAuth setup
+- Works with existing permissions
+- Add more tools anytime
+
+STEP 02: Establish baselines
+SignalTrue builds a baseline for each team so alerts are based on change, not generic benchmarks.
+- Baselines per team
+- Trend comparison over time
+- Adjusts as patterns evolve
+
+STEP 03: Detect meaningful shifts
+Signals trigger when patterns deviate from baseline in a way that often precedes overload, disengagement, or coordination breakdown.
+- Weekly signals
+- Severity-based alerts
+- Clear "what changed" summaries
+
+STEP 04: Intervene and measure
+Choose an intervention, assign an owner, and track before/after changes to prove impact.
+- Intervention tracking
+- Before/after comparisons
+- Executive-ready summaries
+
+---
+
+INTEGRATIONS SECTION:
+
+SECTION LABEL: Integrations
+HEADING 2: Works with tools you already use
+SUBHEADING: Simple OAuth connections. No API keys required.
+
+INTEGRATION 1:
+Slack
+Team-level collaboration patterns
+
+INTEGRATION 2:
+Google Calendar
+Meeting load and focus-time signals
+
+INTEGRATION 3:
+Microsoft Teams
+Planned
+
+INTEGRATION 4:
+Outlook Calendar
+Planned
+
+---
+
+TRUST SECTION:
+
+SECTION LABEL: Built on trust
+HEADING 2: Privacy is non-negotiable
+
+TRUST PILLAR 1:
+Team-level only
+Signals are aggregated at team level with minimum thresholds.
+
+TRUST PILLAR 2:
+No message content access
+We analyze patterns and metadata only, never message content.
+
+TRUST PILLAR 3:
+Transparent rollout
+We provide employee-facing explanations so HR can launch with clarity and trust.
+
+---
+
+CTA SECTION:
+
+HEADING 2: See the workflow in a real demo
+SUBHEADING: We'll show you the signals, privacy model, and how interventions are tracked.
+
+CTA BUTTONS:
+- Get a Demo
+- View Pricing
+
+
+═══════════════════════════════════════════════════════
+PAGE: ABOUT (/about)
+═══════════════════════════════════════════════════════
+
+SECTION LABEL: About
+HEADING 1: We build team health tools that respect privacy
+SUBHEADING: SignalTrue gives HR leading indicators of overload risk using team-level analytics, without turning collaboration tools into surveillance.
+
+---
+
+STORY SECTION:
+
+SECTION LABEL: Why we built SignalTrue
+HEADING 2: Leading indicators for modern work
+
+BODY:
+Teams drift into overload long before it shows up in engagement scores or exit interviews. The signals are often visible in meeting load, after-hours activity, and coordination friction. SignalTrue was built to make those patterns visible at team level, then guide action with a simple loop: Detect → Diagnose → Intervene → Measure.
+
+---
+
+PRINCIPLES SECTION:
+
+SECTION LABEL: Our principles
+HEADING 2: What we believe
+
+PRINCIPLE 1:
+Trust and transparency
+Employees deserve clarity about what is collected and why.
+
+PRINCIPLE 2:
+Action over dashboards
+Insights matter only if managers can use them to change outcomes.
+
+PRINCIPLE 3:
+Privacy by design
+Team-level analytics only. No message content. No individual scoring.
+
+---
+
+CTA SECTION:
+
+HEADING 2: Talk to us
+SUBHEADING: If you're exploring team-level leading indicators for HR, we'd love to show you how SignalTrue works.
+
+CTA BUTTONS:
+- Get a Demo
+- See How It Works
+
+
+═══════════════════════════════════════════════════════
+PAGE: 404 NOT FOUND (/*)
+═══════════════════════════════════════════════════════
+
+HEADING 1:
+This page drifted off course.
+
+BODY:
+The link is broken or the page moved. Use the navigation to get back on track.
+
+CTA BUTTONS:
+- Go to Homepage
+- Get a Demo
+
+
+═══════════════════════════════════════════════════════
+END OF CONTENT
+═══════════════════════════════════════════════════════

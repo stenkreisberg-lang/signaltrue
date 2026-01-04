@@ -2,10 +2,10 @@ import { Button } from "../components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 
 const benefits = [
-  "Free 14-day trial",
-  "No credit card required",
-  "Setup in under 10 minutes",
-  "Cancel anytime",
+  "Setup in minutes",
+  "Team-level signals only",
+  "No message content access",
+  "GDPR-first approach",
 ];
 
 const CTASection = () => {
@@ -18,22 +18,22 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            Stop losing your best people to{" "}
-            <span className="text-gradient">preventable burnout</span>
+            Protect performance without{" "}
+            <span className="text-gradient">breaking trust</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Join HR leaders who are using early warning signals to protect their teams 
-            and reduce turnover.
+            Get team-level early warnings, guide practical interventions, 
+            and show outcomes leadership can understand.
           </p>
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Button variant="hero" size="xl">
-              Start Free Trial
+              Get a Demo
               <ArrowRight className="w-5 h-5" />
             </Button>
             <Button variant="hero-outline" size="xl">
-              Schedule a Demo
+              View Product
             </Button>
           </div>
 

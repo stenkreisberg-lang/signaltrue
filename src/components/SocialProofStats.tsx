@@ -1,19 +1,15 @@
-const stats = [
+const benefits = [
   {
-    value: "83%",
-    label: "of HR leaders say early warnings would have prevented their last regrettable departure",
+    title: "A simple team health snapshot across the organization",
   },
   {
-    value: "42%",
-    label: "average reduction in voluntary turnover for teams using SignalTrue",
+    title: "The top signals that changed vs each team's baseline",
   },
   {
-    value: "14 days",
-    label: "average lead time on burnout detection before visible symptoms",
+    title: "Recommended interventions managers can execute",
   },
   {
-    value: "< 5 min",
-    label: "weekly time investment for team health monitoring",
+    title: "Before/after tracking to show whether changes worked",
   },
 ];
 
@@ -21,18 +17,21 @@ const SocialProofStats = () => {
   return (
     <section className="py-20 bg-secondary/30 border-y border-border/50">
       <div className="container mx-auto px-6">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h2 className="text-2xl sm:text-3xl font-display font-bold mb-4">
+            What you get each week
+          </h2>
+        </div>
+        
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {stats.map((stat, index) => (
+          {benefits.map((benefit, index) => (
             <div 
               key={index} 
-              className="text-center animate-slide-up"
+              className="text-center animate-slide-up p-6 rounded-2xl bg-card border border-border/50"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <p className="text-4xl lg:text-5xl font-display font-bold text-gradient mb-3">
-                {stat.value}
-              </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {stat.label}
+                {benefit.title}
               </p>
             </div>
           ))}
