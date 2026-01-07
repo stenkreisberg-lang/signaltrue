@@ -35,6 +35,8 @@ const Register = () => {
       // Store token
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("orgId", data.user.orgId);
+      localStorage.setItem("teamId", data.user.teamId);
 
       // Redirect to dashboard
       navigate("/app/overview");
