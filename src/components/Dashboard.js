@@ -5,6 +5,7 @@ import OneOnOneTimeline from './OneOnOneTimeline';
 import BenchmarkComparison from './BenchmarkComparison';
 import AdminExportPanel from './AdminExportPanel';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
+import LoopClosingDashboard from './LoopClosingDashboard';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -175,6 +176,7 @@ function Dashboard() {
         {/* Engagement Change Alerts (Drift Explainability) */}
         {teamId && (
           <>
+            <LoopClosingDashboard teamId={teamId} />
             <DriftAlerts teamId={teamId} />
             <PlaybookRecommendations teamId={teamId} />
             <OneOnOneTimeline teamId={teamId} userId={user?._id} />

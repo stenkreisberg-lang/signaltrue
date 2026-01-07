@@ -80,6 +80,7 @@ import privacyRoutes from "./routes/privacy.js";
 import comparisonsRoutes from "./routes/comparisons.js";
 import bdiRoutes from "./routes/bdiRoutes.js";
 import insightsRoutes from "./routes/insights.js";
+import loopClosingRoutes from "./routes/loopClosingRoutes.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -197,6 +198,7 @@ async function main() {
     app.use('/api/drift-events', driftEventsRoutes);
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
     app.use('/api/insights', insightsRoutes);
+    app.use('/api/loop-closing', loopClosingRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {
