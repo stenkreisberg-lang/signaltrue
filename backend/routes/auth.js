@@ -425,13 +425,38 @@ router.post('/create-master-admin', async (req, res) => {
     });
     await user.save();
 
+    // Create a default organization for the master admin
+    const org = new Organization({
+      name: 'Master Admin Organization',
+      domain: email.split('@')[1],
+      ownerId: user._id
+    });
+    await org.save();
+
+    // Create a default team for the master admin
+    const team = new Team({
+      name: 'Master Admin Team',
+      organizationId: org._id,
+      members: [{
+        userId: user._id,
+        role: 'admin',
+        joinedAt: new Date()
+      }]
+    });
+    await team.save();
+
+    // Update user with org and team references
+    user.orgId = org._id;
+    user.teamId = team._id;
+    await user.save();
+
     const token = jwt.sign(
       {
         userId: user._id,
         email: user.email,
         role: user.role,
-        teamId: user.teamId,
-        orgId: user.orgId,
+        teamId: team._id,
+        orgId: org._id,
         isMasterAdmin: user.isMasterAdmin
       },
       JWT_SECRET,
@@ -446,6 +471,8 @@ router.post('/create-master-admin', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        orgId: org._id,
+        teamId: team._id,
         isMasterAdmin: user.isMasterAdmin
       }
     });
