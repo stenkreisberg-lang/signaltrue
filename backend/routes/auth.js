@@ -362,4 +362,97 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Create master admin - PUBLIC endpoint for initial setup
+// POST /api/auth/create-master-admin
+// Body: { email, password, name, secretKey }
+router.post('/create-master-admin', async (req, res) => {
+  try {
+    const { email, password, name, secretKey } = req.body;
+    
+    // Simple secret key check (can be changed to env variable)
+    const MASTER_ADMIN_SECRET = process.env.MASTER_ADMIN_SECRET || 'signaltrue-master-2026';
+    
+    if (secretKey !== MASTER_ADMIN_SECRET) {
+      return res.status(403).json({ message: 'Invalid secret key' });
+    }
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Email, password, and name are required' });
+    }
+
+    // Check if user exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      // Update existing user to master admin
+      existing.role = 'master_admin';
+      existing.isMasterAdmin = true;
+      existing.password = password; // Will be hashed by pre-save hook
+      await existing.save();
+
+      const token = jwt.sign(
+        {
+          userId: existing._id,
+          email: existing.email,
+          role: existing.role,
+          teamId: existing.teamId,
+          orgId: existing.orgId,
+          isMasterAdmin: existing.isMasterAdmin
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return res.status(200).json({
+        message: 'User upgraded to master admin',
+        token,
+        user: {
+          id: existing._id,
+          email: existing.email,
+          name: existing.name,
+          role: existing.role,
+          isMasterAdmin: existing.isMasterAdmin
+        }
+      });
+    }
+
+    // Create new master admin
+    const user = new User({
+      email,
+      password,
+      name,
+      role: 'master_admin',
+      isMasterAdmin: true
+    });
+    await user.save();
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        teamId: user.teamId,
+        orgId: user.orgId,
+        isMasterAdmin: user.isMasterAdmin
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: 'Master admin created successfully',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isMasterAdmin: user.isMasterAdmin
+      }
+    });
+  } catch (error) {
+    console.error('Create master admin error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
