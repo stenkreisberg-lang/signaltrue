@@ -1,5 +1,6 @@
 import Organization from '../models/organizationModel.js';
 import { decryptString } from '../utils/crypto.js';
+import { refreshAllTeamsFromGoogleChat } from './googleChatService.js';
 
 // Placeholder: In a future iteration, pull real data from Google APIs using org.integrations.google.accessToken
 export async function pullGoogleOrgData(org) {
@@ -88,6 +89,7 @@ export async function pullAllConnectedOrgs() {
   const orgs = await Organization.find({
     $or: [
       { 'integrations.google.accessToken': { $exists: true, $ne: '' } },
+      { 'integrations.googleChat.accessToken': { $exists: true, $ne: '' } },
       { 'integrations.microsoft.accessToken': { $exists: true, $ne: '' } },
     ],
   });
@@ -95,4 +97,7 @@ export async function pullAllConnectedOrgs() {
     await pullGoogleOrgData(org);
     await pullMicrosoftOrgData(org);
   }
+  
+  // Pull Google Chat data for all teams
+  await refreshAllTeamsFromGoogleChat();
 }

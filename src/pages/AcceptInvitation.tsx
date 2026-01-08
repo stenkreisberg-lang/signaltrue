@@ -1,45 +1,83 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Activity } from "lucide-react";
 
-const Register = () => {
+const AcceptInvitation = () => {
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [company, setCompany] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [invitationData, setInvitationData] = useState<any>(null);
   const navigate = useNavigate();
+
+  const token = searchParams.get("token");
+
+  useEffect(() => {
+    // You could fetch invitation details here to show company name, role, etc.
+    // For now, we'll just validate the token exists
+    if (!token) {
+      setError("Invalid invitation link - no token provided");
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!token) {
+      setError("Invalid invitation link");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
+      const response = await fetch(`${apiUrl}/api/onboarding/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, company }),
+        body: JSON.stringify({ token, name, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.message || "Failed to accept invitation");
       }
 
-      // Store token
+      // Store token and user data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("orgId", data.user.orgId);
-      localStorage.setItem("teamId", data.user.teamId);
+      if (data.user.teamId) {
+        localStorage.setItem("teamId", data.user.teamId);
+      }
 
-      // Redirect to dashboard (will route based on role/onboarding status)
-      navigate("/dashboard");
+      // Redirect based on role
+      if (data.user.role === "it_admin") {
+        // IT admin goes to integrations setup
+        navigate("/dashboard?onboarding=integrations");
+      } else if (data.user.role === "hr_admin") {
+        // HR admin goes to main dashboard
+        navigate("/dashboard");
+      } else {
+        // Default to dashboard
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -58,11 +96,11 @@ const Register = () => {
           <span className="text-2xl font-display font-bold">SignalTrue</span>
         </Link>
 
-        {/* Register Form */}
+        {/* Accept Invitation Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">Get started</h1>
+          <h1 className="text-2xl font-bold mb-2">Accept Your Invitation</h1>
           <p className="text-muted-foreground mb-6">
-            Create your account
+            Set up your account to get started
           </p>
 
           {error && (
@@ -85,60 +123,50 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Company</label>
-              <Input
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="Your Company"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium mb-2">Password</label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder="••••••••"
                 required
                 disabled={loading}
+                minLength={6}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Confirm Password</label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={loading}
+                minLength={6}
               />
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || !token}
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? "Creating Account..." : "Accept Invitation"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>
   );
 };
 
-export default Register;
+export default AcceptInvitation;

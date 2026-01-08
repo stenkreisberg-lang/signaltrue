@@ -10,7 +10,8 @@ import HowItWorksPage from "./pages/HowItWorksPage";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Setup from "./pages/Setup";
+import AcceptInvitation from "./pages/AcceptInvitation";
+import DashboardRouter from "./pages/DashboardRouter";
 import Overview from "./pages/app/Overview";
 import Insights from "./pages/app/Insights";
 import Signals from "./pages/app/Signals";
@@ -34,7 +35,8 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/setup" element={<Setup />} />
+          <Route path="/onboarding" element={<AcceptInvitation />} />
+          <Route path="/dashboard" element={<DashboardRouter />} />
           <Route path="/app/overview" element={<Overview />} />
           <Route path="/app/insights" element={<Insights />} />
           <Route path="/app/signals" element={<Signals />} />

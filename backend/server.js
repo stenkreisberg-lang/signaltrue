@@ -69,6 +69,7 @@ import projectRoutes from "./routes/projects.js";
 import analyticsRoutes from "./routes/analytics.js";
 import teamRoutes from "./routes/teamRoutes.js";
 import slackRoutes from "./routes/slackRoutes.js";
+import googleChatRoutes from "./routes/googleChatRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
 import calibrationRoutes from "./routes/calibration.js";
 import signalsRoutes from "./routes/signals.js";
@@ -165,6 +166,7 @@ async function main() {
     app.use("/api/analytics", analyticsRoutes);
     app.use("/api/teams", teamRoutes);
     app.use("/api/slack", slackRoutes);
+    app.use("/api/google-chat", googleChatRoutes);
     app.use("/api/history", historyRoutes);
     app.use("/api/calibration", calibrationRoutes);
     app.use("/api/signals", signalsRoutes);

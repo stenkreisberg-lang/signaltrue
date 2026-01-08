@@ -5,6 +5,7 @@ import OneOnOneTimeline from './OneOnOneTimeline';
 import BenchmarkComparison from './BenchmarkComparison';
 import AdminExportPanel from './AdminExportPanel';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
+import GoogleChatConnect from './GoogleChatConnect';
 import LoopClosingDashboard from './LoopClosingDashboard';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
@@ -229,6 +230,10 @@ function Dashboard() {
 
           <div style={styles.card}>
             <GoogleCalendarConnect integrations={integrations} />
+          </div>
+
+          <div style={styles.card}>
+            <GoogleChatConnect integrations={integrations} />
           </div>
 
           <div style={styles.card}>

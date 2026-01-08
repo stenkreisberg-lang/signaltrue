@@ -36,8 +36,8 @@ const Login = () => {
       localStorage.setItem("orgId", data.user.orgId);
       localStorage.setItem("teamId", data.user.teamId);
 
-      // Redirect to dashboard
-      navigate("/app/overview");
+      // Redirect to dashboard (will route based on role/onboarding status)
+      navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {

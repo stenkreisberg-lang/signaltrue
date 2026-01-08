@@ -34,6 +34,22 @@ const organizationSchema = new mongoose.Schema(
         user: mongoose.Schema.Types.Mixed, // Google user info
         eventsCount: Number,
       },
+      googleChat: {
+        refreshToken: String, // encrypted
+        accessToken: String, // encrypted
+        expiry: Date,
+        email: String,
+        user: mongoose.Schema.Types.Mixed, // Google user info
+        spaces: [mongoose.Schema.Types.Mixed], // Chat spaces/rooms
+        messagesCount: Number,
+        lastPulledAt: Date,
+        sync: {
+          enabled: { type: Boolean, default: true },
+          lastSync: Date,
+          lastStatus: String,
+          lastRunAt: Date,
+        },
+      },
       microsoft: {
         scope: String, // 'outlook' or 'teams'
         refreshToken: String, // encrypted

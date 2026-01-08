@@ -120,12 +120,23 @@ router.post('/register', async (req, res) => {
       }
     }
 
+    // Determine role: First user in org becomes hr_admin, others default to viewer
+    let userRole = role || 'viewer';
+    if (!role) {
+      const existingUsersCount = await User.countDocuments({ orgId: resolvedOrgId });
+      if (existingUsersCount === 0) {
+        // This is the first user in the organization - make them HR admin
+        userRole = 'hr_admin';
+        console.log('First user in organization - assigning hr_admin role');
+      }
+    }
+
     // Create new user
     const user = new User({
       email,
       password,
       name,
-      role: role || 'viewer', // Default to 'viewer' to match schema
+      role: userRole,
       teamId: resolvedTeamId,
       orgId: resolvedOrgId,
       isMasterAdmin: false, // Explicitly set for new users

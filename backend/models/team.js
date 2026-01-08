@@ -84,6 +84,17 @@ const teamSchema = new mongoose.Schema({
     avgResponseDelayHours: { type: Number, default: 0 },
     sentiment: { type: Number, default: 0 },
   },
+  googleChatSignals: {
+    messageCount: { type: Number, default: 0 },
+    avgResponseDelayHours: { type: Number, default: 0 },
+    afterHoursCount: { type: Number, default: 0 },
+    afterHoursPercentage: { type: Number, default: 0 },
+    avgThreadDepth: { type: Number, default: 0 },
+    sentiment: { type: Number, default: 0 },
+    adHocMeetingCount: { type: Number, default: 0 },
+    estimatedMeetingHours: { type: Number, default: 0 },
+    adHocAfterHoursMeetings: { type: Number, default: 0 },
+  },
   calendarSignals: {
     meetingHoursWeek: { type: Number, default: 0 },
     afterHoursMeetings: { type: Number, default: 0 },
@@ -94,6 +105,9 @@ const teamSchema = new mongoose.Schema({
 
   // Slack channel ID for integration
   slackChannelId: { type: String },
+
+  // Google Chat space ID for integration
+  googleChatSpaceId: { type: String },
 
   // Google Calendar ID for integration
   calendarId: { type: String },

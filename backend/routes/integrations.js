@@ -49,12 +49,14 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     const available = {
       slack: !!process.env.SLACK_CLIENT_ID,
       google: !!process.env.GOOGLE_CLIENT_ID,
+      googleChat: !!process.env.GOOGLE_CLIENT_ID,
     };
 
     // --- Check Connected Status (based on data in DB) ---
     const connected = {
       slack: !!organization.integrations?.slack?.accessToken,
       google: !!user.google?.accessToken,
+      googleChat: !!organization.integrations?.googleChat?.accessToken,
     };
 
     // --- Provide Connection Details ---
@@ -66,6 +68,9 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       google: connected.google ? {
         email: user.email,
       } : null,
+      googleChat: connected.googleChat ? {
+        email: organization.integrations.googleChat.email,
+      } : null,
     };
 
     // --- OAuth Start URLs ---
@@ -73,6 +78,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     const oauth = {
       slack: available.slack ? '/auth/slack' : null,
       google: available.google ? '/auth/google' : null,
+      googleChat: available.googleChat ? '/auth/google-chat' : null,
     };
 
     res.json({ available, connected, details, oauth });
@@ -343,6 +349,131 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
   }
 });
 
+// --- Google Chat OAuth ---
+// GET /api/integrations/google-chat/oauth/start?orgId=xxx or ?orgSlug=acme
+router.get('/integrations/google-chat/oauth/start', async (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_CHAT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
+  if (!clientId || !redirectUri) {
+    return res.status(503).json({ message: 'Google Chat OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CHAT_REDIRECT_URI.' });
+  }
+  
+  // Google Chat API scopes
+  const scopes = [
+    'https://www.googleapis.com/auth/chat.messages.readonly', // Read messages
+    'https://www.googleapis.com/auth/chat.spaces.readonly',   // Read spaces/rooms
+    'openid',
+    'email',
+    'profile'
+  ];
+  
+  const state = b64({ 
+    orgId: req.query.orgId || null,
+    orgSlug: req.query.orgSlug || null, 
+    nonce: crypto.randomBytes(8).toString('hex') 
+  });
+  
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('access_type', 'offline');
+  url.searchParams.set('include_granted_scopes', 'true');
+  url.searchParams.set('scope', scopes.join(' '));
+  url.searchParams.set('prompt', 'consent');
+  url.searchParams.set('state', state);
+  
+  return res.redirect(String(url));
+});
+
+// GET /api/integrations/google-chat/oauth/callback
+router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_CHAT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
+    
+    if (!clientId || !clientSecret || !redirectUri) {
+      return res.status(503).send('Google Chat OAuth not configured.');
+    }
+    
+    const { code, state } = req.query;
+    const parsed = b64parse(state);
+    const orgId = parsed.orgId || null;
+    const orgSlug = parsed.orgSlug || null;
+    
+    console.log('Google Chat OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug);
+
+    // Exchange code for tokens
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: String(code || ''),
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      }).toString()
+    });
+    
+    const tokens = await tokenRes.json();
+    if (tokens.error) {
+      console.error('Google Chat OAuth error:', tokens);
+      return res.status(400).send('Google Chat authorization failed.');
+    }
+
+    try {
+      // Fetch user info
+      let googleUser = null;
+      try {
+        const ui = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+          headers: { Authorization: `Bearer ${tokens.access_token}` }
+        });
+        if (ui.ok) {
+          googleUser = await ui.json();
+        }
+      } catch {}
+
+      // Find org
+      let org = null;
+      if (orgId) {
+        org = await Organization.findById(orgId);
+      }
+      if (!org && orgSlug) {
+        org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
+      }
+      
+      if (org) {
+        console.log('[Google Chat OAuth] Saving to org:', org._id);
+        
+        await Organization.findByIdAndUpdate(org._id, {
+          $set: {
+            'integrations.googleChat.refreshToken': tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
+            'integrations.googleChat.accessToken': tokens.access_token ? encryptString(tokens.access_token) : '',
+            'integrations.googleChat.expiry': tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+            'integrations.googleChat.email': googleUser?.email || '',
+            'integrations.googleChat.user': googleUser || {},
+            'integrations.googleChat.sync.enabled': true
+          }
+        });
+        
+        console.log('[Google Chat OAuth] Saved successfully to org:', org._id);
+      } else {
+        console.error('[Google Chat OAuth] No org found for orgId:', orgId, 'orgSlug:', orgSlug);
+      }
+    } catch (e) {
+      console.error('Google Chat OAuth persist error:', e.message, e.stack);
+    }
+
+    const redirect = `${getAppUrl()}/dashboard?connected=google-chat`;
+    return res.redirect(redirect);
+  } catch (err) {
+    console.error('Google Chat OAuth callback error:', err.message);
+    return res.status(500).send('Google Chat OAuth callback error');
+  }
+});
+
 // --- Microsoft OAuth (Outlook/Teams) ---
 // GET /api/integrations/microsoft/oauth/start?scope=outlook|teams&orgSlug=acme
 router.get('/integrations/microsoft/oauth/start', async (req, res) => {
@@ -455,7 +586,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
 router.post('/integrations/:provider/disconnect', authenticateToken, async (req, res) => {
   try {
     const provider = String(req.params.provider || '').toLowerCase();
-    if (!['slack','google','microsoft'].includes(provider)) {
+    if (!['slack','google','google-chat','googlechat','microsoft'].includes(provider)) {
       return res.status(400).json({ message: 'Unsupported provider' });
     }
     const orgId = req.user?.orgId;
@@ -470,6 +601,10 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
     } else if (provider === 'google') {
       org.integrations.google = {
         scope: '', refreshToken: '', accessToken: '', expiry: undefined
+      };
+    } else if (provider === 'google-chat' || provider === 'googlechat') {
+      org.integrations.googleChat = {
+        refreshToken: '', accessToken: '', expiry: undefined, email: '', user: {}
       };
     } else if (provider === 'microsoft') {
       org.integrations.microsoft = {
