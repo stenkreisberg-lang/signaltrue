@@ -12,7 +12,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      // Password not required for auto-synced users who haven't claimed their account
+      return this.accountStatus === 'active';
+    },
     minlength: 6
   },
   name: {
@@ -21,6 +24,35 @@ const userSchema = new mongoose.Schema({
     trim: true
     // set: encryptString,
     // get: decryptString
+  },
+  // Account status for auto-synced users
+  accountStatus: {
+    type: String,
+    enum: ['pending', 'active', 'inactive'],
+    default: 'active'
+    // 'pending' = auto-synced from Slack/Google, hasn't logged in yet
+    // 'active' = has set password and can log in
+    // 'inactive' = deactivated or left company
+  },
+  // Source of user creation
+  source: {
+    type: String,
+    enum: ['manual', 'slack', 'google_chat', 'google_workspace', 'invitation'],
+    default: 'manual'
+  },
+  // External IDs for syncing
+  externalIds: {
+    slackUserId: { type: String, sparse: true },
+    googleUserId: { type: String, sparse: true },
+    slackTeamId: { type: String },
+    googleWorkspaceId: { type: String }
+  },
+  // Profile information from external sources
+  profile: {
+    avatar: { type: String },
+    title: { type: String },
+    department: { type: String },
+    phone: { type: String }
   },
   role: {
     type: String,

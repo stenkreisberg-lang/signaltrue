@@ -24,6 +24,7 @@ const organizationSchema = new mongoose.Schema(
           enabled: { type: Boolean, default: false },
           lastSync: Date,
         },
+        lastEmployeeSync: Date, // Track when employees were last synced
       },
       google: {
         scope: String, // 'calendar' or 'gmail'
@@ -43,6 +44,7 @@ const organizationSchema = new mongoose.Schema(
         spaces: [mongoose.Schema.Types.Mixed], // Chat spaces/rooms
         messagesCount: Number,
         lastPulledAt: Date,
+        lastEmployeeSync: Date, // Track when employees were last synced
         sync: {
           enabled: { type: Boolean, default: true },
           lastSync: Date,

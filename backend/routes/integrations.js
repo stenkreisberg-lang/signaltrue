@@ -4,6 +4,7 @@ import Organization from '../models/organizationModel.js';
 import User from '../models/user.js'; // Import User model
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
+import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
 
 const router = express.Router();
 
@@ -204,6 +205,8 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
               accessToken: encryptString(data.access_token),
               botUserId: data.bot_user_id,
               team: data.team,
+              teamId: data.team?.id,
+              teamName: data.team?.name,
               authedUser: data.authed_user,
               installed: true,
               sync: { enabled: true }
@@ -211,6 +214,15 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
           }
         });
         console.log('Slack OAuth: saved token for org', org._id);
+
+        // Trigger employee sync in background
+        syncEmployeesFromSlack(org._id)
+          .then(result => {
+            console.log('Slack employee sync completed:', result.stats);
+          })
+          .catch(err => {
+            console.error('Slack employee sync failed:', err.message);
+          });
       } else {
         console.error('Slack OAuth: no org found for orgId:', orgId, 'orgSlug:', orgSlug);
       }
@@ -459,6 +471,19 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
         });
         
         console.log('[Google Chat OAuth] Saved successfully to org:', org._id);
+
+        // Trigger employee sync in background (if Directory API is available)
+        syncEmployeesFromGoogle(org._id)
+          .then(result => {
+            if (result.success) {
+              console.log('Google Workspace employee sync completed:', result.stats);
+            } else {
+              console.log('Google Workspace employee sync skipped:', result.message);
+            }
+          })
+          .catch(err => {
+            console.error('Google Workspace employee sync failed:', err.message);
+          });
       } else {
         console.error('[Google Chat OAuth] No org found for orgId:', orgId, 'orgSlug:', orgSlug);
       }

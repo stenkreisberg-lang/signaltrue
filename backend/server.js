@@ -68,6 +68,8 @@ import organizationRoutes from "./routes/organizations.js";
 import projectRoutes from "./routes/projects.js";
 import analyticsRoutes from "./routes/analytics.js";
 import teamRoutes from "./routes/teamRoutes.js";
+import teamManagementRoutes from "./routes/teams.js";
+import employeeSyncRoutes from "./routes/employeeSync.js";
 import slackRoutes from "./routes/slackRoutes.js";
 import googleChatRoutes from "./routes/googleChatRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
@@ -165,6 +167,8 @@ async function main() {
     app.use("/api/projects", projectRoutes);
     app.use("/api/analytics", analyticsRoutes);
     app.use("/api/teams", teamRoutes);
+    app.use("/api/team-management", teamManagementRoutes);
+    app.use("/api/employee-sync", employeeSyncRoutes);
     app.use("/api/slack", slackRoutes);
     app.use("/api/google-chat", googleChatRoutes);
     app.use("/api/history", historyRoutes);

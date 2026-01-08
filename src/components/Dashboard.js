@@ -7,6 +7,8 @@ import AdminExportPanel from './AdminExportPanel';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 import GoogleChatConnect from './GoogleChatConnect';
 import LoopClosingDashboard from './LoopClosingDashboard';
+import TeamManagement from './TeamManagement';
+import EmployeeDirectory from './EmployeeDirectory';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -189,6 +191,17 @@ function Dashboard() {
         {['admin','hr_admin','master_admin'].includes(user?.role) && (
           <AdminExportPanel />
         )}
+        
+        {/* Employee Directory for HR/Admin */}
+        {['admin','hr_admin','master_admin'].includes(user?.role) && (
+          <EmployeeDirectory />
+        )}
+        
+        {/* Team Management for HR/Admin */}
+        {['admin','hr_admin','master_admin'].includes(user?.role) && (
+          <TeamManagement />
+        )}
+        
         {/* Admin onboarding shortcut */}
         {['admin','hr_admin','master_admin'].includes(user?.role) && (
           <div style={{
