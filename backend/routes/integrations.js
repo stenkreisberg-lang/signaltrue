@@ -12,14 +12,21 @@ const router = express.Router();
 router.get('/integrations/metrics', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user?.orgId;
-    if (!orgId) return res.status(400).json({ message: 'Missing orgId' });
+    if (!orgId) {
+      // Return zeros if user doesn't have an org yet
+      return res.json({ googleEvents: 0, msEvents: 0, msTeams: 0 });
+    }
     const org = await Organization.findById(orgId);
-    if (!org) return res.status(404).json({ message: 'Organization not found' });
+    if (!org) {
+      // Return zeros if org not found
+      return res.json({ googleEvents: 0, msEvents: 0, msTeams: 0 });
+    }
     const googleEvents = org.integrations?.google?.eventsCount || 0;
     const msEvents = org.integrations?.microsoft?.eventsCount || 0;
     const msTeams = org.integrations?.microsoft?.teamsCount || 0;
     res.json({ googleEvents, msEvents, msTeams });
   } catch (e) {
+    console.error('Error in /integrations/metrics:', e);
     res.status(500).json({ message: e.message });
   }
 });
@@ -29,19 +36,44 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
   try {
     const { userId, orgId } = req.user;
 
-    if (!userId || !orgId) {
-      return res.status(400).json({ message: 'Missing user or organization ID from token.' });
+    if (!userId) {
+      return res.status(400).json({ message: 'Missing user ID from token.' });
     }
 
-    // Fetch user and organization in parallel
-    const [user, organization] = await Promise.all([
-      User.findById(userId).lean(),
-      Organization.findById(orgId).lean()
-    ]);
-
+    // Fetch user
+    const user = await User.findById(userId).lean();
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
+
+    // If no orgId, return empty/default integration status
+    if (!orgId) {
+      return res.json({
+        available: {
+          slack: !!process.env.SLACK_CLIENT_ID,
+          google: !!process.env.GOOGLE_CLIENT_ID,
+          googleChat: !!process.env.GOOGLE_CLIENT_ID,
+        },
+        connected: {
+          slack: false,
+          google: false,
+          googleChat: false,
+        },
+        details: {
+          slack: null,
+          google: null,
+          googleChat: null,
+        },
+        oauth: {
+          slack: !!process.env.SLACK_CLIENT_ID ? '/auth/slack' : null,
+          google: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google' : null,
+          googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google-chat' : null,
+        }
+      });
+    }
+
+    // Fetch organization
+    const organization = await Organization.findById(orgId).lean();
     if (!organization) {
       return res.status(404).json({ message: 'Organization not found.' });
     }
