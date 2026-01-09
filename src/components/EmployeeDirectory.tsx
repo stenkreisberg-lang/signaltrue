@@ -59,11 +59,28 @@ const EmployeeDirectory: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [employeesRes, teamsRes, syncRes] = await Promise.all([
-        api.get('/api/team-members'),
-        api.get('/api/team-management/organization'),
-        api.get('/api/employee-sync/status')
+      
+      // Fetch employees and teams (always available)
+      const [employeesRes, teamsRes] = await Promise.all([
+        api.get('/api/team-members').catch(() => ({ data: [] })),
+        api.get('/api/team-management/organization').catch(() => ({ data: [] }))
       ]);
+
+      // Try to fetch sync status (may not be available on all backends)
+      let syncRes;
+      try {
+        syncRes = await api.get('/api/employee-sync/status');
+      } catch (error) {
+        console.log('Sync status endpoint not available yet');
+        syncRes = { data: {
+          totalUsers: 0,
+          pendingUsers: 0,
+          activeUsers: 0,
+          unassignedUsers: 0,
+          slackConnected: false,
+          googleConnected: false
+        }};
+      }
 
       // Enrich employees with team names
       const employeesWithTeams = employeesRes.data.map((emp: Employee) => {
@@ -102,7 +119,11 @@ const EmployeeDirectory: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Sync error:', error);
-      showError(error.response?.data?.message || 'Failed to sync employees');
+      if (error.response?.status === 404) {
+        showError('Employee sync feature not yet deployed to production backend');
+      } else {
+        showError(error.response?.data?.message || 'Failed to sync employees');
+      }
     } finally {
       setSyncing(false);
     }
