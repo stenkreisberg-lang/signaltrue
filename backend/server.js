@@ -85,6 +85,7 @@ import bdiRoutes from "./routes/bdiRoutes.js";
 import insightsRoutes from "./routes/insights.js";
 import loopClosingRoutes from "./routes/loopClosingRoutes.js";
 import learningRoutes from "./routes/learning.js";
+import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -94,6 +95,10 @@ import auditConsent from "./middleware/consentAudit.js";
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
 import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
+import { runCrisisDetection } from './services/crisisDetectionService.js';
+import { calculateTeamAttritionRisk } from './services/attritionRiskService.js';
+import { calculateManagerEffectiveness } from './services/managerEffectivenessService.js';
+import Team from './models/team.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -207,6 +212,7 @@ async function main() {
     app.use('/api/insights', insightsRoutes);
     app.use('/api/loop-closing', loopClosingRoutes);
     app.use('/api/learning', learningRoutes);
+    app.use('/api/intelligence', behavioralIntelligenceRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {
@@ -224,6 +230,49 @@ async function main() {
       
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
+      
+      // Crisis detection - every 15 minutes (real-time anomaly detection)
+      cron.schedule('*/15 * * * *', async () => {
+        console.log('⏰ Running crisis detection...');
+        try {
+          await runCrisisDetection();
+        } catch (err) {
+          console.error('❌ Crisis detection failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Crisis detection every 15 minutes');
+      
+      // Attrition risk calculation - daily at 3 AM
+      cron.schedule('0 3 * * *', async () => {
+        console.log('⏰ Running attrition risk calculation...');
+        try {
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await calculateTeamAttritionRisk(team._id);
+          }
+          console.log('✅ Attrition risk calculation completed');
+        } catch (err) {
+          console.error('❌ Attrition risk calculation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Attrition risk daily at 3 AM');
+      
+      // Manager effectiveness - monthly on 1st at 4 AM
+      cron.schedule('0 4 1 * *', async () => {
+        console.log('⏰ Running manager effectiveness calculation...');
+        try {
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            if (team.managerId) {
+              await calculateManagerEffectiveness(team.managerId, team._id);
+            }
+          }
+          console.log('✅ Manager effectiveness calculation completed');
+        } catch (err) {
+          console.error('❌ Manager effectiveness calculation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Manager effectiveness monthly on 1st at 4 AM');
     }
 
     // --- Start Server ---
