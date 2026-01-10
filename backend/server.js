@@ -273,6 +273,86 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Manager effectiveness monthly on 1st at 4 AM');
+      
+      // Project risk analysis - daily at 2 AM
+      cron.schedule('0 2 * * *', async () => {
+        console.log('⏰ Running project risk analysis...');
+        try {
+          const { analyzeTeamProjects } = await import('./services/projectRiskService.js');
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await analyzeTeamProjects(team._id);
+          }
+          console.log('✅ Project risk analysis completed');
+        } catch (err) {
+          console.error('❌ Project risk analysis failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Project risk daily at 2 AM');
+      
+      // Network health analysis - weekly on Sundays at 5 AM
+      cron.schedule('0 5 * * 0', async () => {
+        console.log('⏰ Running network health analysis...');
+        try {
+          const { analyzeNetworkHealth } = await import('./services/networkHealthService.js');
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await analyzeNetworkHealth(team._id);
+          }
+          console.log('✅ Network health analysis completed');
+        } catch (err) {
+          console.error('❌ Network health analysis failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Network health weekly on Sundays at 5 AM');
+      
+      // Succession risk analysis - monthly on 15th at 3 AM
+      cron.schedule('0 3 15 * *', async () => {
+        console.log('⏰ Running succession risk analysis...');
+        try {
+          const { analyzeTeamSuccessionRisk } = await import('./services/successionRiskService.js');
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await analyzeTeamSuccessionRisk(team._id);
+          }
+          console.log('✅ Succession risk analysis completed');
+        } catch (err) {
+          console.error('❌ Succession risk analysis failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Succession risk monthly on 15th at 3 AM');
+      
+      // Equity signals analysis - weekly on Mondays at 6 AM
+      cron.schedule('0 6 * * 1', async () => {
+        console.log('⏰ Running equity signals analysis...');
+        try {
+          const { analyzeTeamEquity } = await import('./services/equitySignalsService.js');
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await analyzeTeamEquity(team._id);
+          }
+          console.log('✅ Equity signals analysis completed');
+        } catch (err) {
+          console.error('❌ Equity signals analysis failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Equity signals weekly on Mondays at 6 AM');
+      
+      // Outlook signals analysis - daily at 4 AM
+      cron.schedule('0 4 * * *', async () => {
+        console.log('⏰ Running Outlook signals analysis...');
+        try {
+          const { analyzeTeamOutlookSignals } = await import('./services/outlookSignalsService.js');
+          const teams = await Team.find({ isActive: true });
+          for (const team of teams) {
+            await analyzeTeamOutlookSignals(team._id);
+          }
+          console.log('✅ Outlook signals analysis completed');
+        } catch (err) {
+          console.error('❌ Outlook signals analysis failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Outlook signals daily at 4 AM');
     }
 
     // --- Start Server ---
