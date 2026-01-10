@@ -1,13 +1,17 @@
 /**
  * Action Generation Service
  * Generates recommended actions based on risk analysis
+ * Now with AI-powered recommendations that learn from outcomes
  */
 
 import TeamAction from '../models/teamAction.js';
 import RiskDriver from '../models/riskDriver.js';
+import { buildRecommendationContext, formatContextForPrompt } from './aiRecommendationContext.js';
+import getProvider from '../utils/aiProvider.js';
 
 /**
  * Generate action for a team based on dominant risk
+ * Uses AI if enabled and sufficient context exists, falls back to templates
  */
 export async function generateAction(teamId, weekStart, teamState, risks, riskDrivers) {
   // Only generate if no active action exists
@@ -32,10 +36,35 @@ export async function generateAction(teamId, weekStart, teamState, risks, riskDr
   const drivers = riskDrivers.filter(d => d.riskType === dominantRisk)
     .sort((a, b) => (b.deviation * b.contributionWeight) - (a.deviation * a.contributionWeight));
   
-  // Generate action based on risk type and top drivers
-  const actionTemplate = selectActionTemplate(dominantRisk, drivers, risk.score);
+  // Check if AI recommendations are enabled
+  const useAI = process.env.AI_RECOMMENDATIONS_ENABLED === 'true';
   
-  if (!actionTemplate) {
+  let actionData = null;
+  let generatedBy = 'template';
+  
+  if (useAI) {
+    try {
+      // Try AI-powered recommendation
+      const aiResult = await generateAIRecommendation(teamId, dominantRisk, drivers, risk.score, weekStart);
+      if (aiResult && aiResult.confidence >= (parseInt(process.env.AI_CONFIDENCE_THRESHOLD) || 70)) {
+        actionData = aiResult;
+        generatedBy = 'ai';
+        console.log(`✨ AI-generated recommendation for team ${teamId}: ${aiResult.title}`);
+      } else {
+        console.log(`⚠️ AI confidence too low (${aiResult?.confidence}%), using template`);
+      }
+    } catch (error) {
+      console.error('AI recommendation failed, falling back to template:', error.message);
+    }
+  }
+  
+  // Fallback to template if AI failed or disabled
+  if (!actionData) {
+    actionData = selectActionTemplate(dominantRisk, drivers, risk.score);
+    generatedBy = 'template';
+  }
+  
+  if (!actionData) {
     return null;
   }
   
@@ -43,13 +72,105 @@ export async function generateAction(teamId, weekStart, teamState, risks, riskDr
     teamId,
     createdWeek: weekStart,
     linkedRisk: dominantRisk,
-    title: actionTemplate.title,
-    whyThisAction: actionTemplate.why,
+    title: actionData.title,
+    whyThisAction: actionData.why,
     status: 'suggested',
-    duration: actionTemplate.duration || 2
+    duration: actionData.duration || 2,
+    generatedBy
   });
   
   return action;
+}
+
+/**
+ * Generate AI-powered recommendation using learned patterns
+ */
+async function generateAIRecommendation(teamId, riskType, drivers, riskScore, weekStart) {
+  try {
+    // Build comprehensive context
+    const context = await buildRecommendationContext(teamId, riskType, drivers, weekStart);
+    
+    // Check if we have enough data for AI
+    if (context.learnedPatterns.totalLearnings < 3 && context.pastExperiments.length === 0) {
+      console.log('Insufficient learning data for AI recommendation, need at least 3 learnings or past experiments');
+      return null;
+    }
+    
+    // Format context for prompt
+    const contextPrompt = formatContextForPrompt(context);
+    
+    // Build AI prompt
+    const prompt = `You are an expert organizational psychologist specializing in team health and performance.
+
+${contextPrompt}
+
+CONSTRAINTS:
+- Action must be reversible within 2-4 weeks
+- Must not disrupt ongoing projects or critical deadlines
+- Should align with ${context.teamProfile.industry} industry norms
+- Be specific and actionable, not generic advice
+
+TASK:
+Generate a personalized action recommendation for this team. Consider:
+1. What has worked for THIS specific team in the past
+2. What has worked for similar teams (same function/industry/size)
+3. What has NOT worked (avoid those patterns)
+4. The current timing context (seasonality, quarter-end, etc.)
+
+Respond with ONLY valid JSON in this exact format (no markdown, no code blocks):
+{
+  "title": "Specific, actionable title (8-15 words)",
+  "why": "Why this action for THIS team given their history and context (2-3 sentences, reference specific learnings)",
+  "duration": 2-4,
+  "confidence": 70-100,
+  "reasoning": "Brief explanation of why you chose this over alternatives (1-2 sentences)"
+}
+
+Confidence scoring:
+- 90-100: Strong evidence from multiple similar successes
+- 75-89: Good evidence from some similar successes
+- 70-74: Limited evidence but logical fit
+- <70: Insufficient evidence (will use template instead)`;
+
+    // Call AI provider
+    const provider = getProvider();
+    const response = await provider.generate({ 
+      prompt, 
+      model: process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL || 'gpt-4o-mini',
+      max_tokens: 500 
+    });
+    
+    const aiText = response.choices[0].message.content.trim();
+    
+    // Parse JSON response
+    let aiRecommendation;
+    try {
+      // Remove markdown code blocks if present
+      const cleanJson = aiText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      aiRecommendation = JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', aiText);
+      return null;
+    }
+    
+    // Validate response structure
+    if (!aiRecommendation.title || !aiRecommendation.why || !aiRecommendation.confidence) {
+      console.error('AI response missing required fields:', aiRecommendation);
+      return null;
+    }
+    
+    // Validate confidence is a number
+    if (typeof aiRecommendation.confidence === 'string') {
+      aiRecommendation.confidence = parseInt(aiRecommendation.confidence);
+    }
+    
+    console.log(`AI recommendation generated with ${aiRecommendation.confidence}% confidence`);
+    
+    return aiRecommendation;
+  } catch (error) {
+    console.error('Error generating AI recommendation:', error);
+    return null;
+  }
 }
 
 /**

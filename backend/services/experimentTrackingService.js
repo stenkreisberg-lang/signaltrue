@@ -8,6 +8,7 @@ import TeamAction from '../models/teamAction.js';
 import Impact from '../models/impact.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import Baseline from '../models/baseline.js';
+import { recordActionOutcome } from './learningLoopService.js';
 
 /**
  * Map metric keys to actual MetricsDaily fields
@@ -202,11 +203,20 @@ async function generateImpact(experiment) {
   const impact = await Impact.create({
     experimentId: experiment._id,
     result,
-    confidence,
+    confidence: confidence > 75 ? 'high' : confidence > 50 ? 'medium' : 'low',
     summaryText,
     nextStep,
     metricChanges
   });
+  
+  // LEARNING LOOP: Record this outcome for future AI recommendations
+  try {
+    await recordActionOutcome(experiment._id);
+    console.log(`📚 Learning recorded for experiment ${experiment._id}`);
+  } catch (learningError) {
+    console.error('Failed to record learning:', learningError);
+    // Don't fail the whole impact generation if learning fails
+  }
   
   return impact;
 }

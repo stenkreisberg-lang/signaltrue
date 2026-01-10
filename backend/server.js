@@ -84,6 +84,7 @@ import comparisonsRoutes from "./routes/comparisons.js";
 import bdiRoutes from "./routes/bdiRoutes.js";
 import insightsRoutes from "./routes/insights.js";
 import loopClosingRoutes from "./routes/loopClosingRoutes.js";
+import learningRoutes from "./routes/learning.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -205,6 +206,7 @@ async function main() {
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
     app.use('/api/insights', insightsRoutes);
     app.use('/api/loop-closing', loopClosingRoutes);
+    app.use('/api/learning', learningRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {
