@@ -1,5 +1,6 @@
 import { Button } from "../components/ui/button";
 import { ArrowRight, Shield, Users, Lock } from "lucide-react";
+import { Link } from "react-router-dom";
 import DriftAlertCard from "./DriftAlertCard";
 
 const Hero = () => {
@@ -46,13 +47,17 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-4 mb-12">
-              <Button variant="hero" size="xl">
-                Get a Demo
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-              <Button variant="hero-outline" size="xl">
-                See How It Works
-              </Button>
+              <Link to="/register">
+                <Button variant="hero" size="xl">
+                  Get a Demo
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to="/how-it-works">
+                <Button variant="hero-outline" size="xl">
+                  See How It Works
+                </Button>
+              </Link>
             </div>
 
             {/* Social proof */}

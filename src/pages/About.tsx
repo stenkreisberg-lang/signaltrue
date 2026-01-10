@@ -1,11 +1,13 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
+import { Link } from "react-router-dom";
 import { 
   ArrowRight,
   Heart,
   Target,
-  Users
+  Users,
+  Mail
 } from "lucide-react";
 
 const values = [
@@ -108,7 +110,7 @@ const About = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 bg-hero-gradient relative overflow-hidden">
+        <section id="contact" className="py-24 bg-hero-gradient relative overflow-hidden">
           <div className="absolute inset-0 bg-glow opacity-30" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
@@ -118,14 +120,47 @@ const About = () => {
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
                 If you're exploring team-level leading indicators for HR, we'd love to show you how SignalTrue works.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button variant="hero" size="xl">
-                  Get a Demo
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-                <Button variant="hero-outline" size="xl">
-                  See How It Works
-                </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                <Link to="/register">
+                  <Button variant="hero" size="xl">
+                    Get a Demo
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link to="/how-it-works">
+                  <Button variant="hero-outline" size="xl">
+                    See How It Works
+                  </Button>
+                </Link>
+              </div>
+              <div className="pt-8 border-t border-border/50 mt-8">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Mail className="w-5 h-5" />
+                  <a href="mailto:hello@signaltrue.ai" className="text-lg hover:text-foreground transition-colors">
+                    hello@signaltrue.ai
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Terms Section */}
+        <section id="terms" className="py-16 bg-secondary/20">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-display font-bold mb-6">Terms of Service</h2>
+              <div className="space-y-4 text-muted-foreground">
+                <p>
+                  By using SignalTrue, you agree to our terms of service. We provide team-level analytics
+                  to help organizations detect early warning signs of overload and burnout.
+                </p>
+                <p>
+                  For complete terms and legal documentation, please contact us at{" "}
+                  <a href="mailto:legal@signaltrue.ai" className="text-primary hover:underline">
+                    legal@signaltrue.ai
+                  </a>
+                </p>
               </div>
             </div>
           </div>

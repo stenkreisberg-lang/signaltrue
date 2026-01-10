@@ -1,5 +1,6 @@
 import { Button } from "../components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const benefits = [
   "Setup in minutes",
@@ -28,13 +29,17 @@ const CTASection = () => {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Button variant="hero" size="xl">
-              Get a Demo
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button variant="hero-outline" size="xl">
-              View Product
-            </Button>
+            <Link to="/register">
+              <Button variant="hero" size="xl">
+                Get a Demo
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/product">
+              <Button variant="hero-outline" size="xl">
+                View Product
+              </Button>
+            </Link>
           </div>
 
           {/* Benefits list */}

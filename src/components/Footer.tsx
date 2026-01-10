@@ -1,9 +1,22 @@
 import { Activity, Linkedin, Twitter } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const footerLinks = {
-  Product: ["Features", "Pricing", "Integrations", "Security"],
-  Company: ["About", "Blog", "Careers", "Contact"],
-  Resources: ["Documentation", "Help Center", "Privacy Policy", "Terms of Service"],
+  Product: [
+    { label: "Features", href: "/product" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "How it Works", href: "/how-it-works" },
+    { label: "Security", href: "/app/privacy" }
+  ],
+  Company: [
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/about#contact" }
+  ],
+  Resources: [
+    { label: "Documentation", href: "/how-it-works" },
+    { label: "Privacy Policy", href: "/app/privacy" },
+    { label: "Terms of Service", href: "/about#terms" }
+  ],
 };
 
 const Footer = () => {
@@ -13,28 +26,32 @@ const Footer = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand column */}
           <div className="lg:col-span-2">
-            <a href="/" className="flex items-center gap-2 mb-4">
+            <Link to="/" className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Activity className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-display font-bold text-foreground">
                 SignalTrue
               </span>
-            </a>
+            </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
               Helping HR leaders detect early warning signs and prevent burnout 
               before it impacts your team's performance and retention.
             </p>
             <div className="flex items-center gap-4">
               <a 
-                href="#" 
+                href="https://twitter.com/signaltrue" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-4 h-4 text-muted-foreground" />
               </a>
               <a 
-                href="#" 
+                href="https://linkedin.com/company/signaltrue" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                 aria-label="LinkedIn"
               >
@@ -51,13 +68,13 @@ const Footer = () => {
               </h4>
               <ul className="space-y-3">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a 
-                      href="#" 
+                  <li key={link.label}>
+                    <Link 
+                      to={link.href} 
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

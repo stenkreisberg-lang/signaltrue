@@ -1,6 +1,7 @@
 import { Button } from "../components/ui/button";
-import { Activity } from "lucide-react";
+import { Activity, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 const navItems = [
   { label: "Product", href: "/product" },
@@ -10,6 +11,8 @@ const navItems = [
 ];
 
 const Navbar = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto px-6 py-4">
@@ -27,7 +30,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link
@@ -40,10 +43,10 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-muted-foreground">
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
                 Login
               </Button>
             </Link>
@@ -53,7 +56,50 @@ const Navbar = () => {
               </Button>
             </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 text-foreground"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-4 pb-4 border-t border-border/50 pt-4">
+            <div className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="flex flex-col gap-2 mt-4 px-4">
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="cta" size="sm" className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
