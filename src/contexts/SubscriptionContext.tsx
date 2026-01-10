@@ -5,10 +5,41 @@
  * This enforces the power boundary at the UI level.
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-const SubscriptionContext = createContext();
+interface SubscriptionPlan {
+  planId: string;
+  name: string;
+  priceEUR: number | null;
+  features: {
+    [key: string]: boolean;
+  };
+}
+
+interface SubscriptionData {
+  planId: string;
+  plan: SubscriptionPlan;
+  customFeatures?: { [key: string]: boolean };
+}
+
+interface SubscriptionContextType {
+  subscription: SubscriptionData | null;
+  accessibleFeatures: string[];
+  loading: boolean;
+  error: string | null;
+  hasFeature: (feature: string) => boolean;
+  planHasFeature: (feature: string) => boolean;
+  getPlanName: () => string;
+  getPlanId: () => string | null;
+  canUpgradeTo: (targetPlanId: string) => boolean;
+  upgrade: (targetPlanId: string) => Promise<any>;
+  downgrade: (targetPlanId: string) => Promise<any>;
+  getUpgradeSuggestion: (feature: string) => string;
+  refresh: () => Promise<void>;
+}
+
+const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
@@ -18,11 +49,15 @@ export const useSubscription = () => {
   return context;
 };
 
-export const SubscriptionProvider = ({ children }) => {
-  const [subscription, setSubscription] = useState(null);
-  const [accessibleFeatures, setAccessibleFeatures] = useState([]);
+interface SubscriptionProviderProps {
+  children: ReactNode;
+}
+
+export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [accessibleFeatures, setAccessibleFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubscription();
@@ -36,7 +71,7 @@ export const SubscriptionProvider = ({ children }) => {
       setSubscription(response.data.current);
       setAccessibleFeatures(response.data.access.features);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching subscription:', err);
       setError(err.response?.data?.message || 'Failed to load subscription');
     } finally {
@@ -49,7 +84,7 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} feature - Feature key (e.g., 'weeklyReports')
    * @returns {boolean}
    */
-  const hasFeature = (feature) => {
+  const hasFeature = (feature: string): boolean => {
     return accessibleFeatures.includes(feature);
   };
 
@@ -58,7 +93,7 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} feature - Feature key
    * @returns {boolean}
    */
-  const planHasFeature = (feature) => {
+  const planHasFeature = (feature: string): boolean => {
     if (!subscription?.plan?.features) return false;
     return subscription.plan.features[feature] === true;
   };
@@ -67,7 +102,7 @@ export const SubscriptionProvider = ({ children }) => {
    * Get plan name
    * @returns {string}
    */
-  const getPlanName = () => {
+  const getPlanName = (): string => {
     return subscription?.plan?.name || 'Free';
   };
 
@@ -75,7 +110,7 @@ export const SubscriptionProvider = ({ children }) => {
    * Get plan ID
    * @returns {string}
    */
-  const getPlanId = () => {
+  const getPlanId = (): string | null => {
     return subscription?.planId || null;
   };
 
@@ -84,11 +119,11 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} targetPlanId
    * @returns {boolean}
    */
-  const canUpgradeTo = (targetPlanId) => {
+  const canUpgradeTo = (targetPlanId: string): boolean => {
     const currentPlanId = getPlanId();
     const hierarchy = ['team', 'leadership', 'custom'];
     
-    const currentIndex = hierarchy.indexOf(currentPlanId);
+    const currentIndex = hierarchy.indexOf(currentPlanId || '');
     const targetIndex = hierarchy.indexOf(targetPlanId);
     
     return targetIndex > currentIndex;
@@ -99,7 +134,7 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} targetPlanId
    * @returns {Promise}
    */
-  const upgrade = async (targetPlanId) => {
+  const upgrade = async (targetPlanId: string): Promise<any> => {
     try {
       const response = await axios.put('/api/subscriptions/upgrade', {
         targetPlanId
@@ -109,7 +144,7 @@ export const SubscriptionProvider = ({ children }) => {
       await fetchSubscription();
       
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Upgrade failed');
     }
   };
@@ -119,7 +154,7 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} targetPlanId
    * @returns {Promise}
    */
-  const downgrade = async (targetPlanId) => {
+  const downgrade = async (targetPlanId: string): Promise<any> => {
     try {
       const response = await axios.put('/api/subscriptions/downgrade', {
         targetPlanId
@@ -129,7 +164,7 @@ export const SubscriptionProvider = ({ children }) => {
       await fetchSubscription();
       
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Downgrade failed');
     }
   };
@@ -139,8 +174,8 @@ export const SubscriptionProvider = ({ children }) => {
    * @param {string} feature
    * @returns {string}
    */
-  const getUpgradeSuggestion = (feature) => {
-    const suggestions = {
+  const getUpgradeSuggestion = (feature: string): string => {
+    const suggestions: { [key: string]: string } = {
       monthlyReportsLeadership: 'Upgrade to Leadership Intelligence (€199) to access executive reports',
       aiStrategic: 'Upgrade to Leadership Intelligence (€199) for strategic AI recommendations',
       industryBenchmarks: 'Upgrade to Leadership Intelligence (€199) to compare with industry peers',

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import Index from "./pages/Index";
 import Product from "./pages/Product";
 import Pricing from "./pages/Pricing";
@@ -23,30 +24,32 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/product" element={<Product />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<AcceptInvitation />} />
-          <Route path="/dashboard" element={<DashboardRouter />} />
-          <Route path="/app/overview" element={<Overview />} />
-          <Route path="/app/insights" element={<Insights />} />
-          <Route path="/app/signals" element={<Signals />} />
-          <Route path="/app/risk-feed" element={<RiskFeed />} />
-          <Route path="/app/privacy" element={<Privacy />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <SubscriptionProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/product" element={<Product />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding" element={<AcceptInvitation />} />
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            <Route path="/app/overview" element={<Overview />} />
+            <Route path="/app/insights" element={<Insights />} />
+            <Route path="/app/signals" element={<Signals />} />
+            <Route path="/app/risk-feed" element={<RiskFeed />} />
+            <Route path="/app/privacy" element={<Privacy />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </SubscriptionProvider>
   </QueryClientProvider>
 );
 

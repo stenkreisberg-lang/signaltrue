@@ -7,18 +7,20 @@
  * This enforces the power boundary at the UI level.
  */
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { useSubscription } from '../contexts/SubscriptionContext';
+
+interface FeatureGateProps {
+  feature: string;
+  children: ReactNode;
+  fallback?: ReactNode;
+  showUpgrade?: boolean;
+}
 
 /**
  * FeatureGate - Conditionally render based on feature access
- * 
- * @param {string} feature - Feature key to check
- * @param {ReactNode} children - Content to render if access granted
- * @param {ReactNode} fallback - Optional fallback content (use sparingly)
- * @param {boolean} showUpgrade - Show upgrade prompt if blocked
  */
-export const FeatureGate = ({ 
+export const FeatureGate: React.FC<FeatureGateProps> = ({ 
   feature, 
   children, 
   fallback = null,
@@ -49,20 +51,22 @@ export const FeatureGate = ({
         </div>
       );
     }
-    return fallback;
+    return <>{fallback}</>;
   }
 
   return <>{children}</>;
 };
 
+interface PlanGateProps {
+  requiredPlan: string;
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
 /**
  * PlanGate - Conditionally render based on plan tier
- * 
- * @param {string} requiredPlan - Minimum plan required ('team', 'leadership', 'custom')
- * @param {ReactNode} children - Content to render if plan matches
- * @param {ReactNode} fallback - Optional fallback content
  */
-export const PlanGate = ({ 
+export const PlanGate: React.FC<PlanGateProps> = ({ 
   requiredPlan, 
   children, 
   fallback = null 
@@ -76,22 +80,24 @@ export const PlanGate = ({
   const currentPlanId = getPlanId();
   const planHierarchy = ['team', 'leadership', 'custom'];
   
-  const currentIndex = planHierarchy.indexOf(currentPlanId);
+  const currentIndex = planHierarchy.indexOf(currentPlanId || '');
   const requiredIndex = planHierarchy.indexOf(requiredPlan);
 
   const hasAccess = currentIndex >= requiredIndex;
 
-  return hasAccess ? <>{children}</> : fallback;
+  return hasAccess ? <>{children}</> : <>{fallback}</>;
 };
+
+interface RoleGateProps {
+  allowedRoles: string | string[];
+  children: ReactNode;
+}
 
 /**
  * RoleGate - Conditionally render based on user role
  * Uses AuthContext if available
- * 
- * @param {string|string[]} allowedRoles - Role(s) allowed to see content
- * @param {ReactNode} children - Content to render if role matches
  */
-export const RoleGate = ({ allowedRoles, children }) => {
+export const RoleGate: React.FC<RoleGateProps> = ({ allowedRoles, children }) => {
   // This would need to integrate with your existing AuthContext
   // For now, placeholder implementation
   
@@ -108,13 +114,15 @@ export const RoleGate = ({ allowedRoles, children }) => {
   return <>{children}</>;
 };
 
+interface UpgradePromptProps {
+  feature: string;
+  title?: string;
+}
+
 /**
  * UpgradePrompt - Standalone upgrade suggestion component
- * 
- * @param {string} feature - Feature that's locked
- * @param {string} title - Optional custom title
  */
-export const UpgradePrompt = ({ feature, title }) => {
+export const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, title }) => {
   const { getUpgradeSuggestion, getPlanName } = useSubscription();
 
   return (
@@ -141,10 +149,19 @@ export const UpgradePrompt = ({ feature, title }) => {
   );
 };
 
+interface Feature {
+  key: string;
+  name: string;
+}
+
+interface FeatureListProps {
+  features: Feature[];
+}
+
 /**
  * FeatureList - Show available and locked features
  */
-export const FeatureList = ({ features }) => {
+export const FeatureList: React.FC<FeatureListProps> = ({ features }) => {
   const { hasFeature, planHasFeature } = useSubscription();
 
   return (
