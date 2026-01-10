@@ -1,81 +1,94 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { CheckCircle, ArrowRight, HelpCircle } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, ArrowRight, HelpCircle, X } from "lucide-react";
 
 const plans = [
   {
-    name: "Starter",
-    description: "For small pilots getting started with team health signals",
+    name: "Team Intelligence",
+    description: "For HR teams managing tactical work health",
     price: "€99",
     period: "/month",
     highlight: false,
     features: [
-      "Up to 50 employees",
-      "Slack integration",
-      "Weekly signals and reports",
-      "Email alerts",
-      "Basic dashboards",
-      "Email support",
+      "Weekly team health reports",
+      "Monthly HR reports (aggregated metrics)",
+      "Tactical AI recommendations (7-14 day horizon)",
+      "Max 3 actions per report",
+      "Manager and HR admin access",
+      "Email + Slack notifications",
+      "Unlimited employees",
     ],
-    cta: "Start Pilot",
+    notIncluded: [
+      "No industry benchmarks",
+      "No strategic synthesis",
+    ],
+    cta: "Start Trial",
+    link: "https://app.signaltrue.ai/register?plan=team",
   },
   {
-    name: "Professional",
-    description: "For growing organizations that need deeper signals and comparisons",
+    name: "Leadership Intelligence",
+    description: "For executives making organizational decisions",
     price: "€199",
     period: "/month",
     highlight: true,
     features: [
-      "Up to 250 employees",
-      "Slack + Google Calendar",
-      "Weekly signals and trend monitoring",
-      "Custom alert thresholds",
-      "Team comparisons",
-      "API access",
-      "Priority support",
+      "Everything in Team Intelligence, plus:",
+      "Monthly leadership reports (CEO/Board only)",
+      "Strategic AI synthesis (60-120 day horizon)",
+      "Organizational trajectory analysis",
+      "Industry benchmarks & peer comparison",
+      "Structural risk identification",
+      "Leadership decision prompts",
+      "No individual names in reports",
+      "Unlimited employees",
     ],
-    cta: "Start Pilot",
+    notIncluded: [],
+    cta: "Start Trial",
+    link: "https://app.signaltrue.ai/register?plan=leadership",
   },
   {
-    name: "Enterprise",
-    description: "For larger organizations with advanced security and rollout needs",
+    name: "Organizational Intelligence",
+    description: "Enterprise-grade with custom models",
     price: "Custom",
     period: "",
     highlight: false,
     features: [
-      "Unlimited employees",
-      "All integrations available",
-      "Custom reporting",
-      "SSO & SCIM",
-      "Dedicated support",
-      "SLA options",
-      "On-premise option",
+      "Everything in Leadership Intelligence, plus:",
+      "Board-level quarterly reviews",
+      "Custom AI models & prompts",
+      "Custom thresholds & alerts",
+      "Unlimited leadership roles",
+      "Dedicated success manager",
+      "SLA guarantees",
+      "On-premise deployment option",
     ],
+    notIncluded: [],
     cta: "Contact Sales",
+    link: "mailto:sales@signaltrue.com?subject=Organizational Intelligence Inquiry",
   },
 ];
 
 const faqs = [
   {
-    question: "Do you track individuals?",
-    answer: "No. SignalTrue shows team-level analytics only and enforces minimum team-size thresholds.",
+    question: "Why power-based pricing?",
+    answer: "SignalTrue pricing controls who sees what, what level of synthesis exists, and whether insights are tactical or strategic. Pay for the authority level you need, not the number of employees.",
   },
   {
-    question: "Do you read message content?",
-    answer: "No. We analyze patterns and metadata, not message content.",
+    question: "What's the difference between Tactical and Strategic AI?",
+    answer: "Tactical AI (Team plan) provides 7-14 day action recommendations for HR and managers. Strategic AI (Leadership plan) synthesizes 60-120 day organizational patterns and decision prompts for CEOs and Board members.",
   },
   {
-    question: "What data do you collect?",
-    answer: "Team-level collaboration and calendar patterns needed to compute signals like meeting load, after-hours activity, focus time, and response trends.",
+    question: "Can HR see the Leadership reports?",
+    answer: "No. Leadership reports are strictly separated and only accessible to CEO/BOARD roles. This ensures strategic synthesis stays confidential while HR gets tactical insights for their work.",
   },
   {
-    question: "Is SignalTrue GDPR compliant?",
-    answer: "SignalTrue is built for GDPR-first organizations. We provide clear data processing terms and deletion controls.",
+    question: "Are individual names ever shown in reports?",
+    answer: "Team Intelligence shows aggregated metrics only. Leadership Intelligence validates that zero individual names appear in CEO/Board reports. All insights are pattern-based, not person-based.",
   },
   {
     question: "Can I change plans later?",
-    answer: "Yes. You can upgrade or downgrade at any time. Changes apply from the next billing cycle.",
+    answer: "Yes. You can upgrade or downgrade at any time. Upgrades unlock new features immediately. Downgrades take effect at your next billing cycle with appropriate access revocation.",
   },
 ];
 
@@ -93,11 +106,10 @@ const Pricing = () => {
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Pricing that scales with rollout,{" "}
-                <span className="text-gradient">not surveillance</span>
+                Pay for <span className="text-gradient">power, not volume</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                Start with a pilot, then expand. All plans include privacy-first team-level analytics.
+                SignalTrue pricing controls <strong>who sees what</strong>, <strong>what level of synthesis exists</strong>, and <strong>whether insights are tactical or strategic</strong>.
               </p>
             </div>
           </div>
@@ -112,7 +124,7 @@ const Pricing = () => {
                   key={index}
                   className={`relative rounded-2xl p-8 animate-slide-up ${
                     plan.highlight 
-                      ? 'bg-card border-2 border-primary shadow-glow' 
+                      ? 'bg-card border-2 border-primary shadow-glow'
                       : 'bg-card border border-border/50'
                   }`}
                   style={{ animationDelay: `${index * 0.1}s` }}
@@ -148,33 +160,25 @@ const Pricing = () => {
                         <span className="text-sm text-foreground">{feature}</span>
                       </li>
                     ))}
+                    {plan.notIncluded.map((feature, i) => (
+                      <li key={`not-${i}`} className="flex items-center gap-3 opacity-50">
+                        <X className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
                   </ul>
 
                   <Button 
-                    variant={plan.highlight ? "cta" : "outline"} 
+                    variant={plan.highlight ? "cta" : "outline"}
                     className="w-full"
                     size="lg"
+                    onClick={() => window.location.href = plan.link}
                   >
                     {plan.cta}
                     {plan.highlight && <ArrowRight className="w-4 h-4 ml-2" />}
                   </Button>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Pilot Recommendation Section */}
-        <section className="py-16 bg-secondary/10">
-          <div className="container mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-2xl sm:text-3xl font-display font-bold mb-4">
-                Recommended pilot approach
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Most teams start with a 4-week pilot across 2 to 4 teams to establish baselines 
-                and test interventions with measurable outcomes.
-              </p>
             </div>
           </div>
         </section>
@@ -220,12 +224,12 @@ const Pricing = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                Need help choosing a plan?
+                Ready to see your organizational signals?
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                We'll recommend a pilot size and rollout approach based on your tools and org structure.
+                Request a demo to see how SignalTrue turns coordination patterns into actionable signals.
               </p>
-              <Button variant="hero" size="xl">
+              <Button variant="hero" size="xl" onClick={() => window.location.href = 'mailto:sales@signaltrue.com'}>
                 Schedule a Call
                 <ArrowRight className="w-5 h-5" />
               </Button>
