@@ -5,6 +5,15 @@ import TeamStateBadge from '../../components/insights/TeamStateBadge';
 import RiskCard from '../../components/insights/RiskCard';
 import ActionCard from '../../components/insights/ActionCard';
 import ExperimentCard from '../../components/insights/ExperimentCard';
+import {
+  NetworkHealthWidget,
+  SuccessionRiskWidget,
+  EquitySignalsWidget,
+  ProjectRiskWidget,
+  MeetingROIWidget,
+  OutlookSignalsWidget,
+  AttritionRiskSummary
+} from '../../components/intelligence/IntelligenceWidgets';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -13,9 +22,11 @@ function Insights() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [insights, setInsights] = useState(null);
+  const [intelligenceData, setIntelligenceData] = useState(null);
 
   useEffect(() => {
     fetchInsights();
+    fetchIntelligenceData();
   }, [teamId]);
 
   const fetchInsights = async () => {
@@ -33,6 +44,43 @@ function Insights() {
       setError('Unable to load insights. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchIntelligenceData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch all intelligence metrics for this team (parallel requests)
+      const [attrition, projects, network, succession, equity, meetingROI, outlook] = await Promise.all([
+        axios.get(`${API_URL}/api/intelligence/attrition/team/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/projects/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/network/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/succession/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/equity/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/meeting-roi/team/${teamId}/recent?days=7`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/intelligence/outlook/team/${teamId}`, { headers: { Authorization: `Bearer ${token}` } })
+          .catch(() => ({ data: null }))
+      ]);
+      
+      setIntelligenceData({
+        attritionRisk: attrition.data,
+        projects: projects.data,
+        networkHealth: network.data,
+        successionRisk: succession.data,
+        equitySignals: equity.data,
+        meetingROI: meetingROI.data,
+        outlookSignals: outlook.data
+      });
+    } catch (err) {
+      console.error('Error fetching intelligence data:', err);
+      // Non-critical - don't show error to user
     }
   };
 
@@ -183,6 +231,36 @@ function Insights() {
             )}
           </div>
         </section>
+
+        {/* Intelligence Signals Section */}
+        {intelligenceData && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Behavioral Intelligence</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {intelligenceData.attritionRisk && (
+                <AttritionRiskSummary data={intelligenceData.attritionRisk} />
+              )}
+              {intelligenceData.networkHealth && (
+                <NetworkHealthWidget data={intelligenceData.networkHealth} />
+              )}
+              {intelligenceData.successionRisk && (
+                <SuccessionRiskWidget data={intelligenceData.successionRisk} />
+              )}
+              {intelligenceData.equitySignals && (
+                <EquitySignalsWidget data={intelligenceData.equitySignals} />
+              )}
+              {intelligenceData.projects && (
+                <ProjectRiskWidget data={intelligenceData.projects} />
+              )}
+              {intelligenceData.meetingROI && (
+                <MeetingROIWidget data={{ meetings: intelligenceData.meetingROI }} />
+              )}
+              {intelligenceData.outlookSignals && (
+                <OutlookSignalsWidget data={intelligenceData.outlookSignals} />
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Supporting Metrics Link */}
         <section>
