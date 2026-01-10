@@ -87,6 +87,7 @@ import loopClosingRoutes from "./routes/loopClosingRoutes.js";
 import learningRoutes from "./routes/learning.js";
 import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
 import reportsRoutes from "./routes/reports.js";
+import subscriptionRoutes from "./routes/subscriptions.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -240,6 +241,7 @@ async function main() {
     app.use('/api/learning', learningRoutes);
     app.use('/api/intelligence', behavioralIntelligenceRoutes);
     app.use('/api/reports', reportsRoutes);
+    app.use('/api/subscriptions', subscriptionRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {

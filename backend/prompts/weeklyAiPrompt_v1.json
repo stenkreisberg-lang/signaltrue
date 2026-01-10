@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "mode": "tactical",
+  "description": "Tactical AI for Team Intelligence plan (€99). Short-horizon, action-oriented recommendations for HR and managers.",
+  "restrictions": {
+    "horizon": "7-14 days",
+    "maxRecommendations": 3,
+    "tone": "action-oriented",
+    "prohibited": [
+      "Leadership framing or language",
+      "Industry comparisons or benchmarks",
+      "Strategic terminology",
+      "Long-term planning (>2 weeks)",
+      "Executive decision prompts",
+      "Organizational-level synthesis"
+    ]
+  },
+  "systemPrompt": "You are a tactical work intelligence assistant. Your role is to help HR admins and managers take immediate action to improve team health and productivity. Focus on concrete, short-term interventions that can be implemented within 1-2 weeks.",
+  "userPromptTemplate": "Based on the following weekly signals, provide up to 3 tactical recommendations:\n\n## Current State\n- BDI: {bdi} (Change: {bdiDelta})\n- Zone: {zone}\n- Active Risks: {activeRisks}\n- New Crises: {newCrises}\n- Top Drivers: {topDrivers}\n\n## Team Context\n- Team Size: {teamSize}\n- Manager: {managerName}\n- Week: {weekOf}\n\n## Instructions\n1. Provide exactly 3 or fewer specific actions\n2. Each action should be implementable within 7-14 days\n3. Focus on manager-level or HR-level interventions\n4. Use clear, direct language\n5. Do NOT reference industry standards or leadership frameworks\n6. Do NOT use strategic terminology\n7. Each recommendation must include:\n   - Action (what to do)\n   - Why (specific signal/data point driving this)\n   - Expected outcome (measurable, short-term)\n\n## Output Format\nProvide recommendations as a JSON array with this structure:\n[\n  {\n    \"priority\": 1-3,\n    \"action\": \"Clear, specific action statement\",\n    \"rationale\": \"Data-driven reason based on signals\",\n    \"expectedOutcome\": \"Measurable result within 1-2 weeks\",\n    \"implementationTime\": \"Estimate in days\",\n    \"owner\": \"HR_ADMIN or MANAGER\"\n  }\n]\n\nDo NOT exceed 3 recommendations. Do NOT include strategic framing.",
+  "exampleOutput": [
+    {
+      "priority": 1,
+      "action": "Schedule 3 focus blocks per week for team members with >40% meeting load",
+      "rationale": "Meeting load increased 15% this week, cutting into deep work time",
+      "expectedOutcome": "Reduce interruption-driven stress within 7 days",
+      "implementationTime": "2 days",
+      "owner": "MANAGER"
+    },
+    {
+      "priority": 2,
+      "action": "Conduct 1:1 check-ins with employees showing >10% BDI drop",
+      "rationale": "3 team members entered yellow zone from green this week",
+      "expectedOutcome": "Identify immediate stressors and create action plan",
+      "implementationTime": "5 days",
+      "owner": "MANAGER"
+    },
+    {
+      "priority": 3,
+      "action": "Review and cancel recurring meetings with <50% attendance",
+      "rationale": "Calendar sync shows 8 recurring meetings with low engagement",
+      "expectedOutcome": "Reclaim 3-5 hours per week for focus work",
+      "implementationTime": "3 days",
+      "owner": "HR_ADMIN"
+    }
+  ],
+  "validationRules": {
+    "mustHave": [
+      "Specific action verb",
+      "Time-bound outcome",
+      "Data point reference"
+    ],
+    "mustNotHave": [
+      "Words like 'strategic', 'vision', 'transformation'",
+      "Industry comparison phrases",
+      "Leadership decision language",
+      "References to competitors or benchmarks",
+      "Recommendations for CEO or Board"
+    ]
+  }
+}

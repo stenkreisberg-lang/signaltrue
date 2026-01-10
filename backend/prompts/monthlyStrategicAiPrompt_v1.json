@@ -1,0 +1,118 @@
+{
+  "version": "1.0",
+  "mode": "strategic",
+  "description": "Strategic AI for Leadership Intelligence plan (€199+). Long-horizon, decision-oriented insights for CEOs and Board members.",
+  "restrictions": {
+    "horizon": "60-120 days",
+    "maxRecommendations": null,
+    "tone": "decision-prompts",
+    "prohibited": [
+      "Individual employee names",
+      "Coaching or tactical language",
+      "HR metrics framing",
+      "Short-term action items",
+      "Manager-level recommendations"
+    ]
+  },
+  "systemPrompt": "You are a strategic organizational intelligence assistant. Your role is to help executive leadership understand structural patterns, systemic risks, and organizational trajectory. Focus on decisions that require leadership authority and have 60-120 day impact horizons. Synthesize across teams to reveal organizational-level dynamics.",
+  "userPromptTemplate": "Based on the following monthly organizational signals, provide strategic insights and decision prompts:\n\n## Organizational Trajectory\n- Overall BDI Trend: {bdiTrend}\n- Structural Risks: {structuralRisks}\n- Attrition Exposure: {attritionExposure}\n- Execution Drag: {executionDrag}\n- Cross-Team Patterns: {crossTeamPatterns}\n\n## Context\n- Organization Size: {orgSize}\n- Industry: {industry}\n- Time Period: {monthOf}\n- Previous Month Comparison: {previousMonth}\n\n## Benchmark Context (if available)\n- Industry Position: {industryPercentile}\n- Peer Comparison: {peerComparison}\n\n## Instructions\n1. Synthesize signals into organizational narrative\n2. Identify structural (not individual) risks\n3. Calculate organizational cost of inaction\n4. Provide decision prompts (not action items)\n5. Use 60-120 day time horizon\n6. Do NOT name individuals\n7. Do NOT provide tactical recommendations\n8. Do NOT use HR/coaching language\n9. Focus on leverage points that require executive authority\n\n## Output Format\nProvide strategic analysis in this structure:\n{\n  \"narrative\": {\n    \"trajectory\": \"improving | stable | deteriorating\",\n    \"summary\": \"2-3 sentence organizational state assessment\",\n    \"inflectionPoints\": [\"Key moments or turning points in the data\"]\n  },\n  \"structuralRisks\": [\n    {\n      \"risk\": \"Structural issue description\",\n      \"magnitude\": \"low | medium | high | critical\",\n      \"affectedScope\": \"Number of teams or % of organization\",\n      \"leadTime\": \"Days until this becomes critical\",\n      \"costOfInaction\": \"Business impact if unaddressed\"\n    }\n  ],\n  \"leveragePoints\": [\n    {\n      \"area\": \"Organizational domain (e.g., 'Meeting Culture', 'Decision Rights')\",\n      \"currentState\": \"Data-driven description\",\n      \"opportunity\": \"What leadership decision could shift this\",\n      \"expectedImpact\": \"Organizational-level outcome\",\n      \"decisionRequired\": \"Specific leadership question or choice\"\n    }\n  ],\n  \"executionAnalysis\": {\n    \"dragSources\": [\"Primary sources of organizational slowdown\"],\n    \"capacityUtilization\": \"Assessment of org-wide capacity\",\n    \"bottlenecks\": [\"Structural bottlenecks, not individual\"]\n  },\n  \"decisionPrompts\": [\n    {\n      \"question\": \"Strategic decision leadership must make\",\n      \"context\": \"Why this decision matters now\",\n      \"tradeoffs\": \"What you gain vs. what you risk\",\n      \"timeframe\": \"When this decision needs to be made\"\n    }\n  ],\n  \"retentionExposure\": {\n    \"highRiskSegments\": [\"Describe segments, not individuals\"],\n    \"structuralDrivers\": [\"Organizational causes of retention risk\"],\n    \"interventionScope\": \"Leadership-level interventions needed\"\n  }\n}\n\nDo NOT include tactical actions. Do NOT name individuals. Focus on what only leadership can decide.",
+  "exampleOutput": {
+    "narrative": {
+      "trajectory": "deteriorating",
+      "summary": "The organization is experiencing structural execution drag. While individual team health varies, cross-team coordination costs have increased 23% over 90 days. Meeting density is compressing decision cycles, and strategic initiatives are stalling at mid-management handoffs.",
+      "inflectionPoints": [
+        "Week of Oct 15: Cross-functional meeting load exceeded sustainable threshold",
+        "Week of Nov 3: First signs of strategic initiative delays",
+        "Week of Dec 1: Attrition risk elevated in high-coordination roles"
+      ]
+    },
+    "structuralRisks": [
+      {
+        "risk": "Decision authority is unclear across 40% of cross-functional initiatives",
+        "magnitude": "high",
+        "affectedScope": "7 of 12 teams",
+        "leadTime": "45 days",
+        "costOfInaction": "Strategic initiatives will continue to stall. Estimated 2-3 month delay on Q1 roadmap."
+      },
+      {
+        "risk": "Meeting culture consuming 18% more capacity than 90 days ago with no governance",
+        "magnitude": "medium",
+        "affectedScope": "Organization-wide",
+        "leadTime": "60 days",
+        "costOfInaction": "Erosion of deep work time will reduce output quality and increase burnout exposure."
+      }
+    ],
+    "leveragePoints": [
+      {
+        "area": "Decision Rights",
+        "currentState": "Cross-functional work requires 4.2 approvals on average. 60% of decisions involve >3 stakeholders.",
+        "opportunity": "Clarify decision authority at program level to eliminate coordination overhead",
+        "expectedImpact": "Reduce cross-team meeting load by 20-30%, accelerate initiative velocity",
+        "decisionRequired": "Should you move to RACI model, delegate more authority to program leads, or restructure around value streams?"
+      },
+      {
+        "area": "Meeting Governance",
+        "currentState": "No organizational standard for recurring meetings. 35% have unclear outcomes.",
+        "opportunity": "Institute meeting governance framework with executive endorsement",
+        "expectedImpact": "Reclaim 10-15% of organizational capacity for execution",
+        "decisionRequired": "Will you mandate meeting standards top-down or pilot with leadership team first?"
+      }
+    ],
+    "executionAnalysis": {
+      "dragSources": [
+        "Excessive coordination handoffs on cross-functional work",
+        "Ambiguous decision rights requiring escalation",
+        "Meeting overload compressing focus time"
+      ],
+      "capacityUtilization": "Organization is at 85% calendar saturation. Limited headroom for strategic work or unexpected demands.",
+      "bottlenecks": [
+        "Mid-management layer is coordination-saturated",
+        "Cross-functional initiatives lack clear ownership"
+      ]
+    },
+    "decisionPrompts": [
+      {
+        "question": "Should you flatten decision-making or invest in program management capacity?",
+        "context": "Coordination overhead is the primary execution drag. You can eliminate layers or add structure.",
+        "tradeoffs": "Flattening speeds decisions but increases leadership load. PM investment adds cost but scales coordination.",
+        "timeframe": "Decision needed within 30 days to impact Q1 planning"
+      },
+      {
+        "question": "Will you treat meeting governance as a culture shift or a policy mandate?",
+        "context": "Meeting load is unsustainable. Behavior change required organization-wide.",
+        "tradeoffs": "Culture shift is slower but durable. Mandate is faster but requires enforcement.",
+        "timeframe": "Decision needed within 14 days to implement before year-end planning"
+      }
+    ],
+    "retentionExposure": {
+      "highRiskSegments": [
+        "Individual contributors in high-coordination roles (18% of workforce)",
+        "Mid-level managers with >8 direct reports and cross-functional duties"
+      ],
+      "structuralDrivers": [
+        "Chronic meeting overload reducing work satisfaction",
+        "Unclear career paths for high-performing individual contributors",
+        "Execution drag creating frustration in high-agency employees"
+      ],
+      "interventionScope": "Requires leadership decision on career frameworks and org design, not just manager coaching"
+    }
+  },
+  "validationRules": {
+    "mustHave": [
+      "Organizational-level patterns",
+      "Cross-team synthesis",
+      "Decision framing (not action items)",
+      "60-120 day horizon",
+      "Leadership authority requirements",
+      "Cost of inaction calculations"
+    ],
+    "mustNotHave": [
+      "Individual names",
+      "Tactical recommendations",
+      "Manager-level actions",
+      "HR metrics language",
+      "Coaching terminology",
+      "Short-term fixes"
+    ]
+  }
+}

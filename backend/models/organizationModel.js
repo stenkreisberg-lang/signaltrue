@@ -13,6 +13,30 @@ const organizationSchema = new mongoose.Schema(
       plan: { type: String, default: "free" },
       status: { type: String, default: "active" },
     },
+    // Pricing tier and feature gating
+    subscriptionPlanId: {
+      type: String,
+      enum: ['team', 'leadership', 'custom', null],
+      default: null, // null = free trial or unpaid
+      index: true
+    },
+    subscriptionPlan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubscriptionPlan',
+      default: null
+    },
+    customFeatures: {
+      enableBoardReports: { type: Boolean, default: false },
+      enableCustomThresholds: { type: Boolean, default: false },
+      enableCustomAiPrompts: { type: Boolean, default: false },
+      enableQuarterlyReviews: { type: Boolean, default: false }
+    },
+    subscriptionHistory: [{
+      planId: String,
+      changedAt: { type: Date, default: Date.now },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      action: { type: String, enum: ['upgrade', 'downgrade', 'initial'] }
+    }],
     integrations: {
       slack: {
         teamId: String,
