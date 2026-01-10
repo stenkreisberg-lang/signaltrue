@@ -112,4 +112,4 @@ const meetingROISchema = new mongoose.Schema({
 meetingROISchema.index({ teamId: 1, meetingDate: -1 });
 meetingROISchema.index({ roiScore: -1 });
 
-export default mongoose.model('MeetingROI', meetingROISchema);
+export default mongoose.model('EnhancedMeetingROI', meetingROISchema);

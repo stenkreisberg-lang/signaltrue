@@ -3,7 +3,7 @@
  * Measures meeting effectiveness by analyzing post-meeting Slack behavior
  */
 
-import MeetingROI from '../models/meetingROI.js';
+import EnhancedMeetingROI from '../models/meetingROI.js';
 import Team from '../models/team.js';
 
 /**
@@ -40,7 +40,7 @@ export async function analyzeMeetingROI(meetingId, teamId) {
     
     // Save or update
     const team = await Team.findById(teamId);
-    let roi = await MeetingROI.findOne({ meetingId });
+    let roi = await EnhancedMeetingROI.findOne({ meetingId });
     
     if (roi) {
       Object.assign(roi, {
@@ -53,7 +53,7 @@ export async function analyzeMeetingROI(meetingId, teamId) {
         lastAnalyzed: new Date()
       });
     } else {
-      roi = new MeetingROI({
+      roi = new EnhancedMeetingROI({
         meetingId,
         teamId,
         orgId: team.orgId || team.organizationId,
@@ -299,7 +299,7 @@ async function getRecentMeetings(teamId, days) {
  */
 export async function getLowROIMeetings(orgId, maxScore = 40) {
   try {
-    const meetings = await MeetingROI.find({
+    const meetings = await EnhancedMeetingROI.find({
       orgId,
       roiScore: { $lte: maxScore }
     })
