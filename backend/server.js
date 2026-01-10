@@ -86,6 +86,7 @@ import insightsRoutes from "./routes/insights.js";
 import loopClosingRoutes from "./routes/loopClosingRoutes.js";
 import learningRoutes from "./routes/learning.js";
 import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
+import reportsRoutes from "./routes/reports.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -238,6 +239,7 @@ async function main() {
     app.use('/api/loop-closing', loopClosingRoutes);
     app.use('/api/learning', learningRoutes);
     app.use('/api/intelligence', behavioralIntelligenceRoutes);
+    app.use('/api/reports', reportsRoutes);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {
@@ -378,6 +380,54 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Outlook signals daily at 4 AM');
+      
+      // Weekly reports generation - Sunday at 11:30 PM (after TeamState calculation)
+      cron.schedule('30 23 * * 0', async () => {
+        console.log('⏰ Generating weekly reports for all organizations...');
+        try {
+          const { generateWeeklyReportsForOrg } = await import('./services/weeklyReportService.js');
+          const Organization = (await import('./models/organizationModel.js')).default;
+          const orgs = await Organization.find({ isActive: true });
+          
+          for (const org of orgs) {
+            try {
+              const results = await generateWeeklyReportsForOrg(org._id);
+              console.log(`  ✅ ${org.name}: ${results.success} action required, ${results.noAction} stable`);
+            } catch (err) {
+              console.error(`  ❌ Failed for ${org.name}:`, err.message);
+            }
+          }
+          console.log('✅ Weekly reports generation completed');
+        } catch (err) {
+          console.error('❌ Weekly reports generation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Weekly reports generation Sunday at 11:30 PM');
+      
+      // Monthly reports generation - 1st of month at 4:00 AM
+      cron.schedule('0 4 1 * *', async () => {
+        console.log('⏰ Generating monthly reports for all organizations...');
+        try {
+          const { generateMonthlyReportForOrg } = await import('./services/monthlyReportService.js');
+          const Organization = (await import('./models/organizationModel.js')).default;
+          const orgs = await Organization.find({ isActive: true });
+          
+          for (const org of orgs) {
+            try {
+              const report = await generateMonthlyReportForOrg(org._id);
+              if (report) {
+                console.log(`  ✅ ${org.name}: BDI ${report.orgHealth.avgBDI.toFixed(1)}/100 (${report.orgHealth.bdiTrend})`);
+              }
+            } catch (err) {
+              console.error(`  ❌ Failed for ${org.name}:`, err.message);
+            }
+          }
+          console.log('✅ Monthly reports generation completed');
+        } catch (err) {
+          console.error('❌ Monthly reports generation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Monthly reports generation 1st of month at 4:00 AM');
     }
 
     // --- Start Server ---

@@ -369,7 +369,249 @@ export function formatContextForPrompt(context) {
   return prompt;
 }
 
+/**
+ * Generate weekly tactical recommendations (max 3)
+ * Focused on immediate actions for new/worsening risks
+ */
+export async function generateWeeklyRecommendations(currentState, previousState, newRisks, activeCrises, topDrivers) {
+  try {
+    // Build weekly-specific context
+    let context = `You are a behavioral intelligence expert analyzing team health changes.
+
+WEEKLY BRIEF - TACTICAL FOCUS
+Generate 1-3 SPECIFIC, ACTIONABLE recommendations to address new or worsening issues.
+
+CURRENT TEAM STATE:
+- Zone: ${currentState.zone}
+- BDI: ${currentState.bdi}/100 (change: ${previousState ? (currentState.bdi - previousState.bdi > 0 ? '+' : '') + (currentState.bdi - previousState.bdi).toFixed(1) : '0'})
+`;
+
+    // Add new risks
+    if (newRisks.length > 0) {
+      context += `\nNEW OR WORSENING RISKS:\n`;
+      newRisks.forEach(risk => {
+        context += `- ${risk.type.toUpperCase()}: ${risk.score}/100 (${risk.isNew ? 'NEW' : 'up ' + risk.delta.toFixed(0) + ' points'})\n`;
+      });
+    }
+    
+    // Add active crises
+    if (activeCrises.length > 0) {
+      context += `\nACTIVE CRISES:\n`;
+      activeCrises.forEach(crisis => {
+        context += `- ${crisis.type} (${crisis.severity} severity)\n`;
+      });
+    }
+    
+    // Add top drivers
+    if (topDrivers.length > 0) {
+      context += `\nTOP DRIVERS:\n`;
+      topDrivers.forEach(driver => {
+        context += `- ${driver.metric}: ${(driver.deviation * 100).toFixed(0)}% deviation\n`;
+      });
+    }
+    
+    // Check if no action needed
+    if (newRisks.length === 0 && activeCrises.length === 0) {
+      return [{
+        title: 'No action required',
+        description: 'Team metrics are stable or improving. Continue monitoring.',
+        category: 'monitoring',
+        priority: 'low',
+        expectedImpact: 'Maintain current trajectory'
+      }];
+    }
+    
+    context += `\nINSTRUCTIONS:
+- Generate MAXIMUM 3 recommendations
+- Each must be SPECIFIC and ACTIONABLE (not vague advice)
+- Must reference the actual risks/drivers above
+- NO generic advice like "improve communication"
+- If only 1-2 critical issues, generate only 1-2 recommendations
+- Explicitly state "No action needed" if nothing changed
+
+FORMAT:
+Return JSON array of recommendations:
+[
+  {
+    "title": "Specific action title",
+    "description": "What to do, how to do it",
+    "category": "overload|execution|retention|crisis",
+    "priority": "critical|high|medium",
+    "expectedImpact": "Specific metric improvement expected"
+  }
+]`;
+    
+    // Call OpenAI (placeholder - integrate with actual AI service)
+    const recommendations = await callOpenAIForRecommendations(context, 3);
+    
+    return recommendations;
+    
+  } catch (error) {
+    console.error('Error generating weekly recommendations:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate monthly strategic narrative
+ * Leadership-focused, no tactical recommendations
+ */
+export async function generateMonthlyNarrative(monthlyData) {
+  try {
+    const {
+      orgHealth,
+      persistentRisks,
+      leadershipSignals,
+      executionSignals,
+      retentionExposure,
+      topStructuralDrivers,
+      crisisPatterns
+    } = monthlyData;
+    
+    let context = `You are a strategic organizational health advisor for leadership.
+
+MONTHLY ORGANIZATIONAL HEALTH REVIEW
+Generate a strategic narrative and leadership decision framework. NO tactical recommendations.
+
+ORGANIZATIONAL HEALTH:
+- Average BDI: ${orgHealth.avgBDI.toFixed(1)}/100 (${orgHealth.bdiTrend})
+- Teams at Risk: ${orgHealth.teamsAtRisk} of ${orgHealth.zoneDistribution.stable + orgHealth.zoneDistribution.stretched + orgHealth.zoneDistribution.critical + orgHealth.zoneDistribution.recovery}
+- Zone Distribution:
+  • Stable: ${orgHealth.zoneDistribution.stable}
+  • Stretched: ${orgHealth.zoneDistribution.stretched}
+  • Critical: ${orgHealth.zoneDistribution.critical}
+  • Recovery: ${orgHealth.zoneDistribution.recovery}
+`;
+
+    // Persistent risks
+    if (persistentRisks.length > 0) {
+      context += `\nPERSISTENT RISKS (≥3 weeks elevated):\n`;
+      persistentRisks.forEach(risk => {
+        context += `- ${risk.riskType.toUpperCase()}: ${risk.weeksAboveThreshold} weeks above threshold (${risk.avgScore.toFixed(0)}/100)\n`;
+        context += `  Classification: ${risk.classification.toUpperCase()}\n`;
+        context += `  Teams affected: ${risk.affectedTeams.length}\n`;
+      });
+    }
+    
+    // Leadership signals
+    context += `\nLEADERSHIP SIGNALS:
+- Manager Effectiveness: ${leadershipSignals.managerEffectiveness.avgScore}/100
+  • Managers needing coaching: ${leadershipSignals.managerEffectiveness.managersNeedCoachingCount}
+  • Critical managers: ${leadershipSignals.managerEffectiveness.managersCriticalCount}
+- Equity Score: ${leadershipSignals.equityScoreAvg}/100 (${leadershipSignals.equityIssuesCount} issues detected)
+- Succession Risk: ${leadershipSignals.successionCriticalCount} critical dependencies (avg bus factor: ${leadershipSignals.avgBusFactor})
+`;
+    
+    // Execution signals
+    context += `\nEXECUTION HEALTH:
+- Execution Drag: ${executionSignals.executionDragAvg}/100 (${executionSignals.decisionVelocity} decision velocity)
+- High-Risk Projects: ${executionSignals.highRiskProjectsCount}
+- Low ROI Meetings: ${executionSignals.meetingROILowPercent.toFixed(0)}%
+- Network Silo Score: ${executionSignals.networkSiloScore}/100
+`;
+    
+    // Retention exposure
+    context += `\nRETENTION EXPOSURE:
+- Average Attrition Risk: ${retentionExposure.avgAttritionRisk}/100 (${retentionExposure.trend})
+- Critical Flight Risk: ${retentionExposure.criticalIndividualsCount} individuals
+- High Flight Risk: ${retentionExposure.highRiskIndividualsCount} individuals
+- Estimated Turnover Risk: ${retentionExposure.estimatedTurnoverRisk.toFixed(0)}% of workforce
+`;
+    
+    // Structural drivers
+    if (topStructuralDrivers.length > 0) {
+      context += `\nSTRUCTURAL DRIVERS (org-wide patterns):\n`;
+      topStructuralDrivers.forEach(driver => {
+        context += `- ${driver.metric}: ${(driver.avgDeviation * 100).toFixed(0)}% deviation across ${driver.teamsAffected} teams (${driver.severity})\n`;
+      });
+    }
+    
+    // Crisis patterns
+    if (crisisPatterns.totalCrises > 0) {
+      context += `\nCRISIS PATTERNS:
+- Total Crises: ${crisisPatterns.totalCrises}
+- Teams with Recurring Crises: ${crisisPatterns.teamsWithRecurringCrises}
+`;
+      if (crisisPatterns.crisisByType.length > 0) {
+        context += `- Crisis Types:\n`;
+        crisisPatterns.crisisByType.forEach(c => {
+          context += `  • ${c.type}: ${c.count}\n`;
+        });
+      }
+    }
+    
+    context += `\nINSTRUCTIONS:
+Generate a strategic organizational health summary for the CEO/leadership team.
+
+CRITICAL RULES:
+- NO individual names
+- NO tactical recommendations (no "schedule 1-on-1s", "cancel meetings", etc.)
+- NO coaching language
+- FOCUS on organizational trajectory, structural risks, leadership decisions
+- Include cost of inaction (qualitative)
+
+OUTPUT FORMAT (JSON):
+{
+  "narrative": "2-3 paragraph executive summary of organizational health",
+  "keyRisks": [
+    {
+      "risk": "Brief risk description",
+      "impact": "Business impact if unaddressed",
+      "costOfInaction": "What happens if leadership doesn't act"
+    }
+  ],
+  "leadershipDecisionsRequired": [
+    {
+      "decision": "Strategic decision needed (e.g., 'Resource allocation review', 'Organizational restructure consideration')",
+      "rationale": "Why this decision is needed now",
+      "urgency": "immediate|this-quarter|strategic"
+    }
+  ],
+  "organizationalTrajectory": "positive|stable|concerning|critical"
+}`;
+    
+    // Call OpenAI (placeholder - integrate with actual AI service)
+    const narrative = await callOpenAIForNarrative(context);
+    
+    return narrative;
+    
+  } catch (error) {
+    console.error('Error generating monthly narrative:', error);
+    return {
+      narrative: 'Unable to generate narrative at this time.',
+      keyRisks: [],
+      leadershipDecisionsRequired: [],
+      organizationalTrajectory: 'stable'
+    };
+  }
+}
+
+/**
+ * Placeholder for OpenAI integration
+ * TODO: Integrate with actual OpenAI service
+ */
+async function callOpenAIForRecommendations(context, maxRecommendations) {
+  // This should call your existing OpenAI integration
+  // For now, return placeholder
+  console.log('AI Context for Weekly Recommendations:', context);
+  return [];
+}
+
+async function callOpenAIForNarrative(context) {
+  // This should call your existing OpenAI integration
+  // For now, return placeholder
+  console.log('AI Context for Monthly Narrative:', context);
+  return {
+    narrative: 'Organizational health analysis pending AI generation.',
+    keyRisks: [],
+    leadershipDecisionsRequired: [],
+    organizationalTrajectory: 'stable'
+  };
+}
+
 export default {
   buildRecommendationContext,
-  formatContextForPrompt
+  formatContextForPrompt,
+  generateWeeklyRecommendations,
+  generateMonthlyNarrative
 };
