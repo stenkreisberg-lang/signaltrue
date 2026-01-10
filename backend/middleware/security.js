@@ -10,7 +10,6 @@
  */
 
 import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import helmet from 'helmet';
 
@@ -104,19 +103,64 @@ export const adminLimiter = rateLimit({
 // ============================================
 
 /**
- * MongoDB injection protection
- * Removes $ and . from user input
+ * Custom MongoDB injection protection
+ * Sanitizes request body and params (not query to avoid setter issues)
  */
-export const sanitizeMongoInput = mongoSanitize({
-  replaceWith: '_',
-  onSanitize: ({ req, key }) => {
-    console.warn(`[Security] Sanitized potentially malicious input in ${key}`, {
-      ip: req.ip,
-      path: req.path,
-      method: req.method
-    });
+export function sanitizeMongoInput(req, res, next) {
+  try {
+    // Sanitize body
+    if (req.body) {
+      req.body = sanitizeObject(req.body);
+    }
+    
+    // Sanitize params
+    if (req.params) {
+      req.params = sanitizeObject(req.params);
+    }
+    
+    next();
+  } catch (error) {
+    console.error('[Security] Sanitization error:', error);
+    next(); // Don't block request on sanitization error
   }
-});
+}
+
+/**
+ * Recursively sanitize an object by removing $ and . characters
+ */
+function sanitizeObject(obj) {
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
+  
+  const sanitized = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    // Replace $ and . in keys
+    const cleanKey = key.replace(/[\$\.]/g, '_');
+    
+    // Recursively sanitize nested objects
+    if (typeof value === 'object' && value !== null) {
+      sanitized[cleanKey] = sanitizeObject(value);
+    } else {
+      sanitized[cleanKey] = value;
+    }
+    
+    // Log if we sanitized something
+    if (cleanKey !== key) {
+      console.warn('[Security] Sanitized potentially malicious key:', {
+        original: key,
+        sanitized: cleanKey
+      });
+    }
+  }
+  
+  return sanitized;
+}
 
 /**
  * HTTP Parameter Pollution protection
