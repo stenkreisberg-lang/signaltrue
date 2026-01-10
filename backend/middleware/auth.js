@@ -63,9 +63,24 @@ export function authenticateToken(req, res, next) {
 
 // Require admin role
 export function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'master_admin') {
     return res.status(403).json({ 
       message: 'Forbidden: Admin access required'
+    });
+  }
+  next();
+}
+
+// Require HR or Admin role (for sensitive people data)
+export function requireHROrAdmin(req, res, next) {
+  const role = req.user?.role;
+  const allowedRoles = ['admin', 'master_admin', 'hr_admin'];
+  
+  if (!role || !allowedRoles.includes(role)) {
+    return res.status(403).json({ 
+      message: 'Forbidden: HR or Admin access required',
+      required: allowedRoles,
+      current: role
     });
   }
   next();
@@ -149,5 +164,6 @@ export default {
   requireAuth,
   authenticateToken,
   requireAdmin,
+  requireHROrAdmin,
   requireRoles
 };

@@ -90,6 +90,13 @@ import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
 import auditConsent from "./middleware/consentAudit.js";
+import { 
+  applySecurityMiddleware,
+  authLimiter,
+  intelligenceLimiter,
+  adminLimiter,
+  apiLimiter
+} from './middleware/security.js';
 
 // --- Service Imports ---
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
@@ -149,6 +156,24 @@ async function main() {
     };
     app.use(cors(corsOptions));
     app.set('trust proxy', 1);
+    
+    // --- Security Middleware ---
+    // Apply core security (headers, sanitization, monitoring)
+    applySecurityMiddleware(app);
+    
+    // Apply rate limiting to auth endpoints
+    app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/register', authLimiter);
+    
+    // Apply rate limiting to intelligence endpoints
+    app.use('/api/intelligence', intelligenceLimiter);
+    
+    // Apply rate limiting to admin endpoints
+    app.use('/api/admin', adminLimiter);
+    
+    // Apply general rate limiting to all API routes
+    app.use('/api/', apiLimiter);
+    
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
