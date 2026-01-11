@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { requireApiKey } from "../middleware/auth.js";
 import { scanFile } from "../utils/virusScan.js";
 import { saveFileLocal, saveFileS3 } from "../utils/storage.js";
+import { validateProjectCreation, validateObjectId, validateRequest } from "../middleware/validation.js";
 
 // Define allowed file types
 const ALLOWED_TYPES = [
@@ -31,13 +32,9 @@ const upload = multer({
 const router = express.Router();
 
 // POST - Create a new project
-router.post("/", async (req, res) => {
+router.post("/", validateProjectCreation, async (req, res) => {
   try {
     const { name, description, favorite } = req.body;
-    // Basic validation: name and description are required and must be non-empty strings
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      return res.status(400).json({ message: "'name' is required" });
-    }
     if (!description || typeof description !== "string" || description.trim() === "") {
       return res.status(400).json({ message: "'description' is required" });
     }

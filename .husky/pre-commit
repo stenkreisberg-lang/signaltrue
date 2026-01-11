@@ -1,0 +1,5 @@
+# Run lint-staged to check staged files
+npx lint-staged
+
+# Skip backend linting for now (ESLint 9 migration in progress)
+# Will be re-enabled after migration complete

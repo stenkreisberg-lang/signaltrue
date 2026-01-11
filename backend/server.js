@@ -92,6 +92,7 @@ import subscriptionRoutes from "./routes/subscriptions.js";
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
 import auditConsent from "./middleware/consentAudit.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { 
   applySecurityMiddleware,
   authLimiter,
@@ -242,6 +243,12 @@ async function main() {
     app.use('/api/intelligence', behavioralIntelligenceRoutes);
     app.use('/api/reports', reportsRoutes);
     app.use('/api/subscriptions', subscriptionRoutes);
+
+    // --- 404 Handler - Must come after all route definitions ---
+    app.use(notFoundHandler);
+
+    // --- Global Error Handler - Must be last middleware ---
+    app.use(errorHandler);
 
     // --- Cron Jobs ---
     if (process.env.NODE_ENV !== "test") {

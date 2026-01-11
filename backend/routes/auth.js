@@ -7,6 +7,12 @@ import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
 import { encryptString } from '../utils/crypto.js';
+import {
+  validateUserRegistration,
+  validateLogin,
+  validateEmail,
+  validateRequest
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -70,14 +76,9 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 });
 
 // Register new user
-router.post('/register', async (req, res) => {
+router.post('/register', validateUserRegistration, async (req, res) => {
   try {
     const { email, password, name, role, teamId, orgId, companyName } = req.body;
-
-    // Validate required fields (teamId and orgId not required for master admin)
-    if (!email || !password || !name) {
-      return res.status(400).json({ message: 'Email, password, and name are required' });
-    }
 
     // Optional: block consumer email domains
     const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
@@ -178,13 +179,9 @@ router.post('/register', async (req, res) => {
 // Login
 // POST /api/auth/login
 // Body: { email, password }
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
 
     const user = await User.findOne({ email }).select('+password').populate('teamId').populate('orgId');
 
@@ -272,12 +269,9 @@ const getResendClient = () => {
 };
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', validateEmail(), validateRequest, async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
 
     const user = await User.findOne({ email: email.toLowerCase() });
     
