@@ -264,9 +264,12 @@ router.post('/submit', async (req, res) => {
 
     if (resend) {
       // Send branded email to user
+      // Use signaltrue.ai domain (verified in Resend)
+      const fromEmail = 'SignalTrue <notifications@signaltrue.ai>';
+      
       try {
         await resend.emails.send({
-          from: 'SignalTrue <notifications@signaltrue.ai>',
+          from: fromEmail,
           to: email,
           subject: `📊 Your SignalTrue Fit Assessment: ${tierConfig[tier]?.label || 'Results'}`,
           html: generateUserEmail(submission),
@@ -280,7 +283,7 @@ router.post('/submit', async (req, res) => {
       // Send internal notification
       try {
         await resend.emails.send({
-          from: 'SignalTrue <notifications@signaltrue.ai>',
+          from: fromEmail,
           to: 'sten.kreisberg@signaltrue.ai',
           subject: `New SignalTrue Fit Assessment Submission`,
           html: `<pre>${generateInternalEmail(submission)}</pre>`,
