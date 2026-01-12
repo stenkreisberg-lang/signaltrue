@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import DriftAlertCard from "../components/DriftAlertCard";
 import { Button } from "../components/ui/button";
+import { Link } from "react-router-dom";
 import { 
   Shield, 
   Zap, 
@@ -198,13 +199,17 @@ const Product = () => {
                 Book a demo and we'll walk you through signals, privacy model, and the action workflow.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button variant="hero" size="xl">
-                  Get a Demo
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-                <Button variant="hero-outline" size="xl">
-                  View Pricing
-                </Button>
+                <Link to="/register">
+                  <Button variant="hero" size="xl">
+                    Get a Demo
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link to="/pricing">
+                  <Button variant="hero-outline" size="xl">
+                    View Pricing
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { CheckCircle, ArrowRight, HelpCircle, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -24,7 +25,7 @@ const plans = [
       "No strategic synthesis",
     ],
     cta: "Start Trial",
-    link: "https://app.signaltrue.ai/register?plan=team",
+    link: "/register?plan=team",
   },
   {
     name: "Leadership Intelligence",
@@ -45,7 +46,7 @@ const plans = [
     ],
     notIncluded: [],
     cta: "Start Trial",
-    link: "https://app.signaltrue.ai/register?plan=leadership",
+    link: "/register?plan=leadership",
   },
   {
     name: "Organizational Intelligence",
@@ -65,7 +66,7 @@ const plans = [
     ],
     notIncluded: [],
     cta: "Contact Sales",
-    link: "mailto:sales@signaltrue.com?subject=Organizational Intelligence Inquiry",
+    link: "mailto:sales@signaltrue.ai?subject=Organizational Intelligence Inquiry",
   },
 ];
 
@@ -93,6 +94,16 @@ const faqs = [
 ];
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  
+  const handlePlanClick = (link: string) => {
+    if (link.startsWith('mailto:')) {
+      window.location.href = link;
+    } else {
+      navigate(link);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -172,7 +183,7 @@ const Pricing = () => {
                     variant={plan.highlight ? "cta" : "outline"}
                     className="w-full"
                     size="lg"
-                    onClick={() => window.location.href = plan.link}
+                    onClick={() => handlePlanClick(plan.link)}
                   >
                     {plan.cta}
                     {plan.highlight && <ArrowRight className="w-4 h-4 ml-2" />}
@@ -229,7 +240,7 @@ const Pricing = () => {
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
                 Request a demo to see how SignalTrue turns coordination patterns into actionable signals.
               </p>
-              <Button variant="hero" size="xl" onClick={() => window.location.href = 'mailto:sales@signaltrue.com'}>
+              <Button variant="hero" size="xl" onClick={() => window.location.href = 'mailto:sales@signaltrue.ai'}>
                 Schedule a Call
                 <ArrowRight className="w-5 h-5" />
               </Button>
