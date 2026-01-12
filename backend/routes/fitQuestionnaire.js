@@ -170,11 +170,22 @@ const generateUserEmail = (submission) => {
           <!-- CTA -->
           <tr>
             <td style="padding: 0 32px 40px; text-align: center;">
-              <a href="https://signaltrue.ai/register" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://www.signaltrue.ai/register" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="16%" strokecolor="#6366f1" fillcolor="#6366f1">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">Request a Personalized Demo</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="https://www.signaltrue.ai/register" target="_blank" style="display: inline-block; background-color: #6366f1; background-image: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; mso-hide: all;">
                 Request a Personalized Demo
               </a>
+              <!--<![endif]-->
               <p style="margin: 16px 0 0; color: #6b7280; font-size: 14px;">
                 See how SignalTrue can work for your organization
+              </p>
+              <p style="margin: 12px 0 0; color: #9ca3af; font-size: 12px;">
+                Or copy this link: <a href="https://www.signaltrue.ai/register" style="color: #6366f1;">https://www.signaltrue.ai/register</a>
               </p>
             </td>
           </tr>
