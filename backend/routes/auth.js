@@ -332,14 +332,6 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
-// Resend client for password reset emails
-const getResendClient = () => {
-  if (process.env.RESEND_API_KEY) {
-    return new Resend(process.env.RESEND_API_KEY);
-  }
-  return null;
-};
-
 // POST /api/auth/forgot-password
 router.post('/forgot-password', validateEmail(), validateRequest, async (req, res) => {
   try {
