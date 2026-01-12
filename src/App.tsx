@@ -18,6 +18,7 @@ import Insights from "./pages/app/Insights";
 import Signals from "./pages/app/Signals";
 import RiskFeed from "./pages/app/RiskFeed";
 import Privacy from "./pages/app/Privacy";
+import SelfCheck from "./pages/SelfCheck";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/app/signals" element={<Signals />} />
             <Route path="/app/risk-feed" element={<RiskFeed />} />
             <Route path="/app/privacy" element={<Privacy />} />
+            <Route path="/self-check" element={<SelfCheck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

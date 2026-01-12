@@ -215,21 +215,33 @@ const generateUserEmail = (submission) => {
 const generateInternalEmail = (submission) => {
   const config = tierConfig[submission.tier] || tierConfig['good-fit'];
   
+  // Extract company size (Q1) and work model (Q3) for quick reference
+  const companySizeAnswer = submission.answers.find(a => a.questionId === 1);
+  const workModelAnswer = submission.answers.find(a => a.questionId === 3);
+  
+  const companySize = companySizeAnswer?.value?.replace(/-/g, ' ') || 'Not provided';
+  const workModel = workModelAnswer?.value?.replace(/-/g, ' ') || 'Not provided';
+  
   const answersText = submission.answers.map((answer) => {
     const question = questions.find(q => q.id === answer.questionId);
     return `  - Q${answer.questionId}: ${question?.text || ''}\n    Answer: ${answer.value}`;
   }).join('\n');
 
   return `
-New SignalTrue Fit Assessment Submission
+🚨 New SignalTrue Fit Assessment Lead
 
+=== QUICK SUMMARY ===
 Email: ${submission.email}
 Score: ${submission.score}/30
 Tier: ${config.label}
+Company Size: ${companySize}
+Work Model: ${workModel}
+
+=== DETAILS ===
 Consent Given: ${submission.consentGiven ? 'Yes' : 'No'}
 Submitted: ${new Date().toISOString()}
 
-Answers:
+=== ALL ANSWERS ===
 ${answersText}
 
 ---
@@ -317,6 +329,28 @@ router.post('/submit', async (req, res) => {
   } catch (error) {
     console.error('❌ Fit questionnaire submission error:', error.message);
     res.status(500).json({ message: 'Failed to submit assessment' });
+  }
+});
+
+// POST /api/fit-questionnaire/track - Track self-check events
+router.post('/track', async (req, res) => {
+  try {
+    const { event, data, timestamp } = req.body;
+
+    // Log tracking event
+    console.log(`[Self-Check Event] ${event}`, {
+      data,
+      timestamp: timestamp || new Date().toISOString(),
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    // Could save to database or send to analytics service
+    // For now, just acknowledge receipt
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Track event error:', error.message);
+    res.status(200).json({ success: true }); // Don't fail tracking requests
   }
 });
 
