@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { ClipboardCheck, ArrowRight } from 'lucide-react';
+import { useEffect, useCallback, useState } from 'react';
+import { ClipboardCheck, ArrowRight, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useQuestionnaire } from './useQuestionnaire';
 import QuestionStep from './QuestionStep';
@@ -16,6 +16,8 @@ interface FitQuestionnaireProps {
 }
 
 const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const {
     currentStep,
     totalSteps,
@@ -46,6 +48,28 @@ const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
       });
     }
   }, [isComplete, result, onTrackEvent]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen]);
+
+  const handleStart = useCallback(() => {
+    setIsModalOpen(true);
+    start();
+  }, [start]);
+
+  const handleClose = useCallback(() => {
+    setIsModalOpen(false);
+    reset();
+  }, [reset]);
 
   const handleSubmitEmail = useCallback(async (email: string, consent: boolean) => {
     if (!result) return;
@@ -80,79 +104,93 @@ const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
 
   const handleReset = useCallback(() => {
     reset();
-  }, [reset]);
+    setIsModalOpen(true);
+    start();
+  }, [reset, start]);
 
-  // Initial state - show intro
-  if (!hasStarted) {
-    return (
-      <section id="fit-questionnaire" className="py-24 bg-background">
-        <div className="container mx-auto px-6">
-          <div className="max-w-2xl mx-auto text-center">
-            {/* Section header */}
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <ClipboardCheck className="w-8 h-8 text-primary" />
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-              Wondering how well SignalTrue fits your organization?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Take this 2-minute assessment to see if SignalTrue is the right fit. 
-              No email needed until you see your results.
-            </p>
-
-            <Button
-              variant="hero"
-              size="xl"
-              onClick={start}
-              className="min-w-[200px]"
-            >
-              Start Assessment
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              10 quick questions • Takes about 2 minutes
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
+  // Intro section on homepage
+  const IntroSection = () => (
     <section id="fit-questionnaire" className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        {/* Section header - compact during questions */}
-        <div className="text-center mb-12">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
-            Fit Assessment
-          </p>
-          <h2 className="text-2xl font-display font-bold">
-            {isComplete ? 'Your Results' : 'Is SignalTrue right for you?'}
-          </h2>
-        </div>
+        <div className="max-w-2xl mx-auto text-center">
+          {/* Section header */}
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+            <ClipboardCheck className="w-8 h-8 text-primary" />
+          </div>
 
-        {/* Question or Results */}
-        {!isComplete && currentQuestion ? (
-          <QuestionStep
-            question={currentQuestion}
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            onSelect={selectAnswer}
-            onBack={goBack}
-            selectedValue={answers.find(a => a.questionId === currentQuestion.id)?.value}
-          />
-        ) : result ? (
-          <ResultsScreen
-            result={result}
-            answers={answers}
-            onReset={handleReset}
-            onSubmitEmail={handleSubmitEmail}
-          />
-        ) : null}
+          <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+            Are you seeing people strain early — or only when it's already too late?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            A short self-check for HR leaders who want earlier clarity, without surveys or extra work for teams.
+          </p>
+
+          <Button
+            variant="hero"
+            size="xl"
+            onClick={handleStart}
+            className="min-w-[280px]"
+          >
+            Take the 2-minute HR self-check
+            <ArrowRight className="w-5 h-5" />
+          </Button>
+
+          <p className="mt-4 text-sm text-muted-foreground">
+            10 quick questions • Takes about 2 minutes
+          </p>
+        </div>
       </div>
     </section>
+  );
+
+  // Full-screen modal for questionnaire (no distractions)
+  const QuestionnaireModal = () => (
+    <div className="fixed inset-0 z-50 bg-background">
+      {/* Minimal header with close button only */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
+        <div className="text-sm font-medium text-muted-foreground">
+          SignalTrue Self-Check
+        </div>
+        <button
+          onClick={handleClose}
+          className="p-2 rounded-full hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Main content - centered, focused */}
+      <div className="h-full flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-2xl">
+          {!isComplete && currentQuestion ? (
+            <QuestionStep
+              question={currentQuestion}
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              onSelect={selectAnswer}
+              onBack={goBack}
+              selectedValue={answers.find(a => a.questionId === currentQuestion.id)?.value}
+            />
+          ) : result ? (
+            <ResultsScreen
+              result={result}
+              answers={answers}
+              onReset={handleReset}
+              onSubmitEmail={handleSubmitEmail}
+              onClose={handleClose}
+            />
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <IntroSection />
+      {isModalOpen && <QuestionnaireModal />}
+    </>
   );
 };
 

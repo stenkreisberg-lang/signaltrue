@@ -8,19 +8,50 @@ interface ResultsScreenProps {
   answers: QuestionnaireAnswer[];
   onReset: () => void;
   onSubmitEmail: (email: string, consent: boolean) => Promise<void>;
+  onClose?: () => void;
 }
+
+// Dynamic headlines based on tier
+const getTierHeadline = (tier: string) => {
+  switch (tier) {
+    case 'strong-fit':
+      return "You're not late — but the window is narrower than it looks.";
+    case 'good-fit':
+      return "You're catching some signals early. Others are still hidden.";
+    case 'not-yet-fit':
+      return "Right now, SignalTrue may be more than you need.";
+    default:
+      return "Here's what we found.";
+  }
+};
+
+// Dynamic explanation based on tier
+const getTierExplanation = (tier: string) => {
+  switch (tier) {
+    case 'strong-fit':
+      return "Your organization has the scale, the collaboration patterns, and the visibility gaps where early signals matter most. Teams like yours often discover strain patterns 4–6 weeks before they'd otherwise surface — enough time to intervene before it becomes attrition.";
+    case 'good-fit':
+      return "You're in a position where some signals are visible, but critical ones — like workload imbalance or meeting drag — often stay hidden until they escalate. SignalTrue helps HR teams like yours spot what's brewing before it becomes a conversation you wish you'd had earlier.";
+    case 'not-yet-fit':
+      return "Based on your team size and work patterns, the complexity that SignalTrue is built for may not be present yet. That's not a bad thing — it means you likely have more direct visibility into how your people are doing. As you grow, this changes quickly.";
+    default:
+      return "Based on your answers, here's what we typically see for organizations like yours.";
+  }
+};
 
 const ResultsScreen = ({
   result,
   answers,
   onReset,
   onSubmitEmail,
+  onClose,
 }: ResultsScreenProps) => {
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   const getTierStyles = () => {
     switch (result.tier) {
@@ -86,40 +117,45 @@ const ResultsScreen = ({
     }
   };
 
-  return (
-    <div className="w-full max-w-2xl mx-auto animate-slide-up">
-      {/* Result card */}
-      <div className={`rounded-2xl border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}>
-        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${styles.bgColor} mb-6`}>
-          <Icon className={`w-8 h-8 ${styles.textColor}`} />
+  // Success state after email submission
+  if (isSubmitted) {
+    return (
+      <div className="w-full max-w-2xl mx-auto animate-slide-up text-center">
+        <div className="bg-success/10 rounded-2xl border border-success/30 p-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/20 mb-6">
+            <CheckCircle className="w-8 h-8 text-success" />
+          </div>
+          <h3 className="text-2xl font-display font-bold text-foreground mb-3">
+            Check your inbox
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            We've sent your detailed results to <strong>{email}</strong>
+          </p>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="min-w-[200px]"
+          >
+            Close
+          </Button>
         </div>
-
-        <div className="mb-4">
-          <span className={`text-lg font-semibold ${styles.textColor}`}>
-            You scored {result.score}
-          </span>
-        </div>
-
-        <h3 className="text-3xl font-display font-bold text-foreground mb-4">
-          {result.tierLabel}
-        </h3>
-
-        <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto">
-          {result.tierDescription}
-        </p>
       </div>
+    );
+  }
 
-      {/* Email capture form or success message */}
-      {!isSubmitted ? (
+  // Email capture form (shown after user clicks to get details)
+  if (showEmailForm) {
+    return (
+      <div className="w-full max-w-2xl mx-auto animate-slide-up">
         <div className="bg-card rounded-2xl border border-border/50 p-8">
-          <h4 className="text-xl font-display font-semibold text-foreground mb-2 text-center">
-            Want a detailed breakdown?
-          </h4>
-          <p className="text-muted-foreground text-center mb-6">
-            Get a personalized PDF summary with recommendations tailored to your answers.
+          <h3 className="text-2xl font-display font-bold text-foreground mb-3 text-center">
+            Want a detailed breakdown of what this means for your teams?
+          </h3>
+          <p className="text-muted-foreground text-center mb-8">
+            We'll send you a summary of where hidden risk usually shows up — based on your answers.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
               <div className="relative">
@@ -127,10 +163,11 @@ const ResultsScreen = ({
                 <input
                   type="email"
                   id="email"
-                  placeholder="Enter your email"
+                  placeholder="Your work email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 rounded-xl border border-border/50 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  autoFocus
                 />
               </div>
               {error && (
@@ -151,8 +188,7 @@ const ResultsScreen = ({
                 className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/50"
               />
               <label htmlFor="consent" className="text-sm text-muted-foreground leading-relaxed">
-                I consent to receiving this summary and future relevant content from SignalTrue. 
-                You can unsubscribe at any time.
+                I agree to receive my results and relevant insights from SignalTrue.
               </label>
             </div>
 
@@ -170,37 +206,73 @@ const ResultsScreen = ({
                 </>
               ) : (
                 <>
-                  Get Your Detailed Fit Summary
+                  Send me my results
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </Button>
           </form>
-        </div>
-      ) : (
-        <div className="bg-success/10 rounded-2xl border border-success/30 p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-success/20 mb-4">
-            <CheckCircle className="w-6 h-6 text-success" />
-          </div>
-          <h4 className="text-xl font-display font-semibold text-foreground mb-2">
-            Check your inbox!
-          </h4>
-          <p className="text-muted-foreground">
-            We've sent your personalized fit summary to <strong>{email}</strong>
-          </p>
-        </div>
-      )}
 
-      {/* Reset button */}
-      <div className="mt-6 text-center">
+          <button
+            onClick={() => setShowEmailForm(false)}
+            className="mt-6 w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to results
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main result screen (shown first, before email)
+  return (
+    <div className="w-full max-w-2xl mx-auto animate-slide-up">
+      {/* Result card with emotional headline */}
+      <div className={`rounded-2xl border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}>
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${styles.bgColor} mb-6`}>
+          <Icon className={`w-8 h-8 ${styles.textColor}`} />
+        </div>
+
+        {/* Emotional headline - not score-focused */}
+        <h3 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-4 leading-tight">
+          {getTierHeadline(result.tier)}
+        </h3>
+
+        {/* Explanation */}
+        <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto">
+          {getTierExplanation(result.tier)}
+        </p>
+      </div>
+
+      {/* CTA to get detailed breakdown */}
+      <div className="text-center space-y-4">
         <Button
-          variant="ghost"
-          onClick={onReset}
-          className="text-muted-foreground hover:text-foreground"
+          variant="hero"
+          size="lg"
+          onClick={() => setShowEmailForm(true)}
+          className="min-w-[280px]"
         >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Take the assessment again
+          Get my detailed breakdown
+          <ArrowRight className="w-5 h-5" />
         </Button>
+
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={onReset}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Take again
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Close
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
