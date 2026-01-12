@@ -1,7 +1,15 @@
 import express from 'express';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const router = express.Router();
+
+// Resend client for fit questionnaire emails
+const getResendClient = () => {
+  if (process.env.RESEND_API_KEY) {
+    return new Resend(process.env.RESEND_API_KEY);
+  }
+  return null;
+};
 
 // Question data for email summary
 const questions = [
@@ -52,22 +60,6 @@ const tierConfig = {
       'We\'d love to stay in touch and help when the timing is right.',
     ],
   },
-};
-
-// Initialize email transporter
-const getEmailTransporter = () => {
-  if (process.env.EMAIL_HOST && process.env.EMAIL_USER) {
-    return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-  }
-  return null;
 };
 
 // Generate branded HTML email for user
@@ -267,18 +259,17 @@ router.post('/submit', async (req, res) => {
 
     const submission = { email, score, tier, answers, consentGiven };
 
-    // Get email transporter
-    const transporter = getEmailTransporter();
+    // Get Resend client
+    const resend = getResendClient();
 
-    if (transporter) {
+    if (resend) {
       // Send branded email to user
       try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        await resend.emails.send({
+          from: 'SignalTrue <notifications@signaltrue.ai>',
           to: email,
           subject: `📊 Your SignalTrue Fit Assessment: ${tierConfig[tier]?.label || 'Results'}`,
           html: generateUserEmail(submission),
-          text: `Your SignalTrue Fit Score: ${score}/30 - ${tierConfig[tier]?.label || tier}`,
         });
         console.log(`✓ Fit assessment email sent to ${email}`);
       } catch (emailError) {
@@ -288,11 +279,11 @@ router.post('/submit', async (req, res) => {
 
       // Send internal notification
       try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        await resend.emails.send({
+          from: 'SignalTrue <notifications@signaltrue.ai>',
           to: 'sten.kreisberg@signaltrue.ai',
           subject: `New SignalTrue Fit Assessment Submission`,
-          text: generateInternalEmail(submission),
+          html: `<pre>${generateInternalEmail(submission)}</pre>`,
         });
         console.log(`✓ Internal notification sent for ${email}`);
       } catch (notifyError) {
@@ -300,7 +291,7 @@ router.post('/submit', async (req, res) => {
         // Continue - don't fail the request
       }
     } else {
-      console.warn('⚠️  Email transporter not configured, skipping email delivery');
+      console.warn('⚠️  Resend not configured (RESEND_API_KEY missing), skipping email delivery');
       console.log('Fit Assessment Submission:', JSON.stringify(submission, null, 2));
     }
 
