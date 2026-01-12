@@ -19,6 +19,64 @@ const router = express.Router();
 // JWT Secret (in production, use environment variable)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// Resend client for notification emails
+const getResendClient = () => {
+  if (process.env.RESEND_API_KEY) {
+    return new Resend(process.env.RESEND_API_KEY);
+  }
+  return null;
+};
+
+// Send internal notification for new registration
+const sendRegistrationNotification = async (user, orgName) => {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('⚠️  Resend not configured, skipping registration notification');
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: 'SignalTrue <notifications@signaltrue.ai>',
+      to: 'sten.kreisberg@signaltrue.ai',
+      subject: `🎉 New SignalTrue Registration: ${orgName}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
+          <h2 style="color: #6366f1;">New Account Registration</h2>
+          <table style="border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 8px 16px 8px 0; font-weight: bold; color: #374151;">Company:</td>
+              <td style="padding: 8px 0; color: #111827;">${orgName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 16px 8px 0; font-weight: bold; color: #374151;">Name:</td>
+              <td style="padding: 8px 0; color: #111827;">${user.name || 'Not provided'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 16px 8px 0; font-weight: bold; color: #374151;">Email:</td>
+              <td style="padding: 8px 0; color: #111827;">${user.email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 16px 8px 0; font-weight: bold; color: #374151;">Role:</td>
+              <td style="padding: 8px 0; color: #111827;">${user.role}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 16px 8px 0; font-weight: bold; color: #374151;">Registered:</td>
+              <td style="padding: 8px 0; color: #111827;">${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 24px; color: #6b7280; font-size: 14px;">
+            This is an automated notification from SignalTrue.
+          </p>
+        </div>
+      `,
+    });
+    console.log(`✓ Registration notification sent for ${user.email}`);
+  } catch (error) {
+    console.error('❌ Failed to send registration notification:', error.message);
+  }
+};
+
 // Create a MASTER ADMIN (secured by API key in production; open if no API_KEY set)
 // POST /api/auth/register-master
 // Body: { email, password, name }
@@ -144,6 +202,20 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     });
 
     await user.save();
+
+    // Get organization name for notification
+    let orgNameForNotification = companyName;
+    if (!orgNameForNotification && resolvedOrgId) {
+      try {
+        const org = await Organization.findById(resolvedOrgId);
+        orgNameForNotification = org?.name || 'Unknown';
+      } catch (e) {
+        orgNameForNotification = 'Unknown';
+      }
+    }
+
+    // Send notification email to admin (async, don't block response)
+    sendRegistrationNotification(user, orgNameForNotification);
 
     // Generate JWT
     const token = jwt.sign(
