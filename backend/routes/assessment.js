@@ -1,5 +1,6 @@
 import express from 'express';
 import AssessmentSubmission from '../models/assessmentSubmission.js';
+import { sendAssessmentResultsEmail, sendAssessmentLeadNotification } from '../services/assessmentEmailService.js';
 
 const router = express.Router();
 
@@ -39,8 +40,11 @@ router.post('/submit', async (req, res) => {
     // Log the submission (for internal notifications)
     console.log(`[Assessment] New submission: ${email} | Risk: ${result.riskScore?.level} | Cost: €${Math.round(result.costBreakdown?.totalCostLow || 0)} - €${Math.round(result.costBreakdown?.totalCostHigh || 0)}`);
 
-    // TODO: Send email notification to internal team
-    // TODO: Send results summary email to user
+    // Send emails (don't block response on email sending)
+    Promise.all([
+      sendAssessmentResultsEmail(email, result, inputs),
+      sendAssessmentLeadNotification(email, result, inputs)
+    ]).catch(err => console.error('[Assessment] Email sending error:', err));
 
     res.status(201).json({
       success: true,
