@@ -89,6 +89,7 @@ import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
 import reportsRoutes from "./routes/reports.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import fitQuestionnaireRoutes from "./routes/fitQuestionnaire.js";
+import chatRoutes from "./routes/chat.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -245,6 +246,9 @@ async function main() {
     app.use('/api/reports', reportsRoutes);
     app.use('/api/subscriptions', subscriptionRoutes);
     app.use('/api/fit-questionnaire', fitQuestionnaireRoutes);
+    
+    // --- AI Chat Assistant (public, no auth required) ---
+    app.use('/api/chat', chatRoutes);
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);
