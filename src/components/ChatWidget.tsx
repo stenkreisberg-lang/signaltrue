@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, ExternalLink } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageCircle, X, Send, Loader2, ExternalLink, BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { getAssessmentSession, AssessmentSession, AssessmentResult } from './WorkloadAssessment';
 
 interface ChatMessage {
   id: string;
@@ -30,6 +31,7 @@ export const ChatWidget: React.FC = () => {
   const [leadTriggerQuestion, setLeadTriggerQuestion] = useState('');
   const [leadTriggerType, setLeadTriggerType] = useState('');
   const [suggestedPrompts, setSuggestedPrompts] = useState<SuggestedPrompt[]>([]);
+  const [assessmentSession, setAssessmentSession] = useState<AssessmentSession | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,6 +42,25 @@ export const ChatWidget: React.FC = () => {
       .then(res => res.json())
       .then(data => setSuggestedPrompts(data.prompts || []))
       .catch(err => console.error('Failed to load prompts:', err));
+  }, []);
+
+  // Load assessment session on mount and listen for updates
+  useEffect(() => {
+    // Load existing session
+    const session = getAssessmentSession();
+    if (session) {
+      setAssessmentSession(session);
+    }
+
+    // Listen for assessment session updates
+    const handleSessionUpdate = (event: CustomEvent<AssessmentSession>) => {
+      setAssessmentSession(event.detail);
+    };
+
+    window.addEventListener('assessment-session-update', handleSessionUpdate as EventListener);
+    return () => {
+      window.removeEventListener('assessment-session-update', handleSessionUpdate as EventListener);
+    };
   }, []);
 
   // Scroll to bottom when messages change
@@ -75,7 +96,16 @@ export const ChatWidget: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: question.trim(),
-          sessionId
+          sessionId,
+          assessmentContext: assessmentSession?.completed ? {
+            riskLevel: assessmentSession.result?.riskScore.level,
+            riskScore: assessmentSession.result?.riskScore.total,
+            costRangeLow: assessmentSession.result?.costBreakdown.totalCostLow,
+            costRangeHigh: assessmentSession.result?.costBreakdown.totalCostHigh,
+            teamSize: assessmentSession.inputs?.company.teamSize,
+            meetingHours: assessmentSession.inputs?.workload.meetingHoursPerWeek,
+            insights: assessmentSession.result?.insights
+          } : null
         })
       });
 
@@ -199,15 +229,51 @@ export const ChatWidget: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96 min-h-[300px] bg-gray-50">
             {messages.length === 0 ? (
               <div className="space-y-4">
+                {/* Assessment Context Banner */}
+                {assessmentSession?.completed && assessmentSession.result && (
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BarChart3 className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">Assessment Completed</span>
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      Risk Level: <span className="font-medium capitalize">{assessmentSession.result.riskScore.level}</span>
+                      {' • '}
+                      Score: {assessmentSession.result.riskScore.total}/100
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      I can explain your results or answer questions about them.
+                    </p>
+                  </div>
+                )}
+
                 <p className="text-gray-600 text-sm text-center">
                   Hi! I can answer questions about SignalTrue's product, privacy, and pilot process.
+                  {assessmentSession?.completed && ' I also have context from your assessment results.'}
                 </p>
                 
                 {/* Suggested Prompts */}
                 {suggestedPrompts.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs text-gray-500 text-center">Quick questions:</p>
-                    {suggestedPrompts.map((prompt, idx) => (
+                    {/* Assessment-specific prompts if completed */}
+                    {assessmentSession?.completed && (
+                      <>
+                        <button
+                          onClick={() => sendMessage('How did you calculate my cost exposure?')}
+                          className="w-full text-left px-3 py-2 text-sm bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
+                        >
+                          How did you calculate my cost exposure?
+                        </button>
+                        <button
+                          onClick={() => sendMessage('What would SignalTrue measure differently?')}
+                          className="w-full text-left px-3 py-2 text-sm bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
+                        >
+                          What would SignalTrue measure differently?
+                        </button>
+                      </>
+                    )}
+                    {suggestedPrompts.slice(0, assessmentSession?.completed ? 2 : 4).map((prompt, idx) => (
                       <button
                         key={idx}
                         onClick={() => handlePromptClick(prompt)}

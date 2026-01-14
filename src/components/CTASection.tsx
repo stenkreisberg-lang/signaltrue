@@ -29,15 +29,15 @@ const CTASection = () => {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Link to="/register">
+            <Link to="/how-it-works#assessment">
               <Button variant="hero" size="xl">
-                Get a Demo
+                See How SignalTrue Reveals Hidden Workload
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/product">
+            <Link to="/register">
               <Button variant="hero-outline" size="xl">
-                View Product
+                Get a Demo
               </Button>
             </Link>
           </div>

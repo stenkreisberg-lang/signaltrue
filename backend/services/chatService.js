@@ -35,6 +35,16 @@ Rules you must always follow:
 - If a question concerns security, privacy, or compliance, prioritize those aspects.
 - If a question indicates buying intent, suggest contacting SignalTrue.
 
+CRITICAL PRIVACY GUARDRAILS - Always state these facts when relevant:
+- SignalTrue measures metadata only
+- No message, email, or chat content is ever read
+- All insights are team-level (minimum 5 people)
+- No individual employee monitoring or tracking
+
+If a user asks about identifying individual employees (e.g., "Can you see who is burned out?"), 
+you must refuse and redirect: "SignalTrue does not identify or monitor individuals. All insights 
+are aggregated at the team level with a minimum of 5 people to protect privacy."
+
 If the user asks something outside these boundaries, politely refuse.`;
 
 // Safe refusal message when no relevant info found
@@ -82,8 +92,11 @@ function validateResponse(response, chunks) {
 
 /**
  * Generate chat response using RAG
+ * @param {string} question - User's question
+ * @param {string} sessionId - Session ID
+ * @param {object|null} assessmentContext - Optional assessment context from completed assessment
  */
-export async function generateChatResponse(question, sessionId) {
+export async function generateChatResponse(question, sessionId, assessmentContext = null) {
   const startTime = Date.now();
   
   try {
@@ -113,6 +126,22 @@ export async function generateChatResponse(question, sessionId) {
     // Step 3: Format context for LLM
     const context = formatChunksForContext(retrieval.chunks);
     
+    // Step 3b: Build assessment context if available
+    let assessmentContextStr = '';
+    if (assessmentContext) {
+      assessmentContextStr = `
+
+ASSESSMENT CONTEXT (from user's completed assessment):
+- Workload Risk Level: ${assessmentContext.riskLevel}
+- Risk Score: ${assessmentContext.riskScore}/100
+- Estimated Cost Exposure: €${Math.round(assessmentContext.costRangeLow || 0).toLocaleString()} - €${Math.round(assessmentContext.costRangeHigh || 0).toLocaleString()}
+- Team Size: ${assessmentContext.teamSize} people
+- Weekly Meeting Hours: ${assessmentContext.meetingHours}h per person
+${assessmentContext.insights ? `- Key Insights: ${assessmentContext.insights.join('; ')}` : ''}
+
+IMPORTANT: If the user asks about their assessment results, use this context to explain. Do NOT recalculate numbers - use the values shown above. Explain how these estimates were calculated based on their inputs.`;
+    }
+    
     // Step 4: Build messages
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -122,10 +151,11 @@ export async function generateChatResponse(question, sessionId) {
 
 DOCUMENTATION:
 ${context}
+${assessmentContextStr}
 
 USER QUESTION: ${question}
 
-Remember: Only use information from the documentation above. If the answer is not in the documentation, say you don't have that information.`
+Remember: Only use information from the documentation above. If the answer is not in the documentation, say you don't have that information.${assessmentContext ? ' If asking about assessment results, use the ASSESSMENT CONTEXT values exactly - do not recalculate.' : ''}`
       }
     ];
     

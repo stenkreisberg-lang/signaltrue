@@ -90,6 +90,7 @@ import reportsRoutes from "./routes/reports.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import fitQuestionnaireRoutes from "./routes/fitQuestionnaire.js";
 import chatRoutes from "./routes/chat.js";
+import assessmentRoutes from "./routes/assessment.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -249,6 +250,19 @@ async function main() {
     
     // --- AI Chat Assistant (public, no auth required) ---
     app.use('/api/chat', chatRoutes);
+    
+    // --- Assessment & Cost Calculator (public, no auth required) ---
+    app.use('/api/assessment', assessmentRoutes);
+    
+    // --- Analytics Tracking (public, no auth required) ---
+    app.post('/api/analytics/track', (req, res) => {
+      const { event, data, timestamp } = req.body;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Analytics Track] ${event}`, data);
+      }
+      // TODO: Forward to analytics provider (Segment, Mixpanel, etc.)
+      res.json({ success: true });
+    });
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);

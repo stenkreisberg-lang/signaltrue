@@ -47,15 +47,15 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-4 mb-12">
-              <Link to="/register">
+              <Link to="/how-it-works#assessment">
                 <Button variant="hero" size="xl">
-                  Get a Demo
+                  See How SignalTrue Reveals Hidden Workload
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/how-it-works">
                 <Button variant="hero-outline" size="xl">
-                  See How It Works
+                  How It Works
                 </Button>
               </Link>
             </div>

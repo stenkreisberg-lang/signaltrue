@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
+import { WorkloadAssessment } from "../components/WorkloadAssessment";
 import { 
   Link2, 
   Brain, 
@@ -11,8 +14,35 @@ import {
   CheckCircle,
   Shield,
   Clock,
-  BarChart3
+  BarChart3,
+  Calculator,
+  Target,
+  Eye
 } from "lucide-react";
+
+// API base URL for tracking
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://signaltrue-backend.onrender.com' 
+  : '';
+
+// Analytics tracking function
+const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Analytics] ${eventName}`, data);
+  }
+  
+  // Send to backend for internal tracking
+  try {
+    fetch(`${API_BASE}/api/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: eventName, data, timestamp: new Date().toISOString() }),
+    }).catch(() => {}); // Silent fail for tracking
+  } catch {
+    // Silent fail for tracking
+  }
+};
 
 const steps = [
   {
@@ -69,6 +99,17 @@ const integrations = [
 ];
 
 const HowItWorksPage = () => {
+  const location = useLocation();
+
+  // Scroll to assessment section if hash is present
+  useEffect(() => {
+    if (location.hash === '#assessment') {
+      setTimeout(() => {
+        document.getElementById('assessment')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [location]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -85,9 +126,169 @@ const HowItWorksPage = () => {
                 From setup to useful signals in{" "}
                 <span className="text-gradient">7 days</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
                 Connect your tools, establish team baselines, detect shifts, and measure whether interventions work.
               </p>
+              <Button variant="hero" size="xl" asChild>
+                <a href="#assessment">
+                  Calculate Your Cost Exposure
+                  <ArrowRight className="w-5 h-5" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* What SignalTrue Measures Section */}
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                  What We Measure
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                  Behavioral workload patterns, not content
+                </h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  SignalTrue analyzes metadata and timing patterns to reveal hidden workload. We never read message content, 
+                  emails, or documents.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="p-6 rounded-2xl bg-card border border-border/50">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 mb-4 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    Meeting Load
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Hours in meetings, back-to-back patterns, and focus time availability per team.
+                  </p>
+                </div>
+                <div className="p-6 rounded-2xl bg-card border border-border/50">
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 mb-4 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    Collaboration Patterns
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Message timing, response patterns, and after-hours activity trends.
+                  </p>
+                </div>
+                <div className="p-6 rounded-2xl bg-card border border-border/50">
+                  <div className="w-12 h-12 rounded-xl bg-warning/10 mb-4 flex items-center justify-center">
+                    <Eye className="w-6 h-6 text-warning" />
+                  </div>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    Drift Detection
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Changes from team baselines that often precede overload, disengagement, or coordination issues.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Assessment Section - Main Conversion Engine */}
+        <section id="assessment" className="py-20 bg-secondary/20 scroll-mt-20">
+          <div className="container mx-auto px-6">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Calculator className="w-5 h-5 text-primary" />
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider">
+                  Workload Assessment & Cost Calculator
+                </p>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                Estimate your hidden collaboration costs
+              </h2>
+              <p className="text-muted-foreground">
+                Enter your team's information to see estimated workload risk and cost exposure. 
+                All calculations use transparent assumptions you can adjust.
+              </p>
+            </div>
+
+            <WorkloadAssessment onTrackEvent={trackEvent} />
+          </div>
+        </section>
+
+        {/* How SignalTrue Replaces Assumptions */}
+        <section className="py-20 bg-background">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                  Replace Estimates with Real Data
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                  How SignalTrue turns assumptions into signals
+                </h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  The assessment above uses your estimates. Once connected, SignalTrue measures actual patterns.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
+                  <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm">
+                      ?
+                    </span>
+                    Without SignalTrue
+                  </h3>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      Estimated meeting hours based on surveys or assumptions
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      No visibility into after-hours work patterns
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      Generic industry benchmarks, not team-specific baselines
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      Reactive responses when burnout or attrition appears
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/30">
+                  <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">
+                      ✓
+                    </span>
+                    With SignalTrue
+                  </h3>
+                  <ul className="space-y-3 text-sm text-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                      Actual meeting hours from calendar data
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                      Real after-hours collaboration patterns
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                      Team-specific baselines that evolve over time
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                      Early warning signals before problems escalate
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -95,6 +296,14 @@ const HowItWorksPage = () => {
         {/* Timeline Section */}
         <section className="py-24 bg-secondary/20">
           <div className="container mx-auto px-6">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                Implementation
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                From setup to signals in 4 steps
+              </h2>
+            </div>
             <div className="max-w-4xl mx-auto">
               {steps.map((step, index) => (
                 <div 
@@ -241,7 +450,11 @@ const HowItWorksPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/register">
-                  <Button variant="hero" size="xl">
+                  <Button 
+                    variant="hero" 
+                    size="xl"
+                    onClick={() => trackEvent('cta_clicked', { type: 'demo', location: 'how-it-works-footer' })}
+                  >
                     Get a Demo
                     <ArrowRight className="w-5 h-5" />
                   </Button>
