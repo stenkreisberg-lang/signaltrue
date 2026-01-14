@@ -3,9 +3,19 @@ import { retrieveRelevantChunks, formatChunksForContext } from './retrievalServi
 import ChatLog from '../models/chatLog.js';
 import ChatLead from '../models/chatLead.js';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Check for API key
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  console.warn('⚠️ OPENAI_API_KEY not set - AI Chat will not function');
+}
+
+// Initialize OpenAI client (may be null if no API key)
+let openai = null;
+if (OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: OPENAI_API_KEY
+  });
+}
 
 // Configuration
 const MODEL = 'gpt-4.1'; // Or 'gpt-4o-mini' for faster/cheaper
@@ -98,6 +108,17 @@ function validateResponse(response, chunks) {
  */
 export async function generateChatResponse(question, sessionId, assessmentContext = null) {
   const startTime = Date.now();
+  
+  // Check if OpenAI is configured
+  if (!openai) {
+    console.error('[Chat] OpenAI not configured - OPENAI_API_KEY missing');
+    return {
+      response: "The AI chat service is currently being configured. Please try again later or contact us directly.",
+      sources: [],
+      leadTrigger: null,
+      confidenceScore: 0
+    };
+  }
   
   try {
     // Step 1: Retrieve relevant chunks

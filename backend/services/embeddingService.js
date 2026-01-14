@@ -4,9 +4,19 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import DocumentChunk from '../models/documentChunk.js';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Check for API key
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  console.warn('⚠️ OPENAI_API_KEY not set - Embedding service will not function');
+}
+
+// Initialize OpenAI client (may be null if no API key)
+let openai = null;
+if (OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: OPENAI_API_KEY
+  });
+}
 
 // Configuration
 const CHUNK_SIZE_TOKENS = 400; // Target 300-500 tokens
@@ -135,6 +145,10 @@ function chunkSection(section, source) {
  * Generate embedding for text
  */
 async function generateEmbedding(text) {
+  if (!openai) {
+    throw new Error('OpenAI not configured - OPENAI_API_KEY missing');
+  }
+  
   try {
     const response = await openai.embeddings.create({
       model: EMBEDDING_MODEL,
