@@ -100,10 +100,36 @@ const TRIAL_PHASES = {
  */
 router.get('/status', authenticateToken, async (req, res) => {
   try {
+    // Handle users without an organization (not yet onboarded)
+    if (!req.user.orgId) {
+      return res.json({
+        trial: {
+          isActive: false,
+          isPaid: false,
+          currentDay: 0,
+          daysRemaining: 30,
+          phase: 'pending',
+          banner: null,
+          needsOnboarding: true
+        }
+      });
+    }
+    
     const organization = await Organization.findById(req.user.orgId);
     
     if (!organization) {
-      return res.status(404).json({ error: 'Organization not found' });
+      // Org ID is set but org not found - return safe default
+      return res.json({
+        trial: {
+          isActive: false,
+          isPaid: false,
+          currentDay: 0,
+          daysRemaining: 30,
+          phase: 'pending',
+          banner: null,
+          needsOnboarding: true
+        }
+      });
     }
 
     // Calculate current trial day
