@@ -91,6 +91,7 @@ import subscriptionRoutes from "./routes/subscriptions.js";
 import fitQuestionnaireRoutes from "./routes/fitQuestionnaire.js";
 import chatRoutes from "./routes/chat.js";
 import assessmentRoutes from "./routes/assessment.js";
+import trialRoutes from "./routes/trial.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -253,6 +254,9 @@ async function main() {
     
     // --- Assessment & Cost Calculator (public, no auth required) ---
     app.use('/api/assessment', assessmentRoutes);
+    
+    // --- Trial Management (mixed auth - some public, some protected) ---
+    app.use('/api/trial', trialRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {

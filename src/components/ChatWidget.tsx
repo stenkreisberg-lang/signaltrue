@@ -19,6 +19,13 @@ interface SuggestedPrompt {
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
+interface TrialContext {
+  isActive: boolean;
+  isPaid: boolean;
+  currentDay: number;
+  phase: string;
+}
+
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -32,6 +39,7 @@ export const ChatWidget: React.FC = () => {
   const [leadTriggerType, setLeadTriggerType] = useState('');
   const [suggestedPrompts, setSuggestedPrompts] = useState<SuggestedPrompt[]>([]);
   const [assessmentSession, setAssessmentSession] = useState<AssessmentSession | null>(null);
+  const [trialContext, setTrialContext] = useState<TrialContext | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +50,37 @@ export const ChatWidget: React.FC = () => {
       .then(res => res.json())
       .then(data => setSuggestedPrompts(data.prompts || []))
       .catch(err => console.error('Failed to load prompts:', err));
+  }, []);
+
+  // Load trial context on mount
+  useEffect(() => {
+    const fetchTrialContext = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/trial/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTrialContext({
+            isActive: data.trial.isActive,
+            isPaid: data.trial.isPaid,
+            currentDay: data.trial.currentDay,
+            phase: data.trial.phase
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load trial context:', error);
+      }
+    };
+
+    fetchTrialContext();
   }, []);
 
   // Load assessment session on mount and listen for updates
@@ -105,7 +144,8 @@ export const ChatWidget: React.FC = () => {
             teamSize: assessmentSession.inputs?.company.teamSize,
             meetingHours: assessmentSession.inputs?.workload.meetingHoursPerWeek,
             insights: assessmentSession.result?.insights
-          } : null
+          } : null,
+          trialContext: trialContext || null
         })
       });
 

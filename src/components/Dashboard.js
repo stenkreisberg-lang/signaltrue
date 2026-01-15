@@ -9,6 +9,8 @@ import GoogleChatConnect from './GoogleChatConnect';
 import LoopClosingDashboard from './LoopClosingDashboard';
 import TeamManagement from './TeamManagement';
 import EmployeeDirectory from './EmployeeDirectory';
+import { TrialBanner } from './TrialBanner';
+import { PaywallBanner } from './PaywallOverlay';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -176,6 +178,12 @@ function Dashboard() {
       </nav>
 
       <div style={styles.content}>
+        {/* Trial Status Banner */}
+        <TrialBanner className="mb-6" />
+        
+        {/* Paywall Banner (shown when trial expired) */}
+        <PaywallBanner className="mb-6" />
+        
         {/* Engagement Change Alerts (Drift Explainability) */}
         {teamId && (
           <>

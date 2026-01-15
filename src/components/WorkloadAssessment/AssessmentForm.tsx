@@ -74,7 +74,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             <Building2 className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-display font-semibold text-foreground">Company Inputs</h3>
+            <h3 className="font-display font-semibold text-foreground">About your organization</h3>
             <p className="text-sm text-muted-foreground">Estimates are fine – no validation shaming here</p>
           </div>
         </div>
@@ -83,8 +83,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Team Size */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Team Size
-              <span className="text-muted-foreground font-normal ml-2">(number of people)</span>
+              Team size
+              <span className="text-muted-foreground font-normal ml-2">(number)</span>
             </label>
             <Input
               type="number"
@@ -100,8 +100,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Average Salary */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Average Annual Salary
-              <span className="text-muted-foreground font-normal ml-2">(estimate)</span>
+              Average annual salary (estimate is fine)
             </label>
             {!customSalary ? (
               <div className="relative">
@@ -162,8 +161,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             {showAdvanced && (
               <div className="mt-4 p-4 rounded-lg bg-secondary/30">
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Benefits & Overhead Multiplier
-                  <span className="text-muted-foreground font-normal ml-2">(default: 1.3x = 30% overhead)</span>
+                  Benefits & overhead multiplier
+                  <span className="text-muted-foreground font-normal ml-2">(default: 1.3x)</span>
                 </label>
                 <Input
                   type="number"
@@ -175,7 +174,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   className="w-32"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Typical range: 1.2 (lean) to 1.5 (comprehensive benefits)
+                  Used to estimate real cost of work time. You can adjust this.
                 </p>
               </div>
             )}
@@ -190,7 +189,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             <Clock className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h3 className="font-display font-semibold text-foreground">Workload & Collaboration</h3>
+            <h3 className="font-display font-semibold text-foreground">Collaboration & workload</h3>
             <p className="text-sm text-muted-foreground">Your best estimate of current patterns</p>
           </div>
         </div>
@@ -199,7 +198,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Meeting Hours */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Meeting Hours Per Person / Week
+              Average meeting hours per person per week
             </label>
             <Input
               type="number"
@@ -218,7 +217,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Back-to-Back Frequency */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Back-to-Back Meetings
+              How often do people have back-to-back meetings?
             </label>
             <div className="flex gap-2">
               {(['low', 'medium', 'high'] as const).map((freq) => (
@@ -236,16 +235,12 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              How often do meetings run consecutively without breaks?
-            </p>
           </div>
 
           {/* After-Hours Work */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-foreground mb-2">
-              After-Hours Work Per Person / Week
-              <span className="text-muted-foreground font-normal ml-2">(hours)</span>
+              After-hours work per person per week (hours)
             </label>
             <Input
               type="number"
@@ -267,8 +262,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             <TrendingUp className="w-5 h-5 text-warning" />
           </div>
           <div>
-            <h3 className="font-display font-semibold text-foreground">Retention Risk</h3>
-            <p className="text-sm text-muted-foreground">Estimate turnover exposure</p>
+            <h3 className="font-display font-semibold text-foreground">Retention risk</h3>
+            <p className="text-sm text-muted-foreground">These are estimates. SignalTrue replaces assumptions with real signals once connected.</p>
           </div>
         </div>
 
@@ -276,7 +271,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Attrition Rate */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Estimated Regrettable Attrition %
+              Estimated regrettable attrition % (annual)
             </label>
             <div className="flex items-center gap-2">
               <Input
@@ -290,14 +285,14 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               <span className="text-muted-foreground">%</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Industry average: 10-15% for knowledge workers
+              Default: 10%
             </p>
           </div>
 
           {/* Role Type */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Primary Role Type
+              Primary role type affected
             </label>
             <div className="space-y-2">
               <label className="flex items-center gap-3 cursor-pointer">
@@ -309,7 +304,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-foreground">Professional / Technical</span>
-                <span className="text-xs text-muted-foreground">(80% replacement cost)</span>
+                <span className="text-xs text-muted-foreground">(80%)</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -320,7 +315,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-foreground">Manager / Lead</span>
-                <span className="text-xs text-muted-foreground">(200% replacement cost)</span>
+                <span className="text-xs text-muted-foreground">(200%)</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -351,7 +346,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           {/* Meeting Waste Adjustment */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Estimated Meeting Waste
+              Estimated % of meeting time wasted
               <span className="text-muted-foreground font-normal ml-2">(default: 25%)</span>
             </label>
             <div className="flex items-center gap-4">
@@ -375,7 +370,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
       {/* Submit Button */}
       <div className="flex justify-center">
         <Button type="submit" variant="hero" size="xl" className="min-w-[280px]">
-          Calculate Cost Exposure
+          Calculate my cost exposure
           <ArrowRight className="w-5 h-5" />
         </Button>
       </div>

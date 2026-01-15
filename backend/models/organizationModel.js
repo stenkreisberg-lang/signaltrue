@@ -109,9 +109,66 @@ const organizationSchema = new mongoose.Schema(
       }],
       featuresUnlocked: { type: Boolean, default: false }
     },
+    
+    // Trial state (30-day trial, no credit card required)
+    trial: {
+      isActive: { type: Boolean, default: true },
+      startDate: { type: Date, default: Date.now },
+      endDate: { type: Date }, // Calculated as startDate + 30 days
+      daysRemaining: { type: Number, default: 30 },
+      phase: {
+        type: String,
+        enum: ['baseline', 'first_signals', 'pattern_recognition', 'pre_close', 'report_delivered', 'expired'],
+        default: 'baseline'
+      },
+      // Track key milestones
+      firstSignalsShown: { type: Date },
+      patternRecognitionStarted: { type: Date },
+      preCloseNotificationSent: { type: Date },
+      monthlyReportGenerated: { type: Date },
+      monthlyReportViewed: { type: Date },
+      ceoSummaryGenerated: { type: Date },
+      ceoSummaryShared: { type: Date },
+      // Conversion tracking
+      paywallActivated: { type: Boolean, default: false },
+      paywallActivatedAt: { type: Date },
+      upgradeCtaClicked: { type: Date },
+      convertedToPaid: { type: Boolean, default: false },
+      convertedAt: { type: Date }
+    },
   },
   { timestamps: true }
 );
+
+// Pre-save middleware to calculate trial end date
+organizationSchema.pre('save', function(next) {
+  if (this.trial && this.trial.startDate && !this.trial.endDate) {
+    const startDate = new Date(this.trial.startDate);
+    this.trial.endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+  }
+  next();
+});
+
+// Virtual for calculating current trial day
+organizationSchema.virtual('trial.currentDay').get(function() {
+  if (!this.trial?.startDate) return 0;
+  const now = new Date();
+  const start = new Date(this.trial.startDate);
+  const daysDiff = Math.floor((now - start) / (24 * 60 * 60 * 1000));
+  return Math.min(Math.max(0, daysDiff), 30);
+});
+
+// Method to determine trial phase based on current day
+organizationSchema.methods.calculateTrialPhase = function() {
+  const currentDay = this.trial?.currentDay || 0;
+  
+  if (currentDay <= 3) return 'baseline';
+  if (currentDay <= 10) return 'first_signals';
+  if (currentDay <= 18) return 'pattern_recognition';
+  if (currentDay <= 24) return 'pre_close';
+  if (currentDay <= 30) return 'report_delivered';
+  return 'expired';
+};
 
 
 export default mongoose.model("Organization", organizationSchema);

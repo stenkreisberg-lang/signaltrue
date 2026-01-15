@@ -103,6 +103,9 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
 
         {/* Cost Headline */}
         <div className="text-center py-6 border-y border-border/50 mb-6">
+          <h3 className="text-xl font-display font-semibold text-foreground mb-2">
+            Your collaboration patterns may be costing more than expected
+          </h3>
           <p className="text-muted-foreground mb-2">Estimated annual cost exposure (range)</p>
           <p className="text-3xl sm:text-4xl font-display font-bold text-foreground">
             {formatCostRange(result.costBreakdown.totalCostLow, result.costBreakdown.totalCostHigh)}
@@ -161,22 +164,27 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               <Mail className="w-6 h-6 text-primary" />
             </div>
             <h3 className="text-xl font-display font-bold text-foreground mb-2">
-              Get the Full Breakdown
+              Get full report by email
             </h3>
             <p className="text-muted-foreground">
-              Enter your email to see detailed cost calculations, assumptions, and how SignalTrue replaces estimates with real signals.
+              Enter your work email to receive a detailed breakdown with cost calculations, assumptions, and how SignalTrue replaces estimates with real signals.
             </p>
           </div>
 
           <form onSubmit={handleEmailSubmit} className="max-w-md mx-auto space-y-4">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@company.com"
-              required
-              className="w-full"
-            />
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Work email to receive your full report
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@company.com"
+                required
+                className="w-full"
+              />
+            </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -203,7 +211,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               className="w-full"
               disabled={isSubmitting || !email.trim() || !consent}
             >
-              {isSubmitting ? 'Sending...' : 'View Full Breakdown'}
+              {isSubmitting ? 'Sending...' : 'Send my report'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </form>

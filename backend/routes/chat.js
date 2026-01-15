@@ -11,12 +11,12 @@ const router = express.Router();
  * POST /api/chat/message
  * Send a message to the AI chat assistant
  * 
- * Body: { question: string, sessionId?: string, assessmentContext?: object }
+ * Body: { question: string, sessionId?: string, assessmentContext?: object, trialContext?: object }
  * Response: { response: string, sources: array, leadTrigger?: string, sessionId: string }
  */
 router.post('/message', async (req, res) => {
   try {
-    const { question, sessionId: providedSessionId, assessmentContext } = req.body;
+    const { question, sessionId: providedSessionId, assessmentContext, trialContext } = req.body;
     
     // Validate input
     if (!question || typeof question !== 'string') {
@@ -35,15 +35,21 @@ router.post('/message', async (req, res) => {
     // Generate or use provided session ID
     const sessionId = providedSessionId || uuidv4();
     
-    // Generate response using RAG (pass assessment context if available)
-    const result = await generateChatResponse(question, sessionId, assessmentContext || null);
+    // Generate response using RAG (pass assessment and trial context if available)
+    const result = await generateChatResponse(
+      question, 
+      sessionId, 
+      assessmentContext || null,
+      trialContext || null
+    );
     
     res.json({
       response: result.response,
       sources: result.sources,
       leadTrigger: result.leadTrigger,
       sessionId,
-      confidenceScore: result.confidenceScore
+      confidenceScore: result.confidenceScore,
+      trialRestricted: result.trialRestricted || false
     });
     
   } catch (error) {

@@ -46,18 +46,16 @@ const Hero = () => {
             </p>
 
             {/* CTA buttons */}
-            <div className="flex flex-wrap gap-4 mb-12">
+            <div className="flex flex-col gap-4 mb-12">
               <Link to="/how-it-works#assessment">
                 <Button variant="hero" size="xl">
-                  See How SignalTrue Reveals Hidden Workload
+                  See how SignalTrue reveals hidden workload
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/how-it-works">
-                <Button variant="hero-outline" size="xl">
-                  How It Works
-                </Button>
-              </Link>
+              <p className="text-sm text-muted-foreground">
+                No surveys. No content analysis. No extra work for teams.
+              </p>
             </div>
 
             {/* Social proof */}

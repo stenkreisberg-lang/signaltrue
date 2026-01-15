@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
-import { CheckCircle, ArrowRight, HelpCircle, X } from "lucide-react";
+import { CheckCircle, ArrowRight, HelpCircle, X, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const plans = [
@@ -24,7 +24,7 @@ const plans = [
       "No industry benchmarks",
       "No strategic synthesis",
     ],
-    cta: "Start Trial",
+    cta: "Start free month",
     link: "/register?plan=team",
   },
   {
@@ -45,7 +45,7 @@ const plans = [
       "Unlimited employees",
     ],
     notIncluded: [],
-    cta: "Start Trial",
+    cta: "Start free month",
     link: "/register?plan=leadership",
   },
   {
@@ -113,6 +113,12 @@ const Pricing = () => {
           <div className="absolute inset-0 bg-glow opacity-20" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
+              {/* Trial Banner */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/30 text-success mb-6">
+                <Gift className="w-4 h-4" />
+                <span className="font-medium">First month free. No credit card required.</span>
+              </div>
+              
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
                 Pricing
               </p>
@@ -129,6 +135,13 @@ const Pricing = () => {
         {/* Pricing Cards */}
         <section className="py-24 bg-secondary/20">
           <div className="container mx-auto px-6">
+            {/* Trial info note above cards */}
+            <div className="max-w-6xl mx-auto mb-8">
+              <p className="text-center text-sm text-muted-foreground">
+                Includes full dashboard access and first monthly report. Payment required to continue insights and recommendations.
+              </p>
+            </div>
+            
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {plans.map((plan, index) => (
                 <div 

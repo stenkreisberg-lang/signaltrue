@@ -21,6 +21,8 @@ import RiskFeed from "./pages/app/RiskFeed";
 import Privacy from "./pages/app/Privacy";
 import SelfCheck from "./pages/SelfCheck";
 import NotFound from "./pages/NotFound";
+import MonthlyReport from "./pages/MonthlyReport";
+import CeoSummary from "./pages/CeoSummary";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,8 @@ const App = () => (
             <Route path="/app/signals" element={<Signals />} />
             <Route path="/app/risk-feed" element={<RiskFeed />} />
             <Route path="/app/privacy" element={<Privacy />} />
+            <Route path="/app/monthly-report" element={<MonthlyReport />} />
+            <Route path="/ceo-summary/:token" element={<CeoSummary />} />
             <Route path="/self-check" element={<SelfCheck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

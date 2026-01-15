@@ -30,6 +30,27 @@ const LEAD_TRIGGERS = {
   usage: ['use case', 'how to use', 'start using', 'get started', 'begin']
 };
 
+// Recommendation-seeking keywords (for trial users who shouldn't get recommendations)
+const RECOMMENDATION_KEYWORDS = [
+  'what should we do',
+  'what should i do',
+  'recommend',
+  'recommendation',
+  'suggest',
+  'suggestion',
+  'advice',
+  'next steps',
+  'action',
+  'how to fix',
+  'how do we fix',
+  'what can we do',
+  'how to improve',
+  'how to reduce'
+];
+
+// Trial restriction response
+const TRIAL_RECOMMENDATION_RESPONSE = "SignalTrue provides prioritized recommendations and early warnings once ongoing insights are enabled. During the trial period, I can help explain your results, calculations, and patterns, but actionable recommendations become available with an active subscription.";
+
 // System prompt - COPY EXACTLY as specified
 const SYSTEM_PROMPT = `You are the SignalTrue AI assistant.
 
@@ -81,6 +102,14 @@ function checkLeadTrigger(question) {
 }
 
 /**
+ * Check if question is seeking recommendations (blocked during trial)
+ */
+function isRecommendationSeeking(question) {
+  const lowerQuestion = question.toLowerCase();
+  return RECOMMENDATION_KEYWORDS.some(keyword => lowerQuestion.includes(keyword));
+}
+
+/**
  * Validate response against retrieved chunks
  * Ensures no hallucination by checking claims exist in source
  */
@@ -105,8 +134,9 @@ function validateResponse(response, chunks) {
  * @param {string} question - User's question
  * @param {string} sessionId - Session ID
  * @param {object|null} assessmentContext - Optional assessment context from completed assessment
+ * @param {object|null} trialContext - Optional trial state context
  */
-export async function generateChatResponse(question, sessionId, assessmentContext = null) {
+export async function generateChatResponse(question, sessionId, assessmentContext = null, trialContext = null) {
   const startTime = Date.now();
   
   // Check if OpenAI is configured
@@ -117,6 +147,18 @@ export async function generateChatResponse(question, sessionId, assessmentContex
       sources: [],
       leadTrigger: null,
       confidenceScore: 0
+    };
+  }
+  
+  // Check if user is in trial and asking for recommendations
+  const isInTrial = trialContext?.isActive && !trialContext?.isPaid;
+  if (isInTrial && isRecommendationSeeking(question)) {
+    return {
+      response: TRIAL_RECOMMENDATION_RESPONSE,
+      sources: [],
+      leadTrigger: 'upgrade',
+      confidenceScore: 1,
+      trialRestricted: true
     };
   }
   
