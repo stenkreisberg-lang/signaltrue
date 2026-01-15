@@ -23,6 +23,8 @@ import SelfCheck from "./pages/SelfCheck";
 import NotFound from "./pages/NotFound";
 import MonthlyReport from "./pages/MonthlyReport";
 import CeoSummary from "./pages/CeoSummary";
+import SuperadminDashboard from "./pages/SuperadminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const App = () => (
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/register" element={<Register />} />
             <Route path="/onboarding" element={<AcceptInvitation />} />
             <Route path="/dashboard" element={<DashboardRouter />} />
@@ -50,6 +53,7 @@ const App = () => (
             <Route path="/app/privacy" element={<Privacy />} />
             <Route path="/app/monthly-report" element={<MonthlyReport />} />
             <Route path="/ceo-summary/:token" element={<CeoSummary />} />
+            <Route path="/superadmin" element={<SuperadminDashboard />} />
             <Route path="/self-check" element={<SelfCheck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

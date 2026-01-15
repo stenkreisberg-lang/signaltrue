@@ -92,6 +92,8 @@ import fitQuestionnaireRoutes from "./routes/fitQuestionnaire.js";
 import chatRoutes from "./routes/chat.js";
 import assessmentRoutes from "./routes/assessment.js";
 import trialRoutes from "./routes/trial.js";
+import superadminRoutes from "./routes/superadmin.js";
+import passwordResetRoutes from "./routes/passwordReset.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -257,6 +259,12 @@ async function main() {
     
     // --- Trial Management (mixed auth - some public, some protected) ---
     app.use('/api/trial', trialRoutes);
+    
+    // --- Superadmin Routes (master_admin only) ---
+    app.use('/api/superadmin', superadminRoutes);
+    
+    // --- Password Reset Routes (public, no auth required) ---
+    app.use('/api/auth', passwordResetRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {

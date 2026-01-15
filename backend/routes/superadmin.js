@@ -1,0 +1,403 @@
+/**
+ * Superadmin Routes
+ * 
+ * These routes are only accessible to users with role 'master_admin' and no orgId.
+ * Provides system-wide management capabilities:
+ * - View all organizations
+ * - View all users
+ * - Switch context to any organization
+ * - Create/delete organizations
+ * - System-wide analytics
+ */
+
+import express from 'express';
+import mongoose from 'mongoose';
+import { authenticateToken } from '../middleware/auth.js';
+import Organization from '../models/organizationModel.js';
+import User from '../models/user.js';
+import Team from '../models/team.js';
+
+const router = express.Router();
+
+/**
+ * Middleware: Require master_admin role
+ */
+function requireSuperadmin(req, res, next) {
+  if (req.user?.role !== 'master_admin') {
+    return res.status(403).json({ 
+      message: 'Forbidden: Superadmin access required',
+      hint: 'This endpoint requires master_admin role'
+    });
+  }
+  next();
+}
+
+/**
+ * GET /api/superadmin/organizations
+ * List all organizations in the system
+ */
+router.get('/organizations', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const organizations = await Organization.find({})
+      .select('name domain industry subscription trial integrations.slack.teamName integrations.google createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get user counts per org
+    const userCounts = await User.aggregate([
+      { $group: { _id: '$orgId', count: { $sum: 1 } } }
+    ]);
+    const userCountMap = {};
+    userCounts.forEach(uc => {
+      if (uc._id) userCountMap[uc._id.toString()] = uc.count;
+    });
+
+    // Get team counts per org
+    const teamCounts = await Team.aggregate([
+      { $group: { _id: '$orgId', count: { $sum: 1 } } }
+    ]);
+    const teamCountMap = {};
+    teamCounts.forEach(tc => {
+      if (tc._id) teamCountMap[tc._id.toString()] = tc.count;
+    });
+
+    const enrichedOrgs = organizations.map(org => ({
+      id: org._id,
+      name: org.name,
+      domain: org.domain,
+      industry: org.industry,
+      subscription: org.subscription,
+      trial: {
+        isActive: org.trial?.isActive,
+        phase: org.trial?.phase,
+        daysRemaining: org.trial?.daysRemaining
+      },
+      integrations: {
+        slack: !!org.integrations?.slack?.teamName,
+        slackTeam: org.integrations?.slack?.teamName,
+        google: !!org.integrations?.google
+      },
+      userCount: userCountMap[org._id.toString()] || 0,
+      teamCount: teamCountMap[org._id.toString()] || 0,
+      createdAt: org.createdAt
+    }));
+
+    res.json({
+      total: enrichedOrgs.length,
+      organizations: enrichedOrgs
+    });
+  } catch (error) {
+    console.error('Superadmin organizations error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * GET /api/superadmin/organizations/:id
+ * Get detailed info about a specific organization
+ */
+router.get('/organizations/:id', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id).lean();
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    const users = await User.find({ orgId: org._id })
+      .select('name email role createdAt lastLogin')
+      .lean();
+
+    const teams = await Team.find({ orgId: org._id })
+      .select('name description createdAt')
+      .lean();
+
+    res.json({
+      organization: org,
+      users,
+      teams
+    });
+  } catch (error) {
+    console.error('Superadmin org detail error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * POST /api/superadmin/organizations
+ * Create a new organization
+ */
+router.post('/organizations', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { name, domain, industry } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Organization name is required' });
+    }
+
+    const org = new Organization({
+      name,
+      domain,
+      industry: industry || 'Other',
+      subscription: { plan: 'trial', status: 'active' },
+      trial: {
+        isActive: true,
+        startDate: new Date(),
+        phase: 'baseline',
+        daysRemaining: 30
+      }
+    });
+
+    await org.save();
+
+    // Create a default team
+    const team = new Team({
+      name: 'General',
+      orgId: org._id,
+      description: 'Default team'
+    });
+    await team.save();
+
+    res.status(201).json({
+      message: 'Organization created',
+      organization: org,
+      defaultTeam: team
+    });
+  } catch (error) {
+    console.error('Superadmin create org error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * DELETE /api/superadmin/organizations/:id
+ * Delete an organization and all its data
+ */
+router.delete('/organizations/:id', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const orgId = req.params.id;
+
+    // Safety check: don't delete orgs with users
+    const userCount = await User.countDocuments({ orgId });
+    if (userCount > 0 && !req.query.force) {
+      return res.status(400).json({ 
+        message: `Organization has ${userCount} users. Add ?force=true to delete anyway.`
+      });
+    }
+
+    // Delete teams
+    await Team.deleteMany({ orgId });
+
+    // Optionally unlink users (don't delete them)
+    await User.updateMany({ orgId }, { $unset: { orgId: 1, teamId: 1 } });
+
+    // Delete organization
+    await Organization.findByIdAndDelete(orgId);
+
+    res.json({ message: 'Organization deleted', usersUnlinked: userCount });
+  } catch (error) {
+    console.error('Superadmin delete org error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * GET /api/superadmin/users
+ * List all users in the system
+ */
+router.get('/users', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { orgId, role, search } = req.query;
+
+    const query = {};
+    if (orgId) query.orgId = orgId;
+    if (role) query.role = role;
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const users = await User.find(query)
+      .select('name email role orgId teamId createdAt lastLogin')
+      .populate('orgId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      total,
+      users: users.map(u => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        orgId: u.orgId?._id || u.orgId,
+        orgName: u.orgId?.name,
+        teamId: u.teamId,
+        createdAt: u.createdAt,
+        lastLogin: u.lastLogin
+      }))
+    });
+  } catch (error) {
+    console.error('Superadmin users error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * PUT /api/superadmin/users/:id
+ * Update a user (role, org assignment, etc.)
+ */
+router.put('/users/:id', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { role, orgId, teamId, name } = req.body;
+
+    const update = {};
+    if (role) update.role = role;
+    if (orgId) update.orgId = orgId;
+    if (teamId) update.teamId = teamId;
+    if (name) update.name = name;
+    if (orgId === null) update.$unset = { orgId: 1, teamId: 1 };
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      orgId === null ? { $unset: { orgId: 1, teamId: 1 }, ...update } : { $set: update },
+      { new: true }
+    ).select('name email role orgId teamId');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User updated', user });
+  } catch (error) {
+    console.error('Superadmin update user error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * POST /api/superadmin/users/:id/reset-password
+ * Reset a user's password
+ */
+router.post('/users/:id/reset-password', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.password = newPassword; // Will be hashed by pre-save hook
+    await user.save();
+
+    res.json({ message: 'Password reset successfully', email: user.email });
+  } catch (error) {
+    console.error('Superadmin reset password error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * GET /api/superadmin/stats
+ * System-wide statistics
+ */
+router.get('/stats', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const [orgCount, userCount, teamCount] = await Promise.all([
+      Organization.countDocuments({}),
+      User.countDocuments({}),
+      Team.countDocuments({})
+    ]);
+
+    // Users by role
+    const usersByRole = await User.aggregate([
+      { $group: { _id: '$role', count: { $sum: 1 } } }
+    ]);
+
+    // Orgs by trial status
+    const trialStats = await Organization.aggregate([
+      { $group: { _id: '$trial.phase', count: { $sum: 1 } } }
+    ]);
+
+    // Orgs with integrations
+    const withSlack = await Organization.countDocuments({ 'integrations.slack.accessToken': { $exists: true, $ne: null } });
+    const withGoogle = await Organization.countDocuments({ 'integrations.google.accessToken': { $exists: true, $ne: null } });
+
+    // Recent signups (last 7 days)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentUsers = await User.countDocuments({ createdAt: { $gte: weekAgo } });
+    const recentOrgs = await Organization.countDocuments({ createdAt: { $gte: weekAgo } });
+
+    res.json({
+      totals: {
+        organizations: orgCount,
+        users: userCount,
+        teams: teamCount
+      },
+      usersByRole: Object.fromEntries(usersByRole.map(r => [r._id || 'unknown', r.count])),
+      trialPhases: Object.fromEntries(trialStats.map(t => [t._id || 'unknown', t.count])),
+      integrations: {
+        withSlack,
+        withGoogle
+      },
+      recentActivity: {
+        usersLast7Days: recentUsers,
+        orgsLast7Days: recentOrgs
+      }
+    });
+  } catch (error) {
+    console.error('Superadmin stats error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * POST /api/superadmin/impersonate/:userId
+ * Get a token to impersonate a user (for debugging)
+ */
+router.post('/impersonate/:userId', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).lean();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Create a temporary token for this user
+    const jwt = await import('jsonwebtoken');
+    const token = jwt.default.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        orgId: user.orgId,
+        teamId: user.teamId,
+        impersonatedBy: req.user.userId,
+        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+      },
+      process.env.JWT_SECRET
+    );
+
+    res.json({
+      message: 'Impersonation token created',
+      user: { name: user.name, email: user.email, role: user.role },
+      token,
+      expiresIn: '1 hour',
+      warning: 'This token allows full access as this user. Use responsibly.'
+    });
+  } catch (error) {
+    console.error('Superadmin impersonate error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export default router;
