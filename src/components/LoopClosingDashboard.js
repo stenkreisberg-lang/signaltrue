@@ -1263,13 +1263,17 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
     );
   }
 
-  // If no data yet (new team, no integrations), show a friendly message
+  // If no data yet (calibration period), show a friendly message
   if (!data) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Loop-Closing Metrics</h3>
         <div style={tileStyles.noData}>
-          Connect your integrations (Slack, Google Calendar) to start seeing workload metrics.
+          <div style={{ marginBottom: '8px' }}>📊 Collecting baseline data...</div>
+          <div style={{ fontSize: '13px', opacity: 0.8 }}>
+            SignalTrue is analyzing your team's communication patterns. 
+            Metrics will appear within 24-48 hours as the baseline is established.
+          </div>
         </div>
       </div>
     );
