@@ -55,12 +55,20 @@ router.get("/auth/slack/callback", async (req, res) => {
   const { code, state } = req.query;
 
   if (!code || !state) {
+    console.error("Slack OAuth callback: Missing code or state");
     return res.redirect(dashboardRedirect(false));
   }
 
   try {
     const decodedState = jwt.verify(state, process.env.JWT_SECRET);
     const { orgId } = decodedState;
+    
+    console.log("Slack OAuth callback: orgId from state:", orgId);
+
+    if (!orgId) {
+      console.error("Slack OAuth callback: No orgId in state - user may need to log out and log back in");
+      return res.redirect(dashboardRedirect(false));
+    }
 
     const slackClient = new WebClient();
     const oauthResponse = await slackClient.oauth.v2.access({
@@ -71,13 +79,16 @@ router.get("/auth/slack/callback", async (req, res) => {
     });
 
     if (!oauthResponse.ok) {
+      console.error("Slack OAuth callback: Slack API error:", oauthResponse.error);
       throw new Error(oauthResponse.error);
     }
 
     const { access_token, team } = oauthResponse;
+    console.log("Slack OAuth callback: Got token for team:", team?.name);
 
     const org = await Organization.findById(orgId);
     if (!org) {
+      console.error("Slack OAuth callback: Organization not found for orgId:", orgId);
       return res.redirect(dashboardRedirect(false));
     }
 
@@ -89,10 +100,12 @@ router.get("/auth/slack/callback", async (req, res) => {
     };
 
     await org.save();
+    console.log("Slack OAuth callback: Successfully saved Slack integration for org:", org.name);
 
     res.redirect(dashboardRedirect(true));
   } catch (error) {
-    console.error("Slack OAuth callback error:", error);
+    console.error("Slack OAuth callback error:", error.message);
+    console.error("Stack:", error.stack);
     res.redirect(dashboardRedirect(false));
   }
 });

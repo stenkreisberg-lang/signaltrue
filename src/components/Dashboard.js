@@ -76,6 +76,23 @@ function Dashboard() {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
+    // Check for OAuth callback messages
+    const integrationStatus = searchParams.get('integrationStatus');
+    const msg = searchParams.get('msg');
+    
+    if (integrationStatus) {
+      // Show toast with the result
+      if (integrationStatus === 'success') {
+        setToast({ type: 'success', message: msg || 'Integration connected successfully!' });
+      } else {
+        setToast({ type: 'error', message: msg || 'Integration failed. Please try again.' });
+      }
+      setTimeout(() => setToast(null), 5000);
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, '/dashboard');
+    }
+    
     // Always reload if coming back from an OAuth flow (Google or Slack)
     if (searchParams.has('integrationStatus') || searchParams.has('connected')) {
       loadIntegrationStatus();
