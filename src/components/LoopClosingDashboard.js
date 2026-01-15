@@ -1220,7 +1220,10 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!teamId) return;
+    if (!teamId) {
+      setLoading(false);
+      return;
+    }
     
     async function fetchDashboard() {
       try {
@@ -1229,8 +1232,17 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
           : `/loop-closing/dashboard/${teamId}`;
         const response = await api.get(endpoint);
         setData(response.data);
+        setError(null);
       } catch (err) {
-        setError(err.message);
+        // Handle common errors gracefully
+        const status = err.response?.status;
+        if (status === 403 || status === 404) {
+          // Access denied or team not found - just show empty state
+          setData(null);
+          setError(null);
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -1240,11 +1252,7 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
   }, [teamId, showPhase2]);
 
   if (!teamId) {
-    return (
-      <div style={tileStyles.container}>
-        <div style={tileStyles.noData}>Select a team to view loop-closing metrics</div>
-      </div>
-    );
+    return null; // Don't show anything if no team selected
   }
 
   if (loading) {
@@ -1255,10 +1263,23 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
     );
   }
 
+  // If no data yet (new team, no integrations), show a friendly message
+  if (!data) {
+    return (
+      <div style={tileStyles.container}>
+        <h3 style={tileStyles.title}>Loop-Closing Metrics</h3>
+        <div style={tileStyles.noData}>
+          Connect your integrations (Slack, Google Calendar) to start seeing workload metrics.
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div style={tileStyles.container}>
-        <div style={tileStyles.noData}>Error loading metrics: {error}</div>
+        <h3 style={tileStyles.title}>Loop-Closing Metrics</h3>
+        <div style={tileStyles.noData}>Unable to load metrics. Please try again later.</div>
       </div>
     );
   }
