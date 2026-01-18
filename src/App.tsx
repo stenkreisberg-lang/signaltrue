@@ -25,6 +25,7 @@ import MonthlyReport from "./pages/MonthlyReport";
 import CeoSummary from "./pages/CeoSummary";
 import SuperadminDashboard from "./pages/SuperadminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
+import TeamAnalytics from "./pages/TeamAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/app/monthly-report" element={<MonthlyReport />} />
             <Route path="/ceo-summary/:token" element={<CeoSummary />} />
             <Route path="/superadmin" element={<SuperadminDashboard />} />
+            <Route path="/team-analytics" element={<TeamAnalytics />} />
             <Route path="/self-check" element={<SelfCheck />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
