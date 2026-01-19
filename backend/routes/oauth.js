@@ -6,6 +6,8 @@ import { authenticateToken } from "../middleware/auth.js";
 import { WebClient } from "@slack/web-api";
 import Organization from "../models/organizationModel.js";
 import { v4 as uuidv4 } from "uuid";
+import { notifyHRIntegrationsComplete } from "../services/integrationNotifyService.js";
+import { syncEmployeesFromSlack } from "../services/employeeSyncService.js";
 
 
 const router = express.Router();
@@ -102,6 +104,14 @@ router.get("/auth/slack/callback", async (req, res) => {
     await org.save();
     console.log("Slack OAuth callback: Successfully saved Slack integration for org:", org.name);
 
+    // Trigger employee sync and then check for HR notification
+    syncEmployeesFromSlack(org._id)
+      .then(() => {
+        console.log("Slack employee sync completed, checking HR notification");
+        notifyHRIntegrationsComplete(org._id);
+      })
+      .catch(err => console.error("Slack employee sync failed:", err.message));
+
     res.redirect(dashboardRedirect(true));
   } catch (error) {
     console.error("Slack OAuth callback error:", error.message);
@@ -165,6 +175,11 @@ router.get("/auth/google/callback", async (req, res) => {
     };
 
     await user.save();
+
+    // Check if integrations are now complete and notify HR
+    if (user.orgId) {
+      notifyHRIntegrationsComplete(user.orgId);
+    }
 
     res.redirect(dashboardRedirect(true));
   } catch (error) {

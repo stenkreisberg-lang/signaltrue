@@ -5,6 +5,7 @@ import User from '../models/user.js'; // Import User model
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
 import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
+import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 
 const router = express.Router();
 
@@ -251,6 +252,8 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
         syncEmployeesFromSlack(org._id)
           .then(result => {
             console.log('Slack employee sync completed:', result.stats);
+            // Check if integrations are now complete and notify HR
+            notifyHRIntegrationsComplete(org._id);
           })
           .catch(err => {
             console.error('Slack employee sync failed:', err.message);
