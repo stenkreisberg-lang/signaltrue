@@ -183,6 +183,45 @@ const SuperadminDashboard: React.FC = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div>
+            {/* Welcome Banner */}
+            <div style={styles.welcomeBanner}>
+              <h1 style={styles.welcomeTitle}>Welcome, Superadmin 👋</h1>
+              <p style={styles.welcomeSubtitle}>
+                You have full system access to manage all organizations, users, and platform settings.
+              </p>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={styles.quickActions}>
+              <h3 style={styles.quickActionsTitle}>Your Superadmin Capabilities</h3>
+              <div style={styles.capabilitiesGrid}>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>🏢</span>
+                  <span style={styles.capabilityText}>View & manage all organizations</span>
+                </div>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>👥</span>
+                  <span style={styles.capabilityText}>View & manage all users</span>
+                </div>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>🔑</span>
+                  <span style={styles.capabilityText}>Impersonate any user</span>
+                </div>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>📊</span>
+                  <span style={styles.capabilityText}>Access system-wide analytics</span>
+                </div>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>⚙️</span>
+                  <span style={styles.capabilityText}>Monitor integrations status</span>
+                </div>
+                <div style={styles.capabilityCard}>
+                  <span style={styles.capabilityIcon}>🔔</span>
+                  <span style={styles.capabilityText}>Track trial & subscriptions</span>
+                </div>
+              </div>
+            </div>
+
             <h2 style={styles.sectionTitle}>System Overview</h2>
             
             <div style={styles.statsGrid}>
@@ -224,6 +263,44 @@ const SuperadminDashboard: React.FC = () => {
                   <div style={styles.statLabel}>{role}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Recent Organizations */}
+            <h3 style={styles.subsectionTitle}>Recently Joined Organizations</h3>
+            <div style={styles.recentOrgsContainer}>
+              {organizations.length === 0 ? (
+                <p style={styles.muted}>No organizations yet. New signups will appear here.</p>
+              ) : (
+                organizations.slice(0, 5).map(org => (
+                  <div key={org.id} style={styles.recentOrgCard}>
+                    <div style={styles.recentOrgInfo}>
+                      <strong style={styles.recentOrgName}>{org.name}</strong>
+                      <span style={styles.recentOrgDate}>
+                        Joined {new Date(org.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div style={styles.recentOrgStats}>
+                      <span style={styles.recentOrgStat}>
+                        👥 {org.userCount} users
+                      </span>
+                      <span style={styles.recentOrgStat}>
+                        {org.integrations?.slack ? '✅ Slack' : '⏳ No Slack'}
+                      </span>
+                      <span style={org.trial?.isActive ? styles.badgeActive : styles.badgeInactive}>
+                        {org.trial?.isActive ? org.trial.phase : 'Expired'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              {organizations.length > 5 && (
+                <button 
+                  onClick={() => setActiveTab('organizations')} 
+                  style={styles.viewAllButton}
+                >
+                  View all {organizations.length} organizations →
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -326,6 +403,102 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh',
     backgroundColor: '#0f0f23',
     color: '#fff',
+  },
+  welcomeBanner: {
+    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+    padding: '2rem',
+    borderRadius: '16px',
+    marginBottom: '2rem',
+  },
+  welcomeTitle: {
+    fontSize: '28px',
+    fontWeight: 700,
+    margin: 0,
+    marginBottom: '8px',
+  },
+  welcomeSubtitle: {
+    fontSize: '16px',
+    opacity: 0.9,
+    margin: 0,
+  },
+  quickActions: {
+    backgroundColor: '#1a1a2e',
+    padding: '1.5rem',
+    borderRadius: '12px',
+    marginBottom: '2rem',
+  },
+  quickActionsTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    marginBottom: '1rem',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  capabilitiesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '12px',
+  },
+  capabilityCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: '8px',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+  },
+  capabilityIcon: {
+    fontSize: '20px',
+  },
+  capabilityText: {
+    fontSize: '13px',
+    color: 'rgba(255,255,255,0.9)',
+  },
+  recentOrgsContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '12px',
+  },
+  recentOrgCard: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem 1.5rem',
+    backgroundColor: '#1a1a2e',
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,0.05)',
+  },
+  recentOrgInfo: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+  },
+  recentOrgName: {
+    fontSize: '16px',
+    color: '#fff',
+  },
+  recentOrgDate: {
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.5)',
+  },
+  recentOrgStats: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  recentOrgStat: {
+    fontSize: '13px',
+    color: 'rgba(255,255,255,0.7)',
+  },
+  viewAllButton: {
+    backgroundColor: 'transparent',
+    border: '1px dashed rgba(99, 102, 241, 0.5)',
+    color: '#6366f1',
+    padding: '12px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    textAlign: 'center' as const,
   },
   nav: {
     backgroundColor: '#1a1a2e',
