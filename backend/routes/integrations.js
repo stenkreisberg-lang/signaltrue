@@ -656,9 +656,14 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
         accessToken: '', botUserId: '', team: {}, authedUser: {}
       };
     } else if (provider === 'google') {
+      // Clear organization-level Google integration
       org.integrations.google = {
         scope: '', refreshToken: '', accessToken: '', expiry: undefined
       };
+      // Also clear user-level Google tokens (for Calendar)
+      await User.findByIdAndUpdate(req.user.userId, {
+        $unset: { google: 1 }
+      });
     } else if (provider === 'google-chat' || provider === 'googlechat') {
       org.integrations.googleChat = {
         refreshToken: '', accessToken: '', expiry: undefined, email: '', user: {}
