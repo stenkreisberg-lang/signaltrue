@@ -109,6 +109,7 @@ import {
 
 // --- Service Imports ---
 import { refreshAllTeamsFromSlack } from "./services/slackService.js";
+import { refreshAllTeamsCalendars } from "./services/calendarService.js";
 import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 import { runCrisisDetection } from './services/crisisDetectionService.js';
@@ -295,6 +296,18 @@ async function main() {
         });
         console.log('⏰ Cron job scheduled: Slack refresh daily at 2 AM');
       }
+      
+      // Calendar data sync - daily at 2:30 AM
+      cron.schedule('30 2 * * *', async () => {
+        console.log('⏰ Running scheduled Calendar data refresh...');
+        try {
+          await refreshAllTeamsCalendars();
+          console.log('✅ Calendar refresh completed');
+        } catch (err) {
+          console.error('❌ Scheduled Calendar refresh failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Calendar refresh daily at 2:30 AM');
       
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
