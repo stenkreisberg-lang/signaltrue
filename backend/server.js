@@ -94,6 +94,7 @@ import assessmentRoutes from "./routes/assessment.js";
 import trialRoutes from "./routes/trial.js";
 import superadminRoutes from "./routes/superadmin.js";
 import passwordResetRoutes from "./routes/passwordReset.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -266,6 +267,9 @@ async function main() {
     
     // --- Password Reset Routes (public, no auth required) ---
     app.use('/api/auth', passwordResetRoutes);
+    
+    // --- Calendar Routes ---
+    app.use('/api', calendarRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {
