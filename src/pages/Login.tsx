@@ -36,8 +36,14 @@ const Login = () => {
       localStorage.setItem("orgId", data.user.orgId);
       localStorage.setItem("teamId", data.user.teamId);
 
-      // Redirect to dashboard (will route based on role/onboarding status)
-      navigate("/dashboard");
+      // Redirect based on role
+      if (data.user.role === 'master_admin' && !data.user.orgId) {
+        // Superadmin users go to superadmin dashboard
+        navigate("/superadmin");
+      } else {
+        // Regular users go to dashboard (will route based on role/onboarding status)
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
