@@ -18,13 +18,20 @@ import {
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 function Insights() {
-  const { teamId } = useParams();
+  const { teamId: urlTeamId } = useParams();
+  // Fall back to localStorage if no teamId in URL
+  const teamId = urlTeamId || localStorage.getItem('teamId');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [insights, setInsights] = useState(null);
   const [intelligenceData, setIntelligenceData] = useState(null);
 
   useEffect(() => {
+    if (!teamId) {
+      setError('No team selected. Please select a team first.');
+      setLoading(false);
+      return;
+    }
     fetchInsights();
     fetchIntelligenceData();
   }, [teamId]);
@@ -33,6 +40,14 @@ function Insights() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      
+      if (!teamId) {
+        // No team - show empty state instead of error
+        setInsights({ teamState: null, risks: [], action: null, experiment: null });
+        setError(null);
+        return;
+      }
+      
       const response = await axios.get(
         `${API_URL}/api/insights/team/${teamId}`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -41,7 +56,9 @@ function Insights() {
       setError(null);
     } catch (err) {
       console.error('Error fetching insights:', err);
-      setError('Unable to load insights. Please try again.');
+      // On error, show empty state instead of error message for better UX
+      setInsights({ teamState: null, risks: [], action: null, experiment: null });
+      setError(null);
     } finally {
       setLoading(false);
     }
