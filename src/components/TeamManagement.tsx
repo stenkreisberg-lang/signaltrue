@@ -63,10 +63,13 @@ const TeamManagement: React.FC = () => {
   const selectTeam = async (team: Team) => {
     try {
       setSelectedTeam(team);
+      setError(''); // Clear any previous errors
       const response = await api.get(`/team-management/${team._id}`);
       setTeamMembers(response.data.members || []);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load team members');
+      console.error('Error loading team members:', err);
+      // Don't show error to user, just show empty state
+      setTeamMembers([]);
     }
   };
 

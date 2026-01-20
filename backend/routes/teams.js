@@ -51,7 +51,14 @@ router.get('/:teamId', authenticateToken, async (req, res) => {
     }
 
     // Verify user has access to this team's organization
-    if (team.orgId.toString() !== req.user.orgId.toString()) {
+    const userOrgId = req.user.orgId?.toString() || req.user.orgId;
+    const teamOrgId = team.orgId?.toString() || team.orgId;
+    
+    if (!userOrgId) {
+      return res.status(403).json({ message: 'User not associated with an organization' });
+    }
+    
+    if (teamOrgId !== userOrgId) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
