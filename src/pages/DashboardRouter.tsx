@@ -82,6 +82,7 @@ const DashboardRouter: React.FC = () => {
 
   // Check if user is arriving from integration setup
   const onboardingParam = searchParams.get('onboarding');
+  const setupParam = searchParams.get('setup');
 
   if (loading) {
     return (
@@ -113,6 +114,11 @@ const DashboardRouter: React.FC = () => {
 
   // HR Admin Flow
   if (role === 'hr_admin') {
+    // If user clicked "Set Up Myself", show dashboard with integrations
+    if (setupParam === 'true') {
+      return <Dashboard />;
+    }
+    
     // If integrations are not complete, show onboarding prompt
     if (!integrationsComplete) {
       return <HRAdminOnboarding status={status} />;
