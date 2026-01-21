@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 
 interface OnboardingStatus {
@@ -33,6 +33,7 @@ interface Props {
  * 2. Set up integrations myself - Go directly to dashboard to configure
  */
 const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -183,11 +184,12 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 You can configure the integrations yourself if you have admin access
                 to your organization's Slack workspace and Google Workspace.
               </p>
-              <Link to="/dashboard" style={{ textDecoration: 'none' }}>
-                <button style={styles.secondaryButton}>
-                  Continue to Setup
-                </button>
-              </Link>
+              <button 
+                onClick={() => navigate('/dashboard?setup=true')}
+                style={styles.secondaryButton}
+              >
+                Continue to Setup
+              </button>
             </div>
           </div>
 
@@ -366,6 +368,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     fontSize: '1rem',
     boxSizing: 'border-box',
+    color: '#111827',
+    backgroundColor: '#ffffff',
   },
   buttonGroup: {
     display: 'grid',
