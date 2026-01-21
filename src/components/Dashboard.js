@@ -274,36 +274,52 @@ function Dashboard() {
             <GoogleChatConnect integrations={integrations} />
           </div>
 
-          <div style={styles.card}>
+          <div style={{...styles.card, opacity: 0.7, position: 'relative'}}>
+            <span style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: 'white',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>Coming Soon</span>
             <div style={styles.cardIcon}>📧</div>
-            <h3 style={styles.cardTitle}>Connect Outlook {integrations?.connected?.outlook && <span style={styles.badgeConnected}>Connected</span>}</h3>
-            {integrations?.connected?.outlook && <p style={styles.detailLine}>Provider: Microsoft (Outlook)</p>}
+            <h3 style={styles.cardTitle}>Connect Outlook</h3>
             <p style={styles.cardText}>
               Analyze Outlook/Exchange calendar and email metadata for trends
             </p>
-            {!integrations?.connected?.outlook ? (
-              <button style={styles.cardButton} onClick={() => openOrGuide('outlook')}>
-                Connect Outlook Account
-              </button>
-            ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
-            )}
+            <button style={{...styles.cardButton, opacity: 0.5, cursor: 'not-allowed'}} disabled>
+              Connect Outlook Account
+            </button>
           </div>
 
-          <div style={styles.card}>
+          <div style={{...styles.card, opacity: 0.7, position: 'relative'}}>
+            <span style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: 'white',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>Coming Soon</span>
             <div style={styles.cardIcon}>💼</div>
-            <h3 style={styles.cardTitle}>Connect Microsoft Teams {integrations?.connected?.teams && <span style={styles.badgeConnected}>Connected</span>}</h3>
-            {integrations?.connected?.teams && <p style={styles.detailLine}>Provider: Microsoft (Teams)</p>}
+            <h3 style={styles.cardTitle}>Connect Microsoft Teams</h3>
             <p style={styles.cardText}>
               Import Teams collaboration patterns to enrich communication insights
             </p>
-            {!integrations?.connected?.teams ? (
-              <button style={styles.cardButton} onClick={() => openOrGuide('teams')}>
-                Connect Teams Workspace
-              </button>
-            ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>Disconnect</button>
-            )}
+            <button style={{...styles.cardButton, opacity: 0.5, cursor: 'not-allowed'}} disabled>
+              Connect Teams Workspace
+            </button>
           </div>
 
           <div style={styles.card}>
