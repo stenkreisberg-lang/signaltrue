@@ -68,7 +68,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         oauth: {
           slack: !!process.env.SLACK_CLIENT_ID ? '/auth/slack' : null,
           google: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google' : null,
-          googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google-chat' : null,
+          googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google-chat/oauth/start' : null,
         }
       });
     }
@@ -112,7 +112,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     const oauth = {
       slack: available.slack ? '/auth/slack' : null,
       google: available.google ? '/auth/google' : null,
-      googleChat: available.googleChat ? '/auth/google-chat' : null,
+      googleChat: available.googleChat ? '/integrations/google-chat/oauth/start' : null,
     };
 
     res.json({ available, connected, details, oauth });
