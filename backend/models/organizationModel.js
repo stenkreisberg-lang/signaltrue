@@ -141,12 +141,11 @@ const organizationSchema = new mongoose.Schema(
 );
 
 // Pre-save middleware to calculate trial end date
-organizationSchema.pre('save', function(next) {
+organizationSchema.pre('save', async function() {
   if (this.trial && this.trial.startDate && !this.trial.endDate) {
     const startDate = new Date(this.trial.startDate);
     this.trial.endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
   }
-  next();
 });
 
 // Virtual for calculating current trial day
