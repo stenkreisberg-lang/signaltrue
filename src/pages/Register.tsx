@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Activity } from "lucide-react";
 
+const planLabels: Record<string, string> = {
+  visibility: "Visibility",
+  interpretation: "Interpretation",
+  intervention: "Intervention",
+};
+
 const Register = () => {
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get("plan") || "";
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +32,7 @@ const Register = () => {
       const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, company }),
+        body: JSON.stringify({ name, email, password, company, plan: selectedPlan }),
       });
 
       const data = await response.json();
@@ -60,9 +69,14 @@ const Register = () => {
 
         {/* Register Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">Get started</h1>
+          <h1 className="text-2xl font-bold mb-2">See your organizational signals</h1>
           <p className="text-muted-foreground mb-6">
-            Create your account
+            Create your account to get started
+            {selectedPlan && planLabels[selectedPlan] && (
+              <span className="block mt-1 text-primary font-medium">
+                Selected plan: {planLabels[selectedPlan]}
+              </span>
+            )}
           </p>
 
           {error && (

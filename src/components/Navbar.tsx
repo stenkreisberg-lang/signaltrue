@@ -3,8 +3,15 @@ import { Activity, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
+/*
+ * CATEGORY REPOSITIONING NOTE:
+ * Remove: "Submit", "Get started", "Contact us"
+ * Use: "See your organizational signals", "See how drift shows up", "View signal workflow"
+ * Buttons must describe outcome, not action.
+ */
+
 const navItems = [
-  { label: "Product", href: "/product" },
+  { label: "Signals", href: "/product" },
   { label: "How it Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
@@ -43,16 +50,16 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop CTA Buttons */}
+          {/* Desktop CTA Buttons - Updated with outcome-focused language */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
               <Button variant="ghost" size="sm" className="text-muted-foreground">
                 Login
               </Button>
             </Link>
-            <Link to="/register">
+            <Link to="/product">
               <Button variant="cta" size="sm">
-                Get Started
+                See your signals
               </Button>
             </Link>
           </div>
@@ -91,9 +98,9 @@ const Navbar = () => {
                     Login
                   </Button>
                 </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/product" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="cta" size="sm" className="w-full">
-                    Get Started
+                    See your signals
                   </Button>
                 </Link>
               </div>

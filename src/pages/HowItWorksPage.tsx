@@ -6,9 +6,9 @@ import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 import { WorkloadAssessment } from "../components/WorkloadAssessment";
 import { 
-  Link2, 
-  Brain, 
-  Bell, 
+  Activity, 
+  BarChart2, 
+  AlertCircle, 
   TrendingUp, 
   ArrowRight,
   CheckCircle,
@@ -17,8 +17,18 @@ import {
   BarChart3,
   Calculator,
   Target,
-  Eye
+  Eye,
+  XCircle,
+  Layers
 } from "lucide-react";
+
+/*
+ * CATEGORY REPOSITIONING NOTE:
+ * This is not a visual polish task.
+ * This is a category repositioning.
+ * If a section feels "empty", "safe", or "generic", it's wrong.
+ * Optimize for clarity and conviction over minimalism.
+ */
 
 // API base URL for tracking
 const API_BASE = process.env.NODE_ENV === 'production' 
@@ -44,12 +54,29 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
   }
 };
 
+// Why assumptions fail - per spec
+const assumptions = [
+  {
+    assumption: "Engagement surveys tell us how people feel",
+    rebuttal: "Surveys measure self-reported opinion at a point in time. They miss behavioral patterns that predict problems months earlier.",
+  },
+  {
+    assumption: "Managers know when their teams are struggling",
+    rebuttal: "Managers often lack visibility into coordination load, response pressure, and after-hours patterns across their team.",
+  },
+  {
+    assumption: "Output metrics show team health",
+    rebuttal: "Output stays stable while teams compensate with unsustainable effort. By the time delivery drops, damage is done.",
+  },
+];
+
+// Renamed steps per spec
 const steps = [
   {
     number: "01",
-    icon: Link2,
-    title: "Connect your tools",
-    description: "Connect Slack or Teams and your calendar using OAuth. SignalTrue never sees your passwords.",
+    icon: Activity,
+    title: "Expose how work behaves",
+    description: "Connect collaboration tools. SignalTrue reads behavioral patterns from metadata, not content.",
     details: [
       "Fast OAuth setup",
       "Works with existing permissions",
@@ -58,9 +85,9 @@ const steps = [
   },
   {
     number: "02",
-    icon: Brain,
-    title: "Establish baselines",
-    description: "SignalTrue builds a baseline for each team so alerts are based on change, not generic benchmarks.",
+    icon: BarChart2,
+    title: "Establish system baselines",
+    description: "Each team gets a baseline built from their own patterns, not generic industry benchmarks.",
     details: [
       "Baselines per team",
       "Trend comparison over time",
@@ -69,11 +96,11 @@ const steps = [
   },
   {
     number: "03",
-    icon: Bell,
-    title: "Detect meaningful shifts",
-    description: "Signals trigger when patterns deviate from baseline in a way that often precedes overload, disengagement, or coordination breakdown.",
+    icon: AlertCircle,
+    title: "Detect meaningful drift",
+    description: "Signals trigger when patterns deviate in ways that predict organizational strain.",
     details: [
-      "Weekly signals",
+      "Weekly signal updates",
       "Severity-based alerts",
       "Clear 'what changed' summaries",
     ],
@@ -81,8 +108,8 @@ const steps = [
   {
     number: "04",
     icon: TrendingUp,
-    title: "Intervene and measure",
-    description: "Choose an intervention, assign an owner, and track before/after changes to prove impact.",
+    title: "Intervene and measure impact",
+    description: "Take targeted action and track whether signals improve, stabilize, or continue drifting.",
     details: [
       "Intervention tracking",
       "Before/after comparisons",
@@ -91,11 +118,15 @@ const steps = [
   },
 ];
 
+// Tool ecosystem per spec
 const integrations = [
-  { name: "Slack", description: "Team-level collaboration patterns" },
-  { name: "Google Calendar", description: "Meeting load and focus-time signals" },
-  { name: "Microsoft Teams", description: "Planned" },
-  { name: "Outlook Calendar", description: "Planned" },
+  { name: "Slack", description: "Team-level coordination patterns", status: "current" },
+  { name: "Google Calendar", description: "Meeting load and focus-time signals", status: "current" },
+  { name: "Microsoft Teams", description: "Coordination patterns", status: "planned" },
+  { name: "Outlook Calendar", description: "Meeting load signals", status: "planned" },
+  { name: "Jira", description: "Execution friction signals", status: "next" },
+  { name: "Asana", description: "Task flow patterns", status: "next" },
+  { name: "Basecamp", description: "Project coordination", status: "next" },
 ];
 
 const HowItWorksPage = () => {
@@ -123,15 +154,15 @@ const HowItWorksPage = () => {
                 How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From setup to useful signals in{" "}
+                From setup to organizational signals in{" "}
                 <span className="text-gradient">7 days</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                Connect your tools, establish team baselines, detect shifts, and measure whether interventions work.
+                Expose how work behaves, establish baselines, detect meaningful drift, and measure intervention impact.
               </p>
               <Button variant="hero" size="xl" asChild>
                 <a href="#assessment">
-                  Calculate Your Cost Exposure
+                  See how drift shows up
                   <ArrowRight className="w-5 h-5" />
                 </a>
               </Button>
@@ -139,8 +170,56 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
+        {/* NEW: Why Assumptions Fail Section - per spec */}
+        <section className="py-16 lg:py-20 bg-background">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                  The Problem
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                  Why assumptions fail in modern work
+                </h2>
+              </div>
+
+              <div className="space-y-6">
+                {assumptions.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="grid md:grid-cols-2 gap-6 p-6 rounded-2xl bg-card border border-border/50"
+                  >
+                    <div className="flex items-start gap-4">
+                      <XCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-1" />
+                      <div>
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                          Common Assumption
+                        </h3>
+                        <p className="text-foreground font-medium">
+                          "{item.assumption}"
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-success flex-shrink-0 mt-1" />
+                      <div>
+                        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                          Signal-Based Reality
+                        </h3>
+                        <p className="text-muted-foreground">
+                          {item.rebuttal}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* What SignalTrue Measures Section */}
-        <section className="py-16 bg-background">
+        <section className="py-16 bg-secondary/20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
@@ -349,38 +428,84 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
-        {/* Integrations Section */}
-        <section className="py-24 bg-background">
+        {/* Tool Ecosystem Section - per spec */}
+        <section className="py-20 lg:py-24 bg-background">
           <div className="container mx-auto px-6">
-            <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="text-center max-w-2xl mx-auto mb-12">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                Integrations
+                Tool Ecosystem
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                Works with tools you already use
+                SignalTrue is a signal layer, not a chat plugin
               </h2>
               <p className="text-muted-foreground">
-                Simple OAuth connections. No API keys required.
+                Silent burnout often hides in task flow, not chat volume.
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-              {integrations.map((integration, index) => (
-                <div 
-                  key={index}
-                  className="p-6 rounded-2xl bg-card border border-border/50 text-center"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
-                    <Link2 className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-display font-semibold text-foreground mb-1">
-                    {integration.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {integration.description}
-                  </p>
+            <div className="max-w-4xl mx-auto">
+              {/* Current Integrations */}
+              <div className="mb-8">
+                <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4 text-center">Current</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {integrations.filter(i => i.status === 'current').map((integration, index) => (
+                    <div 
+                      key={index}
+                      className="p-6 rounded-2xl bg-card border border-primary/30 text-center"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                        <Layers className="w-6 h-6 text-primary" />
+                      </div>
+                      <h4 className="font-display font-semibold text-foreground mb-1">
+                        {integration.name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {integration.description}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Next Integrations */}
+              <div className="mb-8">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">Coming Next</h3>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {integrations.filter(i => i.status === 'next').map((integration, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 rounded-2xl bg-secondary/30 border border-border/50 text-center"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-muted mx-auto mb-3 flex items-center justify-center">
+                        <Layers className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <h4 className="font-display font-medium text-foreground text-sm mb-1">
+                        {integration.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {integration.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Planned Integrations */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">Planned</h3>
+                <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto">
+                  {integrations.filter(i => i.status === 'planned').map((integration, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 rounded-2xl bg-muted/30 border border-border/30 text-center opacity-70"
+                    >
+                      <h4 className="font-display font-medium text-muted-foreground text-sm">
+                        {integration.name}
+                      </h4>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -437,25 +562,25 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-24 bg-hero-gradient relative overflow-hidden">
+        {/* CTA Section - Updated with outcome-focused language */}
+        <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
           <div className="absolute inset-0 bg-glow opacity-30" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See the workflow in a real demo
+                See how drift shows up in your organization
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                We'll show you the signals, privacy model, and how interventions are tracked.
+                We'll walk you through signals, privacy architecture, and the intervention workflow.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/register">
+                <Link to="/product">
                   <Button 
                     variant="hero" 
                     size="xl"
-                    onClick={() => trackEvent('cta_clicked', { type: 'demo', location: 'how-it-works-footer' })}
+                    onClick={() => trackEvent('cta_clicked', { type: 'view_signals', location: 'how-it-works-footer' })}
                   >
-                    Get a Demo
+                    See your organizational signals
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                 </Link>

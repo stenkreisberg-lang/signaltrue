@@ -1,19 +1,26 @@
 import { Activity, Linkedin, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
 
+/*
+ * CATEGORY REPOSITIONING NOTE:
+ * SignalTrue is a Work Signal Intelligence platform.
+ * Avoid "health", "wellbeing", "engagement" as primary terms.
+ * Prefer "signals", "drift", "strain", "execution friction", "recovery".
+ */
+
 const footerLinks = {
   Product: [
-    { label: "Features", href: "/product" },
+    { label: "Signals", href: "/product" },
     { label: "Pricing", href: "/pricing" },
     { label: "How it Works", href: "/how-it-works" },
-    { label: "Security", href: "/app/privacy" }
+    { label: "Privacy", href: "/app/privacy" }
   ],
   Company: [
     { label: "About", href: "/about" },
     { label: "Contact", href: "/about#contact" }
   ],
   Resources: [
-    { label: "Documentation", href: "/how-it-works" },
+    { label: "Signal Workflow", href: "/how-it-works" },
     { label: "Privacy Policy", href: "/app/privacy" },
     { label: "Terms of Service", href: "/about#terms" }
   ],
@@ -35,8 +42,8 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
-              Helping HR leaders detect early warning signs and prevent burnout 
-              before it impacts your team's performance and retention.
+              Work Signal Intelligence. Detect organizational drift early 
+              by reading how work actually happens—without surveillance or surveys.
             </p>
             <div className="flex items-center gap-4">
               <a 
@@ -88,7 +95,7 @@ const Footer = () => {
             © 2025 SignalTrue. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Made with care for HR teams everywhere.
+            Early-warning systems for modern work.
           </p>
         </div>
       </div>

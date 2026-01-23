@@ -1,35 +1,42 @@
-import { Link2, Brain, Bell, TrendingUp } from "lucide-react";
+import { Activity, BarChart2, AlertCircle, TrendingUp } from "lucide-react";
+
+/*
+ * CATEGORY REPOSITIONING NOTE:
+ * This is not a visual polish task.
+ * This is a category repositioning.
+ * Renamed steps per spec: Expose, Establish, Detect, Intervene
+ */
 
 const steps = [
   {
     number: "01",
-    icon: Link2,
-    title: "Connect your tools",
-    description: "Connect Slack or Teams and your calendar using OAuth. We never see your passwords.",
+    icon: Activity,
+    title: "Expose how work behaves",
+    description: "Connect your collaboration tools. SignalTrue reads behavioral patterns, not content.",
   },
   {
     number: "02",
-    icon: Brain,
-    title: "Establish a baseline",
-    description: "SignalTrue builds a baseline for each team so changes are measured against what is normal for them.",
+    icon: BarChart2,
+    title: "Establish system baselines",
+    description: "Each team gets a baseline built from their own patterns, not generic benchmarks.",
   },
   {
     number: "03",
-    icon: Bell,
-    title: "Review signals",
-    description: "See which teams shifted, what changed, and where the risk is building.",
+    icon: AlertCircle,
+    title: "Detect meaningful drift",
+    description: "Signals trigger when patterns deviate in ways that predict organizational strain.",
   },
   {
     number: "04",
     icon: TrendingUp,
-    title: "Take action and track impact",
-    description: "Choose an intervention, assign an owner, and track whether signals improve over time.",
+    title: "Intervene and measure impact",
+    description: "Take targeted action and track whether signals improve, stabilize, or continue drifting.",
   },
 ];
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 bg-background">
+    <section id="how-it-works" className="py-20 lg:py-24 bg-background">
       <div className="container mx-auto px-6">
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -37,10 +44,10 @@ const HowItWorks = () => {
             How it works
           </p>
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-            Detect. Diagnose. Intervene. Measure.
+            Expose. Baseline. Detect. Intervene.
           </h2>
           <p className="text-muted-foreground">
-            A repeatable team health workflow HR and managers can actually run.
+            A signal-based workflow for organizational health that leadership can actually use.
           </p>
         </div>
 
