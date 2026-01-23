@@ -17,8 +17,8 @@ const DashboardMockup = () => {
         </div>
         <div style={{ display: 'flex', gap: '20px' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Org Energy Index</div>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: '#34d399' }}>Stable (7.2/10)</div>
+            <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Drift Status</div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#34d399' }}>Stable • 2 Signals</div>
           </div>
         </div>
       </header>

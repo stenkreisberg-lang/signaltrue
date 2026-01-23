@@ -95,6 +95,7 @@ import trialRoutes from "./routes/trial.js";
 import superadminRoutes from "./routes/superadmin.js";
 import passwordResetRoutes from "./routes/passwordReset.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
+import costOfDriftRoutes from "./routes/costOfDrift.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -270,6 +271,9 @@ async function main() {
     
     // --- Calendar Routes ---
     app.use('/api', calendarRoutes);
+    
+    // --- Cost of Drift Routes (Executive ROI view) ---
+    app.use('/api/cost-of-drift', costOfDriftRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {

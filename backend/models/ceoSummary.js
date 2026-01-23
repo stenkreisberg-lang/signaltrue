@@ -135,8 +135,7 @@ const ceoSummarySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for finding summaries by share token
-ceoSummarySchema.index({ shareToken: 1 });
+// shareToken already has unique: true which creates an index
 
 // Generate a unique share token
 ceoSummarySchema.methods.generateShareToken = function(expiryDays = 30) {

@@ -390,7 +390,7 @@ CURRENT TEAM STATE:
     if (newRisks.length > 0) {
       context += `\nNEW OR WORSENING RISKS:\n`;
       newRisks.forEach(risk => {
-        context += `- ${risk.type.toUpperCase()}: ${risk.score}/100 (${risk.isNew ? 'NEW' : 'up ' + risk.delta.toFixed(0) + ' points'})\n`;
+        context += `- ${risk.type.toUpperCase()}: ${risk.score}/100 (${risk.isNewSignal ? 'NEW' : 'up ' + risk.delta.toFixed(0) + ' points'})\n`;
       });
     }
     

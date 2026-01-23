@@ -373,21 +373,43 @@ function getSignalTypeDisplay(signalType) {
     'dependency-spread': 'Dependency Spread',
     'recovery-deficit': 'Recovery Deficit',
     'handoff-bottleneck': 'Handoff Bottleneck',
+    // New signals per Category King spec
+    'context-switching': 'Context Switching Index',
+    'context_switching': 'Context Switching Index',
+    'network-bottleneck': 'Network Bottleneck',
+    'network_bottleneck': 'Network Bottleneck',
+    'rework-churn': 'Rework & Churn',
+    'rework_churn': 'Rework & Churn',
     // Legacy compatibility
     'meeting-load-spike': 'Coordination Risk',
+    'meeting_load_drift': 'Coordination Risk',
     'after-hours-creep': 'Boundary Erosion',
     'response-delay-increase': 'Execution Drag',
-    'sentiment-decline': 'Morale Volatility'
+    'responsiveness_pressure': 'Execution Drag',
+    'sentiment-decline': 'Morale Volatility',
+    'recovery_gap_index': 'Recovery Deficit',
+    'focus_fragmentation': 'Focus Erosion',
+    'engagement_asymmetry': 'Engagement Gap',
+    'signal_convergence': 'Multi-Signal Alert'
   };
-  return mapping[signalType] || signalType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return mapping[signalType] || signalType.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 function getActionStatusText(status) {
+  // Per spec: Unaddressed | In progress | Stabilizing | Resolved
   const mapping = {
-    'active': 'Action in progress',
-    'pending-recheck': 'Ready for recheck',
-    'completed': 'Completed',
-    'abandoned': 'Abandoned'
+    'Open': 'Unaddressed',
+    'open': 'Unaddressed',
+    'Acknowledged': 'In progress',
+    'acknowledged': 'In progress',
+    'active': 'In progress',
+    'In Progress': 'In progress',
+    'in-progress': 'In progress',
+    'pending-recheck': 'Stabilizing',
+    'completed': 'Resolved',
+    'Resolved': 'Resolved',
+    'abandoned': 'Abandoned',
+    'Ignored': 'Dismissed'
   };
   return mapping[status] || status;
 }

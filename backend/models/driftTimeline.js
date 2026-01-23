@@ -97,7 +97,7 @@ const driftTimelineSchema = new mongoose.Schema({
 // Indexes
 driftTimelineSchema.index({ teamId: 1, createdAt: -1 });
 driftTimelineSchema.index({ orgId: 1, status: 1 });
-driftTimelineSchema.index({ timelineId: 1 });
+// timelineId already has unique: true which creates an index
 
 // Update summary before saving
 driftTimelineSchema.pre('save', function(next) {

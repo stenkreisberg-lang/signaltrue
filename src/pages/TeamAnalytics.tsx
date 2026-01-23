@@ -4,8 +4,10 @@ import { ArrowLeft, Users, TrendingUp, Clock, AlertTriangle, Activity, Calendar,
 
 interface AnalyticsData {
   teamHealth: {
-    energyIndex: number;
-    resilienceScore: number;
+    energyIndex?: number;  // deprecated, kept for backwards compat
+    resilienceScore?: number;  // deprecated, kept for backwards compat
+    signalsDetected?: number;  // NEW: count of active signals
+    driftStatus?: 'stable' | 'worsening' | 'stabilizing' | 'recovering';  // NEW: drift trend
     executionCapacity: number;
     trend: string;
   };
@@ -54,8 +56,8 @@ const TeamAnalytics: React.FC = () => {
           // Use fallback demo data if API not available
           setAnalytics({
             teamHealth: {
-              energyIndex: 72,
-              resilienceScore: 68,
+              signalsDetected: 2,
+              driftStatus: 'stable',
               executionCapacity: 75,
               trend: 'stable',
             },
@@ -171,33 +173,35 @@ const TeamAnalytics: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Team Health Scores */}
+        {/* Team Signal Status */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-blue-600" />
-            Team Health Scores
+            Team Signal Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`${getScoreBg(analytics?.teamHealth.energyIndex || 0)} rounded-xl p-6`}>
+            <div className={`${getScoreBg(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)} rounded-xl p-6`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-700 font-medium">Energy Index</span>
+                <span className="text-gray-700 font-medium">Signals Detected</span>
                 <TrendingUp className="w-5 h-5 text-gray-500" />
               </div>
-              <div className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.energyIndex || 0)}`}>
-                {analytics?.teamHealth.energyIndex}%
+              <div className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}>
+                {analytics?.teamHealth.signalsDetected ?? analytics?.teamHealth.energyIndex ?? 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Team energy and engagement level</p>
+              <p className="text-sm text-gray-600 mt-1">Active drift signals requiring attention</p>
             </div>
 
-            <div className={`${getScoreBg(analytics?.teamHealth.resilienceScore || 0)} rounded-xl p-6`}>
+            <div className={`${getScoreBg(analytics?.teamHealth.driftStatus === 'stable' ? 90 : analytics?.teamHealth.driftStatus === 'worsening' ? 40 : 70)} rounded-xl p-6`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-700 font-medium">Resilience Score</span>
+                <span className="text-gray-700 font-medium">Drift Status</span>
                 <Users className="w-5 h-5 text-gray-500" />
               </div>
-              <div className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.resilienceScore || 0)}`}>
-                {analytics?.teamHealth.resilienceScore}%
+              <div className={`text-2xl font-bold ${analytics?.teamHealth.driftStatus === 'stable' ? 'text-green-600' : analytics?.teamHealth.driftStatus === 'worsening' ? 'text-red-600' : 'text-yellow-600'}`}>
+                {analytics?.teamHealth.driftStatus === 'stable' ? 'Stable' : 
+                 analytics?.teamHealth.driftStatus === 'worsening' ? 'Worsening' : 
+                 analytics?.teamHealth.driftStatus === 'recovering' ? 'Recovering' : 'Stabilizing'}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Ability to handle challenges</p>
+              <p className="text-sm text-gray-600 mt-1">Overall organizational drift trend</p>
             </div>
 
             <div className={`${getScoreBg(analytics?.teamHealth.executionCapacity || 0)} rounded-xl p-6`}>

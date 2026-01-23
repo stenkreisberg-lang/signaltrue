@@ -8,7 +8,7 @@ const router = express.Router();
 
 // PATCH /api/teams/:teamId/drivers
 // Update driverWeights and seasonalityFlags for a team
-router.patch('/teams/:teamId/drivers', async (req, res) => {
+router.patch('/:teamId/drivers', async (req, res) => {
   try {
     const { teamId } = req.params;
     const { driverWeights, seasonalityFlags } = req.body;
@@ -44,7 +44,7 @@ async function seedMockTeams() {
 }
 
 // GET /api/teams
-router.get('/teams', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     await seedMockTeams();
     const teams = await Team.find().sort({ favorite: -1, updatedAt: -1 });
@@ -147,7 +147,7 @@ router.get('/ai-usage', requireApiKey, async (req, res) => {
 
 // GET /api/teams/:teamId/energy-expanded
 // Returns expanded Energy Index with capability indicators breakdown
-router.get('/teams/:teamId/energy-expanded', async (req, res) => {
+router.get('/:teamId/energy-expanded', async (req, res) => {
   try {
     const { teamId } = req.params;
     const team = await Team.findById(teamId);

@@ -118,7 +118,7 @@ const actionSchema = new mongoose.Schema({
 // Indexes for common queries
 actionSchema.index({ orgId: 1, teamId: 1, status: 1 });
 actionSchema.index({ owner: 1, status: 1 });
-actionSchema.index({ signalId: 1 });
+// signalId already has index: true in field definition
 actionSchema.index({ status: 1, dueDate: 1 });
 
 export default mongoose.model('Action', actionSchema);

@@ -53,8 +53,8 @@ const dataAccessLogSchema = new mongoose.Schema({
   accessedAt: {
     type: Date,
     default: Date.now,
-    required: true,
-    index: true
+    required: true
+    // Note: index is created below with TTL expireAfterSeconds option
   },
   
   // Request details

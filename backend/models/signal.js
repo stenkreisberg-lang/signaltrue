@@ -30,9 +30,23 @@ const signalSchema = new mongoose.Schema({
       'message-volume-drop',
       'recovery-deficit',
       'sentiment-decline',
-      'handoff-bottleneck'
+      'handoff-bottleneck',
+      'context-switching',
+      'network-bottleneck',
+      'rework-churn'
     ]
   },
+  // Category for grouping signals (per Category King spec)
+  signalCategory: {
+    type: String,
+    enum: ['coordination', 'execution', 'recovery', 'network'],
+    index: true
+  },
+  // Data sources that contributed to this signal
+  sources: [{
+    type: String,
+    enum: ['slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear']
+  }],
   title: { type: String, required: true },
   
   // Severity and confidence

@@ -51,10 +51,25 @@ const signalSchemaV2 = new mongoose.Schema({
       'meeting_load_drift',      // MLD - Meeting creep
       'responsiveness_pressure', // RPI - Reactivity pressure
       'engagement_asymmetry',    // EAS - Participation imbalance
-      'signal_convergence'       // SCD - Multi-signal system overload
+      'signal_convergence',      // SCD - Multi-signal system overload
+      'context_switching',       // CSI - Context switching overhead
+      'network_bottleneck',      // NBI - Collaboration concentration
+      'rework_churn'             // RCI - Task reopening/reassignment
     ],
     index: true
   },
+  // Category for grouping signals (per Category King spec)
+  signalCategory: {
+    type: String,
+    enum: ['coordination', 'execution', 'recovery', 'network'],
+    required: true,
+    index: true
+  },
+  // Data sources that contributed to this signal
+  sources: [{
+    type: String,
+    enum: ['slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear']
+  }],
   
   // Severity (INFO → RISK → CRITICAL escalation path)
   severity: { 

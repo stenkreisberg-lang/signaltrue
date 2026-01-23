@@ -66,7 +66,7 @@ const weeklyReportSchema = new mongoose.Schema({
       type: Number,
       required: true
     },
-    isNew: {
+    isNewSignal: {
       type: Boolean,
       default: false
     }
