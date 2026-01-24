@@ -61,7 +61,7 @@ export default function ExecutiveSummary() {
   const handleExport = async () => {
     try {
       // Generate shareable CEO summary link
-      const res = await api.post(`/trial/generate-ceo-summary/${user.orgId}`);
+      const res = await api.post('/trial/generate-ceo-summary');
       const shareUrl = `${window.location.origin}/ceo-summary/${res.data.shareToken}`;
       
       // Copy to clipboard
