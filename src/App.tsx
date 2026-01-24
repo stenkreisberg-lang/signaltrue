@@ -17,7 +17,9 @@ import DashboardRouter from "./pages/DashboardRouter";
 import Overview from "./pages/app/Overview";
 import Insights from "./pages/app/Insights";
 import Signals from "./pages/app/Signals";
-import RiskFeed from "./pages/app/RiskFeed";
+import ActiveMonitoring from "./pages/app/ActiveMonitoring";
+import Actions from "./pages/app/Actions";
+import ExecutiveSummary from "./pages/app/ExecutiveSummary";
 import Privacy from "./pages/app/Privacy";
 import SelfCheck from "./pages/SelfCheck";
 import NotFound from "./pages/NotFound";
@@ -52,7 +54,10 @@ const App = () => (
             <Route path="/app/insights" element={<Insights />} />
             <Route path="/app/insights/:teamId" element={<Insights />} />
             <Route path="/app/signals" element={<Signals />} />
-            <Route path="/app/risk-feed" element={<RiskFeed />} />
+            <Route path="/app/active-monitoring" element={<ActiveMonitoring />} />
+            <Route path="/app/risk-feed" element={<ActiveMonitoring />} /> {/* Legacy redirect */}
+            <Route path="/app/actions" element={<Actions />} />
+            <Route path="/app/executive-summary" element={<ExecutiveSummary />} />
             <Route path="/app/privacy" element={<Privacy />} />
             <Route path="/app/monthly-report" element={<MonthlyReport />} />
             <Route path="/ceo-summary/:token" element={<CeoSummary />} />

@@ -1,8 +1,9 @@
 /**
- * Risk Feed - New Default Landing Page
- * Replaces dashboard-first approach with signal-first approach
- * Shows "Current Signals" ordered by severity → velocity → time unresolved
- * Max 5 signals visible at once
+ * Active Monitoring - Primary signal monitoring screen
+ * Per SignalTrue Product Spec Section 7
+ * 
+ * "SignalTrue continuously watches for early risk patterns 
+ * across workload, recovery, and collaboration."
  */
 
 import React, { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import RecommendedAction from '../../components/RecommendedAction';
 import api from '../../utils/api';
 
-export default function RiskFeed() {
+export default function ActiveMonitoring() {
   const navigate = useNavigate();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export default function RiskFeed() {
       const signalsRes = await api.get(`/signals/org/${userRes.data.orgId}`, {
         params: {
           status: 'open,acknowledged',
-          limit: 10 // Fetch more than 5 for sorting
+          limit: 10
         }
       });
 
@@ -40,22 +41,18 @@ export default function RiskFeed() {
 
       // Sort by: 1) Severity (CRITICAL > RISK > INFO), 2) Velocity (trend), 3) Time unresolved
       const sorted = rawSignals.sort((a, b) => {
-        // Severity priority
         const severityOrder = { CRITICAL: 3, RISK: 2, INFO: 1 };
         const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
         if (severityDiff !== 0) return severityDiff;
 
-        // Velocity (trend speed) - higher velocity = more urgent
         const velocityDiff = (b.trendVelocity || 0) - (a.trendVelocity || 0);
         if (velocityDiff !== 0) return velocityDiff;
 
-        // Time unresolved (older = more urgent)
         const timeA = new Date(a.detectedAt || a.createdAt);
         const timeB = new Date(b.detectedAt || b.createdAt);
         return timeA - timeB;
       });
 
-      // Take top 5
       const top5 = sorted.slice(0, 5);
       setSignals(top5);
 
@@ -73,7 +70,7 @@ export default function RiskFeed() {
       }
 
     } catch (err) {
-      console.error('[RiskFeed] Error loading data:', err);
+      console.error('[ActiveMonitoring] Error loading data:', err);
       setError(err.message || 'Failed to load signals');
     } finally {
       setLoading(false);
@@ -81,7 +78,6 @@ export default function RiskFeed() {
   };
 
   const handleActionTaken = (intervention) => {
-    // Update interventions state
     setInterventions(prev => ({
       ...prev,
       [intervention.signalId]: intervention
@@ -98,7 +94,7 @@ export default function RiskFeed() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={styles.loadingText}>Loading current signals...</p>
+        <p style={styles.loadingText}>Loading active signals...</p>
       </div>
     );
   }
@@ -123,20 +119,17 @@ export default function RiskFeed() {
       <nav style={styles.nav}>
         <div style={styles.navContent}>
           <div style={styles.navLeft}>
-            <h1 style={styles.logo}>SignalTrue</h1>
-            <span style={styles.navDivider}>|</span>
-            <span style={styles.navTitle}>Current Signals</span>
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              <h1 style={styles.logo}>SignalTrue</h1>
+            </Link>
           </div>
           <div style={styles.navRight}>
-            <Link to="/dashboard" style={styles.navLink}>
-              Dashboard
-            </Link>
-            <Link to="/app/overview" style={styles.navLink}>
-              Overview
-            </Link>
-            <Link to="/app/privacy" style={styles.navLink}>
-              Privacy
-            </Link>
+            <Link to="/app/overview" style={styles.navLink}>Team Overview</Link>
+            <Link to="/app/signals" style={styles.navLink}>Signals</Link>
+            <span style={styles.navLinkActive}>Active Monitoring</span>
+            <Link to="/app/actions" style={styles.navLink}>Actions</Link>
+            <Link to="/app/executive-summary" style={styles.navLink}>Executive Summary</Link>
+            <Link to="/app/privacy" style={styles.navLink}>Signal Coverage</Link>
             {user && (
               <div style={styles.userMenu}>
                 <span style={styles.userName}>{user.name || user.email}</span>
@@ -152,12 +145,12 @@ export default function RiskFeed() {
       {/* Main Content */}
       <main style={styles.main}>
         <div style={styles.content}>
-          {/* Header */}
+          {/* Header - per spec Section 7 */}
           <div style={styles.header}>
             <div>
-              <h2 style={styles.title}>Current Signals</h2>
+              <h2 style={styles.title}>Active Monitoring</h2>
               <p style={styles.subtitle}>
-                Early-warning signals ordered by severity and urgency. Maximum 5 shown at once.
+                SignalTrue continuously watches for early risk patterns across workload, recovery, and collaboration.
               </p>
             </div>
             {signals.length > 0 && (
@@ -167,16 +160,18 @@ export default function RiskFeed() {
             )}
           </div>
 
-          {/* Signals List */}
+          {/* Signals List or Empty State */}
           {signals.length === 0 ? (
             <div style={styles.emptyState}>
               <div style={styles.emptyIcon}>✓</div>
-              <h3 style={styles.emptyTitle}>No Active Signals</h3>
+              <h3 style={styles.emptyTitle}>No Active Risk Signals Detected</h3>
+              {/* CRITICAL COPY per spec Section 7 */}
               <p style={styles.emptyText}>
-                Your team's patterns are within normal baseline ranges. We'll alert you if drift is detected.
+                We are currently monitoring workload intensity, recovery time, and collaboration patterns. 
+                Directional signals typically emerge within 7–10 days.
               </p>
-              <Link to="/dashboard" style={styles.emptyButton}>
-                Go to Dashboard
+              <Link to="/app/overview" style={styles.emptyButton}>
+                Go to Team Overview
               </Link>
             </div>
           ) : (
@@ -209,16 +204,14 @@ export default function RiskFeed() {
 }
 
 /**
- * Signal Card Component (inline for Risk Feed)
+ * Signal Card Component - Active signal card per spec
  * Shows: name, drift indicator, time detected, action status, interpretation, recommended action
  */
 function SignalCard({ signal, intervention, onActionTaken, rank }) {
-  const [expanded, setExpanded] = useState(rank === 1); // Auto-expand top signal
+  const [expanded, setExpanded] = useState(rank === 1);
 
   const driftIndicator = signal.trendDirection || (signal.delta > 0 ? '↑' : signal.delta < 0 ? '↓' : '→');
   const timeSinceDetection = getTimeSince(signal.detectedAt || signal.createdAt);
-
-  // Map old signal types to new risk signal names
   const signalTypeDisplay = getSignalTypeDisplay(signal.signalType);
 
   return (
@@ -253,29 +246,27 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
       {/* Expanded Content */}
       {expanded && (
         <div style={styles.cardBody}>
-          {/* Interpretation Framework */}
-          {signal.interpretation && (
-            <div style={styles.interpretation}>
-              <div style={styles.interpretBox}>
-                <h4 style={styles.interpretLabel}>What is changing</h4>
-                <p style={styles.interpretText}>
-                  {signal.interpretation.whatIsChanging || signal.description || 'Pattern deviation detected'}
-                </p>
-              </div>
-              <div style={styles.interpretBox}>
-                <h4 style={styles.interpretLabel}>Why it matters</h4>
-                <p style={styles.interpretText}>
-                  {signal.interpretation.whyItMatters || signal.consequence || 'May impact team performance'}
-                </p>
-              </div>
-              <div style={styles.interpretBox}>
-                <h4 style={styles.interpretLabel}>What breaks if ignored</h4>
-                <p style={styles.interpretText}>
-                  {signal.interpretation.whatBreaksIfIgnored || 'Risk compounds over time'}
-                </p>
-              </div>
+          {/* Active signal card structure per spec Section 7 */}
+          <div style={styles.interpretation}>
+            <div style={styles.interpretBox}>
+              <h4 style={styles.interpretLabel}>What changed</h4>
+              <p style={styles.interpretText}>
+                {signal.interpretation?.whatIsChanging || signal.description || 'Pattern deviation detected'}
+              </p>
             </div>
-          )}
+            <div style={styles.interpretBox}>
+              <h4 style={styles.interpretLabel}>Likely cause</h4>
+              <p style={styles.interpretText}>
+                {signal.interpretation?.whyItMatters || signal.consequence || 'May impact team performance'}
+              </p>
+            </div>
+            <div style={styles.interpretBox}>
+              <h4 style={styles.interpretLabel}>Suggested first step</h4>
+              <p style={styles.interpretText}>
+                {signal.interpretation?.whatBreaksIfIgnored || signal.actions?.[0]?.description || 'Review and assess impact'}
+              </p>
+            </div>
+          </div>
 
           {/* Metric Details */}
           {signal.currentValue !== undefined && (
@@ -297,7 +288,7 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
             </div>
           )}
 
-          {/* Recommended Action (only if no intervention taken yet) */}
+          {/* Recommended Action */}
           {!intervention && signal.actions && (
             <RecommendedAction
               signal={signal}
@@ -305,7 +296,7 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
             />
           )}
 
-          {/* Intervention Status (if action already taken) */}
+          {/* Intervention Status */}
           {intervention && (
             <div style={styles.interventionBox}>
               <h4 style={styles.interventionTitle}>Action Taken</h4>
@@ -373,14 +364,12 @@ function getSignalTypeDisplay(signalType) {
     'dependency-spread': 'Dependency Spread',
     'recovery-deficit': 'Recovery Deficit',
     'handoff-bottleneck': 'Handoff Bottleneck',
-    // New signals per Category King spec
     'context-switching': 'Context Switching Index',
     'context_switching': 'Context Switching Index',
     'network-bottleneck': 'Network Bottleneck',
     'network_bottleneck': 'Network Bottleneck',
     'rework-churn': 'Rework & Churn',
     'rework_churn': 'Rework & Churn',
-    // Legacy compatibility
     'meeting-load-spike': 'Coordination Risk',
     'meeting_load_drift': 'Coordination Risk',
     'after-hours-creep': 'Boundary Erosion',
@@ -392,11 +381,10 @@ function getSignalTypeDisplay(signalType) {
     'engagement_asymmetry': 'Engagement Gap',
     'signal_convergence': 'Multi-Signal Alert'
   };
-  return mapping[signalType] || signalType.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return mapping[signalType] || signalType?.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Signal';
 }
 
 function getActionStatusText(status) {
-  // Per spec: Unaddressed | In progress | Stabilizing | Resolved
   const mapping = {
     'Open': 'Unaddressed',
     'open': 'Unaddressed',
@@ -479,7 +467,7 @@ const styles = {
     zIndex: 100,
   },
   navContent: {
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
     padding: '1rem 2rem',
     display: 'flex',
@@ -497,13 +485,6 @@ const styles = {
     color: 'white',
     margin: 0,
   },
-  navDivider: {
-    color: 'rgba(255,255,255,0.3)',
-  },
-  navTitle: {
-    color: '#94a3b8',
-    fontSize: '1rem',
-  },
   navRight: {
     display: 'flex',
     alignItems: 'center',
@@ -516,10 +497,20 @@ const styles = {
     fontWeight: 500,
     transition: 'color 0.2s',
   },
+  navLinkActive: {
+    color: 'white',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    borderBottom: '2px solid #3b82f6',
+    paddingBottom: '2px',
+  },
   userMenu: {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
+    marginLeft: '1rem',
+    paddingLeft: '1rem',
+    borderLeft: '1px solid rgba(255,255,255,0.2)',
   },
   userName: {
     color: 'white',
@@ -557,6 +548,7 @@ const styles = {
     fontSize: '1rem',
     color: '#94a3b8',
     margin: 0,
+    maxWidth: '600px',
   },
   viewAllLink: {
     color: '#3b82f6',
@@ -585,6 +577,9 @@ const styles = {
     fontSize: '1rem',
     color: '#6b7280',
     marginBottom: '2rem',
+    maxWidth: '500px',
+    margin: '0 auto 2rem',
+    lineHeight: 1.6,
   },
   emptyButton: {
     display: 'inline-block',

@@ -9,6 +9,7 @@ import CoordinationLoadIndexCard from '../../components/CoordinationLoadIndexCar
 import BandwidthTaxIndicatorCard from '../../components/BandwidthTaxIndicatorCard';
 import SilenceRiskIndicatorCard from '../../components/SilenceRiskIndicatorCard';
 import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
+import OnboardingBanner from '../../components/OnboardingBanner';
 
 /**
  * Overview Dashboard - Main landing page for authenticated users
@@ -104,23 +105,23 @@ const Overview = () => {
             <Badge variant="default">Overview</Badge>
           </div>
           <nav className="flex items-center gap-4">
-            <Link to="/app/overview" className="text-slate-300 hover:text-white transition-colors">
-              Overview
+            <Link to="/app/overview" className="text-white font-semibold border-b-2 border-blue-500 pb-1">
+              Team Overview
             </Link>
             <Link to="/app/signals" className="text-slate-300 hover:text-white transition-colors">
               Signals
             </Link>
-            <Link to="/app/benchmarks" className="text-slate-300 hover:text-white transition-colors">
-              Benchmarks
+            <Link to="/app/active-monitoring" className="text-slate-300 hover:text-white transition-colors">
+              Active Monitoring
             </Link>
             <Link to="/app/actions" className="text-slate-300 hover:text-white transition-colors">
               Actions
             </Link>
-            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
-              Privacy
+            <Link to="/app/executive-summary" className="text-slate-300 hover:text-white transition-colors">
+              Executive Summary
             </Link>
-            <Link to="/app/settings" className="text-slate-300 hover:text-white transition-colors">
-              Settings
+            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
+              Signal Coverage
             </Link>
           </nav>
         </div>
@@ -131,12 +132,15 @@ const Overview = () => {
         {/* Anti-Weaponization Notice - Sticky at top */}
         <AntiWeaponizationNotice variant="sticky" />
         
+        {/* Day-based Onboarding Banner */}
+        <OnboardingBanner calibrationDay={calibrationStatus?.calibrationDay} />
+        
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">Team Health Dashboard</h1>
+          <h1 className="text-3xl font-bold text-slate-100 mb-2">Team Signal Overview</h1>
           <p className="text-slate-400">
             {calibrationStatus?.isInCalibration 
-              ? 'Your baseline is being established. Behavioral drift detection will unlock when calibration completes.'
-              : 'Early-warning system for behavioral drift. Team-level insights only.'}
+              ? 'Signal monitoring has started. Initial patterns will appear within 3–5 days.'
+              : 'Signals reflect how work patterns evolve over time. Interpretation improves as baselines mature.'}
           </p>
         </div>
         

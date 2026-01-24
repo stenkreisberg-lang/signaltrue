@@ -103,22 +103,22 @@ const Signals = () => {
           </div>
           <nav className="flex items-center gap-4">
             <Link to="/app/overview" className="text-slate-300 hover:text-white transition-colors">
-              Overview
+              Team Overview
             </Link>
-            <Link to="/app/signals" className="text-white font-semibold">
+            <Link to="/app/signals" className="text-white font-semibold border-b-2 border-blue-500 pb-1">
               Signals
             </Link>
-            <Link to="/app/benchmarks" className="text-slate-300 hover:text-white transition-colors">
-              Benchmarks
+            <Link to="/app/active-monitoring" className="text-slate-300 hover:text-white transition-colors">
+              Active Monitoring
             </Link>
             <Link to="/app/actions" className="text-slate-300 hover:text-white transition-colors">
               Actions
             </Link>
-            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
-              Privacy
+            <Link to="/app/executive-summary" className="text-slate-300 hover:text-white transition-colors">
+              Executive Summary
             </Link>
-            <Link to="/app/settings" className="text-slate-300 hover:text-white transition-colors">
-              Settings
+            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
+              Signal Coverage
             </Link>
           </nav>
         </div>
@@ -127,9 +127,9 @@ const Signals = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">Risk Signals</h1>
+          <h1 className="text-3xl font-bold text-slate-100 mb-2">Work Signals</h1>
           <p className="text-slate-400">
-            Deviation intelligence with decision guidance
+            Signals reflect how work patterns evolve over time. Interpretation improves as baselines mature.
           </p>
         </div>
         
