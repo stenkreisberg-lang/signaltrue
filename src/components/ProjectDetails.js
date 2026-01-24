@@ -17,7 +17,7 @@ export default function ProjectDetails({ project, onClose, onSave }) {
   // Auto-save with debounce
   const saveToServer = async (patched) => {
     try {
-      const res = await api.put(`/api/projects/${patched._id}`, patched);
+      const res = await api.put(`/projects/${patched._id}`, patched);
       if (res.ok) {
         const updated = await res.json();
         onSave && onSave(updated);

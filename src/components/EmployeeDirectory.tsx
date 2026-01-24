@@ -62,14 +62,14 @@ const EmployeeDirectory: React.FC = () => {
       
       // Fetch employees and teams (always available)
       const [employeesRes, teamsRes] = await Promise.all([
-        api.get('/api/team-members').catch(() => ({ data: [] })),
-        api.get('/api/team-management/organization').catch(() => ({ data: [] }))
+        api.get('/team-members').catch(() => ({ data: [] })),
+        api.get('/team-management/organization').catch(() => ({ data: [] }))
       ]);
 
       // Try to fetch sync status (may not be available on all backends)
       let syncRes;
       try {
-        syncRes = await api.get('/api/employee-sync/status');
+        syncRes = await api.get('/employee-sync/status');
       } catch (error) {
         console.log('Sync status endpoint not available yet');
         syncRes = { data: {
@@ -105,7 +105,7 @@ const EmployeeDirectory: React.FC = () => {
   const handleSync = async (source: 'slack' | 'google') => {
     try {
       setSyncing(true);
-      const response = await api.post(`/api/employee-sync/${source}`);
+      const response = await api.post(`/employee-sync/${source}`);
       
       if (response.data.success) {
         const stats = response.data.stats;
@@ -131,7 +131,7 @@ const EmployeeDirectory: React.FC = () => {
 
   const handleAssignToTeam = async (employeeId: string, teamId: string) => {
     try {
-      await api.put(`/api/team-management/${teamId}/members/${employeeId}`);
+      await api.put(`/team-management/${teamId}/members/${employeeId}`);
       showSuccess('Employee assigned to team successfully');
       await fetchData();
     } catch (error: any) {
@@ -148,7 +148,7 @@ const EmployeeDirectory: React.FC = () => {
 
     try {
       const promises = Array.from(selectedEmployees).map(employeeId =>
-        api.put(`/api/team-management/${bulkAssignTeamId}/members/${employeeId}`)
+        api.put(`/team-management/${bulkAssignTeamId}/members/${employeeId}`)
       );
 
       await Promise.all(promises);
