@@ -7,6 +7,7 @@ const api = axios.create({
   baseURL: process.env.NODE_ENV === 'development' 
     ? '/api' 
     : `${process.env.REACT_APP_API_URL}/api`,
+  timeout: 30000, // 30 second timeout
 });
 
 // Add an interceptor to include the auth token from localStorage in requests
@@ -19,6 +20,29 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling and token refresh
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle 401 - redirect to login
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error - API may be unavailable');
+    }
+    
     return Promise.reject(error);
   }
 );

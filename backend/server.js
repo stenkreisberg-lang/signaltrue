@@ -1,6 +1,7 @@
 // Force redeploy
 import cron from "node-cron";
 import cors from "cors";
+import compression from "compression";
 import mongoose from "mongoose";
 import express from "express";
 import path from "node:path";
@@ -15,6 +16,17 @@ const __dirname = path.dirname(__filename);
 
 // --- Load Environment Variables ---
 dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// --- Global Error Handlers (must be set up early) ---
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // Give time for logs to flush before exiting
+  setTimeout(() => process.exit(1), 1000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // --- Environment Variable Validation ---
 const REQUIRED_ENV_VARS = ['JWT_SECRET'];
@@ -169,6 +181,15 @@ async function main() {
     app.use(cors(corsOptions));
     app.set('trust proxy', 1);
     
+    // --- Response Compression (gzip) ---
+    app.use(compression({
+      filter: (req, res) => {
+        if (req.headers['x-no-compression']) return false;
+        return compression.filter(req, res);
+      },
+      level: 6 // Balance between speed and compression ratio
+    }));
+    
     // --- Security Middleware ---
     // Apply core security (headers, sanitization, monitoring)
     applySecurityMiddleware(app);
@@ -197,6 +218,28 @@ async function main() {
 
     // --- API Routes ---
     app.get("/", (req, res) => res.send("SignalTrue backend is running 🚀"));
+    
+    // Health check endpoint for monitoring
+    app.get("/api/health", async (req, res) => {
+      try {
+        const dbState = mongoose.connection.readyState;
+        const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+        
+        res.json({
+          status: dbState === 1 ? 'healthy' : 'degraded',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          database: dbStatus,
+          memory: {
+            used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+          }
+        });
+      } catch (error) {
+        res.status(503).json({ status: 'unhealthy', error: error.message });
+      }
+    });
+    
     app.use("/api/admin-export", adminExportRoutes);
     app.use("/api/benchmarks", benchmarksRoutes);
     app.use("/api/oneonone", oneOnOneRoutes);

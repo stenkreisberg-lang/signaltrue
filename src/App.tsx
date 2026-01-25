@@ -4,6 +4,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import ChatWidget from "./components/ChatWidget";
 import Index from "./pages/Index";
 import Product from "./pages/Product";
@@ -30,50 +31,60 @@ import ForgotPassword from "./pages/ForgotPassword";
 import TeamAnalytics from "./pages/TeamAnalytics";
 import AdminOnboarding from "./pages/AdminOnboarding";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <SubscriptionProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/product" element={<Product />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/how-it-works" element={<HowItWorksPage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/onboarding" element={<AcceptInvitation />} />
-            <Route path="/dashboard" element={<DashboardRouter />} />
-            <Route path="/app/overview" element={<Overview />} />
-            <Route path="/app/insights" element={<Insights />} />
-            <Route path="/app/insights/:teamId" element={<Insights />} />
-            <Route path="/app/signals" element={<Signals />} />
-            <Route path="/app/active-monitoring" element={<ActiveMonitoring />} />
-            <Route path="/app/risk-feed" element={<ActiveMonitoring />} /> {/* Legacy redirect */}
-            <Route path="/app/actions" element={<Actions />} />
-            <Route path="/app/executive-summary" element={<ExecutiveSummary />} />
-            <Route path="/app/privacy" element={<Privacy />} />
-            <Route path="/app/monthly-report" element={<MonthlyReport />} />
-            <Route path="/ceo-summary/:token" element={<CeoSummary />} />
-            <Route path="/superadmin" element={<SuperadminDashboard />} />
-            <Route path="/team-analytics" element={<TeamAnalytics />} />
-            <Route path="/admin/onboarding" element={<AdminOnboarding />} />
-            <Route path="/self-check" element={<SelfCheck />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          {/* AI Chat Widget - appears on all pages */}
-          <ChatWidget />
-        </BrowserRouter>
-      </TooltipProvider>
-    </SubscriptionProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <SubscriptionProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/product" element={<Product />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/onboarding" element={<AcceptInvitation />} />
+              <Route path="/dashboard" element={<DashboardRouter />} />
+              <Route path="/app/overview" element={<Overview />} />
+              <Route path="/app/insights" element={<Insights />} />
+              <Route path="/app/insights/:teamId" element={<Insights />} />
+              <Route path="/app/signals" element={<Signals />} />
+              <Route path="/app/active-monitoring" element={<ActiveMonitoring />} />
+              <Route path="/app/risk-feed" element={<ActiveMonitoring />} /> {/* Legacy redirect */}
+              <Route path="/app/actions" element={<Actions />} />
+              <Route path="/app/executive-summary" element={<ExecutiveSummary />} />
+              <Route path="/app/privacy" element={<Privacy />} />
+              <Route path="/app/monthly-report" element={<MonthlyReport />} />
+              <Route path="/ceo-summary/:token" element={<CeoSummary />} />
+              <Route path="/superadmin" element={<SuperadminDashboard />} />
+              <Route path="/team-analytics" element={<TeamAnalytics />} />
+              <Route path="/admin/onboarding" element={<AdminOnboarding />} />
+              <Route path="/self-check" element={<SelfCheck />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            {/* AI Chat Widget - appears on all pages */}
+            <ChatWidget />
+          </BrowserRouter>
+        </TooltipProvider>
+      </SubscriptionProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
