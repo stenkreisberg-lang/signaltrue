@@ -134,7 +134,30 @@ const organizationSchema = new mongoose.Schema(
       paywallActivatedAt: { type: Date },
       upgradeCtaClicked: { type: Date },
       convertedToPaid: { type: Boolean, default: false },
-      convertedAt: { type: Date }
+      convertedAt: { type: Date },
+      isPilot: { type: Boolean, default: false }
+    },
+    
+    // Pilot program (granted by superadmin)
+    pilot: {
+      isActive: { type: Boolean, default: false },
+      startDate: { type: Date },
+      endDate: { type: Date },
+      months: { type: Number, default: 6 },
+      grantedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      grantedAt: { type: Date },
+      revokedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      revokedAt: { type: Date }
+    },
+
+    // Stripe payment info
+    stripeCustomerId: { type: String },
+    paymentMethod: {
+      last4: { type: String },
+      brand: { type: String },
+      expiryMonth: { type: Number },
+      expiryYear: { type: Number },
+      expiryReminderSent: { type: Date }
     },
   },
   { timestamps: true }

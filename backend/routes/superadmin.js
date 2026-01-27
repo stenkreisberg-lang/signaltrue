@@ -39,7 +39,7 @@ function requireSuperadmin(req, res, next) {
 router.get('/organizations', authenticateToken, requireSuperadmin, async (req, res) => {
   try {
     const organizations = await Organization.find({})
-      .select('name domain industry subscription trial integrations.slack.teamName integrations.google createdAt')
+      .select('name domain industry subscription trial pilot integrations.slack.teamName integrations.google createdAt')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -72,6 +72,11 @@ router.get('/organizations', authenticateToken, requireSuperadmin, async (req, r
         phase: org.trial?.phase,
         daysRemaining: org.trial?.daysRemaining
       },
+      pilot: org.pilot ? {
+        isActive: org.pilot.isActive,
+        endDate: org.pilot.endDate,
+        months: org.pilot.months
+      } : null,
       integrations: {
         slack: !!org.integrations?.slack?.teamName,
         slackTeam: org.integrations?.slack?.teamName,
@@ -396,6 +401,102 @@ router.post('/impersonate/:userId', authenticateToken, requireSuperadmin, async 
     });
   } catch (error) {
     console.error('Superadmin impersonate error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * POST /api/superadmin/organizations/:id/grant-pilot
+ * Grant 6-month free pilot to an organization
+ */
+router.post('/organizations/:id/grant-pilot', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { months = 6 } = req.body;
+    
+    const org = await Organization.findById(req.params.id);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    const now = new Date();
+    const pilotEndDate = new Date(now);
+    pilotEndDate.setMonth(pilotEndDate.getMonth() + months);
+
+    // Update organization with pilot status
+    org.pilot = {
+      isActive: true,
+      startDate: now,
+      endDate: pilotEndDate,
+      grantedBy: req.user.userId,
+      grantedAt: now,
+      months: months
+    };
+    
+    // Also extend trial to match pilot period
+    org.trial = {
+      ...org.trial,
+      startDate: org.trial?.startDate || now,
+      endDate: pilotEndDate,
+      isPilot: true
+    };
+
+    // Set subscription to pilot plan
+    org.subscription = {
+      plan: 'pilot',
+      status: 'active',
+      currentPeriodStart: now,
+      currentPeriodEnd: pilotEndDate
+    };
+
+    await org.save();
+
+    console.log(`[Superadmin] Granted ${months}-month pilot to org ${org.name} (${org._id}) by ${req.user.email}`);
+
+    res.json({
+      success: true,
+      message: `Granted ${months}-month free pilot to ${org.name}`,
+      pilot: org.pilot,
+      expiresAt: pilotEndDate.toISOString()
+    });
+  } catch (error) {
+    console.error('Grant pilot error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * POST /api/superadmin/organizations/:id/revoke-pilot
+ * Revoke pilot status from an organization
+ */
+router.post('/organizations/:id/revoke-pilot', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    org.pilot = {
+      isActive: false,
+      revokedBy: req.user.userId,
+      revokedAt: new Date()
+    };
+
+    // Reset subscription
+    org.subscription = {
+      plan: 'trial',
+      status: 'expired'
+    };
+
+    await org.save();
+
+    console.log(`[Superadmin] Revoked pilot from org ${org.name} (${org._id}) by ${req.user.email}`);
+
+    res.json({
+      success: true,
+      message: `Revoked pilot from ${org.name}`
+    });
+  } catch (error) {
+    console.error('Revoke pilot error:', error);
     res.status(500).json({ message: error.message });
   }
 });

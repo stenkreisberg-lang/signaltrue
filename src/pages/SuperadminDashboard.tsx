@@ -9,6 +9,7 @@ interface Organization {
   industry?: string;
   subscription?: { plan: string; status: string };
   trial?: { isActive: boolean; phase: string; daysRemaining: number };
+  pilot?: { isActive: boolean; endDate: string; months: number };
   integrations?: { slack: boolean; slackTeam?: string; google: boolean };
   userCount: number;
   teamCount: number;
@@ -119,6 +120,39 @@ const SuperadminDashboard: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       alert('Failed to impersonate: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleGrantPilot = async (orgId: string, orgName: string) => {
+    const months = window.prompt(`Grant pilot access to "${orgName}".\n\nEnter number of months (default: 6):`, '6');
+    if (months === null) return; // Cancelled
+    
+    const monthsNum = parseInt(months) || 6;
+    
+    if (!window.confirm(`Grant ${monthsNum}-month FREE pilot to "${orgName}"?\n\nThis will:\n• Skip trial limitations\n• Give full platform access\n• Set subscription to "pilot" plan`)) {
+      return;
+    }
+
+    try {
+      await api.post(`/superadmin/organizations/${orgId}/grant-pilot`, { months: monthsNum });
+      alert(`✅ ${monthsNum}-month pilot granted to "${orgName}"!`);
+      await fetchOrganizations(); // Refresh the list
+    } catch (err: any) {
+      alert('Failed to grant pilot: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleRevokePilot = async (orgId: string, orgName: string) => {
+    if (!window.confirm(`Revoke pilot access from "${orgName}"?\n\nThis will return them to normal trial/subscription flow.`)) {
+      return;
+    }
+
+    try {
+      await api.post(`/superadmin/organizations/${orgId}/revoke-pilot`);
+      alert(`Pilot revoked from "${orgName}".`);
+      await fetchOrganizations(); // Refresh the list
+    } catch (err: any) {
+      alert('Failed to revoke pilot: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -315,8 +349,9 @@ const SuperadminDashboard: React.FC = () => {
                 <span style={{ flex: 2 }}>Name</span>
                 <span style={{ flex: 1 }}>Users</span>
                 <span style={{ flex: 1 }}>Trial</span>
+                <span style={{ flex: 1 }}>Pilot</span>
                 <span style={{ flex: 1 }}>Slack</span>
-                <span style={{ flex: 1 }}>Created</span>
+                <span style={{ flex: 1.5 }}>Actions</span>
               </div>
               {organizations.map(org => (
                 <div key={org.id} style={styles.tableRow}>
@@ -333,14 +368,47 @@ const SuperadminDashboard: React.FC = () => {
                     )}
                   </span>
                   <span style={{ flex: 1 }}>
-                    {org.integrations?.slack ? (
-                      <span style={styles.badgeActive}>✓ {org.integrations.slackTeam}</span>
+                    {org.pilot?.isActive ? (
+                      <span style={{ ...styles.badgeActive, backgroundColor: '#8b5cf6' }}>
+                        ✓ {org.pilot.months}mo
+                      </span>
                     ) : (
                       <span style={styles.muted}>—</span>
                     )}
                   </span>
-                  <span style={{ flex: 1, ...styles.muted }}>
-                    {new Date(org.createdAt).toLocaleDateString()}
+                  <span style={{ flex: 1 }}>
+                    {org.integrations?.slack ? (
+                      <span style={styles.badgeActive}>✓</span>
+                    ) : (
+                      <span style={styles.muted}>—</span>
+                    )}
+                  </span>
+                  <span style={{ flex: 1.5, display: 'flex', gap: '8px' }}>
+                    {org.pilot?.isActive ? (
+                      <button
+                        onClick={() => handleRevokePilot(org.id, org.name)}
+                        style={{
+                          ...styles.button,
+                          backgroundColor: '#ef4444',
+                          padding: '4px 8px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Revoke Pilot
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleGrantPilot(org.id, org.name)}
+                        style={{
+                          ...styles.button,
+                          backgroundColor: '#8b5cf6',
+                          padding: '4px 8px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Grant Pilot
+                      </button>
+                    )}
                   </span>
                 </div>
               ))}

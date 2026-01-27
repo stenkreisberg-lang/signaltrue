@@ -533,6 +533,19 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Monthly reports generation 1st of month at 4:00 AM');
+      
+      // Card expiry reminder - daily at 9 AM
+      cron.schedule('0 9 * * *', async () => {
+        console.log('⏰ Checking for expiring payment methods...');
+        try {
+          const { checkExpiringCards } = await import('./services/cardExpiryReminderService.js');
+          const result = await checkExpiringCards();
+          console.log(`✅ Card expiry check completed: ${result.reminded} reminders sent`);
+        } catch (err) {
+          console.error('❌ Card expiry check failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Card expiry reminder daily at 9 AM');
     }
 
     // --- Start Server ---

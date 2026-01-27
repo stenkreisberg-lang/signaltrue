@@ -104,10 +104,59 @@ router.post('/stripe/webhook', async (req, res) => {
               }
             }
           );
+          
+          // If subscription has a default payment method, save the card details
+          if (sub.default_payment_method) {
+            try {
+              const pm = await stripe.paymentMethods.retrieve(sub.default_payment_method);
+              if (pm.card) {
+                await Organization.findOneAndUpdate(
+                  { stripeCustomerId: sub.customer },
+                  {
+                    $set: {
+                      'paymentMethod.last4': pm.card.last4,
+                      'paymentMethod.brand': pm.card.brand,
+                      'paymentMethod.expiryMonth': pm.card.exp_month,
+                      'paymentMethod.expiryYear': pm.card.exp_year,
+                      'paymentMethod.expiryReminderSent': false, // Reset when card updated
+                    }
+                  }
+                );
+                console.log(`💳 Saved card ending ${pm.card.last4} for customer ${sub.customer}`);
+              }
+            } catch (pmErr) {
+              console.error('Failed to fetch/save payment method:', pmErr.message);
+            }
+          }
         } catch (e) {
           console.error('Webhook persist error (subscription.*):', e.message);
         }
         console.log(`ℹ️ Subscription event (${event.type}):`, { id: sub.id, status: sub.status, customer: sub.customer, current_period_end: sub.current_period_end });
+        break;
+      }
+      case 'payment_method.attached': {
+        // When a new payment method is attached to a customer
+        const pm = event.data.object;
+        if (pm.card && pm.customer) {
+          try {
+            const { default: Organization } = await import('../models/organizationModel.js');
+            await Organization.findOneAndUpdate(
+              { stripeCustomerId: pm.customer },
+              {
+                $set: {
+                  'paymentMethod.last4': pm.card.last4,
+                  'paymentMethod.brand': pm.card.brand,
+                  'paymentMethod.expiryMonth': pm.card.exp_month,
+                  'paymentMethod.expiryYear': pm.card.exp_year,
+                  'paymentMethod.expiryReminderSent': false, // Reset reminder when new card added
+                }
+              }
+            );
+            console.log(`💳 Payment method attached: **** ${pm.card.last4} exp ${pm.card.exp_month}/${pm.card.exp_year}`);
+          } catch (e) {
+            console.error('Webhook persist error (payment_method.attached):', e.message);
+          }
+        }
         break;
       }
       default:

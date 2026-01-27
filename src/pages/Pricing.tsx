@@ -3,6 +3,8 @@ import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { CheckCircle, ArrowRight, HelpCircle, X, Gift, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import api from "../utils/api";
 
 /*
  * CATEGORY REPOSITIONING NOTE:
@@ -15,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 const plans = [
   {
     name: "Visibility",
+    planId: "visibility",
     description: "See organizational signals at team level",
     subtitle: "What level of clarity: Surface-level drift detection",
     price: "€99",
@@ -32,11 +35,12 @@ const plans = [
       "No strategic synthesis",
       "No executive reporting",
     ],
-    cta: "See your signals",
-    link: "/register?plan=visibility",
+    cta: "Start Free Trial",
+    isCheckout: true,
   },
   {
     name: "Interpretation",
+    planId: "interpretation",
     description: "Understand what signals mean for the organization",
     subtitle: "What level of clarity: Pattern interpretation and recommendations",
     price: "€199",
@@ -53,11 +57,12 @@ const plans = [
       "No individual names in any report",
     ],
     notIncluded: [],
-    cta: "See your signals",
-    link: "/register?plan=interpretation",
+    cta: "Start Free Trial",
+    isCheckout: true,
   },
   {
     name: "Intervention",
+    planId: "enterprise",
     description: "Act on signals with custom support",
     subtitle: "What level of clarity: Full intervention workflow with measurement",
     price: "Custom",
@@ -74,7 +79,8 @@ const plans = [
       "On-premise deployment option",
     ],
     notIncluded: [],
-    cta: "See how drift shows up",
+    cta: "Contact Sales",
+    isCheckout: false,
     link: "mailto:sales@signaltrue.ai?subject=Intervention Plan Inquiry",
   },
 ];
@@ -104,12 +110,50 @@ const faqs = [
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState<string | null>(null);
   
-  const handlePlanClick = (link: string) => {
-    if (link.startsWith('mailto:')) {
-      window.location.href = link;
-    } else {
-      navigate(link);
+  const handlePlanClick = async (plan: typeof plans[0]) => {
+    // For enterprise/contact sales
+    if (plan.link) {
+      if (plan.link.startsWith('mailto:')) {
+        window.location.href = plan.link;
+      } else {
+        navigate(plan.link);
+      }
+      return;
+    }
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      // Not logged in - redirect to register with plan
+      navigate(`/register?plan=${plan.planId}`);
+      return;
+    }
+    
+    // User is logged in - create checkout session
+    if (plan.isCheckout) {
+      try {
+        setLoading(plan.planId);
+        const response = await api.post('/billing/create-checkout-session', {
+          plan: plan.planId,
+        });
+        
+        if (response.data.url) {
+          window.location.href = response.data.url;
+        }
+      } catch (error: any) {
+        console.error('Checkout error:', error);
+        // If billing not configured, redirect to register
+        if (error.response?.status === 503) {
+          navigate(`/register?plan=${plan.planId}`);
+        } else {
+          alert('Unable to start checkout. Please try again.');
+        }
+      } finally {
+        setLoading(null);
+      }
     }
   };
 
@@ -214,10 +258,11 @@ const Pricing = () => {
                     variant={plan.highlight ? "cta" : "outline"}
                     className="w-full"
                     size="lg"
-                    onClick={() => handlePlanClick(plan.link)}
+                    onClick={() => handlePlanClick(plan)}
+                    disabled={loading === plan.planId}
                   >
-                    {plan.cta}
-                    {plan.highlight && <ArrowRight className="w-4 h-4 ml-2" />}
+                    {loading === plan.planId ? 'Loading...' : plan.cta}
+                    {plan.highlight && !loading && <ArrowRight className="w-4 h-4 ml-2" />}
                   </Button>
                 </div>
               ))}
