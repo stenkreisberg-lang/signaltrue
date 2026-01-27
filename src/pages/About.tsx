@@ -164,19 +164,79 @@ const About = () => {
         {/* Terms Section */}
         <section id="terms" className="py-16 bg-secondary/20">
           <div className="container mx-auto px-6">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-display font-bold mb-6">Terms of Service</h2>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  By using SignalTrue, you agree to our terms of service. We provide system-level signal intelligence
-                  to help organizations detect early warning signs of organizational drift.
-                </p>
-                <p>
-                  For complete terms and legal documentation, please contact us at{" "}
-                  <a href="mailto:legal@signaltrue.ai" className="text-primary hover:underline">
-                    legal@signaltrue.ai
-                  </a>
-                </p>
+              <p className="text-sm text-muted-foreground mb-8">Last updated: January 27, 2026</p>
+              
+              <div className="space-y-8 text-muted-foreground">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">1. Service Description</h3>
+                  <p>
+                    SignalTrue provides organizational health analytics by analyzing aggregated, anonymized metadata 
+                    from connected workplace tools. We detect patterns that indicate burnout risk, collaboration gaps, 
+                    and organizational drift—without reading message content or tracking individuals.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">2. What We Collect</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Metadata only:</strong> Meeting counts, email volume, task completion rates, response times</li>
+                    <li><strong>Never content:</strong> We do not read emails, messages, documents, or any content</li>
+                    <li><strong>Aggregated signals:</strong> Individual data is aggregated to team/org level before analysis</li>
+                    <li><strong>OAuth tokens:</strong> Encrypted and used only for authorized API calls</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">3. How We Use Data</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Generate organizational health signals and early warning indicators</li>
+                    <li>Provide AI-powered recommendations to improve team wellbeing</li>
+                    <li>Create anonymized benchmarks (opt-in only)</li>
+                    <li>Improve our detection algorithms using aggregated patterns</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">4. Data Protection</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>All data encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
+                    <li>SOC 2 Type II compliant infrastructure</li>
+                    <li>No data sold to third parties—ever</li>
+                    <li>Data retained for 12 months, then automatically deleted</li>
+                    <li>You can request complete data deletion at any time</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">5. Employee Privacy</h3>
+                  <p>
+                    SignalTrue is designed to protect employee privacy while giving organizations visibility 
+                    into systemic health. Individual employees are never identified in reports. Signals are 
+                    only shown at team level (minimum 5 people) to prevent identification.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">6. Your Rights</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Access: Request a copy of data we hold about your organization</li>
+                    <li>Deletion: Request complete data deletion within 30 days</li>
+                    <li>Portability: Export your data in standard formats</li>
+                    <li>Disconnect: Remove integrations at any time</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">7. Contact</h3>
+                  <p>
+                    For questions about these terms or to exercise your rights, contact us at{" "}
+                    <a href="mailto:legal@signaltrue.ai" className="text-primary hover:underline">
+                      legal@signaltrue.ai
+                    </a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
