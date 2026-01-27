@@ -30,6 +30,7 @@ import SuperadminDashboard from "./pages/SuperadminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import TeamAnalytics from "./pages/TeamAnalytics";
 import AdminOnboarding from "./pages/AdminOnboarding";
+import IntegrationsPage from "./pages/IntegrationsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,8 @@ const App = () => (
               <Route path="/team-analytics" element={<TeamAnalytics />} />
               <Route path="/admin/onboarding" element={<AdminOnboarding />} />
               <Route path="/self-check" element={<SelfCheck />} />
+              <Route path="/integrations" element={<IntegrationsPage />} />
+              <Route path="/integrations/callback" element={<IntegrationsPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

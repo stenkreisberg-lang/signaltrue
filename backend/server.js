@@ -109,6 +109,11 @@ import passwordResetRoutes from "./routes/passwordReset.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import costOfDriftRoutes from "./routes/costOfDrift.js";
 
+// --- Category-King Integration Routes ---
+import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
+import integrationDashboardRoutes from "./routes/integrationDashboard.js";
+import aiCopilotRoutes from "./routes/aiCopilot.js";
+
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
 import auditConsent from "./middleware/consentAudit.js";
@@ -129,6 +134,7 @@ import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 import { runCrisisDetection } from './services/crisisDetectionService.js';
 import { calculateTeamAttritionRisk } from './services/attritionRiskService.js';
 import { calculateManagerEffectiveness } from './services/managerEffectivenessService.js';
+import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
 import Team from './models/team.js';
 
 const app = express();
@@ -318,6 +324,11 @@ async function main() {
     // --- Cost of Drift Routes (Executive ROI view) ---
     app.use('/api/cost-of-drift', costOfDriftRoutes);
     
+    // --- Category-King Integration Routes ---
+    app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);
+    app.use('/api/integration-dashboard', integrationDashboardRoutes);
+    app.use('/api/ai', aiCopilotRoutes);
+    
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {
       const { event, data, timestamp } = req.body;
@@ -362,6 +373,9 @@ async function main() {
       
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
+      
+      // Start Category-King integration sync scheduler
+      scheduleIntegrationJobs();
       
       // Crisis detection - every 15 minutes (real-time anomaly detection)
       cron.schedule('*/15 * * * *', async () => {
