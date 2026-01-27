@@ -274,6 +274,121 @@ function Dashboard() {
             <GoogleChatConnect integrations={integrations} />
           </div>
 
+          {/* Jira Integration */}
+          <div style={styles.card}>
+            <div style={{position: 'relative'}}>
+              <div style={styles.cardIcon}>🎯</div>
+              <button 
+                style={styles.infoButton} 
+                onClick={() => setShowHelp('jira')}
+                title="What does this measure?"
+              >?</button>
+            </div>
+            <h3 style={styles.cardTitle}>Connect Jira {integrations?.connected?.jira && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <p style={styles.cardText}>
+              Track sprint velocity, issue cycle times, and execution blockers
+            </p>
+            {!integrations?.connected?.jira ? (
+              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/jira/oauth/start'}>
+                Connect Jira
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('jira')}>Disconnect</button>
+            )}
+          </div>
+
+          {/* Asana Integration */}
+          <div style={styles.card}>
+            <div style={{position: 'relative'}}>
+              <div style={styles.cardIcon}>✅</div>
+              <button 
+                style={styles.infoButton} 
+                onClick={() => setShowHelp('asana')}
+                title="What does this measure?"
+              >?</button>
+            </div>
+            <h3 style={styles.cardTitle}>Connect Asana {integrations?.connected?.asana && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <p style={styles.cardText}>
+              Analyze task completion rates, overdue items, and workload balance
+            </p>
+            {!integrations?.connected?.asana ? (
+              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/asana/oauth/start'}>
+                Connect Asana
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('asana')}>Disconnect</button>
+            )}
+          </div>
+
+          {/* Notion Integration */}
+          <div style={styles.card}>
+            <div style={{position: 'relative'}}>
+              <div style={styles.cardIcon}>📝</div>
+              <button 
+                style={styles.infoButton} 
+                onClick={() => setShowHelp('notion')}
+                title="What does this measure?"
+              >?</button>
+            </div>
+            <h3 style={styles.cardTitle}>Connect Notion {integrations?.connected?.notion && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <p style={styles.cardText}>
+              Monitor documentation activity, page staleness, and collaboration gaps
+            </p>
+            {!integrations?.connected?.notion ? (
+              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/notion/oauth/start'}>
+                Connect Notion
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('notion')}>Disconnect</button>
+            )}
+          </div>
+
+          {/* HubSpot Integration */}
+          <div style={styles.card}>
+            <div style={{position: 'relative'}}>
+              <div style={styles.cardIcon}>🧡</div>
+              <button 
+                style={styles.infoButton} 
+                onClick={() => setShowHelp('hubspot')}
+                title="What does this measure?"
+              >?</button>
+            </div>
+            <h3 style={styles.cardTitle}>Connect HubSpot {integrations?.connected?.hubspot && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <p style={styles.cardText}>
+              Track deal velocity, CRM activity patterns, and sales team capacity
+            </p>
+            {!integrations?.connected?.hubspot ? (
+              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/hubspot/oauth/start'}>
+                Connect HubSpot
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('hubspot')}>Disconnect</button>
+            )}
+          </div>
+
+          {/* Pipedrive Integration */}
+          <div style={styles.card}>
+            <div style={{position: 'relative'}}>
+              <div style={styles.cardIcon}>💰</div>
+              <button 
+                style={styles.infoButton} 
+                onClick={() => setShowHelp('pipedrive')}
+                title="What does this measure?"
+              >?</button>
+            </div>
+            <h3 style={styles.cardTitle}>Connect Pipedrive {integrations?.connected?.pipedrive && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <p style={styles.cardText}>
+              Analyze deal stages, activity patterns, and pipeline conversion rates
+            </p>
+            {!integrations?.connected?.pipedrive ? (
+              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/pipedrive/oauth/start'}>
+                Connect Pipedrive
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('pipedrive')}>Disconnect</button>
+            )}
+          </div>
+
           <div style={{...styles.card, opacity: 0.7, position: 'relative'}}>
             <span style={{
               position: 'absolute',
@@ -349,6 +464,11 @@ function Dashboard() {
                 {showHelp === 'calendar' && 'How to connect Google Calendar'}
                 {showHelp === 'outlook' && 'How to connect Outlook'}
                 {showHelp === 'teams' && 'How to connect Microsoft Teams'}
+                {showHelp === 'jira' && 'What Jira Measures'}
+                {showHelp === 'asana' && 'What Asana Measures'}
+                {showHelp === 'notion' && 'What Notion Measures'}
+                {showHelp === 'hubspot' && 'What HubSpot Measures'}
+                {showHelp === 'pipedrive' && 'What Pipedrive Measures'}
               </h3>
               {showHelp === 'slack' && (
                 <ol style={styles.helpList}>
@@ -375,8 +495,98 @@ function Dashboard() {
                 <ol style={styles.helpList}>
                   <li>Ask your tenant admin to approve the SignalTrue Teams app if required.</li>
                   <li>Approve read-only permissions to analyze channel participation and activity.</li>
-                  <li>After authorization, you’ll return here and your first sync will start.</li>
+                  <li>After authorization, you'll return here and your first sync will start.</li>
                 </ol>
+              )}
+              {showHelp === 'jira' && (
+                <div>
+                  <p style={{marginBottom: 12, color: '#6b7280'}}>Jira integration analyzes your project management data to detect execution friction.</p>
+                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <ul style={styles.helpList}>
+                    <li><strong>Issue cycle time</strong> — How long issues stay in each status</li>
+                    <li><strong>Sprint velocity</strong> — Story points completed vs committed</li>
+                    <li><strong>Blocker frequency</strong> — How often issues get blocked</li>
+                    <li><strong>Backlog health</strong> — Age and size of unresolved issues</li>
+                  </ul>
+                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <ul style={styles.helpList}>
+                    <li>Execution drag — velocity declining despite stable effort</li>
+                    <li>Coordination strain — too many dependencies and handoffs</li>
+                    <li>Scope creep — expanding work mid-sprint</li>
+                  </ul>
+                </div>
+              )}
+              {showHelp === 'asana' && (
+                <div>
+                  <p style={{marginBottom: 12, color: '#6b7280'}}>Asana integration tracks task flow and workload distribution across your team.</p>
+                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <ul style={styles.helpList}>
+                    <li><strong>Task completion rate</strong> — Completed vs created tasks</li>
+                    <li><strong>Overdue items</strong> — Tasks past their due date</li>
+                    <li><strong>Workload distribution</strong> — Tasks per team member</li>
+                    <li><strong>Project progress</strong> — Milestone completion trends</li>
+                  </ul>
+                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <ul style={styles.helpList}>
+                    <li>Load imbalance — uneven task distribution</li>
+                    <li>Recovery erosion — growing backlog of overdue items</li>
+                    <li>Planning drift — frequent due date changes</li>
+                  </ul>
+                </div>
+              )}
+              {showHelp === 'notion' && (
+                <div>
+                  <p style={{marginBottom: 12, color: '#6b7280'}}>Notion integration monitors documentation activity and knowledge sharing patterns.</p>
+                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <ul style={styles.helpList}>
+                    <li><strong>Page activity</strong> — Creates, edits, and views over time</li>
+                    <li><strong>Staleness</strong> — Pages not updated in 30+ days</li>
+                    <li><strong>Collaboration</strong> — Multi-author activity patterns</li>
+                    <li><strong>Database usage</strong> — Active vs dormant databases</li>
+                  </ul>
+                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <ul style={styles.helpList}>
+                    <li>Knowledge silos — documentation concentrated in few people</li>
+                    <li>Stale documentation — critical docs becoming outdated</li>
+                    <li>Collaboration gaps — teams not sharing knowledge</li>
+                  </ul>
+                </div>
+              )}
+              {showHelp === 'hubspot' && (
+                <div>
+                  <p style={{marginBottom: 12, color: '#6b7280'}}>HubSpot integration analyzes CRM activity and sales team performance patterns.</p>
+                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <ul style={styles.helpList}>
+                    <li><strong>Deal velocity</strong> — Time from creation to close</li>
+                    <li><strong>Activity volume</strong> — Calls, emails, meetings logged</li>
+                    <li><strong>Pipeline movement</strong> — Stage progression rates</li>
+                    <li><strong>Contact engagement</strong> — Response and touch patterns</li>
+                  </ul>
+                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <ul style={styles.helpList}>
+                    <li>Sales execution drag — deals stalling in pipeline</li>
+                    <li>Team capacity strain — activity levels vs quota</li>
+                    <li>Customer risk — engagement drop-offs</li>
+                  </ul>
+                </div>
+              )}
+              {showHelp === 'pipedrive' && (
+                <div>
+                  <p style={{marginBottom: 12, color: '#6b7280'}}>Pipedrive integration tracks sales pipeline health and activity patterns.</p>
+                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <ul style={styles.helpList}>
+                    <li><strong>Deal stages</strong> — Time in each pipeline stage</li>
+                    <li><strong>Activity patterns</strong> — Calls, emails, meetings per deal</li>
+                    <li><strong>Conversion rates</strong> — Stage-to-stage progression</li>
+                    <li><strong>Win/loss analysis</strong> — Deal outcome patterns</li>
+                  </ul>
+                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <ul style={styles.helpList}>
+                    <li>Revenue friction — slowing deal velocity</li>
+                    <li>Pipeline health — conversion rate trends</li>
+                    <li>Rep capacity — activity levels and workload</li>
+                  </ul>
+                </div>
               )}
               <div style={{display:'flex', gap:12, marginTop:16}}>
                 <button style={styles.secondaryBtn} onClick={() => setShowHelp(null)}>Close</button>
@@ -557,6 +767,23 @@ const styles = {
   badgeConnected: { marginLeft: 8, fontSize: 12, padding: '2px 8px', background: '#DCFCE7', color: '#166534', borderRadius: 999 },
   detailLine: { color: '#6b7280', fontSize: 13, marginTop: 6, marginBottom: 10 },
   disconnectBtn: { marginTop: 10, background: 'transparent', color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 8, padding: '0.5rem 0.75rem', fontWeight: 600, cursor: 'pointer' },
+  infoButton: { 
+    position: 'absolute', 
+    top: 0, 
+    right: -8, 
+    width: 20, 
+    height: 20, 
+    borderRadius: '50%', 
+    background: '#E0E7FF', 
+    color: '#4F46E5', 
+    border: 'none', 
+    fontSize: 12, 
+    fontWeight: 700, 
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   loading: {
     display: 'flex',
     justifyContent: 'center',

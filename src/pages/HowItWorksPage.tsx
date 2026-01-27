@@ -122,11 +122,15 @@ const steps = [
 const integrations = [
   { name: "Slack", description: "Team-level coordination patterns", status: "current" },
   { name: "Google Calendar", description: "Meeting load and focus-time signals", status: "current" },
+  { name: "Gmail", description: "Email volume and response patterns", status: "current" },
+  { name: "Google Meet", description: "Meeting frequency and attendance", status: "current" },
+  { name: "Jira", description: "Sprint velocity and execution friction", status: "current" },
+  { name: "Asana", description: "Task flow and workload patterns", status: "current" },
+  { name: "Notion", description: "Documentation and collaboration activity", status: "current" },
+  { name: "HubSpot", description: "CRM activity and deal velocity", status: "current" },
+  { name: "Pipedrive", description: "Sales pipeline and activity patterns", status: "current" },
   { name: "Microsoft Teams", description: "Coordination patterns", status: "planned" },
   { name: "Outlook Calendar", description: "Meeting load signals", status: "planned" },
-  { name: "Jira", description: "Execution friction signals", status: "next" },
-  { name: "Asana", description: "Task flow patterns", status: "next" },
-  { name: "Basecamp", description: "Project coordination", status: "next" },
 ];
 
 const HowItWorksPage = () => {
