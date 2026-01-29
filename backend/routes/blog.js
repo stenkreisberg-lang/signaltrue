@@ -565,68 +565,62 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
     const { 
       id,
       title, 
-      slug, 
+      slug,
+      keywords,
+      metaDescription,
       content,
+      content_html,
+      content_markdown,
       body,
       html,
-      text,
-      article,
-      articleContent,
-      article_content,
-      post_content,
       excerpt, 
       summary,
       description,
-      author, 
-      authorName,
-      author_name,
+      heroImageUrl,
       featuredImage,
       featured_image,
       image,
       imageUrl,
-      image_url,
-      cover,
-      coverImage,
-      cover_image,
-      thumbnail,
-      tags, 
-      categories,
-      status,
-      publishedAt,
-      published_at,
       createdAt,
       created_at,
-      date
+      publishedAt,
+      published_at,
+      date,
+      lang,
+      languageCode
     } = req.body;
 
-    // Try multiple field names for content (BabyLoveGrowth uses "content")
-    const finalContent = content || body || html || text || article || articleContent || article_content || post_content || req.body.postContent || "";
+    // BabyLoveGrowth uses content_html for HTML content
+    const finalContent = content_html || content || content_markdown || body || html || "";
     
     // Generate slug from title if not provided
     const postSlug = slug || title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     
     // Use external ID or generate one
-    const externalId = id || req.body.articleId || req.body.article_id || req.body.postId || req.body.post_id || postSlug || `blg-${Date.now()}`;
+    const externalId = id || postSlug || `blg-${Date.now()}`;
 
-    // Try multiple field names for image
-    const imageSource = featuredImage || featured_image || image || imageUrl || image_url || cover || coverImage || cover_image || thumbnail;
+    // BabyLoveGrowth uses heroImageUrl for featured image
+    const imageSource = heroImageUrl || featuredImage || featured_image || image || imageUrl;
 
     const postData = {
       title,
       slug: postSlug,
       content: finalContent,
-      excerpt: excerpt || summary || description,
+      excerpt: excerpt || summary || metaDescription || description,
       author: {
-        name: author?.name || authorName || author_name || (typeof author === 'string' ? author : null) || "SignalTrue Team"
+        name: "SignalTrue Team"
       },
       featuredImage: imageSource ? {
         url: typeof imageSource === 'string' ? imageSource : (imageSource?.url || imageSource),
-        alt: imageSource?.alt || title
+        alt: title
       } : undefined,
-      tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
-      categories: Array.isArray(categories) ? categories : (categories ? [categories] : []),
-      status: status === "draft" ? "draft" : "published",
+      tags: keywords ? [keywords] : [],
+      categories: [],
+      status: "published",
       publishedAt: publishedAt || published_at || createdAt || created_at || date || new Date(),
+      seo: {
+        metaDescription: metaDescription
+      },
       externalProvider: {
         name: "babylovegrowth",
         externalId: String(externalId),
