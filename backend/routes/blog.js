@@ -574,7 +574,6 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
       articleContent,
       article_content,
       post_content,
-      postContent,
       excerpt, 
       summary,
       description,
@@ -600,8 +599,8 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
       date
     } = req.body;
 
-    // Try multiple field names for content
-    const postContent = content || body || html || text || article || articleContent || article_content || post_content || req.body.postContent || "";
+    // Try multiple field names for content (BabyLoveGrowth uses "content")
+    const finalContent = content || body || html || text || article || articleContent || article_content || post_content || req.body.postContent || "";
     
     // Generate slug from title if not provided
     const postSlug = slug || title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -615,10 +614,10 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
     const postData = {
       title,
       slug: postSlug,
-      content: postContent,
+      content: finalContent,
       excerpt: excerpt || summary || description,
       author: {
-        name: author?.name || authorName || author_name || author || "SignalTrue Team"
+        name: author?.name || authorName || author_name || (typeof author === 'string' ? author : null) || "SignalTrue Team"
       },
       featuredImage: imageSource ? {
         url: typeof imageSource === 'string' ? imageSource : (imageSource?.url || imageSource),
@@ -642,7 +641,7 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    console.log(`[BabyLoveGrowth] Blog post synced: ${post.title} (content length: ${postContent?.length || 0})`);
+    console.log(`[BabyLoveGrowth] Blog post synced: ${post.title} (content length: ${finalContent?.length || 0})`);
     res.json({ success: true, post });
   } catch (error) {
     console.error("BabyLoveGrowth webhook error:", error);
