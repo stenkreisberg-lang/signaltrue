@@ -559,47 +559,75 @@ router.post("/webhook/ghost", requireApiKey, async (req, res) => {
  */
 router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
   try {
+    // Log full payload for debugging
+    console.log("[BabyLoveGrowth] Received webhook payload:", JSON.stringify(req.body, null, 2));
+    
     const { 
       id,
       title, 
       slug, 
-      content, 
+      content,
+      body,
+      html,
+      text,
+      article,
+      articleContent,
+      article_content,
+      post_content,
+      postContent,
       excerpt, 
       summary,
+      description,
       author, 
       authorName,
+      author_name,
       featuredImage,
+      featured_image,
       image,
       imageUrl,
+      image_url,
+      cover,
+      coverImage,
+      cover_image,
+      thumbnail,
       tags, 
       categories,
       status,
       publishedAt,
-      createdAt
+      published_at,
+      createdAt,
+      created_at,
+      date
     } = req.body;
 
+    // Try multiple field names for content
+    const postContent = content || body || html || text || article || articleContent || article_content || post_content || req.body.postContent || "";
+    
     // Generate slug from title if not provided
     const postSlug = slug || title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     
     // Use external ID or generate one
-    const externalId = id || postSlug || `blg-${Date.now()}`;
+    const externalId = id || req.body.articleId || req.body.article_id || req.body.postId || req.body.post_id || postSlug || `blg-${Date.now()}`;
+
+    // Try multiple field names for image
+    const imageSource = featuredImage || featured_image || image || imageUrl || image_url || cover || coverImage || cover_image || thumbnail;
 
     const postData = {
       title,
       slug: postSlug,
-      content,
-      excerpt: excerpt || summary,
+      content: postContent,
+      excerpt: excerpt || summary || description,
       author: {
-        name: author?.name || authorName || "SignalTrue Team"
+        name: author?.name || authorName || author_name || author || "SignalTrue Team"
       },
-      featuredImage: featuredImage || image || imageUrl ? {
-        url: featuredImage?.url || featuredImage || image || imageUrl,
-        alt: featuredImage?.alt || title
+      featuredImage: imageSource ? {
+        url: typeof imageSource === 'string' ? imageSource : (imageSource?.url || imageSource),
+        alt: imageSource?.alt || title
       } : undefined,
       tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       categories: Array.isArray(categories) ? categories : (categories ? [categories] : []),
       status: status === "draft" ? "draft" : "published",
-      publishedAt: publishedAt || createdAt || new Date(),
+      publishedAt: publishedAt || published_at || createdAt || created_at || date || new Date(),
       externalProvider: {
         name: "babylovegrowth",
         externalId: String(externalId),
@@ -614,7 +642,7 @@ router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    console.log(`[BabyLoveGrowth] Blog post synced: ${post.title}`);
+    console.log(`[BabyLoveGrowth] Blog post synced: ${post.title} (content length: ${postContent?.length || 0})`);
     res.json({ success: true, post });
   } catch (error) {
     console.error("BabyLoveGrowth webhook error:", error);
