@@ -473,14 +473,20 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           {/* Content */}
           <div 
             className="prose prose-lg dark:prose-invert max-w-none
-              prose-headings:font-display prose-headings:font-bold
+              prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground
+              prose-h1:hidden
               prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
               prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-              prose-p:text-muted-foreground prose-p:leading-relaxed
+              prose-p:text-foreground/80 prose-p:leading-relaxed
+              prose-strong:text-foreground
               prose-a:text-primary prose-a:no-underline hover:prose-a:underline
               prose-blockquote:border-l-primary prose-blockquote:bg-secondary/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1
               prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-secondary prose-pre:border prose-pre:border-border"
+              prose-pre:bg-secondary prose-pre:border prose-pre:border-border
+              prose-li:text-foreground/80
+              prose-th:text-foreground prose-td:text-foreground/80
+              prose-img:rounded-xl
+              [&>p:first-of-type>img]:hidden"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
