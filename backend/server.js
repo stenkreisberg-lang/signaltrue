@@ -109,6 +109,7 @@ import passwordResetRoutes from "./routes/passwordReset.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import costOfDriftRoutes from "./routes/costOfDrift.js";
 import blogRoutes from "./routes/blog.js";
+import managerCoachingRoutes from "./routes/managerCoaching.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -327,6 +328,9 @@ async function main() {
     
     // --- Blog Routes (public read, API key for write) ---
     app.use('/api/blog', blogRoutes);
+    
+    // --- Manager Coaching Routes ---
+    app.use('/api/manager-coaching', managerCoachingRoutes);
     
     // --- Category-King Integration Routes ---
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);

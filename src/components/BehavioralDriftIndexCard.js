@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import MetricExplainer from './MetricExplainer';
 
 /**
  * Behavioral Drift Index Card
@@ -60,7 +61,10 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
     <div className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-100">Behavioral Drift Index</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-100">Behavioral Drift Index</h2>
+          <MetricExplainer metricKey="bdi" size="md" position="right" />
+        </div>
         <span className="text-2xl">{config.icon}</span>
       </div>
 
