@@ -10,10 +10,10 @@ const blogPostSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
-    content: { type: String, required: true },
+    content: { type: String, default: "" },
     excerpt: { type: String, maxlength: 500 },
     author: {
-      name: { type: String, required: true },
+      name: { type: String, default: "SignalTrue Team" },
       email: { type: String },
       avatar: { type: String },
       bio: { type: String }
