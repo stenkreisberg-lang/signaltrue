@@ -8,9 +8,19 @@
 /**
  * Basic API key authentication for admin endpoints
  * Used by: /api/ai-usage, /api/slack/refresh-all, /api/calendar/refresh-all, /api/notifications/weekly
+ * Supports both x-api-key header and Bearer token format
  */
 export function requireApiKey(req, res, next) {
-  const apiKey = req.headers['x-api-key'];
+  // Check x-api-key header first
+  let apiKey = req.headers['x-api-key'];
+  
+  // Also check Authorization header for Bearer token (used by BabyLoveGrowth, etc.)
+  if (!apiKey && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
+  }
   
   // If no API_KEY configured, allow all (development mode)
   if (!process.env.API_KEY) {
@@ -21,7 +31,7 @@ export function requireApiKey(req, res, next) {
   if (apiKey !== process.env.API_KEY) {
     return res.status(401).json({ 
       message: 'Unauthorized: Invalid or missing API key',
-      hint: 'Include x-api-key header with your API key'
+      hint: 'Include x-api-key header or Authorization: Bearer <token>'
     });
   }
   

@@ -553,4 +553,73 @@ router.post("/webhook/ghost", requireApiKey, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/blog/webhook/babylovegrowth
+ * BabyLoveGrowth.ai webhook handler
+ */
+router.post("/webhook/babylovegrowth", requireApiKey, async (req, res) => {
+  try {
+    const { 
+      id,
+      title, 
+      slug, 
+      content, 
+      excerpt, 
+      summary,
+      author, 
+      authorName,
+      featuredImage,
+      image,
+      imageUrl,
+      tags, 
+      categories,
+      status,
+      publishedAt,
+      createdAt
+    } = req.body;
+
+    // Generate slug from title if not provided
+    const postSlug = slug || title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    
+    // Use external ID or generate one
+    const externalId = id || postSlug || `blg-${Date.now()}`;
+
+    const postData = {
+      title,
+      slug: postSlug,
+      content,
+      excerpt: excerpt || summary,
+      author: {
+        name: author?.name || authorName || "SignalTrue Team"
+      },
+      featuredImage: featuredImage || image || imageUrl ? {
+        url: featuredImage?.url || featuredImage || image || imageUrl,
+        alt: featuredImage?.alt || title
+      } : undefined,
+      tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
+      categories: Array.isArray(categories) ? categories : (categories ? [categories] : []),
+      status: status === "draft" ? "draft" : "published",
+      publishedAt: publishedAt || createdAt || new Date(),
+      externalProvider: {
+        name: "babylovegrowth",
+        externalId: String(externalId),
+        syncedAt: new Date(),
+        webhookPayload: req.body
+      }
+    };
+
+    const post = await BlogPost.findOneAndUpdate(
+      { "externalProvider.name": "babylovegrowth", "externalProvider.externalId": String(externalId) },
+      postData,
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    console.log(`[BabyLoveGrowth] Blog post synced: ${post.title}`);
+    res.json({ success: true, post });
+  } catch (error) {
+    console.error("BabyLoveGrowth webhook error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
