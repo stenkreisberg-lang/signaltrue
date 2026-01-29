@@ -14,6 +14,7 @@ const navItems = [
   { label: "Signals", href: "/product" },
   { label: "How it Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
 ];
 

@@ -31,6 +31,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import TeamAnalytics from "./pages/TeamAnalytics";
 import AdminOnboarding from "./pages/AdminOnboarding";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +79,8 @@ const App = () => (
               <Route path="/self-check" element={<SelfCheck />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
               <Route path="/integrations/callback" element={<IntegrationsPage />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<Blog />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -108,6 +108,7 @@ import superadminRoutes from "./routes/superadmin.js";
 import passwordResetRoutes from "./routes/passwordReset.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import costOfDriftRoutes from "./routes/costOfDrift.js";
+import blogRoutes from "./routes/blog.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -323,6 +324,9 @@ async function main() {
     
     // --- Cost of Drift Routes (Executive ROI view) ---
     app.use('/api/cost-of-drift', costOfDriftRoutes);
+    
+    // --- Blog Routes (public read, API key for write) ---
+    app.use('/api/blog', blogRoutes);
     
     // --- Category-King Integration Routes ---
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);
