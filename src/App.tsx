@@ -33,6 +33,7 @@ import TeamAnalytics from "./pages/TeamAnalytics";
 import AdminOnboarding from "./pages/AdminOnboarding";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import Blog from "./pages/Blog";
+import Contact from "./pages/Contact";
 import DriftDiagnostic from "./pages/DriftDiagnostic";
 import DriftReport from "./pages/DriftReport";
 
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/integrations/callback" element={<IntegrationsPage />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<Blog />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />
               <Route path="/drift-report/:sessionId" element={<DriftReport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
