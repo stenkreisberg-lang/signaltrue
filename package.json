@@ -79,10 +79,10 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true craco build",
+    "build": "TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true craco build && cp -r marketing build/marketing",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "vercel-build": "TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true craco build",
+    "vercel-build": "TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true craco build && cp -r marketing build/marketing",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",

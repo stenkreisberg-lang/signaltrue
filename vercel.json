@@ -1,8 +1,26 @@
 {
   "rewrites": [
+    { "source": "/", "destination": "/marketing/index.html" },
+    { "source": "/product", "destination": "/marketing/product.html" },
+    { "source": "/pricing", "destination": "/marketing/pricing.html" },
+    { "source": "/about", "destination": "/marketing/about.html" },
+    { "source": "/contact", "destination": "/marketing/contact.html" },
+    { "source": "/privacy", "destination": "/marketing/privacy.html" },
+    { "source": "/terms", "destination": "/marketing/terms.html" },
+    { "source": "/solutions", "destination": "/marketing/solutions.html" },
+    { "source": "/resources", "destination": "/marketing/resources.html" },
+    { "source": "/ai-info-page", "destination": "/marketing/ai-info-page.html" },
+    { "source": "/styles.css", "destination": "/marketing/styles.css" },
+    { "source": "/robots.txt", "destination": "/marketing/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "/marketing/sitemap.xml" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/marketing/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }
+      ]
     }
   ]
 }
