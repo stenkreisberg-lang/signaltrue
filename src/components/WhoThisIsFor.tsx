@@ -10,7 +10,7 @@ const audiences = [
   {
     icon: Briefcase,
     title: "Founders managing growing teams",
-    description: "Detect when scaling creates invisible coordination problems—before they slow you down.",
+    description: "Detect when scaling creates invisible coordination problems, before they slow you down.",
   },
   {
     icon: Users,

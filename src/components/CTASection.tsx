@@ -28,7 +28,7 @@ const CTASection = () => {
             <span className="text-gradient">Prove what works.</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Stop relying on lagging surveys. Get behavioral evidence and clear intervention paths—with measured impact.
+            Stop relying on lagging surveys. Get behavioral evidence and clear intervention paths, with measured impact.
           </p>
 
           {/* CTA buttons */}

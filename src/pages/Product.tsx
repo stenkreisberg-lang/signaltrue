@@ -25,7 +25,7 @@ const productSections = [
     id: "baselines",
     icon: BarChart3,
     title: "Drift starts as deviation, not disaster.",
-    description: "Every team has its own rhythm. SignalTrue learns normal work patterns and detects meaningful changes—not noise. This allows early intervention before overload, disengagement, or burnout become visible symptoms.",
+    description: "Every team has its own rhythm. SignalTrue learns normal work patterns and detects meaningful changes, not noise. This allows early intervention before overload, disengagement, or burnout become visible symptoms.",
     features: [
       "Adaptive baselines per team",
       "Seasonality-aware patterns",
@@ -37,7 +37,7 @@ const productSections = [
     id: "causal",
     icon: Target,
     title: "Knowing why matters more than knowing what.",
-    description: "Most tools show correlations. SignalTrue estimates likely causes. We identify which behaviors and structural patterns are driving drift—so leaders can act with confidence instead of guesswork.",
+    description: "Most tools show correlations. SignalTrue estimates likely causes. We identify which behaviors and structural patterns are driving drift, so leaders can act with confidence instead of guesswork.",
     features: [
       "Driver attribution for each drift event",
       "Causal pattern recognition",
@@ -61,7 +61,7 @@ const productSections = [
     id: "measurement",
     icon: TrendingUp,
     title: "Prove what worked.",
-    description: "SignalTrue tracks whether interventions actually changed behavior. This creates a learning loop where decisions improve over time—and leadership actions are backed by evidence, not hope.",
+    description: "SignalTrue tracks whether interventions actually changed behavior. This creates a learning loop where decisions improve over time, and leadership actions are backed by evidence, not hope.",
     features: [
       "Before/after outcome tracking",
       "Effect size measurement",

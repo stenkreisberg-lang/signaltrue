@@ -85,7 +85,7 @@ const steps = [
     number: "02",
     icon: BarChart2,
     title: "Explain the cause",
-    description: "We identify likely drivers behind the drift using causal modeling—not guesswork or simple correlation.",
+    description: "We identify likely drivers behind the drift using causal modeling, not guesswork or simple correlation.",
     details: [
       "Driver attribution for each drift",
       "Ranked contributing factors",
@@ -159,7 +159,7 @@ const HowItWorksPage = () => {
                 <span className="text-gradient">Detect. Explain. Act. Learn.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                A complete workflow for causal drift management—not just another dashboard.
+                A complete workflow for causal drift management. Not just another dashboard.
               </p>
               <Button variant="hero" size="xl" asChild>
                 <a href="#assessment">

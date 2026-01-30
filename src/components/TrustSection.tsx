@@ -24,7 +24,7 @@ const TrustSection = () => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               SignalTrue analyzes behavioral metadata, not message content. 
               No emotion inference. No individual scoring for managers. 
-              Privacy is enforced at the architecture level—not promised in marketing.
+              Privacy is enforced at the architecture level, not promised in marketing.
             </p>
           </div>
 

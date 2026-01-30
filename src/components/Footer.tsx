@@ -44,7 +44,7 @@ const Footer = () => {
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
               Work Signal Intelligence. Detect organizational drift early 
-              by reading how work actually happens—without surveillance or surveys.
+              by reading how work actually happens, without surveillance or surveys.
             </p>
             <div className="flex items-center gap-4">
               <a 

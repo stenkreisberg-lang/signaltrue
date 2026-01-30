@@ -85,7 +85,7 @@ const WhyOrganizationsGoBlind = () => {
           {/* Bridge Paragraph */}
           <div className="max-w-3xl mx-auto text-center mb-12">
             <p className="text-xl lg:text-2xl text-foreground font-medium leading-relaxed">
-              SignalTrue exists to replace lagging indicators with early, behavioral evidence—and clear intervention paths.
+              SignalTrue exists to replace lagging indicators with early, behavioral evidence and clear intervention paths.
             </p>
           </div>
 

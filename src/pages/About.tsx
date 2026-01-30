@@ -21,12 +21,12 @@ const beliefs = [
   {
     icon: Activity,
     title: "Drift is the root cause",
-    description: "Burnout, disengagement, and performance loss are outcomes. Behavioral drift is the cause—and it's detectable.",
+    description: "Burnout, disengagement, and performance loss are outcomes. Behavioral drift is the cause, and it's detectable.",
   },
   {
     icon: Shield,
     title: "Privacy enables trust",
-    description: "We analyze metadata, not content. Privacy by architecture—not policy—earns the trust that makes insight possible.",
+    description: "We analyze metadata, not content. Privacy by architecture, not policy, earns the trust that makes insight possible.",
   },
   {
     icon: Zap,
@@ -54,7 +54,7 @@ const About = () => {
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
                 SignalTrue was built to help leaders detect drift early, act decisively, 
-                and prove impact—without turning work into surveillance.
+                and prove impact without turning work into surveillance.
               </p>
             </div>
           </div>
@@ -73,7 +73,7 @@ const About = () => {
               <div className="space-y-6 text-lg text-muted-foreground">
                 <p>
                   Burnout, attrition, and execution breakdowns don't happen suddenly. 
-                  They emerge from patterns that were detectable months earlier—
+                  They emerge from patterns that were detectable months earlier: 
                   meeting fragmentation, after-hours creep, recovery collapse.
                 </p>
                 <p>
@@ -172,7 +172,7 @@ const About = () => {
                   <p>
                     SignalTrue provides organizational health analytics by analyzing aggregated, anonymized metadata 
                     from connected workplace tools. We detect patterns that indicate burnout risk, collaboration gaps, 
-                    and organizational drift—without reading message content or tracking individuals.
+                    and organizational drift without reading message content or tracking individuals.
                   </p>
                 </div>
 
@@ -201,7 +201,7 @@ const About = () => {
                   <ul className="list-disc pl-6 space-y-2">
                     <li>All data encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
                     <li>SOC 2 Type II compliant infrastructure</li>
-                    <li>No data sold to third parties—ever</li>
+                    <li>No data sold to third parties, ever</li>
                     <li>Data retained for 12 months, then automatically deleted</li>
                     <li>You can request complete data deletion at any time</li>
                   </ul>

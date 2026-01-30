@@ -17,13 +17,13 @@ const steps = [
     number: "02",
     icon: BarChart2,
     title: "Explain the cause",
-    description: "We identify which behaviors and structures are driving the drift—so you know why, not just what.",
+    description: "We identify which behaviors and structures are driving the drift, so you know why, not just what.",
   },
   {
     number: "03",
     icon: AlertCircle,
     title: "Recommend intervention",
-    description: "We suggest concrete actions, ranked by expected impact and feasibility. Not tips—a plan.",
+    description: "We suggest concrete actions, ranked by expected impact and feasibility. Not tips. A plan.",
   },
   {
     number: "04",

@@ -48,7 +48,7 @@ const Hero = () => {
             {/* Subheadline - Category King copy */}
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
               SignalTrue is a causal drift engine for knowledge work.
-              We detect early behavior changes, explain what caused them, and tell leaders what to change—with measured impact.
+              We detect early behavior changes, explain what caused them, and tell leaders what to change. With measured impact.
             </p>
 
             {/* CTA buttons */}
@@ -70,7 +70,7 @@ const Hero = () => {
             <div className="pt-8 border-t border-border/50">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Burnout, disengagement, and performance loss don't start with feelings.
-                They start with small behavioral shifts. SignalTrue detects those shifts early—before they show up in surveys, exits, or missed results.
+                They start with small behavioral shifts. SignalTrue detects those shifts early, before they show up in surveys, exits, or missed results.
               </p>
             </div>
           </div>
