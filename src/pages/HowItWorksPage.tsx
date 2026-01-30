@@ -23,11 +23,9 @@ import {
 } from "lucide-react";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * If a section feels "empty", "safe", or "generic", it's wrong.
- * Optimize for clarity and conviction over minimalism.
+ * CATEGORY KING POSITIONING:
+ * Detect → Explain → Act → Learn
+ * Every section must answer: What decision does this enable?
  */
 
 // API base URL for tracking
@@ -70,50 +68,50 @@ const assumptions = [
   },
 ];
 
-// Renamed steps per spec
+// Renamed steps per spec: Detect → Explain → Act → Learn
 const steps = [
   {
     number: "01",
     icon: Activity,
-    title: "Expose how work behaves",
-    description: "Connect collaboration tools. SignalTrue reads behavioral patterns from metadata, not content.",
+    title: "Detect drift",
+    description: "We establish adaptive baselines for individuals and teams and detect statistically significant drift from normal patterns.",
     details: [
-      "Fast OAuth setup",
-      "Works with existing permissions",
-      "Add more tools anytime",
+      "Adaptive baselines per entity",
+      "Seasonality-aware calibration",
+      "Sustained deviation detection",
     ],
   },
   {
     number: "02",
     icon: BarChart2,
-    title: "Establish system baselines",
-    description: "Each team gets a baseline built from their own patterns, not generic industry benchmarks.",
+    title: "Explain the cause",
+    description: "We identify likely drivers behind the drift using causal modeling—not guesswork or simple correlation.",
     details: [
-      "Baselines per team",
-      "Trend comparison over time",
-      "Adjusts as patterns evolve",
+      "Driver attribution for each drift",
+      "Ranked contributing factors",
+      "Confidence scoring on explanations",
     ],
   },
   {
     number: "03",
     icon: AlertCircle,
-    title: "Detect meaningful drift",
-    description: "Signals trigger when patterns deviate in ways that predict organizational strain.",
+    title: "Recommend intervention",
+    description: "We recommend interventions ranked by expected impact and feasibility. Clear actions, not vague advice.",
     details: [
-      "Weekly signal updates",
-      "Severity-based alerts",
-      "Clear 'what changed' summaries",
+      "Specific action recommendations",
+      "Expected effect per intervention",
+      "Manager-ready language",
     ],
   },
   {
     number: "04",
     icon: TrendingUp,
-    title: "Intervene and measure impact",
-    description: "Take targeted action and track whether signals improve, stabilize, or continue drifting.",
+    title: "Measure and learn",
+    description: "We measure outcomes and continuously improve recommendations. Decisions get better over time.",
     details: [
-      "Intervention tracking",
-      "Before/after comparisons",
-      "Executive-ready summaries",
+      "Before/after outcome tracking",
+      "Effect size measurement",
+      "Continuous learning from results",
     ],
   },
 ];
@@ -155,14 +153,13 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                How it works
+                How SignalTrue works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From setup to organizational signals in{" "}
-                <span className="text-gradient">7 days</span>
+                <span className="text-gradient">Detect. Explain. Act. Learn.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                Expose how work behaves, establish baselines, detect meaningful drift, and measure intervention impact.
+                A complete workflow for causal drift management—not just another dashboard.
               </p>
               <Button variant="hero" size="xl" asChild>
                 <a href="#assessment">

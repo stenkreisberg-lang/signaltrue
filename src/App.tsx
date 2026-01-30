@@ -11,6 +11,7 @@ import Product from "./pages/Product";
 import Pricing from "./pages/Pricing";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import About from "./pages/About";
+import Trust from "./pages/Trust";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AcceptInvitation from "./pages/AcceptInvitation";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/how-it-works" element={<HowItWorksPage />} />
               <Route path="/about" element={<About />} />
+              <Route path="/trust" element={<Trust />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/register" element={<Register />} />

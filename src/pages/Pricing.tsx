@@ -7,92 +7,91 @@ import { useState } from "react";
 import api from "../utils/api";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * SignalTrue pricing reflects clarity and early insight, not headcount monitoring.
- * Each plan answers: What level of organizational clarity does this unlock?
+ * CATEGORY KING POSITIONING:
+ * Pricing reflects decision scope, not surveillance.
+ * Plans scale by number of teams under active drift management 
+ * and decision authority, not by tracking intensity.
  */
 
 const plans = [
   {
-    name: "Visibility",
+    name: "Detect",
     planId: "visibility",
-    description: "See organizational signals at team level",
-    subtitle: "What level of clarity: Surface-level drift detection",
+    description: "Detect behavioral drift at team level",
+    subtitle: "Early warning on team patterns",
     price: "€99",
     period: "/month",
     highlight: false,
     features: [
-      "Weekly signal reports",
-      "Team-level pattern detection",
-      "Basic drift alerts",
+      "Weekly drift detection reports",
+      "Team-level pattern analysis",
+      "Baseline deviation alerts",
       "Manager and HR admin access",
       "Email notifications",
       "Unlimited team members",
     ],
     notIncluded: [
-      "No strategic synthesis",
-      "No executive reporting",
+      "No causal explanation",
+      "No intervention tracking",
     ],
     cta: "Start Free Trial",
     isCheckout: true,
   },
   {
-    name: "Interpretation",
+    name: "Explain + Act",
     planId: "interpretation",
-    description: "Understand what signals mean for the organization",
-    subtitle: "What level of clarity: Pattern interpretation and recommendations",
+    description: "Understand causes and take action",
+    subtitle: "Causal explanation and intervention recommendations",
     price: "€199",
     period: "/month",
     highlight: true,
     features: [
-      "Everything in Visibility, plus:",
+      "Everything in Detect, plus:",
+      "Causal driver attribution",
+      "Intervention recommendations",
+      "Expected effect estimates",
       "Monthly leadership summaries",
-      "Strategic signal synthesis (60-120 day horizon)",
-      "Organizational trajectory analysis",
-      "Industry benchmarks & comparison",
+      "Industry benchmarks",
       "Structural risk identification",
-      "Decision support prompts",
-      "No individual names in any report",
+      "No individual names in reports",
     ],
     notIncluded: [],
     cta: "Start Free Trial",
     isCheckout: true,
   },
   {
-    name: "Intervention",
+    name: "Measure + Learn",
     planId: "enterprise",
-    description: "Act on signals with custom support",
-    subtitle: "What level of clarity: Full intervention workflow with measurement",
+    description: "Prove what worked and improve over time",
+    subtitle: "Full outcome measurement and learning loop",
     price: "Custom",
     period: "",
     highlight: false,
     features: [
-      "Everything in Interpretation, plus:",
+      "Everything in Explain + Act, plus:",
+      "Intervention outcome tracking",
+      "Before/after effect measurement",
+      "Continuous learning from results",
       "Board-level quarterly reviews",
       "Custom signal models",
-      "Custom thresholds & alerts",
-      "Intervention tracking & measurement",
       "Dedicated success manager",
       "SLA guarantees",
-      "On-premise deployment option",
     ],
     notIncluded: [],
     cta: "Contact Sales",
     isCheckout: false,
-    link: "mailto:sales@signaltrue.ai?subject=Intervention Plan Inquiry",
+    link: "mailto:sales@signaltrue.ai?subject=Measure + Learn Plan Inquiry",
   },
 ];
 
 const faqs = [
   {
-    question: "Why power-based pricing?",
-    answer: "SignalTrue pricing controls who sees what, what level of synthesis exists, and whether insights are tactical or strategic. Pay for the authority level you need, not the number of employees.",
+    question: "Why this pricing model?",
+    answer: "SignalTrue pricing reflects decision scope, not surveillance intensity. Pay for the level of causal insight and intervention support you need, not the number of employees being monitored.",
   },
   {
     question: "What's the difference between plan levels?",
-    answer: "Visibility shows signals. Interpretation explains what they mean. Intervention helps you act and measure results. Each level unlocks deeper organizational clarity.",
+    answer: "Detect finds drift. Explain + Act tells you why and what to do. Measure + Learn proves what worked. Each level deepens your ability to make evidence-backed decisions.",
   },
   {
     question: "Can HR see the Leadership reports?",

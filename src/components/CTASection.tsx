@@ -3,18 +3,15 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * Buttons must describe outcome, not action.
- * Remove: "Submit", "Get started", "Contact us"
- * Use: "See your organizational signals", "See how drift shows up", "View signal workflow"
+ * CATEGORY KING POSITIONING:
+ * Decision-oriented CTAs. No vanity language.
  */
 
 const benefits = [
   "No surveys required",
-  "System-level signals only",
+  "Causal explanation, not correlation",
   "No message content access",
-  "No individual scoring",
+  "Measured intervention impact",
 ];
 
 const CTASection = () => {
@@ -27,24 +24,24 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            Detect organizational drift{" "}
-            <span className="text-gradient">before it becomes expensive</span>
+            Detect drift early.{" "}
+            <span className="text-gradient">Prove what works.</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            See the signals that predict burnout, attrition, and execution breakdown—without surveillance or surveys.
+            Stop relying on lagging surveys. Get behavioral evidence and clear intervention paths—with measured impact.
           </p>
 
-          {/* CTA buttons - Outcome-focused language */}
+          {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Link to="/product">
+            <Link to="/how-it-works">
               <Button variant="hero" size="xl">
-                See your organizational signals
+                See how drift is detected
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/how-it-works">
+            <Link to="/contact">
               <Button variant="hero-outline" size="xl">
-                View signal workflow
+                Talk to us
               </Button>
             </Link>
           </div>

@@ -22,57 +22,55 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left content */}
           <div className="animate-slide-up">
-            {/* Trust badges - Updated for signal intelligence positioning */}
+            {/* Trust badges - Causal drift positioning */}
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Activity className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">Work Signal Intelligence</span>
+                <span className="text-xs font-medium text-muted-foreground">Causal Drift Engine</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Lock className="w-3.5 h-3.5 text-success" />
-                <span className="text-xs font-medium text-muted-foreground">No message content access</span>
+                <span className="text-xs font-medium text-muted-foreground">No message content</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">System-level, not individual</span>
+                <span className="text-xs font-medium text-muted-foreground">Privacy by architecture</span>
               </div>
             </div>
 
-            {/* Main headline - New copy per spec */}
+            {/* Main headline - Category King copy */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-              You don't lose people first.
+              Detect behavioral drift early.
               <br />
-              <span className="text-gradient">You lose signals.</span>
+              <span className="text-gradient">Fix it before performance and people break.</span>
             </h1>
 
-            {/* Subheadline - New copy per spec */}
+            {/* Subheadline - Category King copy */}
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              Most burnout, attrition, and execution breakdowns start silently.
-              SignalTrue detects organizational drift early by reading how work actually happens.
+              SignalTrue is a causal drift engine for knowledge work.
+              We detect early behavior changes, explain what caused them, and tell leaders what to change—with measured impact.
             </p>
 
-            {/* CTA buttons - Updated with outcome-focused language */}
+            {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <Link to="/product">
+              <Link to="/how-it-works">
                 <Button variant="hero" size="xl">
-                  See your organizational signals
+                  See how drift is detected
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/how-it-works">
+              <Link to="/contact">
                 <Button variant="hero-outline" size="xl">
-                  How it works
+                  Talk to us
                 </Button>
               </Link>
             </div>
 
-            {/* Social proof - Updated messaging */}
+            {/* Hero support text */}
             <div className="pt-8 border-t border-border/50">
-              <p className="text-sm font-semibold text-foreground mb-2">
-                An early-warning system for organizational drift.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                No surveys. No content analysis. No individual scoring.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Burnout, disengagement, and performance loss don't start with feelings.
+                They start with small behavioral shifts. SignalTrue detects those shifts early—before they show up in surveys, exits, or missed results.
               </p>
             </div>
           </div>

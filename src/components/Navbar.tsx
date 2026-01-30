@@ -4,17 +4,15 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * Remove: "Submit", "Get started", "Contact us"
- * Use: "See your organizational signals", "See how drift shows up", "View signal workflow"
- * Buttons must describe outcome, not action.
+ * CATEGORY KING POSITIONING:
+ * Navigation reflects core product flow: Product → How It Works → Pricing → Trust → About
  */
 
 const navItems = [
-  { label: "Signals", href: "/product" },
+  { label: "Product", href: "/product" },
   { label: "How it Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Blog", href: "/blog" },
+  { label: "Trust", href: "/trust" },
   { label: "About", href: "/about" },
 ];
 

@@ -1,36 +1,35 @@
 import { Activity, BarChart2, AlertCircle, TrendingUp } from "lucide-react";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * Renamed steps per spec: Expose, Establish, Detect, Intervene
+ * CATEGORY KING POSITIONING:
+ * From drift to decision. Not dashboards.
+ * Steps: Detect → Explain → Act → Learn
  */
 
 const steps = [
   {
     number: "01",
     icon: Activity,
-    title: "Expose how work behaves",
-    description: "Connect your collaboration tools. SignalTrue reads behavioral patterns, not content.",
+    title: "Detect drift",
+    description: "We learn normal work patterns and detect statistically meaningful deviations from each team's own baseline.",
   },
   {
     number: "02",
     icon: BarChart2,
-    title: "Establish system baselines",
-    description: "Each team gets a baseline built from their own patterns, not generic benchmarks.",
+    title: "Explain the cause",
+    description: "We identify which behaviors and structures are driving the drift—so you know why, not just what.",
   },
   {
     number: "03",
     icon: AlertCircle,
-    title: "Detect meaningful drift",
-    description: "Signals trigger when patterns deviate in ways that predict organizational strain.",
+    title: "Recommend intervention",
+    description: "We suggest concrete actions, ranked by expected impact and feasibility. Not tips—a plan.",
   },
   {
     number: "04",
     icon: TrendingUp,
-    title: "Intervene and measure impact",
-    description: "Take targeted action and track whether signals improve, stabilize, or continue drifting.",
+    title: "Measure the effect",
+    description: "We show whether the intervention worked and learn from it. Decisions improve over time.",
   },
 ];
 
@@ -41,13 +40,13 @@ const HowItWorks = () => {
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-            How it works
+            How SignalTrue works
           </p>
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-            Expose. Baseline. Detect. Intervene.
+            From drift to decision. Not dashboards.
           </h2>
           <p className="text-muted-foreground">
-            A signal-based workflow for organizational health that leadership can actually use.
+            SignalTrue does not just surface data. It turns behavioral evidence into decision-grade guidance.
           </p>
         </div>
 

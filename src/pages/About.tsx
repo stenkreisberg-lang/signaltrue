@@ -11,29 +11,27 @@ import {
 } from "lucide-react";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * Replace generic mission copy with conviction.
- * No HR buzzwords.
+ * CATEGORY KING POSITIONING:
+ * Why SignalTrue exists.
+ * Burnout is not the problem. It is the outcome of unmanaged drift.
  */
 
-// 3 beliefs only per spec - no HR buzzwords
+// 3 beliefs only - no HR buzzwords
 const beliefs = [
   {
     icon: Activity,
-    title: "Signals beat opinions",
-    description: "Behavioral patterns predict organizational strain earlier and more reliably than surveys or intuition.",
+    title: "Drift is the root cause",
+    description: "Burnout, disengagement, and performance loss are outcomes. Behavioral drift is the cause—and it's detectable.",
   },
   {
     icon: Shield,
-    title: "Trust enables insight",
-    description: "Privacy-first architecture earns the trust that makes meaningful organizational visibility possible.",
+    title: "Privacy enables trust",
+    description: "We analyze metadata, not content. Privacy by architecture—not policy—earns the trust that makes insight possible.",
   },
   {
     icon: Zap,
-    title: "Early action beats recovery",
-    description: "Detecting drift early costs less and preserves more than managing the consequences of breakdown.",
+    title: "Evidence beats intuition",
+    description: "Leaders deserve more than gut feeling. Causal attribution and measured outcomes turn decisions into learning.",
   },
 ];
 
@@ -42,21 +40,21 @@ const About = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-20">
-        {/* Hero Section - Updated per spec */}
+        {/* Hero Section */}
         <section className="py-20 bg-hero-gradient relative overflow-hidden">
           <div className="absolute inset-0 bg-glow opacity-20" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                About
+                Why SignalTrue exists
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                We build early-warning systems for{" "}
-                <span className="text-gradient">modern work</span>
+                Burnout is not the problem.{" "}
+                <span className="text-gradient">It's the outcome.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                SignalTrue detects organizational drift by reading behavioral work patterns—without surveillance, 
-                surveys, or individual scoring.
+                SignalTrue was built to help leaders detect drift early, act decisively, 
+                and prove impact—without turning work into surveillance.
               </p>
             </div>
           </div>
@@ -67,36 +65,36 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                Why we built SignalTrue
+                The problem we solve
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-8">
-                Organizations go blind before they break down
+                Unmanaged drift creates expensive problems
               </h2>
               <div className="space-y-6 text-lg text-muted-foreground">
                 <p>
                   Burnout, attrition, and execution breakdowns don't happen suddenly. 
-                  They emerge from patterns that were visible long before anyone spoke up—
-                  coordination overload, response pressure, recovery erosion.
+                  They emerge from patterns that were detectable months earlier—
+                  meeting fragmentation, after-hours creep, recovery collapse.
                 </p>
                 <p>
-                  The signals are there. In meeting loads. In after-hours patterns. In how work 
-                  actually flows versus how everyone assumes it flows.
+                  Most organizations rely on lagging signals: engagement surveys, exit interviews, 
+                  manager intuition. By the time those signals fire, the damage is done.
                 </p>
                 <p className="text-foreground font-medium">
-                  SignalTrue was built to detect those signals at system level, before they become 
-                  expensive crises.
+                  SignalTrue was built to detect behavioral drift early, explain what caused it, 
+                  recommend interventions, and measure whether they worked.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Values Section - 3 beliefs only per spec */}
+        {/* Values Section */}
         <section className="py-20 lg:py-24 bg-background">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                Our principles
+                What we believe
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold">
                 What we believe

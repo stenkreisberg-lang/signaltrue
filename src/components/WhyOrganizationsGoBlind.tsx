@@ -1,48 +1,51 @@
 import { ArrowRight, Layers } from "lucide-react";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * If a section feels "empty", "safe", or "generic", it's wrong.
- * Optimize for clarity and conviction over minimalism.
- * 
- * Purpose: Reframe the problem before showing product or metrics.
+ * CATEGORY KING POSITIONING:
+ * "The Enemy" section - establishes what we're against
+ * Enemies: Lagging surveys, engagement theater, monitoring tools
  */
 
-const oldWorldItems = [
+const laggingIndicators = [
   "Engagement surveys",
-  "Manager intuition",
-  "Output metrics",
-  "Retrospectives",
+  "Annual reviews",
+  "Manager gut feeling",
+  "Exit interviews",
 ];
 
-const newRealityItems = [
-  "Coordination overload",
+const earlyBehavioralSignals = [
+  "Meeting fragmentation",
+  "After-hours creep",
   "Response pressure",
-  "Execution drag",
-  "Recovery loss",
+  "Recovery collapse",
 ];
 
 const WhyOrganizationsGoBlind = () => {
   return (
-    <section id="why-organizations-go-blind" className="py-16 lg:py-20 bg-background">
+    <section id="the-enemy" className="py-16 lg:py-20 bg-background">
       <div className="container mx-auto px-6">
         <div className="max-w-5xl mx-auto">
           {/* Section headline */}
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center mb-12 lg:mb-16">
-            Most organizational risk never shows up in dashboards.
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center mb-6">
+            The problem isn't motivation.
+            <br />
+            <span className="text-gradient">It's invisible drift.</span>
           </h2>
+
+          {/* Enemy explanation */}
+          <p className="text-xl text-muted-foreground text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+            Most organizations rely on lagging signals. Engagement surveys, annual reviews, and gut feeling tell you what already happened. By the time burnout is visible, the damage is done.
+          </p>
 
           {/* Two-column POV Block */}
           <div className="grid md:grid-cols-2 gap-6 lg:gap-8 mb-12">
-            {/* LEFT COLUMN – OLD WORLD */}
+            {/* LEFT COLUMN – LAGGING INDICATORS */}
             <div className="p-6 lg:p-8 rounded-2xl bg-secondary/30 border border-border/50">
               <h3 className="text-lg font-display font-semibold text-muted-foreground uppercase tracking-wider mb-6">
-                What leaders think they're measuring
+                What most organizations measure
               </h3>
               <ul className="space-y-4 mb-6">
-                {oldWorldItems.map((item, index) => (
+                {laggingIndicators.map((item, index) => (
                   <li 
                     key={index}
                     className="flex items-center gap-3 text-lg text-foreground/70"
@@ -53,17 +56,17 @@ const WhyOrganizationsGoBlind = () => {
                 ))}
               </ul>
               <p className="text-sm text-muted-foreground italic border-t border-border/50 pt-4">
-                Lagging. Opinion-based. Polite.
+                Lagging. Opinion-based. Already too late.
               </p>
             </div>
 
-            {/* RIGHT COLUMN – NEW REALITY */}
+            {/* RIGHT COLUMN – EARLY BEHAVIORAL SIGNALS */}
             <div className="p-6 lg:p-8 rounded-2xl bg-primary/5 border border-primary/20">
               <h3 className="text-lg font-display font-semibold text-primary uppercase tracking-wider mb-6">
-                What actually predicts breakdown
+                What SignalTrue detects
               </h3>
               <ul className="space-y-4 mb-6">
-                {newRealityItems.map((item, index) => (
+                {earlyBehavioralSignals.map((item, index) => (
                   <li 
                     key={index}
                     className="flex items-center gap-3 text-lg text-foreground font-medium"
@@ -74,19 +77,15 @@ const WhyOrganizationsGoBlind = () => {
                 ))}
               </ul>
               <p className="text-sm text-primary/80 italic border-t border-primary/20 pt-4">
-                Leading. Behavioral. Invisible until it's expensive.
+                Leading. Behavioral. Actionable before crisis.
               </p>
             </div>
           </div>
 
           {/* Bridge Paragraph */}
           <div className="max-w-3xl mx-auto text-center mb-12">
-            <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed">
-              Modern work leaves signals long before people speak up.
-              <br />
-              <span className="text-foreground font-medium">
-                SignalTrue exists to detect those signals early, without reading messages or tracking individuals.
-              </span>
+            <p className="text-xl lg:text-2xl text-foreground font-medium leading-relaxed">
+              SignalTrue exists to replace lagging indicators with early, behavioral evidence—and clear intervention paths.
             </p>
           </div>
 
