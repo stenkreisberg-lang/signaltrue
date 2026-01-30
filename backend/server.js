@@ -110,6 +110,7 @@ import calendarRoutes from "./routes/calendarRoutes.js";
 import costOfDriftRoutes from "./routes/costOfDrift.js";
 import blogRoutes from "./routes/blog.js";
 import managerCoachingRoutes from "./routes/managerCoaching.js";
+import driftDiagnosticRoutes from "./routes/drift.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -310,6 +311,9 @@ async function main() {
     
     // --- Assessment & Cost Calculator (public, no auth required) ---
     app.use('/api/assessment', assessmentRoutes);
+    
+    // --- Drift Diagnostic Routes (public, no auth required) ---
+    app.use('/api/drift', driftDiagnosticRoutes);
     
     // --- Trial Management (mixed auth - some public, some protected) ---
     app.use('/api/trial', trialRoutes);

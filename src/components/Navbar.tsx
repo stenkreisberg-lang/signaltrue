@@ -6,12 +6,14 @@ import { useState } from "react";
 /*
  * CATEGORY KING POSITIONING:
  * Navigation reflects core product flow: Product → How It Works → Pricing → Trust → About
+ * Added Free Diagnostic for lead generation
  */
 
 const navItems = [
   { label: "Product", href: "/product" },
   { label: "How it Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Free Diagnostic", href: "/drift-diagnostic" },
   { label: "Trust", href: "/trust" },
   { label: "About", href: "/about" },
 ];

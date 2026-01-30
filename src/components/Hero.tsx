@@ -52,7 +52,7 @@ const Hero = () => {
             </p>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Link to="/how-it-works">
                 <Button variant="hero" size="xl">
                   See how drift is detected
@@ -62,6 +62,20 @@ const Hero = () => {
               <Link to="/contact">
                 <Button variant="hero-outline" size="xl">
                   Talk to us
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Free Diagnostic CTA - Lead generation */}
+            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50 mb-8">
+              <p className="text-sm text-muted-foreground mb-3">
+                <span className="font-medium text-foreground">Not ready for a demo?</span> Start with a free Behavioral Drift Diagnostic.
+                No integrations required. No personal data.
+              </p>
+              <Link to="/drift-diagnostic">
+                <Button variant="outline" size="sm">
+                  Start Free Diagnostic
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
             </div>
