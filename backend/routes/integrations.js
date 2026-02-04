@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'node:crypto';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js'; // Import User model
+import IntegrationConnection from '../models/integrationConnection.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
 import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
@@ -57,6 +58,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           googleChat: !!process.env.GOOGLE_CLIENT_ID,
           teams: !!process.env.MS_APP_CLIENT_ID,
           outlook: !!process.env.MS_APP_CLIENT_ID,
+          jira: !!process.env.JIRA_CLIENT_ID,
+          asana: !!process.env.ASANA_CLIENT_ID,
+          hubspot: !!process.env.HUBSPOT_CLIENT_ID,
+          pipedrive: !!process.env.PIPEDRIVE_CLIENT_ID,
+          notion: !!process.env.NOTION_CLIENT_ID,
         },
         connected: {
           slack: false,
@@ -64,6 +70,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           googleChat: false,
           teams: false,
           outlook: false,
+          jira: false,
+          asana: false,
+          hubspot: false,
+          pipedrive: false,
+          notion: false,
         },
         connections: {
           slack: false,
@@ -71,6 +82,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           teams: false,
           googleCalendar: false,
           outlook: false,
+          jira: false,
+          asana: false,
+          hubspot: false,
+          pipedrive: false,
+          notion: false,
         },
         details: {
           slack: null,
@@ -78,6 +94,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           googleChat: null,
           teams: null,
           outlook: null,
+          jira: null,
+          asana: null,
+          hubspot: null,
+          pipedrive: null,
+          notion: null,
         },
         oauth: {
           slack: !!process.env.SLACK_CLIENT_ID ? '/auth/slack' : null,
@@ -86,6 +107,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google-chat/oauth/start' : null,
           teams: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=teams' : null,
           outlook: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=outlook' : null,
+          jira: !!process.env.JIRA_CLIENT_ID ? '/integrations/jira/oauth/start' : null,
+          asana: !!process.env.ASANA_CLIENT_ID ? '/integrations/asana/oauth/start' : null,
+          hubspot: !!process.env.HUBSPOT_CLIENT_ID ? '/integrations/hubspot/oauth/start' : null,
+          pipedrive: !!process.env.PIPEDRIVE_CLIENT_ID ? '/integrations/pipedrive/oauth/start' : null,
+          notion: !!process.env.NOTION_CLIENT_ID ? '/integrations/notion/oauth/start' : null,
         }
       });
     }
@@ -96,6 +122,25 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Organization not found.' });
     }
 
+    // Fetch IntegrationConnection records for category king integrations
+    const integrationConnections = await IntegrationConnection.find({ 
+      orgId, 
+      integrationType: { $in: ['jira', 'asana', 'hubspot', 'pipedrive', 'notion'] },
+      status: 'connected'
+    }).lean();
+    
+    // Convert to lookup map
+    const connectedIntegrations = {};
+    const integrationDetails = {};
+    for (const conn of integrationConnections) {
+      connectedIntegrations[conn.integrationType] = true;
+      integrationDetails[conn.integrationType] = {
+        connectedAt: conn.connectedAt,
+        siteUrl: conn.auth?.siteUrl,
+        cloudId: conn.auth?.cloudId,
+      };
+    }
+
     // --- Check Available Integrations (based on environment variables) ---
     const available = {
       slack: !!process.env.SLACK_CLIENT_ID,
@@ -103,6 +148,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       googleChat: !!process.env.GOOGLE_CLIENT_ID,
       teams: !!process.env.MS_APP_CLIENT_ID,
       outlook: !!process.env.MS_APP_CLIENT_ID,
+      jira: !!process.env.JIRA_CLIENT_ID,
+      asana: !!process.env.ASANA_CLIENT_ID,
+      hubspot: !!process.env.HUBSPOT_CLIENT_ID,
+      pipedrive: !!process.env.PIPEDRIVE_CLIENT_ID,
+      notion: !!process.env.NOTION_CLIENT_ID,
     };
 
     // --- Check Connected Status (based on data in DB) ---
@@ -115,6 +165,12 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       googleChat: !!organization.integrations?.googleChat?.accessToken,
       teams: msHasToken && msScope === 'teams',
       outlook: msHasToken && msScope === 'outlook',
+      // Check both Organization.integrations and IntegrationConnection for these
+      jira: !!organization.integrations?.jira?.accessToken || !!connectedIntegrations.jira,
+      asana: !!organization.integrations?.asana?.accessToken || !!connectedIntegrations.asana,
+      hubspot: !!organization.integrations?.hubspot?.accessToken || !!connectedIntegrations.hubspot,
+      pipedrive: !!organization.integrations?.pipedrive?.accessToken || !!connectedIntegrations.pipedrive,
+      notion: !!organization.integrations?.notion?.accessToken || !!connectedIntegrations.notion,
     };
 
     // --- Connections object (used by frontend for button states) ---
@@ -124,6 +180,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       teams: connected.teams,
       googleCalendar: connected.google || (organization.integrations?.google?.scope === 'calendar' && !!organization.integrations?.google?.accessToken),
       outlook: connected.outlook,
+      jira: connected.jira,
+      asana: connected.asana,
+      hubspot: connected.hubspot,
+      pipedrive: connected.pipedrive,
+      notion: connected.notion,
     };
 
     // --- Provide Connection Details ---
@@ -146,6 +207,22 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         email: organization.integrations.microsoft?.email,
         user: organization.integrations.microsoft?.user,
       } : null,
+      jira: connected.jira ? (integrationDetails.jira || {
+        site: organization.integrations.jira?.siteName || organization.integrations.jira?.cloudId,
+      }) : null,
+      asana: connected.asana ? (integrationDetails.asana || {
+        email: organization.integrations.asana?.email,
+        workspace: organization.integrations.asana?.workspaceName,
+      }) : null,
+      hubspot: connected.hubspot ? (integrationDetails.hubspot || {
+        portalId: organization.integrations.hubspot?.portalId,
+      }) : null,
+      pipedrive: connected.pipedrive ? (integrationDetails.pipedrive || {
+        companyDomain: organization.integrations.pipedrive?.companyDomain,
+      }) : null,
+      notion: connected.notion ? (integrationDetails.notion || {
+        workspaceName: organization.integrations.notion?.workspaceName,
+      }) : null,
     };
 
     // --- OAuth Start URLs ---
@@ -160,6 +237,11 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      jira: available.jira ? `/integrations/jira/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      asana: available.asana ? `/integrations/asana/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      hubspot: available.hubspot ? `/integrations/hubspot/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      pipedrive: available.pipedrive ? `/integrations/pipedrive/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      notion: available.notion ? `/integrations/notion/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
     };
 
     res.json({ available, connected, connections, details, oauth });
