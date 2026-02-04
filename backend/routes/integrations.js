@@ -150,15 +150,16 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
 
     // --- OAuth Start URLs ---
     // Frontend expects these to accept ?token=...
-    // Include orgSlug for proper token storage
+    // Include orgSlug and orgId for proper token storage
     const orgSlug = organization.slug || 'default';
+    const orgIdStr = organization._id.toString();
     const oauth = {
-      slack: available.slack ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}` : null,
+      slack: available.slack ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       google: available.google ? '/auth/google' : null,
-      calendar: available.google ? `/integrations/google/oauth/start?orgSlug=${orgSlug}` : null,
-      googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}` : null,
-      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}` : null,
-      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}` : null,
+      calendar: available.google ? `/integrations/google/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
     };
 
     res.json({ available, connected, connections, details, oauth });
@@ -589,7 +590,7 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
 });
 
 // --- Microsoft OAuth (Outlook/Teams) ---
-// GET /api/integrations/microsoft/oauth/start?scope=outlook|teams&orgSlug=acme
+// GET /api/integrations/microsoft/oauth/start?scope=outlook|teams&orgSlug=acme&orgId=xxx
 router.get('/integrations/microsoft/oauth/start', async (req, res) => {
   const clientId = process.env.MS_APP_CLIENT_ID;
   const tenant = process.env.MS_APP_TENANT || 'common';
@@ -602,7 +603,12 @@ router.get('/integrations/microsoft/oauth/start', async (req, res) => {
   const scopes = scopeParam === 'teams'
     ? ['https://graph.microsoft.com/ChannelMessage.Read.All', ...scopesCore]
     : ['https://graph.microsoft.com/Calendars.Read', ...scopesCore];
-  const state = b64({ orgSlug: req.query.orgSlug || 'default', scope: scopeParam, nonce: crypto.randomBytes(8).toString('hex') });
+  const state = b64({ 
+    orgSlug: req.query.orgSlug || 'default', 
+    orgId: req.query.orgId || null,
+    scope: scopeParam, 
+    nonce: crypto.randomBytes(8).toString('hex') 
+  });
   const url = new URL(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`);
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('response_type', 'code');
@@ -625,6 +631,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     const { code, state } = req.query;
     const parsed = b64parse(state);
     const orgSlug = String(parsed.orgSlug || 'default');
+    const orgId = parsed.orgId || null;
     const scopeParam = String(parsed.scope || 'outlook');
 
     const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
@@ -663,23 +670,47 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         } catch {}
       }
 
-      const updatedOrg = await Organization.findOneAndUpdate(
-        { slug: orgSlug },
-        {
-          $setOnInsert: { name: orgSlug, industry: 'General' },
-          $set: {
-            [`integrations.microsoft`]: {
-              scope: scopeParam,
-              refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-              accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-              expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-              user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
-              tenantId: tenantId
+      // Prefer lookup by orgId if available, fall back to slug
+      let updatedOrg;
+      if (orgId) {
+        updatedOrg = await Organization.findByIdAndUpdate(
+          orgId,
+          {
+            $set: {
+              [`integrations.microsoft`]: {
+                scope: scopeParam,
+                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
+                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+                user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
+                tenantId: tenantId
+              }
             }
-          }
-        },
-        { upsert: true, new: true }
-      );
+          },
+          { new: true }
+        );
+      }
+      
+      // Fallback to slug lookup if orgId not found or not provided
+      if (!updatedOrg) {
+        updatedOrg = await Organization.findOneAndUpdate(
+          { slug: orgSlug },
+          {
+            $setOnInsert: { name: orgSlug, industry: 'General' },
+            $set: {
+              [`integrations.microsoft`]: {
+                scope: scopeParam,
+                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
+                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+                user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
+                tenantId: tenantId
+              }
+            }
+          },
+          { upsert: true, new: true }
+        );
+      }
       
       // Check if all integrations are complete and notify HR admins
       if (updatedOrg) {

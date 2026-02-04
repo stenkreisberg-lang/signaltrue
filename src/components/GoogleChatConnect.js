@@ -16,8 +16,9 @@ const GoogleChatConnect = ({ integrations }) => {
   const handleConnect = () => {
     const token = localStorage.getItem('token');
     if (token) {
-      const baseUrl = api.defaults.baseURL;
-      window.location.href = `${baseUrl}/auth/google-chat?token=${token}`;
+      // Use REACT_APP_API_URL for OAuth redirects (needs full URL, not relative)
+      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      window.location.href = `${backendUrl}/api/integrations/google-chat/oauth/start?token=${token}`;
     } else {
       alert('You must be logged in to connect Google Chat.');
     }
@@ -38,13 +39,15 @@ const GoogleChatConnect = ({ integrations }) => {
   return (
     <>
       <div style={styles.cardIcon}>💬</div>
-      <h3 style={styles.cardTitle}>Connect Google Chat {isConnected && <span style={styles.badgeConnected}>Connected</span>}</h3>
-      
+      <h3 style={styles.cardTitle}>
+        Connect Google Chat {isConnected && <span style={styles.badgeConnected}>Connected</span>}
+      </h3>
+
       {isConnected ? (
         <>
           <p style={styles.detailLine}>Account: {userEmail}</p>
           <p style={styles.cardText}>
-            Your Google Chat is connected. SignalTrue will analyze message patterns, response times, 
+            Your Google Chat is connected. SignalTrue will analyze message patterns, response times,
             and detect ad-hoc meetings from Google Meet links.
           </p>
           <button onClick={handleDisconnect} style={styles.btnSecondary}>
@@ -53,9 +56,7 @@ const GoogleChatConnect = ({ integrations }) => {
         </>
       ) : (
         <>
-          <p style={styles.cardText}>
-            Connect your Google Chat workspace to analyze:
-          </p>
+          <p style={styles.cardText}>Connect your Google Chat workspace to analyze:</p>
           <ul style={styles.featureList}>
             <li>✓ Message response times</li>
             <li>✓ After-hours activity</li>
@@ -79,7 +80,7 @@ const styles = {
   cardIcon: {
     fontSize: '48px',
     marginBottom: '16px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   cardTitle: {
     fontSize: '20px',
@@ -87,7 +88,7 @@ const styles = {
     marginBottom: '12px',
     color: '#1e293b',
     textAlign: 'center',
-    position: 'relative'
+    position: 'relative',
   },
   badgeConnected: {
     display: 'inline-block',
@@ -98,32 +99,32 @@ const styles = {
     backgroundColor: '#10b981',
     color: 'white',
     borderRadius: '4px',
-    verticalAlign: 'middle'
+    verticalAlign: 'middle',
   },
   cardText: {
     fontSize: '14px',
     color: '#64748b',
     marginBottom: '16px',
-    lineHeight: '1.6'
+    lineHeight: '1.6',
   },
   detailLine: {
     fontSize: '14px',
     color: '#475569',
     marginBottom: '8px',
-    fontWeight: '500'
+    fontWeight: '500',
   },
   featureList: {
     fontSize: '14px',
     color: '#64748b',
     marginBottom: '16px',
     paddingLeft: '20px',
-    lineHeight: '1.8'
+    lineHeight: '1.8',
   },
   privacyNote: {
     fontSize: '12px',
     color: '#94a3b8',
     marginBottom: '16px',
-    fontStyle: 'italic'
+    fontStyle: 'italic',
   },
   btnPrimary: {
     width: '100%',
@@ -135,7 +136,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background-color 0.2s'
+    transition: 'background-color 0.2s',
   },
   btnSecondary: {
     width: '100%',
@@ -147,8 +148,8 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background-color 0.2s'
-  }
+    transition: 'background-color 0.2s',
+  },
 };
 
 export default GoogleChatConnect;
