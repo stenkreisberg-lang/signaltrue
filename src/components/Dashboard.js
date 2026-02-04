@@ -117,9 +117,13 @@ function Dashboard() {
 
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
+      // For OAuth redirects, we need the full backend URL (not relative)
+      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      // Ensure oauth path includes /api prefix
+      const oauthPath = oauth.startsWith('/api') ? oauth : `/api${oauth}`;
       // Handle URLs that may already have query params
-      const separator = oauth.includes('?') ? '&' : '?';
-      const url = `${api.defaults.baseURL}${oauth}${separator}token=${token}`;
+      const separator = oauthPath.includes('?') ? '&' : '?';
+      const url = `${backendUrl}${oauthPath}${separator}token=${token}`;
       window.location.href = url;
     } else {
       setShowHelp(provider);
@@ -471,60 +475,68 @@ function Dashboard() {
             )}
           </div>
 
-          <div style={{ ...styles.card, opacity: 0.7, position: 'relative' }}>
-            <span
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: 'white',
-                padding: '4px 10px',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Coming Soon
-            </span>
-            <div style={styles.cardIcon}>📧</div>
-            <h3 style={styles.cardTitle}>Connect Outlook</h3>
+          {/* Outlook Integration */}
+          <div style={styles.card}>
+            <div style={{ position: 'relative' }}>
+              <div style={styles.cardIcon}>📧</div>
+              <button
+                style={styles.infoButton}
+                onClick={() => setShowHelp('outlook')}
+                title="What does this measure?"
+              >
+                ?
+              </button>
+            </div>
+            <h3 style={styles.cardTitle}>
+              Connect Outlook{' '}
+              {integrations?.connected?.outlook && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Analyze Outlook/Exchange calendar and email metadata for trends
             </p>
-            <button style={{ ...styles.cardButton, opacity: 0.5, cursor: 'not-allowed' }} disabled>
-              Connect Outlook Account
-            </button>
+            {!integrations?.connected?.outlook ? (
+              <button style={styles.cardButton} onClick={() => openOrGuide('outlook')}>
+                Connect Outlook Account
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>
+                Disconnect
+              </button>
+            )}
           </div>
 
-          <div style={{ ...styles.card, opacity: 0.7, position: 'relative' }}>
-            <span
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: 'white',
-                padding: '4px 10px',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Coming Soon
-            </span>
-            <div style={styles.cardIcon}>💼</div>
-            <h3 style={styles.cardTitle}>Connect Microsoft Teams</h3>
+          {/* Microsoft Teams Integration */}
+          <div style={styles.card}>
+            <div style={{ position: 'relative' }}>
+              <div style={styles.cardIcon}>💼</div>
+              <button
+                style={styles.infoButton}
+                onClick={() => setShowHelp('teams')}
+                title="What does this measure?"
+              >
+                ?
+              </button>
+            </div>
+            <h3 style={styles.cardTitle}>
+              Connect Microsoft Teams{' '}
+              {integrations?.connected?.teams && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Import Teams collaboration patterns to enrich communication insights
             </p>
-            <button style={{ ...styles.cardButton, opacity: 0.5, cursor: 'not-allowed' }} disabled>
-              Connect Teams Workspace
-            </button>
+            {!integrations?.connected?.teams ? (
+              <button style={styles.cardButton} onClick={() => openOrGuide('teams')}>
+                Connect Teams Workspace
+              </button>
+            ) : (
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('microsoft')}>
+                Disconnect
+              </button>
+            )}
           </div>
 
           <div style={styles.card}>
@@ -605,7 +617,7 @@ function Dashboard() {
               )}
               {showHelp === 'jira' && (
                 <div>
-                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                  <p style={{ marginBottom: 12, color: '#374151' }}>
                     Jira integration analyzes your project management data to detect execution
                     friction.
                   </p>
@@ -636,7 +648,7 @@ function Dashboard() {
               )}
               {showHelp === 'asana' && (
                 <div>
-                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                  <p style={{ marginBottom: 12, color: '#374151' }}>
                     Asana integration tracks task flow and workload distribution across your team.
                   </p>
                   <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
@@ -666,7 +678,7 @@ function Dashboard() {
               )}
               {showHelp === 'notion' && (
                 <div>
-                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                  <p style={{ marginBottom: 12, color: '#374151' }}>
                     Notion integration monitors documentation activity and knowledge sharing
                     patterns.
                   </p>
@@ -697,7 +709,7 @@ function Dashboard() {
               )}
               {showHelp === 'hubspot' && (
                 <div>
-                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                  <p style={{ marginBottom: 12, color: '#374151' }}>
                     HubSpot integration analyzes CRM activity and sales team performance patterns.
                   </p>
                   <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
@@ -727,7 +739,7 @@ function Dashboard() {
               )}
               {showHelp === 'pipedrive' && (
                 <div>
-                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                  <p style={{ marginBottom: 12, color: '#374151' }}>
                     Pipedrive integration tracks sales pipeline health and activity patterns.
                   </p>
                   <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
@@ -831,7 +843,7 @@ function Dashboard() {
           <div style={styles.modalOverlay} onClick={() => setConfirmProvider(null)}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
               <h3 style={{ marginTop: 0 }}>Disconnect integration</h3>
-              <p style={{ color: '#6b7280' }}>
+              <p style={{ color: '#374151' }}>
                 Are you sure you want to disconnect{' '}
                 {confirmProvider === 'google'
                   ? 'Google'
@@ -896,7 +908,7 @@ const styles = {
     gap: '1rem',
   },
   userName: {
-    color: '#6b7280',
+    color: '#374151',
     fontWeight: '500',
   },
   logoutButton: {
@@ -925,7 +937,7 @@ const styles = {
   },
   subtitle: {
     fontSize: '1.125rem',
-    color: '#6b7280',
+    color: '#374151',
   },
   cardsGrid: {
     display: 'grid',
@@ -951,7 +963,7 @@ const styles = {
     marginBottom: '0.5rem',
   },
   cardText: {
-    color: '#6b7280',
+    color: '#374151',
     marginBottom: '1.5rem',
     lineHeight: '1.6',
   },
@@ -1012,7 +1024,7 @@ const styles = {
     color: 'white',
     cursor: 'pointer',
   },
-  smallNote: { color: '#6b7280', fontSize: 12, marginTop: 12 },
+  smallNote: { color: '#4b5563', fontSize: 12, marginTop: 12 },
   badgeConnected: {
     marginLeft: 8,
     fontSize: 12,
@@ -1021,7 +1033,7 @@ const styles = {
     color: '#166534',
     borderRadius: 999,
   },
-  detailLine: { color: '#6b7280', fontSize: 13, marginTop: 6, marginBottom: 10 },
+  detailLine: { color: '#4b5563', fontSize: 13, marginTop: 6, marginBottom: 10 },
   disconnectBtn: {
     marginTop: 10,
     background: 'transparent',
@@ -1055,7 +1067,7 @@ const styles = {
     alignItems: 'center',
     minHeight: '100vh',
     fontSize: '1.25rem',
-    color: '#6b7280',
+    color: '#374151',
   },
   error: {
     display: 'flex',

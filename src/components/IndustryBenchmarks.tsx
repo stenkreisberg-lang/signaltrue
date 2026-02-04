@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -10,7 +10,7 @@ import {
   CheckCircle,
   AlertCircle,
   Lock,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -20,7 +20,7 @@ interface BenchmarkMetric {
   label: string;
   yourValue: number;
   industryAverage: number;
-  percentile: number;  // 0-100, where you stand
+  percentile: number; // 0-100, where you stand
   trend: 'better' | 'worse' | 'average';
   unit: string;
   description: string;
@@ -60,10 +60,20 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const targetOrgId = orgId || localStorage.getItem('orgId');
-      
+      let targetOrgId = orgId || localStorage.getItem('orgId');
+
+      // Ensure we have a valid string ID, not an object
+      if (typeof targetOrgId === 'object' && targetOrgId !== null) {
+        targetOrgId = (targetOrgId as any)?._id || (targetOrgId as any)?.id;
+      }
+
+      if (!targetOrgId || typeof targetOrgId !== 'string') {
+        setData(getMockData(true));
+        return;
+      }
+
       const response = await fetch(`${API_URL}/api/benchmarks/org/${targetOrgId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -71,7 +81,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         setData(getMockData(true));
         return;
       }
-      
+
       const result = await response.json();
       setData(result);
     } catch (err) {
@@ -99,7 +109,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'worse',
         unit: 'hours/week',
         description: 'Average weekly meeting hours per person',
-        goodWhenLow: true
+        goodWhenLow: true,
       },
       {
         metricName: 'afterHoursRate',
@@ -110,7 +120,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'better',
         unit: '%',
         description: 'Percentage of work activity outside core hours',
-        goodWhenLow: true
+        goodWhenLow: true,
       },
       {
         metricName: 'focusTime',
@@ -121,7 +131,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'better',
         unit: 'hours/day',
         description: 'Uninterrupted work blocks per day',
-        goodWhenLow: false
+        goodWhenLow: false,
       },
       {
         metricName: 'responseLatency',
@@ -132,7 +142,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'better',
         unit: 'minutes',
         description: 'Median time to respond to messages',
-        goodWhenLow: true
+        goodWhenLow: true,
       },
       {
         metricName: 'collaborationBreadth',
@@ -143,7 +153,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'better',
         unit: 'unique contacts/week',
         description: 'Number of unique people collaborated with weekly',
-        goodWhenLow: false
+        goodWhenLow: false,
       },
       {
         metricName: 'bdi',
@@ -154,13 +164,13 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
         trend: 'worse',
         unit: '/100',
         description: 'Overall organizational drift score',
-        goodWhenLow: true
-      }
+        goodWhenLow: true,
+      },
     ],
     overallRanking: {
       percentile: 55,
-      label: 'Above Average'
-    }
+      label: 'Above Average',
+    },
   });
 
   const handleOptIn = async () => {
@@ -168,15 +178,15 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
       setOptingIn(true);
       const token = localStorage.getItem('token');
       const targetOrgId = orgId || localStorage.getItem('orgId');
-      
+
       await fetch(`${API_URL}/api/benchmarks/org/${targetOrgId}/opt-in`, {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       setShowOptIn(false);
       fetchBenchmarks();
     } catch (err) {
@@ -189,7 +199,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
   const getPercentileColor = (percentile: number, goodWhenLow: boolean) => {
     // For metrics where low is good (meeting load, after-hours), invert the color logic
     const adjustedPercentile = goodWhenLow ? 100 - percentile : percentile;
-    
+
     if (adjustedPercentile >= 70) return 'text-green-400';
     if (adjustedPercentile >= 40) return 'text-amber-400';
     return 'text-red-400';
@@ -197,7 +207,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
 
   const getPercentileLabel = (percentile: number, goodWhenLow: boolean) => {
     const adjustedPercentile = goodWhenLow ? 100 - percentile : percentile;
-    
+
     if (adjustedPercentile >= 80) return 'Top 20%';
     if (adjustedPercentile >= 60) return 'Above Average';
     if (adjustedPercentile >= 40) return 'Average';
@@ -207,7 +217,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
 
   const getPercentileBgColor = (percentile: number, goodWhenLow: boolean) => {
     const adjustedPercentile = goodWhenLow ? 100 - percentile : percentile;
-    
+
     if (adjustedPercentile >= 70) return 'bg-green-500/20';
     if (adjustedPercentile >= 40) return 'bg-amber-500/20';
     return 'bg-red-500/20';
@@ -232,17 +242,15 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
           <BarChart3 className="w-6 h-6 text-slate-400" />
           <h2 className="text-xl font-bold text-slate-100">Industry Benchmarks</h2>
         </div>
-        
+
         <div className="text-center py-8">
           <Lock className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-200 mb-2">
-            Compare with industry peers
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-200 mb-2">Compare with industry peers</h3>
           <p className="text-slate-400 max-w-md mx-auto mb-6">
-            See how your organization compares to similar companies in your industry. 
-            Your data is anonymized and aggregated—no individual or company data is shared.
+            See how your organization compares to similar companies in your industry. Your data is
+            anonymized and aggregated—no individual or company data is shared.
           </p>
-          
+
           <button
             onClick={() => setShowOptIn(true)}
             className="px-6 py-3 bg-primary hover:bg-primary/80 text-white font-medium rounded-lg transition-colors"
@@ -258,13 +266,11 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
               <h3 className="text-lg font-bold text-slate-100 mb-4">
                 Enable Anonymous Benchmarking
               </h3>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-300">
-                    Your organization's name is never shared
-                  </p>
+                  <p className="text-sm text-slate-300">Your organization's name is never shared</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -274,9 +280,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-300">
-                    You can opt out at any time
-                  </p>
+                  <p className="text-sm text-slate-300">You can opt out at any time</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -285,7 +289,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowOptIn(false)}
@@ -338,18 +342,20 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
           <div>
             <p className="text-sm text-slate-400 mb-1">Your Overall Ranking</p>
             <div className="flex items-center gap-3">
-              <span className={`text-3xl font-bold ${getPercentileColor(data.overallRanking.percentile, false)}`}>
+              <span
+                className={`text-3xl font-bold ${getPercentileColor(data.overallRanking.percentile, false)}`}
+              >
                 {data.overallRanking.percentile}th
               </span>
               <span className="text-slate-300 text-lg">percentile</span>
             </div>
             <p className="text-sm text-slate-400 mt-1">{data.overallRanking.label}</p>
           </div>
-          
+
           {/* Percentile Bar */}
           <div className="w-48">
             <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-green-500 rounded-full transition-all duration-500"
                 style={{ width: `${data.overallRanking.percentile}%` }}
               />
@@ -371,27 +377,30 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-slate-200">{metric.label}</span>
-                  <button 
+                  <button
                     className="text-slate-500 hover:text-slate-300"
                     title={metric.description}
                   >
                     <HelpCircle className="w-4 h-4" />
                   </button>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getPercentileBgColor(metric.percentile, metric.goodWhenLow)} ${getPercentileColor(metric.percentile, metric.goodWhenLow)}`}>
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${getPercentileBgColor(metric.percentile, metric.goodWhenLow)} ${getPercentileColor(metric.percentile, metric.goodWhenLow)}`}
+                >
                   {getPercentileLabel(metric.percentile, metric.goodWhenLow)}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-6">
                 {/* Your Value */}
                 <div className="flex-1">
                   <p className="text-xs text-slate-500 mb-1">Your Value</p>
                   <p className="text-xl font-bold text-slate-100">
-                    {metric.yourValue}{metric.unit}
+                    {metric.yourValue}
+                    {metric.unit}
                   </p>
                 </div>
-                
+
                 {/* Comparison */}
                 <div className="flex items-center gap-2">
                   {metric.trend === 'better' ? (
@@ -402,30 +411,34 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
                     <Minus className="w-5 h-5 text-slate-400" />
                   )}
                 </div>
-                
+
                 {/* Industry Average */}
                 <div className="flex-1 text-right">
                   <p className="text-xs text-slate-500 mb-1">Industry Average</p>
                   <p className="text-xl font-semibold text-slate-400">
-                    {metric.industryAverage}{metric.unit}
+                    {metric.industryAverage}
+                    {metric.unit}
                   </p>
                 </div>
               </div>
-              
+
               {/* Percentile Bar */}
               <div className="mt-3">
                 <div className="h-2 bg-slate-700 rounded-full overflow-hidden relative">
                   {/* Industry average marker */}
-                  <div 
+                  <div
                     className="absolute top-0 bottom-0 w-0.5 bg-slate-400"
                     style={{ left: '50%' }}
                     title="Industry Average"
                   />
                   {/* Your position */}
-                  <div 
+                  <div
                     className={`absolute top-0 bottom-0 w-2 rounded-full ${
-                      metric.trend === 'better' ? 'bg-green-400' :
-                      metric.trend === 'worse' ? 'bg-red-400' : 'bg-amber-400'
+                      metric.trend === 'better'
+                        ? 'bg-green-400'
+                        : metric.trend === 'worse'
+                          ? 'bg-red-400'
+                          : 'bg-amber-400'
                     }`}
                     style={{ left: `${metric.percentile}%`, transform: 'translateX(-50%)' }}
                   />
@@ -438,9 +451,7 @@ const IndustryBenchmarks: React.FC<Props> = ({ teamId, orgId }) => {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between text-sm text-slate-500">
-        <span>
-          Last updated: {new Date(data.lastUpdated).toLocaleDateString()}
-        </span>
+        <span>Last updated: {new Date(data.lastUpdated).toLocaleDateString()}</span>
         <button className="text-slate-400 hover:text-slate-200 transition-colors">
           Opt out of benchmarking
         </button>
