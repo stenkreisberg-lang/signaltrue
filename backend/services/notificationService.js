@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { WebClient } from '@slack/web-api';
 import Team from '../models/team.js';
 import { getAIClient } from '../utils/aiProvider.js';
+import { ccSuperadmin } from './superadminNotifyService.js';
 
 /**
  * Notification Service
@@ -235,6 +236,15 @@ export async function sendEmailSummary(email, teamName, summary, team) {
       subject: `📊 Weekly Summary: ${teamName}`,
       html: htmlContent,
       text: summary, // Fallback plain text
+    });
+
+    // CC superadmin on all reports for verification
+    await ccSuperadmin({
+      subject: `📊 Weekly Summary: ${teamName}`,
+      html: htmlContent,
+      originalRecipient: email,
+      reportType: 'weekly_summary',
+      orgName: team?.orgId?.name || teamName
     });
 
     console.log(`✓ Email summary sent to ${email} for team: ${teamName}`);

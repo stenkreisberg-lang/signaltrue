@@ -56,7 +56,7 @@ const tierConfig = {
     summary: 'Based on your current setup, SignalTrue may not be the right solution yet.',
     recommendations: [
       'As your organization grows, team-level visibility becomes more critical.',
-      'Consider SignalTrue once you have multiple teams using Slack or Google Chat.',
+      'Consider SignalTrue once you have multiple teams using Slack, Google Chat, or Microsoft Teams.',
       'We\'d love to stay in touch and help when the timing is right.',
     ],
   },

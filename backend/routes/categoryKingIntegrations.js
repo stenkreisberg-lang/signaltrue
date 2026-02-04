@@ -5,6 +5,7 @@ import WorkEvent from '../models/workEvent.js';
 import Organization from '../models/organizationModel.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
+import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
 
 const router = express.Router();
 
@@ -146,6 +147,12 @@ router.get('/jira/oauth/callback', async (req, res) => {
     
     console.log('Jira OAuth: Connected for org', orgId);
     
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'jira');
+    }
+    
     // Trigger initial sync in background
     // TODO: Call syncJiraEvents(orgId)
     
@@ -252,6 +259,12 @@ router.get('/asana/oauth/callback', async (req, res) => {
     );
     
     console.log('Asana OAuth: Connected for org', orgId);
+    
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'asana');
+    }
     
     return res.redirect(`${getAppUrl()}/settings/integrations?connected=asana`);
   } catch (err) {
@@ -374,6 +387,12 @@ router.get('/gmail/oauth/callback', async (req, res) => {
     );
     
     console.log('Gmail OAuth: Connected for org', orgId, 'email:', email);
+    
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'gmail');
+    }
     
     return res.redirect(`${getAppUrl()}/settings/integrations?connected=gmail`);
   } catch (err) {
@@ -582,6 +601,12 @@ router.get('/notion/oauth/callback', async (req, res) => {
     
     console.log('Notion OAuth: Connected for org', orgId);
     
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'notion');
+    }
+    
     return res.redirect(`${getAppUrl()}/settings/integrations?connected=notion`);
   } catch (err) {
     console.error('Notion OAuth callback error:', err);
@@ -687,6 +712,12 @@ router.get('/hubspot/oauth/callback', async (req, res) => {
     
     console.log('HubSpot OAuth: Connected for org', orgId);
     
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'hubspot');
+    }
+    
     return res.redirect(`${getAppUrl()}/settings/integrations?connected=hubspot`);
   } catch (err) {
     console.error('HubSpot OAuth callback error:', err);
@@ -784,6 +815,12 @@ router.get('/pipedrive/oauth/callback', async (req, res) => {
     );
     
     console.log('Pipedrive OAuth: Connected for org', orgId);
+    
+    // Notify superadmin about new integration
+    const org = await Organization.findById(orgId);
+    if (org) {
+      notifyIntegrationConnected(org, 'pipedrive');
+    }
     
     return res.redirect(`${getAppUrl()}/settings/integrations?connected=pipedrive`);
   } catch (err) {

@@ -79,7 +79,7 @@ function Dashboard() {
     // Check for OAuth callback messages
     const integrationStatus = searchParams.get('integrationStatus');
     const msg = searchParams.get('msg');
-    
+
     if (integrationStatus) {
       // Show toast with the result
       if (integrationStatus === 'success') {
@@ -88,16 +88,16 @@ function Dashboard() {
         setToast({ type: 'error', message: msg || 'Integration failed. Please try again.' });
       }
       setTimeout(() => setToast(null), 5000);
-      
+
       // Clean up URL
       window.history.replaceState({}, document.title, '/dashboard');
     }
-    
+
     // Always reload if coming back from an OAuth flow (Google or Slack)
     if (searchParams.has('integrationStatus') || searchParams.has('connected')) {
       loadIntegrationStatus();
     }
-    
+
     // Also run on initial mount
     loadIntegrationStatus();
   }, [loadIntegrationStatus]);
@@ -117,8 +117,9 @@ function Dashboard() {
 
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
-      // Append the token to the OAuth URL
-      const url = `${api.defaults.baseURL}${oauth}?token=${token}`;
+      // Handle URLs that may already have query params
+      const separator = oauth.includes('?') ? '&' : '?';
+      const url = `${api.defaults.baseURL}${oauth}${separator}token=${token}`;
       window.location.href = url;
     } else {
       setShowHelp(provider);
@@ -141,7 +142,10 @@ function Dashboard() {
       const st = await api.get(`/integrations/status${query}`);
       if (st.status === 200) {
         setIntegrations(st.data);
-        setToast({ type: 'success', message: `${provider[0].toUpperCase()+provider.slice(1)} disconnected.` });
+        setToast({
+          type: 'success',
+          message: `${provider[0].toUpperCase() + provider.slice(1)} disconnected.`,
+        });
         setTimeout(() => setToast(null), 2500);
       }
     } catch (e) {
@@ -197,10 +201,10 @@ function Dashboard() {
       <div style={styles.content}>
         {/* Trial Status Banner */}
         <TrialBanner className="mb-6" />
-        
+
         {/* Paywall Banner (shown when trial expired) */}
         <PaywallBanner className="mb-6" />
-        
+
         {/* Engagement Change Alerts (Drift Explainability) */}
         {teamId && (
           <>
@@ -213,46 +217,62 @@ function Dashboard() {
         )}
 
         {/* Admin/HR Controls & Data Export */}
-        {['admin','hr_admin','master_admin'].includes(user?.role) && (
-          <AdminExportPanel />
-        )}
-        
+        {['admin', 'hr_admin', 'master_admin'].includes(user?.role) && <AdminExportPanel />}
+
         {/* Employee Directory for HR/Admin */}
-        {['admin','hr_admin','master_admin'].includes(user?.role) && (
-          <EmployeeDirectory />
-        )}
-        
+        {['admin', 'hr_admin', 'master_admin'].includes(user?.role) && <EmployeeDirectory />}
+
         {/* Team Management for HR/Admin */}
-        {['admin','hr_admin','master_admin'].includes(user?.role) && (
-          <TeamManagement />
-        )}
-        
+        {['admin', 'hr_admin', 'master_admin'].includes(user?.role) && <TeamManagement />}
+
         {/* Admin onboarding shortcut */}
-        {['admin','hr_admin','master_admin'].includes(user?.role) && (
-          <div style={{
-            background:'#EEF2FF', border:'1px solid #C7D2FE', borderRadius:12, padding:'1rem 1.25rem',
-            display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.25rem'
-          }}>
-            <div style={{color:'#4338CA', fontWeight:600}}>New: Guided Admin Onboarding</div>
-            <Link to="/admin/onboarding" style={{
-              background:'linear-gradient(135deg, #6366f1, #8b5cf6)', color:'white', textDecoration:'none',
-              borderRadius:8, padding:'0.5rem 0.75rem', fontWeight:700
-            }}>Open</Link>
+        {['admin', 'hr_admin', 'master_admin'].includes(user?.role) && (
+          <div
+            style={{
+              background: '#EEF2FF',
+              border: '1px solid #C7D2FE',
+              borderRadius: 12,
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <div style={{ color: '#4338CA', fontWeight: 600 }}>New: Guided Admin Onboarding</div>
+            <Link
+              to="/admin/onboarding"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: 8,
+                padding: '0.5rem 0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              Open
+            </Link>
           </div>
         )}
         <div style={styles.hero}>
           <h1 style={styles.title}>Welcome to SignalTrue</h1>
-          <p style={styles.subtitle}>
-            Let's get you set up to start tracking team health
-          </p>
+          <p style={styles.subtitle}>Let's get you set up to start tracking team health</p>
         </div>
 
         <div style={styles.cardsGrid}>
           <div style={styles.card}>
             <div style={styles.cardIcon}>🔗</div>
-            <h3 style={styles.cardTitle}>Connect Slack {integrations?.connected?.slack && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect Slack{' '}
+              {integrations?.connected?.slack && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             {integrations?.connected?.slack && integrations?.details?.slack && (
-              <p style={styles.detailLine}>Workspace: {integrations.details.slack.teamName || 'Unknown'}</p>
+              <p style={styles.detailLine}>
+                Workspace: {integrations.details.slack.teamName || 'Unknown'}
+              </p>
             )}
             <p style={styles.cardText}>
               Import your team's communication patterns and sentiment data
@@ -262,7 +282,9 @@ function Dashboard() {
                 Connect Workspace
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('slack')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('slack')}>
+                Disconnect
+              </button>
             )}
           </div>
 
@@ -276,163 +298,231 @@ function Dashboard() {
 
           {/* Jira Integration */}
           <div style={styles.card}>
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }}>
               <div style={styles.cardIcon}>🎯</div>
-              <button 
-                style={styles.infoButton} 
+              <button
+                style={styles.infoButton}
                 onClick={() => setShowHelp('jira')}
                 title="What does this measure?"
-              >?</button>
+              >
+                ?
+              </button>
             </div>
-            <h3 style={styles.cardTitle}>Connect Jira {integrations?.connected?.jira && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect Jira{' '}
+              {integrations?.connected?.jira && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Track sprint velocity, issue cycle times, and execution blockers
             </p>
             {!integrations?.connected?.jira ? (
-              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/jira/oauth/start'}>
+              <button
+                style={styles.cardButton}
+                onClick={() => (window.location.href = '/api/integrations/jira/oauth/start')}
+              >
                 Connect Jira
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('jira')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('jira')}>
+                Disconnect
+              </button>
             )}
           </div>
 
           {/* Asana Integration */}
           <div style={styles.card}>
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }}>
               <div style={styles.cardIcon}>✅</div>
-              <button 
-                style={styles.infoButton} 
+              <button
+                style={styles.infoButton}
                 onClick={() => setShowHelp('asana')}
                 title="What does this measure?"
-              >?</button>
+              >
+                ?
+              </button>
             </div>
-            <h3 style={styles.cardTitle}>Connect Asana {integrations?.connected?.asana && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect Asana{' '}
+              {integrations?.connected?.asana && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Analyze task completion rates, overdue items, and workload balance
             </p>
             {!integrations?.connected?.asana ? (
-              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/asana/oauth/start'}>
+              <button
+                style={styles.cardButton}
+                onClick={() => (window.location.href = '/api/integrations/asana/oauth/start')}
+              >
                 Connect Asana
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('asana')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('asana')}>
+                Disconnect
+              </button>
             )}
           </div>
 
           {/* Notion Integration */}
           <div style={styles.card}>
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }}>
               <div style={styles.cardIcon}>📝</div>
-              <button 
-                style={styles.infoButton} 
+              <button
+                style={styles.infoButton}
                 onClick={() => setShowHelp('notion')}
                 title="What does this measure?"
-              >?</button>
+              >
+                ?
+              </button>
             </div>
-            <h3 style={styles.cardTitle}>Connect Notion {integrations?.connected?.notion && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect Notion{' '}
+              {integrations?.connected?.notion && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Monitor documentation activity, page staleness, and collaboration gaps
             </p>
             {!integrations?.connected?.notion ? (
-              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/notion/oauth/start'}>
+              <button
+                style={styles.cardButton}
+                onClick={() => (window.location.href = '/api/integrations/notion/oauth/start')}
+              >
                 Connect Notion
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('notion')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('notion')}>
+                Disconnect
+              </button>
             )}
           </div>
 
           {/* HubSpot Integration */}
           <div style={styles.card}>
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }}>
               <div style={styles.cardIcon}>🧡</div>
-              <button 
-                style={styles.infoButton} 
+              <button
+                style={styles.infoButton}
                 onClick={() => setShowHelp('hubspot')}
                 title="What does this measure?"
-              >?</button>
+              >
+                ?
+              </button>
             </div>
-            <h3 style={styles.cardTitle}>Connect HubSpot {integrations?.connected?.hubspot && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect HubSpot{' '}
+              {integrations?.connected?.hubspot && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Track deal velocity, CRM activity patterns, and sales team capacity
             </p>
             {!integrations?.connected?.hubspot ? (
-              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/hubspot/oauth/start'}>
+              <button
+                style={styles.cardButton}
+                onClick={() => (window.location.href = '/api/integrations/hubspot/oauth/start')}
+              >
                 Connect HubSpot
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('hubspot')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('hubspot')}>
+                Disconnect
+              </button>
             )}
           </div>
 
           {/* Pipedrive Integration */}
           <div style={styles.card}>
-            <div style={{position: 'relative'}}>
+            <div style={{ position: 'relative' }}>
               <div style={styles.cardIcon}>💰</div>
-              <button 
-                style={styles.infoButton} 
+              <button
+                style={styles.infoButton}
                 onClick={() => setShowHelp('pipedrive')}
                 title="What does this measure?"
-              >?</button>
+              >
+                ?
+              </button>
             </div>
-            <h3 style={styles.cardTitle}>Connect Pipedrive {integrations?.connected?.pipedrive && <span style={styles.badgeConnected}>Connected</span>}</h3>
+            <h3 style={styles.cardTitle}>
+              Connect Pipedrive{' '}
+              {integrations?.connected?.pipedrive && (
+                <span style={styles.badgeConnected}>Connected</span>
+              )}
+            </h3>
             <p style={styles.cardText}>
               Analyze deal stages, activity patterns, and pipeline conversion rates
             </p>
             {!integrations?.connected?.pipedrive ? (
-              <button style={styles.cardButton} onClick={() => window.location.href = '/api/integrations/pipedrive/oauth/start'}>
+              <button
+                style={styles.cardButton}
+                onClick={() => (window.location.href = '/api/integrations/pipedrive/oauth/start')}
+              >
                 Connect Pipedrive
               </button>
             ) : (
-              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('pipedrive')}>Disconnect</button>
+              <button style={styles.disconnectBtn} onClick={() => setConfirmProvider('pipedrive')}>
+                Disconnect
+              </button>
             )}
           </div>
 
-          <div style={{...styles.card, opacity: 0.7, position: 'relative'}}>
-            <span style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: 'white',
-              padding: '4px 10px',
-              borderRadius: '12px',
-              fontSize: '11px',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>Coming Soon</span>
+          <div style={{ ...styles.card, opacity: 0.7, position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              Coming Soon
+            </span>
             <div style={styles.cardIcon}>📧</div>
             <h3 style={styles.cardTitle}>Connect Outlook</h3>
             <p style={styles.cardText}>
               Analyze Outlook/Exchange calendar and email metadata for trends
             </p>
-            <button style={{...styles.cardButton, opacity: 0.5, cursor: 'not-allowed'}} disabled>
+            <button style={{ ...styles.cardButton, opacity: 0.5, cursor: 'not-allowed' }} disabled>
               Connect Outlook Account
             </button>
           </div>
 
-          <div style={{...styles.card, opacity: 0.7, position: 'relative'}}>
-            <span style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: 'white',
-              padding: '4px 10px',
-              borderRadius: '12px',
-              fontSize: '11px',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>Coming Soon</span>
+          <div style={{ ...styles.card, opacity: 0.7, position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              Coming Soon
+            </span>
             <div style={styles.cardIcon}>💼</div>
             <h3 style={styles.cardTitle}>Connect Microsoft Teams</h3>
             <p style={styles.cardText}>
               Import Teams collaboration patterns to enrich communication insights
             </p>
-            <button style={{...styles.cardButton, opacity: 0.5, cursor: 'not-allowed'}} disabled>
+            <button style={{ ...styles.cardButton, opacity: 0.5, cursor: 'not-allowed' }} disabled>
               Connect Teams Workspace
             </button>
           </div>
@@ -452,14 +542,17 @@ function Dashboard() {
         <div style={styles.infoBox}>
           <h3>Need help getting started?</h3>
           <p>
-            Contact us at <a href="mailto:support@signaltrue.ai" style={styles.link}>support@signaltrue.ai</a>
+            Contact us at{' '}
+            <a href="mailto:support@signaltrue.ai" style={styles.link}>
+              support@signaltrue.ai
+            </a>
           </p>
         </div>
 
         {showHelp && (
           <div style={styles.modalOverlay} onClick={() => setShowHelp(null)}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{marginTop:0}}>
+              <h3 style={{ marginTop: 0 }}>
                 {showHelp === 'slack' && 'How to connect Slack'}
                 {showHelp === 'calendar' && 'How to connect Google Calendar'}
                 {showHelp === 'outlook' && 'How to connect Outlook'}
@@ -473,15 +566,25 @@ function Dashboard() {
               {showHelp === 'slack' && (
                 <ol style={styles.helpList}>
                   <li>Ask your workspace admin to install the SignalTrue Slack App.</li>
-                  <li>Approve read-only scopes to analyze public channel activity and sentiment.</li>
-                  <li>After authorization, you'll be redirected back here and your first sync will start.</li>
+                  <li>
+                    Approve read-only scopes to analyze public channel activity and sentiment.
+                  </li>
+                  <li>
+                    After authorization, you'll be redirected back here and your first sync will
+                    start.
+                  </li>
                 </ol>
               )}
               {showHelp === 'calendar' && (
                 <ol style={styles.helpList}>
                   <li>Choose your work account when prompted by Google.</li>
-                  <li>Approve read-only calendar access so we can compute meeting and focus-time trends.</li>
-                  <li>After authorization, you'll return here and we’ll begin the first analysis.</li>
+                  <li>
+                    Approve read-only calendar access so we can compute meeting and focus-time
+                    trends.
+                  </li>
+                  <li>
+                    After authorization, you'll return here and we’ll begin the first analysis.
+                  </li>
                 </ol>
               )}
               {showHelp === 'outlook' && (
@@ -494,21 +597,36 @@ function Dashboard() {
               {showHelp === 'teams' && (
                 <ol style={styles.helpList}>
                   <li>Ask your tenant admin to approve the SignalTrue Teams app if required.</li>
-                  <li>Approve read-only permissions to analyze channel participation and activity.</li>
+                  <li>
+                    Approve read-only permissions to analyze channel participation and activity.
+                  </li>
                   <li>After authorization, you'll return here and your first sync will start.</li>
                 </ol>
               )}
               {showHelp === 'jira' && (
                 <div>
-                  <p style={{marginBottom: 12, color: '#6b7280'}}>Jira integration analyzes your project management data to detect execution friction.</p>
-                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                    Jira integration analyzes your project management data to detect execution
+                    friction.
+                  </p>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
                   <ul style={styles.helpList}>
-                    <li><strong>Issue cycle time</strong> — How long issues stay in each status</li>
-                    <li><strong>Sprint velocity</strong> — Story points completed vs committed</li>
-                    <li><strong>Blocker frequency</strong> — How often issues get blocked</li>
-                    <li><strong>Backlog health</strong> — Age and size of unresolved issues</li>
+                    <li>
+                      <strong>Issue cycle time</strong> — How long issues stay in each status
+                    </li>
+                    <li>
+                      <strong>Sprint velocity</strong> — Story points completed vs committed
+                    </li>
+                    <li>
+                      <strong>Blocker frequency</strong> — How often issues get blocked
+                    </li>
+                    <li>
+                      <strong>Backlog health</strong> — Age and size of unresolved issues
+                    </li>
                   </ul>
-                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
+                    🚨 Signals we detect:
+                  </p>
                   <ul style={styles.helpList}>
                     <li>Execution drag — velocity declining despite stable effort</li>
                     <li>Coordination strain — too many dependencies and handoffs</li>
@@ -518,15 +636,27 @@ function Dashboard() {
               )}
               {showHelp === 'asana' && (
                 <div>
-                  <p style={{marginBottom: 12, color: '#6b7280'}}>Asana integration tracks task flow and workload distribution across your team.</p>
-                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                    Asana integration tracks task flow and workload distribution across your team.
+                  </p>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
                   <ul style={styles.helpList}>
-                    <li><strong>Task completion rate</strong> — Completed vs created tasks</li>
-                    <li><strong>Overdue items</strong> — Tasks past their due date</li>
-                    <li><strong>Workload distribution</strong> — Tasks per team member</li>
-                    <li><strong>Project progress</strong> — Milestone completion trends</li>
+                    <li>
+                      <strong>Task completion rate</strong> — Completed vs created tasks
+                    </li>
+                    <li>
+                      <strong>Overdue items</strong> — Tasks past their due date
+                    </li>
+                    <li>
+                      <strong>Workload distribution</strong> — Tasks per team member
+                    </li>
+                    <li>
+                      <strong>Project progress</strong> — Milestone completion trends
+                    </li>
                   </ul>
-                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
+                    🚨 Signals we detect:
+                  </p>
                   <ul style={styles.helpList}>
                     <li>Load imbalance — uneven task distribution</li>
                     <li>Recovery erosion — growing backlog of overdue items</li>
@@ -536,15 +666,28 @@ function Dashboard() {
               )}
               {showHelp === 'notion' && (
                 <div>
-                  <p style={{marginBottom: 12, color: '#6b7280'}}>Notion integration monitors documentation activity and knowledge sharing patterns.</p>
-                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                    Notion integration monitors documentation activity and knowledge sharing
+                    patterns.
+                  </p>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
                   <ul style={styles.helpList}>
-                    <li><strong>Page activity</strong> — Creates, edits, and views over time</li>
-                    <li><strong>Staleness</strong> — Pages not updated in 30+ days</li>
-                    <li><strong>Collaboration</strong> — Multi-author activity patterns</li>
-                    <li><strong>Database usage</strong> — Active vs dormant databases</li>
+                    <li>
+                      <strong>Page activity</strong> — Creates, edits, and views over time
+                    </li>
+                    <li>
+                      <strong>Staleness</strong> — Pages not updated in 30+ days
+                    </li>
+                    <li>
+                      <strong>Collaboration</strong> — Multi-author activity patterns
+                    </li>
+                    <li>
+                      <strong>Database usage</strong> — Active vs dormant databases
+                    </li>
                   </ul>
-                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
+                    🚨 Signals we detect:
+                  </p>
                   <ul style={styles.helpList}>
                     <li>Knowledge silos — documentation concentrated in few people</li>
                     <li>Stale documentation — critical docs becoming outdated</li>
@@ -554,15 +697,27 @@ function Dashboard() {
               )}
               {showHelp === 'hubspot' && (
                 <div>
-                  <p style={{marginBottom: 12, color: '#6b7280'}}>HubSpot integration analyzes CRM activity and sales team performance patterns.</p>
-                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                    HubSpot integration analyzes CRM activity and sales team performance patterns.
+                  </p>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
                   <ul style={styles.helpList}>
-                    <li><strong>Deal velocity</strong> — Time from creation to close</li>
-                    <li><strong>Activity volume</strong> — Calls, emails, meetings logged</li>
-                    <li><strong>Pipeline movement</strong> — Stage progression rates</li>
-                    <li><strong>Contact engagement</strong> — Response and touch patterns</li>
+                    <li>
+                      <strong>Deal velocity</strong> — Time from creation to close
+                    </li>
+                    <li>
+                      <strong>Activity volume</strong> — Calls, emails, meetings logged
+                    </li>
+                    <li>
+                      <strong>Pipeline movement</strong> — Stage progression rates
+                    </li>
+                    <li>
+                      <strong>Contact engagement</strong> — Response and touch patterns
+                    </li>
                   </ul>
-                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
+                    🚨 Signals we detect:
+                  </p>
                   <ul style={styles.helpList}>
                     <li>Sales execution drag — deals stalling in pipeline</li>
                     <li>Team capacity strain — activity levels vs quota</li>
@@ -572,15 +727,27 @@ function Dashboard() {
               )}
               {showHelp === 'pipedrive' && (
                 <div>
-                  <p style={{marginBottom: 12, color: '#6b7280'}}>Pipedrive integration tracks sales pipeline health and activity patterns.</p>
-                  <p style={{fontWeight: 600, marginBottom: 8}}>📊 Metrics we measure:</p>
+                  <p style={{ marginBottom: 12, color: '#6b7280' }}>
+                    Pipedrive integration tracks sales pipeline health and activity patterns.
+                  </p>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
                   <ul style={styles.helpList}>
-                    <li><strong>Deal stages</strong> — Time in each pipeline stage</li>
-                    <li><strong>Activity patterns</strong> — Calls, emails, meetings per deal</li>
-                    <li><strong>Conversion rates</strong> — Stage-to-stage progression</li>
-                    <li><strong>Win/loss analysis</strong> — Deal outcome patterns</li>
+                    <li>
+                      <strong>Deal stages</strong> — Time in each pipeline stage
+                    </li>
+                    <li>
+                      <strong>Activity patterns</strong> — Calls, emails, meetings per deal
+                    </li>
+                    <li>
+                      <strong>Conversion rates</strong> — Stage-to-stage progression
+                    </li>
+                    <li>
+                      <strong>Win/loss analysis</strong> — Deal outcome patterns
+                    </li>
                   </ul>
-                  <p style={{fontWeight: 600, marginBottom: 8, marginTop: 16}}>🚨 Signals we detect:</p>
+                  <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
+                    🚨 Signals we detect:
+                  </p>
                   <ul style={styles.helpList}>
                     <li>Revenue friction — slowing deal velocity</li>
                     <li>Pipeline health — conversion rate trends</li>
@@ -588,39 +755,74 @@ function Dashboard() {
                   </ul>
                 </div>
               )}
-              <div style={{display:'flex', gap:12, marginTop:16}}>
-                <button style={styles.secondaryBtn} onClick={() => setShowHelp(null)}>Close</button>
+              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                <button style={styles.secondaryBtn} onClick={() => setShowHelp(null)}>
+                  Close
+                </button>
                 {showHelp === 'slack' && integrations?.oauth?.slack && (
-                  <button style={styles.primaryBtn} onClick={() => openOrGuide('slack')}>Continue to Slack</button>
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('slack')}>
+                    Continue to Slack
+                  </button>
                 )}
                 {showHelp === 'calendar' && integrations?.oauth?.calendar && (
-                  <button style={styles.primaryBtn} onClick={() => openOrGuide('calendar')}>Continue to Google</button>
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('calendar')}>
+                    Continue to Google
+                  </button>
                 )}
                 {showHelp === 'outlook' && integrations?.oauth?.outlook && (
-                  <button style={styles.primaryBtn} onClick={() => openOrGuide('outlook')}>Continue to Microsoft</button>
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('outlook')}>
+                    Continue to Microsoft
+                  </button>
                 )}
                 {showHelp === 'teams' && integrations?.oauth?.teams && (
-                  <button style={styles.primaryBtn} onClick={() => openOrGuide('teams')}>Continue to Microsoft</button>
+                  <button style={styles.primaryBtn} onClick={() => openOrGuide('teams')}>
+                    Continue to Microsoft
+                  </button>
                 )}
               </div>
               {!integrations?.oauth?.slack && showHelp === 'slack' && (
-                <p style={styles.smallNote}>Admin note: set SLACK_CLIENT_ID/SECRET on the backend to enable one‑click Slack OAuth.</p>
+                <p style={styles.smallNote}>
+                  Admin note: set SLACK_CLIENT_ID/SECRET on the backend to enable one‑click Slack
+                  OAuth.
+                </p>
               )}
               {!integrations?.oauth?.calendar && showHelp === 'calendar' && (
-                <p style={styles.smallNote}>Admin note: set GOOGLE_CLIENT_ID/SECRET on the backend to enable one‑click Google OAuth.</p>
+                <p style={styles.smallNote}>
+                  Admin note: set GOOGLE_CLIENT_ID/SECRET on the backend to enable one‑click Google
+                  OAuth.
+                </p>
               )}
               {!integrations?.oauth?.outlook && showHelp === 'outlook' && (
-                <p style={styles.smallNote}>Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click Microsoft OAuth.</p>
+                <p style={styles.smallNote}>
+                  Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click
+                  Microsoft OAuth.
+                </p>
               )}
               {!integrations?.oauth?.teams && showHelp === 'teams' && (
-                <p style={styles.smallNote}>Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click Microsoft OAuth.</p>
+                <p style={styles.smallNote}>
+                  Admin note: set MS_APP_CLIENT_ID/SECRET on the backend to enable one‑click
+                  Microsoft OAuth.
+                </p>
               )}
             </div>
           </div>
         )}
 
         {toast && (
-          <div style={{ position: 'fixed', right: 16, bottom: 16, background: toast.type==='error'?'#FEE2E2':'#ECFDF5', color: toast.type==='error'?'#991B1B':'#065F46', border: '1px solid', borderColor: toast.type==='error'?'#FCA5A5':'#6EE7B7', padding: '0.75rem 1rem', borderRadius: 8, boxShadow: '0 6px 20px rgba(0,0,0,0.15)' }}>
+          <div
+            style={{
+              position: 'fixed',
+              right: 16,
+              bottom: 16,
+              background: toast.type === 'error' ? '#FEE2E2' : '#ECFDF5',
+              color: toast.type === 'error' ? '#991B1B' : '#065F46',
+              border: '1px solid',
+              borderColor: toast.type === 'error' ? '#FCA5A5' : '#6EE7B7',
+              padding: '0.75rem 1rem',
+              borderRadius: 8,
+              boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+            }}
+          >
             {toast.message}
           </div>
         )}
@@ -628,11 +830,33 @@ function Dashboard() {
         {confirmProvider && (
           <div style={styles.modalOverlay} onClick={() => setConfirmProvider(null)}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{marginTop:0}}>Disconnect integration</h3>
-              <p style={{ color: '#6b7280' }}>Are you sure you want to disconnect {confirmProvider === 'google' ? 'Google' : confirmProvider === 'microsoft' ? 'Microsoft' : 'Slack'}? You can reconnect anytime.</p>
-              <div style={{display:'flex', gap:12, marginTop:16, justifyContent:'flex-end'}}>
-                <button style={styles.secondaryBtn} onClick={() => setConfirmProvider(null)}>Cancel</button>
-                <button style={{...styles.primaryBtn, background:'linear-gradient(135deg, #ef4444, #f97316)'}} onClick={() => { const p = confirmProvider; setConfirmProvider(null); disconnect(p); }}>Disconnect</button>
+              <h3 style={{ marginTop: 0 }}>Disconnect integration</h3>
+              <p style={{ color: '#6b7280' }}>
+                Are you sure you want to disconnect{' '}
+                {confirmProvider === 'google'
+                  ? 'Google'
+                  : confirmProvider === 'microsoft'
+                    ? 'Microsoft'
+                    : 'Slack'}
+                ? You can reconnect anytime.
+              </p>
+              <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+                <button style={styles.secondaryBtn} onClick={() => setConfirmProvider(null)}>
+                  Cancel
+                </button>
+                <button
+                  style={{
+                    ...styles.primaryBtn,
+                    background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                  }}
+                  onClick={() => {
+                    const p = confirmProvider;
+                    setConfirmProvider(null);
+                    disconnect(p);
+                  }}
+                >
+                  Disconnect
+                </button>
               </div>
             </div>
           </div>
@@ -754,35 +978,76 @@ const styles = {
     fontWeight: '600',
   },
   modalOverlay: {
-    position: 'fixed', left: 0, top: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
   },
   modal: {
-    background: 'white', borderRadius: 12, padding: '1.5rem', width: 'min(520px, 92vw)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+    background: 'white',
+    borderRadius: 12,
+    padding: '1.5rem',
+    width: 'min(520px, 92vw)',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
   },
   helpList: { color: '#4b5563', lineHeight: 1.6, paddingLeft: '1.2rem' },
-  secondaryBtn: { padding: '0.6rem 1rem', border: '1px solid #e5e7eb', borderRadius: 8, background: 'white', cursor: 'pointer' },
-  primaryBtn: { padding: '0.6rem 1rem', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', cursor: 'pointer' },
+  secondaryBtn: {
+    padding: '0.6rem 1rem',
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
+    background: 'white',
+    cursor: 'pointer',
+  },
+  primaryBtn: {
+    padding: '0.6rem 1rem',
+    border: 'none',
+    borderRadius: 8,
+    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    color: 'white',
+    cursor: 'pointer',
+  },
   smallNote: { color: '#6b7280', fontSize: 12, marginTop: 12 },
-  badgeConnected: { marginLeft: 8, fontSize: 12, padding: '2px 8px', background: '#DCFCE7', color: '#166534', borderRadius: 999 },
+  badgeConnected: {
+    marginLeft: 8,
+    fontSize: 12,
+    padding: '2px 8px',
+    background: '#DCFCE7',
+    color: '#166534',
+    borderRadius: 999,
+  },
   detailLine: { color: '#6b7280', fontSize: 13, marginTop: 6, marginBottom: 10 },
-  disconnectBtn: { marginTop: 10, background: 'transparent', color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 8, padding: '0.5rem 0.75rem', fontWeight: 600, cursor: 'pointer' },
-  infoButton: { 
-    position: 'absolute', 
-    top: 0, 
-    right: -8, 
-    width: 20, 
-    height: 20, 
-    borderRadius: '50%', 
-    background: '#E0E7FF', 
-    color: '#4F46E5', 
-    border: 'none', 
-    fontSize: 12, 
-    fontWeight: 700, 
+  disconnectBtn: {
+    marginTop: 10,
+    background: 'transparent',
+    color: '#EF4444',
+    border: '1px solid #FCA5A5',
+    borderRadius: 8,
+    padding: '0.5rem 0.75rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  infoButton: {
+    position: 'absolute',
+    top: 0,
+    right: -8,
+    width: 20,
+    height: 20,
+    borderRadius: '50%',
+    background: '#E0E7FF',
+    color: '#4F46E5',
+    border: 'none',
+    fontSize: 12,
+    fontWeight: 700,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   loading: {
     display: 'flex',

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { ccSuperadmin } from './superadminNotifyService.js';
 
 // Initialize Resend client
 const getResendClient = () => {
@@ -536,6 +537,15 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
 </body>
 </html>
       `
+    });
+
+    // CC superadmin for verification
+    await ccSuperadmin({
+      subject: `Your SignalTrue Workload Assessment Report - ${riskLabels[riskLevel] || 'Complete'}`,
+      html: `Workload Assessment results for ${email}`,
+      originalRecipient: email,
+      reportType: 'workload_assessment',
+      orgName: email.split('@')[1] || 'Unknown'
     });
 
     console.log(`[Assessment Email] Comprehensive report sent to: ${email}`);

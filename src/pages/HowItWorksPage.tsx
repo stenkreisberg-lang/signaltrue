@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { Link } from "react-router-dom";
-import { WorkloadAssessment } from "../components/WorkloadAssessment";
-import { 
-  Activity, 
-  BarChart2, 
-  AlertCircle, 
-  TrendingUp, 
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
+import { Link } from 'react-router-dom';
+import { WorkloadAssessment } from '../components/WorkloadAssessment';
+import {
+  Activity,
+  BarChart2,
+  AlertCircle,
+  TrendingUp,
   ArrowRight,
   CheckCircle,
   Shield,
@@ -19,8 +19,8 @@ import {
   Target,
   Eye,
   XCircle,
-  Layers
-} from "lucide-react";
+  Layers,
+} from 'lucide-react';
 
 /*
  * CATEGORY KING POSITIONING:
@@ -29,9 +29,8 @@ import {
  */
 
 // API base URL for tracking
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://signaltrue-backend.onrender.com' 
-  : '';
+const API_BASE =
+  process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
 
 // Analytics tracking function
 const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
@@ -39,7 +38,7 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Analytics] ${eventName}`, data);
   }
-  
+
   // Send to backend for internal tracking
   try {
     fetch(`${API_BASE}/api/analytics/track`, {
@@ -55,80 +54,95 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
 // Why assumptions fail - per spec
 const assumptions = [
   {
-    assumption: "Engagement surveys tell us how people feel",
-    rebuttal: "Surveys measure self-reported opinion at a point in time. They miss behavioral patterns that predict problems months earlier.",
+    assumption: 'Engagement surveys tell us how people feel',
+    rebuttal:
+      'Surveys measure self-reported opinion at a point in time. They miss behavioral patterns that predict problems months earlier.',
   },
   {
-    assumption: "Managers know when their teams are struggling",
-    rebuttal: "Managers often lack visibility into coordination load, response pressure, and after-hours patterns across their team.",
+    assumption: 'Managers know when their teams are struggling',
+    rebuttal:
+      'Managers often lack visibility into coordination load, response pressure, and after-hours patterns across their team.',
   },
   {
-    assumption: "Output metrics show team health",
-    rebuttal: "Output stays stable while teams compensate with unsustainable effort. By the time delivery drops, damage is done.",
+    assumption: 'Output metrics show team health',
+    rebuttal:
+      'Output stays stable while teams compensate with unsustainable effort. By the time delivery drops, damage is done.',
   },
 ];
 
 // Renamed steps per spec: Detect → Explain → Act → Learn
 const steps = [
   {
-    number: "01",
+    number: '01',
     icon: Activity,
-    title: "Detect drift",
-    description: "We establish adaptive baselines for individuals and teams and detect statistically significant drift from normal patterns.",
+    title: 'Detect drift',
+    description:
+      'We establish adaptive baselines for individuals and teams and detect statistically significant drift from normal patterns.',
     details: [
-      "Adaptive baselines per entity",
-      "Seasonality-aware calibration",
-      "Sustained deviation detection",
+      'Adaptive baselines per entity',
+      'Seasonality-aware calibration',
+      'Sustained deviation detection',
     ],
   },
   {
-    number: "02",
+    number: '02',
     icon: BarChart2,
-    title: "Explain the cause",
-    description: "We identify likely drivers behind the drift using causal modeling, not guesswork or simple correlation.",
+    title: 'Explain the cause',
+    description:
+      'We identify likely drivers behind the drift using causal modeling, not guesswork or simple correlation.',
     details: [
-      "Driver attribution for each drift",
-      "Ranked contributing factors",
-      "Confidence scoring on explanations",
+      'Driver attribution for each drift',
+      'Ranked contributing factors',
+      'Confidence scoring on explanations',
     ],
   },
   {
-    number: "03",
+    number: '03',
     icon: AlertCircle,
-    title: "Recommend intervention",
-    description: "We recommend interventions ranked by expected impact and feasibility. Clear actions, not vague advice.",
+    title: 'Recommend intervention',
+    description:
+      'We recommend interventions ranked by expected impact and feasibility. Clear actions, not vague advice.',
     details: [
-      "Specific action recommendations",
-      "Expected effect per intervention",
-      "Manager-ready language",
+      'Specific action recommendations',
+      'Expected effect per intervention',
+      'Manager-ready language',
     ],
   },
   {
-    number: "04",
+    number: '04',
     icon: TrendingUp,
-    title: "Measure and learn",
-    description: "We measure outcomes and continuously improve recommendations. Decisions get better over time.",
+    title: 'Measure and learn',
+    description:
+      'We measure outcomes and continuously improve recommendations. Decisions get better over time.',
     details: [
-      "Before/after outcome tracking",
-      "Effect size measurement",
-      "Continuous learning from results",
+      'Before/after outcome tracking',
+      'Effect size measurement',
+      'Continuous learning from results',
     ],
   },
 ];
 
 // Tool ecosystem per spec
 const integrations = [
-  { name: "Slack", description: "Team-level coordination patterns", status: "current" },
-  { name: "Google Calendar", description: "Meeting load and focus-time signals", status: "current" },
-  { name: "Gmail", description: "Email volume and response patterns", status: "current" },
-  { name: "Google Meet", description: "Meeting frequency and attendance", status: "current" },
-  { name: "Jira", description: "Sprint velocity and execution friction", status: "current" },
-  { name: "Asana", description: "Task flow and workload patterns", status: "current" },
-  { name: "Notion", description: "Documentation and collaboration activity", status: "current" },
-  { name: "HubSpot", description: "CRM activity and deal velocity", status: "current" },
-  { name: "Pipedrive", description: "Sales pipeline and activity patterns", status: "current" },
-  { name: "Microsoft Teams", description: "Coordination patterns", status: "planned" },
-  { name: "Outlook Calendar", description: "Meeting load signals", status: "planned" },
+  { name: 'Slack', description: 'Team-level coordination patterns', status: 'current' },
+  {
+    name: 'Google Calendar',
+    description: 'Meeting load and focus-time signals',
+    status: 'current',
+  },
+  { name: 'Gmail', description: 'Email volume and response patterns', status: 'current' },
+  { name: 'Google Meet', description: 'Meeting frequency and attendance', status: 'current' },
+  { name: 'Jira', description: 'Sprint velocity and execution friction', status: 'current' },
+  { name: 'Asana', description: 'Task flow and workload patterns', status: 'current' },
+  { name: 'Notion', description: 'Documentation and collaboration activity', status: 'current' },
+  { name: 'HubSpot', description: 'CRM activity and deal velocity', status: 'current' },
+  { name: 'Pipedrive', description: 'Sales pipeline and activity patterns', status: 'current' },
+  { name: 'Microsoft Teams', description: 'Team collaboration patterns', status: 'current' },
+  {
+    name: 'Outlook Calendar',
+    description: 'Meeting load and focus-time signals',
+    status: 'current',
+  },
 ];
 
 const HowItWorksPage = () => {
@@ -186,7 +200,7 @@ const HowItWorksPage = () => {
 
               <div className="space-y-6">
                 {assumptions.map((item, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="grid md:grid-cols-2 gap-6 p-6 rounded-2xl bg-card border border-border/50"
                   >
@@ -196,9 +210,7 @@ const HowItWorksPage = () => {
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                           Common Assumption
                         </h3>
-                        <p className="text-foreground font-medium">
-                          "{item.assumption}"
-                        </p>
+                        <p className="text-foreground font-medium">"{item.assumption}"</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
@@ -207,9 +219,7 @@ const HowItWorksPage = () => {
                         <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
                           Signal-Based Reality
                         </h3>
-                        <p className="text-muted-foreground">
-                          {item.rebuttal}
-                        </p>
+                        <p className="text-muted-foreground">{item.rebuttal}</p>
                       </div>
                     </div>
                   </div>
@@ -231,8 +241,8 @@ const HowItWorksPage = () => {
                   Behavioral workload patterns, not content
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  SignalTrue analyzes metadata and timing patterns to reveal hidden workload. We never read message content, 
-                  emails, or documents.
+                  SignalTrue analyzes metadata and timing patterns to reveal hidden workload. We
+                  never read message content, emails, or documents.
                 </p>
               </div>
 
@@ -241,9 +251,7 @@ const HowItWorksPage = () => {
                   <div className="w-12 h-12 rounded-xl bg-primary/10 mb-4 flex items-center justify-center">
                     <Clock className="w-6 h-6 text-primary" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">
-                    Meeting Load
-                  </h3>
+                  <h3 className="font-display font-semibold text-foreground mb-2">Meeting Load</h3>
                   <p className="text-sm text-muted-foreground">
                     Hours in meetings, back-to-back patterns, and focus time availability per team.
                   </p>
@@ -267,7 +275,8 @@ const HowItWorksPage = () => {
                     Drift Detection
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Changes from team baselines that often precede overload, disengagement, or coordination issues.
+                    Changes from team baselines that often precede overload, disengagement, or
+                    coordination issues.
                   </p>
                 </div>
               </div>
@@ -289,8 +298,8 @@ const HowItWorksPage = () => {
                 Estimate your hidden collaboration costs
               </h2>
               <p className="text-muted-foreground">
-                Enter your team's information to see estimated workload risk and cost exposure. 
-                All calculations use transparent assumptions you can adjust.
+                Enter your team's information to see estimated workload risk and cost exposure. All
+                calculations use transparent assumptions you can adjust.
               </p>
             </div>
 
@@ -310,7 +319,8 @@ const HowItWorksPage = () => {
                   How SignalTrue turns assumptions into signals
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  The assessment above uses your estimates. Once connected, SignalTrue measures actual patterns.
+                  The assessment above uses your estimates. Once connected, SignalTrue measures
+                  actual patterns.
                 </p>
               </div>
 
@@ -386,7 +396,7 @@ const HowItWorksPage = () => {
             </div>
             <div className="max-w-4xl mx-auto">
               {steps.map((step, index) => (
-                <div 
+                <div
                   key={index}
                   className="relative flex gap-8 pb-16 last:pb-0 animate-slide-up"
                   style={{ animationDelay: `${index * 0.1}s` }}
@@ -399,7 +409,9 @@ const HowItWorksPage = () => {
                   {/* Step number */}
                   <div className="flex-shrink-0">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-                      <span className="text-xl font-display font-bold text-primary">{step.number}</span>
+                      <span className="text-xl font-display font-bold text-primary">
+                        {step.number}
+                      </span>
                     </div>
                   </div>
 
@@ -411,9 +423,7 @@ const HowItWorksPage = () => {
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-lg text-muted-foreground mb-6">
-                      {step.description}
-                    </p>
+                    <p className="text-lg text-muted-foreground mb-6">{step.description}</p>
                     <div className="grid sm:grid-cols-2 gap-3">
                       {step.details.map((detail, i) => (
                         <div key={i} className="flex items-center gap-2">
@@ -447,64 +457,72 @@ const HowItWorksPage = () => {
             <div className="max-w-4xl mx-auto">
               {/* Current Integrations */}
               <div className="mb-8">
-                <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4 text-center">Current</h3>
+                <h3 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4 text-center">
+                  Current
+                </h3>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {integrations.filter(i => i.status === 'current').map((integration, index) => (
-                    <div 
-                      key={index}
-                      className="p-6 rounded-2xl bg-card border border-primary/30 text-center"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
-                        <Layers className="w-6 h-6 text-primary" />
+                  {integrations
+                    .filter((i) => i.status === 'current')
+                    .map((integration, index) => (
+                      <div
+                        key={index}
+                        className="p-6 rounded-2xl bg-card border border-primary/30 text-center"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                          <Layers className="w-6 h-6 text-primary" />
+                        </div>
+                        <h4 className="font-display font-semibold text-foreground mb-1">
+                          {integration.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{integration.description}</p>
                       </div>
-                      <h4 className="font-display font-semibold text-foreground mb-1">
-                        {integration.name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {integration.description}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
 
               {/* Next Integrations */}
               <div className="mb-8">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">Coming Next</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">
+                  Coming Next
+                </h3>
                 <div className="grid sm:grid-cols-3 gap-4">
-                  {integrations.filter(i => i.status === 'next').map((integration, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-2xl bg-secondary/30 border border-border/50 text-center"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-muted mx-auto mb-3 flex items-center justify-center">
-                        <Layers className="w-5 h-5 text-muted-foreground" />
+                  {integrations
+                    .filter((i) => i.status === 'next')
+                    .map((integration, index) => (
+                      <div
+                        key={index}
+                        className="p-4 rounded-2xl bg-secondary/30 border border-border/50 text-center"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-muted mx-auto mb-3 flex items-center justify-center">
+                          <Layers className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <h4 className="font-display font-medium text-foreground text-sm mb-1">
+                          {integration.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">{integration.description}</p>
                       </div>
-                      <h4 className="font-display font-medium text-foreground text-sm mb-1">
-                        {integration.name}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {integration.description}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
 
               {/* Planned Integrations */}
               <div>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">Planned</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">
+                  Planned
+                </h3>
                 <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto">
-                  {integrations.filter(i => i.status === 'planned').map((integration, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-2xl bg-muted/30 border border-border/30 text-center opacity-70"
-                    >
-                      <h4 className="font-display font-medium text-muted-foreground text-sm">
-                        {integration.name}
-                      </h4>
-                    </div>
-                  ))}
+                  {integrations
+                    .filter((i) => i.status === 'planned')
+                    .map((integration, index) => (
+                      <div
+                        key={index}
+                        className="p-4 rounded-2xl bg-muted/30 border border-border/30 text-center opacity-70"
+                      >
+                        <h4 className="font-display font-medium text-muted-foreground text-sm">
+                          {integration.name}
+                        </h4>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
@@ -576,10 +594,15 @@ const HowItWorksPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/product">
-                  <Button 
-                    variant="hero" 
+                  <Button
+                    variant="hero"
                     size="xl"
-                    onClick={() => trackEvent('cta_clicked', { type: 'view_signals', location: 'how-it-works-footer' })}
+                    onClick={() =>
+                      trackEvent('cta_clicked', {
+                        type: 'view_signals',
+                        location: 'how-it-works-footer',
+                      })
+                    }
                   >
                     See your organizational signals
                     <ArrowRight className="w-5 h-5" />

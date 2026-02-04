@@ -336,11 +336,11 @@ Meeting load and focus-time signals
 
 INTEGRATION 3:
 Microsoft Teams
-Planned
+Team-level collaboration patterns
 
 INTEGRATION 4:
 Outlook Calendar
-Planned
+Meeting load and focus-time signals
 
 ---
 

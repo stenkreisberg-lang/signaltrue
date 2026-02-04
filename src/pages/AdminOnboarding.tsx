@@ -17,6 +17,7 @@ interface OnboardingStatus {
   };
   slackConnected: boolean;
   googleChatConnected: boolean;
+  teamsConnected: boolean;
   chatConnected: boolean;
   calendarConnected: boolean;
   integrationsComplete: boolean;
@@ -24,7 +25,7 @@ interface OnboardingStatus {
 
 /**
  * AdminOnboarding - Standalone page for accessing onboarding wizard
- * 
+ *
  * This page is accessed from the dashboard when an admin wants to:
  * - Invite an IT admin to connect integrations
  * - Set up integrations themselves
@@ -76,10 +77,7 @@ const AdminOnboarding: React.FC = () => {
       <div style={styles.errorContainer}>
         <h2 style={styles.errorTitle}>Error</h2>
         <p style={styles.errorText}>{error}</p>
-        <button 
-          onClick={() => navigate('/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/dashboard')} style={styles.backButton}>
           Back to Dashboard
         </button>
       </div>
@@ -91,10 +89,7 @@ const AdminOnboarding: React.FC = () => {
       <div style={styles.errorContainer}>
         <h2 style={styles.errorTitle}>Not Found</h2>
         <p style={styles.errorText}>Could not load onboarding status</p>
-        <button 
-          onClick={() => navigate('/dashboard')} 
-          style={styles.backButton}
-        >
+        <button onClick={() => navigate('/dashboard')} style={styles.backButton}>
           Back to Dashboard
         </button>
       </div>

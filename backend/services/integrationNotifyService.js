@@ -19,7 +19,8 @@ export async function notifyHRIntegrationsComplete(orgId) {
     // Check if integrations are complete (both chat + calendar)
     const slackConnected = !!org?.integrations?.slack?.accessToken;
     const googleChatConnected = !!org?.integrations?.googleChat?.accessToken;
-    const chatConnected = slackConnected || googleChatConnected;
+    const teamsConnected = org?.integrations?.microsoft?.scope === 'teams' && !!org?.integrations?.microsoft?.accessToken;
+    const chatConnected = slackConnected || googleChatConnected || teamsConnected;
     
     const googleCal = org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
     const msOutlook = org?.integrations?.microsoft?.scope === 'outlook' && !!org?.integrations?.microsoft?.accessToken;
@@ -83,8 +84,8 @@ export async function notifyHRIntegrationsComplete(orgId) {
                   <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 24px; margin: 24px 0;">
                     <h3 style="margin: 0 0 16px 0; color: #166534;">✅ What's Ready:</h3>
                     <ul style="margin: 0; padding-left: 20px; color: #374151;">
-                      <li style="margin-bottom: 8px;"><strong>${slackConnected ? 'Slack' : 'Google Chat'}</strong> - Team communication connected</li>
-                      <li style="margin-bottom: 8px;"><strong>Google Calendar</strong> - Meeting patterns connected</li>
+                      <li style="margin-bottom: 8px;"><strong>${slackConnected ? 'Slack' : teamsConnected ? 'Microsoft Teams' : 'Google Chat'}</strong> - Team communication connected</li>
+                      <li style="margin-bottom: 8px;"><strong>${msOutlook ? 'Outlook Calendar' : 'Google Calendar'}</strong> - Meeting patterns connected</li>
                       <li style="margin-bottom: 8px;"><strong>${employeeCount} team members</strong> synced and ready to assign</li>
                     </ul>
                   </div>
@@ -127,6 +128,8 @@ export async function notifyHRIntegrationsComplete(orgId) {
     });
 
     // Start calibration
+    const chatSource = slackConnected ? 'slack' : teamsConnected ? 'microsoft_teams' : 'google_chat';
+    const calendarSource = msOutlook ? 'outlook' : 'google_calendar';
     await Organization.findByIdAndUpdate(orgId, {
       $set: {
         'calibration.isInCalibration': true,
@@ -135,8 +138,8 @@ export async function notifyHRIntegrationsComplete(orgId) {
         'calibration.calibrationConfidence': 'Low',
         'calibration.featuresUnlocked': false,
         'calibration.dataSourcesConnected': [
-          slackConnected ? 'slack' : 'google_chat',
-          'calendar'
+          chatSource,
+          calendarSource
         ]
       }
     });

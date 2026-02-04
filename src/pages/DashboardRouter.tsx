@@ -24,6 +24,7 @@ interface OnboardingStatus {
   };
   slackConnected: boolean;
   googleChatConnected: boolean;
+  teamsConnected: boolean;
   chatConnected: boolean;
   calendarConnected: boolean;
   integrationsComplete: boolean;
@@ -31,16 +32,16 @@ interface OnboardingStatus {
 
 /**
  * DashboardRouter - Routes users to appropriate dashboard based on role and onboarding status
- * 
+ *
  * Flow:
  * - HR Admin (first user):
  *   - If no integrations: Show "Invite IT Admin" onboarding screen
  *   - If integrations complete: Show full dashboard with data
- * 
+ *
  * - IT Admin:
  *   - If no integrations: Show integration setup wizard
  *   - If integrations complete: Show confirmation screen, link to dashboard
- * 
+ *
  * - Admin/Master Admin:
  *   - Always show full dashboard
  */
@@ -65,7 +66,7 @@ const DashboardRouter: React.FC = () => {
       } catch (err: any) {
         console.error('Onboarding status error:', err);
         setError(err.response?.data?.message || 'Failed to load dashboard');
-        
+
         // If unauthorized, redirect to login
         if (err.response?.status === 401) {
           localStorage.removeItem('token');
@@ -118,12 +119,12 @@ const DashboardRouter: React.FC = () => {
     if (setupParam === 'true') {
       return <Dashboard />;
     }
-    
+
     // If integrations are not complete, show onboarding prompt
     if (!integrationsComplete) {
       return <HRAdminOnboarding status={status} />;
     }
-    
+
     // Integrations complete - show full dashboard
     return <Dashboard />;
   }
@@ -134,7 +135,7 @@ const DashboardRouter: React.FC = () => {
     if (onboardingParam === 'integrations' || !integrationsComplete) {
       return <ITAdminOnboarding status={status} />;
     }
-    
+
     // Integrations complete - show success screen with link to dashboard
     return <Dashboard />;
   }

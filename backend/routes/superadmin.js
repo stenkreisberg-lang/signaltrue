@@ -39,7 +39,7 @@ function requireSuperadmin(req, res, next) {
 router.get('/organizations', authenticateToken, requireSuperadmin, async (req, res) => {
   try {
     const organizations = await Organization.find({})
-      .select('name domain industry subscription trial pilot integrations.slack.teamName integrations.google createdAt')
+      .select('name domain industry subscription trial pilot integrations createdAt slug')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -61,31 +61,52 @@ router.get('/organizations', authenticateToken, requireSuperadmin, async (req, r
       if (tc._id) teamCountMap[tc._id.toString()] = tc.count;
     });
 
-    const enrichedOrgs = organizations.map(org => ({
-      id: org._id,
-      name: org.name,
-      domain: org.domain,
-      industry: org.industry,
-      subscription: org.subscription,
-      trial: {
-        isActive: org.trial?.isActive,
-        phase: org.trial?.phase,
-        daysRemaining: org.trial?.daysRemaining
-      },
-      pilot: org.pilot ? {
-        isActive: org.pilot.isActive,
-        endDate: org.pilot.endDate,
-        months: org.pilot.months
-      } : null,
-      integrations: {
-        slack: !!org.integrations?.slack?.teamName,
-        slackTeam: org.integrations?.slack?.teamName,
-        google: !!org.integrations?.google
-      },
-      userCount: userCountMap[org._id.toString()] || 0,
-      teamCount: teamCountMap[org._id.toString()] || 0,
-      createdAt: org.createdAt
-    }));
+    const enrichedOrgs = organizations.map(org => {
+      // Build integrations object with connection status for all supported integrations
+      const integrations = {
+        slack: !!(org.integrations?.slack?.accessToken || org.integrations?.slack?.teamName),
+        slackTeam: org.integrations?.slack?.teamName || null,
+        google: !!(org.integrations?.google?.accessToken),
+        googleChat: !!(org.integrations?.googleChat?.accessToken),
+        microsoft: !!(org.integrations?.microsoft?.accessToken),
+        microsoftScope: org.integrations?.microsoft?.scope || null, // 'teams' or 'outlook'
+        jira: !!(org.integrations?.jira?.accessToken),
+        asana: !!(org.integrations?.asana?.accessToken),
+        hubspot: !!(org.integrations?.hubspot?.accessToken),
+        pipedrive: !!(org.integrations?.pipedrive?.accessToken),
+        gmail: !!(org.integrations?.gmail?.accessToken),
+        notion: !!(org.integrations?.notion?.accessToken),
+      };
+      
+      // Count total connected integrations
+      const connectedCount = Object.entries(integrations)
+        .filter(([key, val]) => val === true && key !== 'slackTeam' && key !== 'microsoftScope')
+        .length;
+      
+      return {
+        id: org._id,
+        name: org.name,
+        slug: org.slug,
+        domain: org.domain,
+        industry: org.industry,
+        subscription: org.subscription,
+        trial: {
+          isActive: org.trial?.isActive,
+          phase: org.trial?.phase,
+          daysRemaining: org.trial?.daysRemaining
+        },
+        pilot: org.pilot ? {
+          isActive: org.pilot.isActive,
+          endDate: org.pilot.endDate,
+          months: org.pilot.months
+        } : null,
+        integrations,
+        integrationsConnected: connectedCount,
+        userCount: userCountMap[org._id.toString()] || 0,
+        teamCount: teamCountMap[org._id.toString()] || 0,
+        createdAt: org.createdAt
+      };
+    });
 
     res.json({
       total: enrichedOrgs.length,

@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { ccSuperadmin } from './superadminNotifyService.js';
 
 // Initialize Resend client
 const getResendClient = () => {
@@ -181,6 +182,15 @@ export async function sendDriftReportEmail(email, session) {
         { name: 'email_sequence', value: 'email_1' },
         { name: 'drift_category', value: session.score.category.replace(/\s+/g, '-').toLowerCase() }
       ]
+    });
+    
+    // CC superadmin for verification
+    await ccSuperadmin({
+      subject: 'Your Behavioral Drift Report (and what it means)',
+      html,
+      originalRecipient: email,
+      reportType: 'drift_report',
+      orgName: email.split('@')[1] || 'Unknown'
     });
     
     console.log(`[Drift Email] Report email sent to ${email}: ${result.id}`);

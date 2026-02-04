@@ -138,6 +138,7 @@ import { runCrisisDetection } from './services/crisisDetectionService.js';
 import { calculateTeamAttritionRisk } from './services/attritionRiskService.js';
 import { calculateManagerEffectiveness } from './services/managerEffectivenessService.js';
 import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
+import { pullAllConnectedOrgs } from './services/integrationPullService.js';
 import Team from './models/team.js';
 
 const app = express();
@@ -382,6 +383,18 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Calendar refresh daily at 2:30 AM');
+      
+      // Microsoft/Google integration sync - every 15 minutes from 6am-10pm
+      cron.schedule('*/15 6-22 * * *', async () => {
+        console.log('⏰ Running scheduled integration data pull (Google/Microsoft)...');
+        try {
+          await pullAllConnectedOrgs();
+          console.log('✅ Integration data pull completed');
+        } catch (err) {
+          console.error('❌ Integration data pull failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Integration data pull every 15 minutes (6am-10pm)');
       
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();

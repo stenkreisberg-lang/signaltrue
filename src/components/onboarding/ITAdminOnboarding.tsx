@@ -15,6 +15,7 @@ interface OnboardingStatus {
   };
   slackConnected: boolean;
   googleChatConnected: boolean;
+  teamsConnected: boolean;
   chatConnected: boolean;
   calendarConnected: boolean;
   integrationsComplete: boolean;
@@ -26,11 +27,11 @@ interface Props {
 
 /**
  * ITAdminOnboarding - Integration setup wizard for IT admins
- * 
+ *
  * Guides IT admin through connecting:
- * 1. Slack or Google Chat (required)
+ * 1. Slack, Google Chat, or Microsoft Teams (required)
  * 2. Google Calendar or Outlook (required)
- * 
+ *
  * Shows real-time connection status and completion progress
  */
 const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
@@ -47,7 +48,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
       const userStr = localStorage.getItem('user');
       const userData = userStr ? JSON.parse(userStr) : null;
       const query = userData?.orgId ? `?orgId=${userData.orgId}` : '';
-      
+
       const res = await api.get('/integrations/status' + query);
       if (res.status === 200) {
         setIntegrations(res.data);
@@ -72,7 +73,9 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
 
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
-      const url = `${api.defaults.baseURL}${oauth}?token=${token}`;
+      // Handle URLs that may already have query params
+      const separator = oauth.includes('?') ? '&' : '?';
+      const url = `${api.defaults.baseURL}${oauth}${separator}token=${token}`;
       window.location.href = url;
     } else {
       alert(`OAuth URL not configured for ${provider}`);
@@ -80,10 +83,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
   };
 
   const { chatConnected, calendarConnected, integrationsComplete } = status;
-  const progress = (
-    (chatConnected ? 50 : 0) + 
-    (calendarConnected ? 50 : 0)
-  );
+  const progress = (chatConnected ? 50 : 0) + (calendarConnected ? 50 : 0);
 
   return (
     <div style={styles.container}>
@@ -105,7 +105,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
               <div style={styles.iconContainer}>
                 <span style={styles.icon}>🔧</span>
               </div>
-              
+
               <h1 style={styles.title}>Integration Setup</h1>
               <p style={styles.subtitle}>
                 Connect your collaboration tools to start analyzing team health signals
@@ -128,7 +128,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                   <div>
                     <h2 style={styles.stepTitle}>Connect Chat Platform</h2>
                     <p style={styles.stepDescription}>
-                      Choose Slack or Google Chat to analyze team communication patterns
+                      Choose Slack, Google Chat, or Microsoft Teams to analyze team communication
+                      patterns
                     </p>
                   </div>
                   {chatConnected && <span style={styles.checkmark}>✓</span>}
@@ -165,6 +166,23 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                       <div style={styles.integrationName}>Google Chat</div>
                       <div style={styles.integrationStatus}>
                         {status.googleChatConnected ? 'Connected' : 'Not connected'}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => openOAuth('teams')}
+                    style={{
+                      ...styles.integrationButton,
+                      ...(integrations?.connections?.teams ? styles.connectedButton : {}),
+                    }}
+                    disabled={loading}
+                  >
+                    <span style={styles.integrationIcon}>👥</span>
+                    <div>
+                      <div style={styles.integrationName}>Microsoft Teams</div>
+                      <div style={styles.integrationStatus}>
+                        {integrations?.connections?.teams ? 'Connected' : 'Not connected'}
                       </div>
                     </div>
                   </button>
@@ -224,7 +242,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
               <div style={styles.helpBox}>
                 <p style={styles.helpText}>
                   <strong>🔒 Privacy First:</strong> All integrations use read-only permissions.
-                  Data is analyzed at the team level only - individual messages are never stored or read by humans.
+                  Data is analyzed at the team level only - individual messages are never stored or
+                  read by humans.
                 </p>
               </div>
             </>
@@ -234,7 +253,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
               <div style={styles.iconContainer}>
                 <span style={styles.successIcon}>🎉</span>
               </div>
-              
+
               <h1 style={styles.title}>Setup Complete!</h1>
               <p style={styles.subtitle}>
                 All integrations are connected. SignalTrue is now analyzing team signals.
@@ -244,7 +263,12 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                 <div style={styles.successItem}>
                   <span style={styles.successCheckmark}>✓</span>
                   <span>
-                    {status.slackConnected ? 'Slack' : 'Google Chat'} connected
+                    {status.slackConnected
+                      ? 'Slack'
+                      : status.teamsConnected
+                        ? 'Microsoft Teams'
+                        : 'Google Chat'}{' '}
+                    connected
                   </span>
                 </div>
                 <div style={styles.successItem}>
@@ -260,14 +284,12 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
               <div style={styles.divider} />
 
               <p style={styles.description}>
-                The HR admin who invited you can now view team health insights.
-                Your job here is done! 
+                The HR admin who invited you can now view team health insights. Your job here is
+                done!
               </p>
 
               <Link to="/dashboard" style={{ textDecoration: 'none' }}>
-                <button style={styles.primaryButton}>
-                  View Dashboard
-                </button>
+                <button style={styles.primaryButton}>View Dashboard</button>
               </Link>
             </>
           )}

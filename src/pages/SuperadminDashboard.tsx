@@ -5,12 +5,27 @@ import api from '../utils/api';
 interface Organization {
   id: string;
   name: string;
+  slug?: string;
   domain?: string;
   industry?: string;
   subscription?: { plan: string; status: string };
   trial?: { isActive: boolean; phase: string; daysRemaining: number };
   pilot?: { isActive: boolean; endDate: string; months: number };
-  integrations?: { slack: boolean; slackTeam?: string; google: boolean };
+  integrations?: {
+    slack: boolean;
+    slackTeam?: string;
+    google: boolean;
+    googleChat: boolean;
+    microsoft: boolean;
+    microsoftScope?: string;
+    jira: boolean;
+    asana: boolean;
+    hubspot: boolean;
+    pipedrive: boolean;
+    gmail: boolean;
+    notion: boolean;
+  };
+  integrationsConnected?: number;
   userCount: number;
   teamCount: number;
   createdAt: string;
@@ -48,7 +63,7 @@ const SuperadminDashboard: React.FC = () => {
     try {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
-      
+
       if (user?.role !== 'master_admin') {
         setError('Access denied. Superadmin role required.');
         return false;
@@ -110,12 +125,12 @@ const SuperadminDashboard: React.FC = () => {
     try {
       const response = await api.post(`/superadmin/impersonate/${userId}`);
       const { token, user } = response.data;
-      
+
       // Store impersonation token
       localStorage.setItem('impersonation_token', localStorage.getItem('token') || '');
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      
+
       alert(`Now impersonating ${user.email}. Refresh to see their dashboard.`);
       navigate('/dashboard');
     } catch (err: any) {
@@ -124,12 +139,19 @@ const SuperadminDashboard: React.FC = () => {
   };
 
   const handleGrantPilot = async (orgId: string, orgName: string) => {
-    const months = window.prompt(`Grant pilot access to "${orgName}".\n\nEnter number of months (default: 6):`, '6');
+    const months = window.prompt(
+      `Grant pilot access to "${orgName}".\n\nEnter number of months (default: 6):`,
+      '6'
+    );
     if (months === null) return; // Cancelled
-    
+
     const monthsNum = parseInt(months) || 6;
-    
-    if (!window.confirm(`Grant ${monthsNum}-month FREE pilot to "${orgName}"?\n\nThis will:\n• Skip trial limitations\n• Give full platform access\n• Set subscription to "pilot" plan`)) {
+
+    if (
+      !window.confirm(
+        `Grant ${monthsNum}-month FREE pilot to "${orgName}"?\n\nThis will:\n• Skip trial limitations\n• Give full platform access\n• Set subscription to "pilot" plan`
+      )
+    ) {
       return;
     }
 
@@ -143,7 +165,11 @@ const SuperadminDashboard: React.FC = () => {
   };
 
   const handleRevokePilot = async (orgId: string, orgName: string) => {
-    if (!window.confirm(`Revoke pilot access from "${orgName}"?\n\nThis will return them to normal trial/subscription flow.`)) {
+    if (
+      !window.confirm(
+        `Revoke pilot access from "${orgName}"?\n\nThis will return them to normal trial/subscription flow.`
+      )
+    ) {
       return;
     }
 
@@ -193,19 +219,21 @@ const SuperadminDashboard: React.FC = () => {
             <span style={styles.logo}>SignalTrue</span>
             <span style={styles.badge}>Superadmin</span>
           </div>
-          <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+          <button onClick={handleLogout} style={styles.logoutButton}>
+            Logout
+          </button>
         </div>
       </nav>
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        {(['overview', 'organizations', 'users'] as const).map(tab => (
+        {(['overview', 'organizations', 'users'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
               ...styles.tab,
-              ...(activeTab === tab ? styles.tabActive : {})
+              ...(activeTab === tab ? styles.tabActive : {}),
             }}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -221,7 +249,8 @@ const SuperadminDashboard: React.FC = () => {
             <div style={styles.welcomeBanner}>
               <h1 style={styles.welcomeTitle}>Welcome, Superadmin 👋</h1>
               <p style={styles.welcomeSubtitle}>
-                You have full system access to manage all organizations, users, and platform settings.
+                You have full system access to manage all organizations, users, and platform
+                settings.
               </p>
             </div>
 
@@ -257,7 +286,7 @@ const SuperadminDashboard: React.FC = () => {
             </div>
 
             <h2 style={styles.sectionTitle}>System Overview</h2>
-            
+
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
                 <div style={styles.statValue}>{stats.totals.organizations}</div>
@@ -305,7 +334,7 @@ const SuperadminDashboard: React.FC = () => {
               {organizations.length === 0 ? (
                 <p style={styles.muted}>No organizations yet. New signups will appear here.</p>
               ) : (
-                organizations.slice(0, 5).map(org => (
+                organizations.slice(0, 5).map((org) => (
                   <div key={org.id} style={styles.recentOrgCard}>
                     <div style={styles.recentOrgInfo}>
                       <strong style={styles.recentOrgName}>{org.name}</strong>
@@ -314,9 +343,7 @@ const SuperadminDashboard: React.FC = () => {
                       </span>
                     </div>
                     <div style={styles.recentOrgStats}>
-                      <span style={styles.recentOrgStat}>
-                        👥 {org.userCount} users
-                      </span>
+                      <span style={styles.recentOrgStat}>👥 {org.userCount} users</span>
                       <span style={styles.recentOrgStat}>
                         {org.integrations?.slack ? '✅ Slack' : '⏳ No Slack'}
                       </span>
@@ -328,10 +355,7 @@ const SuperadminDashboard: React.FC = () => {
                 ))
               )}
               {organizations.length > 5 && (
-                <button 
-                  onClick={() => setActiveTab('organizations')} 
-                  style={styles.viewAllButton}
-                >
+                <button onClick={() => setActiveTab('organizations')} style={styles.viewAllButton}>
                   View all {organizations.length} organizations →
                 </button>
               )}
@@ -343,17 +367,17 @@ const SuperadminDashboard: React.FC = () => {
         {activeTab === 'organizations' && (
           <div>
             <h2 style={styles.sectionTitle}>Organizations ({organizations.length})</h2>
-            
+
             <div style={styles.table}>
               <div style={styles.tableHeader}>
                 <span style={{ flex: 2 }}>Name</span>
                 <span style={{ flex: 1 }}>Users</span>
                 <span style={{ flex: 1 }}>Trial</span>
                 <span style={{ flex: 1 }}>Pilot</span>
-                <span style={{ flex: 1 }}>Slack</span>
+                <span style={{ flex: 2.5 }}>Integrations</span>
                 <span style={{ flex: 1.5 }}>Actions</span>
               </div>
-              {organizations.map(org => (
+              {organizations.map((org) => (
                 <div key={org.id} style={styles.tableRow}>
                   <span style={{ flex: 2 }}>
                     <strong>{org.name}</strong>
@@ -376,11 +400,63 @@ const SuperadminDashboard: React.FC = () => {
                       <span style={styles.muted}>—</span>
                     )}
                   </span>
-                  <span style={{ flex: 1 }}>
-                    {org.integrations?.slack ? (
-                      <span style={styles.badgeActive}>✓</span>
-                    ) : (
-                      <span style={styles.muted}>—</span>
+                  <span style={{ flex: 2.5, display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {org.integrations?.slack && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#611f69' }}>
+                        Slack
+                      </span>
+                    )}
+                    {org.integrations?.google && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#ea4335' }}>
+                        GCal
+                      </span>
+                    )}
+                    {org.integrations?.googleChat && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#34a853' }}>
+                        GChat
+                      </span>
+                    )}
+                    {org.integrations?.microsoft && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#00a4ef' }}>
+                        {org.integrations.microsoftScope === 'teams'
+                          ? 'Teams'
+                          : org.integrations.microsoftScope === 'outlook'
+                            ? 'Outlook'
+                            : 'MS'}
+                      </span>
+                    )}
+                    {org.integrations?.jira && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#0052cc' }}>
+                        Jira
+                      </span>
+                    )}
+                    {org.integrations?.asana && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#f06a6a' }}>
+                        Asana
+                      </span>
+                    )}
+                    {org.integrations?.hubspot && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#ff7a59' }}>
+                        HubSpot
+                      </span>
+                    )}
+                    {org.integrations?.pipedrive && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#017737' }}>
+                        Pipedrive
+                      </span>
+                    )}
+                    {org.integrations?.gmail && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#d44638' }}>
+                        Gmail
+                      </span>
+                    )}
+                    {org.integrations?.notion && (
+                      <span style={{ ...styles.integrationBadge, backgroundColor: '#000' }}>
+                        Notion
+                      </span>
+                    )}
+                    {!org.integrationsConnected && (
+                      <span style={styles.muted}>No integrations</span>
                     )}
                   </span>
                   <span style={{ flex: 1.5, display: 'flex', gap: '8px' }}>
@@ -391,7 +467,7 @@ const SuperadminDashboard: React.FC = () => {
                           ...styles.button,
                           backgroundColor: '#ef4444',
                           padding: '4px 8px',
-                          fontSize: '12px'
+                          fontSize: '12px',
                         }}
                       >
                         Revoke Pilot
@@ -403,7 +479,7 @@ const SuperadminDashboard: React.FC = () => {
                           ...styles.button,
                           backgroundColor: '#8b5cf6',
                           padding: '4px 8px',
-                          fontSize: '12px'
+                          fontSize: '12px',
                         }}
                       >
                         Grant Pilot
@@ -420,7 +496,7 @@ const SuperadminDashboard: React.FC = () => {
         {activeTab === 'users' && (
           <div>
             <h2 style={styles.sectionTitle}>Users ({users.length})</h2>
-            
+
             <input
               type="text"
               placeholder="Search by name or email..."
@@ -428,7 +504,7 @@ const SuperadminDashboard: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
             />
-            
+
             <div style={styles.table}>
               <div style={styles.tableHeader}>
                 <span style={{ flex: 2 }}>Name</span>
@@ -437,12 +513,14 @@ const SuperadminDashboard: React.FC = () => {
                 <span style={{ flex: 2 }}>Organization</span>
                 <span style={{ flex: 1 }}>Actions</span>
               </div>
-              {users.map(user => (
+              {users.map((user) => (
                 <div key={user.id} style={styles.tableRow}>
                   <span style={{ flex: 2 }}>{user.name || '—'}</span>
                   <span style={{ flex: 2 }}>{user.email}</span>
                   <span style={{ flex: 1 }}>
-                    <span style={user.role === 'master_admin' ? styles.badgeAdmin : styles.badgeRole}>
+                    <span
+                      style={user.role === 'master_admin' ? styles.badgeAdmin : styles.badgeRole}
+                    >
                       {user.role}
                     </span>
                   </span>
@@ -728,6 +806,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     fontSize: '12px',
     fontWeight: 600,
+  },
+  integrationBadge: {
+    color: '#fff',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    fontSize: '10px',
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    whiteSpace: 'nowrap' as const,
   },
   smallButton: {
     backgroundColor: 'transparent',

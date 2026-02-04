@@ -6,6 +6,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
 import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
+import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
 
 const router = express.Router();
 
@@ -54,21 +55,37 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           slack: !!process.env.SLACK_CLIENT_ID,
           google: !!process.env.GOOGLE_CLIENT_ID,
           googleChat: !!process.env.GOOGLE_CLIENT_ID,
+          teams: !!process.env.MS_APP_CLIENT_ID,
+          outlook: !!process.env.MS_APP_CLIENT_ID,
         },
         connected: {
           slack: false,
           google: false,
           googleChat: false,
+          teams: false,
+          outlook: false,
+        },
+        connections: {
+          slack: false,
+          googleChat: false,
+          teams: false,
+          googleCalendar: false,
+          outlook: false,
         },
         details: {
           slack: null,
           google: null,
           googleChat: null,
+          teams: null,
+          outlook: null,
         },
         oauth: {
           slack: !!process.env.SLACK_CLIENT_ID ? '/auth/slack' : null,
           google: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google' : null,
+          calendar: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start' : null,
           googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google-chat/oauth/start' : null,
+          teams: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=teams' : null,
+          outlook: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=outlook' : null,
         }
       });
     }
@@ -84,13 +101,29 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       slack: !!process.env.SLACK_CLIENT_ID,
       google: !!process.env.GOOGLE_CLIENT_ID,
       googleChat: !!process.env.GOOGLE_CLIENT_ID,
+      teams: !!process.env.MS_APP_CLIENT_ID,
+      outlook: !!process.env.MS_APP_CLIENT_ID,
     };
 
     // --- Check Connected Status (based on data in DB) ---
+    const msScope = organization.integrations?.microsoft?.scope;
+    const msHasToken = !!organization.integrations?.microsoft?.accessToken;
+    
     const connected = {
       slack: !!organization.integrations?.slack?.accessToken,
       google: !!user.google?.accessToken,
       googleChat: !!organization.integrations?.googleChat?.accessToken,
+      teams: msHasToken && msScope === 'teams',
+      outlook: msHasToken && msScope === 'outlook',
+    };
+
+    // --- Connections object (used by frontend for button states) ---
+    const connections = {
+      slack: connected.slack,
+      googleChat: connected.googleChat,
+      teams: connected.teams,
+      googleCalendar: connected.google || (organization.integrations?.google?.scope === 'calendar' && !!organization.integrations?.google?.accessToken),
+      outlook: connected.outlook,
     };
 
     // --- Provide Connection Details ---
@@ -105,17 +138,30 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       googleChat: connected.googleChat ? {
         email: organization.integrations.googleChat.email,
       } : null,
+      teams: connected.teams ? {
+        email: organization.integrations.microsoft?.email,
+        user: organization.integrations.microsoft?.user,
+      } : null,
+      outlook: connected.outlook ? {
+        email: organization.integrations.microsoft?.email,
+        user: organization.integrations.microsoft?.user,
+      } : null,
     };
 
     // --- OAuth Start URLs ---
     // Frontend expects these to accept ?token=...
+    // Include orgSlug for proper token storage
+    const orgSlug = organization.slug || 'default';
     const oauth = {
-      slack: available.slack ? '/auth/slack' : null,
+      slack: available.slack ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}` : null,
       google: available.google ? '/auth/google' : null,
-      googleChat: available.googleChat ? '/integrations/google-chat/oauth/start' : null,
+      calendar: available.google ? `/integrations/google/oauth/start?orgSlug=${orgSlug}` : null,
+      googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}` : null,
+      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}` : null,
+      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}` : null,
     };
 
-    res.json({ available, connected, details, oauth });
+    res.json({ available, connected, connections, details, oauth });
 
   } catch (err) {
     console.error('Error in /integrations/status:', err);
@@ -254,6 +300,8 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
             console.log('Slack employee sync completed:', result.stats);
             // Check if integrations are now complete and notify HR
             notifyHRIntegrationsComplete(org._id);
+            // Notify superadmin about new integration
+            notifyIntegrationConnected(org, 'slack');
           })
           .catch(err => {
             console.error('Slack employee sync failed:', err.message);
@@ -381,6 +429,9 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
           }
         });
         console.log('[Google OAuth] Saved successfully to org:', org._id);
+        
+        // Notify superadmin about new integration
+        notifyIntegrationConnected(org, 'google', scopeParam);
       } else {
         console.error('[Google OAuth] No org found for orgId:', orgId, 'orgSlug:', orgSlug);
       }
@@ -506,6 +557,9 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
         });
         
         console.log('[Google Chat OAuth] Saved successfully to org:', org._id);
+        
+        // Notify superadmin about new integration
+        notifyIntegrationConnected(org, 'googleChat');
 
         // Trigger employee sync in background (if Directory API is available)
         syncEmployeesFromGoogle(org._id)
@@ -609,25 +663,30 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         } catch {}
       }
 
-      await Organization.findOneAndUpdate(
+      const updatedOrg = await Organization.findOneAndUpdate(
         { slug: orgSlug },
         {
           $setOnInsert: { name: orgSlug, industry: 'General' },
           $set: {
-            integrations: {
-              microsoft: {
-                scope: scopeParam,
-                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-                user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
-                tenantId: tenantId
-              }
+            [`integrations.microsoft`]: {
+              scope: scopeParam,
+              refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
+              accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
+              expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+              user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
+              tenantId: tenantId
             }
           }
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
+      
+      // Check if all integrations are complete and notify HR admins
+      if (updatedOrg) {
+        notifyHRIntegrationsComplete(updatedOrg._id);
+        // Notify superadmin about new integration
+        notifyIntegrationConnected(updatedOrg, 'microsoft', scopeParam);
+      }
     } catch (e) {
       console.error('Microsoft OAuth persist error:', e.message);
     }
