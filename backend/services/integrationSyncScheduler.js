@@ -7,11 +7,13 @@
 
 import cron from 'node-cron';
 import { syncAllIntegrations, getAdapter } from './integrationAdapters.js';
+import { syncCoreIntegrations } from './coreIntegrationAdapters.js';
 import { computeDailyMetrics, computeWeeklyRollups } from './integrationMetricsService.js';
 import { detectSignals } from './signalGenerationService.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
+import Organization from '../models/organizationModel.js';
 
 // ============================================================
 // SYNC SCHEDULER
@@ -68,9 +70,15 @@ async function runIncrementalSync() {
   
   for (const orgId of orgs) {
     try {
+      // Sync IntegrationConnection-based integrations (Jira, Asana, etc.)
       const results = await syncAllIntegrations(orgId, since, until);
-      const successCount = results.filter(r => r.success).length;
-      console.log(`[Sync] Org ${orgId}: ${successCount}/${results.length} integrations synced`);
+      
+      // Sync core integrations (Slack, Microsoft, Google)
+      const coreResults = await syncCoreIntegrations(orgId, since, until);
+      
+      const allResults = [...results, ...coreResults];
+      const successCount = allResults.filter(r => r.success).length;
+      console.log(`[Sync] Org ${orgId}: ${successCount}/${allResults.length} integrations synced`);
     } catch (error) {
       console.error(`[Sync Error] Org ${orgId}:`, error.message);
     }
@@ -88,12 +96,18 @@ async function runDailyBackfill() {
   
   for (const orgId of orgs) {
     try {
+      // Sync IntegrationConnection-based integrations
       const results = await syncAllIntegrations(orgId, since, until);
       
+      // Sync core integrations (Slack, Microsoft, Google)
+      const coreResults = await syncCoreIntegrations(orgId, since, until);
+      
+      const allResults = [...results, ...coreResults];
+      
       // Log results
-      for (const result of results) {
+      for (const result of allResults) {
         if (result.success) {
-          console.log(`[Backfill] Org ${orgId} - ${result.source}: ${result.eventsProcessed} events`);
+          console.log(`[Backfill] Org ${orgId} - ${result.source}: ${result.eventsProcessed || 0} events`);
         } else {
           console.error(`[Backfill Error] Org ${orgId} - ${result.source}: ${result.error}`);
         }
@@ -162,6 +176,7 @@ async function runWeeklyRollups() {
 
 /**
  * Trigger manual sync for a specific org and integration
+ * Works with IntegrationConnection-based integrations (Jira, Asana, etc.)
  */
 export async function triggerManualSync(orgId, integrationType, options = {}) {
   const { 
@@ -193,6 +208,36 @@ export async function triggerManualSync(orgId, integrationType, options = {}) {
   }
   
   return syncResult;
+}
+
+/**
+ * Trigger immediate sync for core integrations (Slack, Microsoft, Google)
+ * Call this after OAuth completes to populate initial data
+ */
+export async function triggerImmediateSync(orgId, options = {}) {
+  const { 
+    since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Default 7 days back
+    until = new Date()
+  } = options;
+  
+  console.log(`[Immediate Sync] Starting core integration sync for org ${orgId}`);
+  
+  try {
+    const results = await syncCoreIntegrations(orgId, since, until);
+    
+    for (const result of results) {
+      if (result.success) {
+        console.log(`[Immediate Sync] ${result.source}: ${result.eventsProcessed || 0} events synced`);
+      } else {
+        console.warn(`[Immediate Sync] ${result.source} failed: ${result.error}`);
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    console.error(`[Immediate Sync] Error for org ${orgId}:`, error.message);
+    return [{ success: false, error: error.message }];
+  }
 }
 
 /**
@@ -257,13 +302,31 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
 
 /**
  * Get list of orgs with active integrations
+ * Includes both IntegrationConnection-based and Organization.integrations-based
  */
 async function getActiveOrgs() {
-  const connections = await IntegrationConnection.find({
+  // Get orgs with IntegrationConnection entries
+  const connectionOrgs = await IntegrationConnection.find({
     status: 'active'
   }).distinct('orgId');
   
-  return connections;
+  // Get orgs with core integrations (Slack, Microsoft, Google) stored directly
+  const coreIntegrationOrgs = await Organization.find({
+    $or: [
+      { 'integrations.slack.accessToken': { $exists: true, $ne: null } },
+      { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
+      { 'integrations.google.accessToken': { $exists: true, $ne: null } },
+      { 'integrations.googleChat.accessToken': { $exists: true, $ne: null } }
+    ]
+  }).distinct('_id');
+  
+  // Merge and dedupe
+  const allOrgIds = new Set([
+    ...connectionOrgs.map(id => id.toString()),
+    ...coreIntegrationOrgs.map(id => id.toString())
+  ]);
+  
+  return Array.from(allOrgIds);
 }
 
 /**

@@ -9,6 +9,7 @@ import GoogleChatConnect from './GoogleChatConnect';
 import LoopClosingDashboard from './LoopClosingDashboard';
 import TeamManagement from './TeamManagement';
 import EmployeeDirectory from './EmployeeDirectory';
+import ImmediateInsightsPanel from './ImmediateInsightsPanel';
 import { TrialBanner } from './TrialBanner';
 import { PaywallBanner } from './PaywallOverlay';
 import { useNavigate, Link } from 'react-router-dom';
@@ -23,6 +24,8 @@ function Dashboard() {
   const [showHelp, setShowHelp] = useState(null); // 'slack' | 'calendar' | 'outlook' | 'teams' | null
   const [toast, setToast] = useState(null);
   const [confirmProvider, setConfirmProvider] = useState(null);
+  const [showImmediateInsights, setShowImmediateInsights] = useState(false);
+  const [connectedProvider, setConnectedProvider] = useState(null);
 
   const loadIntegrationStatus = useCallback(async () => {
     try {
@@ -79,6 +82,7 @@ function Dashboard() {
     // Check for OAuth callback messages
     const integrationStatus = searchParams.get('integrationStatus');
     const msg = searchParams.get('msg');
+    const connected = searchParams.get('connected');
 
     if (integrationStatus) {
       // Show toast with the result
@@ -88,6 +92,25 @@ function Dashboard() {
         setToast({ type: 'error', message: msg || 'Integration failed. Please try again.' });
       }
       setTimeout(() => setToast(null), 5000);
+
+      // Clean up URL
+      window.history.replaceState({}, document.title, '/dashboard');
+    }
+
+    // Check if coming back from OAuth with a newly connected provider
+    if (connected) {
+      // Map the connected param to a provider name
+      let provider = connected;
+      if (connected.startsWith('google-')) provider = 'google';
+      if (connected.startsWith('microsoft-')) provider = 'microsoft';
+
+      setConnectedProvider(provider);
+      setShowImmediateInsights(true);
+      setToast({
+        type: 'success',
+        message: `${connected.replace('-', ' ')} connected successfully!`,
+      });
+      setTimeout(() => setToast(null), 3000);
 
       // Clean up URL
       window.history.replaceState({}, document.title, '/dashboard');
@@ -203,6 +226,14 @@ function Dashboard() {
       </nav>
 
       <div style={styles.content}>
+        {/* Immediate Insights Panel (shown after OAuth connect) */}
+        {showImmediateInsights && (
+          <ImmediateInsightsPanel
+            connectedProvider={connectedProvider}
+            onClose={() => setShowImmediateInsights(false)}
+          />
+        )}
+
         {/* Trial Status Banner */}
         <TrialBanner className="mb-6" />
 

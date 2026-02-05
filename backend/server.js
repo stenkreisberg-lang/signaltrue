@@ -116,6 +116,7 @@ import driftDiagnosticRoutes from "./routes/drift.js";
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
 import integrationDashboardRoutes from "./routes/integrationDashboard.js";
 import aiCopilotRoutes from "./routes/aiCopilot.js";
+import integrationDebugRoutes from "./routes/integrationDebug.js";
 
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
@@ -321,6 +322,9 @@ async function main() {
     
     // --- Superadmin Routes (master_admin only) ---
     app.use('/api/superadmin', superadminRoutes);
+    
+    // --- Integration Debug Routes (superadmin only) ---
+    app.use('/api/debug', integrationDebugRoutes);
     
     // --- Password Reset Routes (public, no auth required) ---
     app.use('/api/auth', passwordResetRoutes);

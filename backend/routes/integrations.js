@@ -8,6 +8,14 @@ import { encryptString, decryptString } from '../utils/crypto.js';
 import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
+import { 
+  getSlackImmediateInsights, 
+  getCalendarImmediateInsights, 
+  getMicrosoftImmediateInsights,
+  getGoogleChatImmediateInsights,
+  getOrgVsBenchmarks 
+} from '../services/immediateInsightsService.js';
+import { triggerImmediateSync } from '../services/integrationSyncScheduler.js';
 
 const router = express.Router();
 
@@ -30,6 +38,89 @@ router.get('/integrations/metrics', authenticateToken, async (req, res) => {
     res.json({ googleEvents, msEvents, msTeams });
   } catch (e) {
     console.error('Error in /integrations/metrics:', e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// GET /api/integrations/immediate-insights - returns immediate stats after integrations connect
+router.get('/integrations/immediate-insights', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user?.orgId;
+    if (!orgId) {
+      return res.json({ message: 'No organization found', insights: {} });
+    }
+    
+    const org = await Organization.findById(orgId).lean();
+    if (!org) {
+      return res.json({ message: 'Organization not found', insights: {} });
+    }
+    
+    // Collect all immediate insights from integrations
+    const insights = {};
+    
+    // Slack insights
+    if (org.integrations?.slack?.immediateInsights) {
+      insights.slack = org.integrations.slack.immediateInsights;
+    }
+    
+    // Google Calendar insights
+    if (org.integrations?.google?.immediateInsights) {
+      insights.google = org.integrations.google.immediateInsights;
+    }
+    
+    // Google Chat insights
+    if (org.integrations?.googleChat?.immediateInsights) {
+      insights.googleChat = org.integrations.googleChat.immediateInsights;
+    }
+    
+    // Microsoft insights
+    if (org.integrations?.microsoft?.immediateInsights) {
+      insights.microsoft = org.integrations.microsoft.immediateInsights;
+    }
+    
+    // Calculate aggregate stats
+    const totalMeetingsThisWeek = 
+      (insights.google?.stats?.meetingsThisWeek || 0) + 
+      (insights.microsoft?.stats?.meetingsThisWeek || 0);
+    
+    const totalUsers = insights.slack?.stats?.activeUsers || 0;
+    const totalChannels = insights.slack?.stats?.channelCount || 0;
+    
+    res.json({
+      insights,
+      summary: {
+        totalMeetingsThisWeek,
+        totalUsers,
+        totalChannels,
+        integrationsConnected: Object.keys(insights).length,
+        hasData: Object.keys(insights).length > 0,
+      },
+      calibrationStatus: {
+        inProgress: org.calibrationStatus !== 'complete',
+        daysRemaining: org.calibrationDaysRemaining || 30,
+        message: org.calibrationStatus === 'complete' 
+          ? 'Baseline established - full insights available'
+          : 'Collecting baseline data. Industry benchmarks shown for comparison.',
+      }
+    });
+  } catch (e) {
+    console.error('Error in /integrations/immediate-insights:', e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// GET /api/integrations/benchmarks - returns industry benchmark comparison
+router.get('/integrations/benchmarks', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user?.orgId;
+    if (!orgId) {
+      return res.json({ message: 'No organization found', benchmarks: null });
+    }
+    
+    const comparison = await getOrgVsBenchmarks(orgId);
+    res.json(comparison);
+  } catch (e) {
+    console.error('Error in /integrations/benchmarks:', e);
     res.status(500).json({ message: e.message });
   }
 });
@@ -377,6 +468,24 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
         });
         console.log('Slack OAuth: saved token for org', org._id);
 
+        // Get immediate insights (runs in background, doesn't block redirect)
+        getSlackImmediateInsights(org._id, data.access_token)
+          .then(insights => {
+            console.log('Slack immediate insights:', JSON.stringify(insights));
+          })
+          .catch(err => {
+            console.error('Slack immediate insights error:', err.message);
+          });
+
+        // Trigger an immediate core sync (populate initial work events/metrics)
+        triggerImmediateSync(org._id)
+          .then(results => {
+            console.log('Slack immediate sync results:', results);
+          })
+          .catch(err => {
+            console.error('Slack immediate sync error:', err.message);
+          });
+
         // Trigger employee sync in background
         syncEmployeesFromSlack(org._id)
           .then(result => {
@@ -513,6 +622,25 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         });
         console.log('[Google OAuth] Saved successfully to org:', org._id);
         
+        // Get immediate calendar insights (runs in background, doesn't block redirect)
+        if (scopeParam === 'calendar' && tokens.access_token) {
+          getCalendarImmediateInsights(org._id, tokens.access_token)
+            .then(insights => {
+              console.log('Google Calendar immediate insights:', JSON.stringify(insights));
+            })
+            .catch(err => {
+              console.error('Google Calendar immediate insights error:', err.message);
+            });
+        }
+        // Trigger immediate core sync for calendar (populate events/metrics)
+        triggerImmediateSync(org._id)
+          .then(results => {
+            console.log('Google immediate sync results:', results);
+          })
+          .catch(err => {
+            console.error('Google immediate sync error:', err.message);
+          });
+        
         // Notify superadmin about new integration
         notifyIntegrationConnected(org, 'google', scopeParam);
       } else {
@@ -640,6 +768,25 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
         });
         
         console.log('[Google Chat OAuth] Saved successfully to org:', org._id);
+        
+        // Get immediate Google Chat insights (runs in background)
+        if (tokens.access_token) {
+          getGoogleChatImmediateInsights(org._id, tokens.access_token)
+            .then(insights => {
+              console.log('Google Chat immediate insights:', JSON.stringify(insights));
+            })
+            .catch(err => {
+              console.error('Google Chat immediate insights error:', err.message);
+            });
+        }
+        // Trigger immediate core sync for Google Chat
+        triggerImmediateSync(org._id)
+          .then(results => {
+            console.log('Google Chat immediate sync results:', results);
+          })
+          .catch(err => {
+            console.error('Google Chat immediate sync error:', err.message);
+          });
         
         // Notify superadmin about new integration
         notifyIntegrationConnected(org, 'googleChat');
@@ -796,9 +943,28 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       
       // Check if all integrations are complete and notify HR admins
       if (updatedOrg) {
+        // Get immediate Microsoft insights (runs in background)
+        if (tokens.access_token) {
+          getMicrosoftImmediateInsights(updatedOrg._id, tokens.access_token, scopeParam)
+            .then(insights => {
+              console.log('Microsoft immediate insights:', JSON.stringify(insights));
+            })
+            .catch(err => {
+              console.error('Microsoft immediate insights error:', err.message);
+            });
+        }
+        
         notifyHRIntegrationsComplete(updatedOrg._id);
         // Notify superadmin about new integration
         notifyIntegrationConnected(updatedOrg, 'microsoft', scopeParam);
+        // Trigger immediate core sync for Microsoft (Outlook/Teams)
+        triggerImmediateSync(updatedOrg._id)
+          .then(results => {
+            console.log('Microsoft immediate sync results:', results);
+          })
+          .catch(err => {
+            console.error('Microsoft immediate sync error:', err.message);
+          });
       }
     } catch (e) {
       console.error('Microsoft OAuth persist error:', e.message);
