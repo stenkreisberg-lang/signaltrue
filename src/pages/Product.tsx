@@ -1,83 +1,88 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import DriftAlertCard from "../components/DriftAlertCard";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 import { 
+  Clock, 
+  Users, 
   Zap, 
-  BarChart3, 
+  Moon,
   ArrowRight,
-  CheckCircle,
   XCircle,
-  Target,
-  TrendingUp
 } from "lucide-react";
 
 /*
- * CATEGORY KING POSITIONING:
- * A causal drift engine for modern teams.
- * Not monitoring. Not surveys. Causal drift management.
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * 
+ * Product Page (per spec):
+ * Purpose: Translate category into tangible capability.
+ * 
+ * Opening: From Invisible Strain to Visible Signals
+ * 
+ * Signals Explained:
+ * - Focus Fragmentation
+ * - Meeting Overload
+ * - Execution Drag
+ * - After-Hours Drift
+ * 
+ * What This Is NOT (explicit)
  */
 
-// Core product sections per spec
-const productSections = [
+// Analytics tracking
+const trackEvent = (eventName: string) => {
+  if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
+  }
+  try {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    fetch(`${apiUrl}/api/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
+    }).catch(() => { /* Silently fail for analytics */ });
+  } catch { /* Silently fail for analytics */ }
+};
+
+// 4 Signal types per spec
+const signals = [
   {
-    id: "baselines",
-    icon: BarChart3,
-    title: "Drift starts as deviation, not disaster.",
-    description: "Every team has its own rhythm. SignalTrue learns normal work patterns and detects meaningful changes, not noise. This allows early intervention before overload, disengagement, or burnout become visible symptoms.",
-    features: [
-      "Adaptive baselines per team",
-      "Seasonality-aware patterns",
-      "Role-aware calibration",
-      "Sustained deviation detection",
-    ],
+    icon: Clock,
+    name: "Focus Fragmentation",
+    whatItMeans: "Deep work time is being eroded by meetings, interruptions, and context switching.",
+    whyItMatters: "Fragmented focus leads to lower quality output and increased stress, even when hours worked stay constant.",
+    whatLeadersCanChange: "Protect focus blocks, consolidate meetings, reduce synchronous communication requirements.",
   },
   {
-    id: "causal",
-    icon: Target,
-    title: "Knowing why matters more than knowing what.",
-    description: "Most tools show correlations. SignalTrue estimates likely causes. We identify which behaviors and structural patterns are driving drift, so leaders can act with confidence instead of guesswork.",
-    features: [
-      "Driver attribution for each drift event",
-      "Causal pattern recognition",
-      "Ranked contributing factors",
-      "Confidence scoring on explanations",
-    ],
+    icon: Users,
+    name: "Meeting Overload",
+    whatItMeans: "Calendar density exceeds sustainable thresholds for knowledge work.",
+    whyItMatters: "Excessive meetings crowd out actual work, forcing it into evenings and weekends.",
+    whatLeadersCanChange: "Audit recurring meetings, implement meeting-free days, reduce default meeting lengths.",
   },
   {
-    id: "interventions",
     icon: Zap,
-    title: "Clear actions, not vague advice.",
-    description: "For every drift pattern, SignalTrue recommends concrete interventions: what to change, why it matters, what signal should improve, and how long it typically takes. Managers get a plan, not a dashboard.",
-    features: [
-      "Specific action recommendations",
-      "Expected effect per intervention",
-      "Feasibility and effort estimates",
-      "Manager-ready language",
-    ],
+    name: "Execution Drag",
+    whatItMeans: "Work is taking longer despite effort levels remaining high.",
+    whyItMatters: "Slowing execution often signals coordination problems, unclear priorities, or hidden blockers.",
+    whatLeadersCanChange: "Clarify priorities, reduce approval layers, address coordination bottlenecks.",
   },
   {
-    id: "measurement",
-    icon: TrendingUp,
-    title: "Prove what worked.",
-    description: "SignalTrue tracks whether interventions actually changed behavior. This creates a learning loop where decisions improve over time, and leadership actions are backed by evidence, not hope.",
-    features: [
-      "Before/after outcome tracking",
-      "Effect size measurement",
-      "Confidence intervals on results",
-      "Continuous learning from outcomes",
-    ],
+    icon: Moon,
+    name: "After-Hours Drift",
+    whatItMeans: "Work is creeping into evenings and weekends at unsustainable rates.",
+    whyItMatters: "After-hours work predicts burnout and attrition, often before people complain.",
+    whatLeadersCanChange: "Redistribute workload, adjust expectations, address capacity gaps.",
   },
 ];
 
-// Privacy "We do NOT" list per spec
-const privacyPromises = [
-  "Read messages or communications content",
-  "Analyze sentiment or emotion",
-  "Score individuals or create individual profiles",
-  "Track location or device activity",
-  "Share data with third parties",
+// What this is NOT per spec
+const whatThisIsNot = [
+  "Not performance monitoring",
+  "Not sentiment analysis",
+  "Not productivity scoring",
+  "Not individual tracking",
+  "Not keystroke logging",
+  "Not screen recording",
 ];
 
 const Product = () => {
@@ -85,74 +90,79 @@ const Product = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-20">
-        {/* Hero Section - Category King positioning */}
+        {/* Hero Section */}
         <section className="py-20 bg-hero-gradient relative overflow-hidden">
           <div className="absolute inset-0 bg-glow opacity-20" />
           <div className="container mx-auto px-6 relative">
-            <div className="max-w-3xl mx-auto text-center mb-12">
+            <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
                 The Product
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                A causal drift engine{" "}
-                <span className="text-gradient">for modern teams.</span>
+                From Invisible Strain to{" "}
+                <span className="text-gradient">Visible Signals</span>
               </h1>
-              
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                SignalTrue is not a monitoring tool and not a survey replacement. 
-                It is a system for detecting behavioral drift, understanding its causes, 
-                and correcting it with measured interventions.
+                SignalTrue translates behavioral patterns into early warning signals that leaders can act on 
+                before strain becomes visible in performance, engagement, or attrition.
               </p>
-
-              {/* What SignalTrue is NOT */}
-              <div className="flex flex-wrap justify-center gap-3">
-                <span className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">Not surveys</span>
-                <span className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">Not surveillance</span>
-                <span className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">Not engagement theater</span>
-              </div>
-            </div>
-
-            {/* Live Alert Preview */}
-            <div className="max-w-xl mx-auto mt-12">
-              <p className="text-center text-sm text-muted-foreground mb-4">
-                <span className="text-primary font-medium">Example drift alert:</span> Causal, actionable, measurable
-              </p>
-              <DriftAlertCard />
             </div>
           </div>
         </section>
 
-        {/* Core Product Sections */}
-        <section className="py-20 lg:py-24 bg-secondary/20">
+        {/* Signals Explained Section */}
+        <section className="py-20 lg:py-24 bg-background">
           <div className="container mx-auto px-6">
-            <div className="max-w-5xl mx-auto space-y-24">
-              {productSections.map((section, index) => (
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                The Signals We Detect
+              </h2>
+              <p className="text-muted-foreground">
+                Each signal type includes: what it means, why it matters, and what leaders can change structurally.
+              </p>
+            </div>
+
+            <div className="max-w-5xl mx-auto space-y-8">
+              {signals.map((signal, index) => (
                 <div 
-                  key={section.id}
-                  className={`flex flex-col ${index % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-12 lg:gap-16 items-center`}
+                  key={index}
+                  className="p-8 rounded-2xl bg-card border border-border/50 animate-slide-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="flex-1 space-y-6">
-                    <div className="p-4 rounded-2xl bg-primary/10 w-fit">
-                      <section.icon className="w-8 h-8 text-primary" />
+                  <div className="flex items-start gap-6">
+                    <div className="p-4 rounded-2xl bg-primary/10 flex-shrink-0">
+                      <signal.icon className="w-8 h-8 text-primary" />
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                      {section.title}
-                    </h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {section.description}
-                    </p>
-                    <ul className="space-y-3">
-                      {section.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                          <span className="text-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex-1 w-full">
-                    <div className="aspect-video rounded-2xl bg-card border border-border/50 flex items-center justify-center">
-                      <section.icon className="w-24 h-24 text-secondary" />
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-display font-bold text-foreground mb-4">
+                        {signal.name}
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div>
+                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                            What it means
+                          </p>
+                          <p className="text-muted-foreground">
+                            {signal.whatItMeans}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                            Why it matters
+                          </p>
+                          <p className="text-muted-foreground">
+                            {signal.whyItMatters}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                            What leaders can change
+                          </p>
+                          <p className="text-muted-foreground">
+                            {signal.whatLeadersCanChange}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -161,36 +171,36 @@ const Product = () => {
           </div>
         </section>
 
-        {/* Privacy Section */}
-        <section className="py-20 lg:py-24 bg-background">
+        {/* What This Is NOT Section */}
+        <section className="py-20 lg:py-24 bg-secondary/20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                  Privacy
-                </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                  Privacy is enforced, not promised.
+                  What This Is <span className="text-destructive">NOT</span>
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  SignalTrue analyzes behavioral metadata, not message content. 
-                  Privacy is enforced at the architecture level.
+                <p className="text-lg text-muted-foreground">
+                  SignalTrue is designed so that surveillance is architecturally impossible.
                 </p>
               </div>
 
-              {/* Explicit "We do NOT" list */}
-              <div className="p-8 rounded-2xl bg-secondary/30 border border-border/50">
-                <h3 className="text-lg font-display font-semibold text-foreground mb-6 text-center">
-                  We never:
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                  {privacyPromises.map((promise, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                      <span className="text-foreground">{promise}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {whatThisIsNot.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="p-4 rounded-xl bg-card border border-destructive/20 flex items-center gap-3"
+                  >
+                    <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+                    <span className="text-foreground font-medium">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 p-6 rounded-2xl bg-success/5 border border-success/20 text-center">
+                <p className="text-lg text-foreground">
+                  <strong>What we are:</strong> A system-level early warning layer that helps leaders 
+                  fix structural problems before people break.
+                </p>
               </div>
             </div>
           </div>
@@ -202,24 +212,17 @@ const Product = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See how drift is detected in your organization
+                See Early Signals in Your Org
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                We'll walk you through causal drift detection, intervention recommendations, and outcome measurement.
+                Request a preview to see what these signals look like in your organization.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/how-it-works">
-                  <Button variant="hero" size="xl">
-                    See how it works
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/contact">
-                  <Button variant="hero-outline" size="xl">
-                    Talk to us
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+                <Button variant="hero" size="xl">
+                  Request Early Signal Preview
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

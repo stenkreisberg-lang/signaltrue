@@ -44,8 +44,9 @@ const Login = () => {
         // Regular users go to dashboard (will route based on role/onboarding status)
         navigate("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -64,6 +65,14 @@ const Login = () => {
 
         {/* Login Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
+          {/* Context text per spec */}
+          <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-sm text-muted-foreground text-center">
+              You're entering a system designed to reveal early organizational strain. 
+              <strong className="text-foreground"> Not to monitor people.</strong>
+            </p>
+          </div>
+
           <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
           <p className="text-muted-foreground mb-6">
             Sign in to your account

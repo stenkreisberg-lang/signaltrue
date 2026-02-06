@@ -1,20 +1,35 @@
 import { Button } from "../components/ui/button";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /*
- * CATEGORY KING POSITIONING:
- * Decision-oriented CTAs. No vanity language.
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * 
+ * Final CTA Section (per spec):
+ * Title: You Don't Need Another Survey. You Need Earlier Truth.
+ * Button: Request Early Signal Preview
  */
 
-const benefits = [
-  "No surveys required",
-  "Causal explanation, not correlation",
-  "No message content access",
-  "Measured intervention impact",
-];
+// Analytics tracking
+const trackEvent = (eventName: string) => {
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    (window as any).gtag('event', eventName);
+  }
+  try {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    fetch(`${apiUrl}/api/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
+    }).catch(() => {});
+  } catch {}
+};
 
 const CTASection = () => {
+  const handleRequestPreview = () => {
+    trackEvent('early_signal_preview_requested');
+  };
+
   return (
     <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
       {/* Background effects */}
@@ -24,37 +39,20 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            Detect drift early.{" "}
-            <span className="text-gradient">Prove what works.</span>
+            You Don't Need Another Survey.{" "}
+            <span className="text-gradient">You Need Earlier Truth.</span>
           </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Stop relying on lagging surveys. Get behavioral evidence and clear intervention paths, with measured impact.
+          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+            See what behavioral drift looks like in your organization before it becomes visible in outcomes, exits, or engagement scores.
           </p>
 
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Link to="/how-it-works">
-              <Button variant="hero" size="xl">
-                See how drift is detected
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/contact">
-              <Button variant="hero-outline" size="xl">
-                Talk to us
-              </Button>
-            </Link>
-          </div>
-
-          {/* Benefits list */}
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-success" />
-                <span className="text-sm text-muted-foreground">{benefit}</span>
-              </div>
-            ))}
-          </div>
+          {/* Single CTA per spec */}
+          <Link to="/contact" onClick={handleRequestPreview}>
+            <Button variant="hero" size="xl">
+              Request Early Signal Preview
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

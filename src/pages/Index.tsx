@@ -1,19 +1,24 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import WhyOrganizationsGoBlind from "../components/WhyOrganizationsGoBlind";
-import HowItWorks from "../components/HowItWorks";
-import WhoThisIsFor from "../components/WhoThisIsFor";
-import TrustSection from "../components/TrustSection";
+import CategoryDeclaration from "../components/CategoryDeclaration";
+import JTBDSection from "../components/JTBDSection";
+import PromisedLand from "../components/PromisedLand";
+import PrivacySection from "../components/PrivacySection";
 import CTASection from "../components/CTASection";
 import Footer from "../components/Footer";
 
 /*
- * CATEGORY KING POSITIONING:
- * SignalTrue is a Causal Drift & Intervention Engine for Knowledge Work.
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
  * 
- * Flow: Hero → Enemy (The Problem) → How It Works → Who This Is For → Trust → CTA
- * 
- * Every section answers: What decision does this enable? What risk does this reduce?
+ * Homepage Flow (per spec):
+ * 1. Hero - Category creation + conviction in <10 seconds
+ * 2. Problem (Enemy) - The Problem With How Teams Are Measured Today
+ * 3. Category Declaration - Introducing Behavioral Drift Intelligence
+ * 4. JTBD - Leaders Hire SignalTrue To Do One Thing
+ * 5. Promised Land - What Changes When You See Drift Early
+ * 6. Privacy - Privacy Is the Constraint
+ * 7. Final CTA - You Don't Need Another Survey. You Need Earlier Truth.
  */
 
 const Index = () => {
@@ -23,9 +28,10 @@ const Index = () => {
       <main>
         <Hero />
         <WhyOrganizationsGoBlind />
-        <HowItWorks />
-        <WhoThisIsFor />
-        <TrustSection />
+        <CategoryDeclaration />
+        <JTBDSection />
+        <PromisedLand />
+        <PrivacySection />
         <CTASection />
       </main>
       <Footer />

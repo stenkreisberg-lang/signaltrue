@@ -30,6 +30,7 @@ import CeoSummary from "./pages/CeoSummary";
 import SuperadminDashboard from "./pages/SuperadminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import TeamAnalytics from "./pages/TeamAnalytics";
+import TeamAnalyticsPage from "./pages/TeamAnalyticsPage";
 import AdminOnboarding from "./pages/AdminOnboarding";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import Blog from "./pages/Blog";
@@ -79,7 +80,8 @@ const App = () => (
               <Route path="/app/monthly-report" element={<MonthlyReport />} />
               <Route path="/ceo-summary/:token" element={<CeoSummary />} />
               <Route path="/superadmin" element={<SuperadminDashboard />} />
-              <Route path="/team-analytics" element={<TeamAnalytics />} />
+              <Route path="/team-analytics" element={<TeamAnalyticsPage />} />
+              <Route path="/app/team-analytics" element={<TeamAnalytics />} />
               <Route path="/admin/onboarding" element={<AdminOnboarding />} />
               <Route path="/self-check" element={<SelfCheck />} />
               <Route path="/integrations" element={<IntegrationsPage />} />

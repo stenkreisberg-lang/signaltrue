@@ -2,27 +2,28 @@ import { Activity, Linkedin, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * SignalTrue is a Work Signal Intelligence platform.
- * Avoid "health", "wellbeing", "engagement" as primary terms.
- * Prefer "signals", "drift", "strain", "execution friction", "recovery".
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * 
+ * Footer updated per spec:
+ * - Team Analytics link added
+ * - Blog link maintained
+ * - Consistent CTA language
  */
 
 const footerLinks = {
   Product: [
-    { label: "Signals", href: "/product" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "Product", href: "/product" },
+    { label: "Team Analytics", href: "/team-analytics" },
     { label: "Pricing", href: "/pricing" },
-    { label: "How it Works", href: "/how-it-works" },
-    { label: "Privacy", href: "/app/privacy" }
   ],
   Company: [
     { label: "About", href: "/about" },
     { label: "Blog", href: "/blog" },
-    { label: "Contact", href: "/about#contact" }
+    { label: "Contact", href: "/contact" }
   ],
   Resources: [
-    { label: "Signal Workflow", href: "/how-it-works" },
-    { label: "Privacy Policy", href: "/app/privacy" },
+    { label: "Privacy", href: "/trust" },
     { label: "Terms of Service", href: "/about#terms" }
   ],
 };
@@ -43,8 +44,8 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
-              Work Signal Intelligence. Detect organizational drift early 
-              by reading how work actually happens, without surveillance or surveys.
+              Behavioral Drift Intelligence. Detect organizational strain early 
+              by observing how work actually happens, without surveillance or surveys.
             </p>
             <div className="flex items-center gap-4">
               <a 
@@ -96,7 +97,7 @@ const Footer = () => {
             © 2025 SignalTrue. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Early-warning systems for modern work.
+            Behavioral Early-Warning System for modern organizations.
           </p>
         </div>
       </div>

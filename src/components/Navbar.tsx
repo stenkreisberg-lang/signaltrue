@@ -4,22 +4,35 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 /*
- * CATEGORY KING POSITIONING:
- * Navigation reflects core product flow: Product → How It Works → Pricing → Trust → About
- * Added Free Diagnostic for lead generation
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * Navigation reflects core product flow per spec:
+ * Product → How It Works → Pricing → About → Blog
+ * Primary CTA: Request Early Signal Preview
+ * No "Free Diagnostic" - simplified per spec
  */
+
+// Analytics tracking
+const trackEvent = (eventName: string) => {
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    (window as any).gtag('event', eventName);
+  }
+};
 
 const navItems = [
   { label: "Product", href: "/product" },
-  { label: "How it Works", href: "/how-it-works" },
+  { label: "How It Works", href: "/how-it-works" },
+  { label: "Team Analytics", href: "/team-analytics" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Free Diagnostic", href: "/drift-diagnostic" },
-  { label: "Trust", href: "/trust" },
   { label: "About", href: "/about" },
+  { label: "Blog", href: "/blog" },
 ];
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleRequestPreview = () => {
+    trackEvent('early_signal_preview_requested');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -51,16 +64,16 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop CTA Buttons - Updated with outcome-focused language */}
+          {/* Desktop CTA Buttons - Updated per spec */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
               <Button variant="ghost" size="sm" className="text-muted-foreground">
                 Login
               </Button>
             </Link>
-            <Link to="/product">
+            <Link to="/contact" onClick={handleRequestPreview}>
               <Button variant="cta" size="sm">
-                See your signals
+                Request Early Signal Preview
               </Button>
             </Link>
           </div>
@@ -99,9 +112,9 @@ const Navbar = () => {
                     Login
                   </Button>
                 </Link>
-                <Link to="/product" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/contact" onClick={() => { setMobileMenuOpen(false); handleRequestPreview(); }}>
                   <Button variant="cta" size="sm" className="w-full">
-                    See your signals
+                    Request Early Signal Preview
                   </Button>
                 </Link>
               </div>

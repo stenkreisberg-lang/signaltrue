@@ -1,17 +1,44 @@
 import { Button } from "../components/ui/button";
-import { ArrowRight, Shield, Users, Lock, Activity } from "lucide-react";
+import { ArrowRight, Shield, Lock, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import DriftAlertCard from "./DriftAlertCard";
 
 /*
- * CATEGORY REPOSITIONING NOTE:
- * This is not a visual polish task.
- * This is a category repositioning.
- * If a section feels "empty", "safe", or "generic", it's wrong.
- * Optimize for clarity and conviction over minimalism.
+ * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * 
+ * Behavioral Drift Intelligence detects early systemic strain in organizations 
+ * by analyzing behavioral metadata from work systems, revealing overload, 
+ * fragmentation, and execution risk before burnout, disengagement, or attrition occur.
+ * 
+ * Enemy: Lagging people analytics (surveys, reviews, exit interviews, wellbeing scores)
+ * Promised Land: Leaders see early truth, act structurally, preserve execution capacity
  */
 
+// Analytics tracking for conviction depth
+const trackEvent = (eventName: string) => {
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    (window as any).gtag('event', eventName);
+  }
+  // Also track internally
+  try {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    fetch(`${apiUrl}/api/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
+    }).catch(() => {});
+  } catch {}
+};
+
 const Hero = () => {
+  const handleRequestPreview = () => {
+    trackEvent('early_signal_preview_requested');
+  };
+
+  const handleHowItWorks = () => {
+    trackEvent('how_it_works_viewed');
+  };
+
   return (
     <section className="relative min-h-screen bg-hero-gradient overflow-hidden">
       {/* Background glow effects */}
@@ -22,70 +49,48 @@ const Hero = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left content */}
           <div className="animate-slide-up">
-            {/* Trust badges - Causal drift positioning */}
+            {/* Trust badges - Privacy positioning */}
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Activity className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">Causal Drift Engine</span>
+                <Eye className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-muted-foreground">Behavioral Early-Warning System</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Lock className="w-3.5 h-3.5 text-success" />
-                <span className="text-xs font-medium text-muted-foreground">No message content</span>
+                <span className="text-xs font-medium text-muted-foreground">No content. No individuals.</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">Privacy by architecture</span>
+                <span className="text-xs font-medium text-muted-foreground">System-level patterns only</span>
               </div>
             </div>
 
             {/* Main headline - Category King copy */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-              Detect behavioral drift early.
+              Burnout Doesn't Start With Complaints.
               <br />
-              <span className="text-gradient">Fix it before performance and people break.</span>
+              <span className="text-gradient">It Starts With Invisible Drift.</span>
             </h1>
 
-            {/* Subheadline - Category King copy */}
+            {/* Subheadline */}
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              SignalTrue is a causal drift engine for knowledge work.
-              We detect early behavior changes, explain what caused them, and tell leaders what to change. With measured impact.
+              SignalTrue is the first <strong className="text-foreground">Behavioral Early-Warning System</strong> that 
+              detects organizational overload and execution drift weeks before surveys, performance drops, or resignations appear.
             </p>
 
-            {/* CTA buttons */}
+            {/* CTA buttons - Updated per spec */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/how-it-works">
+              <Link to="/contact" onClick={handleRequestPreview}>
                 <Button variant="hero" size="xl">
-                  See how drift is detected
+                  Request Early Signal Preview
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/contact">
+              <Link to="/how-it-works" onClick={handleHowItWorks}>
                 <Button variant="hero-outline" size="xl">
-                  Talk to us
+                  See How It Works
                 </Button>
               </Link>
-            </div>
-            
-            {/* Free Diagnostic CTA - Lead generation */}
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50 mb-8">
-              <p className="text-sm text-muted-foreground mb-3">
-                <span className="font-medium text-foreground">Not ready for a demo?</span> Start with a free Behavioral Drift Diagnostic.
-                No integrations required. No personal data.
-              </p>
-              <Link to="/drift-diagnostic">
-                <Button variant="outline" size="sm">
-                  Start Free Diagnostic
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Hero support text */}
-            <div className="pt-8 border-t border-border/50">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Burnout, disengagement, and performance loss don't start with feelings.
-                They start with small behavioral shifts. SignalTrue detects those shifts early, before they show up in surveys, exits, or missed results.
-              </p>
             </div>
           </div>
 
