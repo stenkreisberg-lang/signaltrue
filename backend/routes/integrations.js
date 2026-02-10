@@ -396,6 +396,8 @@ router.get('/integrations/slack/oauth/start', async (req, res) => {
   url.searchParams.set('user_scope', '');
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('state', state);
+  // Force workspace selection - don't auto-pick last used workspace
+  url.searchParams.set('team', '');
   return res.redirect(String(url));
 });
 

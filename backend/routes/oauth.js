@@ -47,7 +47,8 @@ router.get("/auth/slack", (req, res) => {
     const redirectUri = `${getBackendUrl(req)}/api/auth/slack/callback`;
     // Pass the orgId in the state parameter to link the Slack install to the org
     const state = jwt.sign({ orgId: user.orgId }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+    // Force workspace selection with team= parameter
+    const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=channels:read,groups:read,users:read,chat:write,team:read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&team=`;
     res.redirect(url);
   });
 });

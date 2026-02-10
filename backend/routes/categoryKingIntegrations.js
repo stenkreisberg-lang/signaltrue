@@ -185,6 +185,7 @@ router.get('/asana/oauth/start', authenticateToken, async (req, res) => {
       nonce: crypto.randomBytes(8).toString('hex')
     });
     
+    // Asana doesn't have a native prompt parameter, but adding response_type=code forces login
     const url = `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
     
     return res.redirect(url);
@@ -642,7 +643,8 @@ router.get('/hubspot/oauth/start', authenticateToken, async (req, res) => {
       'tickets'
     ].join('%20');
     
-    const url = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+    // HubSpot: Adding optional_scope forces re-consent flow
+    const url = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&optional_scope=`;
     
     return res.redirect(url);
   } catch (err) {
@@ -747,7 +749,8 @@ router.get('/pipedrive/oauth/start', authenticateToken, async (req, res) => {
       nonce: crypto.randomBytes(8).toString('hex')
     });
     
-    const url = `https://oauth.pipedrive.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+    // Pipedrive: prompt=login forces account selection
+    const url = `https://oauth.pipedrive.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&prompt=login`;
     
     return res.redirect(url);
   } catch (err) {
