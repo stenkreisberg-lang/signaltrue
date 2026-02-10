@@ -192,7 +192,7 @@ router.get("/auth/google/callback", async (req, res) => {
 router.get("/auth/outlook", (req, res) => {
   const clientId = process.env.OUTLOOK_CLIENT_ID;
   const redirectUri = `${getBackendUrl(req)}/api/auth/outlook/callback`;
-  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read`;
+  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read&prompt=select_account`;
   res.redirect(url);
 });
 

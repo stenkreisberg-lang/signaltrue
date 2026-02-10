@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalTrue - Complete Features Guide</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: white;
+            font-size: 11pt;
+        }
+        
+        @media print {
+            body { font-size: 10pt; }
+            .page-break { page-break-before: always; }
+            .no-break { page-break-inside: avoid; }
+        }
+        
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        /* Cover Page */
+        .cover {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+            color: white;
+            padding: 60px;
+        }
+        
+        .cover h1 {
+            font-size: 48pt;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .cover h2 {
+            font-size: 18pt;
+            font-weight: 500;
+            color: var(--gray-300);
+            margin-bottom: 40px;
+        }
+        
+        .cover .subtitle {
+            font-size: 14pt;
+            color: var(--gray-400);
+            max-width: 500px;
+        }
+        
+        .cover .meta {
+            margin-top: 80px;
+            font-size: 10pt;
+            color: var(--gray-500);
+        }
+        
+        /* Section Headers */
+        h1.section {
+            font-size: 24pt;
+            color: var(--gray-900);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+            margin: 40px 0 20px;
+        }
+        
+        h2 {
+            font-size: 16pt;
+            color: var(--gray-800);
+            margin: 30px 0 15px;
+        }
+        
+        h3 {
+            font-size: 13pt;
+            color: var(--primary-dark);
+            margin: 20px 0 10px;
+        }
+        
+        h4 {
+            font-size: 11pt;
+            color: var(--gray-700);
+            margin: 15px 0 8px;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            color: var(--gray-700);
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0 25px;
+            font-size: 10pt;
+        }
+        
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid var(--gray-200);
+        }
+        
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        tr:nth-child(even) {
+            background: var(--gray-50);
+        }
+        
+        /* Feature Cards */
+        .feature-card {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-card .emoji {
+            font-size: 20pt;
+        }
+        
+        /* Metric Cards */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .metric-card.green { border-left: 4px solid var(--success); }
+        .metric-card.yellow { border-left: 4px solid var(--warning); }
+        .metric-card.red { border-left: 4px solid var(--danger); }
+        
+        .metric-card .value {
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .metric-card .label {
+            font-size: 9pt;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Code blocks */
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 9pt;
+        }
+        
+        pre {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 9pt;
+            margin: 15px 0;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 10px 0 15px 25px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+            color: var(--gray-700);
+        }
+        
+        /* Callouts */
+        .callout {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .callout.info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .callout.warning {
+            background: #fffbeb;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .callout.success {
+            background: #f0fdf4;
+            border-left: 4px solid var(--success);
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        
+        .badge.green { background: #dcfce7; color: #166534; }
+        .badge.yellow { background: #fef3c7; color: #92400e; }
+        .badge.red { background: #fee2e2; color: #991b1b; }
+        
+        /* TOC */
+        .toc {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 25px 30px;
+            margin: 30px 0;
+        }
+        
+        .toc h2 {
+            margin-top: 0;
+            font-size: 14pt;
+        }
+        
+        .toc ol {
+            margin: 15px 0 0 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+        }
+        
+        .toc a {
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-200);
+            text-align: center;
+            color: var(--gray-500);
+            font-size: 9pt;
+        }
+        
+        /* Dashboard mockup */
+        .dashboard-mockup {
+            background: var(--gray-900);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Monaco', monospace;
+            font-size: 9pt;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        /* Privacy table */
+        .privacy-table td:first-child {
+            color: var(--success);
+            font-weight: 600;
+        }
+        
+        .privacy-table td:last-child {
+            color: var(--danger);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover">
+    <h1>SignalTrue</h1>
+    <h2>Behavioral Drift Intelligence Platform</h2>
+    <p class="subtitle">Complete Features Guide: How SignalTrue detects organizational strain, what it measures, and how insights are presented to leaders.</p>
+    <div class="meta">
+        <p>Version 1.0 | February 2026</p>
+        <p>Client Documentation</p>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- Executive Summary -->
+<div class="page-break"></div>
+<h1 class="section">Executive Summary</h1>
+
+<p>SignalTrue is the first <strong>Behavioral Early-Warning System</strong> that detects organizational overload and execution drift weeks before surveys, performance drops, or resignations appear.</p>
+
+<p>Unlike traditional HR analytics that rely on lagging indicators (surveys, exit interviews, performance reviews), SignalTrue observes behavioral metadata from work systems to reveal systemic strain before it becomes visible.</p>
+
+<div class="metric-grid">
+    <div class="metric-card green">
+        <div class="label">Early Detection</div>
+        <div class="value">4-8</div>
+        <div class="label">weeks before resignations</div>
+    </div>
+    <div class="metric-card yellow">
+        <div class="label">Data Sources</div>
+        <div class="value">3</div>
+        <div class="label">Calendar + Slack + Outlook</div>
+    </div>
+    <div class="metric-card red">
+        <div class="label">Intelligence Features</div>
+        <div class="value">10</div>
+        <div class="label">AI-powered insights</div>
+    </div>
+</div>
+
+<h3>Key Differentiators</h3>
+<ul>
+    <li><strong>No surveys required</strong> — Passive behavioral observation</li>
+    <li><strong>Privacy-first design</strong> — No content access, no individual surveillance</li>
+    <li><strong>Predictive, not reactive</strong> — Early signals, not exit interviews</li>
+    <li><strong>Structural insights</strong> — System-level patterns, not individual blame</li>
+</ul>
+
+<!-- Table of Contents -->
+<div class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+        <li>How SignalTrue Works</li>
+        <li>Core Health Metrics</li>
+        <li>Four Primary Drift Signals</li>
+        <li>Ten Behavioral Intelligence Features</li>
+        <li>AI-Powered Recommendations</li>
+        <li>Client Dashboard Experience</li>
+        <li>Privacy & Data Handling</li>
+        <li>Pricing Tiers</li>
+    </ol>
+</div>
+
+<!-- Section 1: How It Works -->
+<div class="page-break"></div>
+<h1 class="section">1. How SignalTrue Works</h1>
+
+<h2>The Four-Step Process</h2>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Name</th>
+        <th>What Happens</th>
+    </tr>
+    <tr>
+        <td><strong>01</strong></td>
+        <td>Observe</td>
+        <td>We observe behavioral patterns from calendar and communication metadata. No content. No surveillance.</td>
+    </tr>
+    <tr>
+        <td><strong>02</strong></td>
+        <td>Learn Baseline</td>
+        <td>SignalTrue learns what "normal" looks like for each team before detecting drift.</td>
+    </tr>
+    <tr>
+        <td><strong>03</strong></td>
+        <td>Detect Drift</td>
+        <td>Early signals that predict problems weeks before they become visible.</td>
+    </tr>
+    <tr>
+        <td><strong>04</strong></td>
+        <td>Signal</td>
+        <td>Leaders receive clear, system-level insights with actionable recommendations.</td>
+    </tr>
+</table>
+
+<h2>What We Observe</h2>
+
+<div class="no-break">
+<h3>Calendar Patterns</h3>
+<ul>
+    <li>Meeting hours per week</li>
+    <li>Back-to-back meeting frequency</li>
+    <li>Focus time availability (2+ hour blocks)</li>
+    <li>After-hours meetings</li>
+    <li>Meeting acceptance/decline rates</li>
+</ul>
+</div>
+
+<div class="no-break">
+<h3>Communication Patterns</h3>
+<ul>
+    <li>Response time patterns (not content)</li>
+    <li>After-hours activity rates</li>
+    <li>Collaboration network changes</li>
+    <li>Sentiment indicators (emoji usage, tone)</li>
+</ul>
+</div>
+
+<div class="callout warning">
+    <strong>What We Never Access:</strong>
+    <ul>
+        <li>❌ Email or message content</li>
+        <li>❌ File contents or documents</li>
+        <li>❌ Individual productivity scores</li>
+        <li>❌ Keystroke or screen monitoring</li>
+    </ul>
+</div>
+
+<!-- Section 2: Core Health Metrics -->
+<div class="page-break"></div>
+<h1 class="section">2. Core Health Metrics</h1>
+
+<h2>Behavioral Drift Index (BDI)</h2>
+
+<p>The BDI is the master health score that combines all risk factors into a single 0-100 metric.</p>
+
+<pre>BDI = √((Overload Risk² + Execution Drag² + Retention Strain²) / 3)</pre>
+
+<h3>Score Interpretation</h3>
+<table>
+    <tr>
+        <th>Score</th>
+        <th>Zone</th>
+        <th>Meaning</th>
+    </tr>
+    <tr>
+        <td>0-35</td>
+        <td><span class="badge green">🟢 Green</span></td>
+        <td>Team operating within healthy patterns</td>
+    </tr>
+    <tr>
+        <td>35-65</td>
+        <td><span class="badge yellow">🟡 Yellow</span></td>
+        <td>Early warning signs, intervention recommended</td>
+    </tr>
+    <tr>
+        <td>65-100</td>
+        <td><span class="badge red">🔴 Red</span></td>
+        <td>Urgent action required, team at breaking point</td>
+    </tr>
+</table>
+
+<h2>Three Core Risk Dimensions</h2>
+
+<div class="feature-card no-break">
+    <h3>Overload Risk</h3>
+    <p><strong>What It Measures:</strong> Burnout risk from excessive meetings and after-hours work</p>
+    
+    <h4>Calculation Factors:</h4>
+    <ul>
+        <li>After-hours activity (35% weight)</li>
+        <li>Meeting load (30% weight)</li>
+        <li>Back-to-back meetings (20% weight)</li>
+        <li>Focus time erosion (15% weight)</li>
+    </ul>
+    
+    <p><strong>Threshold:</strong> Score >65 = burnout imminent</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3>Execution Drag</h3>
+    <p><strong>What It Measures:</strong> Slowdown in decision-making and output despite effort</p>
+    
+    <h4>Calculation Factors:</h4>
+    <ul>
+        <li>Response time slowdown (40% weight)</li>
+        <li>Meeting fragmentation (30% weight)</li>
+        <li>Participation drift (30% weight)</li>
+    </ul>
+    
+    <p><strong>Threshold:</strong> Score >65 = organizational gridlock</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3>Retention Strain</h3>
+    <p><strong>What It Measures:</strong> Flight risk across the team</p>
+    
+    <h4>Calculation Factors:</h4>
+    <ul>
+        <li>Average attrition risk score (40% weight)</li>
+        <li>Network shrinkage patterns (30% weight)</li>
+        <li>Sentiment decline (30% weight)</li>
+    </ul>
+    
+    <p><strong>Threshold:</strong> Score >65 = multiple departures likely</p>
+</div>
+
+<!-- Section 3: Four Primary Drift Signals -->
+<div class="page-break"></div>
+<h1 class="section">3. Four Primary Drift Signals</h1>
+
+<p>These are the early warning signals that predict problems before they become visible.</p>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">⏱️</span> Focus Fragmentation</h3>
+    <table>
+        <tr><th>Aspect</th><th>Description</th></tr>
+        <tr><td>What It Means</td><td>Deep work time is being eroded by meetings, interruptions, and context switching</td></tr>
+        <tr><td>Why It Matters</td><td>Fragmented focus leads to lower quality output and increased stress</td></tr>
+        <tr><td>What We Observe</td><td>Focus time blocks (2+ hours), meeting interruption patterns</td></tr>
+        <tr><td>What Leaders Can Change</td><td>Protect focus blocks, consolidate meetings, reduce synchronous communication</td></tr>
+    </table>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">📅</span> Meeting Overload</h3>
+    <table>
+        <tr><th>Aspect</th><th>Description</th></tr>
+        <tr><td>What It Means</td><td>Calendar density exceeds sustainable thresholds for knowledge work</td></tr>
+        <tr><td>Why It Matters</td><td>Excessive meetings crowd out actual work, forcing it into evenings</td></tr>
+        <tr><td>Threshold</td><td>>25 hours/week in meetings indicates overload</td></tr>
+        <tr><td>What Leaders Can Change</td><td>Audit recurring meetings, implement meeting-free days</td></tr>
+    </table>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">⚡</span> Execution Drag</h3>
+    <table>
+        <tr><th>Aspect</th><th>Description</th></tr>
+        <tr><td>What It Means</td><td>Work is taking longer despite effort levels remaining high</td></tr>
+        <tr><td>Why It Matters</td><td>Signals coordination problems, unclear priorities, or hidden blockers</td></tr>
+        <tr><td>What We Observe</td><td>Response time patterns, decision velocity, participation rates</td></tr>
+        <tr><td>What Leaders Can Change</td><td>Clarify priorities, reduce approval layers</td></tr>
+    </table>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">🌙</span> After-Hours Drift</h3>
+    <table>
+        <tr><th>Aspect</th><th>Description</th></tr>
+        <tr><td>What It Means</td><td>Work is creeping into evenings and weekends at unsustainable rates</td></tr>
+        <tr><td>Why It Matters</td><td>Predicts burnout and attrition, often before people complain</td></tr>
+        <tr><td>What We Observe</td><td>Messages/meetings outside 9am-5pm, weekend activity</td></tr>
+        <tr><td>What Leaders Can Change</td><td>Redistribute workload, adjust expectations</td></tr>
+    </table>
+</div>
+
+<!-- Section 4: Ten Features -->
+<div class="page-break"></div>
+<h1 class="section">4. Ten Behavioral Intelligence Features</h1>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">⚠️</span> Feature 1: Attrition Risk Detection</h3>
+    <p><strong>Purpose:</strong> Predict individual flight risk 4-8 weeks before resignation</p>
+    
+    <h4>Warning Signals Detected:</h4>
+    <ul>
+        <li>Message volume drop (≥30% decline)</li>
+        <li>Response time increase (≥50% slower)</li>
+        <li>Network shrinkage (≥20% fewer contacts)</li>
+        <li>Engagement drop (≥40% fewer thread replies)</li>
+        <li>Meeting decline spike (≥30% more declines)</li>
+    </ul>
+    
+    <h4>Risk Score Interpretation:</h4>
+    <table>
+        <tr><th>Score</th><th>Risk Level</th><th>Predicted Timeline</th></tr>
+        <tr><td>0-39</td><td>Low</td><td>Healthy engagement</td></tr>
+        <tr><td>40-59</td><td>Medium</td><td>2-3 months if unaddressed</td></tr>
+        <tr><td>60-79</td><td>High</td><td>1-2 months — retention conversation needed</td></tr>
+        <tr><td>80-100</td><td>Critical</td><td>2-4 weeks — imminent departure</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Daily at 3:00 AM</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">📊</span> Feature 2: Manager Effectiveness</h3>
+    <p><strong>Purpose:</strong> Measure manager quality through behavioral outcomes, not surveys</p>
+    
+    <h4>Measurement Dimensions:</h4>
+    <ul>
+        <li><strong>Calendar Metrics (30%):</strong> One-on-one consistency, team meeting load, cancellation rate</li>
+        <li><strong>Communication Metrics (30%):</strong> Response time, recognition rate, escalation bypass</li>
+        <li><strong>Team Outcomes (40%):</strong> Team attrition risk, BDI score, sentiment</li>
+    </ul>
+    
+    <table>
+        <tr><th>Score</th><th>Level</th><th>Action</th></tr>
+        <tr><td>80-100</td><td>Excellent</td><td>Top-tier manager</td></tr>
+        <tr><td>65-79</td><td>Good</td><td>Solid performance</td></tr>
+        <tr><td>45-64</td><td>Needs Improvement</td><td>Coaching required</td></tr>
+        <tr><td>0-44</td><td>Critical</td><td>Urgent intervention</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Monthly on 1st</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">🚨</span> Feature 3: Crisis Detection</h3>
+    <p><strong>Purpose:</strong> Real-time detection of organizational emergencies</p>
+    
+    <h4>Crisis Types Detected:</h4>
+    <ul>
+        <li><strong>Sudden sentiment collapse:</strong> ≥60% drop in positive tone</li>
+        <li><strong>Message volume spike:</strong> ≥200% increase (firefighting mode)</li>
+        <li><strong>After-hours flood:</strong> ≥300% spike in night/weekend activity</li>
+        <li><strong>Meeting cancellation wave:</strong> ≥50% of day's meetings cancelled</li>
+    </ul>
+    
+    <table>
+        <tr><th>Severity</th><th>Response Time</th><th>Example</th></tr>
+        <tr><td>Critical</td><td>15 minutes</td><td>Team morale crash, major deadline missed</td></tr>
+        <tr><td>High</td><td>2 hours</td><td>Project firefighting, blocked delivery</td></tr>
+        <tr><td>Moderate</td><td>24 hours</td><td>Elevated stress, coordination issues</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Every 15 minutes</p>
+</div>
+
+<div class="page-break"></div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">🔗</span> Feature 4: Network Health</h3>
+    <p><strong>Purpose:</strong> Detect collaboration silos, bottlenecks, and knowledge concentration</p>
+    
+    <h4>Issues Detected:</h4>
+    <ul>
+        <li><strong>Silos:</strong> Teams with less than 20% cross-communication</li>
+        <li><strong>Bottlenecks:</strong> Individuals with 8+ unique questioners, slow response times</li>
+        <li><strong>Knowledge Concentration:</strong> Topics with single expert (bus factor = 1)</li>
+    </ul>
+    
+    <table>
+        <tr><th>Score</th><th>Status</th><th>Meaning</th></tr>
+        <tr><td>80-100</td><td>Healthy</td><td>Good collaboration patterns</td></tr>
+        <tr><td>60-79</td><td>Some Issues</td><td>Isolated pockets</td></tr>
+        <tr><td>40-59</td><td>Silos Detected</td><td>Poor knowledge sharing</td></tr>
+        <tr><td>0-39</td><td>Critical</td><td>Single points of failure</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Weekly on Sundays</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">🎯</span> Feature 5: Succession Risk</h3>
+    <p><strong>Purpose:</strong> Identify critical knowledge dependencies</p>
+    
+    <h4>Bus Factor Calculation:</h4>
+    <table>
+        <tr><th>Bus Factor</th><th>Risk Level</th><th>Meaning</th></tr>
+        <tr><td>1</td><td>Critical</td><td>Single point of failure</td></tr>
+        <tr><td>2</td><td>High Risk</td><td>Limited backup</td></tr>
+        <tr><td>≥3</td><td>Acceptable</td><td>Knowledge distributed</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Monthly on 15th</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">⚖️</span> Feature 6: Equity Signals</h3>
+    <p><strong>Purpose:</strong> Detect inequitable treatment from behavioral patterns</p>
+    
+    <h4>Dimensions Measured:</h4>
+    <table>
+        <tr><th>Dimension</th><th>What We Observe</th></tr>
+        <tr><td>Response Time Equity</td><td>Do some people wait longer for responses?</td></tr>
+        <tr><td>Participation Equity</td><td>Are some excluded from meetings/discussions?</td></tr>
+        <tr><td>Workload Equity</td><td>Is after-hours work concentrated on certain people?</td></tr>
+        <tr><td>Voice Equity</td><td>Whose ideas get acknowledged and amplified?</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Weekly on Mondays</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">📈</span> Feature 7: Project Risk</h3>
+    <p><strong>Purpose:</strong> Predict project delays from behavioral patterns (no Jira required)</p>
+    
+    <table>
+        <tr><th>Score</th><th>Prediction</th></tr>
+        <tr><td>80-100</td><td>Likely to miss deadline by >2 weeks</td></tr>
+        <tr><td>60-79</td><td>May slip 1-2 weeks</td></tr>
+        <tr><td>40-59</td><td>On track but monitor closely</td></tr>
+        <tr><td>0-39</td><td>Healthy progress</td></tr>
+    </table>
+    
+    <p><strong>Update Frequency:</strong> Daily at 2:00 AM</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">📉</span> Feature 8: Meeting ROI</h3>
+    <p><strong>Purpose:</strong> Measure meeting effectiveness from post-meeting behavior</p>
+    
+    <h4>Positive Signals (analyzed 4 hours post-meeting):</h4>
+    <ul>
+        <li>Action messages ("I'll take that", "on it")</li>
+        <li>Decision confirmations, follow-up threads</li>
+    </ul>
+    
+    <h4>Negative Signals:</h4>
+    <ul>
+        <li>Confusion ("wait, what did we decide?")</li>
+        <li>No follow-up, complaints ("could've been an email")</li>
+    </ul>
+    
+    <p><strong>Update Frequency:</strong> Daily</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">📧</span> Feature 9: Outlook Signals</h3>
+    <p><strong>Purpose:</strong> Email behavioral patterns for Outlook/Exchange users</p>
+    
+    <h4>Signals Detected:</h4>
+    <ul>
+        <li>After-hours email flood — Burnout risk</li>
+        <li>Response time deterioration — Overload</li>
+        <li>Weekend work spike — Work-life imbalance</li>
+        <li>Shrinking network — Isolation/withdrawal</li>
+    </ul>
+    
+    <p><strong>Update Frequency:</strong> Daily at 4:00 AM</p>
+</div>
+
+<div class="feature-card no-break">
+    <h3><span class="emoji">🎛️</span> Feature 10: Insights Dashboard</h3>
+    <p><strong>Purpose:</strong> All intelligence signals in one unified view</p>
+    
+    <h4>Seven Compact Widgets:</h4>
+    <ol>
+        <li>Network Health (silo score)</li>
+        <li>Succession Risk (bus factor)</li>
+        <li>Equity Signals (equity score)</li>
+        <li>Project Risk (high-risk count)</li>
+        <li>Meeting ROI (low-ROI percentage)</li>
+        <li>Outlook Signals (critical signals)</li>
+        <li>Attrition Risk Summary</li>
+    </ol>
+    
+    <p><strong>Update Frequency:</strong> Real-time polling</p>
+</div>
+
+<!-- Section 5: AI Recommendations -->
+<div class="page-break"></div>
+<h1 class="section">5. AI-Powered Recommendations</h1>
+
+<p>SignalTrue uses AI to generate context-aware, actionable recommendations based on all available signals.</p>
+
+<h3>How It Works</h3>
+
+<ol>
+    <li><strong>Build Context:</strong> Gathers BDI, all 10 intelligence signals, 4-week history</li>
+    <li><strong>Generate Recommendations:</strong> AI analyzes patterns and suggests 3-5 specific actions</li>
+    <li><strong>Track Implementation:</strong> Recommendations saved, status tracked, impact measured</li>
+</ol>
+
+<h3>Example Recommendation</h3>
+
+<div class="dashboard-mockup">
+┌─────────────────────────────────────────────────────┐
+│ 🔴 HIGH PRIORITY                                    │
+│                                                     │
+│ Title: Reduce meeting load by 30%                   │
+│                                                     │
+│ Description: Cancel 3 recurring meetings with       │
+│ &lt;5 attendees. Focus on weekly status meetings       │
+│ that have low ROI scores.                           │
+│                                                     │
+│ Expected Impact: Recover 6 hours/week per person    │
+│                                                     │
+│ Category: Overload                                  │
+└─────────────────────────────────────────────────────┘
+</div>
+
+<h3>Recommendation Categories</h3>
+<table>
+    <tr><th>Category</th><th>Focus Area</th></tr>
+    <tr><td>Overload</td><td>Reduce meetings, protect focus time, limit after-hours</td></tr>
+    <tr><td>Execution</td><td>Speed up decisions, reduce fragmentation, clarify owners</td></tr>
+    <tr><td>Retention</td><td>1-on-1s, workload review, recognition</td></tr>
+    <tr><td>Crisis</td><td>Immediate actions (all-hands, blocker removal)</td></tr>
+    <tr><td>Network</td><td>Connect silos, distribute knowledge, remove bottlenecks</td></tr>
+    <tr><td>Equity</td><td>Rebalance workload, improve inclusion</td></tr>
+</table>
+
+<!-- Section 6: Dashboard -->
+<div class="page-break"></div>
+<h1 class="section">6. Client Dashboard Experience</h1>
+
+<div class="dashboard-mockup">
+┌──────────────────────────────────────────────────────┐
+│                  SIGNALTRUE DASHBOARD                 │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐     │
+│  │    BDI     │  │  OVERLOAD  │  │  EXECUTION │     │
+│  │    47      │  │    62      │  │     38     │     │
+│  │  STRETCHED │  │    HIGH    │  │   HEALTHY  │     │
+│  └────────────┘  └────────────┘  └────────────┘     │
+│                                                      │
+│  ┌────────────┐  ┌────────────────────────────┐     │
+│  │ RETENTION  │  │                            │     │
+│  │    41      │  │    4-WEEK TREND CHART      │     │
+│  │   MEDIUM   │  │                            │     │
+│  └────────────┘  └────────────────────────────┘     │
+│                                                      │
+├──────────────────────────────────────────────────────┤
+│  INTELLIGENCE WIDGETS                                │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐      │
+│  │Network│ │Succes│ │Equity│ │Project│ │Meeting│     │
+│  │Health │ │ sion │ │Signals│ │ Risk │ │  ROI │     │
+│  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘      │
+│                                                      │
+├──────────────────────────────────────────────────────┤
+│  AI RECOMMENDATIONS                                  │
+│  ┌────────────────────────────────────────────────┐ │
+│  │ 🔴 Reduce meeting load by 30%                  │ │
+│  │ 🟡 Schedule retention conversation with Sarah  │ │
+│  │ 🟢 Establish backup for infrastructure role    │ │
+│  └────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────┘
+</div>
+
+<h3>Available Views</h3>
+<table>
+    <tr><th>View</th><th>Purpose</th><th>Audience</th></tr>
+    <tr><td>Executive Summary</td><td>High-level BDI and trends</td><td>C-Suite</td></tr>
+    <tr><td>Team Dashboard</td><td>Detailed team metrics</td><td>HR / Team Leads</td></tr>
+    <tr><td>Manager Effectiveness</td><td>Manager leaderboard</td><td>HR / Leadership</td></tr>
+    <tr><td>Attrition Risk</td><td>Flight risk individuals</td><td>HR</td></tr>
+    <tr><td>Insights Dashboard</td><td>All intelligence signals</td><td>Analysts</td></tr>
+</table>
+
+<!-- Section 7: Privacy -->
+<div class="page-break"></div>
+<h1 class="section">7. Privacy & Data Handling</h1>
+
+<div class="callout success">
+    <strong>Privacy Principles:</strong>
+    <ul>
+        <li><strong>Metadata Only:</strong> We analyze patterns, never content</li>
+        <li><strong>No Surveillance:</strong> No keystroke logging, screen capture, or individual tracking</li>
+        <li><strong>Team-Level Insights:</strong> Recommendations focus on system changes, not individual blame</li>
+        <li><strong>Transparent:</strong> Employees can see what data categories are analyzed</li>
+    </ul>
+</div>
+
+<h3>What We Access vs. What We Don't</h3>
+<table class="privacy-table">
+    <tr><th>✅ We Access</th><th>❌ We Never Access</th></tr>
+    <tr><td>Calendar event times</td><td>Email/message content</td></tr>
+    <tr><td>Meeting duration</td><td>File contents</td></tr>
+    <tr><td>Response time patterns</td><td>Browsing history</td></tr>
+    <tr><td>After-hours activity rates</td><td>Keystroke data</td></tr>
+    <tr><td>Collaboration network structure</td><td>Screen recordings</td></tr>
+    <tr><td>Sentiment indicators (emoji)</td><td>Individual performance scores</td></tr>
+</table>
+
+<h3>Data Retention</h3>
+<ul>
+    <li><strong>Raw behavioral data:</strong> 90 days</li>
+    <li><strong>Aggregated metrics:</strong> 12 months</li>
+    <li><strong>Recommendations:</strong> Until resolved + 90 days</li>
+    <li><strong>Crisis events:</strong> 6 months</li>
+</ul>
+
+<!-- Section 8: Pricing -->
+<div class="page-break"></div>
+<h1 class="section">8. Pricing Tiers</h1>
+
+<div class="callout info">
+    <strong>Pricing Philosophy:</strong> SignalTrue pricing reflects the <strong>cost of late detection</strong>. One missed signal often costs more than a year of prevention.
+</div>
+
+<h3>Three Tiers</h3>
+<table>
+    <tr><th>Tier</th><th>Price</th><th>Outcome</th><th>Best For</th></tr>
+    <tr><td><strong>Visibility</strong></td><td>€99/month</td><td>See early system signals</td><td>Small teams starting with awareness</td></tr>
+    <tr><td><strong>Prevention</strong></td><td>€199/month</td><td>Track trends and get alerts</td><td>Growing teams needing proactive intervention</td></tr>
+    <tr><td><strong>Resilience</strong></td><td>Custom</td><td>Guide interventions with executive insight</td><td>Enterprise organizations</td></tr>
+</table>
+
+<h3>Feature Comparison</h3>
+<table>
+    <tr><th>Feature</th><th>Visibility</th><th>Prevention</th><th>Resilience</th></tr>
+    <tr><td>Weekly drift reports</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Team-level pattern detection</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Focus fragmentation signals</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Meeting overload indicators</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    <tr><td>After-hours drift tracking</td><td>✅</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Trend tracking over time</td><td>—</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Automated drift alerts</td><td>—</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Monthly leadership summaries</td><td>—</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Industry benchmarks</td><td>—</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Executive quarterly summaries</td><td>—</td><td>—</td><td>✅</td></tr>
+    <tr><td>Intervention recommendations</td><td>—</td><td>—</td><td>✅</td></tr>
+    <tr><td>Custom signal models</td><td>—</td><td>—</td><td>✅</td></tr>
+    <tr><td>Dedicated success manager</td><td>—</td><td>—</td><td>✅</td></tr>
+</table>
+
+<!-- Footer -->
+<div class="footer">
+    <p><strong>SignalTrue</strong> — Behavioral Early-Warning System for Organizations</p>
+    <p>Detect early system-level strain before burnout, disengagement, or attrition occur.</p>
+    <br>
+    <p>Contact: hello@signaltrue.com | signaltrue.com/contact</p>
+    <br>
+    <p>© 2026 SignalTrue. All rights reserved.</p>
+</div>
+
+</div>
+</body>
+</html>

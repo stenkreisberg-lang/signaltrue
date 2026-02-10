@@ -845,6 +845,7 @@ router.get('/integrations/microsoft/oauth/start', async (req, res) => {
   url.searchParams.set('response_mode', 'query');
   url.searchParams.set('scope', scopes.join(' '));
   url.searchParams.set('state', state);
+  url.searchParams.set('prompt', 'select_account'); // Force account selection
   return res.redirect(String(url));
 });
 
