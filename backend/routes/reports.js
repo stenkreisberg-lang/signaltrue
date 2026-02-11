@@ -280,7 +280,7 @@ router.post('/monthly/org/:orgId/generate', authenticateToken, checkRole(['hr_ad
 
 /**
  * POST /api/reports/send-weekly-email
- * Generate and send weekly reports via email
+ * Generate and send weekly reports via email using Resend
  * Access: Master Admin only
  */
 router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin']), async (req, res) => {
@@ -288,18 +288,19 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
     const { orgId } = req.user;
     const { recipientEmail } = req.body;
     
-    // Import email service
-    const nodemailer = await import('nodemailer');
-    const mongoose = await import('mongoose');
-    
-    // Check email configuration
-    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    // Check Resend configuration
+    if (!process.env.RESEND_API_KEY) {
       return res.status(500).json({ 
-        message: 'Email not configured on server. Set EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD in environment.' 
+        message: 'Email not configured. Set RESEND_API_KEY in environment.' 
       });
     }
     
+    // Import Resend
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    
     // Get org and team data
+    const mongoose = await import('mongoose');
     const Organization = mongoose.default.model('Organization');
     const org = await Organization.findById(orgId);
     if (!org) {
@@ -310,16 +311,6 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
     const teams = await Team.find({ orgId });
     
     const TeamState = mongoose.default.model('TeamState');
-    
-    const transporter = nodemailer.default.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
-    });
     
     const email = recipientEmail || org.settings?.reportEmail || req.user.email;
     const results = [];
@@ -347,8 +338,9 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
         
         const html = generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor);
         
-        await transporter.sendMail({
-          from: `"SignalTrue" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+        // Send via Resend
+        await resend.emails.send({
+          from: 'SignalTrue <reports@signaltrue.ai>',
           to: email,
           subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team.name} Team)`,
           html

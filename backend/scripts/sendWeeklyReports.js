@@ -1,36 +1,16 @@
 import mongoose from 'mongoose';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://signaltrue:123signaltrue@cluster0.4olk5ma.mongodb.net/signaltrue?retryWrites=true&w=majority';
 
-// Configure email - try multiple providers
-let transporter = null;
-
-if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-  // Production SMTP
-  transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '587'),
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-  console.log('Using SMTP:', process.env.EMAIL_HOST);
-} else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-  // Gmail fallback
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD
-    }
-  });
-  console.log('Using Gmail');
+// Configure Resend
+let resend = null;
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+  console.log('Using Resend for email delivery');
 }
 
 async function generateAndSendReports() {
@@ -204,11 +184,10 @@ async function generateAndSendReports() {
       await mongoose.connection.db.collection('reports').insertOne(report);
       console.log(`✓ Week ${weekNum} report saved to database`);
 
-      // Send email
-      if (transporter) {
-        const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.GMAIL_USER || 'noreply@signaltrue.ai';
-        await transporter.sendMail({
-          from: `"SignalTrue" <${fromEmail}>`,
+      // Send email via Resend
+      if (resend) {
+        await resend.emails.send({
+          from: 'SignalTrue <reports@signaltrue.ai>',
           to: recipientEmail,
           subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team?.name || 'General'} Team)`,
           html
@@ -216,8 +195,7 @@ async function generateAndSendReports() {
         console.log(`✓ Week ${weekNum} report sent to ${recipientEmail}`);
       } else {
         console.log(`⚠ Email not configured - report saved but not sent`);
-        console.log(`  Set EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD in .env`);
-        console.log(`  Or set GMAIL_USER, GMAIL_APP_PASSWORD for Gmail`);
+        console.log(`  Set RESEND_API_KEY in .env`);
       }
     }
 
