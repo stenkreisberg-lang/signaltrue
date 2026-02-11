@@ -44,7 +44,9 @@ const EmployeeDirectory: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'assigned' | 'unassigned' | 'pending' | 'active'>('all');
+  const [filter, setFilter] = useState<'all' | 'assigned' | 'unassigned' | 'pending' | 'active'>(
+    'all'
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
@@ -59,11 +61,11 @@ const EmployeeDirectory: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch employees and teams (always available)
       const [employeesRes, teamsRes] = await Promise.all([
         api.get('/team-members').catch(() => ({ data: [] })),
-        api.get('/team-management/organization').catch(() => ({ data: [] }))
+        api.get('/team-management/organization').catch(() => ({ data: [] })),
       ]);
 
       // Try to fetch sync status (may not be available on all backends)
@@ -72,14 +74,16 @@ const EmployeeDirectory: React.FC = () => {
         syncRes = await api.get('/employee-sync/status');
       } catch (error) {
         console.log('Sync status endpoint not available yet');
-        syncRes = { data: {
-          totalUsers: 0,
-          pendingUsers: 0,
-          activeUsers: 0,
-          unassignedUsers: 0,
-          slackConnected: false,
-          googleConnected: false
-        }};
+        syncRes = {
+          data: {
+            totalUsers: 0,
+            pendingUsers: 0,
+            activeUsers: 0,
+            unassignedUsers: 0,
+            slackConnected: false,
+            googleConnected: false,
+          },
+        };
       }
 
       // Enrich employees with team names
@@ -87,7 +91,7 @@ const EmployeeDirectory: React.FC = () => {
         const team = teamsRes.data.find((t: Team) => t._id === emp.teamId);
         return {
           ...emp,
-          teamName: team?.name || 'Unassigned'
+          teamName: team?.name || 'Unassigned',
         };
       });
 
@@ -106,12 +110,12 @@ const EmployeeDirectory: React.FC = () => {
     try {
       setSyncing(true);
       const response = await api.post(`/employee-sync/${source}`);
-      
+
       if (response.data.success) {
         const stats = response.data.stats;
         showSuccess(
           `Synced ${source === 'slack' ? 'Slack' : 'Google'} employees: ` +
-          `${stats.created} created, ${stats.updated} updated, ${stats.inactivated || 0} inactivated`
+            `${stats.created} created, ${stats.updated} updated, ${stats.inactivated || 0} inactivated`
         );
         await fetchData();
       } else {
@@ -147,7 +151,7 @@ const EmployeeDirectory: React.FC = () => {
     }
 
     try {
-      const promises = Array.from(selectedEmployees).map(employeeId =>
+      const promises = Array.from(selectedEmployees).map((employeeId) =>
         api.put(`/team-management/${bulkAssignTeamId}/members/${employeeId}`)
       );
 
@@ -175,7 +179,7 @@ const EmployeeDirectory: React.FC = () => {
 
   const selectAll = () => {
     const filtered = getFilteredEmployees();
-    setSelectedEmployees(new Set(filtered.map(e => e._id)));
+    setSelectedEmployees(new Set(filtered.map((e) => e._id)));
   };
 
   const deselectAll = () => {
@@ -187,23 +191,24 @@ const EmployeeDirectory: React.FC = () => {
 
     // Apply filter
     if (filter === 'assigned') {
-      filtered = filtered.filter(e => e.teamName && e.teamName !== 'Unassigned');
+      filtered = filtered.filter((e) => e.teamName && e.teamName !== 'Unassigned');
     } else if (filter === 'unassigned') {
-      filtered = filtered.filter(e => !e.teamName || e.teamName === 'Unassigned');
+      filtered = filtered.filter((e) => !e.teamName || e.teamName === 'Unassigned');
     } else if (filter === 'pending') {
-      filtered = filtered.filter(e => e.accountStatus === 'pending');
+      filtered = filtered.filter((e) => e.accountStatus === 'pending');
     } else if (filter === 'active') {
-      filtered = filtered.filter(e => e.accountStatus === 'active');
+      filtered = filtered.filter((e) => e.accountStatus === 'active');
     }
 
     // Apply search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(e =>
-        e.name.toLowerCase().includes(term) ||
-        e.email.toLowerCase().includes(term) ||
-        (e.profile?.title && e.profile.title.toLowerCase().includes(term)) ||
-        (e.profile?.department && e.profile.department.toLowerCase().includes(term))
+      filtered = filtered.filter(
+        (e) =>
+          e.name.toLowerCase().includes(term) ||
+          e.email.toLowerCase().includes(term) ||
+          (e.profile?.title && e.profile.title.toLowerCase().includes(term)) ||
+          (e.profile?.department && e.profile.department.toLowerCase().includes(term))
       );
     }
 
@@ -223,17 +228,23 @@ const EmployeeDirectory: React.FC = () => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (
+      date.toLocaleDateString() +
+      ' ' +
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    );
   };
 
   const getStatusBadge = (status: string) => {
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800',
       active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800'
+      inactive: 'bg-gray-100 text-gray-800',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status as keyof typeof styles] || styles.inactive}`}>
+      <span
+        className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status as keyof typeof styles] || styles.inactive}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -245,7 +256,7 @@ const EmployeeDirectory: React.FC = () => {
       google_workspace: '📧',
       google_chat: '📧',
       manual: '✋',
-      invitation: '✉️'
+      invitation: '✉️',
     };
     return (
       <span className="text-sm text-gray-600">
@@ -342,7 +353,8 @@ const EmployeeDirectory: React.FC = () => {
 
               {!syncStatus.slackConnected && !syncStatus.googleConnected && (
                 <div className="text-sm text-gray-600">
-                  No integrations connected. Connect Slack or Google to sync employees automatically.
+                  No integrations connected. Connect Slack or Google to sync employees
+                  automatically.
                 </div>
               )}
             </div>
@@ -359,7 +371,7 @@ const EmployeeDirectory: React.FC = () => {
               placeholder="Search by name, email, title, or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
             />
           </div>
 
@@ -367,7 +379,9 @@ const EmployeeDirectory: React.FC = () => {
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               All ({employees.length})
@@ -375,7 +389,9 @@ const EmployeeDirectory: React.FC = () => {
             <button
               onClick={() => setFilter('unassigned')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'unassigned' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filter === 'unassigned'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Unassigned
@@ -383,7 +399,9 @@ const EmployeeDirectory: React.FC = () => {
             <button
               onClick={() => setFilter('pending')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filter === 'pending'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Pending
@@ -391,7 +409,9 @@ const EmployeeDirectory: React.FC = () => {
             <button
               onClick={() => setFilter('active')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'active' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filter === 'active'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Active
@@ -429,10 +449,10 @@ const EmployeeDirectory: React.FC = () => {
               <select
                 value={bulkAssignTeamId}
                 onChange={(e) => setBulkAssignTeamId(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               >
                 <option value="">Select a team...</option>
-                {teams.map(team => (
+                {teams.map((team) => (
                   <option key={team._id} value={team._id}>
                     {team.name} {team.metadata?.function ? `(${team.metadata.function})` : ''}
                   </option>
@@ -456,12 +476,11 @@ const EmployeeDirectory: React.FC = () => {
         )}
 
         <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-          <span>Showing {filteredEmployees.length} of {employees.length} employees</span>
+          <span>
+            Showing {filteredEmployees.length} of {employees.length} employees
+          </span>
           {filteredEmployees.length > 0 && (
-            <button
-              onClick={selectAll}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <button onClick={selectAll} className="text-blue-600 hover:text-blue-700 font-medium">
               Select All {filteredEmployees.length}
             </button>
           )}
@@ -472,7 +491,9 @@ const EmployeeDirectory: React.FC = () => {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {filteredEmployees.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            {searchTerm ? 'No employees match your search.' : 'No employees found. Connect Slack or Google to sync employees.'}
+            {searchTerm
+              ? 'No employees match your search.'
+              : 'No employees found. Connect Slack or Google to sync employees.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -482,8 +503,11 @@ const EmployeeDirectory: React.FC = () => {
                   <th className="px-4 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={filteredEmployees.length > 0 && filteredEmployees.every(e => selectedEmployees.has(e._id))}
-                      onChange={(e) => e.target.checked ? selectAll() : deselectAll()}
+                      checked={
+                        filteredEmployees.length > 0 &&
+                        filteredEmployees.every((e) => selectedEmployees.has(e._id))
+                      }
+                      onChange={(e) => (e.target.checked ? selectAll() : deselectAll())}
                       className="rounded border-gray-300"
                     />
                   </th>
@@ -546,14 +570,12 @@ const EmployeeDirectory: React.FC = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">{employee.teamName || 'Unassigned'}</div>
+                      <div className="text-sm text-gray-900">
+                        {employee.teamName || 'Unassigned'}
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      {getStatusBadge(employee.accountStatus)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {getSourceBadge(employee.source)}
-                    </td>
+                    <td className="px-4 py-3">{getStatusBadge(employee.accountStatus)}</td>
+                    <td className="px-4 py-3">{getSourceBadge(employee.source)}</td>
                     <td className="px-4 py-3">
                       <select
                         onChange={(e) => {
@@ -562,13 +584,13 @@ const EmployeeDirectory: React.FC = () => {
                             e.target.value = '';
                           }
                         }}
-                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                         defaultValue=""
                       >
                         <option value="">Assign to team...</option>
                         {teams
-                          .filter(team => team._id !== employee.teamId)
-                          .map(team => (
+                          .filter((team) => team._id !== employee.teamId)
+                          .map((team) => (
                             <option key={team._id} value={team._id}>
                               {team.name}
                             </option>
