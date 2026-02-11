@@ -561,6 +561,7 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
     const scopeParam = String(parsed.scope || 'calendar');
     
     console.log('Google OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug, 'scope:', scopeParam);
+    console.log('Google OAuth redirect URI used:', redirectUri);
 
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -574,9 +575,15 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       }).toString()
     });
     const tokens = await tokenRes.json();
+    console.log('Google OAuth tokens received:', { 
+      hasAccessToken: !!tokens.access_token, 
+      hasRefreshToken: !!tokens.refresh_token,
+      error: tokens.error,
+      errorDescription: tokens.error_description
+    });
     if (tokens.error) {
       console.error('Google OAuth error:', tokens);
-      return res.status(400).send('Google authorization failed.');
+      return res.status(400).send(`Google authorization failed: ${tokens.error_description || tokens.error}`);
     }
 
     try {
