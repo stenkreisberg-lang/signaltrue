@@ -722,12 +722,37 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
       </div>
       ` : ''}
       
-      <!-- BDI Gauge -->
+      <!-- BDI Gauge with SVG Speedometer -->
       <div class="bdi-section">
-        <div class="bdi-gauge">
-          <div class="gauge-bg"></div>
-          <div class="gauge-mask"></div>
-          <div class="gauge-value">${bdiValue}</div>
+        <div style="width: 200px; margin: 0 auto 16px;">
+          <svg viewBox="0 0 200 120" style="width: 100%; height: auto;">
+            <!-- Gauge arc background -->
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#ef4444"/>
+                <stop offset="35%" style="stop-color:#f59e0b"/>
+                <stop offset="65%" style="stop-color:#22c55e"/>
+                <stop offset="100%" style="stop-color:#22c55e"/>
+              </linearGradient>
+            </defs>
+            <!-- Outer arc -->
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="18" stroke-linecap="round"/>
+            <!-- Tick marks -->
+            <text x="15" y="105" font-size="10" fill="#94a3b8">0</text>
+            <text x="55" y="45" font-size="10" fill="#94a3b8">25</text>
+            <text x="93" y="25" font-size="10" fill="#94a3b8">50</text>
+            <text x="135" y="45" font-size="10" fill="#94a3b8">75</text>
+            <text x="175" y="105" font-size="10" fill="#94a3b8">100</text>
+            <!-- Needle - rotates based on value (0=left, 100=right) -->
+            <!-- Rotation: -90deg at 0, +90deg at 100. Formula: (value/100)*180 - 90 -->
+            <g transform="rotate(${(bdiValue / 100) * 180 - 90}, 100, 100)">
+              <polygon points="100,30 95,100 105,100" fill="#1e293b"/>
+              <circle cx="100" cy="100" r="8" fill="#1e293b"/>
+              <circle cx="100" cy="100" r="4" fill="#fff"/>
+            </g>
+            <!-- Value display -->
+            <text x="100" y="95" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e293b">${bdiValue}</text>
+          </svg>
         </div>
         <div class="bdi-label">Behavioral Drift Index (BDI)</div>
         <div class="zone-badge" style="background: ${zoneColor}15; color: ${zoneColor};">
