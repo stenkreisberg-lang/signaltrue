@@ -144,15 +144,16 @@ const EmployeeDirectory: React.FC = () => {
     }
   };
 
-  const handleBulkAssign = async () => {
-    if (!bulkAssignTeamId || selectedEmployees.size === 0) {
+  const handleBulkAssign = async (teamIdParam?: string) => {
+    const teamId = teamIdParam || bulkAssignTeamId;
+    if (!teamId || selectedEmployees.size === 0) {
       showError('Please select a team and at least one employee');
       return;
     }
 
     try {
       const promises = Array.from(selectedEmployees).map((employeeId) =>
-        api.put(`/team-management/${bulkAssignTeamId}/members/${employeeId}`)
+        api.put(`/team-management/${teamId}/members/${employeeId}`)
       );
 
       await Promise.all(promises);
@@ -442,29 +443,22 @@ const EmployeeDirectory: React.FC = () => {
 
         {showBulkAssign && selectedEmployees.size > 0 && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               Assign {selectedEmployees.size} employee(s) to:
             </label>
-            <div className="flex gap-2">
-              <select
-                value={bulkAssignTeamId}
-                onChange={(e) => setBulkAssignTeamId(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-              >
-                <option value="">Select a team...</option>
-                {teams.map((team) => (
-                  <option key={team._id} value={team._id}>
-                    {team.name} {team.metadata?.function ? `(${team.metadata.function})` : ''}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleBulkAssign}
-                disabled={!bulkAssignTeamId}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Assign
-              </button>
+            <div className="flex flex-wrap gap-2">
+              {teams.map((team) => (
+                <button
+                  key={team._id}
+                  onClick={() => {
+                    setBulkAssignTeamId(team._id);
+                    handleBulkAssign(team._id);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {team.name}
+                </button>
+              ))}
               <button
                 onClick={() => setShowBulkAssign(false)}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
