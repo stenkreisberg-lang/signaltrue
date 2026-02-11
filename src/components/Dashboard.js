@@ -7,6 +7,7 @@ import AdminExportPanel from './AdminExportPanel';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 import GoogleChatConnect from './GoogleChatConnect';
 import LoopClosingDashboard from './LoopClosingDashboard';
+import BDIDashboard from './BDIDashboard';
 import TeamManagement from './TeamManagement';
 import EmployeeDirectory from './EmployeeDirectory';
 import ImmediateInsightsPanel from './ImmediateInsightsPanel';
@@ -243,6 +244,7 @@ function Dashboard() {
         {/* Engagement Change Alerts (Drift Explainability) */}
         {teamId && (
           <>
+            <BDIDashboard teamId={teamId} orgId={user?.orgId} />
             <LoopClosingDashboard teamId={teamId} />
             <DriftAlerts teamId={teamId} />
             <PlaybookRecommendations teamId={teamId} />

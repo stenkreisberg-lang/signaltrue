@@ -111,6 +111,7 @@ import costOfDriftRoutes from "./routes/costOfDrift.js";
 import blogRoutes from "./routes/blog.js";
 import managerCoachingRoutes from "./routes/managerCoaching.js";
 import driftDiagnosticRoutes from "./routes/drift.js";
+import teamStateRoutes from "./routes/teamStateRoutes.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -307,6 +308,7 @@ async function main() {
     app.use('/api/reports', reportsRoutes);
     app.use('/api/subscriptions', subscriptionRoutes);
     app.use('/api/fit-questionnaire', fitQuestionnaireRoutes);
+    app.use('/api/team-state', teamStateRoutes);
     
     // --- AI Chat Assistant (public, no auth required) ---
     app.use('/api/chat', chatRoutes);
