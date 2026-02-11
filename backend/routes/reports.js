@@ -365,6 +365,102 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
   }
 });
 
+/**
+ * POST /api/reports/trigger-weekly-email
+ * Trigger weekly report emails with a secret key (for production use)
+ * No auth required - uses secret key instead
+ */
+router.post('/trigger-weekly-email', async (req, res) => {
+  try {
+    const { secret, email, orgId } = req.body;
+    
+    // Verify secret key
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    if (secret !== expectedSecret) {
+      return res.status(401).json({ message: 'Invalid secret key' });
+    }
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email address required' });
+    }
+    
+    // Check Resend configuration
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(500).json({ 
+        message: 'Email not configured. Set RESEND_API_KEY in environment.' 
+      });
+    }
+    
+    // Import dependencies
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const mongoose = await import('mongoose');
+    
+    // Get organization
+    const Organization = mongoose.default.model('Organization');
+    const targetOrgId = orgId || '693bff1d7182d336060c8629';
+    const org = await Organization.findById(targetOrgId);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+    
+    const Team = mongoose.default.model('Team');
+    const teams = await Team.find({ orgId: targetOrgId });
+    
+    const TeamState = mongoose.default.model('TeamState');
+    const results = [];
+    
+    for (const team of teams) {
+      const teamStates = await TeamState.find({ teamId: team._id })
+        .sort({ weekEnd: 1 })
+        .limit(10);
+      
+      if (teamStates.length === 0) continue;
+      
+      for (let i = 0; i < teamStates.length; i++) {
+        const state = teamStates[i];
+        const prevState = i > 0 ? teamStates[i - 1] : null;
+        const weekNum = i + 1;
+        const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', { 
+          year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        
+        const bdiChange = prevState ? state.bdi - prevState.bdi : 0;
+        const bdiChangeText = bdiChange > 0 ? `+${bdiChange}` : bdiChange.toString();
+        const bdiTrend = bdiChange >= 0 ? '↑' : '↓';
+        const zoneColor = state.zone === 'Stable' ? '#22c55e' : 
+                          state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
+        
+        const html = generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor);
+        
+        // Send via Resend
+        const sendResult = await resend.emails.send({
+          from: 'SignalTrue <reports@signaltrue.ai>',
+          to: email,
+          subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team.name} Team)`,
+          html
+        });
+        
+        console.log(`Email sent for Week ${weekNum}:`, sendResult);
+        results.push({ team: team.name, week: weekNum, emailId: sendResult.data?.id, sent: true });
+      }
+    }
+    
+    res.json({ 
+      message: `Successfully sent ${results.length} weekly reports`,
+      recipientEmail: email,
+      reports: results
+    });
+    
+  } catch (error) {
+    console.error('Error sending weekly reports:', error);
+    res.status(500).json({ 
+      message: 'Error sending reports', 
+      error: error.message 
+    });
+  }
+});
+
 function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor) {
   return `
 <!DOCTYPE html>
