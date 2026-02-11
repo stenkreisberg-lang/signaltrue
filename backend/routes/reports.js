@@ -395,10 +395,12 @@ router.post('/trigger-weekly-email', async (req, res) => {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const mongoose = await import('mongoose');
+    const { ObjectId } = mongoose.default.Types;
     
     // Get organization
     const Organization = mongoose.default.model('Organization');
-    const targetOrgId = orgId || '693bff1d7182d336060c8629';
+    const targetOrgIdStr = orgId || '693bff1d7182d336060c8629';
+    const targetOrgId = new ObjectId(targetOrgIdStr);
     const org = await Organization.findById(targetOrgId);
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
@@ -412,15 +414,14 @@ router.post('/trigger-weekly-email', async (req, res) => {
     const teamStatesCollection = db.collection('teamstates');
     const results = [];
     
+    console.log(`Found ${teams.length} teams for org ${targetOrgId}`);
+    
     for (const team of teams) {
-      // Try both ObjectId and string match for teamId
+      console.log(`Looking for teamId: ${team._id} (type: ${typeof team._id})`);
+      
+      // Query directly with ObjectId
       const teamStates = await teamStatesCollection
-        .find({ 
-          $or: [
-            { teamId: team._id },
-            { teamId: team._id.toString() }
-          ]
-        })
+        .find({ teamId: team._id })
         .sort({ weekEnd: 1 })
         .limit(10)
         .toArray();
