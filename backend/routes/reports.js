@@ -413,11 +413,19 @@ router.post('/trigger-weekly-email', async (req, res) => {
     const results = [];
     
     for (const team of teams) {
+      // Try both ObjectId and string match for teamId
       const teamStates = await teamStatesCollection
-        .find({ teamId: team._id.toString() })
+        .find({ 
+          $or: [
+            { teamId: team._id },
+            { teamId: team._id.toString() }
+          ]
+        })
         .sort({ weekEnd: 1 })
         .limit(10)
         .toArray();
+      
+      console.log(`Team ${team.name}: Found ${teamStates.length} states`);
       
       if (teamStates.length === 0) continue;
       
