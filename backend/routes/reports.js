@@ -544,7 +544,7 @@ function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiCha
   `;
 }
 
-// New version with explicit parameters to avoid undefined issues
+// New version with modern SignalTrue design
 function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiValue, bdiChange, bdiChangeText, bdiTrend, zoneValue, zoneColor) {
   const commScore = state.signals?.communication?.score ?? 0;
   const engScore = state.signals?.engagement?.score ?? 0;
@@ -577,69 +577,40 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
   const workChange = prevWork ? workScore - prevWork : 0;
   const collabChange = prevCollab ? collabScore - prevCollab : 0;
   
-  // Helper function to get trend arrow and color
-  const getTrend = (change, inverse = false) => {
-    if (change === 0 || change === null) return { arrow: '→', color: '#64748b', text: 'stable' };
-    const isGood = inverse ? change < 0 : change > 0;
-    return {
-      arrow: change > 0 ? '↑' : '↓',
-      color: isGood ? '#22c55e' : '#ef4444',
-      text: `${change > 0 ? '+' : ''}${change}`
-    };
+  // Helper function to get trend text
+  const getTrendText = (change) => {
+    if (change === 0 || change === null) return 'stable';
+    return change > 0 ? `+${change}` : `${change}`;
   };
   
-  // Helper for metric change badges
-  const getChangeBadge = (change, inverse = false) => {
-    if (change === null) return '';
-    const isGood = inverse ? change < 0 : change > 0;
-    const isNeutral = Math.abs(change) < 5;
-    const color = isNeutral ? '#64748b' : (isGood ? '#22c55e' : '#ef4444');
-    const bg = isNeutral ? '#f1f5f9' : (isGood ? '#dcfce7' : '#fee2e2');
-    return `<span style="font-size: 11px; padding: 2px 6px; border-radius: 8px; background: ${bg}; color: ${color}; margin-left: 6px;">${change > 0 ? '+' : ''}${change}%</span>`;
+  // Zone status
+  const getZoneStatus = (zone) => {
+    if (zone === 'Stable') return { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', label: 'Stable' };
+    if (zone === 'Watch') return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: 'Drifting' };
+    return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Critical' };
   };
   
-  // Build sparkline for BDI (last 4 weeks indicator)
-  const getZoneIndicator = (score) => {
-    if (score >= 80) return '🟢';
-    if (score >= 60) return '🟡';
-    return '🔴';
-  };
+  const zoneStatus = getZoneStatus(zoneValue);
   
-  // Meeting hours health indicator
-  const meetingHealthy = typeof meetingHours === 'number' && meetingHours <= 12;
-  const meetingWarning = typeof meetingHours === 'number' && meetingHours > 12 && meetingHours <= 16;
-  const meetingCritical = typeof meetingHours === 'number' && meetingHours > 16;
-  const meetingColor = meetingHealthy ? '#22c55e' : (meetingWarning ? '#f59e0b' : '#ef4444');
-  const meetingPercent = typeof meetingHours === 'number' ? Math.min((meetingHours / 20) * 100, 100) : 0;
+  // Meeting hours status
+  const meetingStatus = typeof meetingHours === 'number' && meetingHours > 16 ? 'Critical' : 
+                        typeof meetingHours === 'number' && meetingHours > 12 ? 'Elevated' : 'Normal';
+  const meetingStatusColor = meetingStatus === 'Critical' ? '#ef4444' : meetingStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
   
-  // After hours indicator
-  const afterHoursHealthy = typeof afterHours === 'number' && afterHours <= 5;
-  const afterHoursWarning = typeof afterHours === 'number' && afterHours > 5 && afterHours <= 10;
-  const afterHoursCritical = typeof afterHours === 'number' && afterHours > 10;
-  const afterHoursColor = afterHoursHealthy ? '#22c55e' : (afterHoursWarning ? '#f59e0b' : '#ef4444');
+  // After hours status
+  const ahStatus = typeof afterHours === 'number' && afterHours > 10 ? 'Critical' : 
+                   typeof afterHours === 'number' && afterHours > 5 ? 'Elevated' : 'Normal';
+  const ahStatusColor = ahStatus === 'Critical' ? '#ef4444' : ahStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
   
-  // Response time indicator
-  const rtHealthy = typeof responseTime === 'number' && responseTime <= 30;
-  const rtWarning = typeof responseTime === 'number' && responseTime > 30 && responseTime <= 60;
-  const rtColor = rtHealthy ? '#22c55e' : (rtWarning ? '#f59e0b' : '#ef4444');
+  // Needle rotation for gauge (0-100 maps to -90 to +90 degrees)
+  const needleRotation = (bdiValue / 100) * 180 - 90;
   
-  // Generate actionable recommendations based on data
+  // Generate recommendations
   const recommendations = [];
-  if (afterHoursCritical) {
-    recommendations.push('⚠️ After-hours activity is high. Consider addressing potential burnout risks.');
-  }
-  if (meetingCritical) {
-    recommendations.push('📅 Meeting load exceeds healthy thresholds. Review recurring meetings for consolidation.');
-  }
-  if (commChange < -5) {
-    recommendations.push('💬 Communication has dropped. Consider scheduling a team sync.');
-  }
-  if (engChange < -5) {
-    recommendations.push('📊 Engagement declining. Check in with team members individually.');
-  }
-  if (typeof responseTime === 'number' && responseTime > 60) {
-    recommendations.push('⏱️ Response times are elevated. Teams may be overloaded or context-switching.');
-  }
+  if (ahStatus === 'Critical') recommendations.push('After-hours activity exceeding sustainable levels. Review workload distribution.');
+  if (meetingStatus === 'Critical') recommendations.push('Meeting density is critical. Consider async alternatives and meeting audits.');
+  if (bdiChange < -5) recommendations.push('Significant drift detected. Schedule team check-in to identify root causes.');
+  if (commChange < -5) recommendations.push('Communication patterns declining. Consider team sync to restore connection.');
   
   return `
 <!DOCTYPE html>
@@ -647,208 +618,222 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
-    .container { max-width: 640px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-    .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 32px; text-align: center; }
-    .header h1 { margin: 0; font-size: 22px; font-weight: 600; }
-    .header p { margin: 10px 0 0; opacity: 0.9; font-size: 14px; }
-    .content { padding: 28px; }
-    
-    /* BDI Gauge Section */
-    .bdi-section { text-align: center; margin-bottom: 28px; }
-    .bdi-gauge { position: relative; width: 180px; height: 100px; margin: 0 auto 16px; overflow: hidden; }
-    .gauge-bg { position: absolute; width: 180px; height: 90px; border-radius: 90px 90px 0 0; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 40%, #22c55e 70%, #22c55e 100%); }
-    .gauge-mask { position: absolute; top: 20px; left: 20px; width: 140px; height: 70px; border-radius: 70px 70px 0 0; background: white; }
-    .gauge-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 36px; font-weight: 700; color: #1e293b; }
-    .bdi-label { color: #64748b; font-size: 13px; margin-bottom: 12px; }
-    .zone-badge { display: inline-block; padding: 6px 18px; border-radius: 20px; font-weight: 600; font-size: 13px; }
-    .trend-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-top: 8px; }
-    
-    /* Signal Cards */
-    .signals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 24px 0; }
-    .signal-card { background: #f8fafc; border-radius: 12px; padding: 16px; position: relative; }
-    .signal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .signal-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600; }
-    .signal-trend { font-size: 11px; font-weight: 600; }
-    .signal-score { font-size: 28px; font-weight: 700; color: #1e293b; }
-    .signal-bar { height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 10px; overflow: hidden; }
-    .signal-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
-    
-    /* Metrics Row */
-    .metrics-section { background: #f8fafc; border-radius: 12px; padding: 20px; margin: 24px 0; }
-    .metrics-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
-    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    .metric-item { text-align: center; }
-    .metric-value { font-size: 20px; font-weight: 700; color: #1e293b; }
-    .metric-label { font-size: 11px; color: #64748b; margin-top: 2px; }
-    .metric-bar { height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 8px; }
-    .metric-fill { height: 100%; border-radius: 2px; }
-    
-    /* Insights & Recommendations */
-    .section { margin: 24px 0; }
-    .section-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .insights-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 0 10px 10px 0; }
-    .insights-box ul { margin: 0; padding-left: 18px; }
-    .insights-box li { color: #78350f; font-size: 13px; margin-bottom: 6px; line-height: 1.5; }
-    .recs-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 14px 16px; border-radius: 0 10px 10px 0; }
-    .recs-box li { color: #1e40af; font-size: 13px; margin-bottom: 6px; line-height: 1.5; }
-    
-    /* Alert Banner */
-    .alert-banner { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-    .alert-icon { font-size: 20px; }
-    .alert-text { font-size: 13px; color: #991b1b; font-weight: 500; }
-    
-    .footer { background: #f8fafc; padding: 20px 28px; text-align: center; color: #94a3b8; font-size: 11px; border-top: 1px solid #e2e8f0; }
-    .footer a { color: #3b82f6; text-decoration: none; }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📊 SignalTrue Weekly Report</h1>
-      <p>Week ${weekNum} • ${team.name} Team • ${weekEndDate}</p>
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    
+    <!-- Header Card -->
+    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 32px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${zoneStatus.color}; animation: pulse 2s infinite;"></div>
+        <span style="font-size: 12px; font-weight: 600; color: ${zoneStatus.color}; text-transform: uppercase; letter-spacing: 0.5px;">Weekly Signal Report</span>
+      </div>
+      <h1 style="margin: 0 0 8px; font-size: 28px; font-weight: 700; color: #ffffff;">
+        ${team.name} Team
+      </h1>
+      <p style="margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.6);">
+        Week ${weekNum} • ${weekEndDate}
+      </p>
     </div>
     
-    <div class="content">
-      ${afterHoursCritical || meetingCritical ? `
-      <div class="alert-banner">
-        <span class="alert-icon">⚠️</span>
-        <span class="alert-text">
-          ${afterHoursCritical ? `After-hours activity up ${ahChange}%` : ''}
-          ${afterHoursCritical && meetingCritical ? ' • ' : ''}
-          ${meetingCritical ? `Meeting load at ${meetingHours}h (high)` : ''}
-        </span>
+    ${ahStatus === 'Critical' || meetingStatus === 'Critical' || bdiChange < -5 ? `
+    <!-- Alert Banner -->
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 20px;">⚠️</span>
       </div>
-      ` : ''}
-      
-      <!-- BDI Gauge with SVG Speedometer -->
-      <div class="bdi-section">
-        <div style="width: 200px; margin: 0 auto 16px;">
-          <svg viewBox="0 0 200 120" style="width: 100%; height: auto;">
-            <!-- Gauge arc background -->
-            <defs>
-              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#ef4444"/>
-                <stop offset="35%" style="stop-color:#f59e0b"/>
-                <stop offset="65%" style="stop-color:#22c55e"/>
-                <stop offset="100%" style="stop-color:#22c55e"/>
-              </linearGradient>
-            </defs>
-            <!-- Outer arc -->
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="18" stroke-linecap="round"/>
-            <!-- Tick marks -->
-            <text x="15" y="105" font-size="10" fill="#94a3b8">0</text>
-            <text x="55" y="45" font-size="10" fill="#94a3b8">25</text>
-            <text x="93" y="25" font-size="10" fill="#94a3b8">50</text>
-            <text x="135" y="45" font-size="10" fill="#94a3b8">75</text>
-            <text x="175" y="105" font-size="10" fill="#94a3b8">100</text>
-            <!-- Needle - rotates based on value (0=left, 100=right) -->
-            <!-- Rotation: -90deg at 0, +90deg at 100. Formula: (value/100)*180 - 90 -->
-            <g transform="rotate(${(bdiValue / 100) * 180 - 90}, 100, 100)">
-              <polygon points="100,30 95,100 105,100" fill="#1e293b"/>
-              <circle cx="100" cy="100" r="8" fill="#1e293b"/>
-              <circle cx="100" cy="100" r="4" fill="#fff"/>
-            </g>
-            <!-- Value display -->
-            <text x="100" y="95" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e293b">${bdiValue}</text>
-          </svg>
-        </div>
-        <div class="bdi-label">Behavioral Drift Index (BDI)</div>
-        <div class="zone-badge" style="background: ${zoneColor}15; color: ${zoneColor};">
-          ${getZoneIndicator(bdiValue)} ${zoneValue} Zone
-        </div>
-        ${prevState ? `
-        <div class="trend-badge" style="background: ${bdiChange >= 0 ? '#dcfce7' : '#fee2e2'}; color: ${bdiChange >= 0 ? '#166534' : '#991b1b'};">
-          ${bdiTrend} ${bdiChangeText} from last week
-        </div>
-        ` : ''}
-      </div>
-      
-      <!-- Signal Breakdown -->
-      <div class="section-title">📈 Signal Breakdown</div>
-      <div class="signals-grid">
-        <div class="signal-card">
-          <div class="signal-header">
-            <span class="signal-label">Communication</span>
-            <span class="signal-trend" style="color: ${getTrend(commChange).color};">${getTrend(commChange).arrow} ${getTrend(commChange).text}</span>
-          </div>
-          <div class="signal-score">${commScore}</div>
-          <div class="signal-bar"><div class="signal-fill" style="width: ${commScore}%; background: ${commScore >= 70 ? '#22c55e' : commScore >= 50 ? '#f59e0b' : '#ef4444'};"></div></div>
-        </div>
-        <div class="signal-card">
-          <div class="signal-header">
-            <span class="signal-label">Engagement</span>
-            <span class="signal-trend" style="color: ${getTrend(engChange).color};">${getTrend(engChange).arrow} ${getTrend(engChange).text}</span>
-          </div>
-          <div class="signal-score">${engScore}</div>
-          <div class="signal-bar"><div class="signal-fill" style="width: ${engScore}%; background: ${engScore >= 70 ? '#22c55e' : engScore >= 50 ? '#f59e0b' : '#ef4444'};"></div></div>
-        </div>
-        <div class="signal-card">
-          <div class="signal-header">
-            <span class="signal-label">Workload</span>
-            <span class="signal-trend" style="color: ${getTrend(workChange).color};">${getTrend(workChange).arrow} ${getTrend(workChange).text}</span>
-          </div>
-          <div class="signal-score">${workScore}</div>
-          <div class="signal-bar"><div class="signal-fill" style="width: ${workScore}%; background: ${workScore >= 70 ? '#22c55e' : workScore >= 50 ? '#f59e0b' : '#ef4444'};"></div></div>
-        </div>
-        <div class="signal-card">
-          <div class="signal-header">
-            <span class="signal-label">Collaboration</span>
-            <span class="signal-trend" style="color: ${getTrend(collabChange).color};">${getTrend(collabChange).arrow} ${getTrend(collabChange).text}</span>
-          </div>
-          <div class="signal-score">${collabScore}</div>
-          <div class="signal-bar"><div class="signal-fill" style="width: ${collabScore}%; background: ${collabScore >= 70 ? '#22c55e' : collabScore >= 50 ? '#f59e0b' : '#ef4444'};"></div></div>
+      <div>
+        <div style="font-size: 14px; font-weight: 600; color: #fca5a5; margin-bottom: 2px;">Attention Required</div>
+        <div style="font-size: 13px; color: rgba(252, 165, 165, 0.8);">
+          ${ahStatus === 'Critical' ? 'Recovery erosion detected. ' : ''}${meetingStatus === 'Critical' ? 'Meeting overload detected. ' : ''}${bdiChange < -5 ? `BDI dropped ${Math.abs(bdiChange)} points.` : ''}
         </div>
       </div>
+    </div>
+    ` : ''}
+    
+    <!-- BDI Gauge Card -->
+    <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 32px; margin-bottom: 20px; text-align: center;">
       
-      <!-- Activity Metrics -->
-      <div class="metrics-section">
-        <div class="metrics-title">📋 Activity Metrics</div>
-        <div class="metrics-grid">
-          <div class="metric-item">
-            <div class="metric-value">${messageCount}${getChangeBadge(msgChange)}</div>
-            <div class="metric-label">Messages</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-value" style="color: ${meetingColor};">${meetingHours}h${getChangeBadge(mtgChange, true)}</div>
-            <div class="metric-label">Meeting Hours</div>
-            <div class="metric-bar"><div class="metric-fill" style="width: ${meetingPercent}%; background: ${meetingColor};"></div></div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-value" style="color: ${afterHoursColor};">${afterHours}${getChangeBadge(ahChange, true)}</div>
-            <div class="metric-label">After-Hours Events</div>
-          </div>
-          <div class="metric-item">
-            <div class="metric-value" style="color: ${rtColor};">${responseTime}m${getChangeBadge(rtChange, true)}</div>
-            <div class="metric-label">Avg Response Time</div>
-          </div>
-        </div>
+      <!-- SVG Gauge -->
+      <div style="width: 220px; margin: 0 auto 24px;">
+        <svg viewBox="0 0 220 130" style="width: 100%; height: auto;">
+          <!-- Background arc -->
+          <defs>
+            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#ef4444"/>
+              <stop offset="40%" style="stop-color:#f59e0b"/>
+              <stop offset="70%" style="stop-color:#22c55e"/>
+              <stop offset="100%" style="stop-color:#22c55e"/>
+            </linearGradient>
+          </defs>
+          
+          <!-- Outer glow -->
+          <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="24" stroke-linecap="round"/>
+          
+          <!-- Main arc -->
+          <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="url(#arcGrad)" stroke-width="16" stroke-linecap="round"/>
+          
+          <!-- Tick marks -->
+          <line x1="30" y1="110" x2="30" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+          <line x1="110" y1="30" x2="110" y2="40" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+          <line x1="190" y1="110" x2="190" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+          
+          <!-- Labels -->
+          <text x="25" y="125" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="middle">0</text>
+          <text x="110" y="20" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="middle">50</text>
+          <text x="195" y="125" font-size="10" fill="rgba(255,255,255,0.4)" text-anchor="middle">100</text>
+          
+          <!-- Needle -->
+          <g transform="rotate(${needleRotation}, 110, 110)">
+            <path d="M 110 45 L 105 110 L 115 110 Z" fill="#ffffff"/>
+            <circle cx="110" cy="110" r="10" fill="#1e293b" stroke="#ffffff" stroke-width="2"/>
+          </g>
+          
+        </svg>
       </div>
       
-      ${insights.length ? `
-      <div class="section">
-        <div class="section-title">💡 Key Insights</div>
-        <div class="insights-box">
-          <ul>${insights.map(i => `<li>${i}</li>`).join('')}</ul>
-        </div>
-      </div>
-      ` : ''}
+      <!-- Score Display -->
+      <div style="font-size: 56px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">${bdiValue}</div>
+      <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-bottom: 16px;">Behavioral Drift Index</div>
       
-      ${recommendations.length ? `
-      <div class="section">
-        <div class="section-title">🎯 Recommended Actions</div>
-        <div class="recs-box">
-          <ul>${recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
-        </div>
+      <!-- Zone Badge -->
+      <div style="display: inline-block; padding: 8px 20px; border-radius: 20px; background: ${zoneStatus.bg}; border: 1px solid ${zoneStatus.color}40;">
+        <span style="font-size: 13px; font-weight: 600; color: ${zoneStatus.color};">${zoneStatus.label}</span>
+      </div>
+      
+      ${prevState ? `
+      <!-- Change indicator -->
+      <div style="margin-top: 12px; font-size: 13px; color: ${bdiChange >= 0 ? '#22c55e' : '#ef4444'};">
+        ${bdiChange >= 0 ? '↑' : '↓'} ${bdiChangeText} from last week
       </div>
       ` : ''}
     </div>
     
-    <div class="footer">
-      <p>Generated by <a href="https://signaltrue.ai">SignalTrue</a> • Behavioral Intelligence for HR</p>
-      <p style="margin-top: 8px;">View your full dashboard at <a href="https://signaltrue.ai/dashboard">signaltrue.ai/dashboard</a></p>
+    <!-- Signal Metrics Card -->
+    <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+      <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 16px;">📊 Signal Breakdown</div>
+      
+      <!-- Communication -->
+      <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 20px;">💬</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: #ffffff;">Communication</div>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">Team interaction patterns</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 20px; font-weight: 700; color: #ffffff;">${commScore}</div>
+          <div style="font-size: 11px; color: ${commChange >= 0 ? '#22c55e' : '#ef4444'};">${getTrendText(commChange)}</div>
+        </div>
+      </div>
+      
+      <!-- Engagement -->
+      <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(139, 92, 246, 0.15); display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 20px;">⚡</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: #ffffff;">Engagement</div>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">Active participation signals</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 20px; font-weight: 700; color: #ffffff;">${engScore}</div>
+          <div style="font-size: 11px; color: ${engChange >= 0 ? '#22c55e' : '#ef4444'};">${getTrendText(engChange)}</div>
+        </div>
+      </div>
+      
+      <!-- Workload -->
+      <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 20px;">📈</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: #ffffff;">Workload Balance</div>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">Capacity distribution patterns</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 20px; font-weight: 700; color: #ffffff;">${workScore}</div>
+          <div style="font-size: 11px; color: ${workChange >= 0 ? '#22c55e' : '#ef4444'};">${getTrendText(workChange)}</div>
+        </div>
+      </div>
+      
+      <!-- Collaboration -->
+      <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(34, 197, 94, 0.15); display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 20px;">🤝</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 500; color: #ffffff;">Collaboration</div>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">Cross-functional connectivity</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 20px; font-weight: 700; color: #ffffff;">${collabScore}</div>
+          <div style="font-size: 11px; color: ${collabChange >= 0 ? '#22c55e' : '#ef4444'};">${getTrendText(collabChange)}</div>
+        </div>
+      </div>
     </div>
+    
+    <!-- Activity Metrics Card -->
+    <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+      <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 16px;">📋 Activity Signals</div>
+      
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+        <!-- Messages -->
+        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #ffffff;">${messageCount}</div>
+          <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">Messages</div>
+          ${msgChange !== null ? `<div style="font-size: 11px; color: ${msgChange >= 0 ? '#22c55e' : '#ef4444'}; margin-top: 4px;">${msgChange >= 0 ? '+' : ''}${msgChange}%</div>` : ''}
+        </div>
+        
+        <!-- Meeting Hours -->
+        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; text-align: center; ${meetingStatus !== 'Normal' ? `border: 1px solid ${meetingStatusColor}40;` : ''}">
+          <div style="font-size: 24px; font-weight: 700; color: ${meetingStatusColor};">${meetingHours}h</div>
+          <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">Meeting Hours</div>
+          ${meetingStatus !== 'Normal' ? `<div style="font-size: 10px; color: ${meetingStatusColor}; margin-top: 4px;">${meetingStatus}</div>` : ''}
+        </div>
+        
+        <!-- After Hours -->
+        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; text-align: center; ${ahStatus !== 'Normal' ? `border: 1px solid ${ahStatusColor}40;` : ''}">
+          <div style="font-size: 24px; font-weight: 700; color: ${ahStatusColor};">${afterHours}</div>
+          <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">After-Hours Events</div>
+          ${ahStatus !== 'Normal' ? `<div style="font-size: 10px; color: ${ahStatusColor}; margin-top: 4px;">${ahStatus}</div>` : ''}
+        </div>
+        
+        <!-- Response Time -->
+        <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: #ffffff;">${responseTime}m</div>
+          <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">Avg Response</div>
+        </div>
+      </div>
+    </div>
+    
+    ${insights.length > 0 ? `
+    <!-- Insights Card -->
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+      <div style="font-size: 14px; font-weight: 600; color: #fbbf24; margin-bottom: 12px;">💡 Signal Interpretation</div>
+      ${insights.map(i => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(245, 158, 11, 0.4);">${i}</div>`).join('')}
+    </div>
+    ` : ''}
+    
+    ${recommendations.length > 0 ? `
+    <!-- Recommendations Card -->
+    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+      <div style="font-size: 14px; font-weight: 600; color: #60a5fa; margin-bottom: 12px;">🎯 Recommended Actions</div>
+      ${recommendations.map(r => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(59, 130, 246, 0.4);">${r}</div>`).join('')}
+    </div>
+    ` : ''}
+    
+    <!-- Footer -->
+    <div style="text-align: center; padding: 24px 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.4); margin-bottom: 8px;">
+        Generated by <a href="https://signaltrue.ai" style="color: #60a5fa; text-decoration: none;">SignalTrue</a> • Behavioral Drift Intelligence
+      </div>
+      <a href="https://signaltrue.ai/dashboard" style="display: inline-block; padding: 10px 24px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 8px; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600;">
+        View Full Dashboard →
+      </a>
+    </div>
+    
   </div>
 </body>
 </html>
