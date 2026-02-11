@@ -278,4 +278,166 @@ router.post('/monthly/org/:orgId/generate', authenticateToken, checkRole(['hr_ad
   }
 });
 
+/**
+ * POST /api/reports/send-weekly-email
+ * Generate and send weekly reports via email
+ * Access: Master Admin only
+ */
+router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin']), async (req, res) => {
+  try {
+    const { orgId } = req.user;
+    const { recipientEmail } = req.body;
+    
+    // Import email service
+    const nodemailer = await import('nodemailer');
+    const mongoose = await import('mongoose');
+    
+    // Check email configuration
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return res.status(500).json({ 
+        message: 'Email not configured on server. Set EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD in environment.' 
+      });
+    }
+    
+    // Get org and team data
+    const Organization = mongoose.default.model('Organization');
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+    
+    const Team = mongoose.default.model('Team');
+    const teams = await Team.find({ orgId });
+    
+    const TeamState = mongoose.default.model('TeamState');
+    
+    const transporter = nodemailer.default.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+    
+    const email = recipientEmail || org.settings?.reportEmail || req.user.email;
+    const results = [];
+    
+    for (const team of teams) {
+      const teamStates = await TeamState.find({ teamId: team._id })
+        .sort({ weekEnd: 1 })
+        .limit(10);
+      
+      if (teamStates.length === 0) continue;
+      
+      for (let i = 0; i < teamStates.length; i++) {
+        const state = teamStates[i];
+        const prevState = i > 0 ? teamStates[i - 1] : null;
+        const weekNum = i + 1;
+        const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', { 
+          year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        
+        const bdiChange = prevState ? state.bdi - prevState.bdi : 0;
+        const bdiChangeText = bdiChange > 0 ? `+${bdiChange}` : bdiChange.toString();
+        const bdiTrend = bdiChange >= 0 ? '↑' : '↓';
+        const zoneColor = state.zone === 'Stable' ? '#22c55e' : 
+                          state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
+        
+        const html = generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor);
+        
+        await transporter.sendMail({
+          from: `"SignalTrue" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+          to: email,
+          subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team.name} Team)`,
+          html
+        });
+        
+        results.push({ team: team.name, week: weekNum, sent: true });
+      }
+    }
+    
+    res.json({ 
+      message: 'Reports sent successfully',
+      recipientEmail: email,
+      reports: results
+    });
+    
+  } catch (error) {
+    console.error('Error sending weekly reports:', error);
+    res.status(500).json({ 
+      message: 'Error sending reports', 
+      error: error.message 
+    });
+  }
+});
+
+function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header p { margin: 10px 0 0; opacity: 0.9; }
+    .content { padding: 30px; }
+    .bdi-card { background: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; }
+    .bdi-score { font-size: 48px; font-weight: 700; color: #1e293b; }
+    .bdi-label { color: #64748b; font-size: 14px; margin-top: 4px; }
+    .zone-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-top: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
+    .metric { background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; }
+    .metric-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+    .metric-label { font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+    .insights { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .insights h3 { margin: 0 0 12px; color: #92400e; }
+    .insights ul { margin: 0; padding-left: 20px; color: #78350f; }
+    .footer { background: #f8fafc; padding: 20px 30px; text-align: center; color: #64748b; font-size: 12px; }
+    .change { font-size: 14px; margin-top: 8px; }
+    .change.positive { color: #22c55e; }
+    .change.negative { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 SignalTrue Weekly Report</h1>
+      <p>Week ${weekNum} • ${team.name} Team • ${weekEndDate}</p>
+    </div>
+    <div class="content">
+      <div class="bdi-card">
+        <div class="bdi-score">${state.bdi}</div>
+        <div class="bdi-label">Behavioral Drift Index (BDI)</div>
+        <div class="zone-badge" style="background: ${zoneColor}20; color: ${zoneColor};">
+          ${state.zone} Zone
+        </div>
+        ${prevState ? `<div class="change ${bdiChange >= 0 ? 'positive' : 'negative'}">${bdiTrend} ${bdiChangeText} from last week</div>` : ''}
+      </div>
+      <h3 style="color: #1e293b;">📈 Signal Breakdown</h3>
+      <div class="metrics">
+        <div class="metric"><div class="metric-value">${state.signals?.communication?.score || '-'}</div><div class="metric-label">Communication</div></div>
+        <div class="metric"><div class="metric-value">${state.signals?.engagement?.score || '-'}</div><div class="metric-label">Engagement</div></div>
+        <div class="metric"><div class="metric-value">${state.signals?.workload?.score || '-'}</div><div class="metric-label">Workload</div></div>
+        <div class="metric"><div class="metric-value">${state.signals?.collaboration?.score || '-'}</div><div class="metric-label">Collaboration</div></div>
+      </div>
+      ${state.insights?.length ? `
+      <div class="insights">
+        <h3>💡 Key Insights</h3>
+        <ul>${state.insights.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>` : ''}
+    </div>
+    <div class="footer">
+      <p>Generated by SignalTrue • Behavioral Intelligence for HR</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
 export default router;
