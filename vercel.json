@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "signaltrue.ai" }],
+      "destination": "https://www.signaltrue.ai/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/marketing/index.html" },
     { "source": "/product", "destination": "/marketing/product.html" },

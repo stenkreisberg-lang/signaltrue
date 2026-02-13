@@ -1,36 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core Pages -->
-  <url><loc>https://signaltrue.ai/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://signaltrue.ai/product</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://signaltrue.ai/pricing</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://signaltrue.ai/how-it-works</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://signaltrue.ai/drift-diagnostic</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/</loc><lastmod>2026-02-13</lastmod><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/product</loc><lastmod>2026-02-13</lastmod><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/pricing</loc><lastmod>2026-02-13</lastmod><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/how-it-works</loc><lastmod>2026-02-13</lastmod><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/drift-diagnostic</loc><lastmod>2026-02-13</lastmod><priority>0.9</priority><changefreq>weekly</changefreq></url>
   
   <!-- Pillar Pages -->
-  <url><loc>https://signaltrue.ai/burnout-early-warning-system</loc><priority>0.95</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://signaltrue.ai/employee-engagement-leading-indicators</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/burnout-early-warning-system</loc><lastmod>2026-02-13</lastmod><priority>0.95</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/employee-engagement-leading-indicators</loc><lastmod>2026-02-13</lastmod><priority>0.9</priority><changefreq>weekly</changefreq></url>
   
   <!-- Signal Library -->
-  <url><loc>https://signaltrue.ai/signals/meeting-overload</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/recovery-time-collapse</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/focus-fragmentation</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/after-hours-drift</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/responsiveness-pressure</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/coordination-overhead</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/signals/manager-load</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/meeting-overload</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/recovery-time-collapse</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/focus-fragmentation</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/after-hours-drift</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/responsiveness-pressure</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/coordination-overhead</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/signals/manager-load</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
   
   <!-- Company Pages -->
-  <url><loc>https://signaltrue.ai/about</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/contact</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/solutions</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/resources</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/trust</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/blog</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/about</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/contact</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/solutions</loc><lastmod>2026-02-13</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/resources</loc><lastmod>2026-02-13</lastmod><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/trust</loc><lastmod>2026-02-13</lastmod><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/blog</loc><lastmod>2026-02-13</lastmod><priority>0.7</priority><changefreq>weekly</changefreq></url>
   
   <!-- Legal Pages -->
-  <url><loc>https://signaltrue.ai/privacy</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/terms</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/ai-info-page</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://signaltrue.ai/app/privacy</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/privacy</loc><lastmod>2026-02-13</lastmod><priority>0.5</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/terms</loc><lastmod>2026-02-13</lastmod><priority>0.5</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.signaltrue.ai/ai-info-page</loc><lastmod>2026-02-13</lastmod><priority>0.5</priority><changefreq>monthly</changefreq></url>
 </urlset>

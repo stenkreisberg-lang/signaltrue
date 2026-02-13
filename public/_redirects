@@ -1,0 +1,18 @@
+# Redirect non-www to www (canonical domain)
+https://signaltrue.ai/* https://www.signaltrue.ai/:splat 301!
+
+# Remove trailing slashes (prevent duplicate content)
+/product/ /product 301
+/pricing/ /pricing 301
+/about/ /about 301
+/how-it-works/ /how-it-works 301
+/trust/ /trust 301
+/login/ /login 301
+/register/ /register 301
+
+# Old URLs that might be causing soft 404s - redirect to proper pages
+/contact /about 301
+/privacy /trust 301
+
+# SPA fallback - serve index.html for all routes (client-side routing)
+/* /index.html 200
