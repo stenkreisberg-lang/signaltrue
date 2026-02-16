@@ -33,11 +33,15 @@ const reminderEmailSchema = new mongoose.Schema({
   reminderType: { 
     type: String, 
     enum: [
-      'new-user-connect',      // New user - connect your tools
-      'new-user-followup-24h', // 24h follow-up for users
-      'new-user-followup-48h', // 48h follow-up for users
-      'it-admin-invite',       // IT admin invited by HR
-      'it-admin-followup-48h', // 48h urgent follow-up for IT admin
+      'new-user-connect',        // Day 0: New user - connect your tools
+      'new-user-followup-24h',   // Day 1: 24h follow-up for users
+      'new-user-followup-48h',   // Day 2: 48h follow-up for users
+      'user-week2',              // Day 7: Week 2 reminder for users
+      'user-week3',              // Day 14: Week 3 final reminder for users
+      'it-admin-invite',         // Day 0: IT admin invited by HR
+      'it-admin-followup-48h',   // Day 2: 48h urgent follow-up for IT admin
+      'it-admin-week2',          // Day 7: Week 2 reminder for IT admin
+      'it-admin-week3',          // Day 14: Week 3 final escalation for IT admin
     ],
     required: true,
     index: true

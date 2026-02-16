@@ -12,7 +12,11 @@ import Invite from '../models/invite.js';
 import ReminderEmail from '../models/reminderEmail.js';
 import {
   sendUserFollowUpReminder,
-  sendITAdminUrgentReminder
+  sendITAdminUrgentReminder,
+  sendUserWeek2Reminder,
+  sendUserWeek3Reminder,
+  sendITAdminWeek2Reminder,
+  sendITAdminWeek3Reminder
 } from '../services/reminderEmailService.js';
 
 const router = express.Router();
@@ -34,7 +38,7 @@ function verifyCronSecret(req, res, next) {
 /**
  * POST /api/reminders/check-followups
  * Check for users who need follow-up reminders
- * Should be called every hour by a cron job
+ * Should be called daily by a cron job
  */
 router.post('/check-followups', verifyCronSecret, async (req, res) => {
   try {
@@ -42,13 +46,19 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
       usersChecked: 0,
       followupsSent24h: 0,
       followupsSent48h: 0,
+      userWeek2Sent: 0,
+      userWeek3Sent: 0,
       itAdminFollowups: 0,
+      itAdminWeek2Sent: 0,
+      itAdminWeek3Sent: 0,
       errors: []
     };
 
-    // 1. Find users registered 24+ hours ago who haven't connected integrations
+    // Time thresholds
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     // Get all orgs to check integration status
     const orgsWithIntegrations = await Organization.find({
@@ -72,15 +82,35 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
 
     for (const user of usersNeedingReminder) {
       try {
-        // Calculate hours since registration
+        // Calculate days since registration
+        const daysSinceRegistration = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
         const hoursSinceRegistration = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60));
         
-        // Determine which follow-up to send (24h or 48h)
+        // Determine which reminder to send based on age
         let reminderType;
-        if (hoursSinceRegistration >= 48) {
+        let sendFunction;
+        let subject;
+
+        if (daysSinceRegistration >= 14) {
+          // Week 3 - Final reminder
+          reminderType = 'user-week3';
+          sendFunction = sendUserWeek3Reminder;
+          subject = 'Your early-warning system is still inactive';
+        } else if (daysSinceRegistration >= 7) {
+          // Week 2
+          reminderType = 'user-week2';
+          sendFunction = sendUserWeek2Reminder;
+          subject = 'Still no signals detected';
+        } else if (hoursSinceRegistration >= 48) {
+          // 48h follow-up
           reminderType = 'new-user-followup-48h';
+          sendFunction = (u) => sendUserFollowUpReminder(u, 48);
+          subject = '48 hours in — your SignalTrue dashboard is still empty';
         } else if (hoursSinceRegistration >= 24) {
+          // 24h follow-up
           reminderType = 'new-user-followup-24h';
+          sendFunction = (u) => sendUserFollowUpReminder(u, 24);
+          subject = '24 hours in — your SignalTrue dashboard is still empty';
         } else {
           continue; // Too early
         }
@@ -89,8 +119,8 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
         const alreadySent = await ReminderEmail.wasAlreadySent(user.email, reminderType);
         if (alreadySent) continue;
 
-        // Send follow-up
-        const result = await sendUserFollowUpReminder(user, hoursSinceRegistration);
+        // Send the appropriate reminder
+        const result = await sendFunction(user);
         
         if (result.success) {
           await ReminderEmail.recordSent({
@@ -98,22 +128,24 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
             userId: user._id,
             orgId: user.orgId,
             reminderType,
-            subject: `${hoursSinceRegistration} hours in — your SignalTrue dashboard is still empty`,
+            subject,
             emailId: result.emailId
           });
 
-          if (reminderType === 'new-user-followup-24h') {
-            results.followupsSent24h++;
-          } else {
-            results.followupsSent48h++;
-          }
+          // Track which type was sent
+          if (reminderType === 'new-user-followup-24h') results.followupsSent24h++;
+          else if (reminderType === 'new-user-followup-48h') results.followupsSent48h++;
+          else if (reminderType === 'user-week2') results.userWeek2Sent++;
+          else if (reminderType === 'user-week3') results.userWeek3Sent++;
         }
       } catch (err) {
         results.errors.push({ user: user.email, error: err.message });
       }
     }
 
-    // 2. Check for IT admin invites that are 48+ hours old without completion
+    // ========================================
+    // IT ADMIN REMINDERS
+    // ========================================
     const pendingITInvites = await Invite.find({
       role: 'it_admin',
       status: 'pending',
@@ -122,30 +154,51 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
 
     for (const invite of pendingITInvites) {
       try {
-        // Check if urgent reminder already sent
-        const alreadySent = await ReminderEmail.wasAlreadySent(invite.email, 'it-admin-followup-48h');
-        if (alreadySent) continue;
-
+        const daysSinceInvite = Math.floor((Date.now() - new Date(invite.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        
+        let reminderType;
+        let sendFunction;
+        let subject;
         const setupUrl = `https://www.signaltrue.ai/onboarding?token=${invite.token}`;
         const itAdminName = invite.email.split('@')[0];
-        
-        const result = await sendITAdminUrgentReminder(
-          invite.email,
-          itAdminName,
-          invite.inviterName,
-          setupUrl
-        );
+
+        if (daysSinceInvite >= 14) {
+          // Week 3 - Final escalation
+          reminderType = 'it-admin-week3';
+          sendFunction = () => sendITAdminWeek3Reminder(invite.email, itAdminName, invite.inviterName, setupUrl);
+          subject = 'SignalTrue is not active in your organization';
+        } else if (daysSinceInvite >= 7) {
+          // Week 2
+          reminderType = 'it-admin-week2';
+          sendFunction = () => sendITAdminWeek2Reminder(invite.email, itAdminName, invite.inviterName, setupUrl);
+          subject = 'Integration setup still pending';
+        } else if (daysSinceInvite >= 2) {
+          // 48h urgent
+          reminderType = 'it-admin-followup-48h';
+          sendFunction = () => sendITAdminUrgentReminder(invite.email, itAdminName, invite.inviterName, setupUrl);
+          subject = 'Urgent: Teams waiting for SignalTrue data — complete setup';
+        } else {
+          continue;
+        }
+
+        // Check if already sent
+        const alreadySent = await ReminderEmail.wasAlreadySent(invite.email, reminderType);
+        if (alreadySent) continue;
+
+        const result = await sendFunction();
 
         if (result.success) {
           await ReminderEmail.recordSent({
             recipientEmail: invite.email,
-            reminderType: 'it-admin-followup-48h',
-            subject: 'Urgent: Teams waiting for SignalTrue data — complete setup',
+            reminderType,
+            subject,
             emailId: result.emailId,
             invitedBy: { name: invite.inviterName }
           });
 
-          results.itAdminFollowups++;
+          if (reminderType === 'it-admin-followup-48h') results.itAdminFollowups++;
+          else if (reminderType === 'it-admin-week2') results.itAdminWeek2Sent++;
+          else if (reminderType === 'it-admin-week3') results.itAdminWeek3Sent++;
         }
       } catch (err) {
         results.errors.push({ invite: invite.email, error: err.message });
@@ -223,6 +276,12 @@ router.post('/send-test', verifyCronSecret, async (req, res) => {
       case 'followup':
         result = await sendUserFollowUpReminder(testUser, 24);
         break;
+      case 'user-week2':
+        result = await sendUserWeek2Reminder(testUser);
+        break;
+      case 'user-week3':
+        result = await sendUserWeek3Reminder(testUser);
+        break;
       case 'it-admin':
         const { sendITAdminReminder } = await import('../services/reminderEmailService.js');
         result = await sendITAdminReminder(email, 'Test Admin', 'HR Manager', 'https://www.signaltrue.ai/integrations');
@@ -230,8 +289,16 @@ router.post('/send-test', verifyCronSecret, async (req, res) => {
       case 'it-admin-urgent':
         result = await sendITAdminUrgentReminder(email, 'Test Admin', 'HR Manager', 'https://www.signaltrue.ai/integrations');
         break;
+      case 'it-admin-week2':
+        result = await sendITAdminWeek2Reminder(email, 'Test Admin', 'HR Manager', 'https://www.signaltrue.ai/integrations');
+        break;
+      case 'it-admin-week3':
+        result = await sendITAdminWeek3Reminder(email, 'Test Admin', 'HR Manager', 'https://www.signaltrue.ai/integrations');
+        break;
       default:
-        return res.status(400).json({ message: 'Invalid type. Use: new-user, followup, it-admin, it-admin-urgent' });
+        return res.status(400).json({ 
+          message: 'Invalid type. Use: new-user, followup, user-week2, user-week3, it-admin, it-admin-urgent, it-admin-week2, it-admin-week3' 
+        });
     }
 
     res.json({ success: result.success, result });

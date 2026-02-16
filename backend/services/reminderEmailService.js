@@ -403,13 +403,286 @@ export async function sendITAdminUrgentReminder(itAdminEmail, itAdminName, hrAdm
   });
 }
 
+// ============================================================
+// WEEK 2 & WEEK 3 REMINDERS (More direct tone)
+// ============================================================
+
+/**
+ * USER REMINDER - WEEK 2 (7 days after signup, no integrations)
+ */
+export function generateUserWeek2ReminderEmail(firstName, connectUrl) {
+  const content = `
+    <p style="margin: 0 0 20px 0; font-size: 18px; color: ${BRAND_COLORS.text}; line-height: 1.6;">
+      Hi ${firstName || 'there'},
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      You created your SignalTrue account 7 days ago.
+    </p>
+    
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 15px; color: #ef4444; font-weight: 600;">
+        Right now, no integrations are connected.
+      </p>
+      <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
+        That means SignalTrue cannot detect overload, burnout risk, or execution drift in your organization.
+      </p>
+    </div>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.warning}; font-weight: 600;">
+      No data in = no insight out.
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      If your goal was to gain early visibility into team strain, this is the moment to activate it.
+    </p>
+    
+    <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      Connect your tools below and let the system begin analyzing collaboration patterns.
+    </p>
+    
+    ${generateButton('👉 Connect Calendar & Slack Now', connectUrl)}
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      The earlier the signal starts, the earlier risk becomes preventable.
+    </p>
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      – SignalTrue Team
+    </p>
+  `;
+
+  return generateEmailTemplate(content, "Still no signals detected — 7 days since signup");
+}
+
+/**
+ * USER REMINDER - WEEK 3 (14 days after signup, final reminder)
+ */
+export function generateUserWeek3ReminderEmail(firstName, connectUrl) {
+  const content = `
+    <p style="margin: 0 0 20px 0; font-size: 18px; color: ${BRAND_COLORS.text}; line-height: 1.6;">
+      Hi ${firstName || 'there'},
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      Two weeks ago you signed up for SignalTrue.
+    </p>
+    
+    <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 15px; color: #ef4444; font-weight: 600;">
+        The platform is still not connected to any work systems.
+      </p>
+      <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
+        That means there is zero behavioral signal being tracked.
+      </p>
+    </div>
+    
+    <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      Burnout doesn't start with complaints.
+    </p>
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText}; line-height: 1.7;">
+      It starts with subtle shifts in meetings, focus time, and collaboration load.
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      <strong>SignalTrue exists to detect those shifts early.</strong>
+    </p>
+    
+    <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      If this initiative matters to you, activate integrations below.
+    </p>
+    
+    ${generateButton('👉 Start Behavioral Monitoring', connectUrl)}
+    
+    <p style="margin: 24px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.mutedText}; line-height: 1.7;">
+      If not, your account will remain idle and no insights will be generated.
+    </p>
+    
+    <div style="border-left: 3px solid ${BRAND_COLORS.primary}; padding-left: 16px; margin: 24px 0;">
+      <p style="margin: 0; font-size: 15px; color: ${BRAND_COLORS.text}; font-style: italic;">
+        The decision is simple: observe early, or react late.
+      </p>
+    </div>
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      – SignalTrue Team
+    </p>
+  `;
+
+  return generateEmailTemplate(content, "Your early-warning system is still inactive — final reminder");
+}
+
+/**
+ * IT ADMIN REMINDER - WEEK 2 (7 days after invite)
+ */
+export function generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setupUrl) {
+  const content = `
+    <p style="margin: 0 0 20px 0; font-size: 18px; color: ${BRAND_COLORS.text}; line-height: 1.6;">
+      Hi ${itAdminName || 'there'},
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      You were invited by <strong>${hrAdminName || 'your HR administrator'}</strong> to enable SignalTrue integrations.
+    </p>
+    
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 15px; color: ${BRAND_COLORS.warning}; font-weight: 600;">
+        The integrations have not yet been completed.
+      </p>
+      <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
+        Until Slack and calendar access are activated, SignalTrue cannot generate behavioral insights for your organization.
+      </p>
+    </div>
+    
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText}; line-height: 1.7;">
+      This is a one-click OAuth connection. No content access. Metadata only.
+    </p>
+    
+    ${generateButton('👉 Complete Integration Setup', setupUrl)}
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      Teams are waiting for visibility. The system cannot operate without this step.
+    </p>
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      – SignalTrue Team
+    </p>
+  `;
+
+  return generateEmailTemplate(content, "Integration setup still pending — 7 days");
+}
+
+/**
+ * IT ADMIN REMINDER - WEEK 3 (14 days, final escalation)
+ */
+export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setupUrl) {
+  const securityUrl = 'https://www.signaltrue.ai/trust';
+  
+  const content = `
+    <p style="margin: 0 0 20px 0; font-size: 18px; color: ${BRAND_COLORS.text}; line-height: 1.6;">
+      Hi ${itAdminName || 'there'},
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #ef4444; font-weight: 600;">
+      This is a final reminder.
+    </p>
+    
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      SignalTrue has not been connected to your organization's work systems. As a result, <strong>no behavioral risk monitoring is active.</strong>
+    </p>
+    
+    <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 14px; color: ${BRAND_COLORS.text};">
+        <strong>${hrAdminName || 'HR'}</strong> initiated this to gain early detection of overload and burnout patterns.
+      </p>
+      <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.mutedText};">
+        Without integration approval, the initiative stalls here.
+      </p>
+    </div>
+    
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      If security or privacy concerns are blocking this, documentation is available below:
+    </p>
+    
+    ${generateButton('👉 Review Security & Complete Setup', setupUrl)}
+    
+    <p style="margin: 16px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.mutedText};">
+      <a href="${securityUrl}" style="color: ${BRAND_COLORS.primary}; text-decoration: underline;">View Security Overview →</a>
+    </p>
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
+      Otherwise, please confirm whether this initiative should be paused.
+    </p>
+    
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
+      – SignalTrue Team
+    </p>
+  `;
+
+  return generateEmailTemplate(content, "SignalTrue is not active in your organization — final reminder");
+}
+
+// ============================================================
+// SEND FUNCTIONS FOR WEEK 2 & WEEK 3
+// ============================================================
+
+/**
+ * Send Week 2 reminder to user (7 days)
+ */
+export async function sendUserWeek2Reminder(user) {
+  const firstName = user.name?.split(' ')[0] || '';
+  const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
+  
+  const html = generateUserWeek2ReminderEmail(firstName, connectUrl);
+  
+  return sendReminderEmail({
+    to: user.email,
+    subject: 'Still no signals detected',
+    html,
+    tags: [{ name: 'type', value: 'user-week2-reminder' }],
+  });
+}
+
+/**
+ * Send Week 3 reminder to user (14 days, final)
+ */
+export async function sendUserWeek3Reminder(user) {
+  const firstName = user.name?.split(' ')[0] || '';
+  const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
+  
+  const html = generateUserWeek3ReminderEmail(firstName, connectUrl);
+  
+  return sendReminderEmail({
+    to: user.email,
+    subject: 'Your early-warning system is still inactive',
+    html,
+    tags: [{ name: 'type', value: 'user-week3-reminder' }],
+  });
+}
+
+/**
+ * Send Week 2 reminder to IT admin (7 days)
+ */
+export async function sendITAdminWeek2Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
+  const html = generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setupUrl);
+  
+  return sendReminderEmail({
+    to: itAdminEmail,
+    subject: 'Integration setup still pending',
+    html,
+    tags: [{ name: 'type', value: 'it-admin-week2-reminder' }],
+  });
+}
+
+/**
+ * Send Week 3 reminder to IT admin (14 days, final escalation)
+ */
+export async function sendITAdminWeek3Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
+  const html = generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setupUrl);
+  
+  return sendReminderEmail({
+    to: itAdminEmail,
+    subject: 'SignalTrue is not active in your organization',
+    html,
+    tags: [{ name: 'type', value: 'it-admin-week3-reminder' }],
+  });
+}
+
 export default {
   sendNewUserReminder,
   sendITAdminReminder,
   sendUserFollowUpReminder,
   sendITAdminUrgentReminder,
+  sendUserWeek2Reminder,
+  sendUserWeek3Reminder,
+  sendITAdminWeek2Reminder,
+  sendITAdminWeek3Reminder,
   generateNewUserReminderEmail,
   generateITAdminReminderEmail,
   generateFollowUpReminderEmail,
   generateITAdminUrgentReminderEmail,
+  generateUserWeek2ReminderEmail,
+  generateUserWeek3ReminderEmail,
+  generateITAdminWeek2ReminderEmail,
+  generateITAdminWeek3ReminderEmail,
 };
