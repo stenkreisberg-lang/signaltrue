@@ -1,0 +1,38 @@
+name: Weekly Reports
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC (11:00 AM Estonia, 4:00 AM EST)
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  send-weekly-reports:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send Weekly Reports
+        run: |
+          echo "Sending weekly reports..."
+          
+          # Send to sten.kreisberg@signaltrue.ai
+          curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "secret": "${{ secrets.REPORT_TRIGGER_SECRET }}",
+              "email": "sten.kreisberg@signaltrue.ai"
+            }'
+          
+          echo "Weekly reports sent!"
+
+      - name: Check Follow-up Reminders
+        run: |
+          echo "Checking for users needing reminder emails..."
+          
+          curl -X POST "https://signaltrue-backend.onrender.com/api/reminders/check-followups" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "secret": "${{ secrets.CRON_SECRET }}"
+            }'
+          
+          echo "Reminder check complete!"
