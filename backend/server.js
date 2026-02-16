@@ -112,6 +112,7 @@ import blogRoutes from "./routes/blog.js";
 import managerCoachingRoutes from "./routes/managerCoaching.js";
 import driftDiagnosticRoutes from "./routes/drift.js";
 import teamStateRoutes from "./routes/teamStateRoutes.js";
+import reminderCronRoutes from "./routes/reminderCron.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -309,6 +310,7 @@ async function main() {
     app.use('/api/subscriptions', subscriptionRoutes);
     app.use('/api/fit-questionnaire', fitQuestionnaireRoutes);
     app.use('/api/team-state', teamStateRoutes);
+    app.use('/api/reminders', reminderCronRoutes);
     
     // --- AI Chat Assistant (public, no auth required) ---
     app.use('/api/chat', chatRoutes);

@@ -5,8 +5,10 @@ import { Resend } from 'resend';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
+import ReminderEmail from '../models/reminderEmail.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
 import { encryptString } from '../utils/crypto.js';
+import { sendNewUserReminder } from '../services/reminderEmailService.js';
 import {
   validateUserRegistration,
   validateLogin,
@@ -216,6 +218,26 @@ router.post('/register', validateUserRegistration, async (req, res) => {
 
     // Send notification email to admin (async, don't block response)
     sendRegistrationNotification(user, orgNameForNotification);
+
+    // Send "Connect Your Tools" reminder email to new user (async, don't block response)
+    (async () => {
+      try {
+        const result = await sendNewUserReminder(user);
+        if (result.success) {
+          await ReminderEmail.recordSent({
+            recipientEmail: user.email,
+            userId: user._id,
+            orgId: resolvedOrgId,
+            reminderType: 'new-user-connect',
+            subject: "You're almost there — finish connecting tools to see real signals",
+            emailId: result.emailId
+          });
+          console.log(`[Reminder] Sent new user reminder to ${user.email}`);
+        }
+      } catch (err) {
+        console.error('[Reminder] Failed to send new user reminder:', err.message);
+      }
+    })();
 
     // Generate JWT
     const token = jwt.sign(
