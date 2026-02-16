@@ -1,56 +1,75 @@
-import { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Activity } from "lucide-react";
+import { useState } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Activity } from 'lucide-react';
 
 const planLabels: Record<string, string> = {
-  visibility: "Visibility",
-  interpretation: "Interpretation",
-  intervention: "Intervention",
+  visibility: 'Visibility',
+  interpretation: 'Interpretation',
+  intervention: 'Intervention',
 };
 
 const Register = () => {
   const [searchParams] = useSearchParams();
-  const selectedPlan = searchParams.get("plan") || "";
-  
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [company, setCompany] = useState("");
-  const [error, setError] = useState("");
+  const selectedPlan = searchParams.get('plan') || '';
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [company, setCompany] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Helper to format name with proper capitalization
+  const formatName = (name: string) => {
+    return name.trim().charAt(0).toUpperCase() + name.trim().slice(1).toLowerCase();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
+    // Format names with proper capitalization
+    const formattedFirstName = formatName(firstName);
+    const formattedLastName = formatName(lastName);
+    const fullName = `${formattedFirstName} ${formattedLastName}`;
+
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, company, plan: selectedPlan }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          firstName: formattedFirstName,
+          lastName: formattedLastName,
+          email,
+          password,
+          company,
+          plan: selectedPlan,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.message || 'Registration failed');
       }
 
       // Store token
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("orgId", data.user.orgId);
-      localStorage.setItem("teamId", data.user.teamId);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('orgId', data.user.orgId);
+      localStorage.setItem('teamId', data.user.teamId);
 
       // Redirect to dashboard (will route based on role/onboarding status)
-      navigate("/dashboard");
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -86,25 +105,38 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
-                required
-                disabled={loading}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">First Name</label>
+                <Input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Last Name</label>
+                <Input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe"
+                  required
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label className="block text-sm font-medium mb-2">Work Email</label>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="john@company.com"
                 required
                 disabled={loading}
               />
@@ -134,17 +166,13 @@ const Register = () => {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? "Creating account..." : "Create account"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>

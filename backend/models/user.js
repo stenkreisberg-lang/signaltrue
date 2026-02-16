@@ -25,6 +25,14 @@ const userSchema = new mongoose.Schema({
     // set: encryptString,
     // get: decryptString
   },
+  firstName: {
+    type: String,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    trim: true
+  },
   // Account status for auto-synced users
   accountStatus: {
     type: String,

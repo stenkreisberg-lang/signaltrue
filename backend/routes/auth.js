@@ -138,7 +138,31 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 // Register new user
 router.post('/register', validateUserRegistration, async (req, res) => {
   try {
-    const { email, password, name, role, teamId, orgId, companyName } = req.body;
+    const { email, password, name, firstName, lastName, role, teamId, orgId, companyName } = req.body;
+
+    // Helper to format name with proper capitalization
+    const formatName = (n) => {
+      if (!n) return '';
+      return n.trim().charAt(0).toUpperCase() + n.trim().slice(1).toLowerCase();
+    };
+
+    // Parse firstName and lastName from name if not provided separately
+    let resolvedFirstName = firstName;
+    let resolvedLastName = lastName;
+    
+    if (!resolvedFirstName || !resolvedLastName) {
+      const nameParts = (name || '').trim().split(/\s+/);
+      resolvedFirstName = formatName(nameParts[0] || '');
+      resolvedLastName = formatName(nameParts.slice(1).join(' ') || '');
+    } else {
+      resolvedFirstName = formatName(resolvedFirstName);
+      resolvedLastName = formatName(resolvedLastName);
+    }
+    
+    // Build full name with proper formatting
+    const fullName = resolvedLastName 
+      ? `${resolvedFirstName} ${resolvedLastName}` 
+      : resolvedFirstName;
 
     // Optional: block consumer email domains
     const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
@@ -196,7 +220,9 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     const user = new User({
       email,
       password,
-      name,
+      name: fullName,
+      firstName: resolvedFirstName,
+      lastName: resolvedLastName,
       role: userRole,
       teamId: resolvedTeamId,
       orgId: resolvedOrgId,

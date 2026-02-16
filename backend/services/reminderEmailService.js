@@ -342,10 +342,26 @@ export async function sendReminderEmail({ to, subject, html, tags = [] }) {
 }
 
 /**
+ * Helper to get properly formatted first name from user object
+ */
+function getFirstName(user) {
+  // Prefer firstName field if available
+  if (user.firstName) {
+    return user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase();
+  }
+  // Fall back to parsing from name field
+  if (user.name) {
+    const firstName = user.name.split(' ')[0] || '';
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  }
+  return '';
+}
+
+/**
  * Send new user reminder (Trigger 1)
  */
 export async function sendNewUserReminder(user) {
-  const firstName = user.name?.split(' ')[0] || '';
+  const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
   
   const html = generateNewUserReminderEmail(firstName, connectUrl);
@@ -362,7 +378,15 @@ export async function sendNewUserReminder(user) {
  * Send IT admin invitation reminder (Trigger 2)
  */
 export async function sendITAdminReminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
-  const html = generateITAdminReminderEmail(itAdminName, hrAdminName, setupUrl);
+  // Format IT admin name properly
+  const formattedName = itAdminName 
+    ? itAdminName.charAt(0).toUpperCase() + itAdminName.slice(1).toLowerCase()
+    : '';
+  const formattedHRName = hrAdminName
+    ? hrAdminName.charAt(0).toUpperCase() + hrAdminName.slice(1).toLowerCase()
+    : '';
+    
+  const html = generateITAdminReminderEmail(formattedName, formattedHRName, setupUrl);
   
   return sendReminderEmail({
     to: itAdminEmail,
@@ -376,7 +400,7 @@ export async function sendITAdminReminder(itAdminEmail, itAdminName, hrAdminName
  * Send follow-up reminder for user who hasn't connected (24h)
  */
 export async function sendUserFollowUpReminder(user, hoursElapsed = 24) {
-  const firstName = user.name?.split(' ')[0] || '';
+  const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
   
   const html = generateFollowUpReminderEmail(firstName, connectUrl, hoursElapsed);
@@ -610,7 +634,7 @@ export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setu
  * Send Week 2 reminder to user (7 days)
  */
 export async function sendUserWeek2Reminder(user) {
-  const firstName = user.name?.split(' ')[0] || '';
+  const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
   
   const html = generateUserWeek2ReminderEmail(firstName, connectUrl);
@@ -627,7 +651,7 @@ export async function sendUserWeek2Reminder(user) {
  * Send Week 3 reminder to user (14 days, final)
  */
 export async function sendUserWeek3Reminder(user) {
-  const firstName = user.name?.split(' ')[0] || '';
+  const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
   
   const html = generateUserWeek3ReminderEmail(firstName, connectUrl);
@@ -641,10 +665,21 @@ export async function sendUserWeek3Reminder(user) {
 }
 
 /**
+ * Helper to format name properly
+ */
+function formatNameProperly(name) {
+  if (!name) return '';
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
+/**
  * Send Week 2 reminder to IT admin (7 days)
  */
 export async function sendITAdminWeek2Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
-  const html = generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setupUrl);
+  const formattedITName = formatNameProperly(itAdminName);
+  const formattedHRName = formatNameProperly(hrAdminName);
+  
+  const html = generateITAdminWeek2ReminderEmail(formattedITName, formattedHRName, setupUrl);
   
   return sendReminderEmail({
     to: itAdminEmail,
@@ -658,7 +693,10 @@ export async function sendITAdminWeek2Reminder(itAdminEmail, itAdminName, hrAdmi
  * Send Week 3 reminder to IT admin (14 days, final escalation)
  */
 export async function sendITAdminWeek3Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
-  const html = generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setupUrl);
+  const formattedITName = formatNameProperly(itAdminName);
+  const formattedHRName = formatNameProperly(hrAdminName);
+  
+  const html = generateITAdminWeek3ReminderEmail(formattedITName, formattedHRName, setupUrl);
   
   return sendReminderEmail({
     to: itAdminEmail,
