@@ -280,4 +280,210 @@ router.get('/dashboard/:teamId', requireAuth, ...applyAntiWeaponizationGuards, a
   }
 });
 
+/**
+ * POST /api/bdi/team/:teamId/generate-state
+ * Generate TeamState record from current Team data for dashboard display
+ * This creates the records that the BDIDashboard component expects
+ */
+router.post('/team/:teamId/generate-state', requireAuth, async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const mongoose = (await import('mongoose')).default;
+    const Team = (await import('../models/team.js')).default;
+    
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+    
+    // Calculate zone from BDI
+    let zone = 'Stable';
+    if (team.bdi >= 70) zone = 'Alert';
+    else if (team.bdi >= 50) zone = 'Watch';
+    else if (team.bdi < 30) zone = 'Stable';
+    
+    // Calculate signal scores from team data
+    const communicationScore = Math.max(0, Math.min(100, 
+      100 - (team.slackSignals?.avgResponseDelayHours || 0) * 5 + 
+      (team.slackSignals?.sentiment || 0) * 20
+    ));
+    
+    const engagementScore = Math.max(0, Math.min(100,
+      Math.min(100, (team.slackSignals?.messageCount || 0) / 2) +
+      (team.googleChatSignals?.messageCount || 0) / 2
+    ));
+    
+    const workloadScore = Math.max(0, Math.min(100,
+      100 - (team.calendarSignals?.meetingHoursWeek || 0) * 2 -
+      (team.calendarSignals?.afterHoursMeetings || 0) * 5
+    ));
+    
+    const collaborationScore = Math.max(0, Math.min(100,
+      (team.calendarSignals?.recoveryScore || 50) +
+      (team.calendarSignals?.focusToMeetingRatio || 0.5) * 20
+    ));
+    
+    // Create TeamState document in the format the dashboard expects
+    const weekEnd = new Date();
+    weekEnd.setHours(23, 59, 59, 999);
+    
+    const teamStateData = {
+      teamId: team._id,
+      orgId: team.orgId,
+      weekEnd,
+      bdi: team.bdi || 50,
+      zone,
+      riskScore: team.bdi > 60 ? 'high' : team.bdi > 40 ? 'medium' : 'low',
+      signals: {
+        communication: { score: Math.round(communicationScore), trend: 'stable' },
+        engagement: { score: Math.round(engagementScore), trend: 'stable' },
+        workload: { score: Math.round(workloadScore), trend: 'stable' },
+        collaboration: { score: Math.round(collaborationScore), trend: 'stable' }
+      },
+      metrics: {
+        messageCount: (team.slackSignals?.messageCount || 0) + (team.googleChatSignals?.messageCount || 0),
+        meetingHours: team.calendarSignals?.meetingHoursWeek || 0,
+        afterHoursActivity: team.calendarSignals?.afterHoursMeetings || 0,
+        responseTime: team.slackSignals?.avgResponseDelayHours || 0
+      },
+      insights: [],
+      createdAt: new Date()
+    };
+    
+    // Add insights based on signals
+    if (workloadScore < 50) {
+      teamStateData.insights.push('High meeting load detected - consider reducing recurring meetings');
+    }
+    if (communicationScore < 50) {
+      teamStateData.insights.push('Response times are elevated - team may be overloaded');
+    }
+    if (team.calendarSignals?.afterHoursMeetings > 3) {
+      teamStateData.insights.push('After-hours meetings detected - watch for burnout signals');
+    }
+    
+    // Insert into teamstates collection using native MongoDB
+    const db = mongoose.connection.db;
+    const teamStatesCollection = db.collection('teamstates');
+    
+    // Check if recent state exists (within last 24 hours)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const existingState = await teamStatesCollection.findOne({
+      teamId: team._id,
+      createdAt: { $gte: oneDayAgo }
+    });
+    
+    if (existingState) {
+      // Update existing
+      await teamStatesCollection.updateOne(
+        { _id: existingState._id },
+        { $set: teamStateData }
+      );
+      res.json({ message: 'TeamState updated', state: teamStateData, updated: true });
+    } else {
+      // Insert new
+      await teamStatesCollection.insertOne(teamStateData);
+      res.json({ message: 'TeamState created', state: teamStateData, created: true });
+    }
+    
+  } catch (error) {
+    console.error('Error generating team state:', error);
+    res.status(500).json({ message: 'Error generating team state', error: error.message });
+  }
+});
+
+/**
+ * POST /api/bdi/org/:orgId/generate-all-states
+ * Generate TeamState records for all teams in an organization
+ */
+router.post('/org/:orgId/generate-all-states', requireAuth, async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const mongoose = (await import('mongoose')).default;
+    const Team = (await import('../models/team.js')).default;
+    
+    const teams = await Team.find({ orgId });
+    
+    if (teams.length === 0) {
+      return res.status(404).json({ message: 'No teams found for this organization' });
+    }
+    
+    const results = [];
+    const db = mongoose.connection.db;
+    const teamStatesCollection = db.collection('teamstates');
+    
+    for (const team of teams) {
+      // Calculate zone from BDI
+      let zone = 'Stable';
+      if (team.bdi >= 70) zone = 'Alert';
+      else if (team.bdi >= 50) zone = 'Watch';
+      else if (team.bdi < 30) zone = 'Stable';
+      
+      // Calculate signal scores
+      const communicationScore = Math.max(0, Math.min(100, 
+        100 - (team.slackSignals?.avgResponseDelayHours || 0) * 5 + 
+        (team.slackSignals?.sentiment || 0) * 20
+      ));
+      
+      const engagementScore = Math.max(0, Math.min(100,
+        Math.min(100, (team.slackSignals?.messageCount || 0) / 2) +
+        (team.googleChatSignals?.messageCount || 0) / 2
+      ));
+      
+      const workloadScore = Math.max(0, Math.min(100,
+        100 - (team.calendarSignals?.meetingHoursWeek || 0) * 2 -
+        (team.calendarSignals?.afterHoursMeetings || 0) * 5
+      ));
+      
+      const collaborationScore = Math.max(0, Math.min(100,
+        (team.calendarSignals?.recoveryScore || 50) +
+        (team.calendarSignals?.focusToMeetingRatio || 0.5) * 20
+      ));
+      
+      const weekEnd = new Date();
+      weekEnd.setHours(23, 59, 59, 999);
+      
+      const teamStateData = {
+        teamId: team._id,
+        orgId: team.orgId,
+        weekEnd,
+        bdi: team.bdi || 50,
+        zone,
+        riskScore: team.bdi > 60 ? 'high' : team.bdi > 40 ? 'medium' : 'low',
+        signals: {
+          communication: { score: Math.round(communicationScore), trend: 'stable' },
+          engagement: { score: Math.round(engagementScore), trend: 'stable' },
+          workload: { score: Math.round(workloadScore), trend: 'stable' },
+          collaboration: { score: Math.round(collaborationScore), trend: 'stable' }
+        },
+        metrics: {
+          messageCount: (team.slackSignals?.messageCount || 0) + (team.googleChatSignals?.messageCount || 0),
+          meetingHours: team.calendarSignals?.meetingHoursWeek || 0,
+          afterHoursActivity: team.calendarSignals?.afterHoursMeetings || 0,
+          responseTime: team.slackSignals?.avgResponseDelayHours || 0
+        },
+        insights: [],
+        createdAt: new Date()
+      };
+      
+      // Upsert
+      await teamStatesCollection.updateOne(
+        { teamId: team._id, weekEnd: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+        { $set: teamStateData },
+        { upsert: true }
+      );
+      
+      results.push({ teamId: team._id, teamName: team.name, bdi: team.bdi, zone });
+    }
+    
+    res.json({ 
+      message: `Generated TeamState records for ${teams.length} teams`, 
+      teams: results 
+    });
+    
+  } catch (error) {
+    console.error('Error generating all team states:', error);
+    res.status(500).json({ message: 'Error generating team states', error: error.message });
+  }
+});
+
 export default router;
