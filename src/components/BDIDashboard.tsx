@@ -535,6 +535,8 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [drillDown, setDrillDown] = useState<DrillDownData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -561,6 +563,61 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
       setLoading(false);
     }
   }, [teamId]);
+
+  // Refresh all integrations and generate dashboard data
+  const handleRefreshAll = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      setRefreshMessage('Syncing all integrations...');
+
+      // Step 1: Trigger sync for all connected integrations
+      try {
+        const statusRes = await api.get('/integration-dashboard/status');
+        const connectedIntegrations =
+          statusRes.data.integrations?.filter((i: any) => i.status === 'connected') || [];
+
+        for (const integration of connectedIntegrations) {
+          setRefreshMessage(`Syncing ${integration.name}...`);
+          try {
+            await api.post(`/integration-dashboard/${integration.type}/sync`);
+          } catch (e) {
+            console.warn(`Sync failed for ${integration.name}:`, e);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch integration status:', e);
+      }
+
+      // Step 2: Sync Slack data if available
+      setRefreshMessage('Syncing Slack data...');
+      try {
+        await api.post('/employee-sync/slack');
+      } catch (e) {
+        console.warn('Slack sync skipped:', e);
+      }
+
+      // Step 3: Generate TeamState records from all data sources
+      setRefreshMessage('Generating dashboard data...');
+      if (orgId) {
+        await api.post(`/bdi/org/${orgId}/generate-all-states`);
+      } else if (teamId) {
+        await api.post(`/bdi/team/${teamId}/generate-state`);
+      }
+
+      // Step 4: Refresh the dashboard display
+      setRefreshMessage('Refreshing dashboard...');
+      await fetchData();
+
+      setRefreshMessage('✓ Dashboard refreshed successfully!');
+      setTimeout(() => setRefreshMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Error refreshing dashboard:', err);
+      setRefreshMessage('⚠️ Some data may not have synced. Please try again.');
+      setTimeout(() => setRefreshMessage(null), 5000);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [teamId, orgId, fetchData]);
 
   useEffect(() => {
     if (teamId) {
@@ -652,11 +709,69 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
         <h3 style={titleStyle}>📊 Team Health Dashboard</h3>
         <div style={{ textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.6)' }}>
           <div style={{ marginBottom: '12px', fontSize: '18px' }}>📈 Collecting Data...</div>
-          <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+          <div style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
             SignalTrue is analyzing your team's communication patterns.
             <br />
             Initial insights will appear as data is collected from connected integrations.
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefreshAll}
+            disabled={refreshing}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: refreshing ? '#4b5563' : '#6366f1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {refreshing ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTopColor: 'white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                {refreshMessage || 'Refreshing...'}
+              </>
+            ) : (
+              <>🔄 Refresh All Integrations</>
+            )}
+          </button>
+
+          {refreshMessage && !refreshing && (
+            <div
+              style={{
+                marginTop: '12px',
+                fontSize: '13px',
+                color: refreshMessage.startsWith('✓') ? '#22c55e' : '#f59e0b',
+              }}
+            >
+              {refreshMessage}
+            </div>
+          )}
+
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
     );
@@ -728,7 +843,88 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
 
   return (
     <div style={containerStyle}>
-      <h3 style={titleStyle}>📊 Team Health Dashboard</h3>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px',
+        }}
+      >
+        <h3 style={{ ...titleStyle, marginBottom: 0 }}>📊 Team Health Dashboard</h3>
+        <button
+          onClick={handleRefreshAll}
+          disabled={refreshing}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: refreshing ? '#374151' : 'rgba(99, 102, 241, 0.2)',
+            color: refreshing ? '#9ca3af' : '#a5b4fc',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: '500',
+            cursor: refreshing ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!refreshing) {
+              e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.3)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!refreshing) {
+              e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.2)';
+            }
+          }}
+        >
+          {refreshing ? (
+            <>
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '12px',
+                  height: '12px',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  borderTopColor: '#a5b4fc',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }}
+              />
+              Syncing...
+            </>
+          ) : (
+            <>🔄 Refresh</>
+          )}
+        </button>
+      </div>
+
+      {refreshMessage && (
+        <div
+          style={{
+            marginBottom: '12px',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            fontSize: '13px',
+            backgroundColor: refreshMessage.startsWith('✓')
+              ? 'rgba(34, 197, 94, 0.1)'
+              : 'rgba(245, 158, 11, 0.1)',
+            color: refreshMessage.startsWith('✓') ? '#22c55e' : '#f59e0b',
+            border: `1px solid ${refreshMessage.startsWith('✓') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
+          }}
+        >
+          {refreshMessage}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       <AlertBanner alerts={alerts} />
 
