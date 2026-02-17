@@ -96,7 +96,7 @@ export function MeetingROITile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/meeting-roi/${teamId}`);
@@ -107,7 +107,7 @@ export function MeetingROITile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -123,18 +123,12 @@ export function MeetingROITile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Meeting ROI Score</h3>
-        <div style={tileStyles.noData}>
-          Connect calendar to see meeting efficiency analysis
-        </div>
+        <div style={tileStyles.noData}>Connect calendar to see meeting efficiency analysis</div>
       </div>
     );
   }
 
-  const roiColor = data.roiScore >= 70 
-    ? '#22c55e' 
-    : data.roiScore >= 40 
-      ? '#eab308' 
-      : '#ef4444';
+  const roiColor = data.roiScore >= 70 ? '#22c55e' : data.roiScore >= 40 ? '#eab308' : '#ef4444';
 
   return (
     <div style={tileStyles.container}>
@@ -143,29 +137,38 @@ export function MeetingROITile({ teamId }) {
           <h3 style={tileStyles.title}>Meeting ROI Score</h3>
           <p style={tileStyles.subtitle}>Meeting efficiency without reading content</p>
         </div>
-        <span style={{
-          ...tileStyles.badge,
-          ...(data.roiScore >= 70 ? tileStyles.badgeGreen : 
-              data.roiScore >= 40 ? tileStyles.badgeYellow : tileStyles.badgeRed)
-        }}>
+        <span
+          style={{
+            ...tileStyles.badge,
+            ...(data.roiScore >= 70
+              ? tileStyles.badgeGreen
+              : data.roiScore >= 40
+                ? tileStyles.badgeYellow
+                : tileStyles.badgeRed),
+          }}
+        >
           {data.meetingCount} meetings
         </span>
       </div>
-      
-      <div style={tileStyles.value}>{data.roiScore}<span style={{ fontSize: '18px' }}>/100</span></div>
-      
-      <div style={tileStyles.progressBar}>
-        <div style={{
-          ...tileStyles.progressFill,
-          width: `${data.roiScore}%`,
-          backgroundColor: roiColor,
-        }} />
+
+      <div style={tileStyles.value}>
+        {data.roiScore}
+        <span style={{ fontSize: '18px' }}>/100</span>
       </div>
-      
+
+      <div style={tileStyles.progressBar}>
+        <div
+          style={{
+            ...tileStyles.progressFill,
+            width: `${data.roiScore}%`,
+            backgroundColor: roiColor,
+          }}
+        />
+      </div>
+
       <p style={tileStyles.message}>
-        <span style={{ color: roiColor, fontWeight: '600' }}>
-          {data.lowROIPercentage}%
-        </span> of meeting time last month shows low ROI
+        <span style={{ color: roiColor, fontWeight: '600' }}>{data.lowROIPercentage}%</span> of
+        meeting time last month shows low ROI
       </p>
     </div>
   );
@@ -181,7 +184,7 @@ export function FocusForecastTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/focus-forecast/${teamId}`);
@@ -192,7 +195,7 @@ export function FocusForecastTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -208,9 +211,7 @@ export function FocusForecastTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Focus Recovery Forecast</h3>
-        <div style={tileStyles.noData}>
-          Insufficient data for focus forecast
-        </div>
+        <div style={tileStyles.noData}>Insufficient data for focus forecast</div>
       </div>
     );
   }
@@ -230,35 +231,38 @@ export function FocusForecastTile({ teamId }) {
           <h3 style={tileStyles.title}>Focus Recovery Forecast</h3>
           <p style={tileStyles.subtitle}>14-day projection based on current trends</p>
         </div>
-        <span style={{ ...tileStyles.badge, ...state.bg }}>
-          {data.warningState}
-        </span>
+        <span style={{ ...tileStyles.badge, ...state.bg }}>{data.warningState}</span>
       </div>
-      
-      <div style={{
-        ...tileStyles.value,
-        color: state.color,
-      }}>
-        {data.focusCapacityChange > 0 ? '+' : ''}{data.focusCapacityChange}%
+
+      <div
+        style={{
+          ...tileStyles.value,
+          color: state.color,
+        }}
+      >
+        {data.focusCapacityChange > 0 ? '+' : ''}
+        {data.focusCapacityChange}%
       </div>
-      
+
       <p style={tileStyles.message}>{data.forecastMessage}</p>
-      
+
       {/* Simple trend visualization */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        gap: '4px',
-        marginTop: '16px',
-        height: '40px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '4px',
+          marginTop: '16px',
+          height: '40px',
+        }}
+      >
         {data.trendData?.slice(-7).map((point, i) => (
           <div
             key={i}
             style={{
               flex: 1,
               backgroundColor: state.color,
-              opacity: 0.3 + (i * 0.1),
+              opacity: 0.3 + i * 0.1,
               height: `${Math.max(20, (point.focusBlocks || 0) * 20)}%`,
               borderRadius: '2px',
             }}
@@ -280,7 +284,7 @@ export function WorkHealthDeltaTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/health-delta/${teamId}`);
@@ -291,7 +295,7 @@ export function WorkHealthDeltaTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -307,9 +311,7 @@ export function WorkHealthDeltaTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>30-Day Work Health Report</h3>
-        <div style={tileStyles.noData}>
-          Need 30 days of data for comparison report
-        </div>
+        <div style={tileStyles.noData}>Need 30 days of data for comparison report</div>
       </div>
     );
   }
@@ -344,24 +346,28 @@ export function WorkHealthDeltaTile({ teamId }) {
           <h3 style={tileStyles.title}>30-Day Work Health Report</h3>
           <p style={tileStyles.subtitle}>Did this help us?</p>
         </div>
-        <span style={{
-          ...tileStyles.badge,
-          backgroundColor: `${status.color}20`,
-          color: status.color,
-        }}>
+        <span
+          style={{
+            ...tileStyles.badge,
+            backgroundColor: `${status.color}20`,
+            color: status.color,
+          }}
+        >
           {status.label}
         </span>
       </div>
-      
+
       <p style={tileStyles.message}>{data.summaryMessage}</p>
-      
+
       {/* Delta Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '12px',
-        marginTop: '16px',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '12px',
+          marginTop: '16px',
+        }}
+      >
         {Object.entries(data.deltas || {}).map(([key, value]) => (
           <div
             key={key}
@@ -372,24 +378,29 @@ export function WorkHealthDeltaTile({ teamId }) {
               textAlign: 'center',
             }}
           >
-            <div style={{
-              fontSize: '12px',
-              color: 'rgba(255,255,255,0.6)',
-              marginBottom: '4px',
-            }}>
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'rgba(255,255,255,0.6)',
+                marginBottom: '4px',
+              }}
+            >
               {deltaLabels[key] || key}
             </div>
-            <div style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: deltaColors[data.deltaStatus?.[key]] || '#fff',
-            }}>
-              {value > 0 ? '+' : ''}{value}%
+            <div
+              style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: deltaColors[data.deltaStatus?.[key]] || '#fff',
+              }}
+            >
+              {value > 0 ? '+' : ''}
+              {value}%
             </div>
           </div>
         ))}
       </div>
-      
+
       {/* Export Button */}
       <button
         onClick={() => window.open(`/api/loop-closing/health-delta/${teamId}/pdf`, '_blank')}
@@ -420,7 +431,7 @@ export function AfterHoursCostTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/after-hours/${teamId}`);
@@ -431,7 +442,7 @@ export function AfterHoursCostTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -447,18 +458,13 @@ export function AfterHoursCostTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>After-Hours Cost</h3>
-        <div style={tileStyles.noData}>
-          Connect Slack/Teams to analyze after-hours work
-        </div>
+        <div style={tileStyles.noData}>Connect Slack/Teams to analyze after-hours work</div>
       </div>
     );
   }
 
-  const fteColor = data.equivalentFTE >= 1 
-    ? '#ef4444' 
-    : data.equivalentFTE >= 0.5 
-      ? '#eab308' 
-      : '#22c55e';
+  const fteColor =
+    data.equivalentFTE >= 1 ? '#ef4444' : data.equivalentFTE >= 0.5 ? '#eab308' : '#22c55e';
 
   return (
     <div style={tileStyles.container}>
@@ -467,31 +473,39 @@ export function AfterHoursCostTile({ teamId }) {
           <h3 style={tileStyles.title}>After-Hours Cost</h3>
           <p style={tileStyles.subtitle}>Invisible work translated to cost</p>
         </div>
-        <span style={{
-          ...tileStyles.badge,
-          ...(data.equivalentFTE >= 1 ? tileStyles.badgeRed : 
-              data.equivalentFTE >= 0.5 ? tileStyles.badgeYellow : tileStyles.badgeGreen)
-        }}>
+        <span
+          style={{
+            ...tileStyles.badge,
+            ...(data.equivalentFTE >= 1
+              ? tileStyles.badgeRed
+              : data.equivalentFTE >= 0.5
+                ? tileStyles.badgeYellow
+                : tileStyles.badgeGreen),
+          }}
+        >
           {data.afterHoursHours}h/week
         </span>
       </div>
-      
+
       <div style={{ ...tileStyles.value, color: fteColor }}>
-        {data.equivalentFTE}<span style={{ fontSize: '18px' }}> FTE</span>
+        {data.equivalentFTE}
+        <span style={{ fontSize: '18px' }}> FTE</span>
       </div>
-      
+
       <p style={tileStyles.message}>
         This team generates ~<strong>{data.equivalentFTE}</strong> FTE of after-hours load weekly
       </p>
 
       {/* Weekly bar chart */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        gap: '4px',
-        marginTop: '16px',
-        height: '60px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '4px',
+          marginTop: '16px',
+          height: '60px',
+        }}
+      >
         {(data.dailyBreakdown || []).slice(-7).map((day, i) => {
           const maxHours = 4;
           const height = Math.min(100, (day.hours / maxHours) * 100);
@@ -542,7 +556,7 @@ export function CollisionHeatmapTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/collision/${teamId}`);
@@ -553,7 +567,7 @@ export function CollisionHeatmapTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -569,9 +583,7 @@ export function CollisionHeatmapTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Meeting Collision Heatmap</h3>
-        <div style={tileStyles.noData}>
-          Connect calendar to see focus dead zones
-        </div>
+        <div style={tileStyles.noData}>Connect calendar to see focus dead zones</div>
       </div>
     );
   }
@@ -592,11 +604,14 @@ export function CollisionHeatmapTile({ teamId }) {
           <h3 style={tileStyles.title}>Meeting Collision Heatmap</h3>
           <p style={tileStyles.subtitle}>Structural focus dead zones</p>
         </div>
-        <span style={{
-          ...tileStyles.badge,
-          backgroundColor: summary?.congestionRate >= 50 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-          color: summary?.congestionRate >= 50 ? '#ef4444' : '#eab308',
-        }}>
+        <span
+          style={{
+            ...tileStyles.badge,
+            backgroundColor:
+              summary?.congestionRate >= 50 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+            color: summary?.congestionRate >= 50 ? '#ef4444' : '#eab308',
+          }}
+        >
           {summary?.congestionRate || 0}% congested
         </span>
       </div>
@@ -606,12 +621,15 @@ export function CollisionHeatmapTile({ teamId }) {
         {/* Hour labels */}
         <div style={{ display: 'flex', paddingLeft: '40px', marginBottom: '4px' }}>
           {formattedHeatmap?.hours?.slice(0, 5).map((hour, i) => (
-            <div key={i} style={{ 
-              flex: 1, 
-              fontSize: '10px', 
-              color: 'rgba(255,255,255,0.5)',
-              textAlign: 'center'
-            }}>
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                fontSize: '10px',
+                color: 'rgba(255,255,255,0.5)',
+                textAlign: 'center',
+              }}
+            >
               {hour}
             </div>
           ))}
@@ -619,13 +637,18 @@ export function CollisionHeatmapTile({ teamId }) {
 
         {/* Day rows */}
         {formattedHeatmap?.grid?.map((dayData, dayIndex) => (
-          <div key={dayIndex} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px' }}>
-            <div style={{ 
-              width: '36px', 
-              fontSize: '11px', 
-              color: 'rgba(255,255,255,0.7)',
-              fontWeight: '500'
-            }}>
+          <div
+            key={dayIndex}
+            style={{ display: 'flex', alignItems: 'center', marginBottom: '2px' }}
+          >
+            <div
+              style={{
+                width: '36px',
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.7)',
+                fontWeight: '500',
+              }}
+            >
               {dayData.day}
             </div>
             <div style={{ display: 'flex', flex: 1, gap: '2px' }}>
@@ -649,25 +672,29 @@ export function CollisionHeatmapTile({ teamId }) {
       </div>
 
       {/* Summary Stats */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        marginTop: '16px',
-        fontSize: '13px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '16px',
+          marginTop: '16px',
+          fontSize: '13px',
+        }}
+      >
         <div>
-          <span style={{ color: '#ef4444' }}>●</span> Red zones: <strong>{summary?.redZoneHours || 0}h</strong>
+          <span style={{ color: '#ef4444' }}>●</span> Red zones:{' '}
+          <strong>{summary?.redZoneHours || 0}h</strong>
         </div>
         <div>
-          <span style={{ color: '#22c55e' }}>●</span> Focus windows: <strong>{summary?.focusWindowHours || 0}h</strong>
+          <span style={{ color: '#22c55e' }}>●</span> Focus windows:{' '}
+          <strong>{summary?.focusWindowHours || 0}h</strong>
         </div>
       </div>
 
       {/* Worst/Best day */}
       {summary?.worstDay !== undefined && (
         <p style={{ ...tileStyles.message, fontSize: '12px', marginTop: '8px' }}>
-          Worst day: <strong>{dayNames[summary.worstDay]}</strong> | 
-          Best day: <strong>{dayNames[summary.bestDay]}</strong>
+          Worst day: <strong>{dayNames[summary.worstDay]}</strong> | Best day:{' '}
+          <strong>{dayNames[summary.bestDay]}</strong>
         </p>
       )}
     </div>
@@ -705,7 +732,7 @@ export function InterventionSimulatorTile({ teamId }) {
     try {
       const response = await api.post(`/loop-closing/simulator/${teamId}/quick`, {
         presetId,
-        meetings: [] // Use current team meetings
+        meetings: [], // Use current team meetings
       });
       setResult(response.data);
     } catch (err) {
@@ -736,12 +763,14 @@ export function InterventionSimulatorTile({ teamId }) {
       </div>
 
       {/* Preset Buttons */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        marginTop: '16px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginTop: '16px',
+        }}
+      >
         {presets.slice(0, 4).map((preset) => (
           <button
             key={preset.id}
@@ -749,12 +778,12 @@ export function InterventionSimulatorTile({ teamId }) {
             disabled={loading}
             style={{
               padding: '12px 16px',
-              backgroundColor: selectedPreset === preset.id 
-                ? 'rgba(59, 130, 246, 0.3)' 
-                : 'rgba(255,255,255,0.05)',
-              border: selectedPreset === preset.id 
-                ? '1px solid #3b82f6' 
-                : '1px solid rgba(255,255,255,0.1)',
+              backgroundColor:
+                selectedPreset === preset.id ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255,255,255,0.05)',
+              border:
+                selectedPreset === preset.id
+                  ? '1px solid #3b82f6'
+                  : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '8px',
               color: '#fff',
               cursor: loading ? 'wait' : 'pointer',
@@ -773,82 +802,104 @@ export function InterventionSimulatorTile({ teamId }) {
 
       {/* Simulation Results */}
       {result && (
-        <div style={{
-          marginTop: '20px',
-          padding: '16px',
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          borderRadius: '8px',
-        }}>
+        <div
+          style={{
+            marginTop: '20px',
+            padding: '16px',
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderRadius: '8px',
+          }}
+        >
           <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#fff' }}>
             Simulation Results {result.presetUsed && `• ${result.presetUsed}`}
           </h4>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             {/* Focus Time Change */}
-            <div style={{
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-            }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                padding: '12px',
+                borderRadius: '6px',
+                textAlign: 'center',
+              }}
+            >
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Focus Time</div>
-              <div style={{ 
-                fontSize: '18px', 
-                fontWeight: '700', 
-                color: result.deltas?.focusTime >= 0 ? '#22c55e' : '#ef4444',
-              }}>
-                {result.deltas?.focusTime >= 0 ? '+' : ''}{result.deltas?.focusTime || 0}%
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: result.deltas?.focusTime >= 0 ? '#22c55e' : '#ef4444',
+                }}
+              >
+                {result.deltas?.focusTime >= 0 ? '+' : ''}
+                {result.deltas?.focusTime || 0}%
               </div>
             </div>
 
             {/* Fragmentation Change */}
-            <div style={{
-              backgroundColor: 'rgba(234, 179, 8, 0.1)',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-            }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                padding: '12px',
+                borderRadius: '6px',
+                textAlign: 'center',
+              }}
+            >
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Fragmentation</div>
-              <div style={{ 
-                fontSize: '18px', 
-                fontWeight: '700', 
-                color: result.deltas?.fragmentation <= 0 ? '#22c55e' : '#ef4444',
-              }}>
-                {result.deltas?.fragmentation >= 0 ? '+' : ''}{result.deltas?.fragmentation || 0}%
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: result.deltas?.fragmentation <= 0 ? '#22c55e' : '#ef4444',
+                }}
+              >
+                {result.deltas?.fragmentation >= 0 ? '+' : ''}
+                {result.deltas?.fragmentation || 0}%
               </div>
             </div>
 
             {/* After-Hours Change */}
-            <div style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-            }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                padding: '12px',
+                borderRadius: '6px',
+                textAlign: 'center',
+              }}
+            >
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>After-Hours</div>
-              <div style={{ 
-                fontSize: '18px', 
-                fontWeight: '700', 
-                color: result.deltas?.afterHours <= 0 ? '#22c55e' : '#ef4444',
-              }}>
-                {result.deltas?.afterHours >= 0 ? '+' : ''}{result.deltas?.afterHours || 0}%
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: result.deltas?.afterHours <= 0 ? '#22c55e' : '#ef4444',
+                }}
+              >
+                {result.deltas?.afterHours >= 0 ? '+' : ''}
+                {result.deltas?.afterHours || 0}%
               </div>
             </div>
 
             {/* Meeting Hours */}
-            <div style={{
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-            }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                padding: '12px',
+                borderRadius: '6px',
+                textAlign: 'center',
+              }}
+            >
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Meeting Hours</div>
-              <div style={{ 
-                fontSize: '18px', 
-                fontWeight: '700', 
-                color: result.deltas?.meetingHours <= 0 ? '#22c55e' : '#ef4444',
-              }}>
-                {result.deltas?.meetingHours >= 0 ? '+' : ''}{result.deltas?.meetingHours || 0}%
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: result.deltas?.meetingHours <= 0 ? '#22c55e' : '#ef4444',
+                }}
+              >
+                {result.deltas?.meetingHours >= 0 ? '+' : ''}
+                {result.deltas?.meetingHours || 0}%
               </div>
             </div>
           </div>
@@ -874,7 +925,7 @@ export function LoadBalanceTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/load-balance/${teamId}`);
@@ -885,7 +936,7 @@ export function LoadBalanceTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -901,9 +952,7 @@ export function LoadBalanceTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Team Load Balance</h3>
-        <div style={tileStyles.noData}>
-          Insufficient data for load analysis
-        </div>
+        <div style={tileStyles.noData}>Insufficient data for load analysis</div>
       </div>
     );
   }
@@ -938,17 +987,21 @@ export function LoadBalanceTile({ teamId }) {
       </div>
 
       {/* Gauge Display */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: '20px',
-      }}>
-        <div style={{
-          position: 'relative',
-          width: '120px',
-          height: '60px',
-        }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: '20px',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            width: '120px',
+            height: '60px',
+          }}
+        >
           {/* Gauge Background */}
           <svg viewBox="0 0 120 60" style={{ width: '100%', height: '100%' }}>
             {/* Background arc */}
@@ -970,13 +1023,15 @@ export function LoadBalanceTile({ teamId }) {
             />
           </svg>
           {/* Center value */}
-          <div style={{
-            position: 'absolute',
-            bottom: '5px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            textAlign: 'center',
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              textAlign: 'center',
+            }}
+          >
             <div style={{ fontSize: '24px', fontWeight: '700', color: state.color }}>
               {data.loadBalanceIndex}
             </div>
@@ -986,12 +1041,14 @@ export function LoadBalanceTile({ teamId }) {
 
       {/* Dimension Breakdown */}
       {data.dimensions && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '8px',
-          marginTop: '20px',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+            marginTop: '20px',
+          }}
+        >
           {Object.entries(data.dimensions).map(([key, dim]) => (
             <div
               key={key}
@@ -1002,14 +1059,18 @@ export function LoadBalanceTile({ teamId }) {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+              <div
+                style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}
+              >
                 {key.replace(/_/g, ' ').toUpperCase()}
               </div>
-              <div style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: dim.cv > 0.4 ? '#ef4444' : dim.cv > 0.2 ? '#eab308' : '#22c55e',
-              }}>
+              <div
+                style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: dim.cv > 0.4 ? '#ef4444' : dim.cv > 0.2 ? '#eab308' : '#22c55e',
+                }}
+              >
                 {Math.round(dim.cv * 100)}%
               </div>
             </div>
@@ -1021,14 +1082,16 @@ export function LoadBalanceTile({ teamId }) {
 
       {/* Skewed Dimensions Warning */}
       {data.skewedDimensions?.length > 0 && (
-        <div style={{
-          marginTop: '12px',
-          padding: '8px 12px',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          borderRadius: '6px',
-          fontSize: '12px',
-          color: '#ef4444',
-        }}>
+        <div
+          style={{
+            marginTop: '12px',
+            padding: '8px 12px',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#ef4444',
+          }}
+        >
           ⚠ High variance in: {data.skewedDimensions.join(', ')}
         </div>
       )}
@@ -1046,7 +1109,7 @@ export function ExecutionDragTile({ teamId }) {
 
   useEffect(() => {
     if (!teamId) return;
-    
+
     async function fetchData() {
       try {
         const response = await api.get(`/loop-closing/execution-drag/${teamId}`);
@@ -1057,7 +1120,7 @@ export function ExecutionDragTile({ teamId }) {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, [teamId]);
 
@@ -1073,9 +1136,7 @@ export function ExecutionDragTile({ teamId }) {
     return (
       <div style={tileStyles.container}>
         <h3 style={tileStyles.title}>Execution Drag</h3>
-        <div style={tileStyles.noData}>
-          Need multi-week data for drag analysis
-        </div>
+        <div style={tileStyles.noData}>Need multi-week data for drag analysis</div>
       </div>
     );
   }
@@ -1095,95 +1156,116 @@ export function ExecutionDragTile({ teamId }) {
           <h3 style={tileStyles.title}>Execution Drag</h3>
           <p style={tileStyles.subtitle}>Coordination overhead eating capacity</p>
         </div>
-        <span style={{ ...tileStyles.badge, ...state.bg }}>
-          {state.label}
-        </span>
+        <span style={{ ...tileStyles.badge, ...state.bg }}>{state.label}</span>
       </div>
 
       {/* Drag Value Display */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginTop: '16px',
-      }}>
-        <div style={{
-          ...tileStyles.value,
-          color: state.color,
-          margin: 0,
-        }}>
-          {data.executionDrag > 0 ? '+' : ''}{data.executionDrag}%
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          marginTop: '16px',
+        }}
+      >
+        <div
+          style={{
+            ...tileStyles.value,
+            color: state.color,
+            margin: 0,
+          }}
+        >
+          {data.executionDrag > 0 ? '+' : ''}
+          {data.executionDrag}%
         </div>
-        <div style={{
-          flex: 1,
-          fontSize: '13px',
-          color: 'rgba(255,255,255,0.7)',
-          lineHeight: '1.4',
-        }}>
-          {data.executionDrag > 0 
+        <div
+          style={{
+            flex: 1,
+            fontSize: '13px',
+            color: 'rgba(255,255,255,0.7)',
+            lineHeight: '1.4',
+          }}
+        >
+          {data.executionDrag > 0
             ? 'Coordination growing faster than throughput'
             : 'Execution capacity keeping pace with coordination'}
         </div>
       </div>
 
       {/* Trend Comparison Bars */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '12px',
-        marginTop: '20px',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
+          marginTop: '20px',
+        }}
+      >
         {/* Coordination Growth */}
-        <div style={{
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          padding: '12px',
-          borderRadius: '8px',
-        }}>
+        <div
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            padding: '12px',
+            borderRadius: '8px',
+          }}
+        >
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>
             Coordination Growth
           </div>
-          <div style={{
-            height: '8px',
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min(100, Math.abs(data.coordinationGrowth || 0))}%`,
-              backgroundColor: data.coordinationGrowth > 10 ? '#ef4444' : '#eab308',
+          <div
+            style={{
+              height: '8px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
               borderRadius: '4px',
-            }} />
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min(100, Math.abs(data.coordinationGrowth || 0))}%`,
+                backgroundColor: data.coordinationGrowth > 10 ? '#ef4444' : '#eab308',
+                borderRadius: '4px',
+              }}
+            />
           </div>
           <div style={{ fontSize: '14px', fontWeight: '600', marginTop: '6px', color: '#fff' }}>
-            {data.coordinationGrowth > 0 ? '+' : ''}{data.coordinationGrowth || 0}%
+            {data.coordinationGrowth > 0 ? '+' : ''}
+            {data.coordinationGrowth || 0}%
           </div>
         </div>
 
         {/* Response Efficiency */}
-        <div style={{
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          padding: '12px',
-          borderRadius: '8px',
-        }}>
+        <div
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            padding: '12px',
+            borderRadius: '8px',
+          }}
+        >
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>
             Response Efficiency
           </div>
-          <div style={{
-            height: '8px',
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min(100, Math.abs(data.responseEfficiency || 0))}%`,
-              backgroundColor: data.responseEfficiency >= 0 ? '#22c55e' : '#ef4444',
+          <div
+            style={{
+              height: '8px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
               borderRadius: '4px',
-            }} />
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min(100, Math.abs(data.responseEfficiency || 0))}%`,
+                backgroundColor: data.responseEfficiency >= 0 ? '#22c55e' : '#ef4444',
+                borderRadius: '4px',
+              }}
+            />
           </div>
           <div style={{ fontSize: '14px', fontWeight: '600', marginTop: '6px', color: '#fff' }}>
-            {data.responseEfficiency > 0 ? '+' : ''}{data.responseEfficiency || 0}%
+            {data.responseEfficiency > 0 ? '+' : ''}
+            {data.responseEfficiency || 0}%
           </div>
         </div>
       </div>
@@ -1192,17 +1274,19 @@ export function ExecutionDragTile({ teamId }) {
 
       {/* Warning for high drag */}
       {data.dragState === 'high_drag' && (
-        <div style={{
-          marginTop: '12px',
-          padding: '10px 12px',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          borderRadius: '6px',
-          fontSize: '12px',
-          color: '#ef4444',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
+        <div
+          style={{
+            marginTop: '12px',
+            padding: '10px 12px',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
           <span>⚠</span>
           <span>High coordination overhead - consider consolidating communication channels</span>
         </div>
@@ -1214,40 +1298,103 @@ export function ExecutionDragTile({ teamId }) {
 // ============================================
 // Combined Loop Closing Dashboard
 // ============================================
-export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPhase3 = true }) {
+export default function LoopClosingDashboard({
+  teamId,
+  orgId,
+  showPhase2 = true,
+  showPhase3 = true,
+}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState(null);
 
-  useEffect(() => {
+  const fetchDashboard = async () => {
     if (!teamId) {
       setLoading(false);
       return;
     }
-    
-    async function fetchDashboard() {
-      try {
-        const endpoint = showPhase2 
-          ? `/loop-closing/full-dashboard/${teamId}`
-          : `/loop-closing/dashboard/${teamId}`;
-        const response = await api.get(endpoint);
-        setData(response.data);
+
+    try {
+      const endpoint = showPhase2
+        ? `/loop-closing/full-dashboard/${teamId}`
+        : `/loop-closing/dashboard/${teamId}`;
+      const response = await api.get(endpoint);
+      setData(response.data);
+      setError(null);
+    } catch (err) {
+      // Handle common errors gracefully
+      const status = err.response?.status;
+      if (status === 403 || status === 404) {
+        // Access denied or team not found - just show empty state
+        setData(null);
         setError(null);
-      } catch (err) {
-        // Handle common errors gracefully
-        const status = err.response?.status;
-        if (status === 403 || status === 404) {
-          // Access denied or team not found - just show empty state
-          setData(null);
-          setError(null);
-        } else {
-          setError(err.message);
-        }
-      } finally {
-        setLoading(false);
+      } else {
+        setError(err.message);
       }
+    } finally {
+      setLoading(false);
     }
-    
+  };
+
+  // Refresh all integrations and regenerate data
+  const handleRefreshAll = async () => {
+    try {
+      setRefreshing(true);
+      setRefreshMessage('Syncing all integrations...');
+
+      // Step 1: Trigger sync for all connected integrations
+      try {
+        const statusRes = await api.get('/integration-dashboard/status');
+        const connectedIntegrations =
+          statusRes.data.integrations?.filter((i) => i.status === 'connected') || [];
+
+        for (const integration of connectedIntegrations) {
+          setRefreshMessage(`Syncing ${integration.name}...`);
+          try {
+            await api.post(`/integration-dashboard/${integration.type}/sync`);
+          } catch (e) {
+            console.warn(`Sync failed for ${integration.name}:`, e);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch integration status:', e);
+      }
+
+      // Step 2: Sync Slack data if available
+      setRefreshMessage('Syncing Slack data...');
+      try {
+        await api.post('/employee-sync/slack');
+      } catch (e) {
+        console.warn('Slack sync skipped:', e);
+      }
+
+      // Step 3: Generate TeamState records
+      setRefreshMessage('Generating dashboard data...');
+      const userOrgId = orgId || localStorage.getItem('orgId');
+      if (userOrgId) {
+        await api.post(`/bdi/org/${userOrgId}/generate-all-states`);
+      } else if (teamId) {
+        await api.post(`/bdi/team/${teamId}/generate-state`);
+      }
+
+      // Step 4: Refresh the dashboard display
+      setRefreshMessage('Refreshing dashboard...');
+      await fetchDashboard();
+
+      setRefreshMessage('✓ Dashboard refreshed successfully!');
+      setTimeout(() => setRefreshMessage(null), 3000);
+    } catch (err) {
+      console.error('Error refreshing dashboard:', err);
+      setRefreshMessage('⚠️ Some data may not have synced. Please try again.');
+      setTimeout(() => setRefreshMessage(null), 5000);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboard();
   }, [teamId, showPhase2]);
 
@@ -1270,10 +1417,68 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
         <h3 style={tileStyles.title}>Loop-Closing Metrics</h3>
         <div style={tileStyles.noData}>
           <div style={{ marginBottom: '8px' }}>📊 Collecting baseline data...</div>
-          <div style={{ fontSize: '13px', opacity: 0.8 }}>
-            SignalTrue is analyzing your team's communication patterns. 
-            Metrics will appear within 24-48 hours as the baseline is established.
+          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '16px' }}>
+            SignalTrue is analyzing your team's communication patterns. Metrics will appear within
+            24-48 hours as the baseline is established.
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefreshAll}
+            disabled={refreshing}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: refreshing ? '#4b5563' : '#6366f1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {refreshing ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTopColor: 'white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                {refreshMessage || 'Refreshing...'}
+              </>
+            ) : (
+              <>🔄 Refresh All Integrations</>
+            )}
+          </button>
+
+          {refreshMessage && !refreshing && (
+            <div
+              style={{
+                marginTop: '12px',
+                fontSize: '12px',
+                color: refreshMessage.startsWith('✓') ? '#22c55e' : '#f59e0b',
+              }}
+            >
+              {refreshMessage}
+            </div>
+          )}
+
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
     );
@@ -1290,44 +1495,52 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
 
   return (
     <div>
-      <h2 style={{
-        fontSize: '20px',
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: '20px',
-      }}>
+      <h2
+        style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#fff',
+          marginBottom: '20px',
+        }}
+      >
         Loop-Closing Pilot Dashboard
       </h2>
-      
+
       {/* Phase 1 Tiles */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '20px',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '20px',
+        }}
+      >
         <MeetingROITile teamId={teamId} />
         <FocusForecastTile teamId={teamId} />
       </div>
-      
+
       <WorkHealthDeltaTile teamId={teamId} />
 
       {/* Phase 2 Tiles */}
       {showPhase2 && (
         <>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: 'rgba(255,255,255,0.8)',
-            marginTop: '24px',
-            marginBottom: '16px',
-          }}>
+          <h3
+            style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: 'rgba(255,255,255,0.8)',
+              marginTop: '24px',
+              marginBottom: '16px',
+            }}
+          >
             Advanced Metrics
           </h3>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px',
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '20px',
+            }}
+          >
             <AfterHoursCostTile teamId={teamId} />
             <CollisionHeatmapTile teamId={teamId} />
           </div>
@@ -1337,26 +1550,30 @@ export default function LoopClosingDashboard({ teamId, showPhase2 = true, showPh
       {/* Phase 3 Tiles */}
       {showPhase3 && (
         <>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: 'rgba(255,255,255,0.8)',
-            marginTop: '24px',
-            marginBottom: '16px',
-          }}>
+          <h3
+            style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: 'rgba(255,255,255,0.8)',
+              marginTop: '24px',
+              marginBottom: '16px',
+            }}
+          >
             Simulation & Analysis
           </h3>
-          
+
           {/* Intervention Simulator - Full Width */}
           <InterventionSimulatorTile teamId={teamId} />
-          
+
           {/* Load Balance & Execution Drag - Side by Side */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px',
-            marginTop: '20px',
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '20px',
+              marginTop: '20px',
+            }}
+          >
             <LoadBalanceTile teamId={teamId} />
             <ExecutionDragTile teamId={teamId} />
           </div>
