@@ -113,6 +113,7 @@ import managerCoachingRoutes from "./routes/managerCoaching.js";
 import driftDiagnosticRoutes from "./routes/drift.js";
 import teamStateRoutes from "./routes/teamStateRoutes.js";
 import reminderCronRoutes from "./routes/reminderCron.js";
+import leadsRoutes from "./routes/leads.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -341,6 +342,9 @@ async function main() {
     
     // --- Blog Routes (public read, API key for write) ---
     app.use('/api/blog', blogRoutes);
+    
+    // --- Leads Routes (public, no auth required - landing page forms) ---
+    app.use('/api/leads', leadsRoutes);
     
     // --- Manager Coaching Routes ---
     app.use('/api/manager-coaching', managerCoachingRoutes);
