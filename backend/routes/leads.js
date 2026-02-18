@@ -15,7 +15,7 @@ const getResendClient = () => {
 const FROM_EMAIL = process.env.EMAIL_FROM || 'SignalTrue <notifications@signaltrue.ai>';
 const INTERNAL_NOTIFICATION_EMAIL = 'sten.kreisberg@signaltrue.ai';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://signaltrue.ai';
-const CALENDAR_LINK = process.env.CALENDAR_LINK || 'https://calendly.com/signaltrue/strategy';
+const CALENDAR_LINK = process.env.CALENDAR_LINK || 'https://calendly.com/sten-kreisberg-signaltrue/30min';
 
 /**
  * Extract first name from full name
