@@ -34,8 +34,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         api.get(`/notifications/bell?limit=10`),
         api.get(`/notifications/unread-count`),
       ]);
-      setNotifications(notifRes.data);
-      setUnreadCount(countRes.data.count);
+      setNotifications(notifRes.data?.notifications || notifRes.data || []);
+      setUnreadCount(countRes.data?.unreadCount ?? countRes.data?.count ?? 0);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     } finally {

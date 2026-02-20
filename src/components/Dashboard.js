@@ -22,6 +22,7 @@ import { ROIDashboardBanner } from './features/ROIDashboardBanner';
 import { GoalTracker } from './features/GoalTracker';
 import { NotificationBell } from './features/NotificationBell';
 import { RecoveryJourneyTimeline } from './features/RecoveryJourneyTimeline';
+import { FeatureErrorBoundary } from './features/FeatureErrorBoundary';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -225,7 +226,9 @@ function Dashboard() {
             </Link>
           </div>
           <div style={styles.navRight}>
-            <NotificationBell userId={user?._id} />
+            <FeatureErrorBoundary featureName="NotificationBell">
+              <NotificationBell userId={user?._id} />
+            </FeatureErrorBoundary>
             <span style={styles.userName}>{user?.name || user?.email}</span>
             <button onClick={handleLogout} style={styles.logoutButton}>
               Logout
@@ -251,7 +254,12 @@ function Dashboard() {
 
         {/* ROI Savings Banner - shows estimated savings */}
         {user?.orgId && (
-          <ROIDashboardBanner orgId={user.orgId} onViewDetails={() => navigate('/roi-settings')} />
+          <FeatureErrorBoundary featureName="ROIDashboardBanner">
+            <ROIDashboardBanner
+              orgId={user.orgId}
+              onViewDetails={() => navigate('/roi-settings')}
+            />
+          </FeatureErrorBoundary>
         )}
 
         {/* New Feature Widgets Grid */}
@@ -265,10 +273,14 @@ function Dashboard() {
             }}
           >
             {/* OAR Score Widget */}
-            <OARScoreWidget orgId={user.orgId} showHistory={true} />
+            <FeatureErrorBoundary featureName="OARScoreWidget">
+              <OARScoreWidget orgId={user.orgId} showHistory={true} />
+            </FeatureErrorBoundary>
 
             {/* Goal Tracking */}
-            <GoalTracker orgId={user.orgId} userId={user._id} maxGoals={3} />
+            <FeatureErrorBoundary featureName="GoalTracker">
+              <GoalTracker orgId={user.orgId} userId={user._id} maxGoals={3} />
+            </FeatureErrorBoundary>
           </div>
         )}
 
@@ -284,7 +296,9 @@ function Dashboard() {
 
             {/* Recovery Journey Timeline */}
             <div style={{ marginTop: '24px' }}>
-              <RecoveryJourneyTimeline orgId={user?.orgId} maxEvents={5} showNarrative={true} />
+              <FeatureErrorBoundary featureName="RecoveryJourneyTimeline">
+                <RecoveryJourneyTimeline orgId={user?.orgId} maxEvents={5} showNarrative={true} />
+              </FeatureErrorBoundary>
             </div>
           </>
         )}

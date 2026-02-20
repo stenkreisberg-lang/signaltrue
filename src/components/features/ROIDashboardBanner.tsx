@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
 
-interface ROISavings {
-  totalSavings: number;
+interface ROITile {
+  id: string;
+  label: string;
+  value: number;
+  formatted: string;
+  icon: string;
+  highlight?: boolean;
+}
+
+interface ROIBannerData {
+  show: boolean;
   currency: string;
-  metricSavings: {
-    metric: string;
-    savings: number;
-    description: string;
-  }[];
-  projectedAnnualSavings: number;
-  lastCalculated: string;
+  currencySymbol: string;
+  period: string;
+  tiles: ROITile[];
+  driftWarning?: {
+    show: boolean;
+    message: string;
+    cost: string;
+  } | null;
 }
 
 interface ROIDashboardBannerProps {
@@ -19,7 +29,7 @@ interface ROIDashboardBannerProps {
 }
 
 export const ROIDashboardBanner: React.FC<ROIDashboardBannerProps> = ({ orgId, onViewDetails }) => {
-  const [data, setData] = useState<ROISavings | null>(null);
+  const [data, setData] = useState<ROIBannerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +38,7 @@ export const ROIDashboardBanner: React.FC<ROIDashboardBannerProps> = ({ orgId, o
       try {
         setLoading(true);
         const response = await api.get(`/roi/banner`);
-        setData(response.data);
+        setData(response.data?.banner || response.data || null);
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Failed to load ROI data');
@@ -42,15 +52,6 @@ export const ROIDashboardBanner: React.FC<ROIDashboardBannerProps> = ({ orgId, o
     }
   }, [orgId]);
 
-  const formatCurrency = (amount: number, currency: string): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   if (loading) {
     return (
       <div className="roi-banner loading">
@@ -60,27 +61,30 @@ export const ROIDashboardBanner: React.FC<ROIDashboardBannerProps> = ({ orgId, o
     );
   }
 
-  if (error || !data) {
-    return null; // Hide banner on error
+  if (error || !data || !data.show) {
+    return null; // Hide banner on error or if show=false
   }
+
+  const totalTile = (data.tiles || []).find((t) => t.highlight || t.id === 'total-savings');
+  const metricTiles = (data.tiles || []).filter((t) => !t.highlight && t.id !== 'total-savings');
 
   return (
     <div className="roi-banner">
       <div className="roi-icon">💰</div>
       <div className="roi-content">
         <div className="roi-headline">
-          <span className="label">Estimated Monthly Savings</span>
-          <span className="amount">{formatCurrency(data.totalSavings, data.currency)}</span>
+          <span className="label">Estimated {data.period || 'Monthly'} Savings</span>
+          <span className="amount">{totalTile?.formatted || `${data.currencySymbol || '$'}0`}</span>
         </div>
         <div className="roi-details">
-          <span className="projected">
-            Projected annual: {formatCurrency(data.projectedAnnualSavings, data.currency)}
-          </span>
-          {data.metricSavings.slice(0, 2).map((item, i) => (
-            <span key={i} className="metric-tag">
-              {item.metric}: {formatCurrency(item.savings, data.currency)}
+          {metricTiles.slice(0, 3).map((tile) => (
+            <span key={tile.id} className="metric-tag">
+              {tile.icon} {tile.label}: {tile.formatted}
             </span>
           ))}
+          {data.driftWarning?.show && (
+            <span className="drift-warning">⚠️ {data.driftWarning.message}</span>
+          )}
         </div>
       </div>
       {onViewDetails && (

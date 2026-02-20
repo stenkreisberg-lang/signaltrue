@@ -49,8 +49,8 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({
         api.get(`/goals?orgId=${orgId}`),
         api.get(`/goals/summary?orgId=${orgId}`),
       ]);
-      setGoals(goalsRes.data);
-      setSummary(summaryRes.data);
+      setGoals(goalsRes.data?.goals || goalsRes.data || []);
+      setSummary(summaryRes.data?.summary || summaryRes.data || null);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to load goals');

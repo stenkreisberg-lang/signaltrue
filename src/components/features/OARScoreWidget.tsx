@@ -14,6 +14,29 @@ interface OARData {
   lastUpdated: string;
 }
 
+/**
+ * Normalize the backend OAR response into the shape the widget expects.
+ * Backend returns { score, pillars: { execution: { score }, ... }, trendPct, calculatedAt }
+ * Widget expects { oarScore, pillars: { execution: number, ... }, changeFromLast, lastUpdated }
+ */
+function normalizeOAR(raw: any): OARData | null {
+  if (!raw) return null;
+  return {
+    oarScore: raw.oarScore ?? raw.score ?? 0,
+    pillars: {
+      execution: raw.pillars?.execution?.score ?? raw.pillars?.execution ?? 0,
+      engagement:
+        raw.pillars?.innovation?.score ?? raw.pillars?.engagement ?? raw.pillars?.innovation ?? 0,
+      resilience:
+        raw.pillars?.wellbeing?.score ?? raw.pillars?.resilience ?? raw.pillars?.wellbeing ?? 0,
+      culture: raw.pillars?.culture?.score ?? raw.pillars?.culture ?? 0,
+    },
+    trend: raw.trend || 'stable',
+    changeFromLast: raw.changeFromLast ?? raw.trendPct ?? 0,
+    lastUpdated: raw.lastUpdated || raw.calculatedAt || new Date().toISOString(),
+  };
+}
+
 interface OARScoreWidgetProps {
   orgId: string;
   showHistory?: boolean;
@@ -36,7 +59,8 @@ export const OARScoreWidget: React.FC<OARScoreWidgetProps> = ({
         // Backend uses req.user.orgId from auth token, no orgId in URL
         const endpoint = showHistory ? `/oar/org/history` : `/oar/org`;
         const response = await api.get(endpoint);
-        setData(response.data?.oar || response.data);
+        const raw = response.data?.oar || response.data;
+        setData(normalizeOAR(raw));
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Failed to load OAR score');

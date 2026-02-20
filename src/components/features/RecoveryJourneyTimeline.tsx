@@ -53,8 +53,8 @@ export const RecoveryJourneyTimeline: React.FC<RecoveryJourneyTimelineProps> = (
           api.get(`/journey/timeline?limit=${maxEvents}`),
           api.get(`/journey/summary`),
         ]);
-        setEvents(eventsRes.data);
-        setSummary(summaryRes.data);
+        setEvents(eventsRes.data?.events || eventsRes.data || []);
+        setSummary(summaryRes.data?.summary || summaryRes.data || null);
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Failed to load journey');
