@@ -1,10 +1,10 @@
-import { Button } from "../components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Button } from '../components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
+ *
  * Final CTA Section (per spec):
  * Title: You Don't Need Another Survey. You Need Earlier Truth.
  * Button: Request Early Signal Preview
@@ -22,7 +22,9 @@ const trackEvent = (eventName: string) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
     }).catch(() => {});
-  } catch {}
+  } catch {
+    /* analytics tracking is optional */
+  }
 };
 
 const CTASection = () => {
@@ -35,15 +37,16 @@ const CTASection = () => {
       {/* Background effects */}
       <div className="absolute inset-0 bg-glow opacity-30" />
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-      
+
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            You Don't Need Another Survey.{" "}
+            You Don't Need Another Survey.{' '}
             <span className="text-gradient">You Need Earlier Truth.</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            See what behavioral drift looks like in your organization before it becomes visible in outcomes, exits, or engagement scores.
+            See what behavioral drift looks like in your organization before it becomes visible in
+            outcomes, exits, or engagement scores.
           </p>
 
           {/* Single CTA per spec */}

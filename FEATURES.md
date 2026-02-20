@@ -1,4 +1,48 @@
-# SignalTrue Features (Updated 2 November 2025)
+# SignalTrue Features (Updated 20 February 2026)
+
+## 🆕 New in February 2026
+
+### OAR — Organizational Agility Rating
+- **Single composite score (0-100)** summarizing organizational health
+- Four pillars: Execution (30%), Innovation (20%), Wellbeing (30%), Culture (20%)
+- Health zones: Thriving (75+), Stable (55-74), At-Risk (35-54), Critical (0-34)
+- Trend tracking over time with historical data
+- Team-level and org-level scoring
+- API: `/api/oar/*`
+
+### ROI Translation Layer
+- **Dollar-based savings calculations** from behavioral metrics
+- Configurable settings: currency, salary, team size, working days
+- Four savings categories: Meeting time, Focus time, Decision speed, Interventions
+- Drift cost calculator: Shows projected cost if drift continues
+- Dashboard banner with toggle
+- API: `/api/roi/*`
+
+### Goal Tracking System
+- **Set measurable goals** tied to SignalTrue metrics
+- Auto-progress tracking from real-time metric data
+- Goal statuses: Completed, On-Track, Ahead, At-Risk, Behind
+- Milestones for intermediate checkpoints
+- AI-powered goal suggestions
+- API: `/api/goals/*`
+
+### Enhanced Notification System
+- **In-app notifications** with bell icon
+- Unread badge count
+- Multiple notification types: alerts, drift, interventions, goals, recommendations
+- Priority levels: Low, Normal, High, Urgent
+- Mark as read, dismiss, bulk actions
+- API: `/api/notifications/*`
+
+### Recovery Journey Timeline
+- **Chronological narrative** of organizational health journey
+- Event types: Milestones, Alerts, Interventions, Recoveries
+- OAR tracking at each event
+- Board-ready narrative auto-generation
+- Journey summary with key statistics
+- API: `/api/journey/*`
+
+---
 
 ## ✅ Implemented Core Features
 

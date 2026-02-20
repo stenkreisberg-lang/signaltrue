@@ -12,6 +12,27 @@ SignalTrue is an early-warning system that detects behavioral drift in teams, ex
 
 ---
 
+## 🆕 What's New (February 2026)
+
+### 📊 OAR — Organizational Agility Rating
+Single composite score (0-100) with four pillars: Execution, Innovation, Wellbeing, Culture. Your organization's health at a glance.
+
+### 💰 ROI Translation Layer  
+Convert behavioral metrics into dollar savings. Show executives the financial value of healthy teams.
+
+### 🎯 Goal Tracking System
+Set measurable goals tied to metrics. Track progress automatically with milestones and status updates.
+
+### 🔔 Enhanced Notifications
+In-app notification bell with unread badges. Never miss an alert, recommendation, or milestone.
+
+### 📈 Recovery Journey Timeline
+Chronological narrative of your health journey. Board-ready summaries for executive presentations.
+
+👉 See [NEW_FEATURES_FEBRUARY_2026.md](./NEW_FEATURES_FEBRUARY_2026.md) for complete details.
+
+---
+
 ## ✨ Features
 
 ### 📈 **Behavioral Drift Index (BDI)**

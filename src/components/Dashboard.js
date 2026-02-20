@@ -16,6 +16,13 @@ import { PaywallBanner } from './PaywallOverlay';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 
+// New Feature Components (February 2026)
+import { OARScoreWidget } from './features/OARScoreWidget';
+import { ROIDashboardBanner } from './features/ROIDashboardBanner';
+import { GoalTracker } from './features/GoalTracker';
+import { NotificationBell } from './features/NotificationBell';
+import { RecoveryJourneyTimeline } from './features/RecoveryJourneyTimeline';
+
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -218,6 +225,7 @@ function Dashboard() {
             </Link>
           </div>
           <div style={styles.navRight}>
+            <NotificationBell userId={user?._id} />
             <span style={styles.userName}>{user?.name || user?.email}</span>
             <button onClick={handleLogout} style={styles.logoutButton}>
               Logout
@@ -241,6 +249,29 @@ function Dashboard() {
         {/* Paywall Banner (shown when trial expired) */}
         <PaywallBanner className="mb-6" />
 
+        {/* ROI Savings Banner - shows estimated savings */}
+        {user?.orgId && (
+          <ROIDashboardBanner orgId={user.orgId} onViewDetails={() => navigate('/roi-settings')} />
+        )}
+
+        {/* New Feature Widgets Grid */}
+        {user?.orgId && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+              gap: '24px',
+              marginBottom: '24px',
+            }}
+          >
+            {/* OAR Score Widget */}
+            <OARScoreWidget orgId={user.orgId} showHistory={true} />
+
+            {/* Goal Tracking */}
+            <GoalTracker orgId={user.orgId} userId={user._id} maxGoals={3} />
+          </div>
+        )}
+
         {/* Engagement Change Alerts (Drift Explainability) */}
         {teamId && (
           <>
@@ -250,6 +281,11 @@ function Dashboard() {
             <PlaybookRecommendations teamId={teamId} />
             <OneOnOneTimeline teamId={teamId} userId={user?._id} />
             <BenchmarkComparison teamId={teamId} orgId={user?.orgId} />
+
+            {/* Recovery Journey Timeline */}
+            <div style={{ marginTop: '24px' }}>
+              <RecoveryJourneyTimeline orgId={user?.orgId} maxEvents={5} showNarrative={true} />
+            </div>
           </>
         )}
 

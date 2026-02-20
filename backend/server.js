@@ -121,6 +121,13 @@ import integrationDashboardRoutes from "./routes/integrationDashboard.js";
 import aiCopilotRoutes from "./routes/aiCopilot.js";
 import integrationDebugRoutes from "./routes/integrationDebug.js";
 
+// --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
+import oarRoutes from "./routes/oarRoutes.js";
+import roiRoutes from "./routes/roiRoutes.js";
+import goalRoutes from "./routes/goalRoutes.js";
+import bellNotificationRoutes from "./routes/bellNotificationRoutes.js";
+import journeyRoutes from "./routes/journeyRoutes.js";
+
 // --- Middleware Imports ---
 import { authenticateToken } from "./middleware/auth.js";
 import auditConsent from "./middleware/consentAudit.js";
@@ -353,6 +360,13 @@ async function main() {
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);
     app.use('/api/integration-dashboard', integrationDashboardRoutes);
     app.use('/api/ai', aiCopilotRoutes);
+    
+    // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
+    app.use('/api/oar', oarRoutes);
+    app.use('/api/roi', roiRoutes);
+    app.use('/api/goals', goalRoutes);
+    app.use('/api/notifications', bellNotificationRoutes);
+    app.use('/api/journey', journeyRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {

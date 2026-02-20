@@ -1,15 +1,15 @@
-import { Button } from "../components/ui/button";
-import { ArrowRight, Shield, Lock, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
-import DriftAlertCard from "./DriftAlertCard";
+import { Button } from '../components/ui/button';
+import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import DriftAlertCard from './DriftAlertCard';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
- * Behavioral Drift Intelligence detects early systemic strain in organizations 
- * by analyzing behavioral metadata from work systems, revealing overload, 
+ *
+ * Behavioral Drift Intelligence detects early systemic strain in organizations
+ * by analyzing behavioral metadata from work systems, revealing overload,
  * fragmentation, and execution risk before burnout, disengagement, or attrition occur.
- * 
+ *
  * Enemy: Lagging people analytics (surveys, reviews, exit interviews, wellbeing scores)
  * Promised Land: Leaders see early truth, act structurally, preserve execution capacity
  */
@@ -27,7 +27,9 @@ const trackEvent = (eventName: string) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
     }).catch(() => {});
-  } catch {}
+  } catch {
+    /* analytics tracking is optional */
+  }
 };
 
 const Hero = () => {
@@ -44,7 +46,7 @@ const Hero = () => {
       {/* Background glow effects */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-glow opacity-50" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-glow opacity-30" />
-      
+
       <div className="container mx-auto px-6 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left content */}
@@ -53,15 +55,21 @@ const Hero = () => {
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Eye className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">Behavioral Early-Warning System</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Behavioral Early-Warning System
+                </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Lock className="w-3.5 h-3.5 text-success" />
-                <span className="text-xs font-medium text-muted-foreground">No content. No individuals.</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  No content. No individuals.
+                </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">System-level patterns only</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  System-level patterns only
+                </span>
               </div>
             </div>
 
@@ -74,8 +82,10 @@ const Hero = () => {
 
             {/* Subheadline */}
             <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              SignalTrue is the first <strong className="text-foreground">Behavioral Early-Warning System</strong> that 
-              detects organizational overload and execution drift weeks before surveys, performance drops, or resignations appear.
+              SignalTrue is the first{' '}
+              <strong className="text-foreground">Behavioral Early-Warning System</strong> that
+              detects organizational overload and execution drift weeks before surveys, performance
+              drops, or resignations appear.
             </p>
 
             {/* CTA buttons - Updated per spec */}
@@ -95,7 +105,7 @@ const Hero = () => {
           </div>
 
           {/* Right content - Alert card */}
-          <div className="relative animate-slide-in-right" style={{ animationDelay: "0.2s" }}>
+          <div className="relative animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-3xl blur-2xl" />
             <DriftAlertCard />
           </div>
