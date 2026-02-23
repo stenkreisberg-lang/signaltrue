@@ -21,11 +21,13 @@ const getResendClient = () => {
 function integrationsChecklist(org) {
   const slackConnected = !!org?.integrations?.slack?.accessToken;
   const googleChatConnected = !!org?.integrations?.googleChat?.accessToken;
-  const teamsConnected = org?.integrations?.microsoft?.scope === 'teams' && !!org?.integrations?.microsoft?.accessToken;
+  const msScope = org?.integrations?.microsoft?.scope;
+  const msHasToken = !!org?.integrations?.microsoft?.accessToken;
+  const teamsConnected = msHasToken && (msScope === 'teams' || msScope === 'both');
   const chatConnected = !!(slackConnected || googleChatConnected || teamsConnected);
   
   const googleCal = org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
-  const msOutlook = org?.integrations?.microsoft?.scope === 'outlook' && !!org?.integrations?.microsoft?.accessToken;
+  const msOutlook = msHasToken && (msScope === 'outlook' || msScope === 'both');
   const calendarConnected = !!(googleCal || msOutlook);
   
   return {
