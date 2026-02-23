@@ -3,6 +3,11 @@
   const app = el("#app");
   el("#year").textContent = String(new Date().getFullYear());
 
+  // API base URL — static file can't use process.env, so detect by hostname
+  const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? ''  // local dev: relative URLs hit CRA proxy or local backend
+    : 'https://signaltrue-backend.onrender.com';
+
   // Basic UTM capture
   function getUtm() {
     const p = new URLSearchParams(location.search);
@@ -252,7 +257,7 @@
         track("drift_submit", { ...res, answers: state.answers });
 
         try {
-          const r = await fetch("/api/drift/submit", {
+          const r = await fetch(API_BASE + "/api/drift/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ answers: state.answers, score: res, utm: state.utm })
@@ -340,7 +345,7 @@
 
       try {
         track("drift_unlock_submit", { sessionId: state.sessionId });
-        const rr = await fetch("/api/drift/unlock", {
+        const rr = await fetch(API_BASE + "/api/drift/unlock", {
           method: "POST",
           headers: { "Content-Type":"application/json" },
           body: JSON.stringify({ sessionId: state.sessionId, email, consent_marketing: consent })
