@@ -45,13 +45,14 @@ const userSchema = new mongoose.Schema({
   // Source of user creation
   source: {
     type: String,
-    enum: ['manual', 'slack', 'google_chat', 'google_workspace', 'invitation'],
+    enum: ['manual', 'slack', 'google_chat', 'google_workspace', 'microsoft', 'invitation'],
     default: 'manual'
   },
   // External IDs for syncing
   externalIds: {
     slackUserId: { type: String, sparse: true },
     googleUserId: { type: String, sparse: true },
+    microsoftUserId: { type: String, sparse: true },
     slackTeamId: { type: String },
     googleWorkspaceId: { type: String }
   },

@@ -47,8 +47,12 @@ const organizationSchema = new mongoose.Schema(
         sync: {
           enabled: { type: Boolean, default: false },
           lastSync: Date,
+          status: String,
+          error: String,
+          eventsCount: Number,
         },
         lastEmployeeSync: Date, // Track when employees were last synced
+        immediateInsights: mongoose.Schema.Types.Mixed,
       },
       google: {
         scope: String, // 'calendar' or 'gmail'
@@ -58,6 +62,17 @@ const organizationSchema = new mongoose.Schema(
         email: String,
         user: mongoose.Schema.Types.Mixed, // Google user info
         eventsCount: Number,
+        lastPulledAt: Date,
+        sync: {
+          enabled: { type: Boolean, default: true },
+          lastSync: Date,
+          lastStatus: String,
+          lastRunAt: Date,
+          status: String,
+          error: String,
+          eventsCount: Number,
+        },
+        immediateInsights: mongoose.Schema.Types.Mixed,
       },
       googleChat: {
         refreshToken: String, // encrypted
@@ -77,7 +92,7 @@ const organizationSchema = new mongoose.Schema(
         },
       },
       microsoft: {
-        scope: String, // 'outlook' or 'teams'
+        scope: String, // 'outlook', 'teams', or 'both'
         refreshToken: String, // encrypted
         accessToken: String, // encrypted
         expiry: Date,
@@ -85,6 +100,18 @@ const organizationSchema = new mongoose.Schema(
         user: mongoose.Schema.Types.Mixed,
         eventsCount: Number,
         teamsCount: Number,
+        tenantId: String,
+        lastPulledAt: Date,
+        lastEmployeeSync: Date, // Track when employees were last synced
+        sync: {
+          enabled: { type: Boolean, default: true },
+          lastSync: Date,
+          lastStatus: String,
+          lastRunAt: Date,
+          error: String,
+          eventsCount: Number,
+        },
+        immediateInsights: mongoose.Schema.Types.Mixed,
       },
     },
     settings: {

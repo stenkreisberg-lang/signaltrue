@@ -403,7 +403,203 @@ export async function getSyncStatus(orgId) {
     unassignedUsers,
     lastSlackSync: org.integrations?.slack?.lastEmployeeSync,
     lastGoogleSync: org.integrations?.googleChat?.lastEmployeeSync,
+    lastMicrosoftSync: org.integrations?.microsoft?.lastEmployeeSync,
     slackConnected: !!org.integrations?.slack?.accessToken,
-    googleConnected: !!org.integrations?.googleChat?.accessToken
+    googleConnected: !!org.integrations?.googleChat?.accessToken,
+    microsoftConnected: !!org.integrations?.microsoft?.accessToken
   };
+}
+
+/**
+ * Sync employees from Microsoft 365 / Entra ID
+ * Uses Microsoft Graph API /users endpoint (requires User.Read.All scope)
+ * Called after Microsoft OAuth is completed
+ */
+export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = null) {
+  try {
+    console.log('[EmployeeSync] Starting Microsoft employee sync for org:', orgId);
+
+    const org = await Organization.findById(orgId);
+    if (!org) {
+      throw new Error('Organization not found');
+    }
+
+    let accessToken = accessTokenOverride;
+    if (!accessToken) {
+      const { decryptString } = await import('../utils/crypto.js');
+      if (!org.integrations?.microsoft?.accessToken) {
+        throw new Error('Microsoft integration not found or not connected');
+      }
+      accessToken = decryptString(org.integrations.microsoft.accessToken);
+    }
+
+    let syncStats = {
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      errors: []
+    };
+
+    // Get or create "Unassigned" team for this org
+    let unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' });
+    if (!unassignedTeam) {
+      unassignedTeam = new Team({
+        name: 'Unassigned',
+        orgId,
+        metadata: {
+          function: 'Other',
+          sizeBand: '1-5'
+        }
+      });
+      await unassignedTeam.save();
+      console.log('[EmployeeSync] Created "Unassigned" team for org:', orgId);
+    }
+
+    // Fetch users from Microsoft Graph (with pagination)
+    let allMsUsers = [];
+    let nextLink = 'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,mobilePhone,accountEnabled';
+
+    while (nextLink) {
+      const response = await fetch(nextLink, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        // If 403 Forbidden, the User.Read.All scope isn't granted yet
+        if (response.status === 403) {
+          console.warn('[EmployeeSync] Microsoft User.Read.All not granted. Employee list unavailable.');
+          console.warn('[EmployeeSync] User needs to re-authorize with the updated OAuth scopes.');
+          return {
+            success: false,
+            needsReauth: true,
+            message: 'User.Read.All permission not granted. Please disconnect and reconnect Microsoft to grant employee listing permission.',
+            stats: syncStats
+          };
+        }
+        throw new Error(`Microsoft Graph /users failed: ${response.status} ${errBody}`);
+      }
+
+      const data = await response.json();
+      const users = data.value || [];
+      allMsUsers.push(...users);
+      nextLink = data['@odata.nextLink'] || null;
+    }
+
+    // Filter to enabled users with email
+    const activeUsers = allMsUsers.filter(u =>
+      u.accountEnabled !== false &&
+      (u.mail || u.userPrincipalName)
+    );
+
+    console.log(`[EmployeeSync] Found ${allMsUsers.length} total MS users, ${activeUsers.length} active with email`);
+
+    for (const msUser of activeUsers) {
+      try {
+        const email = (msUser.mail || msUser.userPrincipalName).toLowerCase();
+        const name = msUser.displayName || email.split('@')[0];
+
+        // Skip service accounts / shared mailboxes (heuristic)
+        if (email.startsWith('no-reply') || email.startsWith('noreply') || email.includes('shared')) {
+          syncStats.skipped++;
+          continue;
+        }
+
+        // Check if user already exists
+        let user = await User.findOne({
+          $or: [
+            { email },
+            { 'externalIds.microsoftUserId': msUser.id }
+          ]
+        });
+
+        if (user) {
+          // Update existing user
+          let updated = false;
+
+          if (!user.externalIds?.microsoftUserId) {
+            user.externalIds = user.externalIds || {};
+            user.externalIds.microsoftUserId = msUser.id;
+            updated = true;
+          }
+
+          if (msUser.jobTitle && (!user.profile?.title || user.profile.title !== msUser.jobTitle)) {
+            user.profile = user.profile || {};
+            user.profile.title = msUser.jobTitle;
+            updated = true;
+          }
+
+          if (msUser.department && (!user.profile?.department || user.profile.department !== msUser.department)) {
+            user.profile = user.profile || {};
+            user.profile.department = msUser.department;
+            updated = true;
+          }
+
+          // Ensure user is in this org
+          if (!user.orgId || user.orgId.toString() !== orgId.toString()) {
+            user.orgId = orgId;
+            updated = true;
+          }
+
+          if (updated) {
+            await user.save();
+            syncStats.updated++;
+          } else {
+            syncStats.skipped++;
+          }
+        } else {
+          // Create new user
+          const newUser = new User({
+            email,
+            name,
+            password: Math.random().toString(36).slice(-12),
+            accountStatus: 'pending',
+            source: 'microsoft',
+            role: 'team_member',
+            orgId,
+            teamId: unassignedTeam._id,
+            externalIds: {
+              microsoftUserId: msUser.id
+            },
+            profile: {
+              title: msUser.jobTitle || undefined,
+              department: msUser.department || undefined,
+              phone: msUser.mobilePhone || undefined,
+              officeLocation: msUser.officeLocation || undefined
+            }
+          });
+
+          await newUser.save();
+          syncStats.created++;
+          console.log(`[EmployeeSync] Created new user from Microsoft: ${email}`);
+        }
+      } catch (error) {
+        console.error(`[EmployeeSync] Error processing MS user ${msUser.mail || msUser.userPrincipalName}:`, error.message);
+        syncStats.errors.push({
+          email: msUser.mail || msUser.userPrincipalName,
+          error: error.message
+        });
+      }
+    }
+
+    // Update last sync timestamp
+    await Organization.findByIdAndUpdate(orgId, {
+      $set: { 'integrations.microsoft.lastEmployeeSync': new Date() }
+    });
+
+    console.log('[EmployeeSync] Microsoft sync complete:', {
+      created: syncStats.created,
+      updated: syncStats.updated,
+      skipped: syncStats.skipped,
+      errors: syncStats.errors.length
+    });
+
+    return {
+      success: true,
+      stats: syncStats
+    };
+  } catch (error) {
+    console.error('[EmployeeSync] Microsoft sync failed:', error);
+    throw error;
+  }
 }

@@ -5,7 +5,7 @@ import User from '../models/user.js'; // Import User model
 import IntegrationConnection from '../models/integrationConnection.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
-import { syncEmployeesFromSlack, syncEmployeesFromGoogle } from '../services/employeeSyncService.js';
+import { syncEmployeesFromSlack, syncEmployeesFromGoogle, syncEmployeesFromMicrosoft } from '../services/employeeSyncService.js';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
 import { 
@@ -254,8 +254,8 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       slack: !!organization.integrations?.slack?.accessToken,
       google: !!user.google?.accessToken,
       googleChat: !!organization.integrations?.googleChat?.accessToken,
-      teams: msHasToken && msScope === 'teams',
-      outlook: msHasToken && msScope === 'outlook',
+      teams: msHasToken && (msScope === 'teams' || msScope === 'both'),
+      outlook: msHasToken && (msScope === 'outlook' || msScope === 'both'),
       // Check both Organization.integrations and IntegrationConnection for these
       jira: !!organization.integrations?.jira?.accessToken || !!connectedIntegrations.jira,
       asana: !!organization.integrations?.asana?.accessToken || !!connectedIntegrations.asana,
@@ -828,7 +828,7 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
 });
 
 // --- Microsoft OAuth (Outlook/Teams) ---
-// GET /api/integrations/microsoft/oauth/start?scope=outlook|teams&orgSlug=acme&orgId=xxx
+// GET /api/integrations/microsoft/oauth/start?scope=outlook|teams|both&orgSlug=acme&orgId=xxx
 router.get('/integrations/microsoft/oauth/start', async (req, res) => {
   const clientId = process.env.MS_APP_CLIENT_ID;
   const tenant = process.env.MS_APP_TENANT || 'common';
@@ -838,9 +838,21 @@ router.get('/integrations/microsoft/oauth/start', async (req, res) => {
   }
   const scopeParam = String(req.query.scope || 'outlook');
   const scopesCore = ['openid','email','profile','offline_access','https://graph.microsoft.com/User.Read'];
-  const scopes = scopeParam === 'teams'
-    ? ['https://graph.microsoft.com/ChannelMessage.Read.All', ...scopesCore]
-    : ['https://graph.microsoft.com/Calendars.Read', ...scopesCore];
+  // Always request both Outlook + Teams scopes so one token covers everything
+  const teamsScopes = [
+    'https://graph.microsoft.com/Team.ReadBasic.All',
+    'https://graph.microsoft.com/ChannelMessage.Read.All',
+    'https://graph.microsoft.com/Channel.ReadBasic.All',
+  ];
+  const outlookScopes = [
+    'https://graph.microsoft.com/Calendars.Read',
+    'https://graph.microsoft.com/Mail.Read',
+  ];
+  // Employee directory scope — allows listing org users so HR can see employees
+  const directoryScopes = [
+    'https://graph.microsoft.com/User.Read.All',
+  ];
+  const scopes = [...scopesCore, ...outlookScopes, ...teamsScopes, ...directoryScopes];
   const state = b64({ 
     orgSlug: req.query.orgSlug || 'default', 
     orgId: req.query.orgId || null,
@@ -909,6 +921,13 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         } catch {}
       }
 
+      // Determine actual scope from granted permissions
+      // If token has both Calendar and Teams scopes, store 'both'
+      const grantedScopes = tokens.scope || '';
+      const hasCalendar = grantedScopes.includes('Calendars.Read');
+      const hasTeams = grantedScopes.includes('Team.ReadBasic') || grantedScopes.includes('ChannelMessage.Read');
+      const effectiveScope = (hasCalendar && hasTeams) ? 'both' : (hasTeams ? 'teams' : (hasCalendar ? 'outlook' : scopeParam));
+
       // Prefer lookup by orgId if available, fall back to slug
       let updatedOrg;
       if (orgId) {
@@ -917,10 +936,11 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
           {
             $set: {
               [`integrations.microsoft`]: {
-                scope: scopeParam,
+                scope: effectiveScope,
                 refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
                 accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
                 expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+                email: msUser?.userPrincipalName || msUser?.mail || null,
                 user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
                 tenantId: tenantId
               }
@@ -938,10 +958,11 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
             $setOnInsert: { name: orgSlug, industry: 'General' },
             $set: {
               [`integrations.microsoft`]: {
-                scope: scopeParam,
+                scope: effectiveScope,
                 refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
                 accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
                 expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+                email: msUser?.userPrincipalName || msUser?.mail || null,
                 user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
                 tenantId: tenantId
               }
@@ -974,6 +995,18 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
           })
           .catch(err => {
             console.error('Microsoft immediate sync error:', err.message);
+          });
+        // Trigger employee sync in background (uses Graph /users with User.Read.All)
+        syncEmployeesFromMicrosoft(updatedOrg._id, tokens.access_token)
+          .then(result => {
+            if (result.success) {
+              console.log('Microsoft employee sync completed:', result.stats);
+            } else {
+              console.log('Microsoft employee sync skipped:', result.message);
+            }
+          })
+          .catch(err => {
+            console.error('Microsoft employee sync failed:', err.message);
           });
       }
     } catch (e) {

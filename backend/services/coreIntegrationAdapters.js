@@ -274,7 +274,20 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const org = await Organization.findById(orgId).lean();
     const scope = org.integrations?.microsoft?.scope || 'outlook';
     
-    if (scope === 'outlook') {
+    if (scope === 'both') {
+      // Fetch both Outlook calendar events and Teams messages
+      const [outlookEvents, teamsMessages] = await Promise.all([
+        this.fetchOutlookEvents(accessToken, since, until).catch(err => {
+          console.warn('[Microsoft] Outlook fetch failed:', err.message);
+          return [];
+        }),
+        this.fetchTeamsMessages(accessToken, since, until).catch(err => {
+          console.warn('[Microsoft] Teams fetch failed:', err.message);
+          return [];
+        }),
+      ]);
+      return [...outlookEvents, ...teamsMessages];
+    } else if (scope === 'outlook') {
       return await this.fetchOutlookEvents(accessToken, since, until);
     } else {
       return await this.fetchTeamsMessages(accessToken, since, until);

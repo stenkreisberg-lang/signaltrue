@@ -3,6 +3,7 @@ import { authenticateToken, requireRoles } from '../middleware/auth.js';
 import { 
   syncEmployeesFromSlack, 
   syncEmployeesFromGoogle,
+  syncEmployeesFromMicrosoft,
   getSyncStatus 
 } from '../services/employeeSyncService.js';
 
@@ -81,6 +82,34 @@ router.post('/google',
       res.json(result);
     } catch (error) {
       console.error('Google sync error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/employee-sync/microsoft
+ * Manually trigger Microsoft 365 / Entra ID employee sync
+ * Available to: hr_admin, it_admin, admin, master_admin
+ */
+router.post('/microsoft', 
+  authenticateToken, 
+  requireRoles(['hr_admin', 'it_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      
+      if (!orgId) {
+        return res.status(400).json({ message: 'User not associated with an organization' });
+      }
+
+      const result = await syncEmployeesFromMicrosoft(orgId);
+      res.json(result);
+    } catch (error) {
+      console.error('Microsoft sync error:', error);
       res.status(500).json({ 
         success: false,
         message: error.message 
