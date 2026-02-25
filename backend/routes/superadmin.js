@@ -195,6 +195,35 @@ router.post('/organizations', authenticateToken, requireSuperadmin, async (req, 
 });
 
 /**
+ * PATCH /api/superadmin/organizations/:id
+ * Update organization fields (name, domain, industry, etc.)
+ */
+router.patch('/organizations/:id', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const { name, domain, industry } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (domain !== undefined) update.domain = domain.replace(/^@/, '');
+    if (industry !== undefined) update.industry = industry;
+
+    const org = await Organization.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    res.json({ message: 'Organization updated', organization: org });
+  } catch (error) {
+    console.error('Superadmin update org error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
  * DELETE /api/superadmin/organizations/:id
  * Delete an organization and all its data
  */

@@ -492,9 +492,23 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       (u.mail || u.userPrincipalName)
     );
 
-    console.log(`[EmployeeSync] Found ${allMsUsers.length} total MS users, ${activeUsers.length} active with email`);
+    // Filter by organization's email domain (if set) to avoid importing
+    // users from other companies in a shared Microsoft 365 tenant
+    const orgDomain = org.domain?.toLowerCase().replace(/^@/, '');
+    let domainFilteredUsers = activeUsers;
+    if (orgDomain) {
+      domainFilteredUsers = activeUsers.filter(u => {
+        const email = (u.mail || u.userPrincipalName || '').toLowerCase();
+        return email.endsWith(`@${orgDomain}`);
+      });
+      console.log(`[EmployeeSync] Domain filter @${orgDomain}: ${activeUsers.length} → ${domainFilteredUsers.length} users`);
+    } else {
+      console.log(`[EmployeeSync] No org domain set — importing all ${activeUsers.length} tenant users. Set org.domain to filter.`);
+    }
 
-    for (const msUser of activeUsers) {
+    console.log(`[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`);
+
+    for (const msUser of domainFilteredUsers) {
       try {
         const email = (msUser.mail || msUser.userPrincipalName).toLowerCase();
         const name = msUser.displayName || email.split('@')[0];

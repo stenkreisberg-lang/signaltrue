@@ -6,6 +6,8 @@ import {
   syncEmployeesFromMicrosoft,
   getSyncStatus 
 } from '../services/employeeSyncService.js';
+import User from '../models/user.js';
+import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
 
@@ -114,6 +116,67 @@ router.post('/microsoft',
         success: false,
         message: error.message 
       });
+    }
+  }
+);
+
+/**
+ * POST /api/employee-sync/cleanup-domain
+ * Remove synced employees whose email doesn't match the org's domain.
+ * Uses org.domain to determine which users belong.
+ * Available to: hr_admin, admin, master_admin
+ */
+router.post('/cleanup-domain',
+  authenticateToken,
+  requireRoles(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      if (!orgId) {
+        return res.status(400).json({ message: 'User not associated with an organization' });
+      }
+
+      const org = await Organization.findById(orgId);
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      const orgDomain = (org.domain || '').toLowerCase().replace(/^@/, '');
+      if (!orgDomain) {
+        return res.status(400).json({
+          message: 'Organization domain not set. Please set the org domain first.'
+        });
+      }
+
+      // Find all synced users (source: microsoft) in this org whose email doesn't match the domain
+      // Also protect: never delete the requesting user themselves
+      const nonDomainUsers = await User.find({
+        orgId,
+        source: 'microsoft',
+        email: { $not: new RegExp(`@${orgDomain.replace('.', '\\.')}$`, 'i') },
+        _id: { $ne: req.user._id }
+      });
+
+      const count = nonDomainUsers.length;
+      if (count === 0) {
+        return res.json({ success: true, removed: 0, message: 'No non-domain employees found.' });
+      }
+
+      // Delete them
+      const ids = nonDomainUsers.map(u => u._id);
+      await User.deleteMany({ _id: { $in: ids } });
+
+      console.log(`[EmployeeSync] Cleanup: removed ${count} non-@${orgDomain} users from org ${orgId}`);
+
+      res.json({
+        success: true,
+        removed: count,
+        domain: orgDomain,
+        message: `Removed ${count} employees not matching @${orgDomain}`
+      });
+    } catch (error) {
+      console.error('Domain cleanup error:', error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 );
