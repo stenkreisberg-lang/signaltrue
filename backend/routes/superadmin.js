@@ -551,4 +551,60 @@ router.post('/organizations/:id/revoke-pilot', authenticateToken, requireSuperad
   }
 });
 
+/**
+ * POST /api/superadmin/organizations/:id/cleanup-domain
+ * Remove all users whose email doesn't match the org's domain.
+ * Optionally pass { "domain": "example.com" } to set the domain first.
+ */
+router.post('/organizations/:id/cleanup-domain', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    // Optionally update domain first
+    if (req.body.domain) {
+      org.domain = req.body.domain.toLowerCase().replace(/^@/, '');
+      await org.save();
+    }
+
+    const cleanDomain = org.domain;
+    if (!cleanDomain) {
+      return res.status(400).json({ message: 'Organization has no domain set. Pass { "domain": "example.com" } in body.' });
+    }
+
+    // Find non-matching users (any source)
+    const domainRegex = new RegExp(`@${cleanDomain.replace(/\./g, '\\.')}$`, 'i');
+    const nonDomainUsers = await User.find({
+      orgId: org._id,
+      email: { $exists: true, $ne: null, $not: domainRegex }
+    });
+
+    const count = nonDomainUsers.length;
+    const removedEmails = nonDomainUsers.map(u => u.email);
+
+    if (count > 0) {
+      await User.deleteMany({ _id: { $in: nonDomainUsers.map(u => u._id) } });
+    }
+
+    const remaining = await User.countDocuments({ orgId: org._id });
+
+    console.log(`[Superadmin] Cleanup @${cleanDomain} on ${org.name}: removed ${count}, remaining ${remaining}. By ${req.user.email}`);
+
+    res.json({
+      success: true,
+      orgName: org.name,
+      domain: cleanDomain,
+      removed: count,
+      removedEmails,
+      remaining,
+      message: `Removed ${count} users not matching @${cleanDomain}. ${remaining} employees remain.`
+    });
+  } catch (error) {
+    console.error('Superadmin cleanup-domain error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
