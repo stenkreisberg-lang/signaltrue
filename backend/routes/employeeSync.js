@@ -181,4 +181,75 @@ router.post('/cleanup-domain',
   }
 );
 
+/**
+ * POST /api/employee-sync/admin/set-domain-and-cleanup
+ * Admin-key protected: Set org domain and remove non-matching employees.
+ * Body: { "orgSlug": "nobeldigital", "domain": "nobeldigital.ee" }
+ */
+router.post('/admin/set-domain-and-cleanup', async (req, res) => {
+  try {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_API_KEY) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { orgSlug, orgId, domain } = req.body;
+    if (!domain) {
+      return res.status(400).json({ message: 'domain is required' });
+    }
+    if (!orgSlug && !orgId) {
+      return res.status(400).json({ message: 'orgSlug or orgId is required' });
+    }
+
+    const cleanDomain = domain.toLowerCase().replace(/^@/, '');
+
+    // Find org
+    const query = orgId ? { _id: orgId } : { slug: orgSlug };
+    const org = await Organization.findOne(query);
+    if (!org) {
+      return res.status(404).json({ message: `Organization not found (${orgSlug || orgId})` });
+    }
+
+    // Set domain
+    org.domain = cleanDomain;
+    await org.save();
+    console.log(`[AdminCleanup] Set domain @${cleanDomain} on org ${org.name} (${org._id})`);
+
+    // Find non-matching microsoft-sourced users
+    const domainRegex = new RegExp(`@${cleanDomain.replace(/\./g, '\\.')}$`, 'i');
+    const nonDomainUsers = await User.find({
+      orgId: org._id,
+      source: 'microsoft',
+      email: { $not: domainRegex }
+    });
+
+    const count = nonDomainUsers.length;
+    const removedEmails = nonDomainUsers.map(u => u.email);
+
+    if (count > 0) {
+      const ids = nonDomainUsers.map(u => u._id);
+      await User.deleteMany({ _id: { $in: ids } });
+    }
+
+    // Count remaining users
+    const remaining = await User.countDocuments({ orgId: org._id });
+
+    console.log(`[AdminCleanup] Removed ${count} non-@${cleanDomain} users, ${remaining} remaining`);
+
+    res.json({
+      success: true,
+      orgName: org.name,
+      orgId: org._id,
+      domain: cleanDomain,
+      removed: count,
+      removedEmails,
+      remaining,
+      message: `Set domain @${cleanDomain}. Removed ${count} non-matching users. ${remaining} employees remain.`
+    });
+  } catch (error) {
+    console.error('Admin cleanup error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;
