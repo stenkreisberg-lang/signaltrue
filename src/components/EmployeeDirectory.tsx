@@ -34,8 +34,10 @@ interface SyncStatus {
   unassignedUsers: number;
   lastSlackSync?: string;
   lastGoogleSync?: string;
+  lastMicrosoftSync?: string;
   slackConnected: boolean;
   googleConnected: boolean;
+  microsoftConnected: boolean;
 }
 
 const EmployeeDirectory: React.FC = () => {
@@ -82,6 +84,7 @@ const EmployeeDirectory: React.FC = () => {
             unassignedUsers: 0,
             slackConnected: false,
             googleConnected: false,
+            microsoftConnected: false,
           },
         };
       }
@@ -106,15 +109,17 @@ const EmployeeDirectory: React.FC = () => {
     }
   };
 
-  const handleSync = async (source: 'slack' | 'google') => {
+  const handleSync = async (source: 'slack' | 'google' | 'microsoft') => {
     try {
       setSyncing(true);
       const response = await api.post(`/employee-sync/${source}`);
 
       if (response.data.success) {
         const stats = response.data.stats;
+        const sourceLabel =
+          source === 'slack' ? 'Slack' : source === 'google' ? 'Google' : 'Microsoft';
         showSuccess(
-          `Synced ${source === 'slack' ? 'Slack' : 'Google'} employees: ` +
+          `Synced ${sourceLabel} employees: ` +
             `${stats.created} created, ${stats.updated} updated, ${stats.inactivated || 0} inactivated`
         );
         await fetchData();
@@ -352,12 +357,30 @@ const EmployeeDirectory: React.FC = () => {
                 </div>
               )}
 
-              {!syncStatus.slackConnected && !syncStatus.googleConnected && (
-                <div className="text-sm text-gray-600">
-                  No integrations connected. Connect Slack or Google to sync employees
-                  automatically.
+              {syncStatus.microsoftConnected && (
+                <div className="flex-1 min-w-[200px]">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Microsoft 365</div>
+                  <div className="text-xs text-gray-500">
+                    Last synced: {formatDate(syncStatus.lastMicrosoftSync)}
+                  </div>
+                  <button
+                    onClick={() => handleSync('microsoft')}
+                    disabled={syncing}
+                    className="mt-2 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </button>
                 </div>
               )}
+
+              {!syncStatus.slackConnected &&
+                !syncStatus.googleConnected &&
+                !syncStatus.microsoftConnected && (
+                  <div className="text-sm text-gray-600">
+                    No integrations connected. Connect Slack, Google, or Microsoft to sync employees
+                    automatically.
+                  </div>
+                )}
             </div>
           </div>
         </div>

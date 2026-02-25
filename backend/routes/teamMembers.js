@@ -4,12 +4,23 @@ import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all team members for the current user's team
+// Get team members — HR/admin roles see all org employees, others see own team only
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    const isOrgAdmin = ['hr_admin', 'admin', 'master_admin'].includes(req.user.role);
+    const orgId = req.user.orgId;
     const teamId = req.user.teamId;
-    
-    const members = await User.find({ teamId })
+
+    let query;
+    if (isOrgAdmin && orgId) {
+      // HR admins see all employees in their organization (including unassigned)
+      query = { orgId };
+    } else {
+      // Regular users see only their own team
+      query = { teamId };
+    }
+
+    const members = await User.find(query)
       .select('-password')
       .sort({ role: -1, name: 1 }); // Admins first, then alphabetically
 
