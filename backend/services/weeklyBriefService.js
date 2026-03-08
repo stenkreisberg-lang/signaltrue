@@ -10,6 +10,7 @@ import WorkEvent from '../models/workEvent.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
+import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
 
 // ─── Signal type presentation (same as in signals.js) ───
 const SIGNAL_TYPE_PRESENTATION = {
@@ -343,6 +344,24 @@ export async function generateWeeklyBrief(orgId) {
     recommendations.push('Continue monitoring. Stable weeks are a good time to invest in process improvement or address small friction points before they grow.');
   }
 
+  // ─── AI Analysis Layer ───
+  // Feed all computed data to the LLM for cross-metric insights, industry benchmarking,
+  // strategic recommendations, and a look-ahead warning.
+  const employeeCount = await User.countDocuments({ orgId: org._id });
+  const aiAnalysis = await generateWeeklyAIAnalysis({
+    orgName: org.name,
+    industry: org.industry || 'Other',
+    orgSize: org.size || `${employeeCount} employees`,
+    teamCount: teams.length,
+    employeeCount,
+    tw, lw,
+    twMeetings, lwMeetings, twMessages, lwMessages,
+    twSignals, lwSignals, twCKSignals, lwCKSignals,
+    teamBDIData,
+    observations, risks,
+    connectedSources,
+  });
+
   // ════════════════════════════════════════════════════════════
   // BUILD THE HTML
   // ════════════════════════════════════════════════════════════
@@ -462,6 +481,91 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
     }
     html += `</div>`;
+  }
+
+  // ─── 4b. AI Intelligence Analysis (powered by LLM) ───
+  if (aiAnalysis) {
+    // Executive Narrative
+    if (aiAnalysis.executiveNarrative) {
+      html += `<div style="${S.card} border-left:4px solid #6366f1;">`;
+      html += `<div style="display:flex; align-items:center; margin-bottom:12px;">`;
+      html += `<span style="font-size:20px; margin-right:10px;">🧠</span>`;
+      html += `<h3 style="${S.h3} margin:0;">AI Analysis</h3>`;
+      html += `</div>`;
+      html += `<p style="${S.p}">${aiAnalysis.executiveNarrative}</p>`;
+      html += `</div>`;
+    }
+
+    // Cross-Metric Insights
+    if (aiAnalysis.crossMetricInsights?.length > 0) {
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">🔗 Cross-Metric Insights</h3>`;
+      html += `<p style="${S.pSmall}">Patterns the AI identified across multiple data points.</p>`;
+      for (const insight of aiAnalysis.crossMetricInsights) {
+        html += `<div style="padding:10px 14px; margin-bottom:8px; background:#f0f0ff; border-radius:8px; border-left:3px solid #6366f1;">`;
+        html += `<p style="${S.p} margin:0;">${insight}</p>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Industry Benchmarking
+    if (aiAnalysis.industryComparison) {
+      const bench = INDUSTRY_BENCHMARKS[org.industry] || INDUSTRY_BENCHMARKS['Other'];
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">🏢 Industry Benchmark: ${org.industry || 'General'}</h3>`;
+      html += `<p style="${S.p}">${aiAnalysis.industryComparison}</p>`;
+      html += `<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">`;
+      html += `<div style="flex:1; min-width:120px; text-align:center; padding:10px; background:#f9fafb; border-radius:8px;">
+        <div style="font-size:11px; color:#6b7280; text-transform:uppercase;">Industry Avg</div>
+        <div style="font-size:18px; font-weight:700; color:#6b7280;">${bench.meetingHoursPerWeek}h</div>
+        <div style="font-size:11px; color:#6b7280;">mtg hours/wk</div>
+      </div>`;
+      html += `<div style="flex:1; min-width:120px; text-align:center; padding:10px; background:${tw.meetingHours > bench.meetingHoursPerWeek ? '#fef2f2' : '#f0fdf4'}; border-radius:8px;">
+        <div style="font-size:11px; color:#6b7280; text-transform:uppercase;">Your Org</div>
+        <div style="font-size:18px; font-weight:700; color:${tw.meetingHours > bench.meetingHoursPerWeek ? '#ef4444' : '#10b981'};">${fmtNum(tw.meetingHours, 1)}h</div>
+        <div style="font-size:11px; color:#6b7280;">mtg hours/wk</div>
+      </div>`;
+      html += `<div style="flex:1; min-width:120px; text-align:center; padding:10px; background:#f9fafb; border-radius:8px;">
+        <div style="font-size:11px; color:#6b7280; text-transform:uppercase;">Industry Avg</div>
+        <div style="font-size:18px; font-weight:700; color:#6b7280;">${bench.afterHoursPct}%</div>
+        <div style="font-size:11px; color:#6b7280;">after-hours</div>
+      </div>`;
+      html += `<div style="flex:1; min-width:120px; text-align:center; padding:10px; background:${(tw.afterHoursRatio || 0) * 100 > bench.afterHoursPct ? '#fef2f2' : '#f0fdf4'}; border-radius:8px;">
+        <div style="font-size:11px; color:#6b7280; text-transform:uppercase;">Your Org</div>
+        <div style="font-size:18px; font-weight:700; color:${(tw.afterHoursRatio || 0) * 100 > bench.afterHoursPct ? '#ef4444' : '#10b981'};">${Math.round((tw.afterHoursRatio || 0) * 100)}%</div>
+        <div style="font-size:11px; color:#6b7280;">after-hours</div>
+      </div>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+
+    // Strategic Recommendations from AI
+    if (aiAnalysis.strategicRecommendations?.length > 0) {
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">🎯 AI Strategic Recommendations</h3>`;
+      html += `<p style="${S.pSmall}">Prioritised actions generated by AI based on your data, industry context, and cross-metric patterns.</p>`;
+      for (const rec of aiAnalysis.strategicRecommendations) {
+        const effortColor = rec.effort === 'Low' ? '#10b981' : rec.effort === 'Medium' ? '#f59e0b' : '#ef4444';
+        html += `<div style="${S.recBox} border-left:3px solid #6366f1;">`;
+        html += `<p style="${S.p} margin:0 0 6px 0;"><strong>#${rec.priority}:</strong> ${rec.action}</p>`;
+        html += `<p style="${S.pSmall} margin:0 0 4px 0;"><strong>Why:</strong> ${rec.rationale}</p>`;
+        html += `<p style="${S.pSmall} margin:0;">`;
+        html += `<span style="${S.badge(effortColor + '20', effortColor)}">${rec.effort} effort</span> `;
+        html += `<strong>Expected impact:</strong> ${rec.expectedImpact}`;
+        html += `</p>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Look-Ahead Warning
+    if (aiAnalysis.lookAheadWarning) {
+      html += `<div style="${S.card} border-left:4px solid #f59e0b;">`;
+      html += `<h3 style="${S.h3} margin-top:0;">👁️ AI Look-Ahead</h3>`;
+      html += `<p style="${S.p}">${aiAnalysis.lookAheadWarning}</p>`;
+      html += `</div>`;
+    }
   }
 
   // ─── 5. Recommendations ───
