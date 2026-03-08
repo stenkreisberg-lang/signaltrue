@@ -23,7 +23,7 @@ import { generateWeeklyBrief } from '../services/weeklyBriefService.js';
 await mongoose.connect(process.env.MONGO_URI);
 console.log('Connected to MongoDB');
 
-const orgId = '693bff1d7182d336060c8629';
+const orgId = '69831a7c2681136ee2e56c93';
 
 console.log('Generating weekly brief with AI analysis…');
 const startTime = Date.now();

@@ -382,7 +382,7 @@ router.post('/trigger-weekly-email', async (req, res) => {
       return res.status(401).json({ message: 'Invalid secret key' });
     }
 
-    const targetOrgId = orgId || '693bff1d7182d336060c8629';
+    const targetOrgId = orgId || '69831a7c2681136ee2e56c93'; // Nobeldigital
 
     console.log(`[trigger-weekly-email] Sending intelligence brief for org ${targetOrgId}`);
     await sendWeeklyBrief(targetOrgId);
