@@ -145,6 +145,17 @@ const integrationMetricsDailySchema = new mongoose.Schema({
   ticketsCreated7d: { type: Number, default: 0 },
   
   // ============================================================
+  // MESSAGING METRICS (Slack / Microsoft Teams / Google Chat)
+  // ============================================================
+  
+  messageCount7d: { type: Number, default: 0 },          // Total messages sent
+  messagesPerDay: { type: Number, default: 0 },          // Average messages per day
+  afterHoursMessageCount: { type: Number, default: 0 },  // Messages sent after hours (before 8am / after 6pm)
+  afterHoursMessageRatio: { type: Number, default: 0 },  // Ratio of after-hours to total
+  uniqueChannels7d: { type: Number, default: 0 },        // Distinct channels/conversations
+  messageSources: [{ type: String }],                     // Which messaging platforms contributed
+  
+  // ============================================================
   // BASECAMP METRICS (Async collaboration)
   // ============================================================
   
@@ -236,7 +247,11 @@ const integrationMetricsDailySchema = new mongoose.Schema({
   // Data sources that contributed to this day's metrics
   sources: [{
     type: String,
-    enum: ['jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp', 'slack', 'calendar']
+    enum: [
+      'jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp',
+      'slack', 'calendar', 'google-calendar', 'google-chat',
+      'microsoft-outlook', 'microsoft-teams'
+    ]
   }],
   
   // Events processed for this day

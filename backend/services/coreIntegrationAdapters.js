@@ -392,6 +392,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             isAllDay: event.isAllDay,
             showAs: event.showAs, // 'busy', 'free', 'tentative'
             location: event.location?.displayName,
+            durationMinutes,
+            startTime: start.toISOString(),
+            endTime: end.toISOString(),
           },
           raw: { id: event.id }
         };
@@ -517,6 +520,9 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
           isAllDay: !event.start?.dateTime,
           location: event.location,
           recurrence: !!event.recurringEventId,
+          durationMinutes,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
         },
         raw: { id: event.id }
       };

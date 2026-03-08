@@ -71,7 +71,7 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
   // Compute email metrics (Gmail)
   const emailMetrics = computeEmailMetrics(events, date);
   
-  // Compute meeting metrics (Google Meet/Calendar)
+  // Compute meeting metrics (Google Meet/Calendar/Microsoft Outlook)
   const meetingMetrics = computeMeetingMetrics(events, date);
   
   // Compute Notion metrics
@@ -82,6 +82,9 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
   
   // Compute Basecamp metrics
   const basecampMetrics = computeBasecampMetrics(events, date);
+  
+  // Compute messaging metrics (Slack/Teams/Google Chat)
+  const messagingMetrics = computeMessagingMetrics(events, date);
   
   // Get baseline data for robust-z calculations
   const baseline = await getTrailingBaseline(orgId, teamId, null, date, 28);
@@ -112,6 +115,7 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
         ...notionMetrics,
         ...crmMetrics,
         ...basecampMetrics,
+        ...messagingMetrics,
         ...compositeMetrics,
         baseline: {
           ...baseline,
@@ -144,6 +148,7 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
   const notionMetrics = computeNotionMetrics(events, date);
   const crmMetrics = computeCRMMetrics(events, date);
   const basecampMetrics = computeBasecampMetrics(events, date);
+  const messagingMetrics = computeMessagingMetrics(events, date);
   
   const baseline = await getTrailingBaseline(orgId, null, null, date, 28);
   const compositeMetrics = computeCompositeMetrics(
@@ -167,6 +172,7 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
         ...notionMetrics,
         ...crmMetrics,
         ...basecampMetrics,
+        ...messagingMetrics,
         ...compositeMetrics,
         baseline: {
           ...baseline,
@@ -354,19 +360,33 @@ function computeEmailMetrics(events, date) {
 // ============================================================
 
 function computeMeetingMetrics(events, date) {
-  const meetEvents = events.filter(e => e.source === 'meet' || e.source === 'calendar');
+  // Include all calendar/meeting sources: Google Calendar, Microsoft Outlook, Meet
+  const meetEvents = events.filter(e => 
+    e.source === 'meet' || e.source === 'calendar' || 
+    e.source === 'google-calendar' || e.source === 'microsoft-outlook' ||
+    (e.eventType === 'meeting')
+  );
   
   const window7dStart = new Date(date);
   window7dStart.setDate(window7dStart.getDate() - 7);
   const events7d = meetEvents.filter(e => new Date(e.timestamp) >= window7dStart);
   
-  // Meeting count and duration
-  const meetingStarts = events7d.filter(e => e.eventType === 'meet_started');
+  // Meeting count and duration — support both legacy (meet_started) and core adapters (meeting)
+  const meetingStarts = events7d.filter(e => 
+    e.eventType === 'meet_started' || e.eventType === 'meeting'
+  );
   const meetingCount7d = meetingStarts.length;
   
   const durations = events7d
-    .filter(e => e.metadata?.durationMinutes > 0)
+    .filter(e => (e.metadata?.durationMinutes || 0) > 0)
     .map(e => e.metadata.durationMinutes);
+  // Also compute duration from start/end times if durationMinutes isn't set
+  for (const e of events7d) {
+    if (!e.metadata?.durationMinutes && e.metadata?.startTime && e.metadata?.endTime) {
+      const dur = (new Date(e.metadata.endTime) - new Date(e.metadata.startTime)) / (1000 * 60);
+      if (dur > 0) durations.push(dur);
+    }
+  }
   const meetingDurationTotalHours7d = durations.reduce((sum, d) => sum + d, 0) / 60;
   
   // Ad-hoc meetings
@@ -540,6 +560,55 @@ function computeBasecampMetrics(events, date) {
     todosCompleted7d,
     responseGapMedian,
     unansweredPostRate7d
+  };
+}
+
+// ============================================================
+// MESSAGING METRICS (Slack / Microsoft Teams / Google Chat)
+// ============================================================
+
+function computeMessagingMetrics(events, date) {
+  const messagingSources = ['slack', 'microsoft-teams', 'google-chat'];
+  const messagingEvents = events.filter(e => 
+    messagingSources.includes(e.source) || e.eventType === 'message'
+  );
+  
+  const window7dStart = new Date(date);
+  window7dStart.setDate(window7dStart.getDate() - 7);
+  const events7d = messagingEvents.filter(e => new Date(e.timestamp) >= window7dStart);
+  
+  const messageCount7d = events7d.length;
+  const daysInWindow = 7;
+  const messagesPerDay = messageCount7d / daysInWindow;
+  
+  // After-hours messages (before 8am or after 6pm local)
+  const afterHoursMessageCount = events7d.filter(e => {
+    const hour = new Date(e.timestamp).getHours();
+    return hour < 8 || hour >= 18;
+  }).length;
+  const afterHoursMessageRatio = messageCount7d > 0 
+    ? afterHoursMessageCount / messageCount7d 
+    : 0;
+  
+  // Unique channels/conversations
+  const channels = new Set();
+  for (const e of events7d) {
+    if (e.metadata?.channel) channels.add(e.metadata.channel);
+    if (e.metadata?.channelName) channels.add(e.metadata.channelName);
+    if (e.metadata?.conversationId) channels.add(e.metadata.conversationId);
+  }
+  const uniqueChannels7d = channels.size;
+  
+  // Which platforms contributed
+  const messageSources = [...new Set(events7d.map(e => e.source))];
+  
+  return {
+    messageCount7d,
+    messagesPerDay,
+    afterHoursMessageCount,
+    afterHoursMessageRatio,
+    uniqueChannels7d,
+    messageSources
   };
 }
 
