@@ -21,7 +21,12 @@ const workEventSchema = new mongoose.Schema({
   source: {
     type: String,
     required: true,
-    enum: ['jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp', 'slack', 'calendar'],
+    enum: [
+      'jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp',
+      'slack', 'calendar',
+      // Core integration adapters
+      'microsoft-outlook', 'microsoft-teams', 'google-calendar', 'google-chat'
+    ],
     index: true
   },
   
@@ -68,7 +73,11 @@ const workEventSchema = new mongoose.Schema({
       'post_created',
       'todo_created',
       'todo_completed',
-      'checkin_response'
+      'checkin_response',
+
+      // Core integration generic types (Slack, Teams, Google Chat, Calendar)
+      'message',
+      'meeting'
     ],
     index: true
   },

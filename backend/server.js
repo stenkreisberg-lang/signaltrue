@@ -574,6 +574,29 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: Weekly reports generation Sunday at 11:30 PM');
       
+      // Weekly digest email - Monday at 8 AM (after weekly reports + signal generation)
+      cron.schedule('0 8 * * 1', async () => {
+        console.log('⏰ Sending weekly digest emails...');
+        try {
+          const { sendWeeklyBrief } = await import('./services/weeklyBriefService.js');
+          const Organization = (await import('./models/organizationModel.js')).default;
+          const orgs = await Organization.find({ isActive: true });
+          
+          for (const org of orgs) {
+            try {
+              await sendWeeklyBrief(org._id);
+              console.log(`  ✅ Weekly digest sent for ${org.name}`);
+            } catch (err) {
+              console.error(`  ❌ Digest failed for ${org.name}:`, err.message);
+            }
+          }
+          console.log('✅ Weekly digest emails completed');
+        } catch (err) {
+          console.error('❌ Weekly digest emails failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Weekly digest emails Monday at 8 AM');
+      
       // Monthly reports generation - 1st of month at 4:00 AM
       cron.schedule('0 4 1 * *', async () => {
         console.log('⏰ Generating monthly reports for all organizations...');

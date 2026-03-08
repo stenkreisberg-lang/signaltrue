@@ -63,6 +63,12 @@ const userSchema = new mongoose.Schema({
     department: { type: String },
     phone: { type: String }
   },
+  // Work mode for hybrid culture drift segmentation
+  workMode: {
+    type: String,
+    enum: ['on-site', 'hybrid', 'remote'],
+    default: null
+  },
   role: {
     type: String,
     // Support legacy roles and new onboarding roles

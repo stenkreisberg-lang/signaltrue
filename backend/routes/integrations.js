@@ -192,9 +192,9 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           notion: null,
         },
         oauth: {
-          slack: !!process.env.SLACK_CLIENT_ID ? '/auth/slack' : null,
-          google: !!process.env.GOOGLE_CLIENT_ID ? '/auth/google' : null,
-          calendar: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start' : null,
+          slack: !!process.env.SLACK_CLIENT_ID ? '/integrations/slack/oauth/start' : null,
+          google: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start?scope=calendar' : null,
+          calendar: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start?scope=calendar' : null,
           googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google-chat/oauth/start' : null,
           teams: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=teams' : null,
           outlook: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=outlook' : null,
@@ -252,7 +252,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     
     const connected = {
       slack: !!organization.integrations?.slack?.accessToken,
-      google: !!user.google?.accessToken,
+      google: !!(organization.integrations?.google?.accessToken),
       googleChat: !!organization.integrations?.googleChat?.accessToken,
       teams: msHasToken && (msScope === 'teams' || msScope === 'both'),
       outlook: msHasToken && (msScope === 'outlook' || msScope === 'both'),
@@ -285,7 +285,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         teamId: organization.integrations.slack.teamId,
       } : null,
       google: connected.google ? {
-        email: user.email,
+        email: organization.integrations.google?.email || user.email,
       } : null,
       googleChat: connected.googleChat ? {
         email: organization.integrations.googleChat.email,
@@ -323,8 +323,8 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     const orgIdStr = organization._id.toString();
     const oauth = {
       slack: available.slack ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      google: available.google ? '/auth/google' : null,
-      calendar: available.google ? `/integrations/google/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      google: available.google ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      calendar: available.google ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
       outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,

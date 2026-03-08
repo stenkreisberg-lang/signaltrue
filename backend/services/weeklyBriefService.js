@@ -1,5 +1,5 @@
-export default { sendWeeklyBrief, generateWeeklyBrief };
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import DriftEvent from '../models/driftEvent.js';
@@ -25,7 +25,7 @@ export async function generateWeeklyBrief(orgId) {
   const driftEvents = await DriftEvent.find({ orgId, date: { $gte: new Date(Date.now() - 7*24*60*60*1000) } }).sort({ date: -1 });
   
   // NEW: Fetch all teams for this org with latest BDI
-  const teams = await Team.find({ organizationId: orgId });
+  const teams = await Team.find({ orgId });
   const teamBDIData = [];
   
   for (const team of teams) {
@@ -107,11 +107,25 @@ export async function sendWeeklyBrief(orgId) {
   const hrUsers = await User.find({ orgId, role: { $in: ['hr_admin', 'admin', 'master_admin'] } });
   if (!hrUsers.length) return;
   const html = await generateWeeklyBrief(orgId);
-  const recipients = hrUsers.map(u => u.email).join(',');
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
-    to: recipients,
-    subject: `Weekly HR Brief: ${org.name}`,
-    html,
-  });
+  const recipients = hrUsers.map(u => u.email);
+
+  // Prefer Resend if configured, else fall back to nodemailer SMTP
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: 'SignalTrue <brief@signaltrue.ai>',
+      to: recipients,
+      subject: `Weekly HR Brief: ${org.name}`,
+      html,
+    });
+  } else {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
+      to: recipients.join(','),
+      subject: `Weekly HR Brief: ${org.name}`,
+      html,
+    });
+  }
 }
+
+export default { sendWeeklyBrief, generateWeeklyBrief };

@@ -18,10 +18,12 @@ const GoogleCalendarConnect = ({ integrations }) => {
     if (token) {
       // Use the configured API base URL (handles both dev proxy and prod URL)
       const baseUrl = api.defaults.baseURL;
-      // If baseURL is relative (e.g. '/api'), window.location.href works relative to current origin.
-      // If absolute (e.g. 'https://api.site.com/api'), it works as absolute.
-      // Note: api.defaults.baseURL already includes '/api' from utils/api.js
-      window.location.href = `${baseUrl}/auth/google?token=${token}`;
+      // Use the integrations OAuth route which stores the token on the Organization
+      // (not the legacy /auth/google route which stores on the User model)
+      const userStr = localStorage.getItem('user');
+      const userData = userStr ? JSON.parse(userStr) : {};
+      const orgId = userData.orgId || '';
+      window.location.href = `${baseUrl}/integrations/google/oauth/start?scope=calendar&orgId=${orgId}`;
     } else {
       alert('You must be logged in to connect your calendar.');
     }
@@ -42,21 +44,21 @@ const GoogleCalendarConnect = ({ integrations }) => {
   return (
     <>
       <div style={styles.cardIcon}>📅</div>
-      <h3 style={styles.cardTitle}>Connect Calendar {isConnected && <span style={styles.badgeConnected}>Connected</span>}</h3>
-      
+      <h3 style={styles.cardTitle}>
+        Connect Calendar {isConnected && <span style={styles.badgeConnected}>Connected</span>}
+      </h3>
+
       {isConnected ? (
         <>
           <p style={styles.detailLine}>Account: {userEmail}</p>
-          <p style={styles.cardText}>
-            Your Google Calendar is connected.
-          </p>
-          <button style={styles.disconnectBtn} onClick={handleDisconnect}>Disconnect</button>
+          <p style={styles.cardText}>Your Google Calendar is connected.</p>
+          <button style={styles.disconnectBtn} onClick={handleDisconnect}>
+            Disconnect
+          </button>
         </>
       ) : (
         <>
-          <p style={styles.cardText}>
-            Analyze meeting load and focus time patterns
-          </p>
+          <p style={styles.cardText}>Analyze meeting load and focus time patterns</p>
           <button style={styles.cardButton} onClick={handleConnect}>
             Connect Google Calendar
           </button>
@@ -99,13 +101,13 @@ const styles = {
     padding: '2px 8px',
     background: '#DCFCE7',
     color: '#166534',
-    borderRadius: 999
+    borderRadius: 999,
   },
   detailLine: {
     color: '#6b7280',
     fontSize: 13,
     marginTop: 6,
-    marginBottom: 10
+    marginBottom: 10,
   },
   disconnectBtn: {
     marginTop: 10,
@@ -115,7 +117,7 @@ const styles = {
     borderRadius: 8,
     padding: '0.5rem 0.75rem',
     fontWeight: 600,
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
 };
 

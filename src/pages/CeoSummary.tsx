@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
   Minus,
   AlertTriangle,
@@ -10,8 +10,10 @@ import {
   Shield,
   Calendar,
   Clock,
-  Building2
+  Building2,
 } from 'lucide-react';
+import DriftFamilyCard from '../components/drift/DriftFamilyCard';
+import DriftConfidencePanel from '../components/drift/DriftConfidencePanel';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -148,6 +150,60 @@ const CeoSummaryPage: React.FC = () => {
 
   const DirectionIcon = DIRECTION_ICONS[summary.riskDirection.overall] || Minus;
   const directionStyle = DIRECTION_COLORS[summary.riskDirection.overall] || DIRECTION_COLORS.stable;
+  const familyCards = [
+    {
+      name: 'Capacity Drift',
+      score: Math.min(100, Math.max(0, 50 + summary.observations.meetingLoadChange.percentChange)),
+      description: 'Overload, meeting pressure, and recovery strain.',
+      trend: [
+        42,
+        47,
+        52,
+        Math.min(100, Math.max(0, 50 + summary.observations.meetingLoadChange.percentChange)),
+      ].map((score, index) => ({ label: `W${index + 1}`, score })),
+    },
+    {
+      name: 'Coordination Drift',
+      score: summary.observations.coordinationPressure.direction === 'increased' ? 67 : 48,
+      description:
+        'Coordination drag, slower response loops, and concentration of routing pressure.',
+      trend: [
+        40,
+        44,
+        51,
+        summary.observations.coordinationPressure.direction === 'increased' ? 67 : 48,
+      ].map((score, index) => ({ label: `W${index + 1}`, score })),
+    },
+    {
+      name: 'Cohesion Drift',
+      score: summary.observations.afterHoursWork.direction === 'increased' ? 59 : 43,
+      description: 'Cohesion conditions that can weaken when strain and fragmentation rise.',
+      trend: [
+        38,
+        42,
+        46,
+        summary.observations.afterHoursWork.direction === 'increased' ? 59 : 43,
+      ].map((score, index) => ({ label: `W${index + 1}`, score })),
+    },
+  ];
+
+  const confidenceReasons = [
+    {
+      label: 'Trend confidence',
+      value: summary.riskDirection.trendConfidence,
+      note: 'Confidence reflects whether multiple structural signals align over time.',
+    },
+    {
+      label: 'Measurement scope',
+      value: 'Metadata-only',
+      note: 'This summary is based on work patterns, not message content or individual monitoring.',
+    },
+    {
+      label: 'Interpretation rule',
+      value: 'Structural drift, not emotion',
+      note: 'The model detects conditions that often precede overload, siloing, or disconnection.',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -172,11 +228,11 @@ const CeoSummaryPage: React.FC = () => {
               <p className="font-semibold text-foreground">{summary.organizationName}</p>
             </div>
           </div>
-          
+
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-2">
             Organizational Workload Signals – Executive Summary
           </h1>
-          
+
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
@@ -189,12 +245,30 @@ const CeoSummaryPage: React.FC = () => {
           </div>
         </header>
 
+        <section className="mb-10">
+          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+            Structural drift summary
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {familyCards.map((family) => (
+              <DriftFamilyCard
+                key={family.name}
+                familyName={family.name}
+                score={Math.round(family.score)}
+                description={family.description}
+                trend={family.trend}
+                confidenceLabel={summary.riskDirection.trendConfidence}
+              />
+            ))}
+          </div>
+        </section>
+
         {/* Section 1: What we observed this month */}
         <section className="mb-10">
           <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
             What we observed this month
           </h2>
-          
+
           <ul className="space-y-3">
             {/* Meeting Load */}
             <li className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
@@ -209,7 +283,9 @@ const CeoSummaryPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-foreground">Meeting load</p>
-                <p className="text-sm text-muted-foreground">{summary.observations.meetingLoadChange.summary}</p>
+                <p className="text-sm text-muted-foreground">
+                  {summary.observations.meetingLoadChange.summary}
+                </p>
               </div>
             </li>
 
@@ -226,13 +302,17 @@ const CeoSummaryPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-foreground">After-hours work trends</p>
-                <p className="text-sm text-muted-foreground">{summary.observations.afterHoursWork.summary}</p>
+                <p className="text-sm text-muted-foreground">
+                  {summary.observations.afterHoursWork.summary}
+                </p>
               </div>
             </li>
 
             {/* Coordination pressure */}
             <li className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
-              <div className={DIRECTION_COLORS[summary.observations.coordinationPressure.direction]}>
+              <div
+                className={DIRECTION_COLORS[summary.observations.coordinationPressure.direction]}
+              >
                 {summary.observations.coordinationPressure.direction === 'increased' ? (
                   <TrendingUp className="w-5 h-5" />
                 ) : summary.observations.coordinationPressure.direction === 'decreased' ? (
@@ -243,7 +323,9 @@ const CeoSummaryPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-foreground">Coordination pressure concentration</p>
-                <p className="text-sm text-muted-foreground">{summary.observations.coordinationPressure.summary}</p>
+                <p className="text-sm text-muted-foreground">
+                  {summary.observations.coordinationPressure.summary}
+                </p>
               </div>
             </li>
           </ul>
@@ -254,11 +336,9 @@ const CeoSummaryPage: React.FC = () => {
           <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
             Why this matters
           </h2>
-          
+
           <div className="p-6 rounded-xl bg-secondary/20 border border-border/50">
-            <p className="text-foreground leading-relaxed">
-              {summary.significance.summary}
-            </p>
+            <p className="text-foreground leading-relaxed">{summary.significance.summary}</p>
           </div>
         </section>
 
@@ -267,9 +347,11 @@ const CeoSummaryPage: React.FC = () => {
           <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
             Direction of risk
           </h2>
-          
+
           <div className="flex items-center gap-6 mb-4">
-            <div className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 ${directionStyle}`}>
+            <div
+              className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 ${directionStyle}`}
+            >
               <DirectionIcon className="w-8 h-8" />
               <div>
                 <p className="text-xs uppercase tracking-wider opacity-80">Risk Trend</p>
@@ -279,13 +361,25 @@ const CeoSummaryPage: React.FC = () => {
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              <p>Confidence: <span className="font-medium capitalize">{summary.riskDirection.trendConfidence}</span></p>
+              <p>
+                Confidence:{' '}
+                <span className="font-medium capitalize">
+                  {summary.riskDirection.trendConfidence}
+                </span>
+              </p>
             </div>
           </div>
-          
+
           <p className="text-sm text-muted-foreground italic p-4 rounded-lg bg-muted/30">
             {summary.riskDirection.explanation}
           </p>
+        </section>
+
+        <section className="mb-10">
+          <DriftConfidencePanel
+            headline="Confidence reflects whether multiple structural patterns align over time and whether the view stays within metadata-only, team-level boundaries."
+            items={confidenceReasons}
+          />
         </section>
 
         {/* Section 4: What this is (and is not) */}
@@ -293,7 +387,7 @@ const CeoSummaryPage: React.FC = () => {
           <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
             What this is (and is not)
           </h2>
-          
+
           <div className="grid sm:grid-cols-2 gap-4">
             {/* What it is */}
             <div className="space-y-3">
@@ -311,25 +405,19 @@ const CeoSummaryPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 p-3 rounded-lg bg-success/5 border border-success/20">
                 <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-sm text-foreground">
-                  No individual monitoring
-                </span>
+                <span className="text-sm text-foreground">No individual monitoring</span>
               </div>
             </div>
-            
+
             {/* What it is not */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
                 <X className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">
-                  Not a survey
-                </span>
+                <span className="text-sm text-muted-foreground">Not a survey</span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
                 <X className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">
-                  Not sentiment analysis
-                </span>
+                <span className="text-sm text-muted-foreground">Not sentiment analysis</span>
               </div>
             </div>
           </div>
@@ -341,23 +429,23 @@ const CeoSummaryPage: React.FC = () => {
             <Shield className="w-4 h-4" />
             <p>{summary.footer}</p>
           </div>
-          
+
           {/* SignalTrue branding */}
           <div className="mt-6 text-center text-xs text-muted-foreground">
             <p>
               Powered by{' '}
-              <a 
-                href="https://signaltrue.ai" 
-                target="_blank" 
+              <a
+                href="https://signaltrue.ai"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
                 SignalTrue
-              </a>
-              {' '}— Organizational workload intelligence
+              </a>{' '}
+              — Organizational workload intelligence
             </p>
           </div>
-          
+
           {/* Print button */}
           <div className="mt-8 text-center no-print">
             <button

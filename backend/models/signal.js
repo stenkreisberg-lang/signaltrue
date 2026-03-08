@@ -33,7 +33,12 @@ const signalSchema = new mongoose.Schema({
       'handoff-bottleneck',
       'context-switching',
       'network-bottleneck',
-      'rework-churn'
+      'rework-churn',
+      // Culture drift (hybrid belonging)
+      'meeting-exclusion',
+      'peripheral-member',
+      'hybrid-response-gap',
+      'fading-voice'
     ]
   },
   // Category for grouping signals (per Category King spec)
@@ -45,7 +50,11 @@ const signalSchema = new mongoose.Schema({
   // Data sources that contributed to this signal
   sources: [{
     type: String,
-    enum: ['slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear']
+    enum: [
+      'slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear',
+      'microsoft-outlook', 'microsoft-teams', 'google-calendar', 'google-chat',
+      'gmail', 'meet', 'notion', 'hubspot', 'pipedrive'
+    ]
   }],
   title: { type: String, required: true },
   

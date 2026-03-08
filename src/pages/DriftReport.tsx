@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Activity, ArrowRight, Shield, Lock, AlertTriangle, CheckCircle, TrendingUp, Clock, Users, Zap, Calendar } from 'lucide-react';
+import {
+  Activity,
+  ArrowRight,
+  Shield,
+  Lock,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
+  Clock,
+  Users,
+  Zap,
+  Calendar,
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import DriftFamilyCard from '../components/drift/DriftFamilyCard';
+import DriftConfidencePanel from '../components/drift/DriftConfidencePanel';
 
 // API base URL
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://signaltrue-backend.onrender.com' 
-  : '';
+const API_BASE =
+  process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
 
 interface DriftScore {
   totalScore: number;
@@ -48,18 +61,42 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
 };
 
 // Get category styling
-function getCategoryStyle(category: string): { color: string; bgColor: string; icon: React.ReactNode } {
+function getCategoryStyle(category: string): {
+  color: string;
+  bgColor: string;
+  icon: React.ReactNode;
+} {
   switch (category) {
     case 'Critical Drift':
-      return { color: 'text-red-400', bgColor: 'bg-red-500/10 border-red-500/30', icon: <AlertTriangle className="w-5 h-5" /> };
+      return {
+        color: 'text-red-400',
+        bgColor: 'bg-red-500/10 border-red-500/30',
+        icon: <AlertTriangle className="w-5 h-5" />,
+      };
     case 'Active Drift':
-      return { color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/30', icon: <TrendingUp className="w-5 h-5" /> };
+      return {
+        color: 'text-orange-400',
+        bgColor: 'bg-orange-500/10 border-orange-500/30',
+        icon: <TrendingUp className="w-5 h-5" />,
+      };
     case 'Early Drift':
-      return { color: 'text-yellow-400', bgColor: 'bg-yellow-500/10 border-yellow-500/30', icon: <Clock className="w-5 h-5" /> };
+      return {
+        color: 'text-yellow-400',
+        bgColor: 'bg-yellow-500/10 border-yellow-500/30',
+        icon: <Clock className="w-5 h-5" />,
+      };
     case 'Stable':
-      return { color: 'text-green-400', bgColor: 'bg-green-500/10 border-green-500/30', icon: <CheckCircle className="w-5 h-5" /> };
+      return {
+        color: 'text-green-400',
+        bgColor: 'bg-green-500/10 border-green-500/30',
+        icon: <CheckCircle className="w-5 h-5" />,
+      };
     default:
-      return { color: 'text-muted-foreground', bgColor: 'bg-secondary/30 border-border/50', icon: <Activity className="w-5 h-5" /> };
+      return {
+        color: 'text-muted-foreground',
+        bgColor: 'bg-secondary/30 border-border/50',
+        icon: <Activity className="w-5 h-5" />,
+      };
   }
 }
 
@@ -81,6 +118,14 @@ function getSubScoreColor(value: number): string {
   if (value >= 50) return 'bg-orange-500';
   if (value >= 25) return 'bg-yellow-500';
   return 'bg-green-500';
+}
+
+function getTrendDirection(values: number[]): 'up' | 'down' | 'stable' {
+  if (values.length < 2) return 'stable';
+  const diff = values[values.length - 1] - values[0];
+  if (diff > 4) return 'up';
+  if (diff < -4) return 'down';
+  return 'stable';
 }
 
 const DriftReportPage = () => {
@@ -113,10 +158,10 @@ const DriftReportPage = () => {
         }
 
         setReport(data.report);
-        trackEvent('drift_report_view', { 
-          sessionId, 
+        trackEvent('drift_report_view', {
+          sessionId,
           score: data.report.score.totalScore,
-          category: data.report.score.category 
+          category: data.report.score.category,
         });
       } catch (err) {
         setError('Failed to load report. Please try again.');
@@ -153,7 +198,8 @@ const DriftReportPage = () => {
             <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
             <h1 className="text-3xl font-display font-bold mb-4">Report Not Unlocked</h1>
             <p className="text-muted-foreground mb-8">
-              This report requires email verification. Please complete the diagnostic and enter your email to unlock your results.
+              This report requires email verification. Please complete the diagnostic and enter your
+              email to unlock your results.
             </p>
             <a href="/drift/run.html">
               <Button variant="hero" size="lg">
@@ -192,11 +238,82 @@ const DriftReportPage = () => {
 
   const { score } = report;
   const categoryStyle = getCategoryStyle(score.category);
+  const familyCards = [
+    {
+      name: 'Capacity Drift',
+      score: Math.round(
+        (score.subScores.meeting_pressure +
+          score.subScores.focus_fragmentation +
+          score.subScores.recovery_deficit) /
+          3
+      ),
+      trendSeries: [
+        Math.max(score.subScores.meeting_pressure - 10, 0),
+        Math.max(score.subScores.focus_fragmentation - 6, 0),
+        Math.max(score.subScores.recovery_deficit - 3, 0),
+        Math.round(
+          (score.subScores.meeting_pressure +
+            score.subScores.focus_fragmentation +
+            score.subScores.recovery_deficit) /
+            3
+        ),
+      ],
+      description: 'Tracks overload, fragmentation, and shrinking recovery time.',
+    },
+    {
+      name: 'Coordination Drift',
+      score: Math.round((score.subScores.response_pressure + score.subScores.urgency_culture) / 2),
+      trendSeries: [
+        Math.max(score.subScores.response_pressure - 12, 0),
+        Math.max(score.subScores.urgency_culture - 8, 0),
+        Math.max(score.subScores.response_pressure - 3, 0),
+        Math.round((score.subScores.response_pressure + score.subScores.urgency_culture) / 2),
+      ],
+      description: 'Tracks coordination drag, urgency pressure, and rising responsiveness strain.',
+    },
+    {
+      name: 'Cohesion Drift',
+      score: Math.round(
+        (score.subScores.response_pressure + score.subScores.focus_fragmentation) / 2
+      ),
+      trendSeries: [
+        Math.max(score.subScores.response_pressure - 15, 0),
+        Math.max(score.subScores.focus_fragmentation - 10, 0),
+        Math.max(score.subScores.focus_fragmentation - 5, 0),
+        Math.round((score.subScores.response_pressure + score.subScores.focus_fragmentation) / 2),
+      ],
+      description:
+        'Tracks the conditions that can weaken day-to-day connection and collaboration resilience.',
+    },
+  ].map((family) => ({
+    ...family,
+    trend: family.trendSeries.map((score, index) => ({ label: `W${index + 1}`, score })),
+  }));
+
+  const confidenceLabel =
+    score.totalScore >= 70 ? 'High' : score.totalScore >= 40 ? 'Medium' : 'Medium';
+  const coverageItems = [
+    {
+      label: 'Baseline maturity',
+      value: 'Directional',
+      note: 'This report is based on questionnaire signals, not a full metadata baseline yet.',
+    },
+    {
+      label: 'Pattern consistency',
+      value: confidenceLabel,
+      note: 'Confidence increases when multiple drift indicators point in the same direction.',
+    },
+    {
+      label: 'Measurement scope',
+      value: 'Metadata-only model',
+      note: 'No message content or individual surveillance is used.',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="pt-32 pb-12 border-b border-border/50">
         <div className="container mx-auto px-6">
@@ -204,24 +321,24 @@ const DriftReportPage = () => {
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <Activity className="w-6 h-6 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Behavioral Drift Report</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Behavioral Drift Report
+              </span>
             </div>
-            
-            <h1 className="text-4xl sm:text-5xl font-display font-bold mb-4">
-              Your Drift Profile
-            </h1>
+
+            <h1 className="text-4xl sm:text-5xl font-display font-bold mb-4">Your Drift Profile</h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
-              This is a directional risk profile based on your answers. It flags system-level coordination strain patterns 
-              that often show up before surveys and exit interviews.
+              This is a directional risk profile based on your answers. It flags system-level
+              coordination strain patterns that often show up before surveys and exit interviews.
             </p>
-            
+
             {/* Main Score Cards */}
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
                 <div className="text-5xl font-bold mb-2">{score.totalScore}</div>
                 <div className="text-muted-foreground">Drift Score (0-100)</div>
               </div>
-              
+
               <div className={`p-6 rounded-2xl border ${categoryStyle.bgColor}`}>
                 <div className={`flex items-center gap-3 mb-2 ${categoryStyle.color}`}>
                   {categoryStyle.icon}
@@ -233,16 +350,36 @@ const DriftReportPage = () => {
           </div>
         </div>
       </section>
-      
+
+      <section className="py-12 border-b border-border/50 bg-secondary/5">
+        <div className="container mx-auto px-6">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-display font-bold mb-6">Structural Drift Summary</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              {familyCards.map((family) => (
+                <DriftFamilyCard
+                  key={family.name}
+                  familyName={family.name}
+                  score={family.score}
+                  description={family.description}
+                  trend={family.trend}
+                  confidenceLabel={confidenceLabel}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Key Findings Section */}
       <section className="py-12 border-b border-border/50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-display font-bold mb-6">Key Findings</h2>
-            
+
             <div className="space-y-4">
               {score.findings.map((finding, index) => (
-                <div 
+                <div
                   key={index}
                   className="flex items-start gap-4 p-4 rounded-xl bg-secondary/20 border border-border/50"
                 >
@@ -256,13 +393,25 @@ const DriftReportPage = () => {
           </div>
         </div>
       </section>
-      
+
+      <section className="py-12 border-b border-border/50">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-display font-bold mb-6">Confidence & Coverage</h2>
+            <DriftConfidencePanel
+              headline="This report is directional and useful for deciding whether to validate with real metadata-based baseline monitoring."
+              items={coverageItems}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Sub-Scores Section */}
       <section className="py-12 border-b border-border/50 bg-secondary/5">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-display font-bold mb-6">Detailed Breakdown</h2>
-            
+
             <div className="space-y-4">
               {Object.entries(score.subScores).map(([key, value]) => {
                 const { label, icon } = getSubScoreLabel(key);
@@ -276,7 +425,7 @@ const DriftReportPage = () => {
                       <span className="font-bold">{value}%</span>
                     </div>
                     <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full ${getSubScoreColor(value)} transition-all duration-500`}
                         style={{ width: `${value}%` }}
                       />
@@ -288,49 +437,57 @@ const DriftReportPage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* What This Means Section */}
       <section className="py-12 border-b border-border/50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-display font-bold mb-6">What This Means</h2>
-            
+
             <div className="p-6 rounded-2xl bg-secondary/20 border border-border/50 space-y-4">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-muted-foreground">
-                  This is a <strong className="text-foreground">system-level risk profile</strong>, not a judgment of people.
+                  This is a <strong className="text-foreground">system-level risk profile</strong>,
+                  not a judgment of people.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-muted-foreground">
-                  It reflects patterns that often show up <strong className="text-foreground">before engagement surveys or exit interviews</strong>.
+                  It reflects patterns that often show up{' '}
+                  <strong className="text-foreground">
+                    before engagement surveys or exit interviews
+                  </strong>
+                  .
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-muted-foreground">
-                  The goal is prevention. You want to intervene <strong className="text-foreground">while the system is still recoverable</strong>.
+                  The goal is prevention. You want to intervene{' '}
+                  <strong className="text-foreground">while the system is still recoverable</strong>
+                  .
                 </p>
               </div>
             </div>
           </div>
         </div>
       </section>
-      
+
       {/* Recommended Next Steps Section */}
       <section className="py-12 border-b border-border/50 bg-secondary/5">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-display font-bold mb-6">Recommended Next Steps</h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
                 <Users className="w-8 h-8 text-primary mb-4" />
                 <h3 className="font-semibold mb-2">Validate with Real Data</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Run a 30-day baseline calibration with SignalTrue to see these patterns in your actual team behavior—metadata only, no surveillance.
+                  Run a 30-day baseline calibration with SignalTrue to see these patterns in your
+                  actual team behavior—metadata only, no surveillance.
                 </p>
                 <Link to="/product" onClick={handleBaselineCTA}>
                   <Button variant="outline" size="sm">
@@ -339,14 +496,19 @@ const DriftReportPage = () => {
                   </Button>
                 </Link>
               </div>
-              
+
               <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
                 <Calendar className="w-8 h-8 text-accent mb-4" />
                 <h3 className="font-semibold mb-2">Get Expert Guidance</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Book a 15-minute walkthrough of your report and what actions typically work at this stage.
+                  Book a 15-minute walkthrough of your report and what actions typically work at
+                  this stage.
                 </p>
-                <a href="https://calendly.com/signaltrue/drift-review" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://calendly.com/signaltrue/drift-review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button variant="outline" size="sm">
                     Book a Call
                     <ArrowRight className="w-4 h-4" />
@@ -357,7 +519,7 @@ const DriftReportPage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Final CTA Section */}
       <section className="py-20">
         <div className="container mx-auto px-6">
@@ -366,17 +528,17 @@ const DriftReportPage = () => {
               Ready to see this with real behavioral signals?
             </h2>
             <p className="text-muted-foreground mb-8">
-              SignalTrue can run a 30-day baseline calibration. Team-level patterns, metadata only, no surveillance. 
-              See drift signals with confidence scores and trend direction.
+              SignalTrue can run a 30-day baseline calibration. Team-level patterns, metadata only,
+              no surveillance. See drift signals with confidence scores and trend direction.
             </p>
-            
+
             <Link to="/product" onClick={handleBaselineCTA}>
               <Button variant="hero" size="xl">
                 Start Baseline Calibration
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            
+
             {/* Privacy reminder */}
             <div className="flex items-center justify-center gap-4 mt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -395,7 +557,7 @@ const DriftReportPage = () => {
           </div>
         </div>
       </section>
-      
+
       <Footer />
     </div>
   );

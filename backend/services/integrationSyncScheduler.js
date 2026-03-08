@@ -10,6 +10,7 @@ import { syncAllIntegrations, getAdapter } from './integrationAdapters.js';
 import { syncCoreIntegrations } from './coreIntegrationAdapters.js';
 import { computeDailyMetrics, computeWeeklyRollups } from './integrationMetricsService.js';
 import { detectSignals } from './signalGenerationService.js';
+import { bridgeAllOrgSignals } from './signalBridgeService.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
@@ -48,6 +49,13 @@ export function scheduleIntegrationJobs() {
   cron.schedule('30 4 * * *', async () => {
     console.log('⏰ Generating Category-King signals...');
     await runSignalGeneration();
+    // Bridge CK signals to the Signal collection used by dashboards
+    console.log('⏰ Bridging Category-King signals to dashboard Signal model...');
+    try {
+      await bridgeAllOrgSignals();
+    } catch (err) {
+      console.error('❌ Signal bridge failed:', err.message);
+    }
   });
   
   // Weekly rollups on Monday at 5am
@@ -205,6 +213,13 @@ export async function triggerManualSync(orgId, integrationType, options = {}) {
   if (genSignals && syncResult.success) {
     console.log(`[Manual Sync] Generating signals...`);
     await detectSignals(orgId);
+    // Bridge to dashboard Signal model
+    try {
+      const { bridgeSignalsForOrg } = await import('./signalBridgeService.js');
+      await bridgeSignalsForOrg(orgId);
+    } catch (err) {
+      console.error('[Manual Sync] Signal bridge error:', err.message);
+    }
   }
   
   return syncResult;
@@ -230,6 +245,31 @@ export async function triggerImmediateSync(orgId, options = {}) {
         console.log(`[Immediate Sync] ${result.source}: ${result.eventsProcessed || 0} events synced`);
       } else {
         console.warn(`[Immediate Sync] ${result.source} failed: ${result.error}`);
+      }
+    }
+    
+    // After syncing events, compute metrics and generate signals so the
+    // customer sees data immediately (rather than waiting for the 4am cron)
+    const anySuccess = results.some(r => r.success && (r.eventsProcessed || 0) > 0);
+    if (anySuccess) {
+      try {
+        console.log(`[Immediate Sync] Computing metrics for org ${orgId}...`);
+        const current = new Date(since);
+        while (current < until) {
+          await computeDailyMetrics(orgId, current);
+          current.setDate(current.getDate() + 1);
+        }
+        
+        console.log(`[Immediate Sync] Generating signals for org ${orgId}...`);
+        await detectSignals(orgId);
+        
+        console.log(`[Immediate Sync] Bridging signals for org ${orgId}...`);
+        await bridgeAllOrgSignals();
+        
+        console.log(`[Immediate Sync] Full pipeline complete for org ${orgId}`);
+      } catch (pipelineErr) {
+        console.error(`[Immediate Sync] Post-sync pipeline error for org ${orgId}:`, pipelineErr.message);
+        // Don't fail the overall sync — events are already saved
       }
     }
     
