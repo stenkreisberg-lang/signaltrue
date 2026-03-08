@@ -321,8 +321,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     
     const allMessages = [];
     
-    // For each team, get channels and messages (limit to 3 teams)
-    for (const team of teams.slice(0, 3)) {
+    // For each team, get channels and messages (limit to 5 teams for better coverage)
+    for (const team of teams.slice(0, 5)) {
       try {
         const channelsRes = await fetch(`https://graph.microsoft.com/v1.0/teams/${team.id}/channels`, {
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -330,28 +330,43 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         const channelsData = await channelsRes.json();
         const channels = channelsData.value || [];
         
-        // Get messages from first 2 channels per team
-        for (const channel of channels.slice(0, 2)) {
-          const msgsRes = await fetch(
-            `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages?$top=50`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-          );
-          const msgsData = await msgsRes.json();
-          const messages = (msgsData.value || []).map(m => ({
-            ...m,
-            teamId: team.id,
-            teamName: team.displayName,
-            channelId: channel.id,
-            channelName: channel.displayName,
-            eventSource: 'teams'
-          }));
-          allMessages.push(...messages);
+        // Get messages from first 3 channels per team, filtered by date
+        for (const channel of channels.slice(0, 3)) {
+          try {
+            // Use the /messages/delta endpoint or $filter to get only messages within our sync window.
+            // The channel messages API doesn't support $filter directly, so we fetch recent
+            // messages and filter client-side by the since/until window.
+            const msgsRes = await fetch(
+              `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages?$top=50`,
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+            const msgsData = await msgsRes.json();
+            
+            // Filter messages to the requested time window
+            const filtered = (msgsData.value || []).filter(m => {
+              const created = new Date(m.createdDateTime);
+              return created >= since && created <= until;
+            });
+            
+            const messages = filtered.map(m => ({
+              ...m,
+              teamId: team.id,
+              teamName: team.displayName,
+              channelId: channel.id,
+              channelName: channel.displayName,
+              eventSource: 'teams'
+            }));
+            allMessages.push(...messages);
+          } catch (chErr) {
+            console.warn(`[Microsoft] Failed to fetch messages for ${team.displayName}/${channel.displayName}:`, chErr.message);
+          }
         }
       } catch (err) {
-        console.warn(`Failed to fetch Teams channel for ${team.displayName}:`, err.message);
+        console.warn(`Failed to fetch Teams channels for ${team.displayName}:`, err.message);
       }
     }
     
+    console.log(`[Microsoft] Teams: fetched ${allMessages.length} messages within sync window from ${teams.length} teams`);
     return allMessages;
   }
   
