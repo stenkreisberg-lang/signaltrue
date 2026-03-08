@@ -72,7 +72,7 @@ crons:
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
         -H "Content-Type: application/json" \
-        -d '{"secret":"signaltrue-reports-2026","email":"sten.kreisberg@signaltrue.ai"}'
+        -d '{"secret":"signaltrue-reports-2026"}'
     region: oregon
 
   - name: daily-reminders
