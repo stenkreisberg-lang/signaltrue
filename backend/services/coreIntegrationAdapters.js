@@ -321,8 +321,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     
     const allMessages = [];
     
-    // For each team, get channels and messages (limit to 5 teams for better coverage)
-    for (const team of teams.slice(0, 5)) {
+    // Scan ALL teams and ALL channels — no artificial limits
+    for (const team of teams) {
       try {
         const channelsRes = await fetch(`https://graph.microsoft.com/v1.0/teams/${team.id}/channels`, {
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -330,8 +330,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         const channelsData = await channelsRes.json();
         const channels = channelsData.value || [];
         
-        // Get messages from first 3 channels per team, filtered by date
-        for (const channel of channels.slice(0, 3)) {
+        for (const channel of channels) {
           try {
             // Use the /messages/delta endpoint or $filter to get only messages within our sync window.
             // The channel messages API doesn't support $filter directly, so we fetch recent
@@ -366,7 +365,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       }
     }
     
-    console.log(`[Microsoft] Teams: fetched ${allMessages.length} messages within sync window from ${teams.length} teams`);
+    console.log(`[Microsoft] Teams: fetched ${allMessages.length} messages within sync window from ${teams.length} teams (all channels scanned)`);
     return allMessages;
   }
   
