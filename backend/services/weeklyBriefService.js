@@ -11,6 +11,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
+import { ccSuperadmin } from './superadminNotifyService.js';
 
 // ─── Signal type presentation (same as in signals.js) ───
 const SIGNAL_TYPE_PRESENTATION = {
@@ -721,27 +722,22 @@ export async function sendWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error(`Organization ${orgId} not found`);
 
-  const hrUsers = await User.find({ orgId, role: { $in: ['hr_admin', 'admin', 'master_admin'] } });
-
-  // Always include platform master admins so they see every org's brief
-  const masterAdmins = await User.find({ role: 'master_admin' });
-
-  // Deduplicate by email
-  const allRecipients = [...hrUsers, ...masterAdmins];
-  const recipients = [...new Set(allRecipients.map(u => u.email))];
+  // Recipients: only this org's hr_admin / admin users
+  const hrUsers = await User.find({ orgId, role: { $in: ['hr_admin', 'admin'] } });
+  const recipients = hrUsers.map(u => u.email);
 
   if (!recipients.length) {
-    console.warn(`[WeeklyBrief] No recipients found for org ${org.name} — skipping send`);
+    console.warn(`[WeeklyBrief] No HR/admin recipients for org ${org.name} — skipping send`);
     return;
   }
 
-  console.log(`[WeeklyBrief] Generating brief for ${org.name}, recipients: ${recipients.join(', ')}`);
+  console.log(`[WeeklyBrief] Generating brief for ${org.name}, sending to: ${recipients.join(', ')}`);
   const html = await generateWeeklyBrief(orgId);
 
   const weekLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
 
-  // Prefer Resend if configured, else fall back to nodemailer SMTP
+  // Send to client org admins
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
@@ -758,6 +754,17 @@ export async function sendWeeklyBrief(orgId) {
       html,
     });
   }
+
+  console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')}`);
+
+  // CC superadmin (stenkreisberg@gmail.com) so they can verify
+  await ccSuperadmin({
+    subject,
+    html,
+    originalRecipient: recipients.join(', '),
+    reportType: 'Weekly Intelligence Brief',
+    orgName: org.name,
+  });
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };
