@@ -370,6 +370,8 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
  * POST /api/reports/trigger-weekly-email
  * Trigger weekly intelligence brief via cron or manual call.
  * Uses the new comprehensive weeklyBriefService.
+ * If orgId is provided, sends for that org only.
+ * Otherwise sends for ALL active orgs.
  * No auth required - uses secret key instead.
  */
 router.post('/trigger-weekly-email', async (req, res) => {
@@ -382,12 +384,31 @@ router.post('/trigger-weekly-email', async (req, res) => {
       return res.status(401).json({ message: 'Invalid secret key' });
     }
 
-    const targetOrgId = orgId || '69831a7c2681136ee2e56c93'; // Nobeldigital
+    if (orgId) {
+      // Single org mode
+      console.log(`[trigger-weekly-email] Sending intelligence brief for org ${orgId}`);
+      await sendWeeklyBrief(orgId);
+      return res.json({ message: 'Weekly intelligence brief sent', orgId });
+    }
 
-    console.log(`[trigger-weekly-email] Sending intelligence brief for org ${targetOrgId}`);
-    await sendWeeklyBrief(targetOrgId);
+    // Multi-org mode: send for all active orgs
+    const mongoose = await import('mongoose');
+    const Organization = mongoose.default.model('Organization');
+    const orgs = await Organization.find({});
 
-    res.json({ message: 'Weekly intelligence brief sent', orgId: targetOrgId });
+    const results = [];
+    for (const org of orgs) {
+      try {
+        console.log(`[trigger-weekly-email] Sending brief for ${org.name} (${org._id})`);
+        await sendWeeklyBrief(org._id);
+        results.push({ org: org.name, status: 'sent' });
+      } catch (err) {
+        console.error(`[trigger-weekly-email] Failed for ${org.name}:`, err.message);
+        results.push({ org: org.name, status: 'failed', error: err.message });
+      }
+    }
+
+    res.json({ message: 'Weekly briefs processed', results });
   } catch (error) {
     console.error('Error sending weekly brief:', error);
     res.status(500).json({ message: 'Error sending brief', error: error.message });

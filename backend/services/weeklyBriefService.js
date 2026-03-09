@@ -722,8 +722,8 @@ export async function sendWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error(`Organization ${orgId} not found`);
 
-  // Recipients: only this org's hr_admin / admin users
-  const hrUsers = await User.find({ orgId, role: { $in: ['hr_admin', 'admin'] } });
+  // Recipients: this org's master_admin / hr_admin / admin users
+  const hrUsers = await User.find({ orgId, role: { $in: ['master_admin', 'hr_admin', 'admin'] } });
   const recipients = hrUsers.map(u => u.email);
 
   if (!recipients.length) {
