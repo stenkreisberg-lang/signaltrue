@@ -740,12 +740,17 @@ export async function sendWeeklyBrief(orgId) {
   // Send to client org admins
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'SignalTrue <brief@signaltrue.ai>',
       to: recipients,
       subject,
       html,
     });
+    if (error) {
+      console.error(`[WeeklyBrief] ❌ Resend error:`, JSON.stringify(error));
+      throw new Error(`Resend failed: ${error.message || error.name}`);
+    }
+    console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} (id: ${data?.id})`);
   } else {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
@@ -753,9 +758,8 @@ export async function sendWeeklyBrief(orgId) {
       subject,
       html,
     });
+    console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
   }
-
-  console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')}`);
 
   // CC superadmin (stenkreisberg@gmail.com) so they can verify
   await ccSuperadmin({

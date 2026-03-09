@@ -56,7 +56,12 @@ export async function ccSuperadmin({ subject, html, originalRecipient, reportTyp
       html: superadminHtml,
     });
 
-    console.log(`[Superadmin CC] Report copy sent: ${reportType} for ${orgName || originalRecipient}`);
+    if (result.error) {
+      console.error(`[Superadmin CC] ❌ Resend error:`, JSON.stringify(result.error));
+      return null;
+    }
+
+    console.log(`[Superadmin CC] Report copy sent: ${reportType} for ${orgName || originalRecipient} (id: ${result.data?.id})`);
     return result;
   } catch (error) {
     console.error('[Superadmin CC] Failed to send copy:', error.message);
@@ -110,7 +115,12 @@ export async function notifySuperadmin({ title, message, type, data = {} }) {
       html,
     });
 
-    console.log(`[Superadmin Notify] Sent: ${type}`);
+    if (result.error) {
+      console.error(`[Superadmin Notify] ❌ Resend error:`, JSON.stringify(result.error));
+      return null;
+    }
+
+    console.log(`[Superadmin Notify] Sent: ${type} (id: ${result.data?.id})`);
     return result;
   } catch (error) {
     console.error('[Superadmin Notify] Failed:', error.message);
