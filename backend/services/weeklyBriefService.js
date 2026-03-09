@@ -719,10 +719,24 @@ export async function generateWeeklyBrief(orgId) {
 
 export async function sendWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
+  if (!org) throw new Error(`Organization ${orgId} not found`);
+
   const hrUsers = await User.find({ orgId, role: { $in: ['hr_admin', 'admin', 'master_admin'] } });
-  if (!hrUsers.length) return;
+
+  // Always include platform master admins so they see every org's brief
+  const masterAdmins = await User.find({ role: 'master_admin' });
+
+  // Deduplicate by email
+  const allRecipients = [...hrUsers, ...masterAdmins];
+  const recipients = [...new Set(allRecipients.map(u => u.email))];
+
+  if (!recipients.length) {
+    console.warn(`[WeeklyBrief] No recipients found for org ${org.name} — skipping send`);
+    return;
+  }
+
+  console.log(`[WeeklyBrief] Generating brief for ${org.name}, recipients: ${recipients.join(', ')}`);
   const html = await generateWeeklyBrief(orgId);
-  const recipients = hrUsers.map(u => u.email);
 
   const weekLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
