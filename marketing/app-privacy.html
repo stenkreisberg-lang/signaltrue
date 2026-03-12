@@ -214,15 +214,6 @@
     </div>
   </footer>
 
-  <!-- Redirect to React app for logged-in users -->
-  <script>
-    // If JavaScript is enabled and user is logged in, redirect to React app
-    if (window.location.search.indexOf('static=1') === -1) {
-      var isBot = /bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu/i.test(navigator.userAgent);
-      if (!isBot) {
-        window.location.replace('/app/privacy?app=1');
-      }
-    }
-  </script>
+  <!-- Static marketing page - no redirect needed. Vercel serves this directly. -->
 </body>
 </html>

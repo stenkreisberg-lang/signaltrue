@@ -222,16 +222,6 @@
     </div>
   </footer>
 
-  <!-- Redirect to React app for interactive experience -->
-  <script>
-    // If JavaScript is enabled, redirect to the React app for full interactivity
-    if (window.location.search.indexOf('static=1') === -1) {
-      // Allow crawlers to see static content, redirect users to React app
-      var isBot = /bot|crawl|spider|slurp|googlebot|bingbot|yandex|baidu/i.test(navigator.userAgent);
-      if (!isBot) {
-        window.location.replace('/how-it-works?app=1');
-      }
-    }
-  </script>
+  <!-- Static marketing page - no redirect needed. Vercel serves this directly. -->
 </body>
 </html>
