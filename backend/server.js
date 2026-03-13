@@ -443,7 +443,7 @@ async function main() {
       cron.schedule('0 3 * * *', async () => {
         console.log('⏰ Running attrition risk calculation...');
         try {
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await calculateTeamAttritionRisk(team._id);
           }
@@ -458,7 +458,7 @@ async function main() {
       cron.schedule('0 4 1 * *', async () => {
         console.log('⏰ Running manager effectiveness calculation...');
         try {
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             if (team.managerId) {
               await calculateManagerEffectiveness(team.managerId, team._id);
@@ -476,7 +476,7 @@ async function main() {
         console.log('⏰ Running project risk analysis...');
         try {
           const { analyzeTeamProjects } = await import('./services/projectRiskService.js');
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await analyzeTeamProjects(team._id);
           }
@@ -492,7 +492,7 @@ async function main() {
         console.log('⏰ Running network health analysis...');
         try {
           const { analyzeNetworkHealth } = await import('./services/networkHealthService.js');
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await analyzeNetworkHealth(team._id);
           }
@@ -508,7 +508,7 @@ async function main() {
         console.log('⏰ Running succession risk analysis...');
         try {
           const { analyzeTeamSuccessionRisk } = await import('./services/successionRiskService.js');
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await analyzeTeamSuccessionRisk(team._id);
           }
@@ -524,7 +524,7 @@ async function main() {
         console.log('⏰ Running equity signals analysis...');
         try {
           const { analyzeTeamEquity } = await import('./services/equitySignalsService.js');
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await analyzeTeamEquity(team._id);
           }
@@ -540,7 +540,7 @@ async function main() {
         console.log('⏰ Running Outlook signals analysis...');
         try {
           const { analyzeTeamOutlookSignals } = await import('./services/outlookSignalsService.js');
-          const teams = await Team.find({ isActive: true });
+          const teams = await Team.find({});
           for (const team of teams) {
             await analyzeTeamOutlookSignals(team._id);
           }
@@ -557,7 +557,7 @@ async function main() {
         try {
           const { generateWeeklyReportsForOrg } = await import('./services/weeklyReportService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({ isActive: true });
+          const orgs = await Organization.find({});
           
           for (const org of orgs) {
             try {
@@ -580,7 +580,7 @@ async function main() {
         try {
           const { sendWeeklyBrief } = await import('./services/weeklyBriefService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({ isActive: true });
+          const orgs = await Organization.find({});
           
           for (const org of orgs) {
             try {
@@ -603,7 +603,7 @@ async function main() {
         try {
           const { generateMonthlyReportForOrg } = await import('./services/monthlyReportService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({ isActive: true });
+          const orgs = await Organization.find({});
           
           for (const org of orgs) {
             try {

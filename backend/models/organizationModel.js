@@ -116,6 +116,20 @@ const organizationSchema = new mongoose.Schema(
     },
     settings: {
       onboardingComplete: { type: Boolean, default: false },
+      // Privacy-safe minimum team size for aggregation (spec default: 5)
+      minTeamSize: { type: Number, default: 5, min: 3 },
+      // Default alert sensitivity
+      alertSensitivity: { 
+        type: String, 
+        enum: ['low', 'medium', 'high'], 
+        default: 'medium' 
+      },
+      // Alert frequency
+      alertFrequency: {
+        type: String,
+        enum: ['realtime', 'daily', 'weekly', 'off'],
+        default: 'daily'
+      },
     },
     
     // Calibration state

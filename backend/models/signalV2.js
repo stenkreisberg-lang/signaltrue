@@ -54,28 +54,39 @@ const signalSchemaV2 = new mongoose.Schema({
       'signal_convergence',      // SCD - Multi-signal system overload
       'context_switching',       // CSI - Context switching overhead
       'network_bottleneck',      // NBI - Collaboration concentration
-      'rework_churn'             // RCI - Task reopening/reassignment
+      'rework_churn',            // RCI - Task reopening/reassignment
+      // Spec-aligned signal families
+      'meeting_load',            // MLI - Meeting Load Index
+      'recovery_erosion',        // REI - Recovery Erosion Index
+      'coordination_strain',     // CSI - Coordination Strain Index
+      'focus_integrity',         // FIS - Focus Integrity Score
+      'team_rhythm_stability',   // TRS - Team Rhythm Stability Score
+      'manager_capacity_risk',   // MCR - Manager Capacity Risk
+      'execution_drag_risk',     // EDR - Execution Drag Risk
+      'drift_velocity'           // DV  - Drift Velocity
     ],
     index: true
   },
   // Category for grouping signals (per Category King spec)
   signalCategory: {
     type: String,
-    enum: ['coordination', 'execution', 'recovery', 'network'],
+    enum: ['coordination', 'execution', 'recovery', 'network', 'capacity', 'rhythm'],
     required: true,
     index: true
   },
   // Data sources that contributed to this signal
   sources: [{
     type: String,
-    enum: ['slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear']
+    enum: ['slack', 'calendar', 'jira', 'asana', 'email', 'basecamp', 'linear',
+           'google_calendar', 'ms365', 'microsoft_teams', 'google_chat']
   }],
   
-  // Severity (INFO → RISK → CRITICAL escalation path)
+  // Severity — supports both legacy escalation path and spec-aligned severity scale
   severity: { 
     type: String, 
     required: true,
-    enum: ['INFO', 'RISK', 'CRITICAL'],
+    enum: ['INFO', 'RISK', 'CRITICAL',
+           'stable', 'emerging', 'elevated', 'critical', 'improving'],
     index: true
   },
   
@@ -118,6 +129,16 @@ const signalSchemaV2 = new mongoose.Schema({
   baselineValue: { type: Number, required: true },  // median preferred over mean
   deltaAbs: { type: Number, required: true },
   deltaPct: { type: Number, required: true },
+  
+  // Normalized score (spec formula: clamp(50 + 15 * z, 0, 100))
+  // 50 = normal baseline, 65 = emerging, 75 = elevated, 85 = critical
+  normalizedScore: { type: Number, min: 0, max: 100 },
+  
+  // Baseline band for visualization (lower/upper bounds)
+  baselineBand: {
+    lower: { type: Number },
+    upper: { type: Number }
+  },
   
   // Deviation from baseline (with robust z-score)
   deviation: {

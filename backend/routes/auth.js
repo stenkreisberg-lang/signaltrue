@@ -138,7 +138,10 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 // Register new user
 router.post('/register', validateUserRegistration, async (req, res) => {
   try {
-    const { email, password, name, firstName, lastName, role, teamId, orgId, companyName } = req.body;
+    const { email, password, name, firstName, lastName, role, teamId, orgId, companyName, company } = req.body;
+
+    // Support both 'companyName' and 'company' from frontend
+    const resolvedCompanyName = companyName || company;
 
     // Helper to format name with proper capitalization
     const formatName = (n) => {
@@ -185,7 +188,7 @@ router.post('/register', validateUserRegistration, async (req, res) => {
       try {
         // Determine organization name: prefer companyName, else derive from email domain
         const domain = (email.split('@')[1] || '').split('.')[0];
-        const orgName = companyName || domain.charAt(0).toUpperCase() + domain.slice(1);
+        const orgName = resolvedCompanyName || domain.charAt(0).toUpperCase() + domain.slice(1);
         
         const newOrg = new Organization({ name: orgName, domain });
         await newOrg.save();
@@ -232,7 +235,7 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     await user.save();
 
     // Get organization name for notification
-    let orgNameForNotification = companyName;
+    let orgNameForNotification = resolvedCompanyName;
     if (!orgNameForNotification && resolvedOrgId) {
       try {
         const org = await Organization.findById(resolvedOrgId);

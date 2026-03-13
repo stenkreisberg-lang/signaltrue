@@ -20,20 +20,34 @@ const router = express.Router();
  */
 router.post('/', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
-    const { signalId, actionTaken, actionType, expectedEffect, effort, timeframe, metricBefore } = req.body;
+    const { signalId, teamId, orgId, signalType, actionTaken, actionType, expectedEffect, effort, timeframe, metricBefore } = req.body;
     
-    // Fetch signal to get context
-    const signal = await SignalV2.findById(signalId);
-    if (!signal) {
-      return res.status(404).json({ message: 'Signal not found' });
+    let resolvedTeamId = teamId;
+    let resolvedOrgId = orgId;
+    let resolvedSignalType = signalType;
+    let resolvedMetricBefore = metricBefore;
+
+    // If signalId provided, fetch signal context
+    if (signalId) {
+      const signal = await SignalV2.findById(signalId);
+      if (!signal) {
+        return res.status(404).json({ message: 'Signal not found' });
+      }
+      resolvedTeamId = signal.teamId;
+      resolvedOrgId = signal.orgId;
+      resolvedSignalType = signal.signalType;
+      resolvedMetricBefore = metricBefore || signal.currentValue;
+    } else if (!teamId || !orgId) {
+      // Team-centric intervention requires teamId and orgId when no signalId
+      return res.status(400).json({ message: 'Either signalId or both teamId and orgId are required' });
     }
     
     // Create intervention
     const intervention = new Intervention({
-      signalId,
-      signalType: signal.signalType,
-      teamId: signal.teamId,
-      orgId: signal.orgId,
+      signalId: signalId || undefined,
+      signalType: resolvedSignalType,
+      teamId: resolvedTeamId,
+      orgId: resolvedOrgId,
       actionTaken,
       actionType,
       expectedEffect,
@@ -41,7 +55,7 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       timeframe,
       startDate: new Date(),
       outcomeDelta: {
-        metricBefore: metricBefore || signal.currentValue
+        metricBefore: resolvedMetricBefore
       },
       createdBy: req.user.userId
     });

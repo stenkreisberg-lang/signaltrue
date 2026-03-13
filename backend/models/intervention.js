@@ -7,16 +7,14 @@
 import mongoose from 'mongoose';
 
 const interventionSchema = new mongoose.Schema({
-  // Signal reference
+  // Signal reference (optional — spec allows team-centric interventions without a specific signal)
   signalId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'SignalV2',
-    required: true,
     index: true
   },
   signalType: {
     type: String,
-    required: true,
     enum: [
       'coordination-risk',
       'boundary-erosion',
@@ -25,7 +23,15 @@ const interventionSchema = new mongoose.Schema({
       'dependency-spread',
       'morale-volatility',
       'recovery-deficit',
-      'handoff-bottleneck'
+      'handoff-bottleneck',
+      // Spec-aligned signal types
+      'meeting_load',
+      'recovery_erosion',
+      'coordination_strain',
+      'focus_integrity',
+      'team_rhythm_stability',
+      'manager_capacity_risk',
+      'execution_drag_risk'
     ]
   },
   
@@ -43,30 +49,50 @@ const interventionSchema = new mongoose.Schema({
     index: true
   },
   
-  // Action taken
-  actionTaken: {
+  // Spec-aligned intervention type (e.g., 'meeting_reset', 'focus_protection', 'boundary_enforcement')
+  interventionType: {
     type: String,
-    required: true
+    index: true
+  },
+  
+  // Title and description (spec-aligned)
+  title: {
+    type: String
+  },
+  description: {
+    type: String
+  },
+  
+  // Action taken (legacy field - kept for backward compat)
+  actionTaken: {
+    type: String
     // Example: "Remove 1-2 recurring meetings that have low engagement"
   },
   actionType: {
-    type: String,
-    required: true
+    type: String
     // Copied from signalTemplates action object
   },
   expectedEffect: {
-    type: String,
-    required: true
+    type: String
     // Example: "Reduce meeting load by 15-25%, increase focus time"
   },
+  // Structured expected effects (spec-aligned)
+  expectedEffectJson: {
+    type: mongoose.Schema.Types.Mixed
+  },
+  
+  // Monitored signals — which signals are we watching for improvement
+  monitoredSignals: [{
+    type: String
+    // e.g., ['meeting_load', 'focus_fragmentation', 'recovery_erosion']
+  }],
+  
   effort: {
     type: String,
-    enum: ['Low', 'Medium', 'High'],
-    required: true
+    enum: ['Low', 'Medium', 'High']
   },
   timeframe: {
-    type: String,
-    required: true
+    type: String
     // Example: "1 week", "2 weeks"
   },
   
@@ -76,9 +102,16 @@ const interventionSchema = new mongoose.Schema({
     required: true,
     default: Date.now
   },
+  // Review date for checking effectiveness (spec field)
+  reviewDate: {
+    type: Date
+  },
+  // End date (when intervention was completed or stopped)
+  endDate: {
+    type: Date
+  },
   recheckDate: {
     type: Date,
-    required: true,
     // Automatically set to startDate + 14 days
     default: function() {
       const date = new Date();
@@ -87,11 +120,17 @@ const interventionSchema = new mongoose.Schema({
     }
   },
   
-  // Status tracking
+  // Outcome summary (spec field — human-written summary of what happened)
+  outcomeSummary: {
+    type: String
+    // Example: "Meeting load reduced, recovery still elevated"
+  },
+  
+  // Status tracking — extended to include spec statuses
   status: {
     type: String,
-    enum: ['active', 'pending-recheck', 'completed', 'ignored', 'abandoned'],
-    default: 'active',
+    enum: ['planned', 'active', 'pending-recheck', 'completed', 'cancelled', 'ignored', 'abandoned'],
+    default: 'planned',
     index: true
   },
   

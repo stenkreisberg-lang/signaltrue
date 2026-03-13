@@ -106,7 +106,22 @@ const baselineSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
     windowSizeDays: { type: Number, default: 90 },
     lastRecalculated: { type: Date }
-  }
+  },
+  
+  // Spec-aligned per-metric baselines (keyed by metric_key)
+  // Supports the normalized score model: z = (current - mean) / max(stddev, epsilon)
+  metricBaselines: [{
+    metricKey: { type: String, required: true },  // e.g., 'meeting_load', 'recovery_erosion'
+    periodStart: { type: Date },
+    periodEnd: { type: Date },
+    meanValue: { type: Number },
+    stddevValue: { type: Number },
+    p25: { type: Number },
+    p50: { type: Number },  // median
+    p75: { type: Number },
+    lowerBand: { type: Number },  // mean - 1.5 * stddev (or custom threshold)
+    upperBand: { type: Number }   // mean + 1.5 * stddev (or custom threshold)
+  }]
   
 }, { timestamps: true });
 
