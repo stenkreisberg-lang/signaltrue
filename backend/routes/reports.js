@@ -12,6 +12,7 @@ import {
   getLeadershipView 
 } from '../services/monthlyReportService.js';
 import { sendWeeklyBrief } from '../services/weeklyBriefService.js';
+import { getEmailScheduleStatus, manualTriggerWeeklyEmails } from '../services/weeklyEmailScheduler.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkRole } from '../middleware/checkRole.js';
 
@@ -369,9 +370,9 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
 /**
  * POST /api/reports/trigger-weekly-email
  * Trigger weekly intelligence brief via cron or manual call.
- * Uses the new comprehensive weeklyBriefService.
- * If orgId is provided, sends for that org only.
- * Otherwise sends for ALL active orgs.
+ * Uses the self-healing weeklyEmailScheduler (persistent, deduplicated).
+ * If orgId is provided, sends for that org only (bypasses dedup).
+ * Otherwise uses the scheduler which prevents double-sends.
  * No auth required - uses secret key instead.
  */
 router.post('/trigger-weekly-email', async (req, res) => {
@@ -385,33 +386,40 @@ router.post('/trigger-weekly-email', async (req, res) => {
     }
 
     if (orgId) {
-      // Single org mode
+      // Single org mode — direct send, no dedup
       console.log(`[trigger-weekly-email] Sending intelligence brief for org ${orgId}`);
       await sendWeeklyBrief(orgId);
       return res.json({ message: 'Weekly intelligence brief sent', orgId });
     }
 
-    // Multi-org mode: send for all active orgs
-    const mongoose = await import('mongoose');
-    const Organization = mongoose.default.model('Organization');
-    const orgs = await Organization.find({});
-
-    const results = [];
-    for (const org of orgs) {
-      try {
-        console.log(`[trigger-weekly-email] Sending brief for ${org.name} (${org._id})`);
-        await sendWeeklyBrief(org._id);
-        results.push({ org: org.name, status: 'sent' });
-      } catch (err) {
-        console.error(`[trigger-weekly-email] Failed for ${org.name}:`, err.message);
-        results.push({ org: org.name, status: 'failed', error: err.message });
-      }
-    }
-
-    res.json({ message: 'Weekly briefs processed', results });
+    // Multi-org mode: use the scheduler (handles dedup + logging)
+    const result = await manualTriggerWeeklyEmails();
+    res.json({ message: 'Weekly briefs processed', ...result });
   } catch (error) {
     console.error('Error sending weekly brief:', error);
     res.status(500).json({ message: 'Error sending brief', error: error.message });
+  }
+});
+
+/**
+ * GET /api/reports/email-status
+ * Check the status of the weekly email scheduler.
+ * Shows: this week's send status, last successful run, next scheduled, health.
+ * No auth required - uses secret key via query param.
+ */
+router.get('/email-status', async (req, res) => {
+  try {
+    const secret = req.query.secret || req.headers['x-report-secret'];
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    if (secret !== expectedSecret) {
+      return res.status(401).json({ message: 'Invalid secret key' });
+    }
+
+    const status = await getEmailScheduleStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting email status:', error);
+    res.status(500).json({ message: 'Error getting status', error: error.message });
   }
 });
 

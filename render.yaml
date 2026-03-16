@@ -65,10 +65,18 @@ services:
         sync: false
       # Re-deploy trigger
 
-# Cron Jobs for automated tasks
+# NOTE: Weekly email scheduling is now SELF-CONTAINED in the backend server.
+# The weeklyEmailScheduler service handles:
+#   - Primary cron: Monday 8:00 AM UTC
+#   - Watchdog: Hourly check for missed sends
+#   - Startup catch-up: Sends on every server boot if missed
+#   - Deduplication: Logs each send in MongoDB, never double-sends
+# No external cron dependency needed for weekly emails.
+
+# Cron Jobs for automated tasks (kept as backup safety net)
 crons:
-  - name: weekly-reports
-    schedule: "0 9 * * 1"  # Every Monday at 9:00 AM UTC
+  - name: weekly-reports-safety-net
+    schedule: "0 9 * * 1"  # Every Monday at 9:00 AM UTC (backup — server handles this internally)
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
         -H "Content-Type: application/json" \

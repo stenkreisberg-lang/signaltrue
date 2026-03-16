@@ -551,51 +551,11 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: Outlook signals daily at 4 AM');
       
-      // Weekly reports generation - Sunday at 11:30 PM (after TeamState calculation)
-      cron.schedule('30 23 * * 0', async () => {
-        console.log('⏰ Generating weekly reports for all organizations...');
-        try {
-          const { generateWeeklyReportsForOrg } = await import('./services/weeklyReportService.js');
-          const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({});
-          
-          for (const org of orgs) {
-            try {
-              const results = await generateWeeklyReportsForOrg(org._id);
-              console.log(`  ✅ ${org.name}: ${results.success} action required, ${results.noAction} stable`);
-            } catch (err) {
-              console.error(`  ❌ Failed for ${org.name}:`, err.message);
-            }
-          }
-          console.log('✅ Weekly reports generation completed');
-        } catch (err) {
-          console.error('❌ Weekly reports generation failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Weekly reports generation Sunday at 11:30 PM');
-      
-      // Weekly digest email - Monday at 8 AM (after weekly reports + signal generation)
-      cron.schedule('0 8 * * 1', async () => {
-        console.log('⏰ Sending weekly digest emails...');
-        try {
-          const { sendWeeklyBrief } = await import('./services/weeklyBriefService.js');
-          const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({});
-          
-          for (const org of orgs) {
-            try {
-              await sendWeeklyBrief(org._id);
-              console.log(`  ✅ Weekly digest sent for ${org.name}`);
-            } catch (err) {
-              console.error(`  ❌ Digest failed for ${org.name}:`, err.message);
-            }
-          }
-          console.log('✅ Weekly digest emails completed');
-        } catch (err) {
-          console.error('❌ Weekly digest emails failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Weekly digest emails Monday at 8 AM');
+      // ── WEEKLY REPORTS + EMAILS: Self-healing scheduler ──
+      // Replaces the old fragile cron jobs with a persistent, watchdog-backed system.
+      // See backend/services/weeklyEmailScheduler.js for full documentation.
+      const { initWeeklyEmailScheduler } = await import('./services/weeklyEmailScheduler.js');
+      initWeeklyEmailScheduler();
       
       // Monthly reports generation - 1st of month at 4:00 AM
       cron.schedule('0 4 1 * *', async () => {
