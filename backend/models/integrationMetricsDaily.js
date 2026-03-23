@@ -112,6 +112,63 @@ const integrationMetricsDailySchema = new mongoose.Schema({
   
   // External coordination
   meetingsWithExternalParticipants: { type: Number, default: 0 },
+  meetingsWithInternalOnly: { type: Number, default: 0 },
+  
+  // ============================================================
+  // NEW METRICS (v2 — Weekly Report Improvement Spec)
+  // ============================================================
+  
+  // Focus Time Availability — sum of uninterrupted blocks >= 90 min during working hours
+  focusTimeAvailabilityHours: { type: Number, default: 0 },
+  focusTimeBlocks: { type: Number, default: 0 },          // count of 90+ min uninterrupted blocks
+  
+  // Calendar Fragmentation Score (0-100, higher = more fragmented)
+  // Formula: (short_meeting_count * 1.0) + (b2b_blocks * 1.5) + (sub_30_min_gaps * 1.2) + (daily_meeting_span_hours * 0.5), normalized
+  calendarFragmentationScore: { type: Number, default: 0 },
+  calendarFragComponents: {
+    shortMeetingCount: { type: Number, default: 0 },       // meetings < 30 min
+    sub30MinGaps: { type: Number, default: 0 },             // gaps between meetings < 30 min (too short for deep work)
+    dailyMeetingSpanHours: { type: Number, default: 0 },    // hours from first to last meeting
+  },
+  
+  // Recurring Meeting Burden — % of meeting load from recurring meetings
+  recurringMeetingHours: { type: Number, default: 0 },
+  recurringMeetingBurden: { type: Number, default: 0 },    // recurring_hours / total_hours (0-1)
+  
+  // Meeting Concentration by Day — % of meeting time on heaviest day
+  meetingConcentrationPct: { type: Number, default: 0 },   // max(day_hours) / total_hours
+  heaviestMeetingDay: { type: String },                     // e.g., "Tuesday"
+  
+  // Load Inequality (privacy-safe) — distribution of meeting + after-hours burden
+  loadInequality: {
+    meetingHoursP90: { type: Number, default: 0 },
+    meetingHoursMedian: { type: Number, default: 0 },
+    meetingHoursRatio: { type: Number, default: 0 },        // p90 / median
+    afterHoursP90: { type: Number, default: 0 },
+    afterHoursMedian: { type: Number, default: 0 },
+    afterHoursRatio: { type: Number, default: 0 },          // p90 / median
+    backToBackP90: { type: Number, default: 0 },
+    backToBackMedian: { type: Number, default: 0 },
+    topBurdenPctOfTeam: { type: Number, default: 0 },       // % of team carrying most load
+    topBurdenPctOfLoad: { type: Number, default: 0 },       // % of load they carry
+  },
+  
+  // Manager Load Influence — proportion of meetings involving direct manager
+  managerInvolvedMeetingHours: { type: Number, default: 0 },
+  managerLoadInfluenceRatio: { type: Number, default: 0 },  // manager_hours / total_hours
+  
+  // Calendar Volatility — instability in calendar
+  calendarVolatility: {
+    movedMeetings: { type: Number, default: 0 },
+    sameDayAddedMeetings: { type: Number, default: 0 },
+    cancelledMeetings: { type: Number, default: 0 },
+    totalVolatility: { type: Number, default: 0 },          // sum of above
+  },
+  
+  // Internal vs External Meeting Ratio
+  internalMeetingHours: { type: Number, default: 0 },
+  externalMeetingHours: { type: Number, default: 0 },
+  internalExternalRatio: { type: Number, default: 0 },     // internal / total
   
   // ============================================================
   // NOTION METRICS (Documentation/Decisions)

@@ -74,6 +74,7 @@ import invitesRoutes from "./routes/invites.js";
 import playbookRoutes from "./routes/playbook.js";
 import oneOnOneRoutes from "./routes/oneOnOne.js";
 import weeklyBriefRoutes from "./routes/weeklyBrief.js";
+import weekContextRoutes from "./routes/weekContextRoutes.js";
 import authRoutes from "./routes/auth.js";
 import teamMembersRoutes from "./routes/teamMembers.js";
 import organizationRoutes from "./routes/organizations.js";
@@ -266,6 +267,7 @@ async function main() {
     app.use("/api/oneonone", oneOnOneRoutes);
     app.use("/api/playbook", playbookRoutes);
     app.use("/api/weekly-brief", weeklyBriefRoutes);
+    app.use("/api/week-context", weekContextRoutes);
     app.use("/api", oauthRoutes);
     app.use("/api/invites", invitesRoutes);
     app.use("/api/auth", authRoutes);
