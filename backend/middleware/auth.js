@@ -22,9 +22,10 @@ export function requireApiKey(req, res, next) {
     }
   }
   
-  // If no API_KEY configured, allow all (development mode)
+  // Require API_KEY in all environments — no silent bypass
   if (!process.env.API_KEY) {
-    return next();
+    console.error('FATAL: API_KEY environment variable is not set. Admin endpoints are unprotected.');
+    return res.status(500).json({ message: 'Server misconfiguration: API_KEY not set' });
   }
   
   // Verify API key matches
@@ -47,7 +48,10 @@ export function requireApiKey(req, res, next) {
 
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export function authenticateToken(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
