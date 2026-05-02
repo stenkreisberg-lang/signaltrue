@@ -1,4 +1,5 @@
 // Force redeploy
+import 'dotenv/config';  // Must be first — ESM hoists imports before module body runs
 import cron from "node-cron";
 import cors from "cors";
 import compression from "compression";
@@ -14,7 +15,7 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Load Environment Variables ---
+// --- Load Environment Variables (backup — primary load is via import 'dotenv/config' at top) ---
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // --- Global Error Handlers (must be set up early) ---
@@ -122,6 +123,10 @@ import integrationDashboardRoutes from "./routes/integrationDashboard.js";
 import aiCopilotRoutes from "./routes/aiCopilot.js";
 import integrationDebugRoutes from "./routes/integrationDebug.js";
 
+// --- Privacy, DSAR & Internal Scoring Routes ---
+import privacyDSARRoutes from "./routes/privacyDSARRoutes.js";
+import internalScoringRoutes from "./routes/internalScoringRoutes.js";
+
 // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
 import oarRoutes from "./routes/oarRoutes.js";
 import roiRoutes from "./routes/roiRoutes.js";
@@ -130,6 +135,7 @@ import bellNotificationRoutes from "./routes/bellNotificationRoutes.js";
 import journeyRoutes from "./routes/journeyRoutes.js";
 
 // --- Middleware Imports ---
+import { privacyGate, privacyGateOrg } from './middleware/privacyGate.js';
 import { authenticateToken } from "./middleware/auth.js";
 import auditConsent from "./middleware/consentAudit.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
@@ -151,7 +157,10 @@ import { calculateTeamAttritionRisk } from './services/attritionRiskService.js';
 import { calculateManagerEffectiveness } from './services/managerEffectivenessService.js';
 import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
 import { pullAllConnectedOrgs } from './services/integrationPullService.js';
+import { purgeAllOrgs } from './services/retentionPurgeService.js';
+import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
+import Organization from './models/organizationModel.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -289,12 +298,12 @@ async function main() {
     app.use("/api/interventions", interventionsRoutes);
     app.use("/api/privacy", privacyRoutes);
     app.use("/api/comparisons", comparisonsRoutes);
-    app.use("/api/bdi", bdiRoutes);
-    app.use("/api/indices", bdiRoutes);
-    app.use("/api/capacity", bdiRoutes);
-    app.use("/api/timeline", bdiRoutes);
-    app.use("/api/playbooks", bdiRoutes);
-    app.use("/api/dashboard", bdiRoutes);
+    app.use("/api/bdi", privacyGate, bdiRoutes);
+    app.use("/api/indices", privacyGate, bdiRoutes);
+    app.use("/api/capacity", privacyGate, bdiRoutes);
+    app.use("/api/timeline", privacyGate, bdiRoutes);
+    app.use("/api/playbooks", privacyGate, bdiRoutes);
+    app.use("/api/dashboard", privacyGate, bdiRoutes);
     app.use("/api/narrative", narrativeRoutes);
     app.use("/api/focus", focusRoutes);
     app.use("/api/forecast", forecastRoutes);
@@ -312,7 +321,7 @@ async function main() {
     app.use("/api", onboardingRoutes);
     app.use('/api/drift-events', driftEventsRoutes);
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
-    app.use('/api/insights', insightsRoutes);
+    app.use('/api/insights', privacyGate, insightsRoutes);
     app.use('/api/loop-closing', loopClosingRoutes);
     app.use('/api/learning', learningRoutes);
     app.use('/api/intelligence', behavioralIntelligenceRoutes);
@@ -362,6 +371,12 @@ async function main() {
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);
     app.use('/api/integration-dashboard', integrationDashboardRoutes);
     app.use('/api/ai', aiCopilotRoutes);
+    
+    // --- Privacy DSAR Routes ---
+    app.use('/api/privacy', privacyDSARRoutes);
+    
+    // --- Internal Scoring Routes (service-token protected) ---
+    app.use('/internal/scoring', internalScoringRoutes);
     
     // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
     app.use('/api/oar', oarRoutes);
@@ -596,6 +611,70 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Card expiry reminder daily at 9 AM');
+
+      // ── Retention purge — every Sunday at 03:00 UTC ──
+      cron.schedule('0 3 * * 0', async () => {
+        console.log('⏰ Running retention data purge for all orgs...');
+        try {
+          const results = await purgeAllOrgs();
+          const total = results.reduce((s, r) => s + Object.values(r).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0), 0);
+          console.log(`✅ Retention purge completed. Total records removed: ${total}`);
+        } catch (err) {
+          console.error('❌ Retention purge failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Retention purge every Sunday at 3 AM UTC');
+
+      // ── Full scoring run — every Monday at 02:00 UTC ──
+      cron.schedule('0 2 * * 1', async () => {
+        console.log('⏰ Running weekly full scoring for all orgs...');
+        try {
+          const orgs = await Organization.find({}).select('_id').lean();
+          const weekStart = (() => {
+            const now = new Date();
+            const day = now.getUTCDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+          })();
+          for (const org of orgs) {
+            try {
+              await runOrgScoring(org._id, weekStart, 'cron');
+              console.log(`  ✅ Scoring completed for org ${org._id}`);
+            } catch (err) {
+              console.error(`  ❌ Scoring failed for org ${org._id}:`, err.message);
+            }
+          }
+          console.log('✅ Weekly full scoring run completed');
+        } catch (err) {
+          console.error('❌ Weekly full scoring run failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Full scoring run every Monday at 2 AM UTC');
+
+      // ── Nightly BDI-only run — every night at 01:00 UTC ──
+      cron.schedule('0 1 * * *', async () => {
+        console.log('⏰ Running nightly BDI scoring...');
+        try {
+          const { runBDI } = await import('./services/scoringEngineService.js');
+          const orgs = await Organization.find({}).select('_id').lean();
+          const weekStart = (() => {
+            const now = new Date();
+            const day = now.getUTCDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+          })();
+          for (const org of orgs) {
+            const teams = await Team.find({ orgId: org._id }).select('_id').lean();
+            for (const team of teams) {
+              await runBDI(team._id, weekStart, 'cron').catch(() => {});
+            }
+          }
+          console.log('✅ Nightly BDI scoring completed');
+        } catch (err) {
+          console.error('❌ Nightly BDI scoring failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Nightly BDI run at 1 AM UTC');
     }
 
     // --- Start Server ---

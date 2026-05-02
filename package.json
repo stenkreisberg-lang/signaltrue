@@ -87,6 +87,7 @@
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "md-to-pdf": "node ./tools/md-to-pdf.js ./SignalTrue_Product_Logic_and_System_Overview.md ./SignalTrue_Product_Logic_and_System_Overview.pdf",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -125,6 +126,8 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "prettier": "^3.7.4"
+    "prettier": "^3.7.4",
+    "puppeteer": "^21.3.3",
+    "markdown-it": "^13.0.1"
   }
 }

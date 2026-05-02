@@ -63,6 +63,12 @@ services:
         sync: false
       - key: CRON_SECRET
         sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        sync: false
       # Re-deploy trigger
 
 # NOTE: Weekly email scheduling is now SELF-CONTAINED in the backend server.
