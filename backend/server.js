@@ -1,5 +1,4 @@
 // Force redeploy
-import 'dotenv/config';  // Must be first — ESM hoists imports before module body runs
 import cron from "node-cron";
 import cors from "cors";
 import compression from "compression";
