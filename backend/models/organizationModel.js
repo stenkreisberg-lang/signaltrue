@@ -130,6 +130,10 @@ const organizationSchema = new mongoose.Schema(
         enum: ['realtime', 'daily', 'weekly', 'off'],
         default: 'daily'
       },
+      // Optional override recipient lists for longer-cadence reports.
+      // Useful for external executive/CEO emails that don't have a SignalTrue login.
+      quarterlyReportRecipients: [{ type: String }],
+      semiAnnualReportRecipients: [{ type: String }],
     },
     
     // Calibration state

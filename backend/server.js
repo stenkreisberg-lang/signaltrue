@@ -597,7 +597,35 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Monthly reports generation 1st of month at 4:00 AM');
-      
+
+      // ── QUARTERLY REPORTS: 1st of Jan, Apr, Jul, Oct at 5:00 AM UTC ──
+      // Runs after monthly at 4 AM so the just-generated monthly is available.
+      cron.schedule('0 5 1 1,4,7,10 *', async () => {
+        console.log('⏰ Generating quarterly reports for all organizations...');
+        try {
+          const { generateQuarterlyReportsForAllOrgs } = await import('./services/quarterlyReportService.js');
+          const result = await generateQuarterlyReportsForAllOrgs();
+          console.log(`✅ Quarterly reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`);
+        } catch (err) {
+          console.error('❌ Quarterly reports generation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Quarterly reports Jan/Apr/Jul/Oct 1st at 5:00 AM');
+
+      // ── SEMI-ANNUAL REPORTS: 1st of Jan and Jul at 6:00 AM UTC ──
+      // Runs after quarterly at 5 AM so the just-generated quarterly is available.
+      cron.schedule('0 6 1 1,7 *', async () => {
+        console.log('⏰ Generating semi-annual reports for all organizations...');
+        try {
+          const { generateSemiAnnualReportsForAllOrgs } = await import('./services/semiAnnualReportService.js');
+          const result = await generateSemiAnnualReportsForAllOrgs();
+          console.log(`✅ Semi-annual reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`);
+        } catch (err) {
+          console.error('❌ Semi-annual reports generation failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Semi-annual reports Jan/Jul 1st at 6:00 AM');
+
       // Card expiry reminder - daily at 9 AM
       cron.schedule('0 9 * * *', async () => {
         console.log('⏰ Checking for expiring payment methods...');

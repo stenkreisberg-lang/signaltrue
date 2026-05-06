@@ -297,7 +297,20 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
   
   const managersCriticalCount = latestManagerData.filter(m => m.effectivenessScore < 45).length;
   const managersNeedCoachingCount = latestManagerData.filter(m => m.effectivenessScore < 65).length;
-  
+
+  // Manager trend: split the full (chronologically ordered) dataset into first/second half
+  const managerTrend = (() => {
+    const sorted = [...managerData].sort((a, b) => a.calculatedAt - b.calculatedAt);
+    if (sorted.length < 2) return 'stable';
+    const mid = Math.floor(sorted.length / 2);
+    const firstAvg = sorted.slice(0, mid).reduce((s, m) => s + (m.effectivenessScore || 0), 0) / mid;
+    const secondAvg = sorted.slice(mid).reduce((s, m) => s + (m.effectivenessScore || 0), 0) / (sorted.length - mid);
+    const delta = secondAvg - firstAvg;
+    if (delta > 5) return 'improving';
+    if (delta < -5) return 'deteriorating';
+    return 'stable';
+  })();
+
   // Equity signals
   const equityData = await EquitySignal.find({
     teamId: { $in: teamIds },
@@ -335,7 +348,7 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
       avgScore: Math.round(avgManagerScore),
       managersCriticalCount,
       managersNeedCoachingCount,
-      trend: 'stable' // TODO: Calculate trend from historical data
+      trend: managerTrend
     },
     equityScoreAvg: Math.round(avgEquityScore),
     equityIssuesCount,
@@ -436,10 +449,20 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
   
   const criticalIndividualsCount = latestAttritionData.filter(a => a.riskScore >= 80).length;
   const highRiskIndividualsCount = latestAttritionData.filter(a => a.riskScore >= 60).length;
-  
-  // Calculate trend (compare first half vs second half of period)
-  const trend = 'stable'; // TODO: Implement trend calculation
-  
+
+  // Calculate trend: compare first half vs second half of chronologically sorted data
+  const retentionTrend = (() => {
+    const sorted = [...attritionData].sort((a, b) => a.calculatedAt - b.calculatedAt);
+    if (sorted.length < 4) return 'stable';
+    const mid = Math.floor(sorted.length / 2);
+    const firstAvg = sorted.slice(0, mid).reduce((s, a) => s + (a.riskScore || 0), 0) / mid;
+    const secondAvg = sorted.slice(mid).reduce((s, a) => s + (a.riskScore || 0), 0) / (sorted.length - mid);
+    const delta = secondAvg - firstAvg;
+    if (delta > 5) return 'worsening';
+    if (delta < -5) return 'improving';
+    return 'stable';
+  })();
+
   // Estimated turnover risk (% of workforce at high risk)
   const estimatedTurnoverRisk = latestAttritionData.length > 0
     ? (highRiskIndividualsCount / latestAttritionData.length) * 100
@@ -449,7 +472,7 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
     avgAttritionRisk: Math.round(avgAttritionRisk),
     criticalIndividualsCount,
     highRiskIndividualsCount,
-    trend,
+    trend: retentionTrend,
     estimatedTurnoverRisk: Math.round(estimatedTurnoverRisk)
   };
 }

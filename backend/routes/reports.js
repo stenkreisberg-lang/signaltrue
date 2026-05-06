@@ -11,6 +11,16 @@ import {
   getMonthlyReportHistory,
   getLeadershipView 
 } from '../services/monthlyReportService.js';
+import {
+  generateQuarterlyReportForOrg,
+  getLatestQuarterlyReport,
+  getQuarterlyReportHistory,
+} from '../services/quarterlyReportService.js';
+import {
+  generateSemiAnnualReportForOrg,
+  getLatestSemiAnnualReport,
+  getSemiAnnualReportHistory,
+} from '../services/semiAnnualReportService.js';
 import { sendWeeklyBrief } from '../services/weeklyBriefService.js';
 import { getEmailScheduleStatus, manualTriggerWeeklyEmails } from '../services/weeklyEmailScheduler.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -420,6 +430,138 @@ router.get('/email-status', async (req, res) => {
   } catch (error) {
     console.error('Error getting email status:', error);
     res.status(500).json({ message: 'Error getting status', error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUARTERLY REPORTS
+// Strategic 13-week review. Aggregated from 3 MonthlyReports.
+// Recipients: master_admin, hr_admin, executive
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/reports/quarterly/latest
+ * Get the latest quarterly report for the authenticated user's org.
+ * Access: HR/Admin, Executive
+ */
+router.get('/quarterly/latest', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const report = await getLatestQuarterlyReport(orgId);
+    if (!report) return res.status(404).json({ message: 'No quarterly report found' });
+    res.json({ report });
+  } catch (error) {
+    console.error('[Routes] Error fetching latest quarterly report:', error);
+    res.status(500).json({ message: 'Error fetching quarterly report', error: error.message });
+  }
+});
+
+/**
+ * GET /api/reports/quarterly/history
+ * Get quarterly report history (up to 8 quarters = 2 years).
+ * Access: HR/Admin, Executive
+ */
+router.get('/quarterly/history', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const limit = parseInt(req.query.limit) || 8;
+    const reports = await getQuarterlyReportHistory(orgId, Math.min(limit, 16));
+    res.json({ reports });
+  } catch (error) {
+    console.error('[Routes] Error fetching quarterly report history:', error);
+    res.status(500).json({ message: 'Error fetching quarterly report history', error: error.message });
+  }
+});
+
+/**
+ * POST /api/reports/quarterly/generate
+ * Manually trigger quarterly report generation for the authenticated user's org.
+ * Access: HR/Admin only
+ * Body: { force: true } to regenerate an existing report
+ */
+router.post('/quarterly/generate', authenticateToken, checkRole(['master_admin', 'hr_admin']), async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const { force, referenceDate } = req.body;
+    const report = await generateQuarterlyReportForOrg(orgId, { force, referenceDate });
+    if (!report) {
+      return res.status(422).json({
+        message: 'Not enough monthly report data to generate a quarterly report. At least 2 months of data are required.',
+      });
+    }
+    res.json({ message: 'Quarterly report generated successfully', report });
+  } catch (error) {
+    console.error('[Routes] Error generating quarterly report:', error);
+    res.status(500).json({ message: 'Error generating quarterly report', error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SEMI-ANNUAL REPORTS
+// H1/H2 strategic review with YoY comparison.
+// Recipients: master_admin, executive + org.settings.semiAnnualReportRecipients
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/reports/semiannual/latest
+ * Get the latest semi-annual report for the authenticated user's org.
+ * Access: HR/Admin, Executive
+ */
+router.get('/semiannual/latest', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const report = await getLatestSemiAnnualReport(orgId);
+    if (!report) return res.status(404).json({ message: 'No semi-annual report found' });
+    res.json({ report });
+  } catch (error) {
+    console.error('[Routes] Error fetching latest semi-annual report:', error);
+    res.status(500).json({ message: 'Error fetching semi-annual report', error: error.message });
+  }
+});
+
+/**
+ * GET /api/reports/semiannual/history
+ * Get semi-annual report history (up to 4 entries = 2 years).
+ * Access: HR/Admin, Executive
+ */
+router.get('/semiannual/history', authenticateToken, async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const limit = parseInt(req.query.limit) || 4;
+    const reports = await getSemiAnnualReportHistory(orgId, Math.min(limit, 8));
+    res.json({ reports });
+  } catch (error) {
+    console.error('[Routes] Error fetching semi-annual report history:', error);
+    res.status(500).json({ message: 'Error fetching semi-annual report history', error: error.message });
+  }
+});
+
+/**
+ * POST /api/reports/semiannual/generate
+ * Manually trigger semi-annual report generation for the authenticated user's org.
+ * Access: HR/Admin only
+ * Body: { force: true } to regenerate an existing report
+ */
+router.post('/semiannual/generate', authenticateToken, checkRole(['master_admin', 'hr_admin']), async (req, res) => {
+  try {
+    const orgId = req.user.orgId;
+    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    const { force, referenceDate } = req.body;
+    const report = await generateSemiAnnualReportForOrg(orgId, { force, referenceDate });
+    if (!report) {
+      return res.status(422).json({
+        message: 'Not enough data to generate a semi-annual report. At least 4 months of data are required.',
+      });
+    }
+    res.json({ message: 'Semi-annual report generated successfully', report });
+  } catch (error) {
+    console.error('[Routes] Error generating semi-annual report:', error);
+    res.status(500).json({ message: 'Error generating semi-annual report', error: error.message });
   }
 });
 
