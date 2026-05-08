@@ -97,7 +97,7 @@ async function generateAndSendReports() {
     <div class="content">
       <div class="bdi-card">
         <div class="bdi-score">${state.bdi}</div>
-        <div class="bdi-label">Behavioral Drift Index (BDI)</div>
+        <div class="bdi-label">Workload Risk Score</div>
         <div class="zone-badge" style="background: ${zoneColor}20; color: ${zoneColor};">
           ${state.zone} Zone
         </div>

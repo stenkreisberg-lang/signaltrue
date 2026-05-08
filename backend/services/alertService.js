@@ -46,7 +46,7 @@ export async function sendDriftAlerts() {
     // Email
     if (emailTransporter && org.email) {
       try {
-        await emailTransporter.sendMail({ from: process.env.EMAIL_FROM || process.env.EMAIL_USER, to: org.email, subject: 'SignalTrue Drift Alert', text: msg, html: `<p>${msg.replace(/\n/g,'<br>')}</p>` });
+        await emailTransporter.sendMail({ from: process.env.EMAIL_FROM || process.env.EMAIL_USER, to: org.email, subject: 'SignalTrue Workload Risk Alert', text: msg, html: `<p>${msg.replace(/\n/g,'<br>')}</p>` });
       } catch (e) {
         console.error('Email alert send error:', e.message);
       }

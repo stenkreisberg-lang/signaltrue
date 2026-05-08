@@ -62,7 +62,7 @@ function generateReportEmailHTML(session) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Behavioral Drift Report</title>
+  <title>Your Workload Risk Report</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0b0f14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0b0f14; padding: 40px 20px;">
@@ -73,7 +73,7 @@ function generateReportEmailHTML(session) {
           <tr>
             <td style="padding: 30px 40px; border-bottom: 1px solid rgba(255,255,255,0.1);">
               <h1 style="margin: 0; color: #eaf0f7; font-size: 24px; font-weight: 700;">SignalTrue</h1>
-              <p style="margin: 8px 0 0; color: #a9b6c6; font-size: 14px;">Behavioral Drift Diagnostic</p>
+              <p style="margin: 8px 0 0; color: #a9b6c6; font-size: 14px;">Workload Risk Early Warning</p>
             </td>
           </tr>
           
@@ -85,7 +85,7 @@ function generateReportEmailHTML(session) {
               </p>
               
               <p style="color: #a9b6c6; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-                Here's your Behavioral Drift Report:
+                Here's your Workload Risk Report:
               </p>
               
               <p style="margin: 0 0 32px;">
@@ -175,10 +175,10 @@ export async function sendDriftReportEmail(email, session) {
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: 'Your Behavioral Drift Report (and what it means)',
+      subject: 'Your Workload Risk Report (and what it means)',
       html,
       tags: [
-        { name: 'category', value: 'drift-diagnostic' },
+        { name: 'category', value: 'workload-risk' },
         { name: 'email_sequence', value: 'email_1' },
         { name: 'drift_category', value: session.score.category.replace(/\s+/g, '-').toLowerCase() }
       ]
@@ -186,7 +186,7 @@ export async function sendDriftReportEmail(email, session) {
     
     // CC superadmin for verification
     await ccSuperadmin({
-      subject: 'Your Behavioral Drift Report (and what it means)',
+      subject: 'Your Workload Risk Report (and what it means)',
       html,
       originalRecipient: email,
       reportType: 'drift_report',
