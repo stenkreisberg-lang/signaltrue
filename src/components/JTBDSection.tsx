@@ -1,14 +1,4 @@
-import { Target } from "lucide-react";
-
-/*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
- * JTBD Section (per spec):
- * Title: Leaders Hire SignalTrue To Do One Thing
- * 
- * Copy: Detect when the organization is becoming unsustainable early enough 
- * to fix the system before people burn out or leave.
- */
+import { Target } from 'lucide-react';
 
 const JTBDSection = () => {
   return (
@@ -20,19 +10,22 @@ const JTBDSection = () => {
             <Target className="w-8 h-8 text-primary" />
           </div>
 
+          {/* Eyebrow */}
+          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+            Why SignalTrue
+          </p>
+
           {/* Title */}
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-8">
-            Leaders Hire SignalTrue
-            <br />
-            <span className="text-gradient">To Do One Thing</span>
+            Leaders hire SignalTrue to reduce late surprises.
           </h2>
 
           {/* The Job */}
           <div className="p-8 lg:p-10 rounded-2xl bg-card border border-border/50">
             <p className="text-xl lg:text-2xl text-foreground leading-relaxed font-medium">
-              Detect when the organization is becoming unsustainable 
-              <strong className="text-primary"> early enough </strong> 
-              to fix the system before people burn out or leave.
+              SignalTrue helps leadership see when the organization is becoming unsustainable{' '}
+              <strong className="text-primary">early enough</strong> to fix the system before people
+              burn out or leave.
             </p>
           </div>
 
@@ -40,7 +33,7 @@ const JTBDSection = () => {
           <p className="text-lg text-muted-foreground mt-8 max-w-2xl mx-auto">
             Not engagement scores. Not productivity metrics. Not sentiment analysis.
             <br />
-            <strong className="text-foreground">Early structural warning.</strong>
+            <strong className="text-foreground">Early workload risk warning.</strong>
           </p>
         </div>
       </div>

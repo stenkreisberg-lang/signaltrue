@@ -5,33 +5,25 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import {
-  Eye,
+  Plug,
   BarChart2,
   AlertTriangle,
-  Users,
+  FileText,
+  TrendingUp,
   ArrowRight,
   CheckCircle,
   Shield,
   Clock,
   Activity,
+  Users,
 } from 'lucide-react';
-
-/*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
- * How It Works Page (per spec):
- * Purpose: Remove skepticism without technical overload.
- * 
- * Steps:
- * 1. Observe - We Observe Patterns, Not People
- * 2. Learn Baseline - Every Organization Has a Rhythm
- * 3. Detect Drift - Drift Is the First Warning Signal
- * 4. Signal - Leaders See Risk Early
- */
 
 // Analytics tracking
 const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+  if (
+    typeof window !== 'undefined' &&
+    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
+  ) {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
   }
   try {
@@ -40,62 +32,96 @@ const trackEvent = (eventName: string) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => { /* Silently fail for analytics */ });
-  } catch { /* Silently fail for analytics */ }
+    }).catch(() => {
+      /* Silently fail for analytics */
+    });
+  } catch {
+    /* Silently fail for analytics */
+  }
 };
 
-// 4 Steps per spec
+// 5 Steps per spec
 const steps = [
   {
     number: '01',
-    icon: Eye,
-    title: 'We Observe Patterns, Not People',
-    subtitle: 'Observe',
-    description: 'Behavioral metadata only. No content. No surveillance.',
+    icon: Plug,
+    title: 'Connect work tools',
+    subtitle: 'Connect',
+    description:
+      'SignalTrue connects to the systems where work patterns already exist: calendars, meetings, and communication tools.',
     details: [
-      'Calendar patterns and meeting density',
-      'Collaboration timing and response patterns',
-      'Focus time availability',
-      'After-hours work signals',
+      'Google Calendar',
+      'Outlook Calendar',
+      'Slack',
+      'Microsoft Teams',
+      'Google Chat',
+      'Email metadata where appropriate',
     ],
+    privacyNote: 'We do not read message content or private conversations.',
   },
   {
     number: '02',
     icon: BarChart2,
-    title: 'Every Organization Has a Rhythm',
-    subtitle: 'Learn Baseline',
-    description: 'SignalTrue learns what "normal" looks like before detecting drift.',
+    title: 'Build the baseline',
+    subtitle: 'Baseline',
+    description:
+      'SignalTrue learns the normal work rhythm for each team: meeting load, focus availability, after-hours work, response delays, and collaboration patterns.',
     details: [
-      'Adaptive baselines per team',
-      'Seasonality-aware calibration',
-      'Role-specific pattern recognition',
-      'Continuous learning from actual work',
+      'Meeting load patterns',
+      'Focus time availability',
+      'After-hours work rhythms',
+      'Response delay patterns',
+      'Collaboration volumes',
     ],
+    note: 'A signal only matters when it changes from normal. The baseline helps separate normal workload from rising risk.',
   },
   {
     number: '03',
     icon: AlertTriangle,
-    title: 'Drift Is the First Warning Signal',
-    subtitle: 'Detect Drift',
-    description: 'Early signals that predict problems weeks before they become visible.',
+    title: 'Detect early risk signals',
+    subtitle: 'Detect',
+    description:
+      'When work patterns start shifting in risky ways, SignalTrue flags them before the damage appears in surveys, missed deadlines, burnout, or resignations.',
     examples: [
-      'Focus time collapses',
-      'Meeting density rises',
-      'After-hours work creeps in',
-      'Execution slows despite effort',
+      'Meeting overload',
+      'Lost focus time',
+      'After-hours creep',
+      'Manager overload',
+      'Response delays',
+      'Coordination drag',
+      'Repeated pressure patterns',
     ],
   },
   {
     number: '04',
-    icon: Users,
-    title: 'Leaders See Risk Early',
-    subtitle: 'Signal',
-    description: 'Clear system-level insights. No individual blame.',
+    icon: FileText,
+    title: 'Deliver a weekly leadership report',
+    subtitle: 'Report',
+    description:
+      'Each week, CEOs, COOs, and HR receive a clear report showing where risk is increasing and what needs attention.',
     details: [
-      'Team-level pattern visibility',
-      'Structural recommendations',
-      'Risk prioritization',
-      'Early intervention guidance',
+      'What changed',
+      'Which teams are under pressure',
+      'Which signals repeated',
+      'What risk is growing',
+      'What to fix next',
+      'Whether previous actions helped',
+    ],
+  },
+  {
+    number: '05',
+    icon: TrendingUp,
+    title: 'Act, then track whether pressure improves',
+    subtitle: 'Act',
+    description:
+      'SignalTrue is not built to create another dashboard. It is built to help leadership act earlier.',
+    details: [
+      'Reduce recurring meetings',
+      'Protect focus blocks',
+      'Review manager load',
+      'Change response expectations',
+      'Rebalance team capacity',
+      'Fix coordination bottlenecks',
     ],
   },
 ];
@@ -126,14 +152,15 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                How SignalTrue Works
+                How It Works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From Invisible Patterns to{' '}
-                <span className="text-gradient">Early Warning</span>
+                Detect workload risk{' '}
+                <span className="text-gradient">before the damage appears.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                Four steps from behavioral metadata to actionable leadership insight. No surveillance. No content access.
+                SignalTrue turns work-pattern metadata into a weekly leadership report showing where
+                pressure is building, why it matters, and what to fix next.
               </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
                 <Button variant="hero" size="xl">
@@ -145,7 +172,7 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
-        {/* 4-Step Process Section */}
+        {/* 5-Step Process Section */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
@@ -175,7 +202,13 @@ const HowItWorksPage = () => {
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-lg text-muted-foreground mb-6">{step.description}</p>
+                    <p className="text-lg text-muted-foreground mb-4">{step.description}</p>
+                    {step.privacyNote && (
+                      <p className="text-sm text-success mb-4 font-medium">{step.privacyNote}</p>
+                    )}
+                    {step.note && (
+                      <p className="text-sm text-muted-foreground italic mb-4">{step.note}</p>
+                    )}
                     <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
                       {step.details && (
                         <div className="grid sm:grid-cols-2 gap-3">
@@ -189,7 +222,9 @@ const HowItWorksPage = () => {
                       )}
                       {step.examples && (
                         <div className="space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground mb-3">Examples of drift signals:</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-3">
+                            Signals detected:
+                          </p>
                           <div className="grid sm:grid-cols-2 gap-3">
                             {step.examples.map((example, i) => (
                               <div key={i} className="flex items-center gap-2">
@@ -226,22 +261,34 @@ const HowItWorksPage = () => {
                   <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
                     <Activity className="w-6 h-6 text-destructive" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">No Message Reading</h3>
-                  <p className="text-sm text-muted-foreground">We never access email content, chat messages, or document text.</p>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    No Message Reading
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We never access email content, chat messages, or document text.
+                  </p>
                 </div>
                 <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
                   <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
                     <Users className="w-6 h-6 text-destructive" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">No Individual Scoring</h3>
-                  <p className="text-sm text-muted-foreground">No performance ratings, productivity scores, or individual profiles.</p>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    No Individual Scoring
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    No performance ratings, productivity scores, or individual profiles.
+                  </p>
                 </div>
                 <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
                   <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
                     <Clock className="w-6 h-6 text-destructive" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">No Time Tracking</h3>
-                  <p className="text-sm text-muted-foreground">We don't track individual time or monitor specific activities.</p>
+                  <h3 className="font-display font-semibold text-foreground mb-2">
+                    No Surveillance
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    We don't track individuals or monitor private activity. Ever.
+                  </p>
                 </div>
               </div>
             </div>
@@ -254,11 +301,8 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See Early Signals in Your Organization
+                See what early warning looks like in your organization.
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Request a preview to see what behavioral drift looks like in your context.
-              </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
                 <Button variant="hero" size="xl">
                   Request Early Signal Preview

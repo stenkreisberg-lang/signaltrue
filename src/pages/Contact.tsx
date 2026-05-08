@@ -13,17 +13,19 @@ const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Simulate submission - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     setSubmitted(true);
     setLoading(false);
   };
@@ -36,11 +38,11 @@ const Contact: React.FC = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Get in Touch
+              See workload risk before it becomes visible damage.
             </h1>
             <p className="text-xl text-muted-foreground">
-              Have questions about SignalTrue? Want to see how behavioral intelligence 
-              can transform your team? We'd love to hear from you.
+              Tell us about your team size, tools, and current challenges. We will show what early
+              risk signals could look like in your organization.
             </p>
           </div>
         </div>
@@ -56,8 +58,8 @@ const Contact: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Email Us</h3>
               <p className="text-muted-foreground text-sm mb-3">For general inquiries</p>
-              <a 
-                href="mailto:hello@signaltrue.ai" 
+              <a
+                href="mailto:hello@signaltrue.ai"
                 className="text-primary hover:underline font-medium"
               >
                 hello@signaltrue.ai
@@ -70,10 +72,7 @@ const Contact: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Book a Demo</h3>
               <p className="text-muted-foreground text-sm mb-3">See SignalTrue in action</p>
-              <Link 
-                to="/demo" 
-                className="text-primary hover:underline font-medium"
-              >
+              <Link to="/demo" className="text-primary hover:underline font-medium">
                 Schedule a call
               </Link>
             </div>
@@ -84,8 +83,8 @@ const Contact: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Support</h3>
               <p className="text-muted-foreground text-sm mb-3">For existing customers</p>
-              <a 
-                href="mailto:support@signaltrue.ai" 
+              <a
+                href="mailto:support@signaltrue.ai"
                 className="text-primary hover:underline font-medium"
               >
                 support@signaltrue.ai
@@ -105,7 +104,7 @@ const Contact: React.FC = () => {
                   <p className="text-muted-foreground mb-6">
                     Thanks for reaching out. We'll get back to you within 24 hours.
                   </p>
-                  <Link 
+                  <Link
                     to="/"
                     className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                   >
@@ -124,7 +123,10 @@ const Contact: React.FC = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                        <label
+                          htmlFor="name"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
                           Your Name *
                         </label>
                         <input
@@ -139,7 +141,10 @@ const Contact: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                        <label
+                          htmlFor="email"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
                           Work Email *
                         </label>
                         <input
@@ -157,7 +162,10 @@ const Contact: React.FC = () => {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
+                        <label
+                          htmlFor="company"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
                           Company
                         </label>
                         <div className="relative">
@@ -174,8 +182,11 @@ const Contact: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <label htmlFor="teamSize" className="block text-sm font-medium text-foreground mb-2">
-                          Team Size
+                        <label
+                          htmlFor="teamSize"
+                          className="block text-sm font-medium text-foreground mb-2"
+                        >
+                          Company size
                         </label>
                         <select
                           id="teamSize"
@@ -184,19 +195,48 @@ const Contact: React.FC = () => {
                           onChange={handleChange}
                           className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
                         >
-                          <option value="">Select team size</option>
-                          <option value="1-10">1-10 employees</option>
-                          <option value="11-50">11-50 employees</option>
-                          <option value="51-200">51-200 employees</option>
-                          <option value="201-500">201-500 employees</option>
-                          <option value="500+">500+ employees</option>
+                          <option value="">Select company size</option>
+                          <option value="under-50">Under 50</option>
+                          <option value="50-150">50 to 150</option>
+                          <option value="151-500">151 to 500</option>
+                          <option value="501-2500">501 to 2,500</option>
+                          <option value="2500+">2,500+</option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
-                        Message *
+                      <label
+                        htmlFor="challenge"
+                        className="block text-sm font-medium text-foreground mb-2"
+                      >
+                        Main challenge
+                      </label>
+                      <select
+                        id="challenge"
+                        name="challenge"
+                        value={(formData as any).challenge || ''}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
+                      >
+                        <option value="">What are you trying to understand?</option>
+                        <option value="too-many-meetings">Too many meetings</option>
+                        <option value="manager-overload">Manager overload</option>
+                        <option value="burnout-risk">Burnout risk</option>
+                        <option value="slow-execution">Slow execution</option>
+                        <option value="after-hours-work">After-hours work</option>
+                        <option value="retention-risk">Retention risk</option>
+                        <option value="hybrid-coordination">Hybrid coordination</option>
+                        <option value="not-sure">Not sure yet</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="message"
+                        className="block text-sm font-medium text-foreground mb-2"
+                      >
+                        What are you trying to understand?
                       </label>
                       <textarea
                         id="message"
@@ -206,7 +246,7 @@ const Contact: React.FC = () => {
                         value={formData.message}
                         onChange={handleChange}
                         className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors resize-none"
-                        placeholder="Tell us about your needs..."
+                        placeholder="Tell us about your team size, tools, and current challenges..."
                       />
                     </div>
 
@@ -223,7 +263,7 @@ const Contact: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          Send Message
+                          Request Early Signal Preview
                         </>
                       )}
                     </button>
@@ -232,25 +272,6 @@ const Contact: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-            Not sure where to start?
-          </h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Take our free Behavioral Drift Diagnostic to see where your team stands 
-            — no signup required.
-          </p>
-          <Link
-            to="/drift-diagnostic"
-            className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:bg-accent/90 transition-colors"
-          >
-            Take Free Diagnostic
-          </Link>
         </div>
       </section>
     </div>

@@ -1,34 +1,21 @@
-import { CheckCircle, ArrowRight, Sparkles } from "lucide-react";
-
-/*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
- * Promised Land Section (per spec):
- * Title: What Changes When You See Drift Early
- * 
- * Bullets:
- * - Fewer surprise exits
- * - Earlier leadership decisions
- * - Structural fixes instead of motivational talks
- * - Sustainable execution under pressure
- */
+import { CheckCircle, Sparkles } from 'lucide-react';
 
 const promisedLandBenefits = [
   {
-    title: "Fewer surprise exits",
-    description: "See attrition risk before resignations appear on your desk.",
+    title: 'Fewer surprise exits',
+    description: 'See where work patterns suggest teams may be under sustained pressure.',
   },
   {
-    title: "Earlier leadership decisions",
-    description: "Act when systems show strain, not when people break.",
+    title: 'Earlier leadership decisions',
+    description: 'Act before pressure becomes burnout, missed work, or key-person risk.',
   },
   {
-    title: "Structural fixes instead of motivational talks",
-    description: "Address root causes in workflows, not symptoms in individuals.",
+    title: 'Structural fixes instead of motivational talks',
+    description: 'Address root causes in workload, meetings, focus time, and coordination.',
   },
   {
-    title: "Sustainable execution under pressure",
-    description: "Maintain performance without burning out your best people.",
+    title: 'Sustainable execution under pressure',
+    description: 'Maintain performance without normalizing exhaustion.',
   },
 ];
 
@@ -41,19 +28,17 @@ const PromisedLand = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-6">
               <Sparkles className="w-4 h-4 text-success" />
-              <span className="text-sm font-medium text-success">The Promised Land</span>
+              <span className="text-sm font-medium text-success">The Prevention Shift</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold">
-              What Changes When You
-              <br />
-              <span className="text-gradient">See Drift Early</span>
+              What changes when you see risk early
             </h2>
           </div>
 
           {/* Benefits grid */}
           <div className="grid sm:grid-cols-2 gap-6">
             {promisedLandBenefits.map((benefit, index) => (
-              <div 
+              <div
                 key={index}
                 className="p-6 rounded-2xl bg-card border border-border/50 animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
@@ -66,9 +51,7 @@ const PromisedLand = () => {
                     <h3 className="font-display font-semibold text-foreground mb-2">
                       {benefit.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {benefit.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
                   </div>
                 </div>
               </div>
@@ -78,8 +61,8 @@ const PromisedLand = () => {
           {/* Summary */}
           <div className="mt-12 text-center">
             <p className="text-xl text-foreground font-medium">
-              Leaders see early truth, act structurally, and preserve execution capacity 
-              <span className="text-primary"> before human cost appears.</span>
+              Leaders see where workload risk is building before it becomes burnout, missed
+              execution, or resignation.
             </p>
           </div>
         </div>

@@ -1,12 +1,4 @@
-import { AlertTriangle, TrendingUp, Clock, Activity } from "lucide-react";
-
-/*
- * CATEGORY REPOSITIONING NOTE:
- * SignalTrue is a Work Signal Intelligence platform.
- * Avoid "health", "wellbeing", "engagement" as primary terms.
- * Prefer "signals", "drift", "strain", "execution friction", "recovery".
- * Emphasis on patterns over scores. Clear "aggregated, non-individual" label.
- */
+import { AlertTriangle, TrendingUp, Clock, Activity } from 'lucide-react';
 
 const DriftAlertCard = () => {
   return (
@@ -16,13 +8,13 @@ const DriftAlertCard = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-warning animate-pulse-slow" />
-            <span className="text-xs font-medium text-warning">Drift Signal</span>
+            <span className="text-xs font-medium text-warning">Early workload risk signal</span>
           </div>
           <h3 className="text-xl font-display font-bold text-foreground">
-            Team "Product-Alpha" Signal
+            Team: Product &amp; Engineering
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Detected: Dec 20, 2025 • Aggregated team pattern
+            Risk level: Rising • Team-level signals only
           </p>
         </div>
         <div className="p-2 rounded-lg bg-warning/10">
@@ -30,17 +22,16 @@ const DriftAlertCard = () => {
         </div>
       </div>
 
-      {/* Metrics */}
-      <div className="space-y-4 mb-6">
+      {/* Signals detected */}
+      <div className="space-y-3 mb-6">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
           <div className="p-2 rounded-lg bg-warning/10">
             <Activity className="w-4 h-4 text-warning" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Coordination Strain</p>
-            <p className="text-xs text-muted-foreground">Pattern indicates rising coordination overhead</p>
+            <p className="text-sm font-medium text-foreground">Meeting load increasing</p>
           </div>
-          <span className="text-sm font-semibold text-warning">Drifting</span>
+          <span className="text-sm font-semibold text-warning">Rising</span>
         </div>
 
         <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
@@ -48,10 +39,9 @@ const DriftAlertCard = () => {
             <Clock className="w-4 h-4 text-warning" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Recovery Erosion</p>
-            <p className="text-xs text-muted-foreground">After-hours activity extending vs baseline</p>
+            <p className="text-sm font-medium text-foreground">Focus time decreasing</p>
           </div>
-          <span className="text-sm font-semibold text-warning">+35%</span>
+          <span className="text-sm font-semibold text-warning">-28%</span>
         </div>
 
         <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
@@ -59,19 +49,28 @@ const DriftAlertCard = () => {
             <TrendingUp className="w-4 h-4 text-destructive" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Meeting Overload</p>
-            <p className="text-xs text-muted-foreground">Calendar density exceeds sustainable threshold</p>
+            <p className="text-sm font-medium text-foreground">After-hours work rising</p>
+          </div>
+          <span className="text-sm font-semibold text-destructive">+35%</span>
+        </div>
+
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+          <div className="p-2 rounded-lg bg-destructive/10">
+            <Activity className="w-4 h-4 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Manager calendar overload</p>
           </div>
           <span className="text-sm font-semibold text-destructive">Critical</span>
         </div>
       </div>
 
-      {/* Insight box */}
+      {/* Recommended action */}
       <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-        <p className="text-sm font-medium text-foreground mb-1">Signal Interpretation</p>
+        <p className="text-sm font-medium text-foreground mb-1">Recommended action</p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          This team shows coordination strain and recovery erosion. These patterns 
-          often precede execution breakdown. Consider intervention before drift accelerates.
+          Review recurring meetings, protect focus blocks, and check whether managers have become
+          decision bottlenecks.
         </p>
       </div>
     </div>

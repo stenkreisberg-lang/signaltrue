@@ -1,9 +1,9 @@
-import { Activity, Linkedin, Twitter } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Activity, Linkedin, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
+ *
  * Footer updated per spec:
  * - Team Analytics link added
  * - Blog link maintained
@@ -12,19 +12,19 @@ import { Link } from "react-router-dom";
 
 const footerLinks = {
   Product: [
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "Product", href: "/product" },
-    { label: "Team Analytics", href: "/team-analytics" },
-    { label: "Pricing", href: "/pricing" },
+    { label: 'How It Works', href: '/how-it-works' },
+    { label: 'Product', href: '/product' },
+    { label: 'Team Analytics', href: '/team-analytics' },
+    { label: 'Pricing', href: '/pricing' },
   ],
   Company: [
-    { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Contact", href: "/contact" }
+    { label: 'About', href: '/about' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Contact', href: '/contact' },
   ],
   Resources: [
-    { label: "Privacy", href: "/trust" },
-    { label: "Terms of Service", href: "/about#terms" }
+    { label: 'Privacy', href: '/trust' },
+    { label: 'Terms of Service', href: '/about#terms' },
   ],
 };
 
@@ -39,17 +39,15 @@ const Footer = () => {
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Activity className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-display font-bold text-foreground">
-                SignalTrue
-              </span>
+              <span className="text-xl font-display font-bold text-foreground">SignalTrue</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
-              Behavioral Drift Intelligence. Detect organizational strain early 
-              by observing how work actually happens, without surveillance or surveys.
+              SignalTrue detects early workload risk from team-level work patterns, without reading
+              messages or tracking individuals.
             </p>
             <div className="flex items-center gap-4">
-              <a 
-                href="https://twitter.com/signaltrue" 
+              <a
+                href="https://twitter.com/signaltrue"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
@@ -57,8 +55,8 @@ const Footer = () => {
               >
                 <Twitter className="w-4 h-4 text-muted-foreground" />
               </a>
-              <a 
-                href="https://linkedin.com/company/signaltrue" 
+              <a
+                href="https://linkedin.com/company/signaltrue"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
@@ -72,14 +70,12 @@ const Footer = () => {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h4 className="font-display font-semibold text-foreground mb-4">
-                {title}
-              </h4>
+              <h4 className="font-display font-semibold text-foreground mb-4">{title}</h4>
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link 
-                      to={link.href} 
+                    <Link
+                      to={link.href}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {link.label}
@@ -93,9 +89,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            © 2025 SignalTrue. All rights reserved.
-          </p>
+          <p className="text-sm text-muted-foreground">© 2025 SignalTrue. All rights reserved.</p>
           <p className="text-sm text-muted-foreground">
             Behavioral Early-Warning System for modern organizations.
           </p>

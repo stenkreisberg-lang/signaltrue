@@ -56,36 +56,38 @@ const Hero = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Eye className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  Behavioral Early-Warning System
+                  Workload Risk Early Warning
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Lock className="w-3.5 h-3.5 text-success" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  No content. No individuals.
+                  No message content
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Shield className="w-3.5 h-3.5 text-accent" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  System-level patterns only
+                  Team-level signals only
                 </span>
               </div>
             </div>
 
-            {/* Main headline - Category King copy */}
+            {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-              Burnout Doesn't Start With Complaints.
-              <br />
-              <span className="text-gradient">It Starts With Invisible Drift.</span>
+              Prevent workload risk before it becomes burnout, missed execution, or resignations.
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-              SignalTrue is the first{' '}
-              <strong className="text-foreground">Behavioral Early-Warning System</strong> that
-              detects organizational overload and execution drift weeks before surveys, performance
-              drops, or resignations appear.
+            <p className="text-lg text-muted-foreground max-w-lg mb-4 leading-relaxed">
+              SignalTrue gives CEOs, COOs, and HR a weekly team-level report showing where meetings,
+              lost focus time, after-hours work, manager overload, and slow coordination are putting
+              teams at risk.
+            </p>
+
+            {/* Trust line */}
+            <p className="text-sm text-muted-foreground mb-8">
+              No message content. No individual tracking. Team-level signals only.
             </p>
 
             {/* CTA buttons - Updated per spec */}

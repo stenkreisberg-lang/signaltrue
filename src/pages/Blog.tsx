@@ -1,21 +1,21 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Calendar, 
-  Clock, 
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Clock,
   Tag,
   User,
   ChevronLeft,
-  ChevronRight
-} from "lucide-react";
+  ChevronRight,
+} from 'lucide-react';
 
 // API base URL
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 interface Author {
   name: string;
@@ -78,14 +78,14 @@ const BlogList = () => {
     setLoading(true);
     setError(null);
     try {
-      const tagParam = selectedTag ? `&tag=${encodeURIComponent(selectedTag)}` : "";
+      const tagParam = selectedTag ? `&tag=${encodeURIComponent(selectedTag)}` : '';
       const response = await fetch(`${API_URL}/api/blog?page=${page}&limit=9${tagParam}`);
-      if (!response.ok) throw new Error("Failed to fetch posts");
+      if (!response.ok) throw new Error('Failed to fetch posts');
       const data: BlogResponse = await response.json();
       setPosts(data.posts);
       setTotalPages(data.pagination.pages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -99,15 +99,15 @@ const BlogList = () => {
         setTags(data.tags || []);
       }
     } catch (err) {
-      console.error("Failed to fetch tags:", err);
+      console.error('Failed to fetch tags:', err);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -119,15 +119,15 @@ const BlogList = () => {
         <div className="container mx-auto px-6 relative">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-              Blog
+              SignalTrue Blog
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-              Insights on{" "}
-              <span className="text-gradient">organizational health</span>
+              Early warning ideas for leaders who want{' '}
+              <span className="text-gradient">work to stay sustainable.</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Research, strategies, and stories about detecting organizational drift 
-              and building healthier work patterns.
+              Practical thinking on workload risk, execution drag, burnout prevention, manager
+              overload, and the future of team-level work intelligence.
             </p>
           </div>
         </div>
@@ -138,9 +138,7 @@ const BlogList = () => {
         <section className="py-6 border-b border-border/50">
           <div className="container mx-auto px-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground mr-2">
-                Filter by:
-              </span>
+              <span className="text-sm font-medium text-muted-foreground mr-2">Filter by:</span>
               <button
                 onClick={() => {
                   setSelectedTag(null);
@@ -148,8 +146,8 @@ const BlogList = () => {
                 }}
                 className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                   !selectedTag
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
                 }`}
               >
                 All
@@ -163,8 +161,8 @@ const BlogList = () => {
                   }}
                   className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                     selectedTag === tag
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tag}
@@ -326,23 +324,23 @@ const BlogPostView = ({ slug }: { slug: string }) => {
     try {
       const response = await fetch(`${API_URL}/api/blog/${slug}`);
       if (!response.ok) {
-        if (response.status === 404) throw new Error("Post not found");
-        throw new Error("Failed to fetch post");
+        if (response.status === 404) throw new Error('Post not found');
+        throw new Error('Failed to fetch post');
       }
       const data = await response.json();
       setPost(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -371,9 +369,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-2xl font-display font-bold mb-4">
-              {error || "Post not found"}
-            </h1>
+            <h1 className="text-2xl font-display font-bold mb-4">{error || 'Post not found'}</h1>
             <Link to="/blog">
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -435,9 +431,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                     <User className="w-4 h-4 text-primary" />
                   </div>
                 )}
-                <span className="font-medium text-foreground">
-                  {post.author.name}
-                </span>
+                <span className="font-medium text-foreground">{post.author.name}</span>
               </div>
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
@@ -471,7 +465,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           )}
 
           {/* Content */}
-          <div 
+          <div
             className="prose prose-lg dark:prose-invert max-w-none
               prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground
               prose-h1:hidden
@@ -510,9 +504,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                   <p className="font-display font-semibold text-foreground mb-1">
                     {post.author.name}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {post.author.bio}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{post.author.bio}</p>
                 </div>
               </div>
             )}
@@ -520,11 +512,12 @@ const BlogPostView = ({ slug }: { slug: string }) => {
             {/* CTA */}
             <div className="text-center">
               <p className="text-muted-foreground mb-4">
-                Want to detect organizational drift before it becomes a crisis?
+                Want to see workload risk before it becomes burnout, missed execution, or
+                resignations?
               </p>
               <Link to="/product">
                 <Button variant="hero">
-                  See your organizational signals
+                  See early workload risk signals
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
@@ -543,9 +536,7 @@ const Blog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-20">
-        {slug ? <BlogPostView slug={slug} /> : <BlogList />}
-      </main>
+      <main className="pt-20">{slug ? <BlogPostView slug={slug} /> : <BlogList />}</main>
       <Footer />
     </div>
   );

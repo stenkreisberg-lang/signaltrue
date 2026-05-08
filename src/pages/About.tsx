@@ -1,55 +1,61 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { Link } from "react-router-dom";
-import { 
-  ArrowRight,
-  Activity,
-  Shield,
-  Eye,
-} from "lucide-react";
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
+ *
  * About Page (per spec):
  * Purpose: Credibility + philosophical alignment.
- * 
+ *
  * Opening: Why SignalTrue Exists
  * Copy: Burnout is not a motivation problem. It's a system problem that goes unseen for too long.
- * 
+ *
  * Belief System:
  * - Signals beat surveys
  * - Systems shape behavior
  * - Early truth enables better leadership
- * 
+ *
  * Founding Insight: Explain why existing tools fail leaders.
  * No bios first. Belief first.
  */
 
 // Analytics tracking
 const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+  if (
+    typeof window !== 'undefined' &&
+    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
+  ) {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
   }
 };
 
-// Belief system per spec
+// Belief system per spec - 4 beliefs
 const beliefs = [
   {
     icon: Activity,
-    title: "Signals beat surveys",
-    description: "Behavioral patterns reveal truth faster and earlier than self-reported opinions. By the time surveys show a problem, the damage is done.",
+    title: 'Signals beat surveys',
+    description:
+      'Surveys are useful, but they are not early warning systems. Work patterns often show risk before people report it.',
   },
   {
     icon: Eye,
-    title: "Systems shape behavior",
-    description: "People respond to structural conditions. Fix the system, and behavior follows. Motivational talks don't fix overload.",
+    title: 'Systems shape behavior',
+    description:
+      'People respond to structure. Meetings, priorities, communication rules, and manager load shape how work feels.',
   },
   {
     icon: Shield,
-    title: "Early truth enables better leadership",
-    description: "Leaders who see strain early can act structurally. Leaders who see it late can only react to consequences.",
+    title: 'Early truth enables better leadership',
+    description:
+      'Leaders who see risk early can act structurally before pressure becomes a crisis.',
+  },
+  {
+    icon: Shield,
+    title: 'Privacy is not optional',
+    description: 'People analytics without trust is broken. SignalTrue is team-level by design.',
   },
 ];
 
@@ -67,11 +73,12 @@ const About = () => {
                 Why SignalTrue Exists
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Burnout is not a motivation problem.{" "}
+                Burnout is not a motivation problem.{' '}
                 <span className="text-gradient">It's a system problem.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                One that goes unseen for too long because the tools we rely on only show us outcomes, not causes.
+                One that goes unseen for too long because the tools we rely on only show us
+                outcomes, not causes.
               </p>
             </div>
           </div>
@@ -89,15 +96,17 @@ const About = () => {
               </h2>
               <div className="space-y-6 text-lg text-muted-foreground">
                 <p>
-                  Engagement surveys tell you how people felt last quarter. Exit interviews tell you why someone left. 
-                  Performance reviews tell you who's struggling after the struggle has become visible.
+                  Engagement surveys tell you how people felt last quarter. Exit interviews tell you
+                  why someone left. Performance reviews tell you who's struggling after the struggle
+                  has become visible.
                 </p>
                 <p>
-                  All of these tools describe damage <em>after</em> it happens. By the time leaders see the signal, 
-                  the structural conditions that caused it have been in place for months.
+                  All of these tools describe damage <em>after</em> it happens. By the time leaders
+                  see the signal, the structural conditions that caused it have been in place for
+                  months.
                 </p>
                 <p className="text-foreground font-medium border-l-4 border-primary pl-6">
-                  SignalTrue was built to detect behavioral drift early, so leaders can fix systems 
+                  SignalTrue was built to detect workload risk early, so leaders can fix systems
                   before they break people.
                 </p>
               </div>
@@ -112,14 +121,12 @@ const About = () => {
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
                 What we believe
               </p>
-              <h2 className="text-3xl sm:text-4xl font-display font-bold">
-                Our Belief System
-              </h2>
+              <h2 className="text-3xl sm:text-4xl font-display font-bold">Our Belief System</h2>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {beliefs.map((belief, index) => (
-                <div 
+                <div
                   key={index}
                   className="p-8 rounded-2xl bg-card border border-border/50 animate-slide-up"
                   style={{ animationDelay: `${index * 0.1}s` }}
@@ -130,9 +137,7 @@ const About = () => {
                   <h3 className="text-xl font-display font-bold text-foreground mb-4">
                     {belief.title}
                   </h3>
-                  <p className="text-muted-foreground">
-                    {belief.description}
-                  </p>
+                  <p className="text-muted-foreground">{belief.description}</p>
                 </div>
               ))}
             </div>
@@ -148,7 +153,8 @@ const About = () => {
                 See early signals in your organization
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Request a preview to understand what behavioral drift looks like in your context.
+                Request a preview to understand what workload risk looks like in your current work
+                system.
               </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
                 <Button variant="hero" size="xl">

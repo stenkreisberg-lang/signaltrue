@@ -1,36 +1,15 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { Link } from "react-router-dom";
-import { 
-  Clock, 
-  Users, 
-  Zap, 
-  Moon,
-  ArrowRight,
-  XCircle,
-} from "lucide-react";
-
-/*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- * 
- * Product Page (per spec):
- * Purpose: Translate category into tangible capability.
- * 
- * Opening: From Invisible Strain to Visible Signals
- * 
- * Signals Explained:
- * - Focus Fragmentation
- * - Meeting Overload
- * - Execution Drag
- * - After-Hours Drift
- * 
- * What This Is NOT (explicit)
- */
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
+import { Link } from 'react-router-dom';
+import { Clock, Users, Zap, Moon, RefreshCw, UserCheck, ArrowRight, XCircle } from 'lucide-react';
 
 // Analytics tracking
 const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+  if (
+    typeof window !== 'undefined' &&
+    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
+  ) {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
   }
   try {
@@ -39,50 +18,83 @@ const trackEvent = (eventName: string) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => { /* Silently fail for analytics */ });
-  } catch { /* Silently fail for analytics */ }
+    }).catch(() => {
+      /* Silently fail for analytics */
+    });
+  } catch {
+    /* Silently fail for analytics */
+  }
 };
 
-// 4 Signal types per spec
+// 6 Signal types per spec
 const signals = [
   {
     icon: Clock,
-    name: "Focus Fragmentation",
-    whatItMeans: "Deep work time is being eroded by meetings, interruptions, and context switching.",
-    whyItMatters: "Fragmented focus leads to lower quality output and increased stress, even when hours worked stay constant.",
-    whatLeadersCanChange: "Protect focus blocks, consolidate meetings, reduce synchronous communication requirements.",
+    name: 'Focus Loss',
+    whatItMeans: 'Teams are losing protected time for deep work, planning, and decision-making.',
+    whyItMatters:
+      'When focus time disappears, execution quality drops and people compensate through longer working hours.',
+    whatLeadersCanChange:
+      'Protect focus blocks. Reduce low-value meetings. Set clearer async communication expectations. Review manager meeting load.',
   },
   {
     icon: Users,
-    name: "Meeting Overload",
-    whatItMeans: "Calendar density exceeds sustainable thresholds for knowledge work.",
-    whyItMatters: "Excessive meetings crowd out actual work, forcing it into evenings and weekends.",
-    whatLeadersCanChange: "Audit recurring meetings, implement meeting-free days, reduce default meeting lengths.",
+    name: 'Meeting Overload',
+    whatItMeans: 'Calendar density increases beyond what teams can sustain.',
+    whyItMatters:
+      'Too many meetings reduce delivery capacity, increase context switching, and hide coordination problems.',
+    whatLeadersCanChange:
+      'Audit recurring meetings. Remove low-value syncs. Shorten default meeting length. Create meeting-free focus windows.',
   },
   {
     icon: Zap,
-    name: "Execution Drag",
-    whatItMeans: "Work is taking longer despite effort levels remaining high.",
-    whyItMatters: "Slowing execution often signals coordination problems, unclear priorities, or hidden blockers.",
-    whatLeadersCanChange: "Clarify priorities, reduce approval layers, address coordination bottlenecks.",
+    name: 'Execution Drag',
+    whatItMeans:
+      'Work is moving slower because decisions, responses, and coordination take longer.',
+    whyItMatters:
+      'Execution drag quietly increases cost. Projects take longer, managers become bottlenecks, and teams need more effort to make the same progress.',
+    whatLeadersCanChange:
+      'Clarify decision ownership. Reduce approval loops. Review manager bottlenecks. Create clearer response expectations.',
   },
   {
     icon: Moon,
-    name: "After-Hours Drift",
-    whatItMeans: "Work is creeping into evenings and weekends at unsustainable rates.",
-    whyItMatters: "After-hours work predicts burnout and attrition, often before people complain.",
-    whatLeadersCanChange: "Redistribute workload, adjust expectations, address capacity gaps.",
+    name: 'After-Hours Creep',
+    whatItMeans: 'Work is spreading into evenings and weekends.',
+    whyItMatters:
+      'After-hours work predicts recovery risk. If it continues, teams may compensate with exhaustion instead of sustainable capacity.',
+    whatLeadersCanChange:
+      'Review workload balance. Reduce unnecessary urgency. Protect recovery time. Adjust capacity plans.',
+  },
+  {
+    icon: UserCheck,
+    name: 'Manager Load',
+    whatItMeans: 'Managers carry too much meeting, coordination, and communication pressure.',
+    whyItMatters:
+      'When managers are overloaded, decisions slow down and teams wait longer for clarity.',
+    whatLeadersCanChange:
+      'Reduce manager meeting load. Delegate decision rights. Clarify escalation paths. Protect manager focus time.',
+  },
+  {
+    icon: RefreshCw,
+    name: 'Repeated Pressure Patterns',
+    whatItMeans: 'The same risk signals appear week after week.',
+    whyItMatters:
+      'One bad week may be normal. Repeated strain is a warning sign that the work system is becoming unsustainable.',
+    whatLeadersCanChange:
+      'Treat repeated signals as structural issues. Assign an owner. Set a corrective action. Review trend after two weeks.',
   },
 ];
 
 // What this is NOT per spec
 const whatThisIsNot = [
-  "Not performance monitoring",
-  "Not sentiment analysis",
-  "Not productivity scoring",
-  "Not individual tracking",
-  "Not keystroke logging",
-  "Not screen recording",
+  'Not performance monitoring',
+  'Not sentiment analysis',
+  'Not productivity scoring',
+  'Not individual tracking',
+  'Not keylogging',
+  'Not screen recording',
+  'Not message analysis',
+  'Not employee ranking',
 ];
 
 const Product = () => {
@@ -99,13 +111,20 @@ const Product = () => {
                 The Product
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From Invisible Strain to{" "}
-                <span className="text-gradient">Visible Signals</span>
+                From invisible workload strain to{' '}
+                <span className="text-gradient">visible risk signals</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                SignalTrue translates behavioral patterns into early warning signals that leaders can act on 
-                before strain becomes visible in performance, engagement, or attrition.
+                SignalTrue turns calendar, meeting, and communication metadata into early warning
+                signals that leaders can act on before pressure becomes visible in performance,
+                engagement, or attrition.
               </p>
+              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+                <Button variant="hero" size="xl">
+                  Request Early Signal Preview
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
@@ -115,16 +134,17 @@ const Product = () => {
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                The Signals We Detect
+                The signals we detect
               </h2>
               <p className="text-muted-foreground">
-                Each signal type includes: what it means, why it matters, and what leaders can change structurally.
+                Each signal helps reveal whether work is becoming heavier, slower, or harder to
+                sustain.
               </p>
             </div>
 
             <div className="max-w-5xl mx-auto space-y-8">
               {signals.map((signal, index) => (
-                <div 
+                <div
                   key={index}
                   className="p-8 rounded-2xl bg-card border border-border/50 animate-slide-up"
                   style={{ animationDelay: `${index * 0.1}s` }}
@@ -142,25 +162,19 @@ const Product = () => {
                           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
                             What it means
                           </p>
-                          <p className="text-muted-foreground">
-                            {signal.whatItMeans}
-                          </p>
+                          <p className="text-muted-foreground">{signal.whatItMeans}</p>
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
                             Why it matters
                           </p>
-                          <p className="text-muted-foreground">
-                            {signal.whyItMatters}
-                          </p>
+                          <p className="text-muted-foreground">{signal.whyItMatters}</p>
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
                             What leaders can change
                           </p>
-                          <p className="text-muted-foreground">
-                            {signal.whatLeadersCanChange}
-                          </p>
+                          <p className="text-muted-foreground">{signal.whatLeadersCanChange}</p>
                         </div>
                       </div>
                     </div>
@@ -177,16 +191,16 @@ const Product = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                  What This Is <span className="text-destructive">NOT</span>
+                  What this is not
                 </h2>
                 <p className="text-lg text-muted-foreground">
-                  SignalTrue is designed so that surveillance is architecturally impossible.
+                  SignalTrue is designed to make surveillance impossible.
                 </p>
               </div>
 
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {whatThisIsNot.map((item, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="p-4 rounded-xl bg-card border border-destructive/20 flex items-center gap-3"
                   >
@@ -198,7 +212,7 @@ const Product = () => {
 
               <div className="mt-12 p-6 rounded-2xl bg-success/5 border border-success/20 text-center">
                 <p className="text-lg text-foreground">
-                  <strong>What we are:</strong> A system-level early warning layer that helps leaders 
+                  <strong>What we are:</strong> a team-level early warning layer that helps leaders
                   fix structural problems before people break.
                 </p>
               </div>
@@ -212,10 +226,10 @@ const Product = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See Early Signals in Your Org
+                See early signals in your organization
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Request a preview to see what these signals look like in your organization.
+                Request a preview to see what workload risk could look like in your context.
               </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
                 <Button variant="hero" size="xl">

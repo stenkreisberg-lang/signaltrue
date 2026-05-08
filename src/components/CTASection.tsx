@@ -41,12 +41,12 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            You Don't Need Another Survey.{' '}
-            <span className="text-gradient">You Need Earlier Truth.</span>
+            You do not need another survey.{' '}
+            <span className="text-gradient">You need earlier risk visibility.</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            See what behavioral drift looks like in your organization before it becomes visible in
-            outcomes, exits, or engagement scores.
+            See what workload risk looks like in your organization before it becomes burnout, missed
+            execution, or resignation.
           </p>
 
           {/* Single CTA per spec */}
