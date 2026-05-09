@@ -222,10 +222,10 @@ export const attachAccessibleFeatures = async (req, res, next) => {
  */
 function getUpgradeSuggestion(currentPlanId, feature) {
   const suggestions = {
-    'monthlyReportsLeadership': 'Upgrade to Leadership Intelligence (€199) to access executive reports',
-    'aiStrategic': 'Upgrade to Leadership Intelligence (€199) for strategic AI recommendations',
-    'industryBenchmarks': 'Upgrade to Leadership Intelligence (€199) to compare with industry peers',
-    'orgComparisons': 'Upgrade to Leadership Intelligence (€199) for organizational comparisons',
+    'monthlyReportsLeadership': 'Upgrade to Leadership Intelligence (€499) to access executive reports',
+    'aiStrategic': 'Upgrade to Leadership Intelligence (€499) for strategic AI recommendations',
+    'industryBenchmarks': 'Upgrade to Leadership Intelligence (€499) to compare with industry peers',
+    'orgComparisons': 'Upgrade to Leadership Intelligence (€499) for organizational comparisons',
     'customModels': 'Contact us for Organizational Intelligence (Custom) plan'
   };
 

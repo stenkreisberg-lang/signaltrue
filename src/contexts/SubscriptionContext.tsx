@@ -1,6 +1,6 @@
 /**
  * Subscription Context
- * 
+ *
  * Provides subscription plan and feature access throughout the React app.
  * This enforces the power boundary at the UI level.
  */
@@ -67,7 +67,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     try {
       setLoading(true);
       const response = await axios.get('/api/subscriptions/current');
-      
+
       setSubscription(response.data.current);
       setAccessibleFeatures(response.data.access.features);
       setError(null);
@@ -122,10 +122,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const canUpgradeTo = (targetPlanId: string): boolean => {
     const currentPlanId = getPlanId();
     const hierarchy = ['team', 'leadership', 'custom'];
-    
+
     const currentIndex = hierarchy.indexOf(currentPlanId || '');
     const targetIndex = hierarchy.indexOf(targetPlanId);
-    
+
     return targetIndex > currentIndex;
   };
 
@@ -137,12 +137,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const upgrade = async (targetPlanId: string): Promise<any> => {
     try {
       const response = await axios.put('/api/subscriptions/upgrade', {
-        targetPlanId
+        targetPlanId,
       });
-      
+
       // Refresh subscription data
       await fetchSubscription();
-      
+
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Upgrade failed');
@@ -157,12 +157,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const downgrade = async (targetPlanId: string): Promise<any> => {
     try {
       const response = await axios.put('/api/subscriptions/downgrade', {
-        targetPlanId
+        targetPlanId,
       });
-      
+
       // Refresh subscription data
       await fetchSubscription();
-      
+
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Downgrade failed');
@@ -176,11 +176,13 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
    */
   const getUpgradeSuggestion = (feature: string): string => {
     const suggestions: { [key: string]: string } = {
-      monthlyReportsLeadership: 'Upgrade to Leadership Intelligence (€199) to access executive reports',
-      aiStrategic: 'Upgrade to Leadership Intelligence (€199) for strategic AI recommendations',
-      industryBenchmarks: 'Upgrade to Leadership Intelligence (€199) to compare with industry peers',
-      orgComparisons: 'Upgrade to Leadership Intelligence (€199) for organizational comparisons',
-      customModels: 'Contact us for Organizational Intelligence (Custom) plan'
+      monthlyReportsLeadership:
+        'Upgrade to Leadership Intelligence (€499) to access executive reports',
+      aiStrategic: 'Upgrade to Leadership Intelligence (€499) for strategic AI recommendations',
+      industryBenchmarks:
+        'Upgrade to Leadership Intelligence (€499) to compare with industry peers',
+      orgComparisons: 'Upgrade to Leadership Intelligence (€499) for organizational comparisons',
+      customModels: 'Contact us for Organizational Intelligence (Custom) plan',
     };
 
     return suggestions[feature] || 'Upgrade your plan to access this feature';
@@ -199,14 +201,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     upgrade,
     downgrade,
     getUpgradeSuggestion,
-    refresh: fetchSubscription
+    refresh: fetchSubscription,
   };
 
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
+  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 };
 
 export default SubscriptionContext;

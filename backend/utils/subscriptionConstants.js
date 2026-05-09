@@ -15,7 +15,7 @@ export const PLAN_DEFINITIONS = {
   [PLAN_IDS.TEAM]: {
     planId: 'team',
     name: 'Team Intelligence',
-    priceEUR: 99,
+    priceEUR: 299,
     features: {
       weeklyReports: true,
       monthlyReportsHR: true,
@@ -30,7 +30,7 @@ export const PLAN_DEFINITIONS = {
   [PLAN_IDS.LEADERSHIP]: {
     planId: 'leadership',
     name: 'Leadership Intelligence',
-    priceEUR: 199,
+    priceEUR: 499,
     features: {
       weeklyReports: true,
       monthlyReportsHR: true,

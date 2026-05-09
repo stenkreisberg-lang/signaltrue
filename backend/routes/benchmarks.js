@@ -1,7 +1,7 @@
 /**
  * Industry Benchmark Routes
  * 
- * Available only for Leadership Intelligence (€199) and Custom plans.
+ * Available only for Leadership Intelligence (€499) and Custom plans.
  * Strict role-based access: CEO and BOARD only.
  */
 
@@ -45,7 +45,7 @@ router.get('/org/:orgId', async (req, res) => {
 });
 
 /**
- * INDUSTRY BENCHMARK ROUTES (Leadership Intelligence €199+)
+ * INDUSTRY BENCHMARK ROUTES (Leadership Intelligence €499+)
  * Apply benchmark access middleware to protected routes
  */
 

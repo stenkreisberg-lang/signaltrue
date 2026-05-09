@@ -16,8 +16,8 @@ function getStripe() {
  * Body: { plan: 'visibility' | 'interpretation' }
  * 
  * Plans:
- *   - visibility: €99/month
- *   - interpretation: €199/month
+ *   - visibility: €299/month
+ *   - interpretation: €499/month
  */
 router.post('/billing/create-checkout-session', authenticateToken, async (req, res) => {
   try {
@@ -31,8 +31,8 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
     // Map plan names to Stripe Price IDs
     // Set these in your environment after creating products in Stripe Dashboard
     const priceMap = {
-      visibility: process.env.STRIPE_PRICE_VISIBILITY,      // €99/month
-      interpretation: process.env.STRIPE_PRICE_INTERPRETATION, // €199/month
+      visibility: process.env.STRIPE_PRICE_VISIBILITY,      // €299/month
+      interpretation: process.env.STRIPE_PRICE_INTERPRETATION, // €499/month
       // Legacy names for backwards compatibility
       starter: process.env.STRIPE_PRICE_VISIBILITY,
       pro: process.env.STRIPE_PRICE_INTERPRETATION,
@@ -41,7 +41,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
     const priceId = priceMap[plan];
     if (!priceId) {
       return res.status(400).json({ 
-        message: `Unknown plan '${plan}'. Available: visibility (€99), interpretation (€199)` 
+        message: `Unknown plan '${plan}'. Available: visibility (€299), interpretation (€499)` 
       });
     }
 

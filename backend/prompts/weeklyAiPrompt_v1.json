@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "mode": "tactical",
-  "description": "Tactical AI for Team Intelligence plan (€99). Short-horizon, action-oriented recommendations for HR and managers.",
+  "description": "Tactical AI for Team Intelligence plan (€299). Short-horizon, action-oriented recommendations for HR and managers.",
   "restrictions": {
     "horizon": "7-14 days",
     "maxRecommendations": 3,

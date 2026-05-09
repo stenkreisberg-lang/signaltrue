@@ -2,7 +2,7 @@
  * Monthly Leadership Report Service
  * 
  * Generates executive-focused monthly reports for CEO and Board members.
- * Available only in Leadership Intelligence (€199) and Custom plans.
+ * Available only in Leadership Intelligence (€499) and Custom plans.
  * 
  * CRITICAL DIFFERENCES FROM HR REPORTS:
  * - Organizational trajectory, not team metrics
