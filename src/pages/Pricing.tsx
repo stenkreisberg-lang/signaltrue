@@ -47,7 +47,7 @@ const tiers = [
     name: 'Visibility',
     outcome: 'See early workload risk signals before issues become visible.',
     description: 'Small leadership teams that want early visibility into workload risk.',
-    price: '€999',
+    price: '€299',
     period: '/month',
     highlight: false,
     features: [
@@ -66,7 +66,7 @@ const tiers = [
     outcome:
       'Track risk trends and get alerts before pressure turns into burnout, missed execution, or resignations.',
     description: 'Growing companies that want to catch workload risk before it becomes expensive.',
-    price: '€1,999',
+    price: '€499',
     period: '/month',
     highlight: true,
     features: [
