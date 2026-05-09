@@ -27,6 +27,7 @@
         <a href="/product">Product</a>
         <a href="/pricing" aria-current="page">Pricing</a>
         <a href="/about">About</a>
+        <a href="/sample-report" style="color: var(--brand); font-weight: 600;">📋 Sample Report</a>
       </nav>
       <div class="cta">
         <a class="btn" href="/login">Login</a>
@@ -197,12 +198,79 @@
       </div>
     </section>
 
+    <!-- Sample Report Teaser -->
+    <section style="padding: 64px 0;">
+      <div class="container">
+        <div style="
+          background: linear-gradient(135deg, rgba(96,165,250,0.08), rgba(110,231,183,0.04));
+          border: 1px solid rgba(96,165,250,0.25);
+          border-radius: 16px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          overflow: hidden;
+          gap: 0;
+        ">
+          <!-- Left: copy -->
+          <div style="padding: 48px 40px; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 14px;">📋 Still asking "what do I actually get?"</div>
+            <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 14px; line-height: 1.2;">See a real Monday morning report — before you book a call.</h2>
+            <p style="color: var(--muted); font-size: 15px; margin: 0 0 24px; line-height: 1.65;">
+              Every SignalTrue plan delivers a weekly leadership risk report straight to your inbox. We've published a full sample — real layout, real signals, real AI recommendations — so you know exactly what you're buying.
+            </p>
+            <ul style="list-style:none;padding:0;margin:0 0 28px;display:flex;flex-direction:column;gap:9px;">
+              <li style="font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;"><span style="color:var(--brand);font-weight:700;">✓</span> Signal Health Score with 4-week trend</li>
+              <li style="font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;"><span style="color:var(--brand);font-weight:700;">✓</span> Drift alerts with confidence scores</li>
+              <li style="font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;"><span style="color:var(--brand);font-weight:700;">✓</span> Tactical &amp; strategic AI recommendations</li>
+              <li style="font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;"><span style="color:var(--brand);font-weight:700;">✓</span> Team risk table with recommended actions</li>
+              <li style="font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;"><span style="color:var(--brand);font-weight:700;">✓</span> Downloadable as PDF</li>
+            </ul>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;">
+              <a href="/sample-report" class="btn btn-primary" style="padding:13px 24px;font-size:15px;" onclick="gtag('event','sample_report_click',{event_category:'conversion',event_label:'pricing_teaser'});">View Sample Report →</a>
+              <a href="/contact" class="btn" style="padding:13px 20px;font-size:14px;">Book a demo</a>
+            </div>
+          </div>
+          <!-- Right: mini preview -->
+          <div style="background:rgba(11,18,32,0.6);padding:32px 28px;display:flex;flex-direction:column;gap:14px;border-left:1px solid rgba(96,165,250,0.15);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">Preview — NordTech GmbH · Week of May 5</div>
+            <div style="background:rgba(15,23,42,0.8);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">SIGNAL HEALTH SCORE</div>
+                <div style="font-size:30px;font-weight:800;color:#f59e0b;">71 <span style="font-size:14px;color:#ef4444;">↓7</span></div>
+              </div>
+              <div style="text-align:right;font-size:12px;">
+                <div style="color:#ef4444;font-weight:600;">3 teams at risk</div>
+                <div style="color:#10b981;font-weight:600;">1 improving</div>
+              </div>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:12px 14px;">
+              <div style="font-size:12px;font-weight:700;color:#fca5a5;margin-bottom:4px;">🔴 CRITICAL DRIFT</div>
+              <div style="font-size:13px;color:var(--muted);">Engineering: meeting density 2.4σ above baseline for 11 days</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px 14px;">
+              <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:4px;">🟡 WARNING</div>
+              <div style="font-size:13px;color:var(--muted);">Customer Success: after-hours +47% vs 4-week avg</div>
+            </div>
+            <div style="background:rgba(110,231,183,0.06);border:1px solid rgba(110,231,183,0.18);border-radius:8px;padding:12px 14px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand);margin-bottom:4px;">🤖 AI Recommendation</div>
+              <div style="font-size:13px;color:var(--muted);">Pause 2 Engineering ceremonies before Thursday → recover 3.4h/person</div>
+            </div>
+            <div style="text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px;">
+              + causal drill-down, 12-team breakdown, PDF export &nbsp;→&nbsp; <a href="/sample-report" style="color:var(--accent);text-decoration:none;font-weight:600;">See full report</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Final CTA -->
     <section class="cta-section">
       <div class="container center">
         <h2>Ready to see your organizational signals?</h2>
         <p class="muted" style="max-width: 600px; margin: 16px auto 24px;">Request a demo to see how SignalTrue turns coordination patterns into actionable signals.</p>
-        <a class="btn btn-primary btn-large" href="/contact">Request demo</a>
+        <div class="cta-buttons" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+          <a class="btn btn-primary btn-large" href="/contact">Request demo</a>
+          <a class="btn btn-large" href="/sample-report">📋 See a sample report first</a>
+        </div>
       </div>
     </section>
   </main>
