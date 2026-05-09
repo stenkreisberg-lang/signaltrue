@@ -20,6 +20,7 @@
     { "source": "/resources", "destination": "/marketing/resources.html" },
     { "source": "/ai-info-page", "destination": "/marketing/ai-info-page.html" },
     { "source": "/drift-diagnostic", "destination": "/marketing/drift-diagnostic.html" },
+    { "source": "/sample-report", "destination": "/marketing/sample-report.html" },
     { "source": "/app/privacy", "destination": "/marketing/app-privacy.html" },
     { "source": "/burnout-early-warning-system", "destination": "/marketing/burnout-early-warning-system.html" },
     { "source": "/employee-engagement-leading-indicators", "destination": "/marketing/employee-engagement-leading-indicators.html" },
