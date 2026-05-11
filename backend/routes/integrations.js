@@ -880,7 +880,8 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
   try {
     const clientId = process.env.MS_APP_CLIENT_ID;
     const clientSecret = process.env.MS_APP_CLIENT_SECRET;
-    const tenant = process.env.MS_APP_TENANT || 'common';
+    // Must use 'common' here — the auth code was issued by the common endpoint
+    // and must be exchanged there regardless of which tenant the user belongs to.
     const redirectUri = process.env.MS_APP_REDIRECT_URI;
     if (!clientId || !clientSecret || !redirectUri) {
       return res.status(503).send('Microsoft OAuth not configured.');
@@ -891,7 +892,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     const orgId = parsed.orgId || null;
     const scopeParam = String(parsed.scope || 'outlook');
 
-    const tokenRes = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+    const tokenRes = await fetch(`https://login.microsoftonline.com/common/oauth2/v2.0/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({

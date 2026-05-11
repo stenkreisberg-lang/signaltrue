@@ -76,10 +76,12 @@ export async function refreshGoogleAccessToken(refreshTokenEnc) {
 }
 
 // Refresh Microsoft access token using refresh token
-export async function refreshMicrosoftAccessToken(refreshTokenEnc) {
+// orgTenantId should be the tenant ID stored on the org at OAuth time.
+// Falls back to 'common' which Microsoft resolves from the token itself.
+export async function refreshMicrosoftAccessToken(refreshTokenEnc, orgTenantId = null) {
   const clientId = process.env.MS_APP_CLIENT_ID;
   const clientSecret = process.env.MS_APP_CLIENT_SECRET;
-  const tenant = process.env.MS_APP_TENANT || 'common';
+  const tenant = orgTenantId || 'common';
   const tokenUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
   const refreshToken = decryptString(refreshTokenEnc);
   if (!clientId || !clientSecret || !refreshToken) return null;

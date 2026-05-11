@@ -230,7 +230,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   
   async refreshToken(org, integration) {
     const refreshToken = decryptString(integration.refreshToken);
-    const tenant = process.env.MS_APP_TENANT || 'common';
+    // Use the org's own tenant ID (stored at OAuth time) so multi-tenant clients work correctly.
+    // Fall back to 'common' which Microsoft resolves from the refresh token itself.
+    const tenant = integration.tenantId || org.integrations?.microsoft?.tenantId || 'common';
     
     const response = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
       method: 'POST',
