@@ -859,14 +859,20 @@ router.get('/integrations/microsoft/oauth/start', async (req, res) => {
     scope: scopeParam, 
     nonce: crypto.randomBytes(8).toString('hex') 
   });
-  const url = new URL(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`);
+  // Use 'common' so any tenant's admin can connect — Microsoft will resolve the real tenant
+  // from the signed-in account during the flow.
+  const oauthTenant = 'common';
+  const url = new URL(`https://login.microsoftonline.com/${oauthTenant}/oauth2/v2.0/authorize`);
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('response_mode', 'query');
   url.searchParams.set('scope', scopes.join(' '));
   url.searchParams.set('state', state);
-  url.searchParams.set('prompt', 'select_account'); // Force account selection
+  // prompt=consent forces the org-wide admin consent screen so application-level
+  // permissions (Calendars.Read for all mailboxes) are granted in this single step —
+  // no separate Azure portal visit required for any client.
+  url.searchParams.set('prompt', 'consent');
   return res.redirect(String(url));
 });
 
