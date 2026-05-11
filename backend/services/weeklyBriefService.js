@@ -191,6 +191,18 @@ export async function generateWeeklyBrief(orgId) {
   const sixWeekStart = new Date(thisWeekStart);
   sixWeekStart.setDate(sixWeekStart.getDate() - 42); // 6 full weeks before this week
 
+  // ─── Data coverage: how many users have calendar events this week ───
+  const totalUsers = await User.countDocuments({ orgId: org._id });
+  const usersWithDataThisWeek = await WorkEvent.distinct('actorUserId', {
+    orgId: org._id,
+    source: { $in: ['microsoft-outlook', 'google-calendar'] },
+    eventType: 'meeting',
+    actorUserId: { $ne: null },
+    timestamp: { $gte: thisWeekStart, $lte: now },
+  });
+  const connectedUserCount = Math.max(usersWithDataThisWeek.length, 1); // avoid div-by-zero
+  const coveragePct = totalUsers > 0 ? Math.round((usersWithDataThisWeek.length / totalUsers) * 100) : 0;
+
   // ─── Fetch all data in parallel ───
   const [
     twEvents, lwEvents,
@@ -240,48 +252,48 @@ export async function generateWeeklyBrief(orgId) {
   const twTotal = twEvents.reduce((s, e) => s + e.count, 0);
   const lwTotal = lwEvents.reduce((s, e) => s + e.count, 0);
 
-  // Latest vs previous metrics averages
+  // Latest vs previous metrics averages — divided by connectedUserCount for per-person figures
   const tw = {
-    meetings: avgField(twMetricsArr, 'meetingCount7d'),
-    meetingHours: avgField(twMetricsArr, 'meetingDurationTotalHours7d'),
-    backToBack: avgField(twMetricsArr, 'backToBackMeetingBlocks'),
-    messages: avgField(twMetricsArr, 'messageCount7d'),
-    msgsPerDay: avgField(twMetricsArr, 'messagesPerDay'),
-    afterHoursMsg: avgField(twMetricsArr, 'afterHoursMessageCount'),
-    afterHoursRatio: avgField(twMetricsArr, 'afterHoursMessageRatio'),
+    meetings: avgField(twMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(twMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(twMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(twMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(twMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(twMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+    afterHoursRatio: avgField(twMetricsArr, 'afterHoursMessageRatio'),   // already a ratio, no division
     channels: avgField(twMetricsArr, 'uniqueChannels7d'),
     afterHoursEmail: avgField(twMetricsArr, 'afterHoursSentRatio'),
-    focusTimeAvailability: avgField(twMetricsArr, 'focusTimeAvailabilityHours'),
+    focusTimeAvailability: avgField(twMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
     calendarFragmentation: avgField(twMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(twMetricsArr, 'recurringMeetingBurden'),
   };
   const lw = {
-    meetings: avgField(lwMetricsArr, 'meetingCount7d'),
-    meetingHours: avgField(lwMetricsArr, 'meetingDurationTotalHours7d'),
-    backToBack: avgField(lwMetricsArr, 'backToBackMeetingBlocks'),
-    messages: avgField(lwMetricsArr, 'messageCount7d'),
-    msgsPerDay: avgField(lwMetricsArr, 'messagesPerDay'),
-    afterHoursMsg: avgField(lwMetricsArr, 'afterHoursMessageCount'),
+    meetings: avgField(lwMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(lwMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(lwMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(lwMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(lwMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(lwMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
     afterHoursRatio: avgField(lwMetricsArr, 'afterHoursMessageRatio'),
     channels: avgField(lwMetricsArr, 'uniqueChannels7d'),
     afterHoursEmail: avgField(lwMetricsArr, 'afterHoursSentRatio'),
-    focusTimeAvailability: avgField(lwMetricsArr, 'focusTimeAvailabilityHours'),
+    focusTimeAvailability: avgField(lwMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
     calendarFragmentation: avgField(lwMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(lwMetricsArr, 'recurringMeetingBurden'),
   };
 
-  // ─── 6-week baseline averages ───
+  // ─── 6-week baseline averages (per-person) ───
   const sixWeekAvg = {
-    meetings: avgField(sixWeekMetricsArr, 'meetingCount7d'),
-    meetingHours: avgField(sixWeekMetricsArr, 'meetingDurationTotalHours7d'),
-    backToBack: avgField(sixWeekMetricsArr, 'backToBackMeetingBlocks'),
-    messages: avgField(sixWeekMetricsArr, 'messageCount7d'),
-    msgsPerDay: avgField(sixWeekMetricsArr, 'messagesPerDay'),
-    afterHoursMsg: avgField(sixWeekMetricsArr, 'afterHoursMessageCount'),
+    meetings: avgField(sixWeekMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(sixWeekMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(sixWeekMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(sixWeekMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(sixWeekMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(sixWeekMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
     afterHoursRatio: avgField(sixWeekMetricsArr, 'afterHoursMessageRatio'),
     afterHoursRatioPct: avgField(sixWeekMetricsArr, 'afterHoursMessageRatio') * 100,
     channels: avgField(sixWeekMetricsArr, 'uniqueChannels7d'),
-    focusTimeAvailability: avgField(sixWeekMetricsArr, 'focusTimeAvailabilityHours'),
+    focusTimeAvailability: avgField(sixWeekMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
     calendarFragmentation: avgField(sixWeekMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(sixWeekMetricsArr, 'recurringMeetingBurden'),
   };
@@ -491,14 +503,16 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── AI Analysis Layer ───
-  const employeeCount = await User.countDocuments({ orgId: org._id });
+  const employeeCount = totalUsers; // already fetched above for coverage
   const aiAnalysis = await generateWeeklyAIAnalysis({
     orgName: org.name,
     industry: org.industry || 'Other',
     orgSize: org.size || `${employeeCount} employees`,
     teamCount: teams.length,
     employeeCount,
-    tw, lw, sixWeekAvg,
+    connectedUserCount,   // how many users have calendar data — AI uses this for context
+    coveragePct,          // % of org with data — AI can flag low coverage
+    tw, lw, sixWeekAvg,   // these are already per-person figures
     twMeetings, lwMeetings, twMessages, lwMessages,
     twSignals, lwSignals, twCKSignals, lwCKSignals,
     teamBDIData,
@@ -858,6 +872,9 @@ export async function generateWeeklyBrief(orgId) {
 
   // ─── 12. Footer ───
   html += `<div style="padding:16px 24px; background:#f9fafb; border-radius:0 0 12px 12px; border:1px solid #e5e7eb; border-top:0;">`;
+  // Data coverage banner
+  const coverageColor = coveragePct >= 80 ? '#16a34a' : coveragePct >= 40 ? '#d97706' : '#dc2626';
+  html += `<p style="${S.pSmall}">📊 <strong>Data coverage:</strong> <span style="color:${coverageColor}; font-weight:600;">${usersWithDataThisWeek.length} of ${totalUsers} employees (${coveragePct}%)</span> have calendar data this week — all per-person figures are based on connected accounts only.</p>`;
   html += `<p style="${S.pSmall}">Data sources: ${connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}</p>`;
   html += `<p style="${S.pSmall}">Report period: ${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} compared with ${lastWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(thisWeekStart.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>`;
   html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()} · Status: ${verdictText} (${verdictConfidence} confidence)</p>`;
