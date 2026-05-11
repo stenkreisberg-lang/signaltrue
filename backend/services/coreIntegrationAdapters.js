@@ -7,7 +7,9 @@
 
 import Organization from '../models/organizationModel.js';
 import WorkEvent from '../models/workEvent.js';
+import User from '../models/user.js';
 import { decryptString, encryptString } from '../utils/crypto.js';
+import { getMicrosoftAppToken } from './tokenService.js';
 import mongoose from 'mongoose';
 
 // ============================================================
@@ -277,7 +279,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     if (scope === 'both') {
       // Fetch both Outlook calendar events and Teams messages
       const [outlookEvents, teamsMessages] = await Promise.all([
-        this.fetchOutlookEvents(accessToken, since, until).catch(err => {
+        this.fetchOutlookEvents(accessToken, since, until, orgId).catch(err => {
           console.warn('[Microsoft] Outlook fetch failed:', err.message);
           return [];
         }),
@@ -288,27 +290,148 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       ]);
       return [...outlookEvents, ...teamsMessages];
     } else if (scope === 'outlook') {
-      return await this.fetchOutlookEvents(accessToken, since, until);
+      return await this.fetchOutlookEvents(accessToken, since, until, orgId);
     } else {
       return await this.fetchTeamsMessages(accessToken, since, until);
     }
   }
   
-  async fetchOutlookEvents(accessToken, since, until) {
-    // Fetch calendar events
-    const url = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&$top=100`;
-    
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Outlook fetch failed: ${error}`);
+  async fetchOutlookEvents(delegatedToken, since, until, orgId = null) {
+    const allEvents = [];
+    const select = '$select=id,subject,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,location,recurrence&$top=100';
+
+    // ── STRATEGY 1: App-only token (Calendars.Read application permission) ──
+    // This is the correct approach: the app authenticates with its own identity
+    // and reads every user's calendar directly.
+    // Requires "Calendars.Read" APPLICATION permission granted in Azure AD.
+    let appTokenWorked = false;
+    if (orgId) {
+      try {
+        const org = await Organization.findById(orgId).select('integrations.microsoft.tenantId').lean();
+        const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
+        if (!tenantId) {
+          console.warn('[Microsoft] No tenantId available for app-only token');
+        } else {
+          const appToken = await getMicrosoftAppToken(tenantId);
+          if (appToken) {
+            const orgUsers = await User.find({
+              orgId,
+              'externalIds.microsoftUserId': { $exists: true, $ne: null }
+            }).select('_id email externalIds').lean();
+
+            if (orgUsers.length > 0) {
+              console.log(`[Microsoft][AppOnly] Fetching calendars for ${orgUsers.length} users`);
+              let successCount = 0;
+              let failCount = 0;
+              for (const user of orgUsers) {
+                const msId = user.externalIds?.microsoftUserId;
+                if (!msId) continue;
+                try {
+                  const url = `https://graph.microsoft.com/v1.0/users/${msId}/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
+                  const res = await fetch(url, { headers: { Authorization: `Bearer ${appToken}` } });
+                  if (res.ok) {
+                    const data = await res.json();
+                    const events = (data.value || []).map(e => ({
+                      ...e,
+                      eventSource: 'outlook',
+                      _internalUserId: user._id,
+                      _userEmail: user.email,
+                    }));
+                    allEvents.push(...events);
+                    successCount++;
+                  } else {
+                    const errText = await res.text();
+                    if (res.status === 403) {
+                      // App permission not yet granted — bail out of the loop early
+                      console.warn(`[Microsoft][AppOnly] 403 for ${user.email} — Calendars.Read application permission may not be granted yet`);
+                      failCount++;
+                      if (failCount >= 3) {
+                        console.warn('[Microsoft][AppOnly] Multiple 403s — app permission not available, switching to attendee expansion');
+                        break;
+                      }
+                    } else {
+                      console.warn(`[Microsoft][AppOnly] calendarview failed for ${user.email}: ${res.status} ${errText.slice(0, 150)}`);
+                      failCount++;
+                    }
+                  }
+                } catch (userErr) {
+                  console.warn(`[Microsoft][AppOnly] error for ${user.email}:`, userErr.message);
+                }
+              }
+              if (successCount > 0) {
+                appTokenWorked = true;
+                console.log(`[Microsoft][AppOnly] SUCCESS: fetched ${allEvents.length} events from ${successCount}/${orgUsers.length} users`);
+              }
+            }
+          }
+        }
+      } catch (appErr) {
+        console.warn('[Microsoft][AppOnly] App token fetch failed:', appErr.message);
+      }
     }
-    
-    const data = await response.json();
-    return (data.value || []).map(event => ({ ...event, eventSource: 'outlook' }));
+
+    if (appTokenWorked) return allEvents;
+
+    // ── STRATEGY 2: Attendee expansion from /me/calendarview (delegated token) ──
+    // The delegated token can only read the signed-in user's own calendar, but each
+    // calendar event contains the full attendee list with email addresses.
+    // We fetch the admin's calendar, then for each meeting we create one WorkEvent
+    // per attendee whose email matches an internal user — giving us org-wide attribution
+    // for all meetings the admin was part of.
+    console.log('[Microsoft] App-only token unavailable — using attendee expansion from /me/calendarview');
+
+    // Build a complete email → userId map for all org users
+    const allOrgUsers = orgId ? await User.find({ orgId }).select('_id email').lean() : [];
+    const emailToUserId = {};
+    for (const u of allOrgUsers) {
+      if (u.email) emailToUserId[u.email.toLowerCase()] = u._id;
+    }
+    console.log(`[Microsoft][AttendeeExpansion] Have ${Object.keys(emailToUserId).length} org users for matching`);
+
+    const meUrl = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
+    const meRes = await fetch(meUrl, { headers: { Authorization: `Bearer ${delegatedToken}` } });
+    if (!meRes.ok) {
+      const error = await meRes.text();
+      throw new Error(`Outlook /me/calendarview fetch failed: ${error}`);
+    }
+    const meData = await meRes.json();
+    const meEvents = meData.value || [];
+    console.log(`[Microsoft][AttendeeExpansion] Got ${meEvents.length} events from /me, expanding attendees`);
+
+    // For each calendar event, emit one copy per attendee that is an internal user
+    for (const event of meEvents) {
+      const attendeeEmails = (event.attendees || [])
+        .map(a => a.emailAddress?.address?.toLowerCase())
+        .filter(Boolean);
+
+      // Also include the organizer
+      const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
+      const allParticipants = [...new Set([...attendeeEmails, organizerEmail].filter(Boolean))];
+
+      const matchedUsers = allParticipants
+        .map(email => ({ email, userId: emailToUserId[email] }))
+        .filter(x => x.userId);
+
+      if (matchedUsers.length > 0) {
+        // Emit one copy per matched internal user
+        for (const { email, userId } of matchedUsers) {
+          allEvents.push({
+            ...event,
+            eventSource: 'outlook',
+            _internalUserId: userId,
+            _userEmail: email,
+            _attendeeExpanded: true,
+          });
+        }
+      } else {
+        // No attendee matched — keep event unattributed (will have userId: null)
+        allEvents.push({ ...event, eventSource: 'outlook' });
+      }
+    }
+
+    const attributed = allEvents.filter(e => e._internalUserId).length;
+    console.log(`[Microsoft][AttendeeExpansion] ${allEvents.length} total events, ${attributed} attributed to internal users`);
+    return allEvents;
   }
   
   async fetchTeamsMessages(accessToken, since, until) {
@@ -370,40 +493,76 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   }
   
   async transformToWorkEvents(rawEvents, orgId) {
+    // Build email → internal userId lookup for fallback matching
+    const orgUsers = await User.find({ orgId }).select('_id email').lean();
+    const emailToUserId = new Map(orgUsers.map(u => [u.email?.toLowerCase(), u._id]));
+
+    // Helper: parse dateTime safely regardless of whether it already has a TZ offset
+    function parseDateTime(dt) {
+      if (!dt) return null;
+      // If it already has offset info (+HH:MM or Z) don't append Z
+      if (/[+-]\d{2}:\d{2}$/.test(dt) || dt.endsWith('Z')) return new Date(dt);
+      // Microsoft returns local time without offset when timezone is specified separately — treat as UTC
+      return new Date(dt + 'Z');
+    }
+
     return rawEvents.map(event => {
       if (event.eventSource === 'outlook') {
-        // Calendar event
-        const start = new Date(event.start?.dateTime + 'Z');
-        const end = new Date(event.end?.dateTime + 'Z');
-        const durationMinutes = (end - start) / (1000 * 60);
-        
+        const start = parseDateTime(event.start?.dateTime);
+        const end = parseDateTime(event.end?.dateTime);
+        if (!start || isNaN(start)) return null; // skip malformed
+        const durationMinutes = end && !isNaN(end) ? (end - start) / (1000 * 60) : 0;
+
+        // Resolve userId: prefer the _internalUserId stamped during per-user fetch,
+        // fall back to matching organizer email against the User table
+        const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
+        const userId =
+          event._internalUserId ||
+          (organizerEmail ? emailToUserId.get(organizerEmail) : null) ||
+          null;
+
+        // For attendee-expanded events, append the userId to make the externalId unique
+        // per person so the upsert doesn't collapse all attendee copies into one record.
+        // For app-only per-user fetches, userId is also unique per user so same logic applies.
+        const externalIdSuffix = userId ? `-${userId}` : '';
         return {
           orgId: new mongoose.Types.ObjectId(orgId),
           source: 'microsoft-outlook',
           eventType: 'meeting',
-          externalId: `outlook-${event.id}`,
+          actorUserId: userId,
+          externalId: `outlook-${event.id}${externalIdSuffix}`,
           timestamp: start,
           duration: durationMinutes,
           metadata: {
             subject: event.subject,
-            organizer: event.organizer?.emailAddress?.address,
+            organizer: organizerEmail,
             attendeeCount: event.attendees?.length || 0,
+            attendees: (event.attendees || [])
+              .map(a => a.emailAddress?.address?.toLowerCase())
+              .filter(Boolean),
             isOnlineMeeting: event.isOnlineMeeting,
             isAllDay: event.isAllDay,
-            showAs: event.showAs, // 'busy', 'free', 'tentative'
+            showAs: event.showAs,
             location: event.location?.displayName,
             durationMinutes,
             startTime: start.toISOString(),
-            endTime: end.toISOString(),
+            endTime: end ? end.toISOString() : null,
           },
           raw: { id: event.id }
         };
       } else {
         // Teams message
+        const senderEmail = event.from?.user?.email?.toLowerCase() ||
+          event.from?.user?.userIdentityType === 'aadUser'
+            ? null
+            : null;
+        const userId = senderEmail ? emailToUserId.get(senderEmail) : null;
+
         return {
           orgId: new mongoose.Types.ObjectId(orgId),
           source: 'microsoft-teams',
           eventType: 'message',
+          actorUserId: userId,
           externalId: `teams-${event.id}`,
           timestamp: new Date(event.createdDateTime),
           metadata: {
@@ -412,13 +571,14 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             channelId: event.channelId,
             channelName: event.channelName,
             from: event.from?.user?.displayName,
+            fromEmail: senderEmail,
             messageType: event.messageType,
             hasAttachments: (event.attachments?.length || 0) > 0,
           },
           raw: { id: event.id }
         };
       }
-    });
+    }).filter(Boolean); // remove null (malformed) entries
   }
 }
 

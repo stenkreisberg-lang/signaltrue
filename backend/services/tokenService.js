@@ -1,6 +1,52 @@
 import Organization from '../models/organizationModel.js';
 import { decryptString, encryptString } from '../utils/crypto.js';
 
+// ─── In-memory cache for app-only tokens (avoid fetching on every sync) ───
+const appTokenCache = new Map(); // tenantId → { token, expiresAt }
+
+/**
+ * Get a Microsoft app-only (client credentials) access token.
+ * This token can read ALL users' calendars when the app has
+ * Application-level "Calendars.Read" permission granted in Azure AD.
+ *
+ * No user sign-in required — uses MS_APP_CLIENT_ID + MS_APP_CLIENT_SECRET
+ * with the org's tenant ID.
+ */
+export async function getMicrosoftAppToken(tenantId) {
+  const clientId = process.env.MS_APP_CLIENT_ID;
+  const clientSecret = process.env.MS_APP_CLIENT_SECRET;
+  if (!clientId || !clientSecret || !tenantId) return null;
+
+  // Return cached token if still valid (with 2-min buffer)
+  const cached = appTokenCache.get(tenantId);
+  if (cached && cached.expiresAt > Date.now() + 120_000) {
+    return cached.token;
+  }
+
+  const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+  const res = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials',
+    }).toString(),
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(`Microsoft app token failed: ${data.error} — ${data.error_description || ''}`);
+  }
+
+  const token = data.access_token;
+  const expiresAt = Date.now() + (data.expires_in || 3600) * 1000;
+  appTokenCache.set(tenantId, { token, expiresAt });
+  console.log(`[MicrosoftAppToken] Got app-only token for tenant ${tenantId}, expires in ${data.expires_in}s`);
+  return token;
+}
+
 // Refresh Google access token using refresh token
 export async function refreshGoogleAccessToken(refreshTokenEnc) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
