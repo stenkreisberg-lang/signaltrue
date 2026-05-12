@@ -1,8 +1,57 @@
 # SignalTrue Product Features
 
 ## Core Value Proposition
-**Organizational Drift Early Warning System**  
-Detect behavioral drift, get capacity indicators, receive recommendations, and track impact—before people feel the damage.
+**Organizational Drift and Engagement Strain Early Warning System**  
+Detect behavioral drift and engagement strain risk, get capacity indicators, receive recommendations, and track impact — before people feel the damage.
+
+---
+
+## 0. Engagement Strain Risk Model *(v2.0.0 — May 2026)*
+
+**Team work-pattern strain risk scored passively from metadata. No individual scoring. No content reading.**
+
+Grounded in Job Demands-Resources (JD-R) theory and UWES research frameworks. Detects 7 dimensions of strain risk, computes a 0–100 composite score, and names the patterns driving it.
+
+### 7 Subscores
+- **Recovery Debt** (weight 20%) — sustained after-hours work, lack of recovery gaps
+- **Focus Erosion** (18%) — fragmented work blocks, declining focus-to-meeting ratio
+- **Coordination Friction** (17%) — meeting overload, back-to-backs, external meeting creep
+- **Responsiveness Pressure** (14%) — response latency trends, off-hours reply rates
+- **Collaboration Withdrawal** (12%) — narrowing participation, declining async engagement
+- **Manager Support Gap** (11%) — 1:1 frequency, manager meeting access
+- **Workload Volatility** (8%) — week-over-week instability in work patterns
+
+### Risk States & Scoring
+- **Healthy** (0–30): normal work patterns within baseline
+- **Watch** (31–55): early deviation — monitor closely
+- **Strain** (56–74): sustained deviation — intervention recommended
+- **Critical** (75–100): severe strain — immediate action required
+- Baselines: 42-day rolling median + MAD (outlier-resistant). New teams land ~40 (watch band) pending calibration.
+
+### Named Patterns
+Detected by cross-signal logic when multiple subscores confirm the same root cause:
+- `hidden_strain` — high recovery debt + high responsiveness pressure masked by normal output
+- `quiet_withdrawal` — collaboration withdrawal + low messaging activity
+- `manager_bottleneck` — manager support gap + high coordination friction
+- `coordination_tax` — high coordination friction + focus erosion
+- `async_breakdown` — high responsiveness pressure + declining async participation
+- `engagement_theatre` — activity metrics look normal but underlying strain subscores are elevated
+
+### Actions & Explanations
+- Prioritised recommended actions per team, de-duplicated by `actionId`
+- Urgency tiers: urgent → high → medium
+- LLM explanation via `gpt-4o-mini` (temperature 0.3, max 400 tokens) with deterministic rule-based fallback
+- Weekly HTML email digest automatically dispatched every Monday
+
+### Privacy Gates
+- Team minimum: 8 members
+- Per-metric minimum: 5 contributors
+- 40% concentration detection (single-person dominating a metric)
+- Full suppression if gates fail — no partial data returned
+
+### Dashboard Surfaces
+- Executive tile embedded on **Overview** and **Executive Summary** pages
+- Full detail page at `/app/engagement-strain/:teamId` — score gauge, 12-week sparkline, 7 subscore bars, pattern cards with evidence, action cards, alert banners
 
 ---
 

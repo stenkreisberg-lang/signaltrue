@@ -11,6 +11,7 @@ import api from '../../utils/api';
 import { Badge } from '../../components/UIComponents';
 import DriftFamilyCard from '../../components/drift/DriftFamilyCard';
 import DriftConfidencePanel from '../../components/drift/DriftConfidencePanel';
+import EngagementStrainDashboard from '../../components/EngagementStrainDashboard';
 
 export default function ExecutiveSummary() {
   const navigate = useNavigate();
@@ -315,9 +316,14 @@ export default function ExecutiveSummary() {
           </section>
         )}
 
+        {/* Engagement Strain Risk tile */}
+        <section className="mb-8">
+          <EngagementStrainDashboard initialLimit={6} />
+        </section>
+
         {/* Two-column: Risks + Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {/* Risks */}
+          {/* Left: Risks */}
           <section>
             <h2 className="text-xl font-bold text-slate-100 mb-4">Top 3 Risks</h2>
             <div className="space-y-3">

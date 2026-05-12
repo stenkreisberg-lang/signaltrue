@@ -12,6 +12,8 @@ import {
 } from './riskCalculationService.js';
 import { generateAction } from './actionGenerationService.js';
 import { checkExpiredExperiments } from './experimentTrackingService.js';
+import { runWeeklyEngagementStrainJob } from './engagementWeeklyJobService.js';
+import { sendWeeklyEngagementReport } from './engagementWeeklyEmailService.js';
 
 /**
  * Get the start of the current week (Monday)
@@ -120,21 +122,56 @@ async function runExperimentCompletion() {
 }
 
 /**
- * Run full weekly cycle: diagnosis + experiment completion
+ * Run full weekly cycle: legacy diagnosis + engagement strain scoring + experiment completion
  */
 async function runWeeklyCycle() {
   console.log('=== STARTING WEEKLY CYCLE ===');
-  
-  const diagnosisResults = await runWeeklyDiagnosis();
-  const experimentResults = await runExperimentCompletion();
-  
+
+  const diagnosisResults    = await runWeeklyDiagnosis();
+  const experimentResults   = await runExperimentCompletion();
+  const engagementResults   = await runEngagementStrainCycle(getWeekStart());
+
   console.log('=== WEEKLY CYCLE COMPLETE ===');
-  
+
   return {
-    diagnosis: diagnosisResults,
+    diagnosis:   diagnosisResults,
     experiments: experimentResults,
-    timestamp: new Date()
+    engagement:  engagementResults,
+    timestamp: new Date(),
   };
+}
+
+/**
+ * Run Engagement Strain scoring for all orgs.
+ * Collects the distinct set of orgIds from active teams and fires one job per org.
+ */
+async function runEngagementStrainCycle(weekStart) {
+  console.log('[EngagementStrain] Starting weekly engagement strain scoring...');
+
+  const teams = await Team.find({ isActive: true }).select('orgId').lean();
+  const orgIds = [...new Set(teams.map(t => String(t.orgId)).filter(Boolean))];
+
+  const results = { processed: 0, suppressed: 0, errors: 0, orgs: orgIds.length };
+
+  for (const orgId of orgIds) {
+    try {
+      const result = await runWeeklyEngagementStrainJob(orgId, weekStart);
+      results.processed  += result.processed  ?? 0;
+      results.suppressed += result.suppressed ?? 0;
+      results.errors     += result.errors?.length ?? 0;
+
+      // Send weekly email digest after scoring — non-fatal if it fails
+      sendWeeklyEngagementReport(orgId, weekStart.toISOString().split('T')[0]).catch(err =>
+        console.error(`[EngagementStrain] Email send failed for org ${orgId}:`, err.message)
+      );
+    } catch (err) {
+      console.error(`[EngagementStrain] Error processing org ${orgId}:`, err.message);
+      results.errors++;
+    }
+  }
+
+  console.log('[EngagementStrain] Cycle complete:', results);
+  return results;
 }
 
 /**
@@ -200,6 +237,7 @@ export {
   runWeeklyDiagnosis,
   runExperimentCompletion,
   runWeeklyCycle,
+  runEngagementStrainCycle,
   diagnoseSingleTeam,
   scheduleWeeklyJob,
   getWeekStart

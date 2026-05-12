@@ -12,6 +12,7 @@ import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
 import OnboardingBanner from '../../components/OnboardingBanner';
 import DriftFamilyCard from '../../components/drift/DriftFamilyCard';
 import DriftConfidencePanel from '../../components/drift/DriftConfidencePanel';
+import EngagementStrainDashboard from '../../components/EngagementStrainDashboard';
 
 /**
  * Overview Dashboard - Main landing page for authenticated users
@@ -219,6 +220,13 @@ const Overview = () => {
           <div className="mb-8">
             <CalibrationProgress orgId={orgId} />
           </div>
+        )}
+
+        {/* Engagement Strain Risk — always shown once calibration is complete */}
+        {!calibrationStatus?.isInCalibration && (
+          <section className="mb-8">
+            <EngagementStrainDashboard initialLimit={5} />
+          </section>
         )}
 
         {/* NEW: Behavioral Drift Dashboard (if calibration complete) */}

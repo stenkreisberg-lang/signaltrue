@@ -34,18 +34,29 @@ Table of contents
 
 What is SignalTrue (from code):
 
-SignalTrue is implemented as a Behavioral Drift Intelligence platform that passively ingests metadata from calendar, messaging, and other workplace integrations and computes team-level indices and risk scores. The codebase centers on a Behavioral Drift Index (BDI) and weekly risk calculations (overload, execution, retention_strain). Key implementation files:
+SignalTrue is implemented as a Behavioral Drift Intelligence and Engagement Strain Risk platform that passively ingests metadata from calendar, messaging, and other workplace integrations and computes team-level indices and risk scores. The codebase centers on two complementary systems:
 
-- Backend entry: `backend/server.js`
-- BDI implementation: `backend/services/bdiService.js` and model `backend/models/behavioralDriftIndex.js`
-- Risk scoring: `backend/services/riskCalculationService.js` and models `backend/models/riskWeekly.js`, `backend/models/riskDriver.js`
-- Daily metrics storage: `backend/models/metricsDaily.js`
+**1. Behavioral Drift Index (BDI)** — weekly risk calculations (overload, execution, retention_strain). Key files: `backend/services/bdiService.js`, `backend/models/behavioralDriftIndex.js`, `backend/services/riskCalculationService.js`.
 
-Core idea (explicit in code): use passive metadata (meeting duration, after-hours rates, response latency, collaboration breadth, etc.) to detect early deviations from a team-specific baseline. The system computes weekly scores, tracks drivers, and surfaces playbooks and AI-generated recommendations.
+**2. Engagement Strain Risk Model (v2.0.0)** — passive, metadata-only detection of team work-pattern strain risk. Grounded in JD-R and UWES research frameworks. Key files:
+- `backend/models/engagementTeamDaily.js` — daily team metric snapshots
+- `backend/models/engagementBaseline.js` — 42-day rolling median+MAD baselines
+- `backend/models/engagementStrainWeekly.js` — weekly output with 7 subscores, patterns, recommended actions
+- `backend/services/engagementDailyAggregationService.js` — daily metrics from WorkEvents (timezone-aware after-hours detection)
+- `backend/services/engagementBaselineService.js` — robust baseline computation
+- `backend/services/engagementSubscoreService.js` — 7 subscore formulas (JD-R / UWES aligned)
+- `backend/services/engagementScoringService.js` — overall score, risk state, trend, top drivers
+- `backend/services/engagementPatternService.js` — 6 named cross-signal patterns
+- `backend/services/engagementRecommendationService.js` — prioritised action generation
+- `backend/services/engagementAlertService.js` — 5 on-demand alert types
+- `backend/services/engagementExplanationService.js` — gpt-4o-mini LLM explanations with deterministic fallback
+- `backend/services/engagementWeeklyJobService.js` — 11-step weekly pipeline
+- `backend/services/engagementWeeklyEmailService.js` — inline HTML weekly digest email
+- `backend/routes/engagementStrainRoutes.js` — 5 REST endpoints at `/api/engagement-strain`
 
-Privacy positioning (from code and routes): the AI Copilot endpoints require a privacy_mode of `metadata_only` (see `backend/routes/aiCopilot.js`). The code also includes baseline confidence and data-quality checks in `backend/utils/baselineCalculations.js` (e.g., `meetsDataQualityRequirements`) and enforces minimum group-size checks in those utilities (default minGroupSize=8), although some endpoints and UI components do not enforce minimums consistently.
+Privacy positioning: both systems enforce team-level aggregation only. No individual scoring, no content reading. `privacyGate.js` enforces team minimum 8, per-metric minimum 5 contributors, and 40% concentration detection. Engagement Strain scoring version `2.0.0` is stored per record for auditability.
 
-Important clarification: This document reflects implemented logic in code. Where the code contains placeholders, mocks, or TODOs, those are called out explicitly in later sections.
+Core idea: use passive metadata (meeting duration, after-hours rates, response latency, collaboration breadth, focus blocks, 1:1 frequency, etc.) to detect early deviations from a team-specific baseline. The BDI system computes weekly drift scores; the Engagement Strain system computes 7 subscores using robust statistics (median+MAD) and surfaces named patterns, prioritised recommended actions, and LLM-generated explanations.
 
 ---
 

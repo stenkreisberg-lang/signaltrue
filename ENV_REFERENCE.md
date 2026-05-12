@@ -21,6 +21,20 @@ MICROSOFT_CLIENT_ID=<from-azure-ad>
 MICROSOFT_CLIENT_SECRET=<from-azure-ad>
 ```
 
+### Optional (AI & Email)
+```bash
+# LLM explanations for Engagement Strain drivers (graceful fallback if unset)
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini        # Default: gpt-4o-mini
+
+# SMTP for weekly engagement strain email digest (no-op if unset)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=<app-password>
+SMTP_FROM="SignalTrue <noreply@signaltrue.com>"
+```
+
 ## Frontend (Vercel)
 
 ### Required

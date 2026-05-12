@@ -16,11 +16,80 @@ The dashboard MUST display in this order:
 6. Raw Metrics (de-emphasized)        ← BACKGROUND DATA
 ```
 
+# SignalTrue Frontend Developer Guide
+## Quick Reference for Indices, Components & Engagement Strain
+
 ---
 
-## 📡 API Endpoints
+## 🎯 Dashboard Hierarchy (CRITICAL)
 
-### Get All Dashboard Data (Single Call)
+The Overview and Executive Summary pages display in this order:
+
+```
+1. Engagement Strain Risk tile        ← ENGAGEMENT HEALTH (v2.0.0)
+2. Behavioral Drift Index (BDI)       ← BEHAVIOURAL DRIFT
+3. Capacity Status + Drivers          ← WITH EXPLANATION
+4. Coordination Load Index (CLI)
+5. Bandwidth Tax Indicator (BTI)
+6. Silence Risk Indicator (SRI)
+7. Raw Metrics (de-emphasized)        ← BACKGROUND DATA
+```
+
+---
+
+## 🔥 Engagement Strain — Components & Hooks
+
+### Hooks (`src/hooks/useEngagementStrain.ts`)
+```typescript
+useEngagementStrainSummary(orgId)        // Org-level tile data
+useEngagementStrainTeamDetail(teamId)    // Full detail + alerts
+useEngagementStrainHistory(teamId, weeks) // Up to 26 weeks
+useEngagementStrainDrivers(teamId, explain) // Top drivers + optional LLM paragraph
+```
+All hooks use the shared `api` axios instance (auto auth), `@tanstack/react-query`, staleTime 5 min, retry 2.
+
+### Components
+- **`src/components/EngagementStrainDashboard.tsx`** — Executive tile; embedded on `Overview.js` and `ExecutiveSummary.js`. Props: `orgId?`, `initialLimit=5`.
+- **`src/pages/app/EngagementStrainTeamDetail.tsx`** — Routes: `/app/engagement-strain` (org list) and `/app/engagement-strain/:teamId` (full detail). Contains score gauge ring, 12-week SVG sparkline with risk-band shading, 7 subscore bars, pattern cards, action cards, alert banners, privacy footer.
+
+### Routes (`src/App.tsx`)
+```
+/app/engagement-strain           → org team listing
+/app/engagement-strain/:teamId   → full team detail
+```
+
+### API Endpoints
+```javascript
+GET /api/engagement-strain/summary/:orgId
+GET /api/engagement-strain/team/:teamId
+GET /api/engagement-strain/team/:teamId/drivers?explain=true
+GET /api/engagement-strain/team/:teamId/history?weeks=12
+POST /api/engagement-strain/report   // Admin only — triggers scoring + email
+```
+
+### Risk States & Colors
+```
+healthy   → green   (score 0–30)
+watch     → yellow  (score 31–55)
+strain    → orange  (score 56–74)
+critical  → red     (score 75–100)
+```
+
+### Score Math Reference
+```
+robustZ = (value - median) / (scaledMAD)     // scaledMAD = MAD * 1.4826
+riskScore = clamp(50 + z * 12.5, 0, 100)
+overallScore = weighted sum of 7 subscores
+```
+
+### Privacy Rules (enforce in UI)
+- Do not render team data if team size < 8
+- Do not show per-metric breakdown if contributor count < 5
+- Display privacy footer on all engagement strain pages
+
+---
+
+## 📡 API Endpoints (Legacy Indices)
 ```javascript
 GET /api/dashboard/:teamId
 

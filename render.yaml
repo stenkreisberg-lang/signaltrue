@@ -55,6 +55,20 @@ services:
         sync: false
       - key: NOTIFICATION_EMAIL
         sync: false
+      # Engagement Strain email digest (SMTP — optional, no-op if unset)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # LLM explanations (uses OPENAI_API_KEY above — OPENAI_MODEL defaults to gpt-4o-mini)
+      - key: OPENAI_MODEL
+        value: "gpt-4o-mini"
       - key: API_KEY
         sync: false
       - key: ADMIN_API_KEY

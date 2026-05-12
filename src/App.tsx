@@ -38,6 +38,7 @@ import Contact from './pages/Contact';
 import DriftDiagnostic from './pages/DriftDiagnostic';
 import DriftReport from './pages/DriftReport';
 import EhrsSummit2026 from './pages/EhrsSummit2026';
+import EngagementStrainTeamDetail from './pages/app/EngagementStrainTeamDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,11 @@ const App = () => (
               <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />
               <Route path="/drift-report/:sessionId" element={<DriftReport />} />
               <Route path="/ehrs-summit-2026" element={<EhrsSummit2026 />} />
+              <Route path="/app/engagement-strain" element={<EngagementStrainTeamDetail />} />
+              <Route
+                path="/app/engagement-strain/:teamId"
+                element={<EngagementStrainTeamDetail />}
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -123,6 +123,14 @@ const teamSchema = new mongoose.Schema({
   overallDriftScore:      { type: Number, default: null },
   driftScoreUpdatedAt:    { type: Date },
 
+  // ── Work schedule config (used for after-hours detection) ────────────────
+  // timezone: IANA timezone string, e.g. 'America/New_York'
+  timezone: { type: String, default: 'UTC' },
+  workConfig: {
+    workdayStart: { type: String, default: '09:00' }, // HH:MM local time
+    workdayEnd:   { type: String, default: '17:00' }, // HH:MM local time
+  },
+
   // ── Privacy gate flags ────────────────────────────────────────────────────
   analyticsEnabled:    { type: Boolean, default: true },   // false when actualSize < minTeamSizeForAnalytics
   privacyGateFiredAt:  { type: Date },

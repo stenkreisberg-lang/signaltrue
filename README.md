@@ -1,14 +1,31 @@
-# Trigger redeploy for Vercel/Render
 # 📊 SignalTrue
 
-**Early-warning system for behavioral drift in teams**
+**Early-warning system for behavioral drift and engagement strain in teams**
 
-SignalTrue is an early-warning system that detects behavioral drift in teams, explains why it matters, and recommends safe, reversible actions before capacity, delivery, or retention are impacted. Built from aggregated metadata only. No message content, no individual surveillance, team-level signals only.
+SignalTrue is an early-warning platform that detects behavioral drift and engagement strain risk in teams, explains why it matters, and recommends safe, reversible actions before capacity, delivery, or retention are impacted. Built from aggregated metadata only — no message content, no individual surveillance, team-level signals only.
 
 ![SignalTrue Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![React](https://img.shields.io/badge/React-19.2.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-24.11-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-8.19-success)
+
+---
+
+## 🆕 What's New (May 2026)
+
+### 🔥 Engagement Strain Risk Model
+Passive, metadata-only detection of team work-pattern strain risk. Grounded in JD-R and UWES research frameworks.
+
+- **7 subscores**: Recovery Debt, Focus Erosion, Coordination Friction, Responsiveness Pressure, Collaboration Withdrawal, Manager Support Gap, Workload Volatility
+- **Robust statistics**: Median + MAD baselines (42-day window) — outlier-resistant by design
+- **Risk states**: Healthy → Watch → Strain → Critical, with trend tracking (improving / stable / worsening / accelerating)
+- **Pattern detection**: 6 named patterns (hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre)
+- **AI explanations**: `gpt-4o-mini` narrative generation with deterministic fallback
+- **Weekly email reports**: Inline HTML digest with score bars, urgent actions banner, team breakdown
+- **Privacy-first**: Team minimum 8, per-metric minimum 5 contributors, 40% concentration detection
+- **Scoring version**: `2.0.0` — fully auditable per record
+
+👉 API: `/api/engagement-strain/*` — see [API Endpoints](#-api-endpoints) below.
 
 ---
 
@@ -33,7 +50,17 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 
 ---
 
-## ✨ Features
+### ✨ Features
+
+### 🔥 **Engagement Strain Risk Model** *(v2.0.0)*
+- **Primary engagement health score** (0–100, higher = more strain)
+- **7 weighted subscores**: Recovery Debt (20%), Focus Erosion (18%), Coordination Friction (17%), Responsiveness Pressure (14%), Collaboration Withdrawal (12%), Manager Support Gap (11%), Workload Volatility (8%)
+- **Robust baselines**: 42-day median + MAD, outlier-resistant
+- **Named patterns**: hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre
+- **AI-generated explanations** via `gpt-4o-mini`, deterministic fallback when unavailable
+- **Weekly digest email** with per-team score bars, urgent action banners, privacy footer
+- **Privacy gates**: 8-person team minimum, 5-contributor per-metric minimum, concentration detection
+- **Frontend**: Executive summary tile (Overview + Executive Summary pages), full detail page with sparklines, subscore bars, pattern cards, alert banners
 
 ### 📈 **Behavioral Drift Index (BDI)**
 - **Primary metric** for team health tracking
@@ -149,37 +176,44 @@ Open http://localhost:3000 in your browser. You'll see 3 mock teams pre-loaded.
 signaltrue/
 ├── backend/                 # Node.js + Express API
 │   ├── models/             # Mongoose schemas
-│   │   └── team.js         # Team model with BDI history
+│   │   ├── team.js                      # Team model (timezone + workConfig added)
+│   │   ├── workEvent.js                 # Normalized event stream (all integrations)
+│   │   ├── engagementTeamDaily.js       # Daily team metrics snapshot
+│   │   ├── engagementBaseline.js        # 42-day median+MAD baselines per team
+│   │   └── engagementStrainWeekly.js    # Weekly strain scores + patterns + actions
 │   ├── routes/             # API endpoints
-│   │   ├── teamRoutes.js   # Team CRUD + AI analysis
-│   │   ├── slackRoutes.js  # Slack data refresh
-│   │   ├── calendarRoutes.js
-│   │   ├── historyRoutes.js
-│   │   └── notificationRoutes.js
+│   │   ├── teamRoutes.js
+│   │   ├── engagementStrainRoutes.js    # /api/engagement-strain/*
+│   │   └── ...
 │   ├── services/           # Business logic
-│   │   ├── slackService.js
-│   │   ├── calendarService.js
-│   │   └── notificationService.js
-│   ├── utils/              # Utilities
-│   │   ├── aiProvider.js   # Multi-AI provider support
-│   │   ├── aiUsage.js      # Token tracking
-│   │   └── bdiHistory.js   # Snapshot management
-│   ├── middleware/
-│   │   └── auth.js         # Auth scaffold (ready for JWT/Clerk)
-│   ├── server.js           # Express app + cron jobs
-│   └── package.json
+│   │   ├── engagementDailyAggregationService.js  # Daily metrics from WorkEvents
+│   │   ├── engagementBaselineService.js          # Median+MAD baseline computation
+│   │   ├── engagementWeeklyMetricsService.js     # Weekly aggregation
+│   │   ├── engagementSubscoreService.js          # 7 subscore formulas
+│   │   ├── engagementScoringService.js           # Overall score, risk state, trend
+│   │   ├── engagementPatternService.js           # 6 named pattern detectors
+│   │   ├── engagementRecommendationService.js    # Action generation + de-duplication
+│   │   ├── engagementAlertService.js             # On-demand alert evaluation
+│   │   ├── engagementExplanationService.js       # LLM + deterministic explanations
+│   │   ├── engagementWeeklyJobService.js         # 11-step weekly pipeline
+│   │   ├── engagementWeeklyEmailService.js       # HTML digest email
+│   │   ├── weeklySchedulerService.js             # Cron orchestrator
+│   │   └── ...
+│   ├── utils/
+│   │   ├── privacyGate.js  # Team size, metric suppression, concentration detection
+│   │   └── ...
+│   └── server.js
 ├── src/                    # React frontend
 │   ├── components/
-│   │   ├── Dashboard.js    # Main dashboard
-│   │   ├── TeamCard.js     # Individual team display
-│   │   ├── TimelineModal.js # BDI trend visualization
-│   │   ├── OrgDashboard.js # Organization overview
-│   │   └── PlaybookSidebar.js
-│   ├── App.js
-│   └── index.js
-├── render.yaml             # Render deployment config
-├── vercel.json             # Vercel deployment config
-├── DEPLOYMENT.md           # Complete deployment guide
+│   │   ├── EngagementStrainDashboard.tsx  # Executive tile (org overview)
+│   │   └── ...
+│   ├── pages/app/
+│   │   ├── Overview.js                   # Engagement tile embedded
+│   │   ├── ExecutiveSummary.js           # Engagement tile embedded
+│   │   └── EngagementStrainTeamDetail.tsx # Full detail + history page
+│   ├── hooks/
+│   │   └── useEngagementStrain.ts        # 4 typed React Query hooks
+│   └── App.tsx                           # Routes: /app/engagement-strain[/:teamId]
 └── README.md
 ```
 
@@ -197,13 +231,15 @@ MONGO_URI=mongodb://...
 OPENAI_API_KEY=sk-...
 ```
 
-**Optional Integrations:**
+**Optional Integrations & AI:**
 ```bash
 SLACK_BOT_TOKEN=xoxb-...
 GOOGLE_SERVICE_ACCOUNT={"type":"service_account",...}
-EMAIL_HOST=smtp.gmail.com
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=app-password
+OPENAI_API_KEY=sk-...          # Required for LLM explanations (falls back gracefully)
+OPENAI_MODEL=gpt-4o-mini       # Default model for engagement strain explanations
+SMTP_HOST=smtp.gmail.com       # Email digest (optional — no-op if unset)
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=app-password
 API_KEY=admin-secret
 ```
 
@@ -240,6 +276,13 @@ vercel --prod
 ---
 
 ## 📡 API Endpoints
+
+### Engagement Strain Risk
+- `GET /api/engagement-strain/summary/:orgId` — Executive summary for all teams
+- `GET /api/engagement-strain/team/:teamId` — Full detail + live alert evaluation
+- `GET /api/engagement-strain/team/:teamId/drivers` — Top drivers (`?explain=true` for LLM paragraph)
+- `GET /api/engagement-strain/team/:teamId/history` — Up to 26 weeks (`?weeks=N`)
+- `POST /api/engagement-strain/report` — Admin-only: trigger scoring + email for org+week
 
 ### Teams
 - `GET /api/teams` - List all teams
@@ -355,7 +398,12 @@ When backend is deployed (or running locally), these jobs run automatically:
 
 - **Daily 2 AM**: Slack data refresh
 - **Daily 2 AM**: Calendar data refresh
-- **Monday 9 AM**: Weekly summary emails/Slack messages
+- **Daily 3:30 AM**: Unified metrics job (pull, aggregate, drift detect, energy index, alerts)
+- **Monday 9 AM**: Weekly scheduler runs 4 steps in sequence:
+  1. Legacy BDI diagnosis cycle
+  2. **Engagement Strain scoring** — computes subscores, patterns, recommendations for all orgs
+  3. **Engagement Strain email dispatch** — HTML digest to org admins (no-op if SMTP not configured)
+  4. Experiment completion checks
 
 ---
 
@@ -378,9 +426,10 @@ When backend is deployed (or running locally), these jobs run automatically:
 - [x] Phase 4: Org-level visualizations
 - [x] Phase 5: AI-powered notifications
 - [x] Phase 6: Deployment prep
-- [ ] Phase 7: Multi-organization support (JWT/Clerk auth)
-- [ ] Phase 8: Mobile app
-- [ ] Phase 9: Advanced analytics (predictive burnout)
+- [x] Phase 7: Engagement Strain Risk Model (v2.0.0) — passive, metadata-only, 7 subscores, median+MAD, LLM explanations
+- [ ] Phase 8: Org-structure sync (enables `hasOrgStructure` for Manager Support Gap subscore)
+- [ ] Phase 9: Multi-organization JWT/Clerk auth
+- [ ] Phase 10: Mobile app
 
 ---
 

@@ -145,7 +145,7 @@ const workEventSchema = new mongoose.Schema({
     replyLatencySeconds: Number,
     isAfterHours: Boolean,
     
-    // --- Google Meet fields ---
+    // --- Google Meet / Calendar fields ---
     meetingIdHash: String,
     startTime: Date,
     endTime: Date,
@@ -153,6 +153,25 @@ const workEventSchema = new mongoose.Schema({
     isExternalParticipant: Boolean,
     isAdHoc: Boolean,
     durationMinutes: Number,
+
+    // --- Engagement Strain: calendar enrichment fields ---
+    // Populated at ingestion time by calendar adapters
+    is1to1: Boolean,                      // attendee_count == 2
+    isManagerOneOnOne: Boolean,           // 1:1 where one party is the team manager
+    isFocusBlock: Boolean,                // blocked focus/no-meeting time
+    isAllHands: Boolean,                  // company/all-hands event
+    isRecurring: Boolean,                 // recurring series
+    isCancelled: Boolean,                 // cancelled before it ran
+    isRescheduled: Boolean,               // rescheduled from original time
+    attendeeCount: Number,                // total attendee count
+    internalAttendeeCount: Number,        // internal-only attendees
+    externalAttendeeCount: Number,        // external attendees
+    organizerHash: String,                // hashed organizer identity
+    attendeeHashes: [String],             // hashed attendee identities
+    meetingType: {                        // derived classification
+      type: String,
+      enum: ['one_on_one', 'team', 'all_hands', 'external', 'cross_team', 'focus_block', 'other']
+    },
     
     // --- Notion fields ---
     pageIdHash: String,
@@ -175,7 +194,24 @@ const workEventSchema = new mongoose.Schema({
     // --- Basecamp fields ---
     postIdHash: String,
     todoIdHash: String,
-    responseGapSeconds: Number
+    responseGapSeconds: Number,
+
+    // --- Engagement Strain: messaging enrichment fields ---
+    // Populated at ingestion time by messaging adapters (Slack, Teams, Google Chat)
+    channelType: {                        // public / private / dm / group_dm
+      type: String,
+      enum: ['public', 'private', 'dm', 'group_dm']
+    },
+    channelHash: String,                  // hashed channel/conversation id
+    isReply: Boolean,                     // is a reply to another message
+    recipientHashes: [String],            // hashed recipient identities (DMs/group DMs)
+    mentionedUserHashes: [String],        // hashed @-mentioned user identities
+    reactionCount: Number,                // emoji reactions received
+    messageLengthBucket: {               // bucketed message length (no content stored)
+      type: String,
+      enum: ['short', 'medium', 'long']  // <50 chars / 50-300 / >300
+    },
+    hasAttachment: Boolean               // whether message had a file/link attachment
   },
   
   // Privacy marker (always metadata_only for compliance)

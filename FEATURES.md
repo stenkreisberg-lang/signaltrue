@@ -1,4 +1,33 @@
-# SignalTrue Features (Updated 20 February 2026)
+# SignalTrue Features (Updated May 2026)
+
+## 🆕 New in May 2026
+
+### Engagement Strain Risk Model (v2.0.0)
+Passive, metadata-only detection of team work-pattern strain risk, grounded in JD-R and UWES research frameworks. Operates entirely at team level — no individual scoring, no content reading.
+
+- **7 weighted subscores** (weights sum to 1.0):
+  - Recovery Debt (0.20) — after-hours activity, weekend work, lack of recovery gaps
+  - Focus Erosion (0.18) — fragmented work blocks, focus-to-meeting ratio decline
+  - Coordination Friction (0.17) — meeting load, back-to-back ratio, external meeting creep
+  - Responsiveness Pressure (0.14) — response latency trend, off-hours response rate
+  - Collaboration Withdrawal (0.12) — narrowing network breadth, async participation decline
+  - Manager Support Gap (0.11) — 1:1 frequency, manager meeting access
+  - Workload Volatility (0.08) — week-over-week instability in work patterns
+- **Robust baselines**: 42-day rolling window, median + MAD (not mean + stdDev) — outlier-resistant
+- **Risk states**: Healthy / Watch / Strain / Critical with trend direction (improving / stable / worsening / accelerating)
+- **Confidence scoring**: based on integration coverage, sample size, and baseline validity
+- **Pattern detection**: 6 named patterns detected via cross-signal logic:
+  - `hidden_strain`, `quiet_withdrawal`, `manager_bottleneck`, `coordination_tax`, `async_breakdown`, `engagement_theatre`
+- **Recommended actions**: prioritised by urgency, de-duplicated, with 5 compound cross-signal rules
+- **Alert evaluation**: 5 alert types on-demand — `rising_strain`, `critical_driver`, `fast_drift`, `silent_withdrawal`, `recovery_collapse`
+- **LLM explanations**: `gpt-4o-mini` narrative, temperature 0.3, with deterministic rule-based fallback
+- **Weekly email digest**: Inline HTML template — score bars, urgent actions banner, CTA, privacy footer. Graceful no-op if SMTP unconfigured.
+- **Privacy gates**: 8-person team minimum; per-metric 5-contributor minimum; 40% concentration detection; suppression if gates fail
+- **Frontend**: `EngagementStrainDashboard` tile on Overview + ExecutiveSummary; full detail page at `/app/engagement-strain/:teamId` with score gauge, 12-week sparkline, subscore bars, pattern cards, action cards, alert banners
+- **API**: `GET /api/engagement-strain/summary/:orgId`, `/team/:teamId`, `/team/:teamId/drivers`, `/team/:teamId/history`, `POST /api/engagement-strain/report`
+- **Scoring version**: `2.0.0` — stored per record for auditability
+
+---
 
 ## 🆕 New in February 2026
 
@@ -187,10 +216,21 @@ Removed low-value/redundant metrics, keeping only high-impact signals:
    - Detect drift
    - Update Energy Index
    - Send drift alerts
-5. **Weekly Manager Brief** - Mondays 9 AM
+5. **Weekly Scheduler** - Mondays 9 AM (4-step cycle):
+   - Legacy BDI diagnosis
+   - **Engagement Strain scoring** — full 11-step pipeline per team (aggregate → baseline → subscores → score → patterns → recommendations)
+   - **Engagement Strain email dispatch** — HTML digest per org (no-op if SMTP not set)
+   - Experiment completion checks
 6. **Data Purge** - Daily 00:30 UTC (retention policy enforcement)
 
 ## 📊 API Endpoints Summary
+
+### Engagement Strain Risk
+- `GET /api/engagement-strain/summary/:orgId` — Org-level executive summary
+- `GET /api/engagement-strain/team/:teamId` — Full team detail + alerts
+- `GET /api/engagement-strain/team/:teamId/drivers` — Top drivers (`?explain=true` for LLM paragraph)
+- `GET /api/engagement-strain/team/:teamId/history` — Up to 26 weeks (`?weeks=N`)
+- `POST /api/engagement-strain/report` — Admin-only: trigger scoring job + email dispatch
 
 ### Integrations
 - `GET /api/integrations/status` - Connection status

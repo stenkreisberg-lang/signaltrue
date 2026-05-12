@@ -115,6 +115,7 @@ import driftDiagnosticRoutes from "./routes/drift.js";
 import teamStateRoutes from "./routes/teamStateRoutes.js";
 import reminderCronRoutes from "./routes/reminderCron.js";
 import leadsRoutes from "./routes/leads.js";
+import engagementStrainRoutes from "./routes/engagementStrainRoutes.js";
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
@@ -383,6 +384,9 @@ async function main() {
     app.use('/api/goals', goalRoutes);
     app.use('/api/notifications', bellNotificationRoutes);
     app.use('/api/journey', journeyRoutes);
+
+    // --- Engagement Strain Risk Routes ---
+    app.use('/api/engagement-strain', engagementStrainRoutes);
     
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {
