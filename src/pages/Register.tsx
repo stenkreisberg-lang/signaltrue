@@ -66,6 +66,29 @@ const Register = () => {
       localStorage.setItem('orgId', data.user.orgId);
       localStorage.setItem('teamId', data.user.teamId);
 
+      // If a paid plan was selected, redirect to Stripe Checkout immediately
+      if (selectedPlan && selectedPlan !== 'trial') {
+        try {
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+          const checkoutRes = await fetch(`${apiUrl}/api/billing/create-checkout-session`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${data.token}`,
+            },
+            body: JSON.stringify({ plan: selectedPlan }),
+          });
+          const checkoutData = await checkoutRes.json();
+          if (checkoutRes.ok && checkoutData.url) {
+            window.location.href = checkoutData.url;
+            return; // browser is navigating away
+          }
+          // Checkout config not ready (Stripe keys missing) — fall through to dashboard
+        } catch {
+          // Non-fatal — just go to dashboard
+        }
+      }
+
       // Redirect to dashboard (will route based on role/onboarding status)
       navigate('/dashboard');
     } catch (err: any) {

@@ -6,6 +6,54 @@ import api from '../utils/api';
 import Dashboard from '../components/Dashboard';
 import { HRAdminOnboarding, ITAdminOnboarding } from '../components/onboarding';
 
+// ── Payment result banner ──────────────────────────────────────────────────────
+const PaymentBanner: React.FC<{ result: 'success' | 'cancelled'; onDismiss: () => void }> = ({
+  result,
+  onDismiss,
+}) => {
+  const isSuccess = result === 'success';
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        padding: '14px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: isSuccess ? '#065f46' : '#7f1d1d',
+        color: '#fff',
+        fontSize: '0.9rem',
+        fontWeight: 500,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      }}
+    >
+      <span>
+        {isSuccess
+          ? '✅ Subscription activated — welcome to SignalTrue! Your account is now live.'
+          : '⚠️ Checkout was cancelled. You can subscribe any time from Settings → Billing.'}
+      </span>
+      <button
+        onClick={onDismiss}
+        style={{
+          marginLeft: 24,
+          background: 'none',
+          border: 'none',
+          color: '#fff',
+          cursor: 'pointer',
+          fontSize: '1.1rem',
+        }}
+        aria-label="Dismiss"
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
 interface OnboardingStatus {
   role: string;
   orgId: string | null;
@@ -47,10 +95,24 @@ interface OnboardingStatus {
  */
 const DashboardRouter: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Payment result from Stripe redirect
+  const paymentParam = searchParams.get('payment') as 'success' | 'cancelled' | null;
+  const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(paymentParam);
+
+  // Remove the query param from the URL without navigating
+  useEffect(() => {
+    if (paymentParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('payment');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchOnboardingStatus = async () => {
@@ -117,7 +179,13 @@ const DashboardRouter: React.FC = () => {
   if (role === 'hr_admin') {
     // If user clicked "Set Up Myself", show dashboard with integrations
     if (setupParam === 'true') {
-      return <Dashboard />;
+      return (
+        <>
+          <PaymentBanner result={paymentBanner!} onDismiss={() => setPaymentBanner(null)} />
+          {paymentBanner && <div style={{ height: 52 }} />}
+          <Dashboard />
+        </>
+      );
     }
 
     // If integrations are not complete, show onboarding prompt
@@ -126,7 +194,15 @@ const DashboardRouter: React.FC = () => {
     }
 
     // Integrations complete - show full dashboard
-    return <Dashboard />;
+    return (
+      <>
+        {paymentBanner && (
+          <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
+        )}
+        {paymentBanner && <div style={{ height: 52 }} />}
+        <Dashboard />
+      </>
+    );
   }
 
   // IT Admin Flow
@@ -141,7 +217,15 @@ const DashboardRouter: React.FC = () => {
   }
 
   // Admin, Master Admin, or other roles - full access
-  return <Dashboard />;
+  return (
+    <>
+      {paymentBanner && (
+        <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
+      )}
+      {paymentBanner && <div style={{ height: 52 }} />}
+      <Dashboard />
+    </>
+  );
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
