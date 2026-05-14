@@ -78,23 +78,22 @@ const employeeTransparency = [
 
 const Trust = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-20" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 bg-white border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-6">
-                <Shield className="w-4 h-4 text-success" />
-                <span className="text-sm font-medium text-success">Privacy by architecture</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D1FAE5] border border-[#A7F3D0] mb-6">
+                <Shield className="w-4 h-4 text-[#047857]" />
+                <span className="text-sm font-medium text-[#047857]">Privacy by architecture</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 Privacy is not a feature.{' '}
-                <span className="text-gradient">It is the foundation.</span>
+                <span className="text-[#1D4ED8]">It is the foundation.</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              <p className="text-lg text-[#334155] max-w-xl mx-auto">
                 SignalTrue is built to detect work-system pressure without reading employee
                 messages, exposing individual behaviour, or ranking productivity.
               </p>
@@ -102,32 +101,54 @@ const Trust = () => {
           </div>
         </section>
 
+        {/* Plain-language summary cards */}
+        <section className="py-12 bg-[#ECFDF5] border-b border-[#A7F3D0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  'Metadata only',
+                  'No message content',
+                  'Team-level signals',
+                  'No employee ranking',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="p-4 rounded-xl bg-white border border-[#A7F3D0] text-center"
+                  >
+                    <CheckCircle className="w-5 h-5 text-[#047857] mx-auto mb-2" />
+                    <span className="text-sm font-semibold text-[#064E3B]">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* What We Use Section */}
-        <section className="py-20 lg:py-24 bg-background">
+        <section className="py-20 lg:py-24 bg-white">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                   What we use
                 </p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                   Behavioral metadata only
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-lg text-[#475569] max-w-2xl mx-auto">
                   We analyze patterns and timing, never content.
                 </p>
               </div>
 
               <div className="grid md:grid-cols-3 gap-6">
                 {whatWeUse.map((item, index) => (
-                  <div key={index} className="p-6 rounded-2xl bg-card border border-border/50">
-                    <div className="p-3 rounded-xl bg-success/10 w-fit mb-4">
-                      <item.icon className="w-6 h-6 text-success" />
+                  <div key={index} className="p-6 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                    <div className="p-3 rounded-xl bg-[#D1FAE5] w-fit mb-4">
+                      <item.icon className="w-6 h-6 text-[#047857]" />
                     </div>
-                    <h3 className="font-display font-semibold text-foreground mb-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                    <h3 className="font-display font-semibold text-[#0F172A] mb-2">{item.title}</h3>
+                    <p className="text-sm text-[#475569]">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -136,28 +157,28 @@ const Trust = () => {
         </section>
 
         {/* What We NEVER Use Section */}
-        <section className="py-20 lg:py-24 bg-secondary/20">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC] border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/10 border border-destructive/20 mb-6">
-                  <EyeOff className="w-4 h-4 text-destructive" />
-                  <span className="text-sm font-medium text-destructive">Hard limits</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FEE2E2] border border-[#B91C1C]/20 mb-6">
+                  <EyeOff className="w-4 h-4 text-[#B91C1C]" />
+                  <span className="text-sm font-medium text-[#B91C1C]">Hard limits</span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                   What we never access
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-lg text-[#475569] max-w-2xl mx-auto">
                   SignalTrue does not need private content to detect work-system friction.
                 </p>
               </div>
 
-              <div className="p-8 rounded-2xl bg-card border border-border/50">
+              <div className="p-8 rounded-2xl bg-white border border-[#E2E8F0]">
                 <div className="grid sm:grid-cols-2 gap-4">
                   {whatWeNeverUse.map((item, index) => (
                     <div key={index} className="flex items-center gap-3">
-                      <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                      <span className="text-foreground">{item}</span>
+                      <XCircle className="w-5 h-5 text-[#B91C1C] flex-shrink-0" />
+                      <span className="text-[#334155]">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -167,17 +188,17 @@ const Trust = () => {
         </section>
 
         {/* Employee Transparency Section */}
-        <section className="py-20 lg:py-24 bg-background">
+        <section className="py-20 lg:py-24 bg-white">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                   Employee transparency
                 </p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                   Employees can see what we see
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-lg text-[#475569] max-w-2xl mx-auto">
                   Transparency builds trust. Employees can view exactly how their data contributes
                   to team-level insights.
                 </p>
@@ -185,12 +206,12 @@ const Trust = () => {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {employeeTransparency.map((item, index) => (
-                  <div key={index} className="p-6 rounded-2xl bg-card border border-border/50">
+                  <div key={index} className="p-6 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
                     <div className="flex items-center gap-3 mb-3">
-                      <CheckCircle className="w-5 h-5 text-success" />
-                      <h3 className="font-display font-semibold text-foreground">{item.title}</h3>
+                      <CheckCircle className="w-5 h-5 text-[#047857]" />
+                      <h3 className="font-display font-semibold text-[#0F172A]">{item.title}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground pl-8">{item.description}</p>
+                    <p className="text-sm text-[#475569] pl-8">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -199,45 +220,45 @@ const Trust = () => {
         </section>
 
         {/* Architecture Section */}
-        <section className="py-20 lg:py-24 bg-secondary/20">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC] border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                   Technical architecture
                 </p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                   Privacy enforced at every layer
                 </h2>
               </div>
 
               <div className="grid md:grid-cols-3 gap-6">
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="p-3 rounded-xl bg-primary/10 w-fit mx-auto mb-4">
-                    <Lock className="w-6 h-6 text-primary" />
+                <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
+                  <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
+                    <Lock className="w-6 h-6 text-[#1E3A8A]" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Encryption</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-[#0F172A] mb-2">Encryption</h3>
+                  <p className="text-sm text-[#475569]">
                     All data encrypted in transit (TLS 1.3) and at rest (AES-256).
                   </p>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="p-3 rounded-xl bg-primary/10 w-fit mx-auto mb-4">
-                    <Users className="w-6 h-6 text-primary" />
+                <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
+                  <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
+                    <Users className="w-6 h-6 text-[#1E3A8A]" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Aggregation thresholds</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-[#0F172A] mb-2">Aggregation thresholds</h3>
+                  <p className="text-sm text-[#475569]">
                     Minimum team sizes enforced. No individual-level signals exposed.
                   </p>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="p-3 rounded-xl bg-primary/10 w-fit mx-auto mb-4">
-                    <Eye className="w-6 h-6 text-primary" />
+                <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
+                  <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
+                    <Eye className="w-6 h-6 text-[#1E3A8A]" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Role-based access</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-[#0F172A] mb-2">Role-based access</h3>
+                  <p className="text-sm text-[#475569]">
                     Hard permission boundaries between team, org, and HR access levels.
                   </p>
                 </div>
@@ -247,16 +268,15 @@ const Trust = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-30" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 lg:py-24 bg-white">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 Questions about privacy?
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
                 For privacy or data protection questions, contact:{' '}
-                <a href="mailto:privacy@signaltrue.ai" className="text-primary underline">
+                <a href="mailto:privacy@signaltrue.ai" className="text-[#1D4ED8] underline">
                   privacy@signaltrue.ai
                 </a>
               </p>

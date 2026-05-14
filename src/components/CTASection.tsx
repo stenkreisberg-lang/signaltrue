@@ -33,18 +33,14 @@ const CTASection = () => {
   };
 
   return (
-    <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-glow opacity-30" />
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
-      <div className="container mx-auto px-6 relative">
+    <section className="py-20 lg:py-24 bg-[#0F172A]">
+      <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6 text-white">
             See where work pressure is building{' '}
-            <span className="text-gradient">before it becomes expensive.</span>
+            <span className="text-[#93C5FD]">before it becomes expensive.</span>
           </h2>
-          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+          <p className="text-lg text-[#CBD5E1] mb-10 max-w-xl mx-auto">
             Request a demo and see how SignalTrue turns meetings, focus time, response pressure, and
             manager load into early warning signals.
           </p>

@@ -43,50 +43,46 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen bg-hero-gradient overflow-hidden">
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-glow opacity-50" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-glow opacity-30" />
+      {/* Subtle blue tint accents */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#DBEAFE] opacity-20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#EFF6FF] opacity-30 rounded-full blur-3xl pointer-events-none" />
 
       <div className="container mx-auto px-6 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left content */}
           <div className="animate-slide-up">
-            {/* Trust badges - Privacy positioning */}
-            <div className="flex flex-wrap gap-4 mb-8">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Eye className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
+                <Eye className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <span className="text-xs font-medium text-[#334155]">
                   Work-system early warning
                 </span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Lock className="w-3.5 h-3.5 text-success" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  No message content
-                </span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
+                <Lock className="w-3.5 h-3.5 text-[#047857]" />
+                <span className="text-xs font-medium text-[#334155]">No message content</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
-                <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  Team-level signals only
-                </span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
+                <Shield className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <span className="text-xs font-medium text-[#334155]">Team-level signals only</span>
               </div>
             </div>
 
             {/* Main headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 text-[#0F172A]">
               Detect manager overload before it slows the whole team down.
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg text-muted-foreground max-w-lg mb-4 leading-relaxed">
+            <p className="text-lg text-[#334155] max-w-lg mb-4 leading-relaxed">
               SignalTrue shows where meetings, response pressure, focus loss, and after-hours
               catch-up are creating hidden work-system friction before it turns into burnout, missed
               delivery, or resignation risk.
             </p>
 
             {/* Trust line */}
-            <p className="text-sm text-muted-foreground mb-8">
+            <p className="text-sm text-[#475569] mb-8">
               Metadata only. Team-level only. No message content. No individual productivity scores.
             </p>
 
@@ -108,7 +104,7 @@ const Hero = () => {
 
           {/* Right content - Alert card */}
           <div className="relative animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
-            <div className="absolute -inset-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-3xl blur-2xl" />
+            <div className="absolute -inset-4 bg-[#DBEAFE] opacity-20 rounded-3xl blur-2xl pointer-events-none" />
             <DriftAlertCard />
           </div>
         </div>

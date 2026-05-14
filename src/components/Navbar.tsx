@@ -34,18 +34,17 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E2E8F0]">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Activity className="w-5 h-5 text-primary-foreground" />
+              <div className="w-9 h-9 rounded-lg bg-[#1D4ED8] flex items-center justify-center">
+                <Activity className="w-5 h-5 text-white" />
               </div>
-              <div className="absolute inset-0 rounded-lg bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="text-xl font-display font-bold text-foreground">SignalTrue</span>
+            <span className="text-xl font-display font-bold text-[#0F172A]">SignalTrue</span>
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -54,22 +53,22 @@ const Navbar = () => {
               <Link
                 key={item.label}
                 to={item.href}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="px-4 py-2 text-sm font-medium text-[#475569] hover:text-[#0F172A] transition-colors"
               >
                 {item.label}
               </Link>
             ))}
           </div>
 
-          {/* Desktop CTA Buttons - Updated per spec */}
+          {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-muted-foreground">
+              <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
                 Login
               </Button>
             </Link>
             <Link to="/how-it-works">
-              <Button variant="ghost" size="sm" className="text-muted-foreground">
+              <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
                 See product
               </Button>
             </Link>
@@ -82,7 +81,7 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-foreground"
+            className="md:hidden p-2 text-[#0F172A]"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -92,13 +91,13 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-border/50 pt-4">
+          <div className="md:hidden mt-4 pb-4 border-t border-[#E2E8F0] pt-4">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-lg transition-colors"
+                  className="px-4 py-3 text-sm font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}
@@ -106,7 +105,7 @@ const Navbar = () => {
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                  <Button variant="ghost" size="sm" className="w-full text-[#475569]">
                     Login
                   </Button>
                 </Link>

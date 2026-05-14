@@ -103,27 +103,26 @@ const whatThisIsNot = [
 
 const Product = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-20" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 bg-white border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                 Product
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 Early warning signals from the way{' '}
-                <span className="text-gradient">work actually happens.</span>
+                <span className="text-[#1D4ED8]">work actually happens.</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+              <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-8">
                 SignalTrue detects hidden work-system friction from meetings, focus time, response
                 pressure, after-hours patterns, and manager load, without reading messages or
                 tracking individual productivity.
               </p>
-              <p className="text-sm text-muted-foreground mb-8">
+              <p className="text-sm text-[#475569] mb-8">
                 Metadata only. Team-level only. No message content. No individual productivity
                 scores.
               </p>
@@ -138,51 +137,57 @@ const Product = () => {
         </section>
 
         {/* Signals Explained Section */}
-        <section className="py-20 lg:py-24 bg-background">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                 The signals we detect
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-[#475569]">
                 Each signal helps reveal whether work is becoming heavier, slower, or harder to
                 sustain.
               </p>
             </div>
 
-            <div className="max-w-5xl mx-auto space-y-8">
+            <div className="max-w-5xl mx-auto space-y-6">
               {signals.map((signal, index) => (
                 <div
                   key={index}
-                  className="p-8 rounded-2xl bg-card border border-border/50 animate-slide-up"
+                  className="p-8 rounded-2xl bg-white border border-[#E2E8F0] animate-slide-up shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded-2xl bg-primary/10 flex-shrink-0">
-                      <signal.icon className="w-8 h-8 text-primary" />
+                    <div className="p-4 rounded-2xl bg-[#EFF6FF] flex-shrink-0">
+                      <signal.icon className="w-8 h-8 text-[#1D4ED8]" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-2xl font-display font-bold text-foreground mb-4">
+                      <h3 className="text-2xl font-display font-bold text-[#0F172A] mb-4">
                         {signal.name}
                       </h3>
                       <div className="grid md:grid-cols-3 gap-6">
                         <div>
-                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                          <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-2">
                             What it means
                           </p>
-                          <p className="text-muted-foreground">{signal.whatItMeans}</p>
+                          <p className="text-[#475569] text-sm leading-relaxed">
+                            {signal.whatItMeans}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                          <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-2">
                             Why it matters
                           </p>
-                          <p className="text-muted-foreground">{signal.whyItMatters}</p>
+                          <p className="text-[#475569] text-sm leading-relaxed">
+                            {signal.whyItMatters}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                          <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-2">
                             What leaders can change
                           </p>
-                          <p className="text-muted-foreground">{signal.whatLeadersCanChange}</p>
+                          <p className="text-[#475569] text-sm leading-relaxed">
+                            {signal.whatLeadersCanChange}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -194,14 +199,14 @@ const Product = () => {
         </section>
 
         {/* What This Is NOT Section */}
-        <section className="py-20 lg:py-24 bg-secondary/20">
+        <section className="py-20 lg:py-24 bg-white border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
                   What SignalTrue does not do
                 </h2>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-lg text-[#475569]">
                   SignalTrue shows system pressure, not personal blame.
                 </p>
               </div>
@@ -210,16 +215,16 @@ const Product = () => {
                 {whatThisIsNot.map((item, index) => (
                   <div
                     key={index}
-                    className="p-4 rounded-xl bg-card border border-destructive/20 flex items-center gap-3"
+                    className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center gap-3"
                   >
-                    <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                    <span className="text-foreground font-medium">{item}</span>
+                    <XCircle className="w-5 h-5 text-[#B91C1C] flex-shrink-0" />
+                    <span className="text-[#0F172A] font-medium text-sm">{item}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-12 p-6 rounded-2xl bg-success/5 border border-success/20 text-center">
-                <p className="text-lg text-foreground">
+              <div className="mt-12 p-6 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] text-center">
+                <p className="text-lg text-[#064E3B] font-medium">
                   SignalTrue shows system pressure, not personal blame. That difference matters.
                 </p>
               </div>
@@ -228,14 +233,13 @@ const Product = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-30" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 See the signals your current tools are hiding.
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
                 Request a demo and see how SignalTrue detects manager overload, meeting friction,
                 focus loss, and response pressure.
               </p>

@@ -59,6 +59,37 @@ module.exports = {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        /* Named brand tokens — use as bg-brand, text-brand, etc. */
+        brand: {
+          DEFAULT: "#1D4ED8",
+          dark: "#1E3A8A",
+          soft: "#DBEAFE",
+          softer: "#EFF6FF",
+        },
+        surface: {
+          DEFAULT: "#FFFFFF",
+          soft: "#F1F5F9",
+          blue: "#EFF6FF",
+        },
+        "color-text": {
+          DEFAULT: "#0F172A",
+          secondary: "#334155",
+          muted: "#475569",
+          subtle: "#64748B",
+        },
+        danger: {
+          DEFAULT: "#B91C1C",
+          bg: "#FEE2E2",
+        },
+        critical: {
+          DEFAULT: "#BE123C",
+          bg: "#FFE4E6",
+        },
+        dark: {
+          DEFAULT: "#0F172A",
+          soft: "#1E293B",
+          border: "#334155",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -66,9 +97,9 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        'hero-gradient': 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary)/30) 100%)',
-        'card-gradient': 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)/20) 100%)',
-        'glow': 'radial-gradient(circle, hsl(var(--primary)/20) 0%, transparent 70%)',
+        'hero-gradient': 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
+        'card-gradient': 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+        'glow': 'radial-gradient(circle, rgba(29, 78, 216, 0.08) 0%, transparent 70%)',
       },
       keyframes: {
         "slide-up": {
@@ -95,7 +126,9 @@ module.exports = {
         "pulse-slow": "pulse-slow 2s ease-in-out infinite",
       },
       boxShadow: {
-        'card': '0 4px 20px rgba(0, 0, 0, 0.1)',
+        'card': '0 8px 24px rgba(15, 23, 42, 0.04)',
+        'card-hover': '0 12px 32px rgba(15, 23, 42, 0.08)',
+        'featured': '0 20px 40px rgba(15, 23, 42, 0.08)',
       },
     },
   },

@@ -143,21 +143,20 @@ const HowItWorksPage = () => {
   }, [location]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-20" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 bg-white border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                 How it works
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                We observe patterns, <span className="text-gradient">not people.</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
+                We observe patterns, <span className="text-[#1D4ED8]">not people.</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+              <p className="text-lg text-[#334155] max-w-xl mx-auto mb-8">
                 SignalTrue uses metadata from work tools to detect team-level changes in meetings,
                 focus time, response pressure, recovery patterns, and manager load. No message
                 content. No individual scoring. No surveillance.
@@ -173,7 +172,7 @@ const HowItWorksPage = () => {
         </section>
 
         {/* 5-Step Process Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               {steps.map((step, index) => (
@@ -183,53 +182,51 @@ const HowItWorksPage = () => {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   {index < steps.length - 1 && (
-                    <div className="absolute left-8 top-20 bottom-0 w-px bg-gradient-to-b from-primary/50 to-border" />
+                    <div className="absolute left-8 top-20 bottom-0 w-px bg-gradient-to-b from-[#1D4ED8]/30 to-[#E2E8F0]" />
                   )}
                   <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-                      <span className="text-xl font-display font-bold text-primary">
+                    <div className="w-16 h-16 rounded-2xl bg-[#DBEAFE] border border-[#DBEAFE] flex items-center justify-center">
+                      <span className="text-xl font-display font-bold text-[#1E3A8A]">
                         {step.number}
                       </span>
                     </div>
                   </div>
                   <div className="flex-1 pt-2">
-                    <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">
+                    <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-2">
                       {step.subtitle}
                     </p>
                     <div className="flex items-center gap-3 mb-3">
-                      <step.icon className="w-6 h-6 text-primary" />
-                      <h3 className="text-2xl font-display font-bold text-foreground">
+                      <step.icon className="w-6 h-6 text-[#1D4ED8]" />
+                      <h3 className="text-2xl font-display font-bold text-[#0F172A]">
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-lg text-muted-foreground mb-4">{step.description}</p>
+                    <p className="text-lg text-[#334155] mb-4">{step.description}</p>
                     {step.privacyNote && (
-                      <p className="text-sm text-success mb-4 font-medium">{step.privacyNote}</p>
+                      <p className="text-sm text-[#047857] mb-4 font-medium">{step.privacyNote}</p>
                     )}
-                    {step.note && (
-                      <p className="text-sm text-muted-foreground italic mb-4">{step.note}</p>
-                    )}
-                    <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
+                    {step.note && <p className="text-sm text-[#475569] italic mb-4">{step.note}</p>}
+                    <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0]">
                       {step.details && (
                         <div className="grid sm:grid-cols-2 gap-3">
                           {step.details.map((detail, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                              <span className="text-sm text-foreground">{detail}</span>
+                              <CheckCircle className="w-4 h-4 text-[#047857] flex-shrink-0" />
+                              <span className="text-sm text-[#334155]">{detail}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       {step.examples && (
                         <div className="space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground mb-3">
+                          <p className="text-sm font-medium text-[#475569] mb-3">
                             Signals detected:
                           </p>
                           <div className="grid sm:grid-cols-2 gap-3">
                             {step.examples.map((example, i) => (
                               <div key={i} className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
-                                <span className="text-sm text-foreground">{example}</span>
+                                <AlertTriangle className="w-4 h-4 text-[#92400E] flex-shrink-0" />
+                                <span className="text-sm text-[#334155]">{example}</span>
                               </div>
                             ))}
                           </div>
@@ -244,49 +241,51 @@ const HowItWorksPage = () => {
         </section>
 
         {/* Privacy Reinforcement */}
-        <section className="py-20 bg-secondary/20">
+        <section className="py-20 bg-[#ECFDF5] border-y border-[#A7F3D0]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-6">
-                  <Shield className="w-4 h-4 text-success" />
-                  <span className="text-sm font-medium text-success">Privacy by architecture</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#A7F3D0] mb-6">
+                  <Shield className="w-4 h-4 text-[#047857]" />
+                  <span className="text-sm font-medium text-[#047857]">
+                    Privacy by architecture
+                  </span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#064E3B]">
                   What We Never Do
                 </h2>
               </div>
               <div className="grid md:grid-cols-3 gap-6">
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-destructive" />
+                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
+                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-[#B91C1C]" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">
+                  <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Message Reading
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#475569]">
                     We never access email content, chat messages, or document text.
                   </p>
                 </div>
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-destructive" />
+                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
+                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-[#B91C1C]" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">
+                  <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Individual Scoring
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#475569]">
                     No performance ratings, productivity scores, or individual profiles.
                   </p>
                 </div>
-                <div className="p-6 rounded-2xl bg-card border border-border/50 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-destructive" />
+                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
+                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-[#B91C1C]" />
                   </div>
-                  <h3 className="font-display font-semibold text-foreground mb-2">
+                  <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Surveillance
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#475569]">
                     We don't track individuals or monitor private activity. Ever.
                   </p>
                 </div>
@@ -296,11 +295,10 @@ const HowItWorksPage = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-30" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 lg:py-24 bg-white border-t border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 See how your work patterns become early warning signals.
               </h2>
               <Link to="/contact" onClick={() => trackEvent('demo_requested')}>

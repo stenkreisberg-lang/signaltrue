@@ -180,30 +180,29 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-20 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-20" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 bg-white border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
                 Pricing
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 Pricing that matches how ready{' '}
-                <span className="text-gradient">you are to act.</span>
+                <span className="text-[#1D4ED8]">you are to act.</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
+              <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-6">
                 Use SignalTrue as an always-on early warning system or start with a focused workload
                 scan to see where pressure is building.
               </p>
-              <div className="mt-6 p-6 rounded-2xl bg-background/50 border border-border/50 max-w-2xl mx-auto">
-                <p className="text-lg text-foreground font-medium">
+              <div className="mt-6 p-6 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] max-w-2xl mx-auto">
+                <p className="text-lg text-[#0F172A] font-medium">
                   Start with visibility. Continue with action.
                 </p>
-                <p className="text-muted-foreground mt-2">
+                <p className="text-[#475569] mt-2">
                   Start with a workload scan. See where pressure is building, then decide whether
                   SignalTrue should stay on continuously.
                 </p>
@@ -213,10 +212,10 @@ const Pricing = () => {
         </section>
 
         {/* Pricing Cards */}
-        <section className="py-20 lg:py-24 bg-secondary/20">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
             {checkoutError && (
-              <div className="max-w-xl mx-auto mb-8 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+              <div className="max-w-xl mx-auto mb-8 p-4 rounded-lg bg-[#FEE2E2] border border-[#B91C1C]/20 text-[#B91C1C] text-sm text-center">
                 {checkoutError}
               </div>
             )}
@@ -226,41 +225,41 @@ const Pricing = () => {
                 return (
                   <div
                     key={index}
-                    className={`relative rounded-2xl p-8 animate-slide-up ${
+                    className={`relative rounded-2xl p-8 animate-slide-up bg-white ${
                       tier.highlight
-                        ? 'bg-card border-2 border-primary shadow-glow'
-                        : 'bg-card border border-border/50'
+                        ? 'border-2 border-[#1D4ED8] shadow-[0_20px_40px_rgba(15,23,42,0.08)]'
+                        : 'border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.04)]'
                     }`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     {tier.highlight && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                        <span className="px-4 py-1.5 rounded-full bg-[#1D4ED8] text-white text-sm font-medium">
                           Most Popular
                         </span>
                       </div>
                     )}
 
                     <div className="mb-6">
-                      <h3 className="text-2xl font-display font-bold text-foreground mb-2">
+                      <h3 className="text-2xl font-display font-bold text-[#0F172A] mb-2">
                         {tier.name}
                       </h3>
-                      <p className="text-lg text-primary font-medium mb-2">{tier.outcome}</p>
-                      <p className="text-sm text-muted-foreground">{tier.description}</p>
+                      <p className="text-base text-[#1D4ED8] font-medium mb-2">{tier.outcome}</p>
+                      <p className="text-sm text-[#475569]">{tier.description}</p>
                     </div>
 
                     <div className="mb-6">
-                      <span className="text-4xl font-display font-bold text-foreground">
+                      <span className="text-4xl font-display font-bold text-[#0F172A]">
                         {tier.price}
                       </span>
-                      <span className="text-muted-foreground">{tier.period}</span>
+                      <span className="text-[#475569]">{tier.period}</span>
                     </div>
 
                     <ul className="space-y-3 mb-8">
                       {tier.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                          <span className="text-sm text-foreground">{feature}</span>
+                          <CheckCircle className="w-5 h-5 text-[#047857] flex-shrink-0" />
+                          <span className="text-sm text-[#334155]">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -295,16 +294,16 @@ const Pricing = () => {
         </section>
 
         {/* Trust Strip */}
-        <section className="py-16 bg-background">
+        <section className="py-16 bg-white border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-6">
-                <Shield className="w-4 h-4 text-success" />
-                <span className="text-sm font-medium text-success">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D1FAE5] border border-[#A7F3D0] mb-6">
+                <Shield className="w-4 h-4 text-[#047857]" />
+                <span className="text-sm font-medium text-[#047857]">
                   All plans are team-level by architecture
                 </span>
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-[#475569]">
                 No message content access. No individual scoring. Aggregated reports only. Your
                 privacy rules apply.
               </p>
@@ -313,14 +312,13 @@ const Pricing = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 lg:py-24 bg-hero-gradient relative overflow-hidden">
-          <div className="absolute inset-0 bg-glow opacity-30" />
-          <div className="container mx-auto px-6 relative">
+        <section className="py-20 lg:py-24 bg-[#F8FAFC]">
+          <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 Not sure which plan fits?
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
                 Start with a workload scan. See where pressure is building, then decide whether
                 SignalTrue should stay on continuously.
               </p>

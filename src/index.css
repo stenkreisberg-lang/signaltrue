@@ -6,66 +6,110 @@
 
 @layer base {
   :root {
-    /* SignalTrue Dark Theme - Professional HR SaaS */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* SignalTrue Light Theme - Leadership Clarity */
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    /* ── Tailwind/shadcn semantic tokens (HSL) ── */
+    --background: 210 40% 98%; /* #F8FAFC */
+    --foreground: 222 47% 11%; /* #0F172A */
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 222 47% 11%; /* #0F172A */
 
-    /* Primary - Vibrant Blue */
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 6%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Secondary - Muted Slate */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Primary - Brand Blue */
+    --primary: 224 76% 48%; /* #1D4ED8 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    /* Secondary - Soft surface */
+    --secondary: 210 40% 96%; /* #F1F5F9 */
+    --secondary-foreground: 215 25% 27%; /* #334155 */
 
-    /* Accent - Cyan/Teal for highlights */
-    --accent: 199 89% 48%;
-    --accent-foreground: 222 47% 6%;
+    --muted: 210 40% 96%; /* #F1F5F9 */
+    --muted-foreground: 215 20% 35%; /* #475569 */
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 214 95% 93%; /* #DBEAFE */
+    --accent-foreground: 224 64% 33%; /* #1E3A8A */
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --destructive: 0 72% 42%; /* #B91C1C */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%; /* #E2E8F0 */
+    --input: 215 25% 84%; /* #CBD5E1 */
+    --ring: 214 95% 77%; /* #93C5FD */
 
     --radius: 0.75rem;
 
-    /* Custom SignalTrue tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 8%) 0%, hsl(217 50% 12%) 50%, hsl(222 47% 6%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(199 89% 48%) 100%);
-    --gradient-glow: radial-gradient(ellipse at center, hsl(217 91% 60% / 0.15) 0%, transparent 70%);
-    
-    /* Shadows */
-    --shadow-card: 0 4px 24px -4px hsl(217 91% 60% / 0.1);
-    --shadow-glow: 0 0 60px hsl(217 91% 60% / 0.2);
-    --shadow-alert: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
-
     /* Alert colors */
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --warning: 28 76% 31%; /* #92400E */
+    --warning-foreground: 48 97% 89%; /* #FEF3C7 */
+    --success: 161 94% 24%; /* #047857 */
+    --success-foreground: 152 76% 91%; /* #D1FAE5 */
 
-    /* Sidebar - keeping for compatibility */
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    /* Sidebar */
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 224 76% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 214 95% 77%;
+
+    /* ── Named color tokens ── */
+
+    /* Base */
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-soft: #f1f5f9;
+    --color-surface-blue: #eff6ff;
+    --color-border: #e2e8f0;
+    --color-border-strong: #cbd5e1;
+
+    /* Text */
+    --color-text: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-muted: #475569;
+    --color-text-subtle: #64748b;
+    --color-text-inverse: #ffffff;
+
+    /* Brand */
+    --color-brand: #1d4ed8;
+    --color-brand-dark: #1e3a8a;
+    --color-brand-soft: #dbeafe;
+    --color-brand-softer: #eff6ff;
+
+    /* Status */
+    --color-success: #047857;
+    --color-success-bg: #d1fae5;
+    --color-warning: #92400e;
+    --color-warning-bg: #fef3c7;
+    --color-danger: #b91c1c;
+    --color-danger-bg: #fee2e2;
+    --color-critical: #be123c;
+    --color-critical-bg: #ffe4e6;
+
+    /* Dark sections */
+    --color-dark: #0f172a;
+    --color-dark-soft: #1e293b;
+    --color-dark-border: #334155;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    --gradient-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    --gradient-accent: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%);
+    --gradient-glow: radial-gradient(
+      ellipse at center,
+      rgba(29, 78, 216, 0.08) 0%,
+      transparent 70%
+    );
+
+    /* Shadows */
+    --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.04);
+    --shadow-card-hover: 0 12px 32px rgba(15, 23, 42, 0.08);
+    --shadow-featured: 0 20px 40px rgba(15, 23, 42, 0.08);
+    --shadow-alert: 0 8px 32px rgba(15, 23, 42, 0.12);
   }
 }
 
@@ -76,11 +120,68 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "ss01", "ss02", "cv01";
+    font-feature-settings: 'ss01', 'ss02', 'cv01';
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1 {
     @apply font-display tracking-tight;
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--color-text);
+  }
+
+  h2 {
+    @apply font-display tracking-tight;
+    font-size: clamp(30px, 3vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+  }
+
+  h3 {
+    @apply font-display tracking-tight;
+    font-size: 22px;
+    line-height: 1.25;
+    color: var(--color-text);
+  }
+
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+    color: var(--color-text);
+  }
+
+  a {
+    color: var(--color-brand);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+  }
+
+  a:hover {
+    color: var(--color-brand-dark);
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-subtle);
+  }
+
+  :focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
   }
 }
 
@@ -103,36 +204,308 @@
   }
 
   .shadow-glow {
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-glow, 0 0 60px rgba(29, 78, 216, 0.15));
   }
 
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
 
+  /* ── Typography ── */
+  .content-text {
+    max-width: 680px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .signal-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 28px;
+  }
+
+  .signal-card h3 {
+    color: var(--color-text);
+  }
+
+  .signal-card p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+
+  .signal-card .metric {
+    color: var(--color-brand);
+  }
+
+  /* Signal category accent borders */
+  .card-manager-load {
+    border-top: 3px solid #7c3aed;
+  }
+  .card-meeting-overload {
+    border-top: 3px solid #1d4ed8;
+  }
+  .card-focus-frag {
+    border-top: 3px solid #0369a1;
+  }
+  .card-resp-pressure {
+    border-top: 3px solid #b45309;
+  }
+  .card-after-hours {
+    border-top: 3px solid #b91c1c;
+  }
+  .card-recovery-risk {
+    border-top: 3px solid #be123c;
+  }
+  .card-exec-drag {
+    border-top: 3px solid #334155;
+  }
+
+  /* Status left-border cards */
+  .card-critical {
+    border-left: 4px solid var(--color-danger);
+    background: var(--color-surface);
+  }
+
+  /* ── Badges ── */
+  .badge {
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 6px 10px;
+    display: inline-block;
+  }
+
+  .badge-blue {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-dark);
+  }
+
+  .badge-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  .badge-danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+  }
+
+  .badge-critical {
+    background: var(--color-critical-bg);
+    color: var(--color-critical);
+  }
+
+  .badge-success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  /* ── Buttons ── */
+  .primary-button {
+    background: var(--color-brand);
+    color: var(--color-text-inverse);
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-button:hover {
+    background: #1e40af;
+  }
+
+  .secondary-button {
+    background: var(--color-surface);
+    color: var(--color-brand-dark);
+    border: 1px solid var(--color-border-strong);
+    cursor: pointer;
+  }
+
+  .secondary-button:hover {
+    background: var(--color-surface-soft);
+  }
+
+  /* ── Metrics ── */
+  .metric-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .metric-label {
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  /* ── Page backgrounds ── */
+  .product-page {
+    background: var(--color-bg);
+  }
+  .pricing-page {
+    background: var(--color-bg);
+  }
+  .about-page {
+    background: var(--color-surface);
+  }
+
+  /* ── Hero ── */
+  .home-hero {
+    background: var(--gradient-hero);
+  }
+
+  /* ── Trust strip ── */
+  .trust-strip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+
+  /* ── Privacy boxes ── */
+  .privacy-box {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #064e3b;
+  }
+
+  .privacy-band {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+  }
+
+  .privacy-summary-card {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #064e3b;
+  }
+
+  /* ── Ethics section (dark island) ── */
+  .ethics-section {
+    background: var(--color-dark);
+    color: var(--color-text-inverse);
+  }
+
+  .ethics-section p {
+    color: #cbd5e1;
+  }
+
+  /* ── Integration cards ── */
+  .integration-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+
+  /* ── Pricing cards ── */
+  .pricing-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    padding: 32px;
+  }
+
+  .pricing-card-featured {
+    border: 2px solid var(--color-brand);
+    box-shadow: var(--shadow-featured);
+  }
+
+  /* ── Comparison table ── */
+  .comparison-table th {
+    background: var(--color-surface-soft);
+    color: var(--color-text);
+  }
+
+  .comparison-table td {
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* ── About belief cards ── */
+  .about-belief-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+
+  /* ── Step cards (How It Works) ── */
+  .step-card {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 24px;
+  }
+
+  .step-number {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-dark);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  /* ── Legal content ── */
+  .legal-content {
+    max-width: 760px;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--color-text-secondary);
+  }
+
+  .legal-content h2,
+  .legal-content h3 {
+    color: var(--color-text);
+    margin-top: 40px;
+  }
+
+  /* ── Card text helpers ── */
+  .card p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+
+  /* ── Animations ── */
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-
   .animate-pulse-slow {
     animation: pulse-slow 4s ease-in-out infinite;
   }
-
   .animate-fade-in {
     animation: fade-in 0.6s ease-out forwards;
   }
-
   .animate-slide-up {
     animation: slide-up 0.6s ease-out forwards;
   }
-
   .animate-slide-in-right {
     animation: slide-in-right 0.8s ease-out forwards;
+  }
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out forwards;
   }
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -141,7 +514,8 @@
 }
 
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
