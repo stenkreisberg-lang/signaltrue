@@ -152,19 +152,19 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                How It Works
+                How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Detect workload risk{' '}
-                <span className="text-gradient">before the damage appears.</span>
+                We observe patterns, <span className="text-gradient">not people.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                SignalTrue turns work-pattern metadata into a weekly leadership report showing where
-                pressure is building, why it matters, and what to fix next.
+                SignalTrue uses metadata from work tools to detect team-level changes in meetings,
+                focus time, response pressure, recovery patterns, and manager load. No message
+                content. No individual scoring. No surveillance.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
@@ -301,11 +301,11 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See what early warning looks like in your organization.
+                See how your work patterns become early warning signals.
               </h2>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>

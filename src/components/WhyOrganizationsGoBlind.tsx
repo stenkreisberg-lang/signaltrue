@@ -1,12 +1,15 @@
 import { XCircle } from 'lucide-react';
 
 const laggingIndicators = [
-  { name: 'Engagement surveys', problem: 'Measure opinions after pressure is already visible.' },
-  { name: 'Performance reviews', problem: 'Arrive too late to catch daily execution drag.' },
-  { name: 'Exit interviews', problem: 'Explain the problem after the person has already left.' },
   {
-    name: 'Wellbeing programs',
-    problem: 'Help people cope, but rarely show what work patterns created the pressure.',
+    name: 'Annual surveys',
+    problem: 'Tell you how people felt after the pressure already built up.',
+  },
+  { name: 'Exit interviews', problem: 'Explain why someone left after the damage is done.' },
+  { name: 'Manager intuition', problem: 'Anecdotal and inconsistent. Hard to act on at scale.' },
+  {
+    name: 'Engagement dashboards',
+    problem: 'Show numbers without telling leaders what to fix or when.',
   },
 ];
 
@@ -23,13 +26,16 @@ const WhyOrganizationsGoBlind = () => {
 
           {/* Section headline */}
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center mb-6">
-            Most companies see the damage too late.
+            Most teams do not break suddenly.
+            <br />
+            They slow down first.
           </h2>
 
           <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16 space-y-4">
             <p className="text-xl text-muted-foreground">
-              Leaders often see burnout, missed deadlines, or resignations only after the pressure
-              has been building for weeks.
+              Before burnout, resignation, or missed delivery, the work system usually shows signs.
+              Most companies notice too late because they rely on signals that only arrive after the
+              damage is already visible.
             </p>
           </div>
 
@@ -53,11 +59,11 @@ const WhyOrganizationsGoBlind = () => {
           {/* Highlight box */}
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-2xl bg-destructive/5 border border-destructive/20">
             <p className="text-lg lg:text-xl text-foreground font-medium">
-              The warning signs usually appear earlier.
+              SignalTrue helps leaders see the pressure building while it is still fixable.
             </p>
             <p className="text-muted-foreground mt-2">
-              Meeting overload, lost focus time, after-hours work, manager bottlenecks, and slow
-              coordination.
+              Meetings pile up. Focus time disappears. Managers become bottlenecks. Urgent messages
+              become the norm. Work moves into evenings.
             </p>
           </div>
         </div>

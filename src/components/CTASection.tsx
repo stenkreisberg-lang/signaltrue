@@ -28,8 +28,8 @@ const trackEvent = (eventName: string) => {
 };
 
 const CTASection = () => {
-  const handleRequestPreview = () => {
-    trackEvent('early_signal_preview_requested');
+  const handleRequestDemo = () => {
+    trackEvent('demo_requested');
   };
 
   return (
@@ -41,18 +41,18 @@ const CTASection = () => {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6">
-            You do not need another survey.{' '}
-            <span className="text-gradient">You need earlier risk visibility.</span>
+            See where work pressure is building{' '}
+            <span className="text-gradient">before it becomes expensive.</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            See what workload risk looks like in your organization before it becomes burnout, missed
-            execution, or resignation.
+            Request a demo and see how SignalTrue turns meetings, focus time, response pressure, and
+            manager load into early warning signals.
           </p>
 
           {/* Single CTA per spec */}
-          <Link to="/contact" onClick={handleRequestPreview}>
+          <Link to="/contact" onClick={handleRequestDemo}>
             <Button variant="hero" size="xl">
-              Request Early Signal Preview
+              Request demo
               <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>

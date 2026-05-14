@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
@@ -42,68 +42,96 @@ const trackEvent = (eventName: string) => {
   }
 };
 
-// Pricing tiers per spec - outcomes first
+// Pricing tiers per spec
 const tiers = [
   {
-    name: 'Visibility',
-    planKey: 'visibility', // maps to STRIPE_PRICE_VISIBILITY (€299/month)
-    outcome: 'See early workload risk signals before issues become visible.',
-    description: 'Small leadership teams that want early visibility into workload risk.',
-    price: '€299',
+    name: 'Workload Scan',
+    planKey: null,
+    outcome: 'A focused 3–4 week diagnostic before committing to ongoing use.',
+    description:
+      'Best for small teams or organizations that want a clear picture before buying an always-on system.',
+    price: 'Custom pilot price',
+    period: '',
+    highlight: false,
+    features: [
+      '3–4 week baseline period',
+      'Team-level work-pattern analysis',
+      'Manager load overview',
+      'Meeting overload findings',
+      'Focus fragmentation findings',
+      'Response pressure findings',
+      'Recovery risk findings',
+      'Executive summary',
+      'Recommended actions',
+      'Follow-up review call',
+    ],
+    cta: 'Request scan',
+  },
+  {
+    name: 'Team Signals',
+    planKey: 'interpretation',
+    outcome: 'Weekly visibility into work-system pressure with practical recommendations.',
+    description: 'Best for HR, People Ops, and team leaders who need ongoing visibility.',
+    price: '€99',
     period: '/month',
     highlight: false,
     features: [
-      'Weekly team-level risk report',
-      'Meeting load indicators',
-      'Focus-time availability signals',
-      'After-hours work tracking',
-      'Basic manager-load indicators',
-      'Privacy-safe reporting',
-      'Monthly summary',
+      'Weekly team reports',
+      'Manager Load Signal',
+      'Meeting Overload Signal',
+      'Focus Fragmentation Signal',
+      'Responsiveness Pressure Signal',
+      'Recovery Risk Signal',
+      'Intervention notes',
+      'Email alerts',
+      'Metadata-only reporting',
+      'Team-level privacy rules',
     ],
-    cta: 'Start free trial',
+    cta: 'Request demo',
   },
   {
-    name: 'Prevention',
-    planKey: 'interpretation', // maps to STRIPE_PRICE_INTERPRETATION (€499/month)
-    outcome:
-      'Track risk trends and get alerts before pressure turns into burnout, missed execution, or resignations.',
-    description: 'Growing companies that want to catch workload risk before it becomes expensive.',
-    price: '€499',
+    name: 'Leadership Signals',
+    planKey: 'visibility',
+    outcome: 'Organizational visibility across multiple teams.',
+    description: 'Best for executives and leadership teams who need cross-team insight.',
+    price: '€199',
     period: '/month',
     highlight: true,
     features: [
-      'Everything in Visibility',
-      'Trend tracking over time',
-      'Automated risk alerts',
-      'Baseline deviation notification',
-      'Weekly leadership risk summary',
-      'Action recommendations',
-      'Team-level breakdowns',
-      'Monthly review session',
+      'Everything in Team Signals, plus:',
+      'Monthly leadership report',
+      'Organizational risk summary',
+      'Cross-team comparison',
+      'Manager capacity view',
+      'Execution Drag Signal',
+      'Priority action list',
+      'Before-and-after intervention tracking',
+      'Leadership review notes',
+      'Board-ready summary',
     ],
-    cta: 'Start free trial',
+    cta: 'Request demo',
   },
   {
-    name: 'Resilience',
-    planKey: null, // custom — routes to /contact
-    outcome: 'Create prevention workflows for larger teams with complex structures.',
-    description:
-      'Larger companies that need structured workload risk monitoring across departments.',
+    name: 'Enterprise',
+    planKey: null,
+    outcome: 'Custom security, compliance, integration, and reporting.',
+    description: 'Best for larger organizations with advanced requirements.',
     price: 'Custom',
     period: '',
     highlight: false,
     features: [
-      'Everything in Prevention',
-      'Custom department structure',
-      'Executive summary reports',
-      'Custom team-risk thresholds',
-      'Advanced privacy configuration',
+      'Everything in Leadership Signals, plus:',
+      'Custom integrations',
+      'Custom thresholds',
+      'SSO, if required',
+      'Advanced access controls',
+      'Dedicated onboarding',
+      'Custom reporting structure',
+      'Data retention controls',
+      'Security review support',
       'Quarterly leadership review',
-      'Implementation support',
-      'Custom integrations where needed',
     ],
-    cta: 'Request Custom Preview',
+    cta: 'Contact sales',
   },
 ];
 
@@ -164,15 +192,20 @@ const Pricing = () => {
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Pricing based on <span className="text-gradient">risk prevented.</span>
+                Pricing that matches how ready{' '}
+                <span className="text-gradient">you are to act.</span>
               </h1>
-              <div className="mt-8 p-6 rounded-2xl bg-background/50 border border-border/50 max-w-2xl mx-auto">
-                <p className="text-lg text-foreground">
-                  SignalTrue costs a fraction of <strong>late detection</strong>.
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
+                Use SignalTrue as an always-on early warning system or start with a focused workload
+                scan to see where pressure is building.
+              </p>
+              <div className="mt-6 p-6 rounded-2xl bg-background/50 border border-border/50 max-w-2xl mx-auto">
+                <p className="text-lg text-foreground font-medium">
+                  Start with visibility. Continue with action.
                 </p>
                 <p className="text-muted-foreground mt-2">
-                  One missed resignation, delayed project, or overloaded leadership team can cost
-                  more than a year of prevention.
+                  Start with a workload scan. See where pressure is building, then decide whether
+                  SignalTrue should stay on continuously.
                 </p>
               </div>
             </div>
@@ -187,7 +220,7 @@ const Pricing = () => {
                 {checkoutError}
               </div>
             )}
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
               {tiers.map((tier, index) => {
                 const isLoading = loadingPlan === tier.planKey;
                 return (
@@ -285,34 +318,18 @@ const Pricing = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                The cost of late detection is always higher.
+                Not sure which plan fits?
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                When workload risk is ignored, companies pay through missed execution, burned-out
-                managers, lost key people, and slower delivery.
+                Start with a workload scan. See where pressure is building, then decide whether
+                SignalTrue should stay on continuously.
               </p>
-              <Button
-                variant="hero"
-                size="xl"
-                onClick={() => {
-                  trackEvent('hero_cta_clicked');
-                  handleCheckout('visibility');
-                }}
-                disabled={!!loadingPlan}
-              >
-                {loadingPlan === 'visibility' ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Redirecting…
-                  </>
-                ) : (
-                  <>
-                    Get started — €299/month <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </Button>
-              <p className="mt-3 text-sm text-muted-foreground">
-                30-day free trial · No credit card required to register
-              </p>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                <Button variant="hero" size="xl">
+                  Request demo
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

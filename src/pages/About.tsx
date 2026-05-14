@@ -32,30 +32,37 @@ const trackEvent = (eventName: string) => {
   }
 };
 
-// Belief system per spec - 4 beliefs
+// Belief system per spec - 5 beliefs
 const beliefs = [
   {
     icon: Activity,
-    title: 'Signals beat surveys',
+    title: 'The work system usually breaks before people do.',
     description:
-      'Surveys are useful, but they are not early warning systems. Work patterns often show risk before people report it.',
+      'Burnout is rarely the first signal. Before that, meeting load rises, focus time disappears, response pressure increases, and recovery shrinks.',
   },
   {
     icon: Eye,
-    title: 'Systems shape behavior',
+    title: 'Managers are often the pressure layer.',
     description:
-      'People respond to structure. Meetings, priorities, communication rules, and manager load shape how work feels.',
+      'Managers absorb leadership priorities, team questions, customer pressure, and unclear decisions. When managers overload, the whole team feels it.',
   },
   {
     icon: Shield,
-    title: 'Early truth enables better leadership',
+    title: 'Surveys are useful, but late.',
     description:
-      'Leaders who see risk early can act structurally before pressure becomes a crisis.',
+      'Surveys tell leaders how people felt after pressure was already building. SignalTrue helps leaders see where to act earlier.',
   },
   {
     icon: Shield,
-    title: 'Privacy is not optional',
-    description: 'People analytics without trust is broken. SignalTrue is team-level by design.',
+    title: 'Privacy must be designed, not promised.',
+    description:
+      'A company should not need to trust managers not to misuse data. The product should prevent misuse by design.',
+  },
+  {
+    icon: Activity,
+    title: 'The answer is system change, not personal blame.',
+    description:
+      'If a signal rises, the question is not "Who is the problem?" The question is "What in the way we work is creating this pressure?"',
   },
 ];
 
@@ -73,12 +80,14 @@ const About = () => {
                 Why SignalTrue Exists
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Burnout is not a motivation problem.{' '}
-                <span className="text-gradient">It's a system problem.</span>
+                Work does not break because people stop caring.{' '}
+                <span className="text-gradient">
+                  It breaks because the system makes caring harder.
+                </span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                One that goes unseen for too long because the tools we rely on only show us
-                outcomes, not causes.
+                SignalTrue exists to help leaders see the work-system friction that usually stays
+                hidden until people burn out, delivery slows, or managers become bottlenecks.
               </p>
             </div>
           </div>
@@ -121,7 +130,7 @@ const About = () => {
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
                 What we believe
               </p>
-              <h2 className="text-3xl sm:text-4xl font-display font-bold">Our Belief System</h2>
+              <h2 className="text-3xl sm:text-4xl font-display font-bold">What we believe</h2>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -150,15 +159,15 @@ const About = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See early signals in your organization
+                See where work is starting to strain.
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Request a preview to understand what workload risk looks like in your current work
-                system.
+                Request a demo and see how SignalTrue detects work-system friction before it becomes
+                burnout, missed delivery, or resignation risk.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>

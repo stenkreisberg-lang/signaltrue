@@ -33,8 +33,8 @@ const trackEvent = (eventName: string) => {
 };
 
 const Hero = () => {
-  const handleRequestPreview = () => {
-    trackEvent('early_signal_preview_requested');
+  const handleRequestDemo = () => {
+    trackEvent('demo_requested');
   };
 
   const handleHowItWorks = () => {
@@ -56,7 +56,7 @@ const Hero = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
                 <Eye className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  Workload Risk Early Warning
+                  Work-system early warning
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/50">
@@ -75,32 +75,32 @@ const Hero = () => {
 
             {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-              Prevent workload risk before it becomes burnout, missed execution, or resignations.
+              Detect manager overload before it slows the whole team down.
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-muted-foreground max-w-lg mb-4 leading-relaxed">
-              SignalTrue gives CEOs, COOs, and HR a weekly team-level report showing where meetings,
-              lost focus time, after-hours work, manager overload, and slow coordination are putting
-              teams at risk.
+              SignalTrue shows where meetings, response pressure, focus loss, and after-hours
+              catch-up are creating hidden work-system friction before it turns into burnout, missed
+              delivery, or resignation risk.
             </p>
 
             {/* Trust line */}
             <p className="text-sm text-muted-foreground mb-8">
-              No message content. No individual tracking. Team-level signals only.
+              Metadata only. Team-level only. No message content. No individual productivity scores.
             </p>
 
-            {/* CTA buttons - Updated per spec */}
+            {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/contact" onClick={handleRequestPreview}>
+              <Link to="/contact" onClick={handleRequestDemo}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/how-it-works" onClick={handleHowItWorks}>
                 <Button variant="hero-outline" size="xl">
-                  See How It Works
+                  See how it works
                 </Button>
               </Link>
             </div>

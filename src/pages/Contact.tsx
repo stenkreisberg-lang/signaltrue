@@ -7,8 +7,9 @@ const Contact: React.FC = () => {
     name: '',
     email: '',
     company: '',
-    teamSize: '',
-    message: '',
+    role: '',
+    companySize: '',
+    mainProblem: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,11 +39,11 @@ const Contact: React.FC = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              See workload risk before it becomes visible damage.
+              See what SignalTrue would show in your organization.
             </h1>
             <p className="text-xl text-muted-foreground">
-              Tell us about your team size, tools, and current challenges. We will show what early
-              risk signals could look like in your organization.
+              Request a demo to see how SignalTrue detects manager overload, meeting friction, focus
+              fragmentation, response pressure, and recovery risk without reading employee messages.
             </p>
           </div>
         </div>
@@ -100,9 +101,12 @@ const Contact: React.FC = () => {
                   <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle className="w-8 h-8 text-green-500" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground mb-3">Message Sent!</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-3">
+                    Thanks. We received your request.
+                  </h2>
                   <p className="text-muted-foreground mb-6">
-                    Thanks for reaching out. We'll get back to you within 24 hours.
+                    We will contact you about SignalTrue and share the next step for a demo or
+                    workload scan.
                   </p>
                   <Link
                     to="/"
@@ -114,10 +118,24 @@ const Contact: React.FC = () => {
               ) : (
                 <>
                   <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Send Us a Message</h2>
-                    <p className="text-muted-foreground">
-                      Fill out the form below and we'll get back to you shortly.
-                    </p>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">What we will cover</h2>
+                    <ul className="text-muted-foreground text-sm space-y-1 mt-4 text-left max-w-sm mx-auto">
+                      {[
+                        'What SignalTrue detects',
+                        'What data it uses',
+                        'What it does not collect',
+                        'How privacy is protected',
+                        'What a weekly signal report looks like',
+                        'How manager overload is detected',
+                        'How recommendations work',
+                        'What a pilot or workload scan could look like',
+                      ].map((item) => (
+                        <li key={item} className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
@@ -127,7 +145,7 @@ const Contact: React.FC = () => {
                           htmlFor="name"
                           className="block text-sm font-medium text-foreground mb-2"
                         >
-                          Your Name *
+                          Name *
                         </label>
                         <input
                           type="text"
@@ -145,7 +163,7 @@ const Contact: React.FC = () => {
                           htmlFor="email"
                           className="block text-sm font-medium text-foreground mb-2"
                         >
-                          Work Email *
+                          Work email *
                         </label>
                         <input
                           type="email"
@@ -183,71 +201,70 @@ const Contact: React.FC = () => {
                       </div>
                       <div>
                         <label
-                          htmlFor="teamSize"
+                          htmlFor="role"
                           className="block text-sm font-medium text-foreground mb-2"
                         >
-                          Company size
+                          Role
                         </label>
-                        <select
-                          id="teamSize"
-                          name="teamSize"
-                          value={formData.teamSize}
+                        <input
+                          type="text"
+                          id="role"
+                          name="role"
+                          value={formData.role}
                           onChange={handleChange}
                           className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                        >
-                          <option value="">Select company size</option>
-                          <option value="under-50">Under 50</option>
-                          <option value="50-150">50 to 150</option>
-                          <option value="151-500">151 to 500</option>
-                          <option value="501-2500">501 to 2,500</option>
-                          <option value="2500+">2,500+</option>
-                        </select>
+                          placeholder="e.g. HR Director, COO"
+                        />
                       </div>
                     </div>
 
                     <div>
                       <label
-                        htmlFor="challenge"
+                        htmlFor="companySize"
                         className="block text-sm font-medium text-foreground mb-2"
                       >
-                        Main challenge
+                        Company size
                       </label>
                       <select
-                        id="challenge"
-                        name="challenge"
-                        value={(formData as any).challenge || ''}
+                        id="companySize"
+                        name="companySize"
+                        value={formData.companySize}
                         onChange={handleChange}
                         className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
                       >
-                        <option value="">What are you trying to understand?</option>
-                        <option value="too-many-meetings">Too many meetings</option>
-                        <option value="manager-overload">Manager overload</option>
-                        <option value="burnout-risk">Burnout risk</option>
-                        <option value="slow-execution">Slow execution</option>
-                        <option value="after-hours-work">After-hours work</option>
-                        <option value="retention-risk">Retention risk</option>
-                        <option value="hybrid-coordination">Hybrid coordination</option>
-                        <option value="not-sure">Not sure yet</option>
+                        <option value="">Select company size</option>
+                        <option value="under-50">Under 50</option>
+                        <option value="50-150">50 to 150</option>
+                        <option value="151-500">151 to 500</option>
+                        <option value="501-2500">501 to 2,500</option>
+                        <option value="2500+">2,500+</option>
                       </select>
                     </div>
 
                     <div>
                       <label
-                        htmlFor="message"
+                        htmlFor="mainProblem"
                         className="block text-sm font-medium text-foreground mb-2"
                       >
-                        What are you trying to understand?
+                        Main problem you want to understand
                       </label>
-                      <textarea
-                        id="message"
-                        name="message"
-                        required
-                        rows={5}
-                        value={formData.message}
+                      <select
+                        id="mainProblem"
+                        name="mainProblem"
+                        value={formData.mainProblem}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors resize-none"
-                        placeholder="Tell us about your team size, tools, and current challenges..."
-                      />
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
+                      >
+                        <option value="">Select a problem area</option>
+                        <option value="manager-overload">Manager overload</option>
+                        <option value="too-many-meetings">Too many meetings</option>
+                        <option value="focus-fragmentation">Focus fragmentation</option>
+                        <option value="response-pressure">Response pressure</option>
+                        <option value="burnout-risk">Burnout risk</option>
+                        <option value="employee-engagement">Employee engagement</option>
+                        <option value="delivery-slowing">Delivery slowing down</option>
+                        <option value="not-sure">Not sure yet</option>
+                      </select>
                     </div>
 
                     <button
@@ -263,10 +280,14 @@ const Contact: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          Request Early Signal Preview
+                          Request demo
                         </>
                       )}
                     </button>
+
+                    <p className="text-xs text-muted-foreground text-center">
+                      We will only use your information to contact you about SignalTrue.
+                    </p>
                   </form>
                 </>
               )}

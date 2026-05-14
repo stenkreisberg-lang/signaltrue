@@ -12,19 +12,21 @@ import { Link } from 'react-router-dom';
 
 const footerLinks = {
   Product: [
-    { label: 'How It Works', href: '/how-it-works' },
     { label: 'Product', href: '/product' },
-    { label: 'Team Analytics', href: '/team-analytics' },
+    { label: 'How It Works', href: '/how-it-works' },
     { label: 'Pricing', href: '/pricing' },
+    { label: 'Request demo', href: '/contact' },
   ],
   Company: [
     { label: 'About', href: '/about' },
-    { label: 'Blog', href: '/blog' },
     { label: 'Contact', href: '/contact' },
-  ],
-  Resources: [
     { label: 'Privacy', href: '/trust' },
-    { label: 'Terms of Service', href: '/about#terms' },
+  ],
+  Trust: [
+    { label: 'Metadata only', href: '/trust' },
+    { label: 'Team-level insights', href: '/trust' },
+    { label: 'No message content', href: '/trust' },
+    { label: 'No individual scores', href: '/trust' },
   ],
 };
 
@@ -42,8 +44,7 @@ const Footer = () => {
               <span className="text-xl font-display font-bold text-foreground">SignalTrue</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mb-6">
-              SignalTrue detects early workload risk from team-level work patterns, without reading
-              messages or tracking individuals.
+              Work-system early warning for healthier, faster teams.
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -89,10 +90,10 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">© 2025 SignalTrue. All rights reserved.</p>
           <p className="text-sm text-muted-foreground">
-            Behavioral Early-Warning System for modern organizations.
+            © 2026 SignalTrue. Built for prevention, not surveillance.
           </p>
+          <p className="text-sm text-muted-foreground">Work-system early warning platform.</p>
         </div>
       </div>
     </footer>

@@ -29,72 +29,76 @@ const trackEvent = (eventName: string) => {
 // 6 Signal types per spec
 const signals = [
   {
-    icon: Clock,
-    name: 'Focus Loss',
-    whatItMeans: 'Teams are losing protected time for deep work, planning, and decision-making.',
+    icon: UserCheck,
+    name: 'Manager Load Signal',
+    whatItMeans:
+      'Managers are becoming overloaded by meetings, interruptions, decision requests, and shrinking focus time.',
     whyItMatters:
-      'When focus time disappears, execution quality drops and people compensate through longer working hours.',
+      'When managers overload, they become bottlenecks. Teams wait longer for decisions, coaching disappears, and strategic work gets pushed into evenings.',
     whatLeadersCanChange:
-      'Protect focus blocks. Reduce low-value meetings. Set clearer async communication expectations. Review manager meeting load.',
+      'Reduce manager meeting load. Delegate decision rights. Clarify escalation paths. Protect at least two manager focus blocks per week.',
   },
   {
     icon: Users,
-    name: 'Meeting Overload',
-    whatItMeans: 'Calendar density increases beyond what teams can sustain.',
+    name: 'Meeting Overload Signal',
+    whatItMeans:
+      'Meetings are taking too much time, creating too many handoffs, or crowding out real work.',
     whyItMatters:
-      'Too many meetings reduce delivery capacity, increase context switching, and hide coordination problems.',
+      'People say they are busy all day but still cannot finish important work. Low-value meetings are the cost, not meetings themselves.',
     whatLeadersCanChange:
-      'Audit recurring meetings. Remove low-value syncs. Shorten default meeting length. Create meeting-free focus windows.',
+      'Audit recurring meetings. Cancel status-only calls. Shorten default meeting lengths. Require clear owners for decision meetings.',
+  },
+  {
+    icon: Clock,
+    name: 'Focus Fragmentation Signal',
+    whatItMeans:
+      'Uninterrupted work time is disappearing and people are constantly switching between tasks, meetings, and messages.',
+    whyItMatters:
+      'Work quality drops, delivery slows, and people feel they never get deep work done. People do not need only fewer hours — they need usable hours.',
+    whatLeadersCanChange:
+      'Create team-wide focus windows. Group meetings into fewer blocks. Move non-urgent updates to async channels. Reduce ad hoc meeting slots.',
   },
   {
     icon: Zap,
-    name: 'Execution Drag',
+    name: 'Responsiveness Pressure Signal',
     whatItMeans:
-      'Work is moving slower because decisions, responses, and coordination take longer.',
+      'Expected response speed keeps increasing and teams have fallen into constant reply mode.',
     whyItMatters:
-      'Execution drag quietly increases cost. Projects take longer, managers become bottlenecks, and teams need more effort to make the same progress.',
+      'When everything feels urgent, people stop prioritising. Constant response pressure creates stress, interrupts real work, and weakens async confidence.',
     whatLeadersCanChange:
-      'Clarify decision ownership. Reduce approval loops. Review manager bottlenecks. Create clearer response expectations.',
+      'Define response expectations by channel. Separate urgent from non-urgent work. Protect async decision rules. Reduce "just checking" follow-ups.',
   },
   {
     icon: Moon,
-    name: 'After-Hours Creep',
-    whatItMeans: 'Work is spreading into evenings and weekends.',
+    name: 'Recovery Risk Signal',
+    whatItMeans:
+      'Recovery windows are shrinking and people are carrying work into evenings, weekends, or repeated high-pressure periods.',
     whyItMatters:
-      'After-hours work predicts recovery risk. If it continues, teams may compensate with exhaustion instead of sustainable capacity.',
+      'Short pressure spikes are normal. Sustained recovery loss is different. That is when people stop resetting and exhaustion compounds.',
     whatLeadersCanChange:
-      'Review workload balance. Reduce unnecessary urgency. Protect recovery time. Adjust capacity plans.',
-  },
-  {
-    icon: UserCheck,
-    name: 'Manager Load',
-    whatItMeans: 'Managers carry too much meeting, coordination, and communication pressure.',
-    whyItMatters:
-      'When managers are overloaded, decisions slow down and teams wait longer for clarity.',
-    whatLeadersCanChange:
-      'Reduce manager meeting load. Delegate decision rights. Clarify escalation paths. Protect manager focus time.',
+      'Identify why daytime work is blocked. Reduce meeting compression. Pause non-essential work. Review whether pressure is temporary or structural.',
   },
   {
     icon: RefreshCw,
-    name: 'Repeated Pressure Patterns',
-    whatItMeans: 'The same risk signals appear week after week.',
+    name: 'Execution Drag Signal',
+    whatItMeans: 'Several signals are combining and the work system is starting to slow delivery.',
     whyItMatters:
-      'One bad week may be normal. Repeated strain is a warning sign that the work system is becoming unsustainable.',
+      'Teams can look busy and still become slower. Execution drag shows when the system consumes energy faster than it creates progress.',
     whatLeadersCanChange:
-      'Treat repeated signals as structural issues. Assign an owner. Set a corrective action. Review trend after two weeks.',
+      'Run a work-system review. Identify the top 3 friction points. Assign owners. Set a corrective action. Review improvement in 2 weeks.',
   },
 ];
 
-// What this is NOT per spec
+// What SignalTrue does NOT do per spec
 const whatThisIsNot = [
-  'Not performance monitoring',
-  'Not sentiment analysis',
-  'Not productivity scoring',
-  'Not individual tracking',
-  'Not keylogging',
-  'Not screen recording',
-  'Not message analysis',
-  'Not employee ranking',
+  'SignalTrue does not read message content.',
+  'SignalTrue does not read email bodies.',
+  'SignalTrue does not record meetings.',
+  'SignalTrue does not track screens.',
+  'SignalTrue does not monitor keystrokes.',
+  'SignalTrue does not rank employees.',
+  'SignalTrue does not show individual productivity scores.',
+  'SignalTrue does not tell managers who is underperforming.',
 ];
 
 const Product = () => {
@@ -108,20 +112,24 @@ const Product = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-                The Product
+                Product
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                From invisible workload strain to{' '}
-                <span className="text-gradient">visible risk signals</span>
+                Early warning signals from the way{' '}
+                <span className="text-gradient">work actually happens.</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                SignalTrue turns calendar, meeting, and communication metadata into early warning
-                signals that leaders can act on before pressure becomes visible in performance,
-                engagement, or attrition.
+                SignalTrue detects hidden work-system friction from meetings, focus time, response
+                pressure, after-hours patterns, and manager load, without reading messages or
+                tracking individual productivity.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+              <p className="text-sm text-muted-foreground mb-8">
+                Metadata only. Team-level only. No message content. No individual productivity
+                scores.
+              </p>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
@@ -191,14 +199,14 @@ const Product = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
-                  What this is not
+                  What SignalTrue does not do
                 </h2>
                 <p className="text-lg text-muted-foreground">
-                  SignalTrue is designed to make surveillance impossible.
+                  SignalTrue shows system pressure, not personal blame.
                 </p>
               </div>
 
-              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 {whatThisIsNot.map((item, index) => (
                   <div
                     key={index}
@@ -212,8 +220,7 @@ const Product = () => {
 
               <div className="mt-12 p-6 rounded-2xl bg-success/5 border border-success/20 text-center">
                 <p className="text-lg text-foreground">
-                  <strong>What we are:</strong> a team-level early warning layer that helps leaders
-                  fix structural problems before people break.
+                  SignalTrue shows system pressure, not personal blame. That difference matters.
                 </p>
               </div>
             </div>
@@ -226,14 +233,15 @@ const Product = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                See early signals in your organization
+                See the signals your current tools are hiding.
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                Request a preview to see what workload risk could look like in your context.
+                Request a demo and see how SignalTrue detects manager overload, meeting friction,
+                focus loss, and response pressure.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">
-                  Request Early Signal Preview
+                  Request demo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>

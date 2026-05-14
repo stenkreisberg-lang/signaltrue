@@ -1,7 +1,7 @@
-import { Button } from "../components/ui/button";
-import { Activity, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Button } from '../components/ui/button';
+import { Activity, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -19,19 +19,18 @@ const trackEvent = (eventName: string) => {
 };
 
 const navItems = [
-  { label: "Product", href: "/product" },
-  { label: "How It Works", href: "/how-it-works" },
-  { label: "Team Analytics", href: "/team-analytics" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "About", href: "/about" },
-  { label: "Blog", href: "/blog" },
+  { label: 'Product', href: '/product' },
+  { label: 'How It Works', href: '/how-it-works' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'About', href: '/about' },
+  { label: 'Privacy', href: '/trust' },
 ];
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleRequestPreview = () => {
-    trackEvent('early_signal_preview_requested');
+  const handleRequestDemo = () => {
+    trackEvent('demo_requested');
   };
 
   return (
@@ -46,9 +45,7 @@ const Navbar = () => {
               </div>
               <div className="absolute inset-0 rounded-lg bg-primary/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="text-xl font-display font-bold text-foreground">
-              SignalTrue
-            </span>
+            <span className="text-xl font-display font-bold text-foreground">SignalTrue</span>
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -71,9 +68,14 @@ const Navbar = () => {
                 Login
               </Button>
             </Link>
-            <Link to="/contact" onClick={handleRequestPreview}>
+            <Link to="/how-it-works">
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                See product
+              </Button>
+            </Link>
+            <Link to="/contact" onClick={handleRequestDemo}>
               <Button variant="cta" size="sm">
-                Request Early Signal Preview
+                Request demo
               </Button>
             </Link>
           </div>
@@ -84,11 +86,7 @@ const Navbar = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
@@ -112,9 +110,15 @@ const Navbar = () => {
                     Login
                   </Button>
                 </Link>
-                <Link to="/contact" onClick={() => { setMobileMenuOpen(false); handleRequestPreview(); }}>
+                <Link
+                  to="/contact"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleRequestDemo();
+                  }}
+                >
                   <Button variant="cta" size="sm" className="w-full">
-                    Request Early Signal Preview
+                    Request demo
                   </Button>
                 </Link>
               </div>

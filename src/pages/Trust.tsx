@@ -1,19 +1,19 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { Button } from "../components/ui/button";
-import { Link } from "react-router-dom";
-import { 
-  Shield, 
-  Lock, 
-  Eye, 
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
+import { Link } from 'react-router-dom';
+import {
+  Shield,
+  Lock,
+  Eye,
   EyeOff,
   CheckCircle,
   XCircle,
   ArrowRight,
   Users,
   Database,
-  FileText
-} from "lucide-react";
+  FileText,
+} from 'lucide-react';
 
 /*
  * CATEGORY KING POSITIONING:
@@ -25,50 +25,54 @@ import {
 const whatWeUse = [
   {
     icon: Database,
-    title: "Calendar metadata",
-    description: "Meeting times, durations, and participant counts. Never meeting content or notes.",
+    title: 'Calendar metadata',
+    description:
+      'Meeting times, durations, and participant counts. Never meeting content or notes.',
   },
   {
     icon: FileText,
-    title: "Communication timing patterns",
-    description: "When messages are sent, response intervals, channel activity levels. Never message content.",
+    title: 'Communication timing patterns',
+    description:
+      'When messages are sent, response intervals, channel activity levels. Never message content.',
   },
   {
     icon: Users,
-    title: "Aggregated behavioral signals",
-    description: "Team-level patterns only. Individual data is never exposed to managers.",
+    title: 'Aggregated behavioral signals',
+    description: 'Team-level patterns only. Individual data is never exposed to managers.',
   },
 ];
 
 // What we NEVER use
 const whatWeNeverUse = [
-  "Message content (Slack, email, chat)",
-  "Email body text or subject lines",
-  "Document content or file contents",
-  "Emotional analysis or sentiment",
-  "Individual performance scores visible to managers",
-  "Location or device tracking",
-  "Keystroke or screen monitoring",
-  "Video or audio recording analysis",
+  'No Slack message text',
+  'No email bodies',
+  'No document contents',
+  'No meeting recordings',
+  'No screen tracking',
+  'No keystroke tracking',
+  'No webcam tracking',
+  'No private employee notes',
+  'No individual productivity ranking',
 ];
 
 // Employee transparency features
 const employeeTransparency = [
   {
-    title: "See what data is used",
-    description: "Employees can view exactly which data sources contribute to team-level insights.",
+    title: 'See what data is used',
+    description: 'Employees can view exactly which data sources contribute to team-level insights.',
   },
   {
-    title: "See what is NOT used",
-    description: "Clear documentation of data we explicitly do not collect or analyze.",
+    title: 'See what is NOT used',
+    description: 'Clear documentation of data we explicitly do not collect or analyze.',
   },
   {
-    title: "Understand the outputs",
-    description: "Employees can see what insights are generated and how they're used at team level.",
+    title: 'Understand the outputs',
+    description:
+      "Employees can see what insights are generated and how they're used at team level.",
   },
   {
-    title: "Optional participation",
-    description: "Organizations can configure employee opt-out for non-aggregate analysis.",
+    title: 'Optional participation',
+    description: 'Organizations can configure employee opt-out for non-aggregate analysis.',
   },
 ];
 
@@ -87,13 +91,12 @@ const Trust = () => {
                 <span className="text-sm font-medium text-success">Privacy by architecture</span>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
-                Privacy is enforced,{" "}
-                <span className="text-gradient">not promised.</span>
+                Privacy is not a feature.{' '}
+                <span className="text-gradient">It is the foundation.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                SignalTrue analyzes behavioral metadata, not message content. 
-                No emotion inference. No individual scoring for managers. 
-                Privacy is enforced at the architecture level.
+                SignalTrue is built to detect work-system pressure without reading employee
+                messages, exposing individual behaviour, or ranking productivity.
               </p>
             </div>
           </div>
@@ -117,19 +120,14 @@ const Trust = () => {
 
               <div className="grid md:grid-cols-3 gap-6">
                 {whatWeUse.map((item, index) => (
-                  <div 
-                    key={index}
-                    className="p-6 rounded-2xl bg-card border border-border/50"
-                  >
+                  <div key={index} className="p-6 rounded-2xl bg-card border border-border/50">
                     <div className="p-3 rounded-xl bg-success/10 w-fit mb-4">
                       <item.icon className="w-6 h-6 text-success" />
                     </div>
                     <h3 className="font-display font-semibold text-foreground mb-2">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {item.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -150,8 +148,7 @@ const Trust = () => {
                   What we never access
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  These are architectural constraints, not policy promises. 
-                  The system cannot access this data.
+                  SignalTrue does not need private content to detect work-system friction.
                 </p>
               </div>
 
@@ -181,25 +178,19 @@ const Trust = () => {
                   Employees can see what we see
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Transparency builds trust. Employees can view exactly how their data contributes to team-level insights.
+                  Transparency builds trust. Employees can view exactly how their data contributes
+                  to team-level insights.
                 </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 {employeeTransparency.map((item, index) => (
-                  <div 
-                    key={index}
-                    className="p-6 rounded-2xl bg-card border border-border/50"
-                  >
+                  <div key={index} className="p-6 rounded-2xl bg-card border border-border/50">
                     <div className="flex items-center gap-3 mb-3">
                       <CheckCircle className="w-5 h-5 text-success" />
-                      <h3 className="font-display font-semibold text-foreground">
-                        {item.title}
-                      </h3>
+                      <h3 className="font-display font-semibold text-foreground">{item.title}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground pl-8">
-                      {item.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground pl-8">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -261,10 +252,13 @@ const Trust = () => {
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
-                Questions about privacy or compliance?
+                Questions about privacy?
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                We're happy to walk you through our architecture and answer any GDPR, SOC 2, or compliance questions.
+                For privacy or data protection questions, contact:{' '}
+                <a href="mailto:privacy@signaltrue.ai" className="text-primary underline">
+                  privacy@signaltrue.ai
+                </a>
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/contact">
