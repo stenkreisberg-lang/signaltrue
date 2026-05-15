@@ -47,7 +47,7 @@ const tiers = [
   {
     name: 'Workload Scan',
     planKey: null,
-    outcome: 'A focused 3–4 week diagnostic before committing to ongoing use.',
+    outcome: 'A focused 3–4 week calibration before committing to ongoing use.',
     description:
       'Best for small teams or organizations that want a clear picture before buying an always-on system.',
     price: 'Custom pilot price',
@@ -289,6 +289,33 @@ const Pricing = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* Free Diagnostic nudge */}
+        <section className="py-10 bg-white border-t border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0]">
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-sm font-semibold text-[#047857] uppercase tracking-wide mb-1">
+                  Not sure yet?
+                </p>
+                <p className="text-[#0F172A] font-medium">Take the free diagnostic first.</p>
+                <p className="text-sm text-[#334155] mt-1">
+                  8 questions. 7 minutes. Get your organization's drift score instantly — no
+                  integrations, no commitment.
+                </p>
+              </div>
+              <Link to="/drift-diagnostic" className="flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#047857] text-[#047857] hover:bg-[#D1FAE5] whitespace-nowrap"
+                >
+                  Free diagnostic →
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

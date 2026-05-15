@@ -294,6 +294,40 @@ const HowItWorksPage = () => {
           </div>
         </section>
 
+        {/* Free Diagnostic Strip */}
+        <section className="py-14 bg-[#EFF6FF] border-b border-[#DBEAFE]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto text-center">
+              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wide mb-3">
+                See it for your organization
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0F172A] mb-3">
+                Does your organization show early drift signals?
+              </h2>
+              <p className="text-[#334155] mb-8 max-w-xl mx-auto">
+                Take the free diagnostic. 8 questions, 7 minutes. No integrations needed — get your
+                organization's drift score right now.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link to="/drift-diagnostic">
+                  <Button variant="hero" size="lg">
+                    Take the free diagnostic
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                  <Button variant="hero-outline" size="lg">
+                    Request a full demo
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-xs text-[#475569] mt-4">
+                No personal data. No message content. Anonymous — takes 7 minutes.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-20 lg:py-24 bg-white border-t border-[#E2E8F0]">
           <div className="container mx-auto px-6">
