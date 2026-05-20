@@ -23,6 +23,7 @@ import { GoalTracker } from './features/GoalTracker';
 import { NotificationBell } from './features/NotificationBell';
 import { RecoveryJourneyTimeline } from './features/RecoveryJourneyTimeline';
 import { FeatureErrorBoundary } from './features/FeatureErrorBoundary';
+import { EngagementStrainWidget } from './features/EngagementStrainWidget';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -288,6 +289,14 @@ function Dashboard() {
         {teamId && (
           <>
             <BDIDashboard teamId={teamId} orgId={user?.orgId} />
+
+            {/* Engagement Level — behavioral engagement conditions, not survey-based */}
+            {user?.orgId && (
+              <FeatureErrorBoundary featureName="EngagementStrainWidget">
+                <EngagementStrainWidget orgId={user.orgId} teamId={teamId} />
+              </FeatureErrorBoundary>
+            )}
+
             <LoopClosingDashboard teamId={teamId} />
             <DriftAlerts teamId={teamId} />
             <PlaybookRecommendations teamId={teamId} />

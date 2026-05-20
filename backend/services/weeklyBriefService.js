@@ -11,6 +11,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import WeekContext from '../models/weekContext.js';
+import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, getStatusMeta, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -211,7 +212,8 @@ export async function generateWeeklyBrief(orgId) {
     twSignals, lwSignals,
     twCKSignals, lwCKSignals,
     driftEvents,
-    contextTags
+    contextTags,
+    engagementStrainDocs,
   ] = await Promise.all([
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
@@ -230,6 +232,13 @@ export async function generateWeeklyBrief(orgId) {
     CategoryKingSignal.find({ orgId: org._id, detectedAt: { $gte: lastWeekStart, $lt: thisWeekStart } }).lean(),
     DriftEvent.find({ orgId, date: { $gte: thisWeekStart } }).sort({ date: -1 }).lean(),
     WeekContext.find({ orgId: org._id, weekStart: { $lte: now }, weekEnd: { $gte: thisWeekStart } }).lean(),
+    // Engagement Strain: latest record per team for this org
+    EngagementStrainWeekly.aggregate([
+      { $match: { orgId: org._id } },
+      { $sort: { teamId: 1, weekStart: -1 } },
+      { $group: { _id: '$teamId', doc: { $first: '$$ROOT' } } },
+      { $replaceRoot: { newRoot: '$doc' } },
+    ]),
   ]);
 
   // ─── BDI data ───
@@ -241,6 +250,13 @@ export async function generateWeeklyBrief(orgId) {
       .sort({ calculatedAt: -1 }).limit(1).lean();
     if (latestBDI) teamBDIData.push({ teamName: team.name, bdi: latestBDI, prevBDI });
   }
+
+  // ─── Engagement Strain — attach team names ───
+  const teamNameMap = Object.fromEntries(teams.map(t => [String(t._id), t.name]));
+  const engagementStrainByTeam = engagementStrainDocs.map(doc => ({
+    ...doc,
+    teamName: teamNameMap[String(doc.teamId)] ?? null,
+  }));
 
   // ─── Derived metrics ───
   const getCount = (arr, source, eventType) => (arr.find(e => e._id.source === source && e._id.eventType === eventType))?.count || 0;
@@ -867,6 +883,113 @@ export async function generateWeeklyBrief(orgId) {
     html += `<div style="${S.card} opacity:0.85;">`;
     html += `<h3 style="${S.h3} margin-top:0; font-size:14px; color:#9ca3af;">📎 Industry Context: ${org.industry || 'General'}</h3>`;
     html += `<p style="${S.pSmall}">${aiAnalysis.industryComparison}</p>`;
+    html += `</div>`;
+  }
+
+  // ─── 11b. Engagement Level ───
+  if (engagementStrainByTeam.length > 0) {
+    const DRIVER_LABELS = {
+      recovery_debt:               'Recovery Debt',
+      focus_erosion:               'Focus Erosion',
+      coordination_friction:       'Coordination Friction',
+      responsiveness_pressure:     'Responsiveness Pressure',
+      collaboration_withdrawal:    'Collaboration Withdrawal',
+      manager_support_gap:         'Manager Support Gap',
+      workload_volatility:         'Workload Volatility',
+    };
+
+    const riskStateColor = (state) =>
+      state === 'critical' ? '#ef4444' : state === 'strain' ? '#f97316' : state === 'watch' ? '#f59e0b' : '#10b981';
+    const riskStateLabel = (state) =>
+      state === 'critical' ? 'Critical' : state === 'strain' ? 'Strain' : state === 'watch' ? 'Watch' : 'Healthy';
+    const trendLbl = (trend) =>
+      trend === 'rising' ? '📈 Risk rising' : trend === 'improving' ? '📉 Improving' : '➡️ Stable';
+
+    // Worst-case state across teams
+    const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
+    const worstState = engagementStrainByTeam.reduce(
+      (worst, t) => stateOrder.indexOf(t.riskState) > stateOrder.indexOf(worst) ? t.riskState : worst,
+      'healthy'
+    );
+    const worstColor = riskStateColor(worstState);
+
+    html += `<div style="${S.card} border-left:4px solid ${worstColor};">`;
+    html += `<h3 style="${S.h3} margin-top:0; color:${worstColor};">🧠 Engagement Level</h3>`;
+
+    // Why it matters — always shown, non-optional
+    html += `<div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 16px; margin-bottom:16px;">`;
+    html += `<p style="${S.p} margin:0 0 6px 0; font-weight:600; color:#0369a1;">Why engagement level is in this report</p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0;">`;
+    html += `Engagement isn't measured through surveys here — it's derived from <strong>behavioral metadata</strong>: `;
+    html += `how recovery time, focus availability, responsiveness pressure, and collaboration patterns shift week to week. `;
+    html += `</p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0;">`;
+    html += `This matters because engagement problems appear in <strong>system behavior 4–8 weeks before</strong> `;
+    html += `people report them in surveys, or before they show up in attrition and performance metrics. `;
+    html += `Acting at the structural level now prevents the downstream cost.`;
+    html += `</p>`;
+    html += `<p style="${S.pSmall} margin:0;">No surveillance. No sentiment analysis. No individual names. Metadata-derived team-level patterns only.</p>`;
+    html += `</div>`;
+
+    // Score key
+    html += `<p style="${S.pSmall} margin-bottom:12px;">`;
+    html += `<strong>Strain Risk:</strong> 0 = no strain, 100 = critical &nbsp;·&nbsp; `;
+    html += `<strong>Conditions Score:</strong> inverse (higher = healthier) &nbsp;·&nbsp; `;
+    html += `<strong>Trend:</strong> direction vs last week`;
+    html += `</p>`;
+
+    // Per-team blocks
+    for (const t of engagementStrainByTeam) {
+      const tc = riskStateColor(t.riskState);
+      html += `<div style="${S.cardAlert(tc)} margin-bottom:12px;">`;
+      html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">`;
+      html += `<p style="${S.p} margin:0; font-weight:700;">${t.teamName ?? 'Team'} <span style="${S.badge(tc + '20', tc)}">${riskStateLabel(t.riskState)}</span></p>`;
+      html += `<p style="${S.pSmall} margin:0;">${trendLbl(t.trend)}</p>`;
+      html += `</div>`;
+
+      html += `<div style="display:flex; gap:16px; margin-bottom:8px;">`;
+      html += `<div style="text-align:center;"><strong style="font-size:20px; color:${tc};">${t.engagementStrainRisk}</strong><br><span style="${S.pSmall}">Strain Risk</span></div>`;
+      html += `<div style="text-align:center;"><strong style="font-size:20px; color:#10b981;">${t.engagementConditionsScore}</strong><br><span style="${S.pSmall}">Conditions</span></div>`;
+      html += `<div style="text-align:center;"><strong style="font-size:20px;">${t.activePeopleCount}</strong><br><span style="${S.pSmall}">Members</span></div>`;
+      html += `</div>`;
+
+      // Top drivers
+      if (t.topDrivers?.length > 0) {
+        html += `<p style="${S.pSmall} margin-bottom:4px;"><strong>Top drivers:</strong></p>`;
+        for (const d of t.topDrivers.slice(0, 3)) {
+          const dLabel = DRIVER_LABELS[d.driver] ?? d.driver;
+          const changeStr = d.changeVsBaseline ? ` (${d.changeVsBaseline} vs baseline)` : '';
+          html += `<p style="${S.pSmall} margin:2px 0;">• ${dLabel}${changeStr} — score ${d.score}/100</p>`;
+          if (d.explanation) {
+            html += `<p style="${S.pSmall} margin:0 0 4px 16px; font-style:italic;">${d.explanation}</p>`;
+          }
+        }
+      }
+
+      // What it means for this risk state
+      let stateMsg = '';
+      if (t.riskState === 'critical') {
+        stateMsg = 'Critical engagement strain: structural conditions for sustained work have significantly degraded. Expect rising attrition risk and declining output quality within 2–4 weeks without intervention.';
+      } else if (t.riskState === 'strain') {
+        stateMsg = 'Strain-level conditions: the team is working against friction most people won\'t explicitly name. Recovery time is likely shrinking or responsiveness pressure is high. Act before it compounds.';
+      } else if (t.riskState === 'watch' && t.trend === 'rising') {
+        stateMsg = 'Watch-level risk with a rising trend — conditions are not critical, but the direction is wrong. This is the optimal intervention window.';
+      } else if (t.riskState === 'watch') {
+        stateMsg = 'Watch-level: nothing is broken, but there are early structural signals worth monitoring.';
+      } else if (t.trend === 'improving') {
+        stateMsg = 'Healthy and improving. Keep the patterns that are working — particularly recovery time and focus availability.';
+      } else {
+        stateMsg = 'Healthy and stable. No structural engagement risks detected this week.';
+      }
+
+      html += `<div style="margin-top:8px; padding:8px 10px; background:${tc}10; border-left:3px solid ${tc}; border-radius:4px;">`;
+      html += `<p style="${S.p} margin:0;"><strong>What this means:</strong> ${stateMsg}</p>`;
+      html += `</div>`;
+
+      html += `</div>`;
+    }
+
+    html += `<p style="${S.pSmall}">Engagement data is computed weekly. View full driver breakdown and trend history on your SignalTrue dashboard.</p>`;
     html += `</div>`;
   }
 
