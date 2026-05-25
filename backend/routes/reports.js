@@ -420,7 +420,7 @@ router.post('/trigger-weekly-email', async (req, res) => {
  */
 router.post('/trigger-monthly-email', async (req, res) => {
   try {
-    const { secret, orgId } = req.body;
+    const { secret, orgId, previewOnly } = req.body;
     const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
     if (secret !== expectedSecret) {
       return res.status(401).json({ message: 'Invalid secret key' });
@@ -437,8 +437,8 @@ router.post('/trigger-monthly-email', async (req, res) => {
       try {
         const report = await generateMonthlyReportForOrg(org._id);
         if (report) {
-          await sendMonthlyReportEmail(org._id, report);
-          results.push({ org: org.name, status: 'sent' });
+          await sendMonthlyReportEmail(org._id, report, { previewOnly: !!previewOnly });
+          results.push({ org: org.name, status: previewOnly ? 'preview sent to superadmin only' : 'sent' });
         } else {
           results.push({ org: org.name, status: 'skipped — no data' });
         }
