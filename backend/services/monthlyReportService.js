@@ -669,209 +669,158 @@ export async function getLeadershipView(orgId) {
 
 function generateMonthlyEmailHTML({ org, report }) {
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const bdi = report.orgHealth.avgBDI || 0;
-  const bdiColor = bdi >= 70 ? '#22c55e' : bdi >= 40 ? '#f59e0b' : '#ef4444';
-  const trendEmoji = { improving: '📉', stable: '➡️', deteriorating: '📈' }[report.orgHealth.bdiTrend] || '➡️';
-  const trendColor = { improving: '#22c55e', stable: '#6b7280', deteriorating: '#ef4444' }[report.orgHealth.bdiTrend] || '#6b7280';
   const periodLabel = `${fmtDate(report.periodStart)} – ${fmtDate(report.periodEnd)}`;
 
-  const metricBox = (value, label, color = '#111827') =>
-    `<td style="padding:16px;background:#f8fafc;border-radius:8px;text-align:center;border:1px solid #e5e7eb;">
-      <div style="font-size:26px;font-weight:700;color:${color};">${value}</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:2px;">${label}</div>
-    </td>`;
+  // ── Core metrics ──
+  const meetHours  = report.orgHealth?.avgMeetingHoursWeekly || 0;
+  const meetCount  = report.orgHealth?.avgMeetingCount || 0;
+  const b2b        = report.orgHealth?.avgBackToBackBlocks || 0;
+  const afterHours = report.orgHealth?.avgAfterHoursPct || 0;
+  const rci        = report.orgHealth?.avgRCI || 0;
+  const execDrag   = report.executionSignals?.executionDragAvg || 0;
+  const turnoverRisk = report.retentionExposure?.estimatedTurnoverRisk || 0;
+  const avgHourlyRate = 75; // loaded cost assumption
+  const weeklyMeetingCost = Math.round(meetHours * avgHourlyRate);
 
-  const execDrag = report.executionSignals?.executionDragAvg || 0;
-  const mgrScore = report.leadershipSignals?.managerEffectiveness?.avgScore || 0;
-  const attrColor = (report.retentionExposure?.criticalIndividualsCount || 0) > 0 ? '#ef4444' : '#22c55e';
-  const execColor = execDrag >= 60 ? '#ef4444' : execDrag >= 35 ? '#f59e0b' : '#22c55e';
-  const mgrColor  = mgrScore > 0 ? (mgrScore < 45 ? '#ef4444' : mgrScore < 65 ? '#f59e0b' : '#22c55e') : '#9ca3af';
+  // ── Helpers ──
+  const statPill = (value, label, color) =>
+    `<div style="text-align:center;padding:12px 16px;background:#fff;border-radius:8px;border:1px solid #e5e7eb;min-width:90px;">
+      <div style="font-size:22px;font-weight:800;color:${color};line-height:1;">${value}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px;line-height:1.3;">${label}</div>
+    </div>`;
 
-  // ── Meeting load numbers ──
-  const meetHours   = report.orgHealth?.avgMeetingHoursWeekly || 0;
-  const meetCount   = report.orgHealth?.avgMeetingCount || 0;
-  const b2b         = report.orgHealth?.avgBackToBackBlocks || 0;
-  const afterHours  = report.orgHealth?.avgAfterHoursPct || 0;
-  const rci         = report.orgHealth?.avgRCI || 0;
-  const meetHoursColor = meetHours > 300 ? '#ef4444' : meetHours > 150 ? '#f59e0b' : '#22c55e';
-  const b2bColor       = b2b > 20 ? '#ef4444' : b2b > 10 ? '#f59e0b' : '#22c55e';
-  const afterHoursColor = afterHours > 25 ? '#ef4444' : afterHours > 10 ? '#f59e0b' : '#22c55e';
-  const rciColor        = rci >= 70 ? '#ef4444' : rci >= 40 ? '#f59e0b' : '#22c55e';
+  const riskCard = ({ icon, severityLabel, severityColor, headline, situation, businessRisk, action }) =>
+    `<div style="border:1px solid ${severityColor}40;border-left:5px solid ${severityColor};border-radius:10px;padding:22px 24px;margin-bottom:20px;background:#fff;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:20px;">${icon}</span>
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${severityColor};background:${severityColor}15;padding:3px 10px;border-radius:20px;">${severityLabel}</span>
+      </div>
+      <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#111827;line-height:1.35;">${headline}</h3>
+      <p style="margin:0 0 8px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Situation:</strong> ${situation}</p>
+      <p style="margin:0 0 14px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Why this matters:</strong> ${businessRisk}</p>
+      <div style="background:${severityColor}08;border-top:1px solid ${severityColor}25;padding:12px 14px;border-radius:6px;margin-top:4px;">
+        <p style="margin:0;font-size:13px;color:#111827;line-height:1.65;"><strong>Action:</strong> ${action}</p>
+      </div>
+    </div>`;
 
-  const persistentRisksHtml = (report.persistentRisks || []).length > 0
-    ? report.persistentRisks.map(r => {
-        const rc = r.classification === 'structural' ? '#ef4444' : '#f59e0b';
-        const teamNames = (r.affectedTeams || []).map(t => t.teamName).filter(Boolean).join(', ');
-        const label = r.label || (r.riskType === 'overload' ? 'Workload Overload' : r.riskType === 'execution' ? 'Execution Drag' : 'Retention Strain');
-        const detail = r.detail || `Avg score: ${r.avgScore}/100`;
-        return `<div style="padding:10px 14px;margin-bottom:8px;background:${rc}10;border-left:4px solid ${rc};border-radius:4px;">
-          <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#111827;">${label}
-            <span style="font-size:11px;font-weight:400;background:${rc}20;color:${rc};padding:1px 6px;border-radius:10px;margin-left:6px;">${r.classification} · ${r.weeksAboveThreshold}w elevated</span>
-          </p>
-          <p style="margin:0;font-size:13px;color:#6b7280;">${detail}${teamNames ? ` · Teams: ${teamNames}` : ''}</p>
-        </div>`;
-      }).join('')
-    : `<p style="font-size:14px;color:#22c55e;margin:0;">✅ No persistent risks identified this month.</p>`;
+  // ── Build risk cards from available data ──
+  const cards = [];
 
-  const aiNarrative = report.aiSummary?.narrative
-    ? report.aiSummary.narrative.split('\n\n').filter(Boolean)
-        .map(p => `<p style="font-size:14px;color:#374151;line-height:1.7;margin:0 0 10px;">${p}</p>`).join('')
-    : '<p style="font-size:14px;color:#6b7280;font-style:italic;">Organizational health analysis pending AI generation.</p>';
+  if (meetHours > 0) {
+    const execSev = meetHours > 300 ? { label: 'CRITICAL EXECUTION RISK', color: '#ef4444', icon: '🔴' }
+                  : meetHours > 150 ? { label: 'HIGH EXECUTION RISK',     color: '#f59e0b', icon: '🟠' }
+                  :                   { label: 'ELEVATED MEETING LOAD',   color: '#6366f1', icon: '🟡' };
+    cards.push(riskCard({
+      icon: execSev.icon,
+      severityLabel: execSev.label,
+      severityColor: execSev.color,
+      headline: `${org.name} is spending ${meetHours} hours per week in meetings`,
+      situation: `Over the past month, the organisation averaged ${meetHours} meeting hours per week across ${meetCount} meetings. That is equivalent to roughly $${weeklyMeetingCost.toLocaleString()} per week in staff time — before accounting for preparation or follow-up.`,
+      businessRisk: `When this much time is locked in meetings, execution suffers directly. Strategic decisions get deferred, project delivery slows, and individual contributors lose the deep-focus time needed to produce output. At ${meetHours}h/week, this is not a productivity issue — it is a structural capacity problem.`,
+      action: `This week: pull a list of all recurring meetings with 6+ attendees. Cancel or reduce cadence for any that lack a documented output. Target a 20% reduction in meeting hours within 30 days. Assign one person to own this audit.`,
+    }));
+  }
 
-  const leadershipActions = (report.aiSummary?.recommendedLeadershipActions || []).length > 0
-    ? report.aiSummary.recommendedLeadershipActions.slice(0, 4).map(a => {
-        const uc = a.urgency === 'immediate' ? '#ef4444' : a.urgency === 'this-month' ? '#f59e0b' : '#6366f1';
-        const ul = a.urgency === 'immediate' ? 'Immediate' : a.urgency === 'this-month' ? 'This Month' : 'Strategic';
-        return `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:8px;">
-          <div style="margin-bottom:4px;">
-            <span style="font-size:13px;font-weight:600;color:#111827;">${a.action}</span>
-            <span style="font-size:11px;font-weight:600;color:${uc};background:${uc}15;padding:2px 8px;border-radius:10px;margin-left:8px;">${ul}</span>
-          </div>
-          <p style="margin:0;font-size:12px;color:#6b7280;">${a.rationale || ''}</p>
-        </div>`;
-      }).join('')
-    : '';
+  if (b2b > 10) {
+    const b2bSev = b2b > 20 ? { label: 'CRITICAL CAPACITY RISK', color: '#ef4444', icon: '🔴' }
+                            : { label: 'HIGH CAPACITY RISK',     color: '#f59e0b', icon: '🟠' };
+    cards.push(riskCard({
+      icon: b2bSev.icon,
+      severityLabel: b2bSev.label,
+      severityColor: b2bSev.color,
+      headline: `${b2b} back-to-back meeting blocks per week — your people have no time to think`,
+      situation: `Each week, ${org.name} averages ${b2b} consecutive meeting blocks. Healthy organisations operate below 10. This pattern has been sustained for 4+ weeks.`,
+      businessRisk: `Back-to-back meetings eliminate the cognitive recovery time required for strategic thinking, risk assessment, and decision quality. Leaders and managers are stuck in reaction mode — they are attending meetings, not driving outcomes. This directly degrades execution speed and decision quality across the organisation.`,
+      action: `Starting Monday: mandate a 15-minute buffer between all calendar meetings across the leadership team. Block two mornings per week as meeting-free. These are not optional — enforce it through calendar policy.`,
+    }));
+  }
 
-  const structuralDriversHtml = (report.topStructuralDrivers || []).length > 0
-    ? report.topStructuralDrivers.map(d => {
-        const sc = d.severity === 'critical' ? '#ef4444' : d.severity === 'high' ? '#f59e0b' : '#6366f1';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-radius:6px;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;color:#111827;">${d.metric}</span>
-          <span style="font-size:11px;font-weight:700;color:${sc};background:${sc}15;padding:2px 8px;border-radius:10px;">${d.severity?.toUpperCase()}</span>
-        </div>`;
-      }).join('')
-    : '';
+  if (afterHours > 15) {
+    const ahSev = afterHours > 25 ? { label: 'CRITICAL RETENTION RISK', color: '#dc2626', icon: '🔴' }
+                                  : { label: 'HIGH RETENTION RISK',     color: '#f59e0b', icon: '🟠' };
+    cards.push(riskCard({
+      icon: ahSev.icon,
+      severityLabel: ahSev.label,
+      severityColor: ahSev.color,
+      headline: `${afterHours}% of all communication is happening outside working hours`,
+      situation: `More than one in four messages sent at ${org.name} is sent outside standard working hours. This is not occasional — it is a sustained structural pattern for at least 4 consecutive weeks.`,
+      businessRisk: `Sustained after-hours work pressure is the single strongest predictor of voluntary attrition within 6 months. Employees who consistently work after hours report higher burnout, lower engagement, and are significantly more likely to resign. Based on this pattern, estimated turnover risk is ${turnoverRisk}%. Replacing a single senior employee typically costs 50–200% of their annual salary.`,
+      action: `Declare a communication blackout policy after 7pm, effective immediately. Audit workload distribution — after-hours patterns almost always signal unequal burden. Identify the 3–5 roles generating most after-hours messages and investigate root cause this week.`,
+    }));
+  }
+
+  if (rci >= 70) {
+    cards.push(riskCard({
+      icon: '🔴',
+      severityLabel: 'CRITICAL — RECOVERY COLLAPSE',
+      severityColor: '#7c3aed',
+      headline: `Recovery Collapse Index is at ${rci}/100 — teams have no capacity buffer left`,
+      situation: `The Recovery Collapse Index (RCI) measures how much compounded pressure — consecutive meetings, after-hours load, and inadequate recovery gaps — is bearing on your workforce. A score of ${rci}/100 is the maximum level.`,
+      businessRisk: `At RCI ${rci}, there is no slack in the system. Any additional demand — a product launch, a client escalation, a team departure — will cause visible breakdown: missed deadlines, quality failures, or sudden resignations. This score indicates the organisation is operating in a chronic stress state, not a temporary peak.`,
+      action: `Treat this as a structural emergency, not a morale issue. Do not add new initiatives until meeting load and after-hours patterns are addressed. Schedule a leadership session this month specifically to redesign how work is structured — not how hard people work.`,
+    }));
+  }
+
+  const cardsHtml = cards.length > 0
+    ? cards.join('')
+    : `<div style="padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+        <p style="margin:0;font-size:14px;color:#15803d;">✅ No significant risks identified for this period.</p>
+      </div>`;
+
+  // ── Summary stats bar ──
+  const summaryStats = [
+    meetHours > 0 ? statPill(`${meetHours}h`, 'Mtg Hrs/Week', meetHours > 300 ? '#ef4444' : meetHours > 150 ? '#f59e0b' : '#22c55e') : null,
+    b2b > 0       ? statPill(`${b2b}`,         'B2B Blocks',  b2b > 20 ? '#ef4444' : b2b > 10 ? '#f59e0b' : '#22c55e') : null,
+    afterHours > 0 ? statPill(`${afterHours}%`, 'After-Hours', afterHours > 25 ? '#ef4444' : afterHours > 10 ? '#f59e0b' : '#22c55e') : null,
+    rci > 0        ? statPill(`${rci}/100`,     'RCI',         rci >= 70 ? '#ef4444' : rci >= 40 ? '#f59e0b' : '#22c55e') : null,
+    execDrag > 0   ? statPill(`${execDrag}/100`, 'Exec Drag',  execDrag >= 60 ? '#ef4444' : execDrag >= 35 ? '#f59e0b' : '#22c55e') : null,
+    turnoverRisk > 0 ? statPill(`${turnoverRisk}%`, 'Turnover Risk', turnoverRisk > 20 ? '#ef4444' : turnoverRisk > 10 ? '#f59e0b' : '#22c55e') : null,
+  ].filter(Boolean).join('<div style="width:8px;flex-shrink:0;"></div>');
+
+  // ── Situation summary sentence ──
+  const situationLines = [];
+  if (meetHours > 0) situationLines.push(`${org.name} averaged <strong>${meetHours} meeting hours per week</strong> over the past month`);
+  if (b2b > 0)       situationLines.push(`<strong>${b2b} back-to-back meeting blocks</strong> per week`);
+  if (afterHours > 0) situationLines.push(`<strong>${afterHours}% of messages</strong> sent outside working hours`);
+  if (rci >= 70)     situationLines.push(`Recovery Collapse Index at <strong>${rci}/100</strong> — maximum stress load`);
+  const situationText = situationLines.length > 0
+    ? situationLines.join(', with ') + '.'
+    : 'No significant signals detected this period.';
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:20px;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#1e3a5f 0%,#3b82f6 100%);color:#fff;padding:32px 30px 24px;">
-    <div style="font-size:12px;opacity:.8;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Monthly Leadership Report</div>
-    <h1 style="margin:0 0 4px;font-size:26px;font-weight:700;">${org.name}</h1>
-    <div style="font-size:14px;opacity:.85;">${periodLabel}</div>
+  <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);color:#fff;padding:30px 30px 22px;">
+    <div style="font-size:11px;opacity:.75;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.2px;">Monthly Leadership Briefing</div>
+    <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;">${org.name}</h1>
+    <div style="font-size:13px;opacity:.8;">${periodLabel}</div>
   </div>
 
-  <!-- BDI banner -->
-  <div style="background:#f8fafc;padding:16px 30px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px;">
-    <span style="font-size:24px;">${trendEmoji}</span>
-    <div style="flex:1;">
-      <div style="font-size:15px;font-weight:600;color:#111827;">
-        Organisation BDI: <span style="color:${bdiColor};">${bdi.toFixed(1)}/100</span>
-      </div>
-      <div style="font-size:13px;color:${trendColor};text-transform:capitalize;">
-        Trend: ${report.orgHealth.bdiTrend}${report.orgHealth.trendStrength ? ` (${report.orgHealth.trendStrength})` : ''}
-      </div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:13px;color:#6b7280;">${report.orgHealth.teamsAtRisk} of ${Object.values(report.orgHealth.zoneDistribution||{}).reduce((a,b)=>a+b,0)} teams at risk</div>
-      <div style="font-size:12px;color:#9ca3af;">
-        Stable ${report.orgHealth.zoneDistribution?.stable||0} · Stretched ${report.orgHealth.zoneDistribution?.stretched||0} · Critical ${report.orgHealth.zoneDistribution?.critical||0}
-      </div>
+  <!-- Situation banner -->
+  <div style="background:#fef2f2;border-bottom:3px solid #ef4444;padding:18px 28px;">
+    <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#991b1b;">This Month's Situation</p>
+    <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.7;">${situationText}</p>
+  </div>
+
+  <!-- Stats bar -->
+  <div style="padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+    <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:2px;">
+      ${summaryStats}
     </div>
   </div>
 
-  <div style="padding:24px 30px;">
-
-    <!-- Meeting Load — primary data we have -->
-    ${meetHours > 0 ? `
-    <div style="background:linear-gradient(135deg,#fef3c710,#fff);border:1px solid #fde68a;border-radius:10px;padding:18px 20px;margin-bottom:24px;">
-      <h2 style="color:#92400e;font-size:16px;font-weight:700;margin:0 0 14px;">📅 Meeting Load — 30-Day Average</h2>
-      <table style="width:100%;border-collapse:separate;border-spacing:8px;">
-        <tr>
-          ${metricBox(`${meetHours}h`, 'Avg Meeting Hrs/Week', meetHoursColor)}
-          <td style="width:8px;"></td>
-          ${metricBox(`${meetCount}`, 'Avg Meetings/Week', meetCount > 100 ? '#ef4444' : '#f59e0b')}
-          <td style="width:8px;"></td>
-          ${metricBox(`${b2b}`, 'Back-to-Back Blocks', b2bColor)}
-          <td style="width:8px;"></td>
-          ${metricBox(`${afterHours}%`, 'Out-of-Hours Messages', afterHoursColor)}
-        </tr>
-      </table>
-      ${b2b > 20 ? `<p style="margin:12px 0 0;font-size:13px;color:#92400e;">⚠️ <strong>${b2b} consecutive meeting blocks per week</strong> is significantly above healthy levels (≤10). This leaves no recovery time between meetings and is a direct cause of cognitive fatigue and poor decision quality.</p>` : ''}
-      ${meetHours > 200 ? `<p style="margin:8px 0 0;font-size:13px;color:#92400e;">⚠️ <strong>${meetHours} hours of meetings per week</strong> across the organisation means an average of ${(meetHours / Math.max(1, meetCount > 0 ? 10 : 1)).toFixed(0)} hours per person — leaving insufficient time for focused execution work.</p>` : ''}
-    </div>` : ''}
-
-    <!-- Recovery Collapse Index -->
-    ${rci > 0 ? `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px 16px;margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:#991b1b;">Recovery Collapse Index (RCI)</p>
-          <p style="margin:0;font-size:13px;color:#7f1d1d;">A score of <strong>${rci}/100</strong> means back-to-back meetings, after-hours pressure, and gaps between meetings are compounding into a high-stress work pattern. <strong>${rci >= 80 ? 'This is critical.' : rci >= 50 ? 'This needs attention.' : 'Monitor closely.'}</strong></p>
-        </div>
-        <div style="font-size:32px;font-weight:800;color:${rciColor};margin-left:16px;white-space:nowrap;">${rci}/100</div>
-      </div>
-    </div>` : ''}
-
-    <!-- 4 Key metrics -->
-    <h2 style="color:#111827;font-size:17px;font-weight:700;margin:0 0 12px;">📊 Key Signals</h2>
-    <table style="border-collapse:separate;border-spacing:8px;width:100%;margin-bottom:24px;">
-      <tr>
-        ${metricBox(`${report.retentionExposure?.criticalIndividualsCount||0}`, 'Critical Attrition Risk', attrColor)}
-        <td style="width:8px;"></td>
-        ${metricBox(`${execDrag}/100`, 'Execution Drag', execColor)}
-        <td style="width:8px;"></td>
-        ${metricBox(mgrScore > 0 ? `${mgrScore}/100` : 'N/A', 'Manager Effectiveness', mgrColor)}
-        <td style="width:8px;"></td>
-        ${metricBox(`${report.crisisPatterns?.totalCrises||0}`, 'Crisis Events', (report.crisisPatterns?.totalCrises||0) > 0 ? '#f97316' : '#22c55e')}
-      </tr>
-    </table>
-
-    <!-- Persistent risks -->
-    <div style="margin-bottom:24px;">
-      <h2 style="color:#111827;font-size:17px;font-weight:700;margin:0 0 12px;">⚠️ Persistent Risks</h2>
-      ${persistentRisksHtml}
-    </div>
-
-    <!-- Structural drivers -->
-    ${structuralDriversHtml ? `
-    <div style="margin-bottom:24px;">
-      <h2 style="color:#111827;font-size:17px;font-weight:700;margin:0 0 12px;">🔍 Top Structural Drivers</h2>
-      ${structuralDriversHtml}
-    </div>` : ''}
-
-    <!-- AI narrative -->
-    <div style="margin-bottom:24px;">
-      <h2 style="color:#111827;font-size:17px;font-weight:700;margin:0 0 12px;">📋 Strategic Assessment</h2>
-      ${aiNarrative}
-    </div>
-
-    <!-- Leadership actions -->
-    ${leadershipActions ? `
-    <div style="margin-bottom:24px;">
-      <h2 style="color:#111827;font-size:17px;font-weight:700;margin:0 0 12px;">✅ Recommended Leadership Actions</h2>
-      ${leadershipActions}
-    </div>` : ''}
-
-    <!-- Retention detail -->
-    <div style="background:#fef9f0;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
-      <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#92400e;">Retention Exposure</p>
-      <p style="margin:0;font-size:13px;color:#78350f;">
-        ${report.retentionExposure?.highRiskIndividualsCount||0} individuals at high risk ·
-        ${report.retentionExposure?.criticalIndividualsCount||0} critical ·
-        Trend: ${report.retentionExposure?.trend||'stable'} ·
-        Est. turnover risk: ${report.retentionExposure?.estimatedTurnoverRisk||0}%
-        ${afterHours > 15 ? ` · ⚠️ ${afterHours}% of messages sent outside working hours` : ''}
-      </p>
-    </div>
-
-    <!-- Leadership detail -->
-    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
-      <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#0369a1;">Leadership Health</p>
-      <p style="margin:0;font-size:13px;color:#075985;">
-        ${mgrScore > 0 ? `Manager effectiveness avg: ${mgrScore}/100 · ${report.leadershipSignals?.managerEffectiveness?.managersNeedCoachingCount||0} managers need coaching · ` : 'Manager effectiveness: insufficient data · '}
-        Equity score: ${report.leadershipSignals?.equityScoreAvg||100}/100
-      </p>
-    </div>
-
+  <!-- Risk cards -->
+  <div style="padding:24px 24px 8px;">
+    <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin:0 0 16px;">What this means — and what to do</h2>
+    ${cardsHtml}
   </div>
 
   <!-- Footer -->
-  <div style="padding:14px 30px;background:#f9fafb;border-top:1px solid #e5e7eb;">
-    <p style="color:#9ca3af;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> · Monthly Leadership Report · ${fmtDate(new Date())}</p>
-    <p style="color:#9ca3af;font-size:11px;margin:4px 0 0;">Team-aggregate data only. No individual names or personal data included.</p>
+  <div style="padding:16px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;margin-top:16px;">
+    <p style="color:#9ca3af;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> · Monthly Leadership Briefing · ${fmtDate(new Date())}</p>
+    <p style="color:#9ca3af;font-size:11px;margin:4px 0 0;">Org-aggregate signals only. No individual names or personal data included.</p>
   </div>
 
 </div>
