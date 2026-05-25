@@ -41,7 +41,7 @@ export async function generateMonthlyReportForOrg(orgId) {
     periodStart.setDate(periodStart.getDate() - 30);
     
     // Get all teams for this org
-    const teams = await Team.find({ organizationId: orgId });
+    const teams = await Team.find({ orgId });
     
     if (teams.length === 0) {
       console.log('No teams found for org');

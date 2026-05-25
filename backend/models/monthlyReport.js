@@ -245,6 +245,8 @@ const monthlyReportSchema = new mongoose.Schema({
     default: Date.now,
     immutable: true
   },
+  emailSentAt: { type: Date },
+  emailRecipients: [{ type: String }],
   
   createdAt: {
     type: Date,
