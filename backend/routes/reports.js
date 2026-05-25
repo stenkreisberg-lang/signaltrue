@@ -5,11 +5,12 @@ import {
   getLatestWeeklyReport,
   getWeeklyReportHistory 
 } from '../services/weeklyReportService.js';
-import { 
+import {
   generateMonthlyReportForOrg,
   getLatestMonthlyReport,
   getMonthlyReportHistory,
-  getLeadershipView 
+  getLeadershipView,
+  sendMonthlyReportEmail,
 } from '../services/monthlyReportService.js';
 import {
   generateQuarterlyReportForOrg,
@@ -408,6 +409,48 @@ router.post('/trigger-weekly-email', async (req, res) => {
   } catch (error) {
     console.error('Error sending weekly brief:', error);
     res.status(500).json({ message: 'Error sending brief', error: error.message });
+  }
+});
+
+/**
+ * POST /api/reports/trigger-monthly-email
+ * Manually generate + send the monthly leadership report for all orgs (or one org).
+ * No auth required — uses secret key instead.
+ * Always sends a copy to sten.kreisberg@gmail.com regardless of client recipients.
+ */
+router.post('/trigger-monthly-email', async (req, res) => {
+  try {
+    const { secret, orgId } = req.body;
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    if (secret !== expectedSecret) {
+      return res.status(401).json({ message: 'Invalid secret key' });
+    }
+
+    const Organization = (await import('../models/organizationModel.js')).default;
+    const orgs = orgId
+      ? [await Organization.findById(orgId)]
+      : await Organization.find({});
+
+    const results = [];
+    for (const org of orgs) {
+      if (!org) continue;
+      try {
+        const report = await generateMonthlyReportForOrg(org._id);
+        if (report) {
+          await sendMonthlyReportEmail(org._id, report);
+          results.push({ org: org.name, status: 'sent' });
+        } else {
+          results.push({ org: org.name, status: 'skipped — no data' });
+        }
+      } catch (err) {
+        results.push({ org: org.name, status: 'failed', error: err.message });
+      }
+    }
+
+    res.json({ message: 'Monthly report run complete', results });
+  } catch (error) {
+    console.error('Error triggering monthly report:', error);
+    res.status(500).json({ message: 'Error triggering monthly report', error: error.message });
   }
 });
 

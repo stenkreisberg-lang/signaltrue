@@ -132,6 +132,8 @@ const organizationSchema = new mongoose.Schema(
       },
       // Optional override recipient lists for longer-cadence reports.
       // Useful for external executive/CEO emails that don't have a SignalTrue login.
+      weeklyBriefRecipients: [{ type: String }],
+      monthlyReportRecipients: [{ type: String }],
       quarterlyReportRecipients: [{ type: String }],
       semiAnnualReportRecipients: [{ type: String }],
     },

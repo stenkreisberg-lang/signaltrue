@@ -577,11 +577,11 @@ async function main() {
       const { initWeeklyEmailScheduler } = await import('./services/weeklyEmailScheduler.js');
       initWeeklyEmailScheduler();
       
-      // Monthly reports generation - 1st of month at 4:00 AM
+      // Monthly reports generation + email - 1st of month at 4:00 AM
       cron.schedule('0 4 1 * *', async () => {
         console.log('⏰ Generating monthly reports for all organizations...');
         try {
-          const { generateMonthlyReportForOrg } = await import('./services/monthlyReportService.js');
+          const { generateMonthlyReportForOrg, sendMonthlyReportEmail } = await import('./services/monthlyReportService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
           const orgs = await Organization.find({});
           
@@ -590,17 +590,18 @@ async function main() {
               const report = await generateMonthlyReportForOrg(org._id);
               if (report) {
                 console.log(`  ✅ ${org.name}: BDI ${report.orgHealth.avgBDI.toFixed(1)}/100 (${report.orgHealth.bdiTrend})`);
+                await sendMonthlyReportEmail(org._id, report);
               }
             } catch (err) {
               console.error(`  ❌ Failed for ${org.name}:`, err.message);
             }
           }
-          console.log('✅ Monthly reports generation completed');
+          console.log('✅ Monthly reports generation + email completed');
         } catch (err) {
           console.error('❌ Monthly reports generation failed:', err.message);
         }
       });
-      console.log('⏰ Cron job scheduled: Monthly reports generation 1st of month at 4:00 AM');
+      console.log('⏰ Cron job scheduled: Monthly reports + email 1st of month at 4:00 AM');
 
       // ── QUARTERLY REPORTS: 1st of Jan, Apr, Jul, Oct at 5:00 AM UTC ──
       // Runs after monthly at 4 AM so the just-generated monthly is available.

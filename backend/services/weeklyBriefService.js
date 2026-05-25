@@ -349,38 +349,48 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Meeting analysis
+  // Track meeting trend so downstream checks can avoid contradictory advice
+  let meetDeltaPct = 0;
   if (twMeetings > 0 || lwMeetings > 0) {
-    const meetDelta = lwMeetings > 0 ? ((twMeetings - lwMeetings) / lwMeetings) * 100 : 0;
+    meetDeltaPct = lwMeetings > 0 ? ((twMeetings - lwMeetings) / lwMeetings) * 100 : 0;
     const aboveSixWeek = sixWeekAvg.meetings > 0 && twMeetings > sixWeekAvg.meetings * 1.15;
-    if (meetDelta > 15) {
-      const conf = obsConfidence([meetDelta > 25, aboveSixWeek, tw.backToBack > lw.backToBack]);
-      observations.push({ text: `Meetings increased ${Math.round(meetDelta)}% week-over-week (${lwMeetings} → ${twMeetings}). This suggests growing coordination demand or a phase of active planning.`, confidence: conf });
-      risks.push('Sustained meeting growth crowds out focused work time and can trigger capacity drift within 2-3 weeks.');
-      recommendations.push('Audit this week\'s calendar: cancel or shorten the 2-3 lowest-value recurring meetings. Protect at least one 2-hour focus block per day.');
-    } else if (meetDelta < -15) {
-      const conf = obsConfidence([meetDelta < -25, tw.messages >= lw.messages]);
-      observations.push({ text: `Meetings decreased ${Math.abs(Math.round(meetDelta))}% week-over-week (${lwMeetings} → ${twMeetings}). Teams may have more space for execution.`, confidence: conf });
+    if (meetDeltaPct > 15) {
+      const conf = obsConfidence([meetDeltaPct > 25, aboveSixWeek, tw.backToBack > lw.backToBack]);
+      observations.push({ text: `Meetings increased ${Math.round(meetDeltaPct)}% this week (${lwMeetings} → ${twMeetings}). This usually means more coordination or an active planning phase — healthy in the short term, but worth watching if it continues.`, confidence: conf });
+      risks.push('When meeting count keeps growing week over week, teams lose the uninterrupted time they need for deep work. This can quietly erode output quality within 2–3 weeks.');
+      recommendations.push('Review this week\'s calendar with team leads: identify and cancel or shorten the 2–3 lowest-value recurring meetings. Aim to protect at least one 2-hour focus block per person per day.');
+    } else if (meetDeltaPct < -15) {
+      const conf = obsConfidence([meetDeltaPct < -25, tw.messages >= lw.messages]);
+      observations.push({ text: `Meetings dropped ${Math.abs(Math.round(meetDeltaPct))}% this week (${lwMeetings} → ${twMeetings}). Teams have more uninterrupted time — a positive sign for execution.`, confidence: conf });
     }
   }
 
   // Meeting duration + back-to-back
+  // Only flag meeting-load issues when meetings are NOT already trending down (avoid contradictory advice)
+  const meetingsTrending = meetDeltaPct; // positive = up, negative = down
   if (tw.meetingHours > 0) {
     const hoursPerDay = tw.meetingHours / 5;
     if (hoursPerDay > 4) {
       const conf = obsConfidence([hoursPerDay > 5, tw.backToBack > 5, tw.afterHoursRatio > 0.2]);
-      observations.push({ text: `Average meeting load is ${fmtNum(hoursPerDay, 1)} hours/day (${fmtNum(tw.meetingHours, 1)} total hours this week). This is above the healthy threshold of 3 hours/day.`, confidence: conf });
-      risks.push('When meeting load exceeds 60% of the workday, execution velocity typically drops and after-hours work increases.');
-      recommendations.push('Introduce "meeting-free mornings" or designate 1-2 no-meeting days per week. Default meeting durations to 25 or 50 minutes.');
-    } else if (hoursPerDay > 2.5) {
-      observations.push({ text: `Meeting time is ${fmtNum(hoursPerDay, 1)} hours/day (${fmtNum(tw.meetingHours, 1)} total hours). This is moderate but worth watching.`, confidence: 'Low' });
+      observations.push({ text: `People are spending an average of ${fmtNum(hoursPerDay, 1)} hours per day in meetings (${fmtNum(tw.meetingHours, 1)} total hours this week). The healthy threshold is around 3 hours/day.`, confidence: conf });
+      risks.push('When more than 60% of the workday is spent in meetings, the pace of actual work slows down and people often end up working late to catch up.');
+      // Only recommend reducing meetings if they are NOT already declining
+      if (meetingsTrending >= -10) {
+        recommendations.push('Consider introducing meeting-free mornings or one meeting-free day per week. Try defaulting meeting lengths to 25 or 50 minutes instead of 30 or 60.');
+      }
+    } else if (hoursPerDay > 2.5 && meetingsTrending >= 0) {
+      observations.push({ text: `Meeting time is at ${fmtNum(hoursPerDay, 1)} hours/day (${fmtNum(tw.meetingHours, 1)} total hours). This is manageable but worth keeping an eye on if the trend continues upward.`, confidence: 'Low' });
     }
   }
   if (tw.backToBack > 5) {
     const b2bDelta = lw.backToBack > 0 ? ((tw.backToBack - lw.backToBack) / lw.backToBack) * 100 : 100;
     const conf = obsConfidence([tw.backToBack > 8, b2bDelta > 20, tw.afterHoursRatio > 0.2]);
-    observations.push({ text: `${Math.round(tw.backToBack)} back-to-back meeting blocks detected (≤5 min gap between meetings)${b2bDelta > 20 ? `, up ${Math.round(b2bDelta)}% from last week` : ''}.`, confidence: conf });
-    risks.push('Back-to-back meetings eliminate micro-recovery. Research shows decision quality degrades significantly after 3+ consecutive meetings.');
-    recommendations.push('Add 10-minute buffers between meetings. If back-to-back blocks exceed 3 per day, actively reschedule or decline one.');
+    observations.push({ text: `${Math.round(tw.backToBack)} instances of back-to-back meetings detected (less than 5 minutes between meetings)${b2bDelta > 20 ? `, up ${Math.round(b2bDelta)}% from last week` : ''}. This leaves no recovery time between sessions.`, confidence: conf });
+    risks.push('Consecutive meetings without breaks reduce decision quality and leave people feeling drained. After 3+ meetings in a row, focus and engagement typically drop noticeably.');
+    // Only suggest fixing back-to-back if meetings are not already declining overall
+    if (meetingsTrending >= -10) {
+      recommendations.push('Encourage managers to add 10-minute buffers between meetings. If someone has more than 3 back-to-back meetings per day, work with them to reschedule or decline at least one.');
+    }
   }
 
   // Messaging analysis
@@ -593,9 +603,9 @@ export async function generateWeeklyBrief(orgId) {
   const snapshotMetrics = [
     { label: 'Meetings', value: twMeetings, change: pctChangeLabel(twMeetings, lwMeetings), color: twMeetings > lwMeetings ? '#ef4444' : '#10b981' },
     { label: 'Meeting Hours', value: `${fmtNum(tw.meetingHours, 1)}h`, change: pctChangeLabel(tw.meetingHours, lw.meetingHours), color: tw.meetingHours > lw.meetingHours ? '#ef4444' : '#10b981' },
-    { label: 'After-Hours', value: `${Math.round((tw.afterHoursRatio || 0) * 100)}%`, change: pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio), color: tw.afterHoursRatio > lw.afterHoursRatio ? '#ef4444' : '#10b981' },
-    { label: 'Focus Time', value: tw.focusTimeAvailability ? `${fmtNum(tw.focusTimeAvailability, 1)}h` : '—', change: tw.focusTimeAvailability && lw.focusTimeAvailability ? pctChangeLabel(tw.focusTimeAvailability, lw.focusTimeAvailability) : '—', color: tw.focusTimeAvailability < lw.focusTimeAvailability ? '#ef4444' : '#10b981' },
-    { label: 'Signals', value: `${twSignals.length + twCKSignals.length}`, change: critCount > 0 ? `${critCount} critical` : riskCount > 0 ? `${riskCount} risk` : 'None critical', color: critCount > 0 ? '#ef4444' : '#6b7280' },
+    { label: 'Out-of-Hours Work', value: `${Math.round((tw.afterHoursRatio || 0) * 100)}%`, change: pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio), color: tw.afterHoursRatio > lw.afterHoursRatio ? '#ef4444' : '#10b981' },
+    { label: 'Uninterrupted Time', value: tw.focusTimeAvailability ? `${fmtNum(tw.focusTimeAvailability, 1)}h` : '—', change: tw.focusTimeAvailability && lw.focusTimeAvailability ? pctChangeLabel(tw.focusTimeAvailability, lw.focusTimeAvailability) : '—', color: tw.focusTimeAvailability < lw.focusTimeAvailability ? '#ef4444' : '#10b981' },
+    { label: 'Active Alerts', value: `${twSignals.length + twCKSignals.length}`, change: critCount > 0 ? `${critCount} urgent` : riskCount > 0 ? `${riskCount} watch` : 'All clear', color: critCount > 0 ? '#ef4444' : '#6b7280' },
   ];
   
   for (const m of snapshotMetrics) {
@@ -775,19 +785,25 @@ export async function generateWeeklyBrief(orgId) {
 
   // Detailed metrics section
   if (twMetricsArr.length > 0 || lwMetricsArr.length > 0) {
-    html += `<tr><td colspan="5" style="padding:10px 10px 4px; font-weight:600; color:#6366f1; border-bottom:2px solid #e5e7eb; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Detailed Metrics (rolling 7-day avg)</td></tr>`;
+    html += `<tr><td colspan="5" style="padding:10px 10px 4px; font-weight:600; color:#6366f1; border-bottom:2px solid #e5e7eb; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Workload Detail (rolling 7-day avg, per person)</td></tr>`;
     addTableRow('⏱️ Meeting Hours', sixWeekAvg.meetingHours, lw.meetingHours, tw.meetingHours, true, 1);
-    addTableRow('⚡ Back-to-Back Blocks', sixWeekAvg.backToBack, lw.backToBack, tw.backToBack, true, 0);
+    addTableRow('⚡ Consecutive Meetings', sixWeekAvg.backToBack, lw.backToBack, tw.backToBack, true, 0);
     addTableRow('💬 Messages / Day', sixWeekAvg.msgsPerDay, lw.msgsPerDay, tw.msgsPerDay, false, 1);
-    addTableRow('🌙 After-Hours Messages', sixWeekAvg.afterHoursMsg, lw.afterHoursMsg, tw.afterHoursMsg, true, 0);
-    addTableRow('🌙 After-Hours Ratio', Math.round((sixWeekAvg.afterHoursRatio || 0) * 100), Math.round((lw.afterHoursRatio || 0) * 100), Math.round((tw.afterHoursRatio || 0) * 100), true);
-    addTableRow('🎯 Focus Time (hrs)', sixWeekAvg.focusTimeAvailability, lw.focusTimeAvailability || 0, tw.focusTimeAvailability || 0, false, 1);
-    addTableRow('🧩 Calendar Fragmentation', sixWeekAvg.calendarFragmentation, lw.calendarFragmentation || 0, tw.calendarFragmentation || 0, true, 0);
-    addTableRow('🔄 Recurring Meeting Burden', Math.round((sixWeekAvg.recurringBurden || 0) * 100), Math.round((lw.recurringBurden || 0) * 100), Math.round((tw.recurringBurden || 0) * 100), true);
+    addTableRow('🌙 Out-of-Hours Messages', sixWeekAvg.afterHoursMsg, lw.afterHoursMsg, tw.afterHoursMsg, true, 0);
+    addTableRow('🌙 Out-of-Hours Work %', Math.round((sixWeekAvg.afterHoursRatio || 0) * 100), Math.round((lw.afterHoursRatio || 0) * 100), Math.round((tw.afterHoursRatio || 0) * 100), true);
+    addTableRow('🎯 Uninterrupted Time (hrs)', sixWeekAvg.focusTimeAvailability, lw.focusTimeAvailability || 0, tw.focusTimeAvailability || 0, false, 1);
+    addTableRow('🧩 Schedule Fragmentation', sixWeekAvg.calendarFragmentation, lw.calendarFragmentation || 0, tw.calendarFragmentation || 0, true, 0);
+    addTableRow('🔄 Recurring Meeting Load %', Math.round((sixWeekAvg.recurringBurden || 0) * 100), Math.round((lw.recurringBurden || 0) * 100), Math.round((tw.recurringBurden || 0) * 100), true);
     if (tw.channels > 0 || lw.channels > 0) addTableRow('📂 Active Channels', sixWeekAvg.channels, lw.channels, tw.channels, false, 0);
   }
 
   html += `</tbody></table>`;
+  html += `<p style="font-size:11px; color:#9ca3af; margin:8px 0 0 0;">`;
+  html += `📖 <strong>How to read this table:</strong> `;
+  html += `"This Week" values are highlighted in bold. `;
+  html += `🟢 = moving in a healthy direction &nbsp;·&nbsp; 🔴 = moving in a concerning direction &nbsp;·&nbsp; ⚠️ = notably above or below your 6-week average. `;
+  html += `"Uninterrupted Time" and "Team Messages" are better when higher. All other metrics are better when lower.`;
+  html += `</p>`;
   html += `</div>`;
 
   // ─── 9. Active Drift Signals (compact) ───
@@ -887,6 +903,23 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── 11b. Engagement Level ───
+  if (engagementStrainByTeam.length === 0) {
+    html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
+    html += `<h3 style="${S.h3} margin-top:0; color:#6b7280;">🧠 Engagement Level</h3>`;
+    html += `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px;">`;
+    html += `<p style="${S.p} margin:0 0 6px 0; color:#374151;"><strong>No engagement data available for this week.</strong></p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0; color:#6b7280;">`;
+    html += `Engagement scores are computed weekly from behavioral metadata (calendar patterns, messaging habits, focus time). `;
+    html += `This section will populate once the first full weekly cycle completes for your teams.`;
+    html += `</p>`;
+    html += `<p style="${S.pSmall} margin:0; color:#9ca3af;">`;
+    html += `Common reasons for missing data: the weekly scoring job hasn't run yet, a team has fewer than the minimum required members, `;
+    html += `or the connected integrations haven't produced enough data for the current week.`;
+    html += `</p>`;
+    html += `</div>`;
+    html += `</div>`;
+  }
+
   if (engagementStrainByTeam.length > 0) {
     const DRIVER_LABELS = {
       recovery_debt:               'Recovery Debt',
@@ -1012,50 +1045,56 @@ export async function sendWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error(`Organization ${orgId} not found`);
 
-  // Recipients: this org's master_admin / hr_admin / admin users
-  const hrUsers = await User.find({ orgId, role: { $in: ['master_admin', 'hr_admin', 'admin'] } });
-  const recipients = hrUsers.map(u => u.email);
-
-  if (!recipients.length) {
-    console.warn(`[WeeklyBrief] No HR/admin recipients for org ${org.name} — skipping send`);
-    return;
-  }
-
-  console.log(`[WeeklyBrief] Generating brief for ${org.name}, sending to: ${recipients.join(', ')}`);
-  const html = await generateWeeklyBrief(orgId);
-
   const weekLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
 
-  // Send to client org admins
-  if (process.env.RESEND_API_KEY) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data, error } = await resend.emails.send({
-      from: 'SignalTrue <brief@signaltrue.ai>',
-      to: recipients,
-      subject,
-      html,
-    });
-    if (error) {
-      console.error(`[WeeklyBrief] ❌ Resend error:`, JSON.stringify(error));
-      throw new Error(`Resend failed: ${error.message || error.name}`);
+  // Always generate the brief first — we need it for the superadmin copy regardless
+  const html = await generateWeeklyBrief(orgId);
+
+  // Build recipient list:
+  //  1. Users with HR/admin/executive roles
+  const orgUsers = await User.find({ orgId, role: { $in: ['master_admin', 'hr_admin', 'admin', 'executive'] } });
+  const userEmails = orgUsers.map(u => u.email);
+  //  2. Org-level override list (external C-level / CEO emails without a SignalTrue login)
+  const overrides = org.settings?.weeklyBriefRecipients || [];
+  const recipients = [...new Set([...userEmails, ...overrides])];
+
+  if (recipients.length > 0) {
+    console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);
+
+    // Send to client recipients
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const { data, error } = await resend.emails.send({
+        from: 'SignalTrue <brief@signaltrue.ai>',
+        to: recipients,
+        subject,
+        html,
+      });
+      if (error) {
+        console.error(`[WeeklyBrief] ❌ Resend error:`, JSON.stringify(error));
+        throw new Error(`Resend failed: ${error.message || error.name}`);
+      }
+      console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} (id: ${data?.id})`);
+    } else {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
+        to: recipients.join(','),
+        subject,
+        html,
+      });
+      console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }
-    console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} (id: ${data?.id})`);
   } else {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
-      to: recipients.join(','),
-      subject,
-      html,
-    });
-    console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
+    console.warn(`[WeeklyBrief] No client recipients configured for org ${org.name} — skipping client send but still copying superadmin`);
   }
 
-  // CC superadmin (stenkreisberg@gmail.com) so they can verify
+  // Always CC superadmin (sten.kreisberg@gmail.com) — even when no client recipients exist,
+  // so the report can be reviewed and any delivery issues caught early.
   await ccSuperadmin({
     subject,
     html,
-    originalRecipient: recipients.join(', '),
+    originalRecipient: recipients.length > 0 ? recipients.join(', ') : '(none — no client recipients configured)',
     reportType: 'Weekly Intelligence Brief',
     orgName: org.name,
   });
