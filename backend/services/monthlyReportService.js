@@ -11,6 +11,7 @@ import CrisisEvent from '../models/crisisEvent.js';
 import ProjectRisk from '../models/projectRisk.js';
 import MeetingROI from '../models/meetingROI.js';
 import NetworkHealth from '../models/networkHealth.js';
+import BehavioralDriftIndex from '../models/behavioralDriftIndex.js';
 import { Resend } from 'resend';
 import { generateMonthlyNarrative } from './aiRecommendationContext.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -49,7 +50,7 @@ export async function generateMonthlyReportForOrg(orgId) {
     }
     
     // Aggregate organizational health
-    const orgHealth = await calculateOrgHealth(teams, periodStart, periodEnd);
+    const orgHealth = await calculateOrgHealth(teams, orgId, periodStart, periodEnd);
     
     // Identify persistent risks (≥3 weeks elevated)
     const persistentRisks = await identifyPersistentRisks(teams, periodStart, periodEnd);
@@ -114,41 +115,40 @@ export async function generateMonthlyReportForOrg(orgId) {
 /**
  * Calculate organizational health metrics
  */
-async function calculateOrgHealth(teams, periodStart, periodEnd) {
-  const teamIds = teams.map(t => t._id);
-  
-  // Get last 4 weekly TeamState snapshots for each team
-  const teamStates = await TeamState.find({
-    teamId: { $in: teamIds },
-    weekEnd: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ weekEnd: -1 });
-  
-  // Get most recent state per team
-  const latestStates = [];
+async function calculateOrgHealth(teams, orgId, periodStart, periodEnd) {
+  // Use BehavioralDriftIndex as the source of BDI scores and zone distribution
+  const bdiRecords = await BehavioralDriftIndex.find({
+    orgId,
+    periodStart: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ periodStart: -1 });
+
+  // Get most recent BDI record per team
+  const latestBDI = [];
   const seenTeams = new Set();
-  for (const state of teamStates) {
-    if (!seenTeams.has(state.teamId.toString())) {
-      latestStates.push(state);
-      seenTeams.add(state.teamId.toString());
+  for (const record of bdiRecords) {
+    const key = record.teamId.toString();
+    if (!seenTeams.has(key)) {
+      latestBDI.push(record);
+      seenTeams.add(key);
     }
   }
-  
-  // Calculate average BDI
-  const avgBDI = latestStates.reduce((sum, s) => sum + (s.bdi || 0), 0) / (latestStates.length || 1);
-  
-  // Calculate BDI trend (comparing first 2 weeks vs last 2 weeks)
-  const bdiTrend = calculateBDITrend(teamStates);
-  
-  // Zone distribution
+
+  const avgBDI = latestBDI.length > 0
+    ? latestBDI.reduce((sum, r) => sum + (r.driftScore || 0), 0) / latestBDI.length
+    : 0;
+
+  // Map BDI states to zone labels used in the email template
   const zoneDistribution = {
-    stable: latestStates.filter(s => s.zone === 'Stable').length,
-    stretched: latestStates.filter(s => s.zone === 'Stretched').length,
-    critical: latestStates.filter(s => s.zone === 'Critical').length,
-    recovery: latestStates.filter(s => s.zone === 'Recovery').length
+    stable:    latestBDI.filter(r => r.state === 'Stable').length,
+    stretched: latestBDI.filter(r => r.state === 'Early Drift').length,
+    critical:  latestBDI.filter(r => r.state === 'Critical Drift').length,
+    recovery:  latestBDI.filter(r => r.state === 'Developing Drift').length
   };
-  
-  const teamsAtRisk = zoneDistribution.stretched + zoneDistribution.critical;
-  
+
+  const teamsAtRisk = zoneDistribution.stretched + zoneDistribution.critical + zoneDistribution.recovery;
+
+  const bdiTrend = calculateBDITrend(bdiRecords);
+
   return {
     avgBDI,
     bdiTrend: bdiTrend.direction,
@@ -161,27 +161,24 @@ async function calculateOrgHealth(teams, periodStart, periodEnd) {
 /**
  * Calculate BDI trend across period
  */
-function calculateBDITrend(teamStates) {
-  if (teamStates.length < 2) {
+function calculateBDITrend(bdiRecords) {
+  if (bdiRecords.length < 2) {
     return { direction: 'stable', strength: 'weak' };
   }
-  
-  // Sort by date
-  const sorted = [...teamStates].sort((a, b) => a.weekEnd - b.weekEnd);
-  
-  // Split into first half and second half
+
+  const sorted = [...bdiRecords].sort((a, b) => a.periodStart - b.periodStart);
   const midpoint = Math.floor(sorted.length / 2);
   const firstHalf = sorted.slice(0, midpoint);
   const secondHalf = sorted.slice(midpoint);
-  
-  const avgFirst = firstHalf.reduce((sum, s) => sum + (s.bdi || 0), 0) / firstHalf.length;
-  const avgSecond = secondHalf.reduce((sum, s) => sum + (s.bdi || 0), 0) / secondHalf.length;
-  
+
+  const avgFirst = firstHalf.reduce((sum, r) => sum + (r.driftScore || 0), 0) / firstHalf.length;
+  const avgSecond = secondHalf.reduce((sum, r) => sum + (r.driftScore || 0), 0) / secondHalf.length;
+
   const delta = avgSecond - avgFirst;
-  
+
   let direction = 'stable';
   let strength = 'weak';
-  
+
   if (delta < -5) {
     direction = 'improving';
     strength = delta < -15 ? 'strong' : 'moderate';
@@ -189,7 +186,7 @@ function calculateBDITrend(teamStates) {
     direction = 'deteriorating';
     strength = delta > 15 ? 'strong' : 'moderate';
   }
-  
+
   return { direction, strength };
 }
 
@@ -199,35 +196,42 @@ function calculateBDITrend(teamStates) {
 async function identifyPersistentRisks(teams, periodStart, periodEnd) {
   const teamIds = teams.map(t => t._id);
   const persistentRisks = [];
-  
-  // Get all TeamStates in period
+
+  // Get all TeamStates in period — field is weekStart, not weekEnd
   const teamStates = await TeamState.find({
     teamId: { $in: teamIds },
-    weekEnd: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ weekEnd: 1 }).populate('teamId');
-  
-  // Group by risk type
-  const riskTypes = ['overload', 'execution', 'retention'];
-  
-  for (const riskType of riskTypes) {
-    const riskKey = riskType === 'overload' ? 'overloadRisk' :
-                    riskType === 'execution' ? 'executionDrag' :
-                    'retentionStrain';
-    
-    // Track teams with this risk elevated
-    const affectedTeams = [];
+    weekStart: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ weekStart: 1 }).populate('teamId');
+
+  // Map risk types to TeamState intelligenceScores fields
+  const riskMappings = [
+    {
+      riskType: 'overload',
+      scorer: (s) => s.state === 'overloaded' || s.state === 'breaking' ? 60 : 0
+    },
+    {
+      riskType: 'retention',
+      scorer: (s) => s.intelligenceScores?.attritionRisk?.avgRiskScore || 0
+    },
+    {
+      riskType: 'execution',
+      scorer: (s) => s.state === 'strained' || s.state === 'breaking' ? 50 : 0
+    }
+  ];
+
+  for (const { riskType, scorer } of riskMappings) {
     const teamRiskWeeks = {};
-    
-    // Count weeks each team has this risk elevated (≥35)
+
     teamStates.forEach(state => {
-      const teamId = state.teamId._id.toString();
-      const riskScore = state[riskKey] || 0;
-      
+      const teamId = state.teamId?._id?.toString() || state.teamId?.toString();
+      if (!teamId) return;
+      const riskScore = scorer(state);
+
       if (riskScore >= 35) {
         if (!teamRiskWeeks[teamId]) {
           teamRiskWeeks[teamId] = {
-            teamId: state.teamId._id,
-            teamName: state.teamId.name,
+            teamId: state.teamId._id || state.teamId,
+            teamName: state.teamId.name || 'Unknown',
             weeks: 0,
             scores: []
           };
@@ -236,40 +240,25 @@ async function identifyPersistentRisks(teams, periodStart, periodEnd) {
         teamRiskWeeks[teamId].scores.push(riskScore);
       }
     });
-    
-    // Filter teams with ≥3 weeks elevated
-    Object.values(teamRiskWeeks).forEach(team => {
-      if (team.weeks >= PERSISTENT_RISK_WEEKS) {
-        affectedTeams.push({
-          teamId: team.teamId,
-          teamName: team.teamName,
-          score: team.scores.reduce((a, b) => a + b, 0) / team.scores.length
-        });
-      }
-    });
-    
+
+    const affectedTeams = Object.values(teamRiskWeeks).filter(t => t.weeks >= PERSISTENT_RISK_WEEKS);
+
     if (affectedTeams.length > 0) {
-      const totalWeeks = 4; // Assuming 4 weeks in period
-      const avgWeeksElevated = Object.values(teamRiskWeeks)
-        .reduce((sum, t) => sum + t.weeks, 0) / affectedTeams.length;
-      
-      // Classify as structural if elevated >70% of period
-      const classification = avgWeeksElevated / totalWeeks >= STRUCTURAL_THRESHOLD 
-        ? 'structural' 
-        : 'episodic';
-      
-      const avgScore = affectedTeams.reduce((sum, t) => sum + t.score, 0) / affectedTeams.length;
-      
+      const totalWeeks = 4;
+      const avgWeeksElevated = affectedTeams.reduce((sum, t) => sum + t.weeks, 0) / affectedTeams.length;
+      const classification = avgWeeksElevated / totalWeeks >= STRUCTURAL_THRESHOLD ? 'structural' : 'episodic';
+      const avgScore = affectedTeams.reduce((sum, t) => sum + (t.scores.reduce((a, b) => a + b, 0) / t.scores.length), 0) / affectedTeams.length;
+
       persistentRisks.push({
         riskType,
         weeksAboveThreshold: Math.round(avgWeeksElevated),
         avgScore: Math.round(avgScore),
-        affectedTeams,
+        affectedTeams: affectedTeams.map(t => ({ teamId: t.teamId, teamName: t.teamName, score: Math.round(t.scores.reduce((a, b) => a + b, 0) / t.scores.length) })),
         classification
       });
     }
   }
-  
+
   return persistentRisks;
 }
 
@@ -282,8 +271,8 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
   // Manager effectiveness
   const managerData = await ManagerEffectiveness.find({
     teamId: { $in: teamIds },
-    calculatedAt: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ calculatedAt: -1 });
+    createdAt: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ createdAt: -1 });
   
   const latestManagerData = [];
   const seenManagers = new Set();
@@ -304,7 +293,7 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
 
   // Manager trend: split the full (chronologically ordered) dataset into first/second half
   const managerTrend = (() => {
-    const sorted = [...managerData].sort((a, b) => a.calculatedAt - b.calculatedAt);
+    const sorted = [...managerData].sort((a, b) => a.createdAt - b.createdAt);
     if (sorted.length < 2) return 'stable';
     const mid = Math.floor(sorted.length / 2);
     const firstAvg = sorted.slice(0, mid).reduce((s, m) => s + (m.effectivenessScore || 0), 0) / mid;
@@ -318,8 +307,8 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
   // Equity signals
   const equityData = await EquitySignal.find({
     teamId: { $in: teamIds },
-    calculatedAt: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ calculatedAt: -1 });
+    createdAt: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ createdAt: -1 });
   
   const latestEquityData = [];
   const seenEquityTeams = new Set();
@@ -339,8 +328,8 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
   // Succession risk
   const successionData = await SuccessionRisk.find({
     teamId: { $in: teamIds },
-    calculatedAt: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ calculatedAt: -1 });
+    createdAt: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ createdAt: -1 });
   
   const successionCriticalCount = successionData.filter(s => s.busFactor < 2).length;
   const avgBusFactor = successionData.length > 0
@@ -367,11 +356,11 @@ async function calculateLeadershipSignals(teams, periodStart, periodEnd) {
 async function calculateExecutionSignals(teams, periodStart, periodEnd) {
   const teamIds = teams.map(t => t._id);
   
-  // Get latest TeamStates for execution drag
+  // Get latest TeamStates for execution drag — field is weekStart not weekEnd
   const teamStates = await TeamState.find({
     teamId: { $in: teamIds },
-    weekEnd: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ weekEnd: -1 });
+    weekStart: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ weekStart: -1 });
   
   const latestStates = [];
   const seenTeams = new Set();
@@ -381,9 +370,11 @@ async function calculateExecutionSignals(teams, periodStart, periodEnd) {
       seenTeams.add(state.teamId.toString());
     }
   }
-  
+
+  // Derive execution drag from TeamState: 'breaking'→80, 'strained'→50, 'overloaded'→60, 'healthy'→10
+  const stateToScore = { healthy: 10, strained: 50, overloaded: 60, breaking: 80 };
   const executionDragAvg = latestStates.length > 0
-    ? latestStates.reduce((sum, s) => sum + (s.executionDrag || 0), 0) / latestStates.length
+    ? latestStates.reduce((sum, s) => sum + (stateToScore[s.state] || 0), 0) / latestStates.length
     : 0;
   
   // Project risk
@@ -435,8 +426,8 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
   // Get latest attrition risk data
   const attritionData = await AttritionRisk.find({
     teamId: { $in: teamIds },
-    calculatedAt: { $gte: periodStart, $lte: periodEnd }
-  }).sort({ calculatedAt: -1 });
+    createdAt: { $gte: periodStart, $lte: periodEnd }
+  }).sort({ createdAt: -1 });
   
   const latestAttritionData = [];
   const seenUsers = new Set();
@@ -456,7 +447,7 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
 
   // Calculate trend: compare first half vs second half of chronologically sorted data
   const retentionTrend = (() => {
-    const sorted = [...attritionData].sort((a, b) => a.calculatedAt - b.calculatedAt);
+    const sorted = [...attritionData].sort((a, b) => a.createdAt - b.createdAt);
     if (sorted.length < 4) return 'stable';
     const mid = Math.floor(sorted.length / 2);
     const firstAvg = sorted.slice(0, mid).reduce((s, a) => s + (a.riskScore || 0), 0) / mid;
@@ -482,48 +473,45 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
 }
 
 /**
- * Get top structural drivers (org-wide patterns)
+ * Get top structural drivers (org-wide patterns) — from BDI topDrivers
  */
 async function getTopStructuralDrivers(teams, periodStart, periodEnd) {
   const teamIds = teams.map(t => t._id);
-  
-  // Get all TeamStates in period
-  const teamStates = await TeamState.find({
+
+  // BehavioralDriftIndex has topDrivers array with signal contributions
+  const bdiRecords = await BehavioralDriftIndex.find({
     teamId: { $in: teamIds },
-    weekEnd: { $gte: periodStart, $lte: periodEnd }
+    periodStart: { $gte: periodStart, $lte: periodEnd }
   });
-  
+
   // Aggregate drivers across all teams
   const driverAggregation = {};
-  
-  teamStates.forEach(state => {
-    if (state.topDrivers) {
-      state.topDrivers.forEach(driver => {
-        if (!driverAggregation[driver.metric]) {
-          driverAggregation[driver.metric] = {
-            metric: driver.metric,
-            deviations: [],
-            teams: new Set()
-          };
+
+  bdiRecords.forEach(record => {
+    if (record.topDrivers && record.topDrivers.length > 0) {
+      record.topDrivers.forEach(driver => {
+        const metric = driver.signal || driver.metric;
+        if (!metric) return;
+        if (!driverAggregation[metric]) {
+          driverAggregation[metric] = { metric, contributions: [], teams: new Set() };
         }
-        driverAggregation[driver.metric].deviations.push(driver.deviation);
-        driverAggregation[driver.metric].teams.add(state.teamId.toString());
+        driverAggregation[metric].contributions.push(driver.contribution || 0);
+        driverAggregation[metric].teams.add(record.teamId.toString());
       });
     }
   });
-  
-  // Calculate averages and rank
+
   const drivers = Object.values(driverAggregation)
     .map(d => ({
       metric: d.metric,
-      avgDeviation: d.deviations.reduce((a, b) => a + b, 0) / d.deviations.length,
+      avgDeviation: d.contributions.reduce((a, b) => a + b, 0) / d.contributions.length,
       teamsAffected: d.teams.size,
-      severity: Math.abs(d.deviations.reduce((a, b) => a + b, 0) / d.deviations.length) > 0.7 ? 'critical' :
-                Math.abs(d.deviations.reduce((a, b) => a + b, 0) / d.deviations.length) > 0.4 ? 'high' : 'medium'
+      severity: d.contributions.reduce((a, b) => a + b, 0) / d.contributions.length > 40 ? 'critical' :
+                d.contributions.reduce((a, b) => a + b, 0) / d.contributions.length > 20 ? 'high' : 'medium'
     }))
-    .sort((a, b) => Math.abs(b.avgDeviation) - Math.abs(a.avgDeviation))
+    .sort((a, b) => b.avgDeviation - a.avgDeviation)
     .slice(0, 5);
-  
+
   return drivers;
 }
 
@@ -543,10 +531,11 @@ async function analyzeCrisisPatterns(teams, periodStart, periodEnd) {
   // Group by type
   const crisisByType = {};
   crises.forEach(crisis => {
-    if (!crisisByType[crisis.type]) {
-      crisisByType[crisis.type] = 0;
+    const type = crisis.crisisType || crisis.type || 'unknown';
+    if (!crisisByType[type]) {
+      crisisByType[type] = 0;
     }
-    crisisByType[crisis.type]++;
+    crisisByType[type]++;
   });
   
   const crisisByTypeArray = Object.entries(crisisByType).map(([type, count]) => ({
