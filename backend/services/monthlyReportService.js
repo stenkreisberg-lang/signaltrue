@@ -731,6 +731,22 @@ function generateMonthlyEmailHTML({ org, report }) {
  * Send the monthly leadership report email for one org.
  * Always CCs sten.kreisberg@gmail.com regardless of client recipient status.
  */
+/**
+ * Returns true if the report has real data worth sending to a client.
+ * All-zero reports are held back from clients and only sent to superadmin.
+ */
+function reportHasRealData(report) {
+  const bdi = report.orgHealth?.avgBDI || 0;
+  const teamsAtRisk = report.orgHealth?.teamsAtRisk || 0;
+  const attrition = report.retentionExposure?.criticalIndividualsCount || 0;
+  const managerScore = report.leadershipSignals?.managerEffectiveness?.avgScore || 0;
+  const crises = report.crisisPatterns?.totalCrises || 0;
+  const execDrag = report.executionSignals?.executionDragAvg || 0;
+  const persistentRisks = (report.persistentRisks || []).length;
+  // If every single metric is 0, the data pipeline hasn't populated yet
+  return (bdi + teamsAtRisk + attrition + managerScore + crises + execDrag + persistentRisks) > 0;
+}
+
 export async function sendMonthlyReportEmail(orgId, report) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error(`[MonthlyReport] Org ${orgId} not found`);
@@ -744,6 +760,25 @@ export async function sendMonthlyReportEmail(orgId, report) {
   const userEmails = orgUsers.map(u => u.email);
   const overrides = org.settings?.monthlyReportRecipients || [];
   const recipients = [...new Set([...userEmails, ...overrides])];
+
+  // ── Data quality gate: never send all-zero report to clients ──────────────
+  const hasData = reportHasRealData(report);
+  if (!hasData) {
+    console.warn(`[MonthlyReport] ⚠️  ${org.name}: report has no data yet — blocking client send, notifying superadmin only`);
+    await ccSuperadmin({
+      subject: `⚠️ DATA MISSING — ${subject}`,
+      html: `<div style="background:#fef3c7;border:2px solid #f59e0b;padding:16px;border-radius:8px;font-family:sans-serif;margin-bottom:24px">
+        <strong>⚠️ This report was NOT sent to the client.</strong><br/>
+        All metrics returned 0 — the data pipeline has not yet populated data for <strong>${org.name}</strong>.<br/>
+        Intended recipients: ${recipients.length > 0 ? recipients.join(', ') : '(none found)'}<br/>
+        Please check integrations and re-trigger once data is available.
+      </div>${html}`,
+      originalRecipient: '(blocked — no data)',
+      reportType: 'Monthly Leadership Report',
+      orgName: org.name,
+    });
+    return;
+  }
 
   if (!process.env.RESEND_API_KEY) {
     console.warn(`[MonthlyReport] No RESEND_API_KEY — skipping client send for ${org.name}, but copying superadmin`);
