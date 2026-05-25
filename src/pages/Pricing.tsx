@@ -191,22 +191,15 @@ const Pricing = () => {
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                Pricing that matches how ready{' '}
-                <span className="text-[#1D4ED8]">you are to act.</span>
+                Start with the level of visibility <span className="text-[#1D4ED8]">you need.</span>
               </h1>
               <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-6">
-                Use SignalTrue as an always-on early warning system or start with a focused workload
-                scan to see where pressure is building.
+                Use SignalTrue as a one-time workload scan, a team-level early warning system, or a
+                leadership view across teams.
               </p>
-              <div className="mt-6 p-6 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] max-w-2xl mx-auto">
-                <p className="text-lg text-[#0F172A] font-medium">
-                  Start with visibility. Continue with action.
-                </p>
-                <p className="text-[#475569] mt-2">
-                  Start with a workload scan. See where pressure is building, then decide whether
-                  SignalTrue should stay on continuously.
-                </p>
-              </div>
+              <p className="text-sm text-[#475569]">
+                All plans use metadata only. No message content. No individual productivity scores.
+              </p>
             </div>
           </div>
         </section>
@@ -235,7 +228,7 @@ const Pricing = () => {
                     {tier.highlight && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                         <span className="px-4 py-1.5 rounded-full bg-[#1D4ED8] text-white text-sm font-medium">
-                          Most Popular
+                          Best starting point
                         </span>
                       </div>
                     )}
@@ -303,8 +296,8 @@ const Pricing = () => {
                 </p>
                 <p className="text-[#0F172A] font-medium">Take the free diagnostic first.</p>
                 <p className="text-sm text-[#334155] mt-1">
-                  8 questions. 7 minutes. Get your organization's drift score instantly — no
-                  integrations, no commitment.
+                  8 questions. 7 minutes. Get your organization's early pressure result before
+                  choosing a plan.
                 </p>
               </div>
               <Link to="/drift-diagnostic" className="flex-shrink-0">

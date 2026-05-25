@@ -100,22 +100,18 @@ const About = () => {
                 The founding insight
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-8 text-[#0F172A]">
-                Why existing tools fail leaders
+                Existing tools show the problem too late.
               </h2>
               <div className="space-y-6 text-lg text-[#334155]">
+                <p>Surveys show how people felt after pressure built up.</p>
+                <p>Exit interviews explain why someone left.</p>
+                <p>Project dashboards show missed work after delivery is already affected.</p>
                 <p>
-                  Engagement surveys tell you how people felt last quarter. Exit interviews tell you
-                  why someone left. Performance reviews tell you who's struggling after the struggle
-                  has become visible.
-                </p>
-                <p>
-                  All of these tools describe damage <em>after</em> it happens. By the time leaders
-                  see the signal, the structural conditions that caused it have been in place for
-                  months.
+                  All of these are useful. But they usually describe the damage after it happens.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-[#1D4ED8] pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
-                  SignalTrue was built to detect workload risk early, so leaders can fix systems
-                  before they break people.
+                  SignalTrue was built to detect pressure earlier, while leaders can still fix the
+                  system.
                 </p>
               </div>
             </div>
@@ -162,8 +158,8 @@ const About = () => {
                 Built for prevention, not surveillance.
               </h2>
               <p className="text-[#CBD5E1] text-lg mb-6">
-                SignalTrue does not diagnose, score, rank, or rate people. Signals indicate
-                system-level risk, not individual performance.
+                SignalTrue does not diagnose people, score performance, or expose private behavior.
+                It shows team-level work pressure so leaders can fix the system earlier.
               </p>
               <div className="grid sm:grid-cols-3 gap-4 mt-8">
                 {['No individual scoring', 'No employee ranking', 'System-level signals only'].map(
@@ -186,18 +182,25 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
-                See where work is starting to strain.
+                Built for prevention, not surveillance.
               </h2>
               <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
-                Request a demo and see how SignalTrue detects work-system friction before it becomes
-                burnout, missed delivery, or resignation risk.
+                SignalTrue does not diagnose people, score performance, or expose private behavior.
+                It shows team-level work pressure so leaders can fix the system earlier.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
-                <Button variant="hero" size="xl">
-                  Request demo
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link to="/how-it-works">
+                  <Button variant="hero-outline" size="xl">
+                    See how it works
+                  </Button>
+                </Link>
+                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                  <Button variant="hero" size="xl">
+                    Request demo
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

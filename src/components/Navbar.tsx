@@ -67,9 +67,9 @@ const Navbar = () => {
                 Login
               </Button>
             </Link>
-            <Link to="/how-it-works">
+            <Link to="/product#sample-report">
               <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
-                See product
+                See sample report
               </Button>
             </Link>
             <Link to="/contact" onClick={handleRequestDemo}>
@@ -117,6 +117,7 @@ const Navbar = () => {
                   }}
                 >
                   <Button variant="cta" size="sm" className="w-full">
+                    {' '}
                     Request demo
                   </Button>
                 </Link>

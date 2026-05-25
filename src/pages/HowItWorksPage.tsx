@@ -40,15 +40,14 @@ const trackEvent = (eventName: string) => {
   }
 };
 
-// 5 Steps per spec
+// 4 Steps per brief
 const steps = [
   {
     number: '01',
     icon: Plug,
     title: 'Connect work tools',
     subtitle: 'Connect',
-    description:
-      'SignalTrue connects to the systems where work patterns already exist: calendars, meetings, and communication tools.',
+    description: 'Connect calendars and collaboration tools where work patterns already exist.',
     details: [
       'Google Calendar',
       'Outlook Calendar',
@@ -57,71 +56,46 @@ const steps = [
       'Google Chat',
       'Email metadata where appropriate',
     ],
-    privacyNote: 'We do not read message content or private conversations.',
+    privacyNote: 'SignalTrue does not read message content or private conversations.',
   },
   {
     number: '02',
     icon: BarChart2,
-    title: 'Build the baseline',
+    title: "Build each team's baseline",
     subtitle: 'Baseline',
     description:
-      'SignalTrue learns the normal work rhythm for each team: meeting load, focus availability, after-hours work, response delays, and collaboration patterns.',
-    details: [
-      'Meeting load patterns',
-      'Focus time availability',
-      'After-hours work rhythms',
-      'Response delay patterns',
-      'Collaboration volumes',
-    ],
-    note: 'A signal only matters when it changes from normal. The baseline helps separate normal workload from rising risk.',
+      'SignalTrue learns the normal rhythm for each team: meeting load, focus availability, after-hours work, response delays, collaboration patterns, and manager load.',
+    note: 'A signal only matters when it changes from normal.',
   },
   {
     number: '03',
     icon: AlertTriangle,
-    title: 'Detect early risk signals',
+    title: 'Detect pressure changes',
     subtitle: 'Detect',
     description:
-      'When work patterns start shifting in risky ways, SignalTrue flags them before the damage appears in surveys, missed deadlines, burnout, or resignations.',
+      'SignalTrue flags early changes that suggest manager overload, meeting pressure, focus loss, response pressure, recovery risk, or execution drag.',
     examples: [
-      'Meeting overload',
-      'Lost focus time',
-      'After-hours creep',
       'Manager overload',
-      'Response delays',
-      'Coordination drag',
-      'Repeated pressure patterns',
+      'Meeting pressure',
+      'Focus loss',
+      'Response pressure',
+      'Recovery risk',
+      'Execution drag',
     ],
   },
   {
     number: '04',
     icon: FileText,
-    title: 'Deliver a weekly leadership report',
+    title: 'Report, act, and track',
     subtitle: 'Report',
     description:
-      'Each week, CEOs, COOs, and HR receive a clear report showing where risk is increasing and what needs attention.',
+      'Leaders receive a weekly report showing what changed, which teams are under pressure, what risk is growing, what to fix next, and whether previous actions helped.',
     details: [
       'What changed',
       'Which teams are under pressure',
-      'Which signals repeated',
       'What risk is growing',
       'What to fix next',
       'Whether previous actions helped',
-    ],
-  },
-  {
-    number: '05',
-    icon: TrendingUp,
-    title: 'Act, then track whether pressure improves',
-    subtitle: 'Act',
-    description:
-      'SignalTrue is not built to create another dashboard. It is built to help leadership act earlier.',
-    details: [
-      'Reduce recurring meetings',
-      'Protect focus blocks',
-      'Review manager load',
-      'Change response expectations',
-      'Rebalance team capacity',
-      'Fix coordination bottlenecks',
     ],
   },
 ];
@@ -154,7 +128,8 @@ const HowItWorksPage = () => {
                 How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                We observe patterns, <span className="text-[#1D4ED8]">not people.</span>
+                How SignalTrue detects pressure{' '}
+                <span className="text-[#1D4ED8]">without watching people.</span>
               </h1>
               <p className="text-lg text-[#334155] max-w-xl mx-auto mb-8">
                 SignalTrue uses metadata from work tools to detect team-level changes in meetings,
@@ -302,11 +277,10 @@ const HowItWorksPage = () => {
                 See it for your organization
               </p>
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0F172A] mb-3">
-                Does your organization show early drift signals?
+                Is manager overload already slowing your team?
               </h2>
               <p className="text-[#334155] mb-8 max-w-xl mx-auto">
-                Take the free diagnostic. 8 questions, 7 minutes. No integrations needed — get your
-                organization's drift score right now.
+                Take the free diagnostic. 8 questions. 7 minutes. No integrations needed.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link to="/drift-diagnostic">
@@ -322,7 +296,7 @@ const HowItWorksPage = () => {
                 </Link>
               </div>
               <p className="text-xs text-[#475569] mt-4">
-                No personal data. No message content. Anonymous — takes 7 minutes.
+                No personal data. No message content. Anonymous result.
               </p>
             </div>
           </div>
@@ -333,7 +307,7 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
-                See how your work patterns become early warning signals.
+                See how work patterns become early warning signals.
               </h2>
               <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
                 <Button variant="hero" size="xl">

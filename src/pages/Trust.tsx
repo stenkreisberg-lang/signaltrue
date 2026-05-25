@@ -169,7 +169,7 @@ const Trust = () => {
                   What we never access
                 </h2>
                 <p className="text-lg text-[#475569] max-w-2xl mx-auto">
-                  SignalTrue does not need private content to detect work-system friction.
+                  SignalTrue does not need private content to detect work-system pressure.
                 </p>
               </div>
 

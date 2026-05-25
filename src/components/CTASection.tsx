@@ -37,12 +37,11 @@ const CTASection = () => {
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6 text-white">
-            See where work pressure is building{' '}
-            <span className="text-[#93C5FD]">before it becomes expensive.</span>
+            See where manager overload is building.
           </h2>
           <p className="text-lg text-[#CBD5E1] mb-10 max-w-xl mx-auto">
-            Request a demo and see how SignalTrue turns meetings, focus time, response pressure, and
-            manager load into early warning signals.
+            Request a demo and see how SignalTrue turns meetings, focus time, response pressure,
+            after-hours work, and manager load into a weekly early warning report.
           </p>
 
           {/* Single CTA per spec */}

@@ -56,7 +56,7 @@ const Hero = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Eye className="w-3.5 h-3.5 text-[#1D4ED8]" />
                 <span className="text-xs font-medium text-[#334155]">
-                  Work-system early warning
+                  Work pressure early warning
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
@@ -71,14 +71,17 @@ const Hero = () => {
 
             {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 text-[#0F172A]">
-              Detect manager overload before it slows the whole team down.
+              Detect manager overload before delivery slows down.
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-[#334155] max-w-lg mb-4 leading-relaxed">
-              SignalTrue shows where meetings, response pressure, focus loss, and after-hours
-              catch-up are creating hidden work-system friction before it turns into burnout, missed
-              delivery, or resignation risk.
+              SignalTrue shows when meetings, after-hours work, lost focus time, and response
+              pressure are creating execution drag in hybrid teams.
+            </p>
+
+            <p className="text-base text-[#334155] max-w-lg mb-4 leading-relaxed">
+              Catch the pattern before it becomes missed delivery, burnout, or resignation risk.
             </p>
 
             {/* Trust line */}
@@ -94,9 +97,9 @@ const Hero = () => {
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/how-it-works" onClick={handleHowItWorks}>
+              <Link to="/product#sample-report" onClick={handleHowItWorks}>
                 <Button variant="hero-outline" size="xl">
-                  See how it works
+                  See sample report
                 </Button>
               </Link>
             </div>

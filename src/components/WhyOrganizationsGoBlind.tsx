@@ -2,14 +2,20 @@ import { XCircle } from 'lucide-react';
 
 const laggingIndicators = [
   {
-    name: 'Annual surveys',
-    problem: 'Tell you how people felt after the pressure already built up.',
+    name: 'Surveys',
+    problem: 'Show how people felt after pressure built up.',
   },
-  { name: 'Exit interviews', problem: 'Explain why someone left after the damage is done.' },
-  { name: 'Manager intuition', problem: 'Anecdotal and inconsistent. Hard to act on at scale.' },
   {
-    name: 'Engagement dashboards',
-    problem: 'Show numbers without telling leaders what to fix or when.',
+    name: 'Exit interviews',
+    problem: 'Explain the problem after someone has already left.',
+  },
+  {
+    name: 'Manager intuition',
+    problem: 'Useful, but inconsistent and hard to scale.',
+  },
+  {
+    name: 'Project dashboards',
+    problem: 'Show missed work, not the pressure causing it.',
   },
 ];
 
@@ -20,22 +26,26 @@ const WhyOrganizationsGoBlind = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-4">
             <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
-              The Problem
+              The problem
             </p>
           </div>
 
           {/* Section headline */}
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center mb-6">
-            Most teams do not break suddenly.
+            Teams rarely break suddenly.
             <br />
             They slow down first.
           </h2>
 
-          <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16 space-y-4">
+          <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16">
             <p className="text-xl text-muted-foreground">
-              Before burnout, resignation, or missed delivery, the work system usually shows signs.
-              Most companies notice too late because they rely on signals that only arrive after the
-              damage is already visible.
+              Before deadlines slip or people leave, the work pattern changes. Meetings increase.
+              Focus time shrinks. Managers become bottlenecks. Urgent messages become normal. Work
+              moves into evenings.
+            </p>
+            <p className="text-xl text-muted-foreground mt-4">
+              Most companies notice this too late because their tools show opinions, outputs, or
+              damage after pressure has already built up.
             </p>
           </div>
 
@@ -62,11 +72,11 @@ const WhyOrganizationsGoBlind = () => {
           {/* Highlight box */}
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-2xl bg-[#FEE2E2] border border-[#B91C1C]/20">
             <p className="text-lg lg:text-xl text-[#0F172A] font-medium">
-              SignalTrue helps leaders see the pressure building while it is still fixable.
+              SignalTrue helps leaders see pressure while it is still fixable.
             </p>
             <p className="text-[#334155] mt-2">
-              Meetings pile up. Focus time disappears. Managers become bottlenecks. Urgent messages
-              become the norm. Work moves into evenings.
+              Meetings pile up. Focus time disappears. Managers become bottlenecks. Work moves into
+              evenings.
             </p>
           </div>
         </div>

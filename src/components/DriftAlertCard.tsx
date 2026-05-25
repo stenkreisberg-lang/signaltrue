@@ -8,13 +8,13 @@ const DriftAlertCard = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse-slow" />
-            <span className="text-xs font-medium text-[#92400E]">Early workload risk signal</span>
+            <span className="text-xs font-medium text-[#92400E]">Early pressure signal</span>
           </div>
           <h3 className="text-xl font-display font-bold text-[#0F172A]">
             Team: Product &amp; Engineering
           </h3>
           <p className="text-sm text-[#475569] mt-1">
-            Risk level: Rising • Team-level signals only
+            Risk level: Rising · Team-level signals only
           </p>
         </div>
         <div className="p-2 rounded-lg bg-[#FEF3C7]">
@@ -29,7 +29,7 @@ const DriftAlertCard = () => {
             <Activity className="w-4 h-4 text-[#92400E]" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-[#0F172A]">Meeting load increasing</p>
+            <p className="text-sm font-medium text-[#0F172A]">Meeting pressure increasing</p>
           </div>
           <span className="text-sm font-semibold text-[#92400E]">Rising</span>
         </div>
@@ -59,7 +59,7 @@ const DriftAlertCard = () => {
             <Activity className="w-4 h-4 text-[#B91C1C]" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-[#0F172A]">Manager calendar overload</p>
+            <p className="text-sm font-medium text-[#0F172A]">Manager load</p>
           </div>
           <span className="text-sm font-semibold text-[#B91C1C]">Critical</span>
         </div>

@@ -15,18 +15,18 @@ import { Shield, Lock, Eye, XCircle } from 'lucide-react';
 const privacyConstraints = [
   {
     icon: XCircle,
-    title: 'No message reading',
-    description: 'We never access email content, chat messages, or document text.',
+    title: 'No content reading',
+    description: 'No message text, email bodies, documents, or meeting recordings.',
   },
   {
     icon: XCircle,
     title: 'No individual scoring',
-    description: 'No performance ratings, productivity scores, or individual profiles.',
+    description: 'No productivity ratings, rankings, or personal profiles.',
   },
   {
     icon: Shield,
-    title: 'Aggregated patterns only',
-    description: 'All insights are system-level. Individual data is never surfaced.',
+    title: 'Team-level only',
+    description: 'Insights are aggregated so leaders see patterns, not personal blame.',
   },
 ];
 
@@ -39,14 +39,14 @@ const PrivacySection = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#A7F3D0] mb-6">
               <Lock className="w-4 h-4 text-[#047857]" />
-              <span className="text-sm font-medium text-[#047857]">Privacy by architecture</span>
+              <span className="text-sm font-medium text-[#047857]">Privacy by design</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4 text-[#064E3B]">
-              Privacy Is the Constraint
+              Patterns, not people.
             </h2>
             <p className="text-lg text-[#047857] max-w-2xl mx-auto">
-              SignalTrue is designed so that surveillance is architecturally impossible, not just
-              policy-prohibited.
+              SignalTrue is designed to show team pressure without exposing private conversations or
+              individual productivity.
             </p>
           </div>
 
