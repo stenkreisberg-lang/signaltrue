@@ -73,10 +73,18 @@ export async function generateMonthlyReportForOrg(orgId) {
     const avgHalf = (recs, field) => recs.reduce((s, r) => s + (r[field] || 0), 0) / (recs.length || 1);
 
     // ── Meeting load ──
-    const avgMeetingHours = avg('meetingDurationTotalHours7d');
-    const avgMeetingCount = avg('meetingCount7d');
-    const avgBackToBack = avg('backToBackMeetingBlocks');
-    const avgAfterHoursRatio = avg('afterHoursSentRatio') || avg('afterHoursMessageRatio');
+    // These are 7-day rolling totals written to each daily record.
+    // Many historical records have 0 (field added later), so averaging
+    // across 30 rows would dilute to near-zero. Instead, use the most
+    // recent record that has a non-zero value for each field.
+    const latestNonZero = (field) => {
+      const rec = allRecords.find(r => (r[field] || 0) > 0);
+      return rec ? (rec[field] || 0) : 0;
+    };
+    const avgMeetingHours = latestNonZero('meetingDurationTotalHours7d');
+    const avgMeetingCount = latestNonZero('meetingCount7d');
+    const avgBackToBack = latestNonZero('backToBackMeetingBlocks');
+    const avgAfterHoursRatio = latestNonZero('afterHoursSentRatio') || latestNonZero('afterHoursMessageRatio');
     const avgFragScore = avg('calendarFragmentationScore');
     const avgRCI = avg('rci');
 
