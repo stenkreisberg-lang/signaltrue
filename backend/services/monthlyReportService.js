@@ -697,7 +697,7 @@ function generateMonthlyEmailHTML({ org, report }) {
       <div style="font-size:11px;color:#6b7280;margin-top:4px;line-height:1.3;">${label}</div>
     </div>`;
 
-  const riskCard = ({ icon, severityLabel, severityColor, headline, situation, businessRisk, action }) =>
+  const riskCard = ({ icon, severityLabel, severityColor, headline, situation, businessRisk, action, upside }) =>
     `<div style="border:1px solid ${severityColor}40;border-left:5px solid ${severityColor};border-radius:10px;padding:22px 24px;margin-bottom:20px;background:#fff;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="font-size:20px;">${icon}</span>
@@ -706,9 +706,12 @@ function generateMonthlyEmailHTML({ org, report }) {
       <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#111827;line-height:1.35;">${headline}</h3>
       <p style="margin:0 0 8px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Situation:</strong> ${situation}</p>
       <p style="margin:0 0 14px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Why this matters:</strong> ${businessRisk}</p>
-      <div style="background:${severityColor}08;border-top:1px solid ${severityColor}25;padding:12px 14px;border-radius:6px;margin-top:4px;">
+      <div style="background:${severityColor}08;border-top:1px solid ${severityColor}25;padding:12px 14px;border-radius:6px;margin-top:4px;margin-bottom:10px;">
         <p style="margin:0;font-size:13px;color:#111827;line-height:1.65;"><strong>Action:</strong> ${action}</p>
       </div>
+      ${upside ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:6px;">
+        <p style="margin:0;font-size:13px;color:#166534;line-height:1.65;">✅ <strong>What you gain:</strong> ${upside}</p>
+      </div>` : ''}
     </div>`;
 
   // ── Build risk cards from available data ──
@@ -725,7 +728,8 @@ function generateMonthlyEmailHTML({ org, report }) {
       headline: `${org.name} is spending ${meetHours} hours per week in meetings`,
       situation: `Over the past month, the organisation averaged ${meetHours} meeting hours per week across ${meetCount} meetings. That is equivalent to roughly $${weeklyMeetingCost.toLocaleString()} per week in staff time — before accounting for preparation or follow-up.`,
       businessRisk: `When this much time is locked in meetings, execution suffers directly. Strategic decisions get deferred, project delivery slows, and individual contributors lose the deep-focus time needed to produce output. At ${meetHours}h/week, this is not a productivity issue — it is a structural capacity problem.`,
-      action: `This week: pull a list of all recurring meetings with 6+ attendees. Cancel or reduce cadence for any that lack a documented output. Target a 20% reduction in meeting hours within 30 days. Assign one person to own this audit.`,
+      action: `This week: pull a list of all recurring meetings with 6+ attendees. Cancel or reduce cadence for any that lacks a documented output. Target a 20% reduction in meeting hours within 30 days. Assign one person to own this audit.`,
+      upside: `A 20% cut in meeting time frees up ${Math.round(meetHours * 0.2)}h of execution capacity per week — worth ~$${Math.round(meetHours * 0.2 * avgHourlyRate).toLocaleString()} in recovered productive time. Teams get uninterrupted blocks to ship work, leaders can focus on decisions instead of status updates, and output quality improves visibly within weeks.`,
     }));
   }
 
@@ -740,6 +744,7 @@ function generateMonthlyEmailHTML({ org, report }) {
       situation: `Each week, ${org.name} averages ${b2b} consecutive meeting blocks. Healthy organisations operate below 10. This pattern has been sustained for 4+ weeks.`,
       businessRisk: `Back-to-back meetings eliminate the cognitive recovery time required for strategic thinking, risk assessment, and decision quality. Leaders and managers are stuck in reaction mode — they are attending meetings, not driving outcomes. This directly degrades execution speed and decision quality across the organisation.`,
       action: `Starting Monday: mandate a 15-minute buffer between all calendar meetings across the leadership team. Block two mornings per week as meeting-free. These are not optional — enforce it through calendar policy.`,
+      upside: `Adding gaps between meetings restores the thinking time your leaders need to make better decisions. Research shows that even 10-minute breaks between meetings recover up to 30% of cognitive performance. When leaders can actually prepare and reflect, meeting quality goes up — and you end up needing fewer meetings overall.`,
     }));
   }
 
@@ -754,6 +759,7 @@ function generateMonthlyEmailHTML({ org, report }) {
       situation: `More than one in four messages sent at ${org.name} is sent outside standard working hours. This is not occasional — it is a sustained structural pattern for at least 4 consecutive weeks.`,
       businessRisk: `Sustained after-hours work pressure is the single strongest predictor of voluntary attrition within 6 months. Employees who consistently work after hours report higher burnout, lower engagement, and are significantly more likely to resign. Based on this pattern, estimated turnover risk is ${turnoverRisk}%. Replacing a single senior employee typically costs 50–200% of their annual salary.`,
       action: `Declare a communication blackout policy after 7pm, effective immediately. Audit workload distribution — after-hours patterns almost always signal unequal burden. Identify the 3–5 roles generating most after-hours messages and investigate root cause this week.`,
+      upside: `Restoring boundaries dramatically increases employee engagement, reduces sick leave, and cuts attrition. Reducing turnover risk from ${turnoverRisk}% to under 10% can save the equivalent of several full salaries per year. Employees who work sustainable hours are more focused, make fewer errors, and stay longer — compounding value over time.`,
     }));
   }
 
@@ -766,6 +772,7 @@ function generateMonthlyEmailHTML({ org, report }) {
       situation: `The Recovery Collapse Index (RCI) measures how much compounded pressure — consecutive meetings, after-hours load, and inadequate recovery gaps — is bearing on your workforce. A score of ${rci}/100 is the maximum level.`,
       businessRisk: `At RCI ${rci}, there is no slack in the system. Any additional demand — a product launch, a client escalation, a team departure — will cause visible breakdown: missed deadlines, quality failures, or sudden resignations. This score indicates the organisation is operating in a chronic stress state, not a temporary peak.`,
       action: `Treat this as a structural emergency, not a morale issue. Do not add new initiatives until meeting load and after-hours patterns are addressed. Schedule a leadership session this month specifically to redesign how work is structured — not how hard people work.`,
+      upside: `Bringing RCI below 50 means the organisation has real capacity headroom — teams can absorb new priorities without breaking, quality stops declining under pressure, and leadership can finally operate proactively rather than reactively. This is the foundation for sustainable growth.`,
     }));
   }
 

@@ -44,7 +44,12 @@ const monthlyReportSchema = new mongoose.Schema({
     teamsAtRisk: {
       type: Number,
       default: 0
-    }
+    },
+    avgMeetingHoursWeekly: { type: Number, default: 0 },
+    avgMeetingCount:        { type: Number, default: 0 },
+    avgBackToBackBlocks:    { type: Number, default: 0 },
+    avgAfterHoursPct:       { type: Number, default: 0 },
+    avgRCI:                 { type: Number, default: 0 }
   },
   
   // Persistent risks (≥3 weeks in Yellow/Red)
