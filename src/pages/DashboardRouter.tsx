@@ -78,6 +78,67 @@ interface OnboardingStatus {
   integrationsComplete: boolean;
 }
 
+// ── Impersonation banner ───────────────────────────────────────────────────────
+const ImpersonationBanner: React.FC = () => {
+  const navigate = useNavigate();
+  const orgName = localStorage.getItem('impersonation_org') || 'unknown org';
+  const userStr = localStorage.getItem('user');
+  const email = userStr ? JSON.parse(userStr).email : '';
+
+  const handleReturn = () => {
+    const originalToken = localStorage.getItem('impersonation_token');
+    if (originalToken) {
+      localStorage.setItem('token', originalToken);
+    }
+    localStorage.removeItem('impersonation_token');
+    localStorage.removeItem('impersonation_org');
+    localStorage.removeItem('user');
+    navigate('/superadmin');
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10000,
+        padding: '10px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: '#b45309',
+        color: '#fff',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      }}
+    >
+      <span>
+        🔑 Viewing as <strong>{orgName}</strong> admin{email ? ` (${email})` : ''} — Superadmin
+        impersonation active
+      </span>
+      <button
+        onClick={handleReturn}
+        style={{
+          marginLeft: 24,
+          background: '#fff',
+          border: 'none',
+          color: '#b45309',
+          cursor: 'pointer',
+          fontSize: '0.8rem',
+          fontWeight: 700,
+          padding: '4px 12px',
+          borderRadius: '4px',
+        }}
+      >
+        ← Return to Superadmin
+      </button>
+    </div>
+  );
+};
+
 /**
  * DashboardRouter - Routes users to appropriate dashboard based on role and onboarding status
  *
@@ -99,6 +160,8 @@ const DashboardRouter: React.FC = () => {
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const isImpersonating = !!localStorage.getItem('impersonation_token');
 
   // Payment result from Stripe redirect
   const paymentParam = searchParams.get('payment') as 'success' | 'cancelled' | null;
@@ -181,6 +244,8 @@ const DashboardRouter: React.FC = () => {
     if (setupParam === 'true') {
       return (
         <>
+          {isImpersonating && <ImpersonationBanner />}
+          {isImpersonating && <div style={{ height: 44 }} />}
           <PaymentBanner result={paymentBanner!} onDismiss={() => setPaymentBanner(null)} />
           {paymentBanner && <div style={{ height: 52 }} />}
           <Dashboard />
@@ -196,6 +261,8 @@ const DashboardRouter: React.FC = () => {
     // Integrations complete - show full dashboard
     return (
       <>
+        {isImpersonating && <ImpersonationBanner />}
+        {isImpersonating && <div style={{ height: 44 }} />}
         {paymentBanner && (
           <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
         )}
@@ -213,12 +280,20 @@ const DashboardRouter: React.FC = () => {
     }
 
     // Integrations complete - show success screen with link to dashboard
-    return <Dashboard />;
+    return (
+      <>
+        {isImpersonating && <ImpersonationBanner />}
+        {isImpersonating && <div style={{ height: 44 }} />}
+        <Dashboard />
+      </>
+    );
   }
 
   // Admin, Master Admin, or other roles - full access
   return (
     <>
+      {isImpersonating && <ImpersonationBanner />}
+      {isImpersonating && <div style={{ height: 44 }} />}
       {paymentBanner && (
         <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
       )}

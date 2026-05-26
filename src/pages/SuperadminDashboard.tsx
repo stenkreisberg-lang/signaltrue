@@ -138,6 +138,26 @@ const SuperadminDashboard: React.FC = () => {
     }
   };
 
+  const handleLoginAsOrgAdmin = async (orgId: string, orgName: string) => {
+    if (
+      !window.confirm(
+        `Log in as admin of "${orgName}"?\n\nYou will see their dashboard exactly as their HR manager/admin does.`
+      )
+    )
+      return;
+    try {
+      const response = await api.post(`/superadmin/organizations/${orgId}/login-as-admin`);
+      const { token, user } = response.data;
+      localStorage.setItem('impersonation_token', localStorage.getItem('token') || '');
+      localStorage.setItem('impersonation_org', orgName);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      navigate('/dashboard');
+    } catch (err: any) {
+      alert('Failed: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleGrantPilot = async (orgId: string, orgName: string) => {
     const months = window.prompt(
       `Grant pilot access to "${orgName}".\n\nEnter number of months (default: 6):`,
@@ -459,7 +479,18 @@ const SuperadminDashboard: React.FC = () => {
                       <span style={styles.muted}>No integrations</span>
                     )}
                   </span>
-                  <span style={{ flex: 1.5, display: 'flex', gap: '8px' }}>
+                  <span style={{ flex: 1.5, display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <button
+                      onClick={() => handleLoginAsOrgAdmin(org.id, org.name)}
+                      style={{
+                        ...styles.button,
+                        backgroundColor: '#1D4ED8',
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                      }}
+                    >
+                      Login as admin
+                    </button>
                     {org.pilot?.isActive ? (
                       <button
                         onClick={() => handleRevokePilot(org.id, org.name)}

@@ -552,6 +552,67 @@ router.post('/organizations/:id/revoke-pilot', authenticateToken, requireSuperad
 });
 
 /**
+ * POST /api/superadmin/organizations/:id/login-as-admin
+ * Issue a token impersonating the org's admin (or HR manager) user.
+ * Stores who initiated the impersonation for audit purposes.
+ */
+router.post('/organizations/:id/login-as-admin', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id).lean();
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    // Find best user to impersonate: prefer 'admin' or 'hr_manager', fallback to any user
+    const adminUser = await User.findOne({
+      orgId: org._id,
+      role: { $in: ['admin', 'hr_manager', 'org_admin'] }
+    }).lean()
+    || await User.findOne({ orgId: org._id }).lean();
+
+    if (!adminUser) {
+      return res.status(404).json({ message: 'No users found in this organization' });
+    }
+
+    const jwt = await import('jsonwebtoken');
+    const token = jwt.default.sign(
+      {
+        userId: adminUser._id,
+        email: adminUser.email,
+        role: adminUser.role,
+        orgId: adminUser.orgId,
+        teamId: adminUser.teamId,
+        impersonatedBy: req.user.userId,
+        impersonatedByEmail: req.user.email,
+        impersonatingOrg: org.name,
+        exp: Math.floor(Date.now() / 1000) + (4 * 60 * 60) // 4 hours
+      },
+      process.env.JWT_SECRET
+    );
+
+    console.log(`[Superadmin] ${req.user.email} is impersonating org "${org.name}" as ${adminUser.email}`);
+
+    res.json({
+      message: `Logged in as admin of ${org.name}`,
+      token,
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        email: adminUser.email,
+        role: adminUser.role,
+        orgId: adminUser.orgId,
+        orgName: org.name
+      },
+      org: { id: org._id, name: org.name },
+      expiresIn: '4 hours'
+    });
+  } catch (error) {
+    console.error('Superadmin login-as-admin error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
  * POST /api/superadmin/organizations/:id/cleanup-domain
  * Remove all users whose email doesn't match the org's domain.
  * Optionally pass { "domain": "example.com" } to set the domain first.
