@@ -147,22 +147,33 @@ router.get('/status', authenticateToken, async (req, res) => {
       }
     }
     
-    // Check if converted to paid
-    const isPaid = organization.trial?.convertedToPaid || 
+    // Check if converted to paid or on active pilot
+    const isPilot = organization.pilot?.isActive && 
+                    (!organization.pilot?.endDate || new Date(organization.pilot.endDate) > new Date());
+    const isPaid = isPilot ||
+                   organization.trial?.convertedToPaid || 
                    (organization.subscriptionPlanId && organization.subscriptionPlanId !== null);
+
+    // Pilot users always get full access — override expired phase
+    if (isPilot && currentPhase === 'expired') {
+      currentPhase = 'baseline';
+    }
     
-    const phaseConfig = TRIAL_PHASES[currentPhase];
+    const phaseConfig = TRIAL_PHASES[currentPhase] || TRIAL_PHASES['baseline'];
     
     res.json({
       trial: {
-        isActive: currentDay <= 30 && !isPaid,
+        isActive: (currentDay <= 30 && !isPaid) || isPilot,
         isPaid,
+        isPilot,
         startDate,
         endDate: organization.trial?.endDate,
         currentDay,
-        daysRemaining: Math.max(0, 30 - currentDay),
+        daysRemaining: isPilot 
+          ? Math.max(0, Math.ceil((new Date(organization.pilot.endDate) - new Date()) / (1000 * 60 * 60 * 24)))
+          : Math.max(0, 30 - currentDay),
         phase: currentPhase,
-        banner: !isPaid ? phaseConfig.banner : null,
+        banner: (!isPaid && !isPilot) ? phaseConfig.banner : null,
         
         // Milestones
         milestones: {
@@ -177,9 +188,9 @@ router.get('/status', authenticateToken, async (req, res) => {
         
         // Paywall status
         paywall: {
-          isActive: currentPhase === 'expired' && !isPaid,
+          isActive: currentPhase === 'expired' && !isPaid && !isPilot,
           activatedAt: organization.trial?.paywallActivatedAt,
-          lockedFeatures: currentPhase === 'expired' && !isPaid ? [
+          lockedFeatures: (currentPhase === 'expired' && !isPaid && !isPilot) ? [
             'forward_looking_insights',
             'ai_recommendations',
             'alerts_thresholds',
@@ -636,7 +647,10 @@ router.get('/paywall-status', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Organization not found' });
     }
     
-    const isPaid = organization.trial?.convertedToPaid || 
+    const isPilot = organization.pilot?.isActive && 
+                    (!organization.pilot?.endDate || new Date(organization.pilot.endDate) > new Date());
+    const isPaid = isPilot ||
+                   organization.trial?.convertedToPaid || 
                    (organization.subscriptionPlanId && organization.subscriptionPlanId !== null);
     
     // Calculate current trial day
@@ -644,13 +658,15 @@ router.get('/paywall-status', authenticateToken, async (req, res) => {
     const daysDiff = Math.floor((new Date() - new Date(startDate)) / (24 * 60 * 60 * 1000));
     const isExpired = daysDiff > 30;
     
-    // Paywall activates after monthly report is viewed OR trial expires
-    const paywallActive = !isPaid && (organization.trial?.paywallActivated || isExpired);
+    // Paywall activates after monthly report is viewed OR trial expires (pilots are never paywalled)
+    const paywallActive = !isPaid && !isPilot && (organization.trial?.paywallActivated || isExpired);
     
     res.json({
       paywall: {
         isActive: paywallActive,
-        reason: isExpired ? 'trial_expired' : 
+        isPilot,
+        reason: isPilot ? 'pilot_active' :
+                isExpired ? 'trial_expired' : 
                 organization.trial?.paywallActivated ? 'report_viewed' : null,
         
         // What's still accessible
@@ -690,7 +706,7 @@ router.get('/paywall-status', authenticateToken, async (req, res) => {
         ] : [],
         
         // CTA
-        cta: paywallActive ? {
+        cta: paywallActive && !isPilot ? {
           headline: 'Continue receiving early signals and recommendations',
           buttonText: 'Choose a plan',
           subtext: 'Historical data remains available. New insights require an active plan.',
