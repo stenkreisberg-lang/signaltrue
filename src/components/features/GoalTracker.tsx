@@ -157,10 +157,10 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({
         <div className="overall-progress">
           <div className="progress-label">
             <span>Overall Progress</span>
-            <span>{Math.round(summary.averageProgress)}%</span>
+            <span>{Math.round(summary.averageProgress || 0)}%</span>
           </div>
           <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${summary.averageProgress}%` }} />
+            <div className="progress-fill" style={{ width: `${summary.averageProgress || 0}%` }} />
           </div>
         </div>
       )}

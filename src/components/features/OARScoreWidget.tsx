@@ -56,9 +56,9 @@ export const OARScoreWidget: React.FC<OARScoreWidgetProps> = ({
     const fetchOARScore = async () => {
       try {
         setLoading(true);
-        // Backend uses req.user.orgId from auth token, no orgId in URL
-        const endpoint = showHistory ? `/oar/org/history` : `/oar/org`;
-        const response = await api.get(endpoint);
+        // Always fetch current score from /oar/org — it returns the live score and pillars.
+        // History endpoint returns { history: [] } which has no score/pillars fields.
+        const response = await api.get(`/oar/org`);
         const raw = response.data?.oar || response.data;
         setData(normalizeOAR(raw));
         setError(null);

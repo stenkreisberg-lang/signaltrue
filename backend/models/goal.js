@@ -279,6 +279,10 @@ goalSchema.statics.getSummary = async function(orgId) {
     if (goal.progressStatus === 'at-risk') summary.atRisk++;
     if (goal.progressStatus === 'behind') summary.behind++;
   });
+
+  summary.averageProgress = goals.length > 0
+    ? Math.round(goals.reduce((sum, g) => sum + (g.progress || 0), 0) / goals.length)
+    : 0;
   
   return summary;
 };
