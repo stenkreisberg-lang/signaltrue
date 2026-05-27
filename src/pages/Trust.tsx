@@ -91,7 +91,7 @@ const Trust = () => {
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 Privacy is not a feature.{' '}
-                <span className="text-[#1D4ED8]">It is the foundation.</span>
+                <span className="text-[#0F766E]">It is the foundation.</span>
               </h1>
               <p className="text-lg text-[#334155] max-w-xl mx-auto">
                 SignalTrue is built to detect work-system pressure without reading employee
@@ -130,7 +130,7 @@ const Trust = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#0F766E] uppercase tracking-wider mb-4">
                   What we use
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
@@ -192,7 +192,7 @@ const Trust = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#0F766E] uppercase tracking-wider mb-4">
                   Employee transparency
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
@@ -224,7 +224,7 @@ const Trust = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-[#0F766E] uppercase tracking-wider mb-4">
                   Technical architecture
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
@@ -276,7 +276,7 @@ const Trust = () => {
               </h2>
               <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
                 For privacy or data protection questions, contact:{' '}
-                <a href="mailto:privacy@signaltrue.ai" className="text-[#1D4ED8] underline">
+                <a href="mailto:privacy@signaltrue.ai" className="text-[#0F766E] underline">
                   privacy@signaltrue.ai
                 </a>
               </p>

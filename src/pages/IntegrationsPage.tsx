@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import IntegrationDashboard from '../components/IntegrationDashboard';
 import AICopilotPanel from '../components/AICopilotPanel';
-import { Link2, CheckCircle2, XCircle, AlertTriangle, ArrowLeft, Settings } from 'lucide-react';
+import { Link2, CheckCircle2, XCircle, ArrowLeft, Settings } from 'lucide-react';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -31,7 +31,6 @@ export default function IntegrationsPage() {
   const [callbackStatus, setCallbackStatus] = useState<CallbackStatus | null>(null);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
-  const [, setError] = useState<string | null>(null);
 
   // Handle OAuth callback
   useEffect(() => {
@@ -121,7 +120,7 @@ export default function IntegrationsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -134,9 +133,9 @@ export default function IntegrationsPage() {
             </button>
 
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Integrations</h1>
-              <p className="text-sm text-gray-500">
-                Connect your tools to enable Category-King signals
+              <h1 className="text-xl font-bold text-slate-900">Data sources</h1>
+              <p className="text-sm text-slate-600">
+                Connect metadata sources for privacy-protected organizational signals
               </p>
             </div>
           </div>
@@ -179,7 +178,7 @@ export default function IntegrationsPage() {
       {loading && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-8 flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-700 rounded-full animate-spin" />
             <p className="mt-4 text-gray-600">Connecting integration...</p>
           </div>
         </div>
@@ -196,7 +195,7 @@ export default function IntegrationsPage() {
           {/* AI Copilot Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">AI Insights</h2>
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Current insights</h2>
 
               <AICopilotPanel
                 orgId={null}
@@ -207,12 +206,12 @@ export default function IntegrationsPage() {
 
               {/* Getting Started Tips */}
               {signals.length === 0 && (
-                <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                  <h3 className="font-medium text-indigo-900 mb-2">Getting Started</h3>
-                  <ol className="space-y-2 text-sm text-indigo-700">
+                <div className="mt-6 p-5 bg-white border border-slate-200 rounded-xl">
+                  <h3 className="font-medium text-slate-900 mb-2">Establish coverage</h3>
+                  <ol className="space-y-2 text-sm text-slate-600">
                     <li className="flex items-start gap-2">
                       <span className="font-bold">1.</span>
-                      Connect at least 2-3 integrations for comprehensive signals
+                      Connect at least two metadata sources for broader coverage
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="font-bold">2.</span>
@@ -234,17 +233,17 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Privacy Notice */}
-        <div className="mt-12 p-6 bg-gray-100 rounded-lg">
+        <div className="mt-12 p-6 bg-teal-50 border border-teal-100 rounded-xl">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-              <Link2 className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+              <Link2 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Privacy First</h3>
-              <p className="text-gray-600 mt-1">
-                SignalTrue only accesses <strong>metadata</strong>—timestamps, counts, and patterns.
-                We never read email content, document text, chat messages, or any personally
-                identifiable information. All data is encrypted in transit and at rest.
+              <h3 className="font-semibold text-slate-900">Privacy protected by design</h3>
+              <p className="text-slate-600 mt-1">
+                SignalTrue only accesses <strong>metadata</strong>: timestamps, counts, and
+                patterns. We never read email content, document text, chat messages, or any
+                personally identifiable information. All data is encrypted in transit and at rest.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">

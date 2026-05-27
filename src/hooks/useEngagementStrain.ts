@@ -105,7 +105,11 @@ export function useEngagementStrainSummary(orgId: string | null) {
       );
       setTeams(res.data.teams ?? []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load engagement strain summary';
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const msg =
+        status === 403
+          ? 'Engagement strain is unavailable until data coverage meets privacy thresholds.'
+          : 'Engagement strain data is temporarily unavailable.';
       setError(msg);
     } finally {
       setLoading(false);

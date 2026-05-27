@@ -23,6 +23,7 @@ import ActiveMonitoring from './pages/app/ActiveMonitoring';
 import Actions from './pages/app/Actions';
 import ExecutiveSummary from './pages/app/ExecutiveSummary';
 import Privacy from './pages/app/Privacy';
+import SignalCoverage from './pages/app/SignalCoverage';
 import SelfCheck from './pages/SelfCheck';
 import NotFound from './pages/NotFound';
 import MonthlyReport from './pages/MonthlyReport';
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/app/actions" element={<Actions />} />
               <Route path="/app/executive-summary" element={<ExecutiveSummary />} />
               <Route path="/app/privacy" element={<Privacy />} />
+              <Route path="/app/signal-coverage" element={<SignalCoverage />} />
               <Route path="/app/monthly-report" element={<MonthlyReport />} />
               <Route path="/ceo-summary/:token" element={<CeoSummary />} />
               <Route path="/superadmin" element={<SuperadminDashboard />} />

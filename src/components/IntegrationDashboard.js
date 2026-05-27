@@ -4,12 +4,9 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-  Clock,
   AlertTriangle,
-  ExternalLink,
   Settings,
   TrendingUp,
-  Users,
   BarChart3,
   Mail,
   Video,
@@ -32,55 +29,55 @@ const INTEGRATIONS = {
   jira: {
     name: 'Jira',
     icon: LayoutGrid,
-    color: 'bg-blue-500',
+    color: 'bg-teal-700',
     description: 'Track project and task management',
     signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   asana: {
     name: 'Asana',
     icon: LayoutGrid,
-    color: 'bg-pink-500',
+    color: 'bg-teal-700',
     description: 'Track project and task management',
     signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   gmail: {
     name: 'Gmail',
     icon: Mail,
-    color: 'bg-red-500',
+    color: 'bg-teal-700',
     description: 'Analyze email patterns and after-hours activity',
     signals: ['Boundary erosion', 'Response drift'],
   },
   meet: {
     name: 'Google Meet',
     icon: Video,
-    color: 'bg-green-500',
+    color: 'bg-teal-700',
     description: 'Track meeting load and recovery time',
     signals: ['Meeting fatigue', 'Recovery collapse', 'Panic coordination'],
   },
   notion: {
     name: 'Notion',
     icon: FileText,
-    color: 'bg-gray-800',
+    color: 'bg-teal-700',
     description: 'Monitor documentation and decision patterns',
     signals: ['Decision churn', 'Documentation decay'],
   },
   hubspot: {
     name: 'HubSpot',
     icon: Briefcase,
-    color: 'bg-orange-500',
+    color: 'bg-teal-700',
     description: 'Track CRM activity and external pressure',
     signals: ['External pressure injection', 'Escalation cascade'],
   },
   pipedrive: {
     name: 'Pipedrive',
     icon: Briefcase,
-    color: 'bg-emerald-500',
+    color: 'bg-teal-700',
     description: 'Track CRM activity and external pressure',
     signals: ['External pressure injection', 'Escalation cascade'],
   },
 };
 
-export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
+export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChange }) {
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -204,7 +201,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
   if (loading) {
     return (
       <div className="p-8 flex justify-center">
-        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-teal-700 animate-spin" />
       </div>
     );
   }
@@ -214,12 +211,17 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Data source status is temporarily unavailable. {error}
+        </div>
+      )}
       {/* Header Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Link2 className="w-5 h-5 text-indigo-600" />
+            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+              <Link2 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{connectedCount}</p>
@@ -230,8 +232,8 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-teal-700" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{dataQuality}%</p>
@@ -242,8 +244,8 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">
@@ -265,14 +267,12 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
           return (
             <div
               key={source}
-              className={`bg-white rounded-lg border ${
-                connected ? 'border-green-200' : 'border-gray-200'
+              className={`bg-white rounded-xl border ${
+                connected ? 'border-teal-200' : 'border-gray-200'
               } overflow-hidden`}
             >
               {/* Header */}
-              <div
-                className={`px-4 py-3 ${config.color} bg-opacity-10 flex items-center justify-between`}
-              >
+              <div className="px-4 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-8 h-8 rounded-lg ${config.color} flex items-center justify-center`}
@@ -286,7 +286,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                 </div>
 
                 {connected ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <CheckCircle2 className="w-5 h-5 text-teal-700" />
                 ) : (
                   <XCircle className="w-5 h-5 text-gray-300" />
                 )}
@@ -303,7 +303,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-green-500 rounded-full"
+                              className="h-full bg-teal-600 rounded-full"
                               style={{ width: `${integration.coverage || 0}%` }}
                             />
                           </div>
@@ -334,7 +334,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                       <button
                         onClick={() => triggerSync(source)}
                         disabled={syncing[source]}
-                        className="flex-1 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <RefreshCw className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`} />
                         {syncing[source] ? 'Syncing...' : 'Sync Now'}
@@ -368,7 +368,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                     {/* Connect Button */}
                     <button
                       onClick={() => connectIntegration(source)}
-                      className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors flex items-center justify-center gap-2"
                     >
                       <Link2 className="w-4 h-4" />
                       Connect {config.name}
@@ -383,12 +383,12 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 
       {/* Data Quality Tips */}
       {dataQuality < 70 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h4 className="font-medium text-amber-800 mb-2 flex items-center gap-2">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+          <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             Improve Your Data Quality
           </h4>
-          <ul className="space-y-2 text-sm text-amber-700">
+          <ul className="space-y-2 text-sm text-slate-600">
             {connectedCount < 3 && (
               <li>• Connect more integrations to enable comprehensive signals</li>
             )}

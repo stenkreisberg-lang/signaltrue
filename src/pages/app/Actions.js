@@ -9,6 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function Actions() {
   const navigate = useNavigate();
@@ -24,11 +25,12 @@ export default function Actions() {
 
   const loadData = async () => {
     try {
-      const userRes = await api.get('/auth/me');
-      setUser(userRes.data);
+      const context = await getAuthenticatedContext();
+      setUser(context.user);
+      if (!context.teamId || !context.orgId) throw new Error('No organization context available.');
 
       // Fetch interventions/actions for the team
-      const interventionRes = await api.get(`/interventions/team/${userRes.data.teamId}`);
+      const interventionRes = await api.get(`/interventions/team/${context.teamId}`);
       const allInterventions = interventionRes.data.interventions || [];
 
       // Separate active from completed
@@ -44,7 +46,7 @@ export default function Actions() {
 
       // If no interventions, try to get recommended actions from signals
       if (active.length === 0) {
-        const signalsRes = await api.get(`/signals/org/${userRes.data.orgId}`, {
+        const signalsRes = await api.get(`/signals/org/${context.orgId}`, {
           params: { status: 'open,acknowledged', limit: 5 },
         });
 
@@ -67,40 +69,7 @@ export default function Actions() {
       }
     } catch (err) {
       console.error('[Actions] Error:', err);
-      // Use demo data
-      setActions([
-        {
-          _id: '1',
-          title: 'Reduce recurring meetings by 15%',
-          description: 'Review and consolidate recurring meetings to free up focus time',
-          whyThisHelps: 'Creates uninterrupted time and restores cognitive recovery.',
-          expectedImpact: 'Focus Time Ratio +8–12% within 2 weeks.',
-          suggestedOwner: 'Team Lead',
-          status: 'suggested',
-          severity: 'RISK',
-        },
-        {
-          _id: '2',
-          title: 'Protect 2-hour focus blocks daily',
-          description:
-            'Block calendar time for deep work, disable notifications during focus hours',
-          whyThisHelps: 'Reduces context switching and improves task completion rates.',
-          expectedImpact: 'Context Switching Index -15% within 3 weeks.',
-          suggestedOwner: 'Leadership',
-          status: 'suggested',
-          severity: 'RISK',
-        },
-        {
-          _id: '3',
-          title: 'Review after-hours communication norms',
-          description: 'Establish clear expectations about responding outside work hours',
-          whyThisHelps: 'Improves recovery time and reduces burnout risk indicators.',
-          expectedImpact: 'After-hours activity -20% within 2 weeks.',
-          suggestedOwner: 'Leadership',
-          status: 'suggested',
-          severity: 'INFO',
-        },
-      ]);
+      setError('Suggested actions are currently unavailable. No recommendations are inferred.');
     } finally {
       setLoading(false);
     }
@@ -173,8 +142,8 @@ export default function Actions() {
             <Link to="/app/executive-summary" style={styles.navLink}>
               Executive Summary
             </Link>
-            <Link to="/app/privacy" style={styles.navLink}>
-              Signal Coverage
+            <Link to="/app/signal-coverage" style={styles.navLink}>
+              Data Coverage
             </Link>
             {user && (
               <div style={styles.userMenu}>
@@ -201,15 +170,16 @@ export default function Actions() {
               </p>
             </div>
           </div>
+          {error && <div style={styles.errorNotice}>{error}</div>}
 
           {/* Actions List */}
           {actions.length === 0 ? (
             <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>✓</div>
+              <div style={styles.emptyIcon}>Clear</div>
               <h3 style={styles.emptyTitle}>No Actions Required</h3>
               <p style={styles.emptyText}>
-                Current signal patterns are within normal ranges. We'll suggest actions when early
-                intervention could help.
+                No verified recommendations are currently available. Suggested actions appear only
+                after sufficient signal evidence is established.
               </p>
               <Link to="/app/active-monitoring" style={styles.emptyButton}>
                 View Active Monitoring
@@ -315,7 +285,7 @@ export default function Actions() {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#f8fafc',
   },
   loadingContainer: {
     minHeight: '100vh',
@@ -323,25 +293,24 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#f8fafc',
   },
   spinner: {
     width: '40px',
     height: '40px',
-    border: '4px solid rgba(255,255,255,0.1)',
-    borderTop: '4px solid #3b82f6',
+    border: '4px solid #e2e8f0',
+    borderTop: '4px solid #0f766e',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
   loadingText: {
     marginTop: '1rem',
-    color: '#94a3b8',
+    color: '#475569',
     fontSize: '1rem',
   },
   nav: {
-    background: 'rgba(15, 23, 42, 0.8)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    background: '#ffffff',
+    borderBottom: '1px solid #e2e8f0',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -361,7 +330,7 @@ const styles = {
   logo: {
     fontSize: '1.5rem',
     fontWeight: 700,
-    color: 'white',
+    color: '#0f172a',
     margin: 0,
   },
   navRight: {
@@ -370,16 +339,16 @@ const styles = {
     gap: '1.5rem',
   },
   navLink: {
-    color: '#94a3b8',
+    color: '#475569',
     textDecoration: 'none',
     fontSize: '0.875rem',
     fontWeight: 500,
   },
   navLinkActive: {
-    color: 'white',
+    color: '#0f766e',
     fontSize: '0.875rem',
     fontWeight: 600,
-    borderBottom: '2px solid #3b82f6',
+    borderBottom: '2px solid #0f766e',
     paddingBottom: '2px',
   },
   userMenu: {
@@ -388,16 +357,16 @@ const styles = {
     gap: '1rem',
     marginLeft: '1rem',
     paddingLeft: '1rem',
-    borderLeft: '1px solid rgba(255,255,255,0.2)',
+    borderLeft: '1px solid #e2e8f0',
   },
   userName: {
-    color: 'white',
+    color: '#475569',
     fontSize: '0.875rem',
   },
   logoutButton: {
     background: 'transparent',
-    color: '#94a3b8',
-    border: '1px solid rgba(255,255,255,0.2)',
+    color: '#475569',
+    border: '1px solid #cbd5e1',
     borderRadius: '6px',
     padding: '0.5rem 1rem',
     fontSize: '0.875rem',
@@ -416,12 +385,12 @@ const styles = {
   title: {
     fontSize: '2rem',
     fontWeight: 700,
-    color: 'white',
+    color: '#0f172a',
     margin: '0 0 0.5rem 0',
   },
   subtitle: {
     fontSize: '1rem',
-    color: '#94a3b8',
+    color: '#475569',
     margin: 0,
   },
   emptyState: {
@@ -431,8 +400,13 @@ const styles = {
     textAlign: 'center',
   },
   emptyIcon: {
-    fontSize: '4rem',
-    color: '#10b981',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: '#0f766e',
+    background: '#ccfbf1',
+    display: 'inline-block',
+    padding: '0.35rem 0.8rem',
+    borderRadius: '999px',
     marginBottom: '1rem',
   },
   emptyTitle: {
@@ -450,7 +424,7 @@ const styles = {
   },
   emptyButton: {
     display: 'inline-block',
-    background: '#3b82f6',
+    background: '#0f766e',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '8px',
@@ -467,7 +441,8 @@ const styles = {
     background: 'white',
     borderRadius: '12px',
     padding: '1.5rem',
-    borderLeft: '4px solid #3b82f6',
+    border: '1px solid #e2e8f0',
+    borderLeft: '4px solid #0f766e',
   },
   actionHeader: {
     display: 'flex',
@@ -522,7 +497,7 @@ const styles = {
     gap: '1rem',
   },
   takeActionButton: {
-    background: '#3b82f6',
+    background: '#0f766e',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -560,7 +535,7 @@ const styles = {
   completedTitle: {
     fontSize: '1.25rem',
     fontWeight: 600,
-    color: 'white',
+    color: '#0f172a',
     marginBottom: '1rem',
   },
   completedList: {
@@ -569,7 +544,8 @@ const styles = {
     gap: '0.75rem',
   },
   completedCard: {
-    background: 'rgba(255,255,255,0.05)',
+    background: '#ffffff',
+    border: '1px solid #e2e8f0',
     borderRadius: '8px',
     padding: '1rem',
     display: 'flex',
@@ -591,12 +567,21 @@ const styles = {
   },
   completedAction: {
     fontSize: '0.875rem',
-    color: '#e2e8f0',
+    color: '#0f172a',
     margin: '0 0 0.25rem 0',
   },
   completedOutcome: {
     fontSize: '0.75rem',
     color: '#10b981',
     margin: 0,
+  },
+  errorNotice: {
+    border: '1px solid #fde68a',
+    background: '#fffbeb',
+    color: '#92400e',
+    borderRadius: '10px',
+    padding: '0.875rem 1rem',
+    marginBottom: '1.5rem',
+    fontSize: '0.875rem',
   },
 };

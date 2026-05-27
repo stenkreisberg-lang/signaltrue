@@ -22,35 +22,35 @@ function scoreSeverity(score: number) {
   if (score >= 70)
     return {
       label: 'Critical',
-      ring: 'border-red-500',
-      text: 'text-red-400',
-      bg: 'bg-red-500/15',
+      ring: 'border-red-200',
+      text: 'text-red-700',
+      bg: 'bg-white',
       bar: 'bg-red-500',
       hex: '#ef4444',
     };
   if (score >= 50)
     return {
       label: 'Elevated',
-      ring: 'border-orange-400',
-      text: 'text-orange-400',
-      bg: 'bg-orange-400/15',
+      ring: 'border-orange-200',
+      text: 'text-orange-700',
+      bg: 'bg-white',
       bar: 'bg-orange-400',
       hex: '#fb923c',
     };
   if (score >= 30)
     return {
       label: 'Moderate',
-      ring: 'border-amber-300',
-      text: 'text-amber-300',
-      bg: 'bg-amber-300/15',
+      ring: 'border-amber-200',
+      text: 'text-amber-700',
+      bg: 'bg-white',
       bar: 'bg-amber-400',
       hex: '#fbbf24',
     };
   return {
     label: 'Low',
-    ring: 'border-emerald-400',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-400/15',
+    ring: 'border-emerald-200',
+    text: 'text-emerald-700',
+    bg: 'bg-white',
     bar: 'bg-emerald-500',
     hex: '#34d399',
   };
@@ -126,7 +126,7 @@ export default function DriftFamilyCard({
 
   return (
     <div
-      className={`relative p-5 rounded-2xl border-2 ${sev.ring} ${sev.bg} cursor-pointer transition-all hover:shadow-lg`}
+      className={`relative p-5 rounded-xl border ${sev.ring} ${sev.bg} cursor-pointer transition-all hover:shadow-card`}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -177,7 +177,7 @@ export default function DriftFamilyCard({
 
       {/* gap badge (always visible when present) */}
       {gapLabel && (
-        <div className="mt-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-[11px] text-indigo-200">
+        <div className="mt-2 rounded-lg bg-teal-50 border border-teal-100 px-2.5 py-1 text-[11px] text-teal-800">
           {gapLabel}
         </div>
       )}
@@ -191,7 +191,7 @@ export default function DriftFamilyCard({
             </div>
           )}
           {actionPrompt && (
-            <div className="text-xs rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-emerald-100">
+            <div className="text-xs rounded-lg border border-teal-100 bg-teal-50 px-2.5 py-1.5 text-teal-800">
               <span className="font-semibold">Recommended:</span> {actionPrompt}
             </div>
           )}
@@ -200,7 +200,7 @@ export default function DriftFamilyCard({
           )}
           <button
             onClick={handleViewSignals}
-            className={`w-full mt-1 text-xs font-medium py-1.5 rounded-lg border border-current/20 ${sev.text} hover:bg-white/10 transition-colors`}
+            className={`w-full mt-1 text-xs font-medium py-1.5 rounded-lg border border-current/20 ${sev.text} hover:bg-slate-50 transition-colors`}
           >
             View {familyName} signals →
           </button>

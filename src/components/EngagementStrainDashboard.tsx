@@ -28,26 +28,26 @@ import { useEngagementStrainSummary, TeamStrainSummary } from '../hooks/useEngag
 const RISK_STATE_CONFIG = {
   healthy: {
     label: 'Healthy',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-900/40 border-emerald-700',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50 border-emerald-200',
     dot: 'bg-emerald-400',
   },
   watch: {
     label: 'Watch',
-    color: 'text-amber-400',
-    bg: 'bg-amber-900/40 border-amber-700',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50 border-amber-200',
     dot: 'bg-amber-400',
   },
   strain: {
     label: 'Strain',
-    color: 'text-orange-400',
-    bg: 'bg-orange-900/40 border-orange-700',
+    color: 'text-orange-700',
+    bg: 'bg-orange-50 border-orange-200',
     dot: 'bg-orange-400',
   },
   critical: {
     label: 'Critical',
-    color: 'text-red-400',
-    bg: 'bg-red-900/40 border-red-700',
+    color: 'text-red-700',
+    bg: 'bg-red-50 border-red-200',
     dot: 'bg-red-400',
   },
 };
@@ -84,13 +84,13 @@ const TeamStrainRow: React.FC<{ team: TeamStrainSummary; onClick: () => void }> 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left group hover:bg-slate-700/50 rounded-lg p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      className="w-full text-left group hover:bg-slate-50 rounded-lg p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex items-center justify-between gap-3">
         {/* Team name + risk state badge */}
         <div className="flex items-center gap-2 min-w-0">
           {riskIcon(team.riskState)}
-          <span className="text-sm font-medium text-slate-100 truncate">
+          <span className="text-sm font-medium text-slate-900 truncate">
             {team.teamName ?? team.teamId}
           </span>
           <span
@@ -107,12 +107,12 @@ const TeamStrainRow: React.FC<{ team: TeamStrainSummary; onClick: () => void }> 
             <span className="text-xs text-slate-500 ml-0.5">/100</span>
           </div>
           {TREND_ICON[team.trend] ?? TREND_ICON.stable}
-          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-700 transition-colors" />
         </div>
       </div>
 
       {/* Score bar */}
-      <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+      <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${scoreBarColor(score)}`}
           style={{ width: `${score}%` }}
@@ -147,7 +147,7 @@ const OrgSummaryBar: React.FC<{ teams: TeamStrainSummary[] }> = ({ teams }) => {
   const healthy = counts.healthy ?? 0;
 
   return (
-    <div className="flex items-center gap-3 text-xs text-slate-400 mb-4">
+    <div className="flex items-center gap-3 text-xs text-slate-600 mb-4">
       {critical > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
@@ -172,7 +172,7 @@ const OrgSummaryBar: React.FC<{ teams: TeamStrainSummary[] }> = ({ teams }) => {
           {healthy} healthy
         </span>
       )}
-      <span className="ml-auto text-slate-600">{teams.length} teams total</span>
+      <span className="ml-auto text-slate-500">{teams.length} teams total</span>
     </div>
   );
 };
@@ -207,19 +207,19 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
   const visible = showAll ? sorted : sorted.slice(0, initialLimit);
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
+    <div className="bg-white rounded-xl border border-slate-200 p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div>
-          <h2 className="text-base font-semibold text-slate-100">Engagement Strain Risk</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Passive work-pattern analysis · team metadata only
+          <h2 className="text-base font-semibold text-slate-900">Engagement Strain Risk</h2>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Passive work-pattern analysis, team metadata only
           </p>
         </div>
         <button
           onClick={refetch}
           disabled={loading}
-          className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-40"
+          className="p-1.5 rounded hover:bg-slate-50 text-slate-500 hover:text-teal-700 transition-colors disabled:opacity-40"
           aria-label="Refresh"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -228,7 +228,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
 
       {/* Error state */}
       {error && (
-        <div className="mt-3 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-3">
+        <div className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-3">
           {error}
         </div>
       )}
@@ -269,7 +269,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
           {sorted.length > initialLimit && (
             <button
               onClick={() => setShowAll((v) => !v)}
-              className="mt-3 w-full text-xs text-slate-400 hover:text-slate-200 py-2 hover:bg-slate-700/50 rounded transition-colors"
+              className="mt-3 w-full text-xs text-slate-600 hover:text-teal-700 py-2 hover:bg-slate-50 rounded transition-colors"
             >
               {showAll ? 'Show fewer teams' : `Show all ${sorted.length} teams`}
             </button>
@@ -277,9 +277,9 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
 
           <button
             onClick={() => navigate('/app/engagement-strain')}
-            className="mt-3 w-full text-xs text-emerald-400 hover:text-emerald-300 py-2 border border-emerald-800 hover:border-emerald-700 rounded transition-colors"
+            className="mt-3 w-full text-xs text-teal-700 hover:text-teal-800 py-2 border border-teal-200 hover:border-teal-300 rounded transition-colors"
           >
-            View full engagement strain dashboard →
+            View full engagement strain dashboard
           </button>
         </>
       )}

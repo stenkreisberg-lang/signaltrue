@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import RecommendedAction from '../../components/RecommendedAction';
 import api from '../../utils/api';
+import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function ActiveMonitoring() {
   const navigate = useNavigate();
@@ -26,11 +27,12 @@ export default function ActiveMonitoring() {
   const loadData = async () => {
     try {
       // Fetch user context
-      const userRes = await api.get('/auth/me');
-      setUser(userRes.data);
+      const context = await getAuthenticatedContext();
+      setUser(context.user);
+      if (!context.orgId) throw new Error('No organization context available.');
 
       // Fetch current signals for user's team/org
-      const signalsRes = await api.get(`/signals/org/${userRes.data.orgId}`, {
+      const signalsRes = await api.get(`/signals/org/${context.orgId}`, {
         params: {
           status: 'open,acknowledged',
           limit: 10,
@@ -58,7 +60,7 @@ export default function ActiveMonitoring() {
 
       // Fetch interventions for these signals
       if (top5.length > 0) {
-        const interventionRes = await api.get(`/interventions/team/${userRes.data.teamId}`, {
+        const interventionRes = await api.get(`/interventions/team/${context.teamId}`, {
           params: { status: 'active,pending-recheck' },
         });
 
@@ -70,7 +72,7 @@ export default function ActiveMonitoring() {
       }
     } catch (err) {
       console.error('[ActiveMonitoring] Error loading data:', err);
-      setError(err.message || 'Failed to load signals');
+      setError('Monitoring data is temporarily unavailable. Please retry in a moment.');
     } finally {
       setLoading(false);
     }
@@ -136,8 +138,8 @@ export default function ActiveMonitoring() {
             <Link to="/app/executive-summary" style={styles.navLink}>
               Executive Summary
             </Link>
-            <Link to="/app/privacy" style={styles.navLink}>
-              Signal Coverage
+            <Link to="/app/signal-coverage" style={styles.navLink}>
+              Data Coverage
             </Link>
             {user && (
               <div style={styles.userMenu}>
@@ -173,7 +175,7 @@ export default function ActiveMonitoring() {
           {/* Signals List or Empty State */}
           {signals.length === 0 ? (
             <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>✓</div>
+              <div style={styles.emptyIcon}>Monitoring active</div>
               <h3 style={styles.emptyTitle}>No Active Risk Signals Detected</h3>
               {/* CRITICAL COPY per spec Section 7 */}
               <p style={styles.emptyText}>
@@ -181,7 +183,7 @@ export default function ActiveMonitoring() {
                 patterns. Directional signals typically emerge within 7–10 days.
               </p>
               <Link to="/app/overview" style={styles.emptyButton}>
-                Go to Team Overview
+                Return to overview
               </Link>
             </div>
           ) : (
@@ -427,7 +429,7 @@ function getActionStatusText(status) {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#f8fafc',
   },
   loadingContainer: {
     minHeight: '100vh',
@@ -435,19 +437,19 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#f8fafc',
   },
   spinner: {
     width: '40px',
     height: '40px',
-    border: '4px solid rgba(255,255,255,0.1)',
-    borderTop: '4px solid #3b82f6',
+    border: '4px solid #e2e8f0',
+    borderTop: '4px solid #0f766e',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
   loadingText: {
     marginTop: '1rem',
-    color: '#94a3b8',
+    color: '#475569',
     fontSize: '1rem',
   },
   errorCard: {
@@ -470,7 +472,7 @@ const styles = {
     marginBottom: '1.5rem',
   },
   retryButton: {
-    background: '#3b82f6',
+    background: '#0f766e',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -480,9 +482,8 @@ const styles = {
     cursor: 'pointer',
   },
   nav: {
-    background: 'rgba(15, 23, 42, 0.8)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    background: '#ffffff',
+    borderBottom: '1px solid #e2e8f0',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -503,7 +504,7 @@ const styles = {
   logo: {
     fontSize: '1.5rem',
     fontWeight: 700,
-    color: 'white',
+    color: '#0f172a',
     margin: 0,
   },
   navRight: {
@@ -512,17 +513,17 @@ const styles = {
     gap: '1.5rem',
   },
   navLink: {
-    color: '#94a3b8',
+    color: '#475569',
     textDecoration: 'none',
     fontSize: '0.875rem',
     fontWeight: 500,
     transition: 'color 0.2s',
   },
   navLinkActive: {
-    color: 'white',
+    color: '#0f766e',
     fontSize: '0.875rem',
     fontWeight: 600,
-    borderBottom: '2px solid #3b82f6',
+    borderBottom: '2px solid #0f766e',
     paddingBottom: '2px',
   },
   userMenu: {
@@ -531,16 +532,16 @@ const styles = {
     gap: '1rem',
     marginLeft: '1rem',
     paddingLeft: '1rem',
-    borderLeft: '1px solid rgba(255,255,255,0.2)',
+    borderLeft: '1px solid #e2e8f0',
   },
   userName: {
-    color: 'white',
+    color: '#475569',
     fontSize: '0.875rem',
   },
   logoutButton: {
     background: 'transparent',
-    color: '#94a3b8',
-    border: '1px solid rgba(255,255,255,0.2)',
+    color: '#475569',
+    border: '1px solid #cbd5e1',
     borderRadius: '6px',
     padding: '0.5rem 1rem',
     fontSize: '0.875rem',
@@ -562,30 +563,36 @@ const styles = {
   title: {
     fontSize: '2rem',
     fontWeight: 700,
-    color: 'white',
+    color: '#0f172a',
     margin: '0 0 0.5rem 0',
   },
   subtitle: {
     fontSize: '1rem',
-    color: '#94a3b8',
+    color: '#475569',
     margin: 0,
     maxWidth: '600px',
   },
   viewAllLink: {
-    color: '#3b82f6',
+    color: '#0f766e',
     textDecoration: 'none',
     fontSize: '1rem',
     fontWeight: 600,
   },
   emptyState: {
     background: 'white',
+    border: '1px solid #e2e8f0',
     borderRadius: '16px',
     padding: '4rem 2rem',
     textAlign: 'center',
   },
   emptyIcon: {
-    fontSize: '4rem',
-    color: '#10b981',
+    display: 'inline-block',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    padding: '0.35rem 0.8rem',
+    borderRadius: '999px',
+    background: '#ecfdf5',
+    color: '#047857',
     marginBottom: '1rem',
   },
   emptyTitle: {
@@ -604,7 +611,7 @@ const styles = {
   },
   emptyButton: {
     display: 'inline-block',
-    background: '#3b82f6',
+    background: '#0f766e',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '8px',

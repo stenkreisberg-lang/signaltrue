@@ -13,6 +13,9 @@ import OnboardingBanner from '../../components/OnboardingBanner';
 import DriftFamilyCard from '../../components/drift/DriftFamilyCard';
 import DriftConfidencePanel from '../../components/drift/DriftConfidencePanel';
 import EngagementStrainDashboard from '../../components/EngagementStrainDashboard';
+import AppShell from '../../components/app/AppShell';
+import api from '../../utils/api';
+import { getAuthenticatedContext } from '../../utils/authContext';
 
 /**
  * Overview Dashboard - Main landing page for authenticated users
@@ -26,54 +29,41 @@ const Overview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-
-  const orgId = localStorage.getItem('orgId'); // Assuming orgId is stored in localStorage
-  const teamId = localStorage.getItem('teamId'); // Get first team for demo purposes
+  const [user, setUser] = useState(null);
+  const [orgId, setOrgId] = useState(null);
+  const [teamId, setTeamId] = useState(null);
+  const [loadWarning, setLoadWarning] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        const context = await getAuthenticatedContext();
+        setUser(context.user);
+        setOrgId(context.orgId);
+        setTeamId(context.teamId);
 
-        // Fetch calibration status
-        const calibrationRes = await fetch(`${apiUrl}/api/calibration/status/${orgId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!calibrationRes.ok) throw new Error('Failed to fetch calibration status');
-        const calibrationData = await calibrationRes.json();
+        if (!context.orgId) throw new Error('No organization is associated with this account.');
+        let calibrationData = { isInCalibration: false };
+        try {
+          const calibrationRes = await api.get(`/calibration/status/${context.orgId}`);
+          calibrationData = calibrationRes.data;
+        } catch (calibrationError) {
+          setLoadWarning(
+            'Calibration status is temporarily unavailable. Available signal data is shown below.'
+          );
+        }
         setCalibrationStatus(calibrationData);
 
-        // If not in calibration, fetch comprehensive dashboard data
-        if (!calibrationData.isInCalibration && teamId) {
-          // Fetch new BDI dashboard endpoint (includes BDI, Capacity, CLI, BTI, SRI)
-          const dashboardRes = await fetch(`${apiUrl}/api/dashboard/${teamId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (dashboardRes.ok) {
-            const dashData = await dashboardRes.json();
-            setDashboardData(dashData);
-          }
-
-          // Still fetch signal summary for legacy signals
-          const summaryRes = await fetch(`${apiUrl}/api/signals/org/${orgId}/summary`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (summaryRes.ok) {
-            const summaryData = await summaryRes.json();
-            setSignalSummary(summaryData);
-          }
-
-          const familyRes = await fetch(`${apiUrl}/api/signals/org/${orgId}/families`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (familyRes.ok) {
-            const families = await familyRes.json();
-            setFamilyData(families);
+        if (!calibrationData.isInCalibration && context.teamId) {
+          const [dashboardRes, summaryRes, familyRes] = await Promise.allSettled([
+            api.get(`/dashboard/${context.teamId}`),
+            api.get(`/signals/org/${context.orgId}/summary`),
+            api.get(`/signals/org/${context.orgId}/families`),
+          ]);
+          if (dashboardRes.status === 'fulfilled') setDashboardData(dashboardRes.value.data);
+          if (summaryRes.status === 'fulfilled') setSignalSummary(summaryRes.value.data);
+          if (familyRes.status === 'fulfilled') {
+            setFamilyData(familyRes.value.data);
             setLastUpdated(new Date());
           }
         }
@@ -85,14 +75,12 @@ const Overview = () => {
       }
     };
 
-    if (orgId) {
-      fetchDashboardData();
-    }
-  }, [orgId, teamId]);
+    fetchDashboardData();
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Spinner size="large" />
       </div>
     );
@@ -100,10 +88,10 @@ const Overview = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-900 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
           <Card>
-            <div className="text-center text-red-400">Error loading dashboard: {error}</div>
+            <div className="text-center text-red-700">Unable to load the overview. {error}</div>
           </Card>
         </div>
       </div>
@@ -111,57 +99,22 @@ const Overview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold text-slate-100">SignalTrue</div>
-            <Badge variant="default">Overview</Badge>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/app/overview"
-              className="text-white font-semibold border-b-2 border-blue-500 pb-1"
-            >
-              Team Overview
-            </Link>
-            <Link to="/app/signals" className="text-slate-300 hover:text-white transition-colors">
-              Signals
-            </Link>
-            <Link
-              to="/app/active-monitoring"
-              className="text-slate-300 hover:text-white transition-colors"
-            >
-              Active Monitoring
-            </Link>
-            <Link to="/app/actions" className="text-slate-300 hover:text-white transition-colors">
-              Actions
-            </Link>
-            <Link
-              to="/app/executive-summary"
-              className="text-slate-300 hover:text-white transition-colors"
-            >
-              Executive Summary
-            </Link>
-            <Link to="/app/privacy" className="text-slate-300 hover:text-white transition-colors">
-              Signal Coverage
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <AppShell user={user} section="Overview">
+      <div>
         {/* Anti-Weaponization Notice - Sticky at top */}
         <AntiWeaponizationNotice variant="sticky" />
+        {loadWarning && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {loadWarning}
+          </div>
+        )}
 
         {/* Day-based Onboarding Banner */}
         <OnboardingBanner calibrationDay={calibrationStatus?.calibrationDay} />
 
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold text-slate-100">Team Signal Overview</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Team Signal Overview</h1>
             {(() => {
               const fams = familyData?.families;
               if (!fams?.length) return null;
@@ -203,7 +156,7 @@ const Overview = () => {
               );
             })()}
           </div>
-          <p className="text-slate-400">
+          <p className="text-slate-600">
             {calibrationStatus?.isInCalibration
               ? 'Signal monitoring has started. Initial patterns will appear within 3–5 days.'
               : 'Signals reflect structural drift in capacity, coordination, and cohesion. Interpretation improves as baselines mature.'}
@@ -225,7 +178,7 @@ const Overview = () => {
         {/* Engagement Strain Risk — always shown once calibration is complete */}
         {!calibrationStatus?.isInCalibration && (
           <section className="mb-8">
-            <EngagementStrainDashboard initialLimit={5} />
+            <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
           </section>
         )}
 
@@ -235,8 +188,8 @@ const Overview = () => {
             {familyData?.families?.length > 0 && (
               <>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                    <span>🧭</span> Structural Drift Summary
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    Structural Drift Summary
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {familyData.families.map((family) => (
@@ -268,19 +221,19 @@ const Overview = () => {
             )}
 
             {/* Quick Actions Banner */}
-            <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-4 border border-blue-700/50">
+            <div className="bg-teal-50 rounded-xl p-5 border border-teal-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-100 mb-1">
-                    🎯 Team Insights Available
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                    Team insights available
                   </h3>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-slate-600">
                     View AI-powered diagnosis, risk analysis, and recommended actions for your team
                   </p>
                 </div>
                 <Link
                   to={`/app/insights/${teamId}`}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg"
+                  className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-lg transition-colors"
                 >
                   View Insights →
                 </Link>
@@ -289,8 +242,8 @@ const Overview = () => {
 
             {/* 1. BEHAVIORAL DRIFT INDEX - PRIMARY METRIC */}
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <span>🎯</span> Behavioral Drift Index
+              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                Behavioral Drift Index
                 <Badge variant="info" size="small">
                   Primary Signal
                 </Badge>
@@ -300,61 +253,61 @@ const Overview = () => {
 
             {/* 2. CAPACITY STATUS + DRIVERS */}
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <span>⚡</span> Capacity Status
+              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                Capacity Status
               </h2>
               <CapacityStatusCard capacity={dashboardData.capacity} />
             </div>
 
             {/* 3. COORDINATION LOAD INDEX */}
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <span>🔄</span> Coordination Load
+              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                Coordination Load
               </h2>
               <CoordinationLoadIndexCard cli={dashboardData.cli} />
             </div>
 
             {/* 4. BANDWIDTH TAX INDICATOR */}
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <span>🧠</span> Bandwidth Tax
+              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                Bandwidth Tax
               </h2>
               <BandwidthTaxIndicatorCard bti={dashboardData.bti} />
             </div>
 
             {/* 5. SILENCE RISK INDICATOR */}
             <div>
-              <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-                <span>🔇</span> Silence Risk
+              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                Silence Risk
               </h2>
               <SilenceRiskIndicatorCard sri={dashboardData.sri} />
             </div>
 
             {/* 6. RAW METRICS - De-emphasized */}
-            <div className="border-t border-slate-700 pt-8">
+            <div className="border-t border-slate-200 pt-8">
               <details className="group">
-                <summary className="text-xl font-bold text-slate-400 mb-4 cursor-pointer hover:text-slate-300 transition-colors flex items-center gap-2">
+                <summary className="text-xl font-bold text-slate-700 mb-4 cursor-pointer hover:text-slate-900 transition-colors flex items-center gap-2">
                   <span className="transform transition-transform group-open:rotate-90">▶</span>
                   Raw Metrics (Advanced)
                 </summary>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                   <Card>
                     <div className="text-sm text-slate-400 mb-1">Avg Meeting Hours/Week</div>
-                    <div className="text-3xl font-bold text-slate-100">
+                    <div className="text-3xl font-bold text-slate-900">
                       {dashboardData.rawMetrics?.avgMeetingHours?.toFixed(1) || 'N/A'}
                     </div>
                   </Card>
 
                   <Card>
                     <div className="text-sm text-slate-400 mb-1">Avg Response Time</div>
-                    <div className="text-3xl font-bold text-slate-100">
+                    <div className="text-3xl font-bold text-slate-900">
                       {dashboardData.rawMetrics?.avgResponseHours?.toFixed(1) || 'N/A'} hrs
                     </div>
                   </Card>
 
                   <Card>
                     <div className="text-sm text-slate-400 mb-1">Avg Focus Time</div>
-                    <div className="text-3xl font-bold text-slate-100">
+                    <div className="text-3xl font-bold text-slate-900">
                       {dashboardData.rawMetrics?.avgFocusHours?.toFixed(1) || 'N/A'} hrs
                     </div>
                   </Card>
@@ -371,7 +324,7 @@ const Overview = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <div className="text-sm text-slate-400 mb-1">New Signals This Week</div>
-                <div className="text-3xl font-bold text-slate-100">
+                <div className="text-3xl font-bold text-slate-900">
                   {signalSummary.newSignalsThisWeek || 0}
                 </div>
               </Card>
@@ -403,7 +356,7 @@ const Overview = () => {
             {signalSummary.criticalSignals && signalSummary.criticalSignals.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-slate-100">Top Critical Signals</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">Top Critical Signals</h2>
                   <Link to="/app/signals?severity=Critical">
                     <Button variant="ghost" size="small">
                       View all →
@@ -452,7 +405,7 @@ const Overview = () => {
             {/* Recommended Actions */}
             {signalSummary.recommendedActions && signalSummary.recommendedActions.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-slate-100 mb-4">Recommended Next Actions</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-4">Recommended Next Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {signalSummary.recommendedActions.map((rec, idx) => (
                     <Card key={idx} padding="normal">
@@ -461,10 +414,10 @@ const Overview = () => {
                           {rec.severity || 'Signal'}
                         </Badge>
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-100 mb-2">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">
                         {rec.signalTitle}
                       </h3>
-                      <p className="text-sm text-slate-300 mb-3">{rec.action.action}</p>
+                      <p className="text-sm text-slate-600 mb-3">{rec.action.action}</p>
                       <div className="text-xs text-slate-400">
                         Expected effect: {rec.action.expectedEffect || 'See signal for details'}
                       </div>
@@ -482,8 +435,8 @@ const Overview = () => {
             )}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

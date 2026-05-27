@@ -34,30 +34,30 @@ const Contact: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-hero-gradient relative overflow-hidden">
+      <section className="pt-20 pb-12 bg-hero-gradient relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              See what SignalTrue would show in your organization.
+              See work-system pressure before it becomes disruption.
             </h1>
             <p className="text-xl text-muted-foreground">
-              Request a demo to see how SignalTrue detects manager overload, meeting friction, focus
-              fragmentation, response pressure, and recovery risk without reading employee messages.
+              Request a guided review of capacity, coordination, and recovery signals generated from
+              metadata only, without reading employee messages.
             </p>
           </div>
         </div>
       </section>
 
       {/* Contact Options */}
-      <section className="py-16">
+      <section className="py-10">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto mb-10">
             <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Email Us</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">General inquiries</h3>
               <p className="text-muted-foreground text-sm mb-3">For general inquiries</p>
               <a
                 href="mailto:hello@signaltrue.ai"
@@ -71,7 +71,7 @@ const Contact: React.FC = () => {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Book a Demo</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Product demonstration</h3>
               <p className="text-muted-foreground text-sm mb-3">See SignalTrue in action</p>
               <Link to="/demo" className="text-primary hover:underline font-medium">
                 Schedule a call
@@ -82,7 +82,7 @@ const Contact: React.FC = () => {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Support</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Customer support</h3>
               <p className="text-muted-foreground text-sm mb-3">For existing customers</p>
               <a
                 href="mailto:support@signaltrue.ai"
@@ -94,7 +94,7 @@ const Contact: React.FC = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-3xl mx-auto">
             <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
               {submitted ? (
                 <div className="text-center py-8">
@@ -118,6 +118,9 @@ const Contact: React.FC = () => {
               ) : (
                 <>
                   <div className="text-center mb-8">
+                    <p className="text-xs uppercase tracking-widest font-semibold text-primary mb-3">
+                      Request a demo
+                    </p>
                     <h2 className="text-2xl font-bold text-foreground mb-2">What we will cover</h2>
                     <ul className="text-muted-foreground text-sm space-y-1 mt-4 text-left max-w-sm mx-auto">
                       {[

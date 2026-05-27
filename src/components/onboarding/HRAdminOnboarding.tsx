@@ -47,7 +47,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
     setError('');
 
     try {
-      const response = await api.post('/onboarding/invitations', {
+      await api.post('/onboarding/invitations', {
         email,
         name,
         role: 'it_admin',
@@ -85,10 +85,10 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
       <div style={styles.content}>
         <div style={styles.onboardingCard}>
           <div style={styles.iconContainer}>
-            <span style={styles.icon}>👋</span>
+            <span style={styles.icon}>Organization setup</span>
           </div>
 
-          <h1 style={styles.title}>Welcome to SignalTrue!</h1>
+          <h1 style={styles.title}>Welcome to SignalTrue</h1>
           <p style={styles.subtitle}>
             You're the first person from <strong>{status.orgName || 'your organization'}</strong> to
             join.
@@ -96,11 +96,11 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
 
           <div style={styles.divider} />
 
-          <h2 style={styles.sectionTitle}>Next Step: Connect Your Tools</h2>
+          <h2 style={styles.sectionTitle}>Connect trusted data sources</h2>
           <p style={styles.description}>
-            SignalTrue analyzes your team's communication patterns to detect early signs of
-            disengagement. To get started, we need to connect to your collaboration tools
-            (Slack/Google Chat + Calendar).
+            SignalTrue analyzes aggregate work-pattern metadata to identify capacity and
+            coordination pressure. Connect collaboration and calendar sources to establish a
+            privacy-protected baseline.
           </p>
 
           <div style={styles.optionsContainer}>
@@ -108,8 +108,8 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
             <div style={styles.optionCard}>
               <div style={styles.optionBadge}>Recommended</div>
               <h3 style={styles.optionTitle}>
-                <span style={styles.optionIcon}>👨‍💻</span>
-                Invite IT Admin
+                <span style={styles.optionIcon}>01</span>
+                Invite IT administrator
               </h3>
               <p style={styles.optionDescription}>
                 Send an invitation to your IT administrator. They'll handle the integration setup
@@ -118,7 +118,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
 
               {!showInviteForm ? (
                 <button onClick={() => setShowInviteForm(true)} style={styles.primaryButton}>
-                  Invite IT Admin
+                  Invite IT administrator
                 </button>
               ) : (
                 <form onSubmit={handleInvite} style={styles.inviteForm}>
@@ -169,8 +169,8 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
             {/* Option 2: Set up myself */}
             <div style={styles.optionCard}>
               <h3 style={styles.optionTitle}>
-                <span style={styles.optionIcon}>⚡</span>
-                Set Up Myself
+                <span style={styles.optionIcon}>02</span>
+                Configure sources myself
               </h3>
               <p style={styles.optionDescription}>
                 You can configure the integrations yourself if you have admin access to your
@@ -180,7 +180,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 onClick={() => navigate('/dashboard?setup=true')}
                 style={styles.secondaryButton}
               >
-                Continue to Setup
+                Continue to setup
               </button>
             </div>
           </div>
@@ -188,9 +188,9 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
           <div style={styles.helpBox}>
             <p style={styles.helpText}>
               <strong>Need help?</strong> Our integrations only request read-only permissions and
-              all data is anonymized at the team level. Contact{' '}
-              <a href="mailto:support@signaltrue.com" style={styles.link}>
-                support@signaltrue.com
+              outputs are aggregated at team level. Contact{' '}
+              <a href="mailto:support@signaltrue.ai" style={styles.link}>
+                support@signaltrue.ai
               </a>{' '}
               with questions.
             </p>
@@ -204,7 +204,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     minHeight: '100vh',
-    background: '#f9fafb',
+    background: '#f8fafc',
   },
   nav: {
     background: 'white',
@@ -221,9 +221,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   logo: {
     fontSize: '1.5rem',
     fontWeight: '700',
-    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    color: '#0f172a',
   },
   navRight: {
     display: 'flex',
@@ -235,34 +233,39 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '500',
   },
   content: {
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto',
     padding: '3rem 2rem',
   },
   onboardingCard: {
     background: 'white',
-    borderRadius: '16px',
+    borderRadius: '14px',
     padding: '3rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
   },
   iconContainer: {
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: '1.5rem',
   },
   icon: {
-    fontSize: '4rem',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: '#0f766e',
   },
   title: {
     fontSize: '2rem',
     fontWeight: '700',
-    textAlign: 'center',
-    color: '#1f2937',
+    textAlign: 'left',
+    color: '#0f172a',
     marginBottom: '0.5rem',
   },
   subtitle: {
     fontSize: '1.125rem',
-    textAlign: 'center',
-    color: '#6b7280',
+    textAlign: 'left',
+    color: '#475569',
     marginBottom: '2rem',
   },
   divider: {
@@ -289,7 +292,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginBottom: '2rem',
   },
   optionCard: {
-    border: '2px solid #e5e7eb',
+    border: '1px solid #e2e8f0',
     borderRadius: '12px',
     padding: '1.5rem',
     position: 'relative',
@@ -299,8 +302,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     position: 'absolute',
     top: '-12px',
     right: '16px',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: 'white',
+    background: '#ccfbf1',
+    color: '#115e59',
     padding: '0.25rem 0.75rem',
     borderRadius: '12px',
     fontSize: '0.75rem',
@@ -316,7 +319,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '0.5rem',
   },
   optionIcon: {
-    fontSize: '1.5rem',
+    fontSize: '0.75rem',
+    color: '#0f766e',
+    background: '#f0fdfa',
+    borderRadius: '999px',
+    padding: '0.35rem 0.5rem',
   },
   optionDescription: {
     fontSize: '0.875rem',
@@ -327,7 +334,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   primaryButton: {
     width: '100%',
     padding: '0.75rem 1.5rem',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    background: '#0f766e',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -340,8 +347,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: '100%',
     padding: '0.75rem 1.5rem',
     background: 'white',
-    color: '#6366f1',
-    border: '2px solid #6366f1',
+    color: '#0f766e',
+    border: '1px solid #0f766e',
     borderRadius: '8px',
     fontWeight: '600',
     cursor: 'pointer',
@@ -397,7 +404,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: '1.5',
   },
   link: {
-    color: '#6366f1',
+    color: '#0f766e',
     textDecoration: 'none',
     fontWeight: '500',
   },

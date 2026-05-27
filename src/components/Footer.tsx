@@ -38,7 +38,7 @@ const Footer = () => {
           {/* Brand column */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-lg bg-[#1D4ED8] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-[#0F766E] flex items-center justify-center">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-display font-bold text-white">SignalTrue</span>
