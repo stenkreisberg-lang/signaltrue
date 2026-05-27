@@ -15,12 +15,12 @@ import {
   Video,
   FileText,
   Briefcase,
-  LayoutGrid
+  LayoutGrid,
 } from 'lucide-react';
 
 /**
  * Integration Dashboard Component
- * 
+ *
  * Displays connected integrations status, coverage,
  * and allows connecting new data sources.
  */
@@ -34,50 +34,50 @@ const INTEGRATIONS = {
     icon: LayoutGrid,
     color: 'bg-blue-500',
     description: 'Track project and task management',
-    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload']
+    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   asana: {
     name: 'Asana',
     icon: LayoutGrid,
     color: 'bg-pink-500',
     description: 'Track project and task management',
-    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload']
+    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   gmail: {
     name: 'Gmail',
     icon: Mail,
     color: 'bg-red-500',
     description: 'Analyze email patterns and after-hours activity',
-    signals: ['Boundary erosion', 'Response drift']
+    signals: ['Boundary erosion', 'Response drift'],
   },
   meet: {
     name: 'Google Meet',
     icon: Video,
     color: 'bg-green-500',
     description: 'Track meeting load and recovery time',
-    signals: ['Meeting fatigue', 'Recovery collapse', 'Panic coordination']
+    signals: ['Meeting fatigue', 'Recovery collapse', 'Panic coordination'],
   },
   notion: {
     name: 'Notion',
     icon: FileText,
     color: 'bg-gray-800',
     description: 'Monitor documentation and decision patterns',
-    signals: ['Decision churn', 'Documentation decay']
+    signals: ['Decision churn', 'Documentation decay'],
   },
   hubspot: {
     name: 'HubSpot',
     icon: Briefcase,
     color: 'bg-orange-500',
     description: 'Track CRM activity and external pressure',
-    signals: ['External pressure injection', 'Escalation cascade']
+    signals: ['External pressure injection', 'Escalation cascade'],
   },
   pipedrive: {
     name: 'Pipedrive',
     icon: Briefcase,
     color: 'bg-emerald-500',
     description: 'Track CRM activity and external pressure',
-    signals: ['External pressure injection', 'Escalation cascade']
-  }
+    signals: ['External pressure injection', 'Escalation cascade'],
+  },
 };
 
 export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
@@ -91,18 +91,25 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
   const fetchIntegrations = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      const res = await fetch(`${API_BASE}/api/integration-dashboard/tiles`, {
+
+      const res = await fetch(`${API_BASE}/api/integration-dashboard/status`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (!res.ok) throw new Error('Failed to fetch integrations');
-      
+
       const data = await res.json();
-      setIntegrations(data.tiles || []);
-      
+      setIntegrations(
+        (data.integrations || []).map((integration) => ({
+          source: integration.type,
+          connected: integration.status === 'connected',
+          coverage: integration.coverage?.percent || 0,
+          signals_enabled: integration.whatWeMeasure?.length || 0,
+          ...integration,
+        }))
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -115,59 +122,69 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
   }, [fetchIntegrations]);
 
   // Start OAuth flow
-  const connectIntegration = (source) => {
+  const connectIntegration = async (source) => {
     const token = localStorage.getItem('token');
-    const callbackUrl = `${window.location.origin}/integrations/callback`;
-    
-    // Redirect to OAuth start endpoint
-    window.location.href = `${API_BASE}/api/integrations-v2/${source}/start?callback=${encodeURIComponent(callbackUrl)}&token=${token}`;
+    try {
+      const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/oauth/start?format=json`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.authorizationUrl) throw new Error(data.message || 'Connection failed');
+      window.location.href = data.authorizationUrl;
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // Trigger manual sync
   const triggerSync = async (source) => {
-    setSyncing(prev => ({ ...prev, [source]: true }));
-    
+    setSyncing((prev) => ({ ...prev, [source]: true }));
+
     try {
       const token = localStorage.getItem('token');
-      
-      await fetch(`${API_BASE}/api/integrations-v2/sync/${source}`, {
+
+      const res = await fetch(`${API_BASE}/api/integration-dashboard/${source}/sync`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+      if (!res.ok) throw new Error('Sync failed');
+
       // Refresh after a delay
       setTimeout(() => {
         fetchIntegrations();
-        setSyncing(prev => ({ ...prev, [source]: false }));
+        setSyncing((prev) => ({ ...prev, [source]: false }));
       }, 2000);
-      
     } catch (err) {
       console.error('Sync error:', err);
-      setSyncing(prev => ({ ...prev, [source]: false }));
+      setSyncing((prev) => ({ ...prev, [source]: false }));
     }
   };
 
   // Disconnect integration
   const disconnectIntegration = async (source) => {
-    if (!window.confirm(`Disconnect ${INTEGRATIONS[source]?.name || source}? This will stop data sync.`)) {
+    if (
+      !window.confirm(
+        `Disconnect ${INTEGRATIONS[source]?.name || source}? This will stop data sync.`
+      )
+    ) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
-      
-      await fetch(`${API_BASE}/api/integrations-v2/${source}/disconnect`, {
-        method: 'POST',
+
+      const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/disconnect`, {
+        method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+      if (!res.ok) throw new Error('Disconnect failed');
+
       fetchIntegrations();
       onIntegrationChange?.();
-      
     } catch (err) {
       console.error('Disconnect error:', err);
     }
@@ -175,12 +192,12 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 
   // Calculate overall data quality score
   const calculateDataQuality = () => {
-    const connected = integrations.filter(i => i.connected);
+    const connected = integrations.filter((i) => i.connected);
     if (connected.length === 0) return 0;
-    
+
     const avgCoverage = connected.reduce((sum, i) => sum + (i.coverage || 0), 0) / connected.length;
     const sourceScore = Math.min(100, connected.length * 15);
-    
+
     return Math.round((avgCoverage + sourceScore) / 2);
   };
 
@@ -192,7 +209,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
     );
   }
 
-  const connectedCount = integrations.filter(i => i.connected).length;
+  const connectedCount = integrations.filter((i) => i.connected).length;
   const dataQuality = calculateDataQuality();
 
   return (
@@ -210,7 +227,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -222,7 +239,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -241,10 +258,10 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
       {/* Integration Tiles */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(INTEGRATIONS).map(([source, config]) => {
-          const integration = integrations.find(i => i.source === source);
+          const integration = integrations.find((i) => i.source === source);
           const connected = integration?.connected || false;
           const Icon = config.icon;
-          
+
           return (
             <div
               key={source}
@@ -253,9 +270,13 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
               } overflow-hidden`}
             >
               {/* Header */}
-              <div className={`px-4 py-3 ${config.color} bg-opacity-10 flex items-center justify-between`}>
+              <div
+                className={`px-4 py-3 ${config.color} bg-opacity-10 flex items-center justify-between`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg ${config.color} flex items-center justify-center`}>
+                  <div
+                    className={`w-8 h-8 rounded-lg ${config.color} flex items-center justify-center`}
+                  >
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                   <div>
@@ -263,14 +284,14 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                     <p className="text-xs text-gray-500">{config.description}</p>
                   </div>
                 </div>
-                
+
                 {connected ? (
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                 ) : (
                   <XCircle className="w-5 h-5 text-gray-300" />
                 )}
               </div>
-              
+
               {/* Body */}
               <div className="p-4">
                 {connected ? (
@@ -281,7 +302,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                         <p className="text-xs text-gray-500">Coverage</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-green-500 rounded-full"
                               style={{ width: `${integration.coverage || 0}%` }}
                             />
@@ -291,18 +312,15 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                           </span>
                         </div>
                       </div>
-                      
+
                       <div>
                         <p className="text-xs text-gray-500">Last Sync</p>
                         <p className="text-sm text-gray-700">
-                          {integration.last_sync 
-                            ? formatTimeAgo(integration.last_sync)
-                            : 'Never'
-                          }
+                          {integration.last_sync ? formatTimeAgo(integration.last_sync) : 'Never'}
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* Sync Status */}
                     {integration.sync_status === 'error' && (
                       <div className="mb-4 p-2 bg-red-50 rounded-lg flex items-center gap-2 text-xs text-red-700">
@@ -310,7 +328,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                         <span>Sync error: {integration.sync_error}</span>
                       </div>
                     )}
-                    
+
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                       <button
@@ -321,7 +339,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                         <RefreshCw className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`} />
                         {syncing[source] ? 'Syncing...' : 'Sync Now'}
                       </button>
-                      
+
                       <button
                         onClick={() => setShowConnectModal(source)}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -346,7 +364,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Connect Button */}
                     <button
                       onClick={() => connectIntegration(source)}
@@ -374,13 +392,13 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
             {connectedCount < 3 && (
               <li>• Connect more integrations to enable comprehensive signals</li>
             )}
-            {integrations.some(i => i.connected && i.coverage < 70) && (
+            {integrations.some((i) => i.connected && i.coverage < 70) && (
               <li>• Map more users in connected integrations to improve coverage</li>
             )}
-            {!integrations.find(i => i.source === 'jira' || i.source === 'asana')?.connected && (
+            {!integrations.find((i) => i.source === 'jira' || i.source === 'asana')?.connected && (
               <li>• Connect Jira or Asana to enable execution metrics</li>
             )}
-            {!integrations.find(i => i.source === 'gmail')?.connected && (
+            {!integrations.find((i) => i.source === 'gmail')?.connected && (
               <li>• Connect Gmail to detect after-hours patterns</li>
             )}
           </ul>
@@ -391,7 +409,7 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
       {showConnectModal && (
         <IntegrationSettingsModal
           source={showConnectModal}
-          integration={integrations.find(i => i.source === showConnectModal)}
+          integration={integrations.find((i) => i.source === showConnectModal)}
           onClose={() => setShowConnectModal(null)}
           onDisconnect={() => disconnectIntegration(showConnectModal)}
           onSave={() => {
@@ -408,13 +426,17 @@ export default function IntegrationDashboard({ orgId, onIntegrationChange }) {
 function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, onSave }) {
   const config = INTEGRATIONS[source];
   const Icon = config?.icon || Link2;
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         {/* Header */}
-        <div className={`px-6 py-4 ${config?.color || 'bg-gray-500'} bg-opacity-10 flex items-center gap-3`}>
-          <div className={`w-10 h-10 rounded-lg ${config?.color || 'bg-gray-500'} flex items-center justify-center`}>
+        <div
+          className={`px-6 py-4 ${config?.color || 'bg-gray-500'} bg-opacity-10 flex items-center gap-3`}
+        >
+          <div
+            className={`w-10 h-10 rounded-lg ${config?.color || 'bg-gray-500'} flex items-center justify-center`}
+          >
             <Icon className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -422,7 +444,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, 
             <p className="text-sm text-gray-500">Manage integration connection</p>
           </div>
         </div>
-        
+
         {/* Body */}
         <div className="p-6 space-y-4">
           <div>
@@ -443,7 +465,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, 
               )}
             </div>
           </div>
-          
+
           {integration?.connected && (
             <>
               <div>
@@ -452,7 +474,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, 
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-green-500 rounded-full"
                       style={{ width: `${integration.coverage || 0}%` }}
                     />
@@ -465,22 +487,19 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, 
                   {integration.mapped_users || 0} of {integration.total_users || 0} users mapped
                 </p>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Sync
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Sync</label>
                 <p className="text-sm text-gray-600">
-                  {integration.last_sync 
+                  {integration.last_sync
                     ? new Date(integration.last_sync).toLocaleString()
-                    : 'Never'
-                  }
+                    : 'Never'}
                 </p>
               </div>
             </>
           )}
         </div>
-        
+
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 flex items-center justify-between rounded-b-lg">
           {integration?.connected ? (
@@ -493,7 +512,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, 
           ) : (
             <div />
           )}
-          
+
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -511,11 +530,11 @@ function formatTimeAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
   const diff = now - date;
-  
+
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  
+
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;

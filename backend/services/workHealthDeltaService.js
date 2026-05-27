@@ -1,11 +1,11 @@
 /**
  * Work Health Delta Service
  * 30-Day before/after comparison (Pilot Killer feature)
- * 
+ *
  * Compares:
  * - Baseline (first 7 days)
  * - Current (last 7 days)
- * 
+ *
  * Metrics tracked:
  * - Focus time
  * - Meeting load
@@ -29,7 +29,7 @@ import Team from '../models/team.js';
 async function getMetricsForPeriod(teamId, startDate, endDate) {
   const metrics = await MetricsDaily.find({
     teamId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: startDate, $lte: endDate },
   });
 
   if (metrics.length === 0) {
@@ -40,33 +40,36 @@ async function getMetricsForPeriod(teamId, startDate, endDate) {
       afterHoursHours: 0,
       loadBalanceIndex: 50,
       meetingROI: 50,
-      daysCounted: 0
+      daysCounted: 0,
     };
   }
 
   // Aggregate metrics
-  const totals = metrics.reduce((acc, m) => {
-    // Focus time from ratio (assume 8h workday)
-    acc.focusTimeHours += (m.focusTimeRatio || 0) * 8;
-    // Meeting load
-    acc.meetingLoadHours += m.meetingHoursWeek || 0;
-    // Response time as proxy for fragmentation
-    acc.fragmentationIndex += m.responseMedianMins || 0;
-    // After hours rate
-    acc.afterHoursRate += m.afterHoursRate || 0;
-    // Energy index as proxy for load balance
-    acc.energyIndex += m.energyIndex || 50;
-    return acc;
-  }, {
-    focusTimeHours: 0,
-    meetingLoadHours: 0,
-    fragmentationIndex: 0,
-    afterHoursRate: 0,
-    energyIndex: 0
-  });
+  const totals = metrics.reduce(
+    (acc, m) => {
+      // Focus time from ratio (assume 8h workday)
+      acc.focusTimeHours += (m.focusTimeRatio || 0) * 8;
+      // Meeting load
+      acc.meetingLoadHours += m.meetingHoursWeek || 0;
+      // Response time as proxy for fragmentation
+      acc.fragmentationIndex += m.responseMedianMins || 0;
+      // After hours rate
+      acc.afterHoursRate += m.afterHoursRate || 0;
+      // Energy index as proxy for load balance
+      acc.energyIndex += m.energyIndex || 50;
+      return acc;
+    },
+    {
+      focusTimeHours: 0,
+      meetingLoadHours: 0,
+      fragmentationIndex: 0,
+      afterHoursRate: 0,
+      energyIndex: 0,
+    }
+  );
 
   const days = metrics.length;
-  
+
   return {
     focusTimeHours: Math.round((totals.focusTimeHours / days) * 10) / 10,
     meetingLoadHours: Math.round((totals.meetingLoadHours / days) * 10) / 10,
@@ -74,7 +77,7 @@ async function getMetricsForPeriod(teamId, startDate, endDate) {
     afterHoursHours: Math.round((totals.afterHoursRate / days) * 4) / 10, // Convert rate to hours estimate
     loadBalanceIndex: Math.round(totals.energyIndex / days),
     meetingROI: 50, // Will be enriched from MeetingROI model
-    daysCounted: days
+    daysCounted: days,
   };
 }
 
@@ -88,7 +91,7 @@ async function getMetricsForPeriod(teamId, startDate, endDate) {
 async function getMeetingROIForPeriod(teamId, startDate, endDate) {
   const roiRecords = await MeetingROI.find({
     teamId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: startDate, $lte: endDate },
   });
 
   if (roiRecords.length === 0) return 50;
@@ -114,7 +117,7 @@ function calculateDelta(baseline, current) {
  * Determine delta status (green/yellow/red)
  * Positive changes are green for: focusTime, loadBalance, meetingROI
  * Negative changes are green for: meetingLoad, fragmentation, afterHours
- * 
+ *
  * @param {string} metric - Metric name
  * @param {number} delta - Percentage change
  * @returns {string} - 'green' | 'yellow' | 'red'
@@ -125,10 +128,10 @@ function determineDeltaStatus(metric, delta) {
   // Metrics where decrease is good
   const negativeIsGood = ['meetingLoad', 'fragmentation', 'afterHours'];
 
-  const isGoodDirection = positiveIsGood.includes(metric) 
-    ? delta > 0 
-    : negativeIsGood.includes(metric) 
-      ? delta < 0 
+  const isGoodDirection = positiveIsGood.includes(metric)
+    ? delta > 0
+    : negativeIsGood.includes(metric)
+      ? delta < 0
       : false;
 
   const absDelta = Math.abs(delta);
@@ -136,7 +139,7 @@ function determineDeltaStatus(metric, delta) {
   if (isGoodDirection) {
     return absDelta > 5 ? 'green' : 'yellow';
   }
-  
+
   if (absDelta > 15) return 'red';
   if (absDelta > 5) return 'yellow';
   return 'yellow';
@@ -150,8 +153,8 @@ function determineDeltaStatus(metric, delta) {
  */
 function determineOverallStatus(deltas, statuses) {
   const statusValues = Object.values(statuses);
-  const greenCount = statusValues.filter(s => s === 'green').length;
-  const redCount = statusValues.filter(s => s === 'red').length;
+  const greenCount = statusValues.filter((s) => s === 'green').length;
+  const redCount = statusValues.filter((s) => s === 'red').length;
 
   if (greenCount >= 3 && redCount === 0) return 'improved';
   if (redCount >= 2) return 'declined';
@@ -166,27 +169,28 @@ function determineOverallStatus(deltas, statuses) {
  */
 function generateSummaryMessage(overallStatus, deltas) {
   const highlights = [];
-  
+
   if (Math.abs(deltas.focusTime) > 5) {
     const direction = deltas.focusTime > 0 ? '+' : '';
     highlights.push(`focus time ${direction}${deltas.focusTime}%`);
   }
-  
+
   if (Math.abs(deltas.meetingLoad) > 5) {
     const direction = deltas.meetingLoad > 0 ? '+' : '';
     highlights.push(`meeting load ${direction}${deltas.meetingLoad}%`);
   }
-  
+
   if (Math.abs(deltas.afterHours) > 5) {
     const direction = deltas.afterHours > 0 ? '+' : '';
     highlights.push(`after-hours work ${direction}${deltas.afterHours}%`);
   }
 
-  const verb = overallStatus === 'improved' 
-    ? 'improved' 
-    : overallStatus === 'declined' 
-      ? 'declined' 
-      : 'remained stable';
+  const verb =
+    overallStatus === 'improved'
+      ? 'improved'
+      : overallStatus === 'declined'
+        ? 'declined'
+        : 'remained stable';
 
   if (highlights.length === 0) {
     return `Work health ${verb} over the 30-day period`;
@@ -224,13 +228,13 @@ export async function computeWorkHealthDelta(teamId, options = {}) {
   // Fetch metrics for both periods
   const [baselineMetrics, currentMetrics] = await Promise.all([
     getMetricsForPeriod(teamId, baselineStart, baselineEnd),
-    getMetricsForPeriod(teamId, currentStart, currentEnd)
+    getMetricsForPeriod(teamId, currentStart, currentEnd),
   ]);
 
   // Enrich with Meeting ROI
   const [baselineROI, currentROI] = await Promise.all([
     getMeetingROIForPeriod(teamId, baselineStart, baselineEnd),
-    getMeetingROIForPeriod(teamId, currentStart, currentEnd)
+    getMeetingROIForPeriod(teamId, currentStart, currentEnd),
   ]);
 
   baselineMetrics.meetingROI = baselineROI;
@@ -240,10 +244,13 @@ export async function computeWorkHealthDelta(teamId, options = {}) {
   const deltas = {
     focusTime: calculateDelta(baselineMetrics.focusTimeHours, currentMetrics.focusTimeHours),
     meetingLoad: calculateDelta(baselineMetrics.meetingLoadHours, currentMetrics.meetingLoadHours),
-    fragmentation: calculateDelta(baselineMetrics.fragmentationIndex, currentMetrics.fragmentationIndex),
+    fragmentation: calculateDelta(
+      baselineMetrics.fragmentationIndex,
+      currentMetrics.fragmentationIndex
+    ),
     afterHours: calculateDelta(baselineMetrics.afterHoursHours, currentMetrics.afterHoursHours),
     loadBalance: calculateDelta(baselineMetrics.loadBalanceIndex, currentMetrics.loadBalanceIndex),
-    meetingROI: calculateDelta(baselineMetrics.meetingROI, currentMetrics.meetingROI)
+    meetingROI: calculateDelta(baselineMetrics.meetingROI, currentMetrics.meetingROI),
   };
 
   // Determine status for each metric
@@ -253,7 +260,7 @@ export async function computeWorkHealthDelta(teamId, options = {}) {
     fragmentation: determineDeltaStatus('fragmentation', deltas.fragmentation),
     afterHours: determineDeltaStatus('afterHours', deltas.afterHours),
     loadBalance: determineDeltaStatus('loadBalance', deltas.loadBalance),
-    meetingROI: determineDeltaStatus('meetingROI', deltas.meetingROI)
+    meetingROI: determineDeltaStatus('meetingROI', deltas.meetingROI),
   };
 
   // Overall verdict
@@ -264,29 +271,29 @@ export async function computeWorkHealthDelta(teamId, options = {}) {
     teamId,
     orgId: team.orgId,
     reportDate: now,
-    
+
     periodStart,
     periodEnd,
-    
+
     baseline: {
       periodStart: baselineStart,
       periodEnd: baselineEnd,
-      ...baselineMetrics
+      ...baselineMetrics,
     },
-    
+
     current: {
       periodStart: currentStart,
       periodEnd: currentEnd,
-      ...currentMetrics
+      ...currentMetrics,
     },
-    
+
     deltas,
     deltaStatus,
     overallStatus,
     summaryMessage,
-    
+
     pdfGenerated: false,
-    pdfUrl: null
+    pdfUrl: null,
   };
 }
 
@@ -300,8 +307,8 @@ export async function storeWorkHealthDelta(reportData) {
     teamId: reportData.teamId,
     reportDate: {
       $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      $lt: new Date(new Date().setHours(23, 59, 59, 999))
-    }
+      $lt: new Date(new Date().setHours(23, 59, 59, 999)),
+    },
   });
 
   if (existing) {
@@ -319,9 +326,7 @@ export async function storeWorkHealthDelta(reportData) {
  * @returns {Array} - Historical reports
  */
 export async function getWorkHealthDeltaHistory(teamId, count = 10) {
-  return WorkHealthDelta.find({ teamId })
-    .sort({ reportDate: -1 })
-    .limit(count);
+  return WorkHealthDelta.find({ teamId }).sort({ reportDate: -1 }).limit(count);
 }
 
 /**
@@ -351,44 +356,44 @@ export function formatReportForPDF(report) {
         baseline: `${report.baseline.focusTimeHours}h/day`,
         current: `${report.current.focusTimeHours}h/day`,
         delta: `${report.deltas.focusTime > 0 ? '+' : ''}${report.deltas.focusTime}%`,
-        status: report.deltaStatus.focusTime
+        status: report.deltaStatus.focusTime,
       },
       {
         name: 'Meeting Load',
         baseline: `${report.baseline.meetingLoadHours}h/week`,
         current: `${report.current.meetingLoadHours}h/week`,
         delta: `${report.deltas.meetingLoad > 0 ? '+' : ''}${report.deltas.meetingLoad}%`,
-        status: report.deltaStatus.meetingLoad
+        status: report.deltaStatus.meetingLoad,
       },
       {
         name: 'Fragmentation',
         baseline: `${report.baseline.fragmentationIndex} switches/day`,
         current: `${report.current.fragmentationIndex} switches/day`,
         delta: `${report.deltas.fragmentation > 0 ? '+' : ''}${report.deltas.fragmentation}%`,
-        status: report.deltaStatus.fragmentation
+        status: report.deltaStatus.fragmentation,
       },
       {
         name: 'After-Hours Work',
         baseline: `${report.baseline.afterHoursHours}h/week`,
         current: `${report.current.afterHoursHours}h/week`,
         delta: `${report.deltas.afterHours > 0 ? '+' : ''}${report.deltas.afterHours}%`,
-        status: report.deltaStatus.afterHours
+        status: report.deltaStatus.afterHours,
       },
       {
         name: 'Load Balance',
         baseline: `${report.baseline.loadBalanceIndex}/100`,
         current: `${report.current.loadBalanceIndex}/100`,
         delta: `${report.deltas.loadBalance > 0 ? '+' : ''}${report.deltas.loadBalance}%`,
-        status: report.deltaStatus.loadBalance
+        status: report.deltaStatus.loadBalance,
       },
       {
         name: 'Meeting ROI',
         baseline: `${report.baseline.meetingROI}/100`,
         current: `${report.current.meetingROI}/100`,
         delta: `${report.deltas.meetingROI > 0 ? '+' : ''}${report.deltas.meetingROI}%`,
-        status: report.deltaStatus.meetingROI
-      }
-    ]
+        status: report.deltaStatus.meetingROI,
+      },
+    ],
   };
 }
 
@@ -397,5 +402,5 @@ export default {
   storeWorkHealthDelta,
   getWorkHealthDeltaHistory,
   getLatestWorkHealthDelta,
-  formatReportForPDF
+  formatReportForPDF,
 };

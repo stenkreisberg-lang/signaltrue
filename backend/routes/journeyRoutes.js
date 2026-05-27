@@ -12,7 +12,7 @@ import {
   getOARTrendData,
   deleteJourneyEvent,
   updateJourneyEvent,
-  getNarrativeSummary
+  getNarrativeSummary,
 } from '../services/journeyService.js';
 
 const router = express.Router();
@@ -27,21 +27,21 @@ router.get('/timeline', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { teamId, limit = 50, offset = 0, types, startDate, endDate } = req.query;
-    
+
     const result = await getJourneyTimeline(orgId, {
       teamId: teamId || null,
       limit: parseInt(limit),
       offset: parseInt(offset),
       types: types ? types.split(',') : null,
       startDate,
-      endDate
+      endDate,
     });
-    
+
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     console.error('[Journey API] Error getting timeline:', error);
@@ -59,13 +59,13 @@ router.get('/summary', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { teamId } = req.query;
     const summary = await getJourneySummary(orgId, teamId || null);
-    
+
     res.json({
       success: true,
-      summary
+      summary,
     });
   } catch (error) {
     console.error('[Journey API] Error getting summary:', error);
@@ -83,16 +83,16 @@ router.get('/oar-trend', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { teamId, limit = 20 } = req.query;
     const trend = await getOARTrendData(orgId, {
       teamId: teamId || null,
-      limit: parseInt(limit)
+      limit: parseInt(limit),
     });
-    
+
     res.json({
       success: true,
-      dataPoints: trend
+      dataPoints: trend,
     });
   } catch (error) {
     console.error('[Journey API] Error getting OAR trend:', error);
@@ -110,12 +110,12 @@ router.get('/narrative', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const narrative = await getNarrativeSummary(orgId);
-    
+
     res.json({
       success: true,
-      ...narrative
+      ...narrative,
     });
   } catch (error) {
     console.error('[Journey API] Error getting narrative:', error);
@@ -133,13 +133,13 @@ router.post('/events', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { type, title, description, teamId, oarScore, impact, isHighlight } = req.body;
-    
+
     if (!type || !title) {
       return res.status(400).json({ message: 'Type and title are required' });
     }
-    
+
     const event = await createJourneyEvent({
       orgId,
       teamId: teamId || null,
@@ -149,13 +149,13 @@ router.post('/events', authenticateToken, async (req, res) => {
       oarScore,
       impact,
       isHighlight: isHighlight || false,
-      createdBy: req.user.userId
+      createdBy: req.user.userId,
     });
-    
+
     res.status(201).json({
       success: true,
       message: 'Journey event created',
-      event
+      event,
     });
   } catch (error) {
     console.error('[Journey API] Error creating event:', error);
@@ -173,13 +173,13 @@ router.put('/events/:id', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const event = await updateJourneyEvent(req.params.id, req.body, orgId);
-    
+
     res.json({
       success: true,
       message: 'Journey event updated',
-      event
+      event,
     });
   } catch (error) {
     console.error('[Journey API] Error updating event:', error);
@@ -200,16 +200,16 @@ router.delete('/events/:id', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const deleted = await deleteJourneyEvent(req.params.id, orgId);
-    
+
     if (!deleted) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    
+
     res.json({
       success: true,
-      message: 'Journey event deleted'
+      message: 'Journey event deleted',
     });
   } catch (error) {
     console.error('[Journey API] Error deleting event:', error);
@@ -226,17 +226,17 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
     const orgId = req.user.orgId;
     const { teamId } = req.params;
     const { limit = 30 } = req.query;
-    
+
     const [timeline, summary] = await Promise.all([
       getJourneyTimeline(orgId, { teamId, limit: parseInt(limit) }),
-      getJourneySummary(orgId, teamId)
+      getJourneySummary(orgId, teamId),
     ]);
-    
+
     res.json({
       success: true,
       teamId,
       timeline: timeline.events,
-      summary
+      summary,
     });
   } catch (error) {
     console.error('[Journey API] Error getting team journey:', error);
@@ -254,22 +254,22 @@ router.get('/highlights', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { limit = 10 } = req.query;
-    
+
     const JourneyEvent = (await import('../models/journeyEvent.js')).default;
     const highlights = await JourneyEvent.find({
       orgId,
-      isHighlight: true
+      isHighlight: true,
     })
       .populate('teamId', 'name')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .lean();
-    
+
     res.json({
       success: true,
-      highlights
+      highlights,
     });
   } catch (error) {
     console.error('[Journey API] Error getting highlights:', error);

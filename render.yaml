@@ -100,7 +100,7 @@ crons:
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
         -H "Content-Type: application/json" \
-        -d '{"secret":"signaltrue-reports-2026"}'
+        -H "x-report-secret: $REPORT_TRIGGER_SECRET"
     region: oregon
 
   - name: daily-reminders
@@ -108,5 +108,5 @@ crons:
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reminders/check-followups" \
         -H "Content-Type: application/json" \
-        -d '{"secret":"signaltrue-cron-2026"}'
+        -H "x-cron-secret: $CRON_SECRET"
     region: oregon

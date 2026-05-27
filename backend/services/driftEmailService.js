@@ -34,11 +34,16 @@ function extractFirstName(email) {
  */
 function getCategoryColor(category) {
   switch (category) {
-    case 'Critical Drift': return '#ff6b6b';
-    case 'Active Drift': return '#ffa726';
-    case 'Early Drift': return '#ffca28';
-    case 'Stable': return '#66bb6a';
-    default: return '#9e9e9e';
+    case 'Critical Drift':
+      return '#ff6b6b';
+    case 'Active Drift':
+      return '#ffa726';
+    case 'Early Drift':
+      return '#ffca28';
+    case 'Stable':
+      return '#66bb6a';
+    default:
+      return '#9e9e9e';
   }
 }
 
@@ -51,11 +56,12 @@ function generateReportEmailHTML(session) {
   const { score } = session;
   const reportLink = `${FRONTEND_URL}/drift-report/${session.sessionId}`;
   const categoryColor = getCategoryColor(score.category);
-  
-  const findingsHTML = score.findings.slice(0, 5).map(f => 
-    `<li style="margin-bottom: 8px; color: #555;">${f}</li>`
-  ).join('');
-  
+
+  const findingsHTML = score.findings
+    .slice(0, 5)
+    .map((f) => `<li style="margin-bottom: 8px; color: #555;">${f}</li>`)
+    .join('');
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -162,16 +168,16 @@ function generateReportEmailHTML(session) {
  */
 export async function sendDriftReportEmail(email, session) {
   const resend = getResendClient();
-  
+
   if (!resend) {
     console.log('[Drift Email] Resend client not configured, skipping email');
     return { success: false, reason: 'No email client configured' };
   }
-  
+
   try {
     const html = generateReportEmailHTML(session);
     const firstName = extractFirstName(email);
-    
+
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
@@ -180,23 +186,25 @@ export async function sendDriftReportEmail(email, session) {
       tags: [
         { name: 'category', value: 'workload-risk' },
         { name: 'email_sequence', value: 'email_1' },
-        { name: 'drift_category', value: session.score.category.replace(/\s+/g, '-').toLowerCase() }
-      ]
+        {
+          name: 'drift_category',
+          value: session.score.category.replace(/\s+/g, '-').toLowerCase(),
+        },
+      ],
     });
-    
+
     // CC superadmin for verification
     await ccSuperadmin({
       subject: 'Your Workload Risk Report (and what it means)',
       html,
       originalRecipient: email,
       reportType: 'drift_report',
-      orgName: email.split('@')[1] || 'Unknown'
+      orgName: email.split('@')[1] || 'Unknown',
     });
-    
+
     console.log(`[Drift Email] Report email sent to ${email}: ${result.id}`);
-    
+
     return { success: true, id: result.id };
-    
   } catch (error) {
     console.error('[Drift Email] Failed to send report email:', error);
     return { success: false, error: error.message };
@@ -208,16 +216,16 @@ export async function sendDriftReportEmail(email, session) {
  */
 export async function sendDriftLeadNotification(session) {
   const resend = getResendClient();
-  
+
   if (!resend) {
     console.log('[Drift Email] Resend client not configured, skipping internal notification');
     return { success: false, reason: 'No email client configured' };
   }
-  
+
   try {
     const { score, email, utm } = session;
     const emailDomain = email.split('@')[1];
-    
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -250,21 +258,29 @@ export async function sendDriftLeadNotification(session) {
       <td style="padding: 8px 16px 8px 0; color: #666; font-weight: 600;">Work Mode:</td>
       <td style="padding: 8px 0;">${session.answers.work_mode || 'N/A'}</td>
     </tr>
-    ${utm?.utm_source ? `
+    ${
+      utm?.utm_source
+        ? `
     <tr>
       <td style="padding: 8px 16px 8px 0; color: #666; font-weight: 600;">UTM Source:</td>
       <td style="padding: 8px 0;">${utm.utm_source}</td>
-    </tr>` : ''}
-    ${utm?.utm_campaign ? `
+    </tr>`
+        : ''
+    }
+    ${
+      utm?.utm_campaign
+        ? `
     <tr>
       <td style="padding: 8px 16px 8px 0; color: #666; font-weight: 600;">UTM Campaign:</td>
       <td style="padding: 8px 0;">${utm.utm_campaign}</td>
-    </tr>` : ''}
+    </tr>`
+        : ''
+    }
   </table>
   
   <h3>Key Findings:</h3>
   <ul>
-    ${score.findings.map(f => `<li>${f}</li>`).join('')}
+    ${score.findings.map((f) => `<li>${f}</li>`).join('')}
   </ul>
   
   <p style="color: #666; font-size: 12px; margin-top: 30px;">
@@ -273,18 +289,17 @@ export async function sendDriftLeadNotification(session) {
   </p>
 </body>
 </html>`;
-    
+
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: INTERNAL_NOTIFICATION_EMAIL,
       subject: `[Drift Lead] ${email} - ${score.category} (${score.totalScore})`,
-      html
+      html,
     });
-    
+
     console.log(`[Drift Email] Internal notification sent: ${result.id}`);
-    
+
     return { success: true, id: result.id };
-    
   } catch (error) {
     console.error('[Drift Email] Failed to send internal notification:', error);
     return { success: false, error: error.message };
@@ -298,7 +313,7 @@ export function generateEmail2HTML(session) {
   const firstName = extractFirstName(session.email);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
   const reportLink = `${FRONTEND_URL}/drift-report/${session.sessionId}`;
-  
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -361,7 +376,7 @@ export function generateEmail3HTML(session) {
   const firstName = extractFirstName(session.email);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
   const reportLink = `${FRONTEND_URL}/drift-report/${session.sessionId}`;
-  
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -429,7 +444,7 @@ export function generateEmail4HTML(session) {
   const firstName = extractFirstName(session.email);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
   const reportLink = `${FRONTEND_URL}/drift-report/${session.sessionId}`;
-  
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -493,7 +508,7 @@ export function generateEmail4HTML(session) {
 export function generateEmail5HTML(session) {
   const firstName = extractFirstName(session.email);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
-  
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -549,5 +564,5 @@ export default {
   generateEmail2HTML,
   generateEmail3HTML,
   generateEmail4HTML,
-  generateEmail5HTML
+  generateEmail5HTML,
 };

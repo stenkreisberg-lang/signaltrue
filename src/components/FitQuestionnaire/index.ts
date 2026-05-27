@@ -2,11 +2,11 @@
 export { default } from './FitQuestionnaire';
 export { useQuestionnaire } from './useQuestionnaire';
 export { questions, calculateResult } from './questionnaireData';
-export type { 
-  Question, 
-  QuestionOption, 
-  QuestionnaireAnswer, 
-  QuestionnaireResult, 
+export type {
+  Question,
+  QuestionOption,
+  QuestionnaireAnswer,
+  QuestionnaireResult,
   QuestionnaireSubmission,
-  FitTier 
+  FitTier,
 } from './types';

@@ -12,23 +12,12 @@ export default function CrisisAlertBanner({ orgId }) {
   const [crises, setCrises] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!orgId) return;
-    
-    fetchCrises();
-    
-    // Poll every 30 seconds for real-time updates
-    const interval = setInterval(fetchCrises, 30000);
-    return () => clearInterval(interval);
-  }, [orgId]);
-
   const fetchCrises = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${API_URL}/api/intelligence/crisis/${orgId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get(`${API_URL}/api/intelligence/crisis/${orgId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setCrises(response.data.crises || []);
       setLoading(false);
     } catch (error) {
@@ -36,6 +25,16 @@ export default function CrisisAlertBanner({ orgId }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    fetchCrises();
+
+    // Poll every 30 seconds for real-time updates
+    const interval = setInterval(fetchCrises, 30000);
+    return () => clearInterval(interval);
+  }, [orgId]);
 
   const handleAcknowledge = async (crisisId) => {
     try {
@@ -74,7 +73,7 @@ export default function CrisisAlertBanner({ orgId }) {
 
   return (
     <div style={styles.container}>
-      {crises.map(crisis => (
+      {crises.map((crisis) => (
         <div key={crisis._id} style={getSeverityStyle(crisis.severity)}>
           <div style={styles.content}>
             <div style={styles.icon}>🚨</div>
@@ -82,28 +81,20 @@ export default function CrisisAlertBanner({ orgId }) {
               <div style={styles.title}>
                 {getCrisisTitle(crisis.crisisType)} - {crisis.teamId?.name || 'Team'}
               </div>
-              <div style={styles.description}>
-                {crisis.description}
-              </div>
+              <div style={styles.description}>{crisis.description}</div>
               <div style={styles.meta}>
-                Severity: <strong>{crisis.severity}</strong> | 
-                Confidence: <strong>{crisis.confidence}%</strong> | 
-                Detected: {new Date(crisis.detectedAt).toLocaleString()}
+                Severity: <strong>{crisis.severity}</strong> | Confidence:{' '}
+                <strong>{crisis.confidence}%</strong> | Detected:{' '}
+                {new Date(crisis.detectedAt).toLocaleString()}
               </div>
             </div>
             <div style={styles.actions}>
               {!crisis.acknowledgedAt && (
-                <button
-                  onClick={() => handleAcknowledge(crisis._id)}
-                  style={styles.btnAcknowledge}
-                >
+                <button onClick={() => handleAcknowledge(crisis._id)} style={styles.btnAcknowledge}>
                   Acknowledge
                 </button>
               )}
-              <button
-                onClick={() => handleResolve(crisis._id)}
-                style={styles.btnResolve}
-              >
+              <button onClick={() => handleResolve(crisis._id)} style={styles.btnResolve}>
                 Mark Resolved
               </button>
             </div>
@@ -119,14 +110,14 @@ function getCrisisTitle(type) {
     'team-collapse': '⚠️ Team Collapse Detected',
     'mass-exodus': '🚪 Mass Exodus Warning',
     'sudden-silence': '🔇 Sudden Communication Silence',
-    'conflict-spike': '💥 Conflict Spike Detected'
+    'conflict-spike': '💥 Conflict Spike Detected',
   };
   return titles[type] || '⚠️ Crisis Alert';
 }
 
 function getSeverityStyle(severity) {
   const base = { ...styles.alert };
-  
+
   if (severity === 'critical') {
     return { ...base, ...styles.critical };
   } else if (severity === 'high') {

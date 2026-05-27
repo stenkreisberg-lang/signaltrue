@@ -1,9 +1,10 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import ApiKey from '../models/apiKey.js';
 import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
+router.use('/admin', authenticateToken, requireMasterAdmin);
 
 // GET /api/admin/api-keys - List all API keys for org
 router.get('/admin/api-keys', authenticateToken, async (req, res) => {
@@ -11,7 +12,17 @@ router.get('/admin/api-keys', authenticateToken, async (req, res) => {
     const orgId = req.user?.orgId;
     if (!orgId) return res.status(400).json({ message: 'Missing orgId' });
     const keys = await ApiKey.find({ orgId }).sort({ createdAt: -1 });
-    res.json(keys.map(k => ({ id: k._id, name: k.name, lastUsed: k.lastUsed, usageCount: k.usageCount, active: k.active, createdAt: k.createdAt, expiresAt: k.expiresAt })));
+    res.json(
+      keys.map((k) => ({
+        id: k._id,
+        name: k.name,
+        lastUsed: k.lastUsed,
+        usageCount: k.usageCount,
+        active: k.active,
+        createdAt: k.createdAt,
+        expiresAt: k.expiresAt,
+      }))
+    );
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -25,7 +36,12 @@ router.post('/admin/api-keys', authenticateToken, async (req, res) => {
     const { name, expiresAt } = req.body;
     if (!name) return res.status(400).json({ message: 'Name required' });
     const { key, hash } = ApiKey.generateKey();
-    const apiKey = await ApiKey.create({ orgId, name, keyHash: hash, expiresAt: expiresAt ? new Date(expiresAt) : null });
+    const apiKey = await ApiKey.create({
+      orgId,
+      name,
+      keyHash: hash,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    });
     res.json({ id: apiKey._id, key, name: apiKey.name, createdAt: apiKey.createdAt });
   } catch (e) {
     res.status(500).json({ message: e.message });

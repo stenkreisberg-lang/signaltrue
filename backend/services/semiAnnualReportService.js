@@ -33,8 +33,14 @@ export function getHalfBounds(date = new Date(), halfOffset = 0) {
   const targetHalf = halfNumber + halfOffset;
   let adjustedYear = year;
   let adjustedH = targetHalf;
-  while (adjustedH < 1) { adjustedH += 2; adjustedYear -= 1; }
-  while (adjustedH > 2) { adjustedH -= 2; adjustedYear += 1; }
+  while (adjustedH < 1) {
+    adjustedH += 2;
+    adjustedYear -= 1;
+  }
+  while (adjustedH > 2) {
+    adjustedH -= 2;
+    adjustedYear += 1;
+  }
 
   const startMonth = adjustedH === 1 ? 0 : 6; // Jan or Jul
   const endMonth = adjustedH === 1 ? 5 : 11; // Jun or Dec
@@ -107,7 +113,8 @@ function aggregateQuartersIntoHalfSnapshot(quarterlyReports, halfLabel, halfStar
     quarterLabel: q.quarterLabel,
     avgBDI: q.current?.avgBDI,
     teamWeeksAtRisk: q.current?.teamWeeksAtRisk,
-    organizationalTrajectory: q.current?.organizationalTrajectory || q.aiSummary?.organizationalTrajectory,
+    organizationalTrajectory:
+      q.current?.organizationalTrajectory || q.aiSummary?.organizationalTrajectory,
   }));
 
   // Structural risks: appeared in both quarters
@@ -115,7 +122,12 @@ function aggregateQuartersIntoHalfSnapshot(quarterlyReports, halfLabel, halfStar
   for (const q of sorted) {
     for (const r of q.current?.persistentRisks || []) {
       if (!riskCounts[r.riskType]) {
-        riskCounts[r.riskType] = { riskType: r.riskType, quartersPresent: 0, scores: [], teamCounts: [] };
+        riskCounts[r.riskType] = {
+          riskType: r.riskType,
+          quartersPresent: 0,
+          scores: [],
+          teamCounts: [],
+        };
       }
       riskCounts[r.riskType].quartersPresent++;
       riskCounts[r.riskType].scores.push(r.avgScore || 0);
@@ -134,7 +146,11 @@ function aggregateQuartersIntoHalfSnapshot(quarterlyReports, halfLabel, halfStar
   const managerScores = sorted.map((q) => q.current?.managerEffectivenessAvg).filter(Boolean);
   const managerEffectivenessAvg =
     managerScores.length > 0 ? managerScores.reduce((a, b) => a + b, 0) / managerScores.length : 0;
-  const managerEffectivenessTrend = calcTrend(managerScores[0], managerScores[managerScores.length - 1], false);
+  const managerEffectivenessTrend = calcTrend(
+    managerScores[0],
+    managerScores[managerScores.length - 1],
+    false
+  );
 
   // Equity
   const equityScores = sorted.map((q) => q.current?.equityScoreAvg).filter(Boolean);
@@ -143,13 +159,17 @@ function aggregateQuartersIntoHalfSnapshot(quarterlyReports, halfLabel, halfStar
 
   // Attrition
   const attrValues = sorted.map((q) => q.current?.avgAttritionRisk).filter((v) => v != null);
-  const avgAttritionRisk = attrValues.length > 0 ? attrValues.reduce((a, b) => a + b, 0) / attrValues.length : 0;
+  const avgAttritionRisk =
+    attrValues.length > 0 ? attrValues.reduce((a, b) => a + b, 0) / attrValues.length : 0;
   const peakAttritionRisk = attrValues.length > 0 ? Math.max(...attrValues) : 0;
-  const criticalIndividualsPeak = Math.max(...sorted.map((q) => q.current?.criticalIndividualsPeak || 0));
+  const criticalIndividualsPeak = Math.max(
+    ...sorted.map((q) => q.current?.criticalIndividualsPeak || 0)
+  );
 
   // Execution
   const dragValues = sorted.map((q) => q.current?.executionDragAvg).filter((v) => v != null);
-  const executionDragAvg = dragValues.length > 0 ? dragValues.reduce((a, b) => a + b, 0) / dragValues.length : 0;
+  const executionDragAvg =
+    dragValues.length > 0 ? dragValues.reduce((a, b) => a + b, 0) / dragValues.length : 0;
 
   const totalCrises = sorted.reduce((s, q) => s + (q.current?.totalCrises || 0), 0);
 
@@ -211,14 +231,22 @@ function aggregateMonthsIntoHalfSnapshot(monthlyReports, halfLabel, halfStart, h
 
   const teamWeeksAtRisk = sorted.reduce(
     (s, m) =>
-      s + (m.orgHealth?.zoneDistribution?.stretched || 0) + (m.orgHealth?.zoneDistribution?.critical || 0),
+      s +
+      (m.orgHealth?.zoneDistribution?.stretched || 0) +
+      (m.orgHealth?.zoneDistribution?.critical || 0),
     0
   );
 
   const riskCounts = {};
   for (const m of sorted) {
     for (const r of m.persistentRisks || []) {
-      if (!riskCounts[r.riskType]) riskCounts[r.riskType] = { riskType: r.riskType, quartersPresent: 0, scores: [], teamCounts: [] };
+      if (!riskCounts[r.riskType])
+        riskCounts[r.riskType] = {
+          riskType: r.riskType,
+          quartersPresent: 0,
+          scores: [],
+          teamCounts: [],
+        };
       riskCounts[r.riskType].quartersPresent++;
       riskCounts[r.riskType].scores.push(r.avgScore || 0);
       riskCounts[r.riskType].teamCounts.push(r.affectedTeams?.length || 0);
@@ -231,20 +259,36 @@ function aggregateMonthsIntoHalfSnapshot(monthlyReports, halfLabel, halfStart, h
     affectedTeamCount: Math.round(r.teamCounts.reduce((a, b) => a + b, 0) / r.teamCounts.length),
   }));
 
-  const managerScores = sorted.map((m) => m.leadershipSignals?.managerEffectiveness?.avgScore).filter(Boolean);
-  const managerEffectivenessAvg = managerScores.length > 0 ? managerScores.reduce((a, b) => a + b, 0) / managerScores.length : 0;
-  const managerEffectivenessTrend = calcTrend(managerScores[0], managerScores[managerScores.length - 1], false);
+  const managerScores = sorted
+    .map((m) => m.leadershipSignals?.managerEffectiveness?.avgScore)
+    .filter(Boolean);
+  const managerEffectivenessAvg =
+    managerScores.length > 0 ? managerScores.reduce((a, b) => a + b, 0) / managerScores.length : 0;
+  const managerEffectivenessTrend = calcTrend(
+    managerScores[0],
+    managerScores[managerScores.length - 1],
+    false
+  );
 
   const equityScores = sorted.map((m) => m.leadershipSignals?.equityScoreAvg).filter(Boolean);
-  const equityScoreAvg = equityScores.length > 0 ? equityScores.reduce((a, b) => a + b, 0) / equityScores.length : 100;
+  const equityScoreAvg =
+    equityScores.length > 0 ? equityScores.reduce((a, b) => a + b, 0) / equityScores.length : 100;
 
-  const attrValues = sorted.map((m) => m.retentionExposure?.avgAttritionRisk).filter((v) => v != null);
-  const avgAttritionRisk = attrValues.length > 0 ? attrValues.reduce((a, b) => a + b, 0) / attrValues.length : 0;
+  const attrValues = sorted
+    .map((m) => m.retentionExposure?.avgAttritionRisk)
+    .filter((v) => v != null);
+  const avgAttritionRisk =
+    attrValues.length > 0 ? attrValues.reduce((a, b) => a + b, 0) / attrValues.length : 0;
   const peakAttritionRisk = attrValues.length > 0 ? Math.max(...attrValues) : 0;
-  const criticalIndividualsPeak = Math.max(...sorted.map((m) => m.retentionExposure?.criticalIndividualsCount || 0));
+  const criticalIndividualsPeak = Math.max(
+    ...sorted.map((m) => m.retentionExposure?.criticalIndividualsCount || 0)
+  );
 
-  const dragValues = sorted.map((m) => m.executionSignals?.executionDragAvg).filter((v) => v != null);
-  const executionDragAvg = dragValues.length > 0 ? dragValues.reduce((a, b) => a + b, 0) / dragValues.length : 0;
+  const dragValues = sorted
+    .map((m) => m.executionSignals?.executionDragAvg)
+    .filter((v) => v != null);
+  const executionDragAvg =
+    dragValues.length > 0 ? dragValues.reduce((a, b) => a + b, 0) / dragValues.length : 0;
 
   const totalCrises = sorted.reduce((s, m) => s + (m.crisisPatterns?.totalCrises || 0), 0);
 
@@ -310,7 +354,11 @@ async function generateSemiAnnualAINarrative({
 
     const quarterBreakdownText =
       current.quarterBreakdown?.length > 0
-        ? current.quarterBreakdown.map((q) => `${q.quarterLabel}: BDI ${q.avgBDI}, ${q.teamWeeksAtRisk} team-weeks at risk`).join(' | ')
+        ? current.quarterBreakdown
+            .map(
+              (q) => `${q.quarterLabel}: BDI ${q.avgBDI}, ${q.teamWeeksAtRisk} team-weeks at risk`
+            )
+            .join(' | ')
         : 'No quarter breakdown available';
 
     const prompt = `You are a Chief People Officer preparing a semi-annual organizational health summary for the board and CEO. Be precise, evidence-based, and direct. Focus on structural patterns, not individual weeks.
@@ -365,10 +413,14 @@ Write the following JSON object (no markdown, no code blocks):
     return {
       executiveSummary: `Semi-annual report for ${halfLabel}. Average BDI: ${current.avgBDI}/100. Trajectory: ${current.organizationalTrajectory}.`,
       narrative: `This report covers ${halfLabel}. The organization's average BDI was ${current.avgBDI}/100 with a ${current.bdiTrend} trend. ${current.teamWeeksAtRisk} team-weeks were spent in Watch or Critical zones.`,
-      halfVsPriorHalf: priorHalf ? `Prior half BDI was ${priorHalf.avgBDI} vs ${current.avgBDI} this half.` : 'No prior half data available.',
+      halfVsPriorHalf: priorHalf
+        ? `Prior half BDI was ${priorHalf.avgBDI} vs ${current.avgBDI} this half.`
+        : 'No prior half data available.',
       yearOnYearInsight: null,
       seasonalPatterns: [],
-      structuralConditions: current.structuralRisks.filter((r) => r.quartersPresent >= 2).map((r) => r.riskType),
+      structuralConditions: current.structuralRisks
+        .filter((r) => r.quartersPresent >= 2)
+        .map((r) => r.riskType),
       resolvedConditions: [],
       headcountAndCapacityInsights: [],
       leadershipDecisionsRequired: [],
@@ -380,11 +432,25 @@ Write the following JSON object (no markdown, no code blocks):
 // ── Email HTML ────────────────────────────────────────────────────────────────
 
 function generateSemiAnnualEmailHTML({ org, report }) {
-  const { current, priorHalf, sameHalfPriorYear, deltasVsPriorHalf, deltasVsPriorYear, aiSummary, halfLabel, periodStart, periodEnd } = report;
+  const {
+    current,
+    priorHalf,
+    sameHalfPriorYear,
+    deltasVsPriorHalf,
+    deltasVsPriorYear,
+    aiSummary,
+    halfLabel,
+    periodStart,
+    periodEnd,
+  } = report;
 
-  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtDate = (d) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const bdiColor = current.avgBDI < 35 ? '#22c55e' : current.avgBDI < 60 ? '#f59e0b' : '#ef4444';
-  const trajectoryEmoji = { positive: '🟢', stable: '🔵', concerning: '🟡', critical: '🔴' }[aiSummary.organizationalTrajectory] || '🔵';
+  const trajectoryEmoji =
+    { positive: '🟢', stable: '🔵', concerning: '🟡', critical: '🔴' }[
+      aiSummary.organizationalTrajectory
+    ] || '🔵';
 
   const deltaRow = (label, delta, lowerIsBetter = true) => {
     if (delta == null) return '';
@@ -455,22 +521,32 @@ function generateSemiAnnualEmailHTML({ org, report }) {
     </table>
 
     <!-- Quarter breakdown -->
-    ${current.quarterBreakdown?.length > 0 ? `
+    ${
+      current.quarterBreakdown?.length > 0
+        ? `
     <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px; margin-bottom:24px;">
       <div style="font-size:12px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Quarter Breakdown</div>
       <table style="border-collapse:collapse; width:100%;">
-        ${current.quarterBreakdown.map((q) => `
+        ${current.quarterBreakdown
+          .map(
+            (q) => `
         <tr>
           <td style="padding:5px 8px; font-size:13px; font-weight:600; color:#374151;">${q.quarterLabel}</td>
           <td style="padding:5px 8px; font-size:13px; color:#4b5563;">BDI ${q.avgBDI}</td>
           <td style="padding:5px 8px; font-size:13px; color:#4b5563;">${q.teamWeeksAtRisk} team-weeks at risk</td>
           <td style="padding:5px 8px; font-size:12px; text-align:right; text-transform:capitalize; color:${{ positive: '#22c55e', stable: '#6366f1', concerning: '#f59e0b', critical: '#ef4444' }[q.organizationalTrajectory] || '#9ca3af'}; font-weight:600;">${q.organizationalTrajectory || '—'}</td>
-        </tr>`).join('')}
+        </tr>`
+          )
+          .join('')}
       </table>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
 
     <!-- vs Prior Half delta table -->
-    ${priorHalf ? `
+    ${
+      priorHalf
+        ? `
     <div style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; margin-bottom:24px;">
       <div style="background:#f8fafc; padding:10px 16px; border-bottom:1px solid #e5e7eb;">
         <span style="font-size:13px; font-weight:600; color:#374151;">Changes vs Prior Half (${priorHalf.halfLabel || 'prior'})</span>
@@ -482,59 +558,104 @@ function generateSemiAnnualEmailHTML({ org, report }) {
         ${deltaRow('Execution Drag', deltasVsPriorHalf?.executionDragDelta, true)}
         ${deltaRow('Manager Effectiveness', deltasVsPriorHalf?.managerEffectivenessDelta, false)}
       </table>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
 
     <!-- YoY comparison (if available) -->
-    ${sameHalfPriorYear && deltasVsPriorYear?.yoyDataAvailable ? `
+    ${
+      sameHalfPriorYear && deltasVsPriorYear?.yoyDataAvailable
+        ? `
     <div style="background:#fefce8; border:1px solid #fde68a; border-radius:8px; padding:14px 16px; margin-bottom:24px;">
       <div style="font-size:12px; font-weight:600; color:#92400e; margin-bottom:6px;">Year-on-Year (vs ${sameHalfPriorYear.halfLabel})</div>
       <p style="font-size:13px; color:#78350f; margin:0; line-height:1.6;">${aiSummary.yearOnYearInsight || 'See narrative below.'}</p>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
 
     <!-- Narrative -->
     <div style="margin-bottom:24px;">
       <h2 style="color:#111827; font-size:17px; font-weight:700; margin:0 0 12px;">Strategic Narrative</h2>
-      ${aiSummary.narrative.split('\n\n').filter(Boolean).map((p) => `<p style="color:#4b5563; font-size:14px; line-height:1.7; margin:0 0 12px;">${p}</p>`).join('')}
+      ${aiSummary.narrative
+        .split('\n\n')
+        .filter(Boolean)
+        .map(
+          (p) =>
+            `<p style="color:#4b5563; font-size:14px; line-height:1.7; margin:0 0 12px;">${p}</p>`
+        )
+        .join('')}
     </div>
 
     <!-- Structural conditions -->
-    ${aiSummary.structuralConditions?.length > 0 ? `
+    ${
+      aiSummary.structuralConditions?.length > 0
+        ? `
     <div style="margin-bottom:24px;">
       <h2 style="color:#111827; font-size:17px; font-weight:700; margin:0 0 12px;">Structural Conditions</h2>
-      ${aiSummary.structuralConditions.map((c) => `
+      ${aiSummary.structuralConditions
+        .map(
+          (c) => `
       <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:6px;">
         <span style="color:#ef4444; font-size:14px; margin-top:1px;">⚠</span>
         <span style="font-size:13px; color:#4b5563;">${c}</span>
-      </div>`).join('')}
-    </div>` : ''}
+      </div>`
+        )
+        .join('')}
+    </div>`
+        : ''
+    }
 
     <!-- Headcount & capacity insights -->
-    ${aiSummary.headcountAndCapacityInsights?.length > 0 ? `
+    ${
+      aiSummary.headcountAndCapacityInsights?.length > 0
+        ? `
     <div style="margin-bottom:24px;">
       <h2 style="color:#111827; font-size:17px; font-weight:700; margin:0 0 12px;">Headcount & Capacity Insights</h2>
-      ${aiSummary.headcountAndCapacityInsights.map((i) => `
+      ${aiSummary.headcountAndCapacityInsights
+        .map(
+          (i) => `
       <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:6px;">
         <span style="color:#6366f1; font-size:14px; margin-top:1px;">→</span>
         <span style="font-size:13px; color:#4b5563;">${i}</span>
-      </div>`).join('')}
-    </div>` : ''}
+      </div>`
+        )
+        .join('')}
+    </div>`
+        : ''
+    }
 
     <!-- Leadership decisions -->
-    ${aiSummary.leadershipDecisionsRequired?.length > 0 ? `
+    ${
+      aiSummary.leadershipDecisionsRequired?.length > 0
+        ? `
     <div style="margin-bottom:24px;">
       <h2 style="color:#111827; font-size:17px; font-weight:700; margin:0 0 12px;">Leadership Decisions Required</h2>
-      ${aiSummary.leadershipDecisionsRequired.map((a) => {
-        const urgencyColor = a.urgency === 'immediate' ? '#ef4444' : a.urgency === 'this-half' ? '#f59e0b' : '#6366f1';
-        const urgencyLabel = a.urgency === 'immediate' ? 'Immediate' : a.urgency === 'this-half' ? 'This Half' : 'Strategic';
-        return `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px; margin-bottom:8px;">
+      ${aiSummary.leadershipDecisionsRequired
+        .map((a) => {
+          const urgencyColor =
+            a.urgency === 'immediate'
+              ? '#ef4444'
+              : a.urgency === 'this-half'
+                ? '#f59e0b'
+                : '#6366f1';
+          const urgencyLabel =
+            a.urgency === 'immediate'
+              ? 'Immediate'
+              : a.urgency === 'this-half'
+                ? 'This Half'
+                : 'Strategic';
+          return `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px; margin-bottom:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
             <span style="font-size:13px; font-weight:600; color:#111827;">${a.decision}</span>
             <span style="font-size:11px; font-weight:600; color:${urgencyColor}; background:${urgencyColor}18; padding:2px 8px; border-radius:20px;">${urgencyLabel}</span>
           </div>
           <div style="font-size:12px; color:#6b7280;">${a.rationale}</div>
         </div>`;
-      }).join('')}
-    </div>` : ''}
+        })
+        .join('')}
+    </div>`
+        : ''
+    }
 
   </div>
 
@@ -555,13 +676,16 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
   // Determine which half just ended
   const currentH = getHalfBounds(referenceDate, 0);
   const dayOfHalf = Math.floor((referenceDate - currentH.start) / (1000 * 60 * 60 * 24));
-  const reportH = dayOfHalf <= 1 ? getHalfBounds(referenceDate, -1) : getHalfBounds(referenceDate, 0);
+  const reportH =
+    dayOfHalf <= 1 ? getHalfBounds(referenceDate, -1) : getHalfBounds(referenceDate, 0);
   const priorH = getHalfBounds(new Date(reportH.start.getTime() - 1), 0);
 
   // Same half, one year ago
   const priorYearH = {
     start: new Date(Date.UTC(reportH.year - 1, reportH.halfNumber === 1 ? 0 : 6, 1)),
-    end: new Date(Date.UTC(reportH.year - 1, reportH.halfNumber === 1 ? 5 : 11 + 1, 0, 23, 59, 59, 999)),
+    end: new Date(
+      Date.UTC(reportH.year - 1, reportH.halfNumber === 1 ? 5 : 11 + 1, 0, 23, 59, 59, 999)
+    ),
     label: `${reportH.year - 1}-H${reportH.halfNumber}`,
   };
 
@@ -579,7 +703,10 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
   // Try quarterly reports first
   const currentQReports = await QuarterlyReport.find({
     orgId,
-    periodEnd: { $gte: reportH.start, $lte: new Date(reportH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+    periodEnd: {
+      $gte: reportH.start,
+      $lte: new Date(reportH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+    },
   }).sort({ periodEnd: 1 });
 
   // Fallback to monthly reports if no quarterly available
@@ -587,40 +714,57 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
     currentQReports.length === 0
       ? await MonthlyReport.find({
           orgId,
-          periodEnd: { $gte: reportH.start, $lte: new Date(reportH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+          periodEnd: {
+            $gte: reportH.start,
+            $lte: new Date(reportH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+          },
         }).sort({ periodEnd: 1 })
       : [];
 
   // Guard: insufficient data
   const totalDataPoints = currentQReports.length + currentMReports.length;
   if (totalDataPoints < 2) {
-    console.log(`[SemiAnnualReport] ⚠️ Only ${totalDataPoints} data point(s) for ${reportH.label} — need ≥2. Skipping.`);
+    console.log(
+      `[SemiAnnualReport] ⚠️ Only ${totalDataPoints} data point(s) for ${reportH.label} — need ≥2. Skipping.`
+    );
     return null;
   }
 
   // Prior half
   const priorQReports = await QuarterlyReport.find({
     orgId,
-    periodEnd: { $gte: priorH.start, $lte: new Date(priorH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+    periodEnd: {
+      $gte: priorH.start,
+      $lte: new Date(priorH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+    },
   }).sort({ periodEnd: 1 });
   const priorMReports =
     priorQReports.length === 0
       ? await MonthlyReport.find({
           orgId,
-          periodEnd: { $gte: priorH.start, $lte: new Date(priorH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+          periodEnd: {
+            $gte: priorH.start,
+            $lte: new Date(priorH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+          },
         }).sort({ periodEnd: 1 })
       : [];
 
   // Prior year same half
   const priorYearQReports = await QuarterlyReport.find({
     orgId,
-    periodEnd: { $gte: priorYearH.start, $lte: new Date(priorYearH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+    periodEnd: {
+      $gte: priorYearH.start,
+      $lte: new Date(priorYearH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+    },
   }).sort({ periodEnd: 1 });
   const priorYearMReports =
     priorYearQReports.length === 0
       ? await MonthlyReport.find({
           orgId,
-          periodEnd: { $gte: priorYearH.start, $lte: new Date(priorYearH.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+          periodEnd: {
+            $gte: priorYearH.start,
+            $lte: new Date(priorYearH.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+          },
         }).sort({ periodEnd: 1 })
       : [];
 
@@ -628,40 +772,77 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
 
   const currentSnapshot =
     currentQReports.length > 0
-      ? aggregateQuartersIntoHalfSnapshot(currentQReports, reportH.label, reportH.start, reportH.end)
+      ? aggregateQuartersIntoHalfSnapshot(
+          currentQReports,
+          reportH.label,
+          reportH.start,
+          reportH.end
+        )
       : aggregateMonthsIntoHalfSnapshot(currentMReports, reportH.label, reportH.start, reportH.end);
 
   const priorSnapshot =
     priorQReports.length >= 1
       ? aggregateQuartersIntoHalfSnapshot(priorQReports, priorH.label, priorH.start, priorH.end)
       : priorMReports.length >= 2
-      ? aggregateMonthsIntoHalfSnapshot(priorMReports, priorH.label, priorH.start, priorH.end)
-      : null;
+        ? aggregateMonthsIntoHalfSnapshot(priorMReports, priorH.label, priorH.start, priorH.end)
+        : null;
 
   const priorYearSnapshot =
     priorYearQReports.length >= 1
-      ? aggregateQuartersIntoHalfSnapshot(priorYearQReports, priorYearH.label, priorYearH.start, priorYearH.end)
+      ? aggregateQuartersIntoHalfSnapshot(
+          priorYearQReports,
+          priorYearH.label,
+          priorYearH.start,
+          priorYearH.end
+        )
       : priorYearMReports.length >= 2
-      ? aggregateMonthsIntoHalfSnapshot(priorYearMReports, priorYearH.label, priorYearH.start, priorYearH.end)
-      : null;
+        ? aggregateMonthsIntoHalfSnapshot(
+            priorYearMReports,
+            priorYearH.label,
+            priorYearH.start,
+            priorYearH.end
+          )
+        : null;
 
   // ── Deltas ───────────────────────────────────────────────────────────────────
 
   let deltasVsPriorHalf = null;
   if (priorSnapshot) {
     const bdiDelta = safeDelta(currentSnapshot.avgBDI, priorSnapshot.avgBDI);
-    const attritionRiskDelta = safeDelta(currentSnapshot.avgAttritionRisk, priorSnapshot.avgAttritionRisk);
-    const executionDragDelta = safeDelta(currentSnapshot.executionDragAvg, priorSnapshot.executionDragAvg);
-    const managerEffectivenessDelta = safeDelta(currentSnapshot.managerEffectivenessAvg, priorSnapshot.managerEffectivenessAvg);
-    const teamWeeksAtRiskDelta = safeDelta(currentSnapshot.teamWeeksAtRisk, priorSnapshot.teamWeeksAtRisk);
-    const improvingCount = [bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter((d) => d != null && d < -2).length;
-    const worseningCount = [bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter((d) => d != null && d > 2).length;
+    const attritionRiskDelta = safeDelta(
+      currentSnapshot.avgAttritionRisk,
+      priorSnapshot.avgAttritionRisk
+    );
+    const executionDragDelta = safeDelta(
+      currentSnapshot.executionDragAvg,
+      priorSnapshot.executionDragAvg
+    );
+    const managerEffectivenessDelta = safeDelta(
+      currentSnapshot.managerEffectivenessAvg,
+      priorSnapshot.managerEffectivenessAvg
+    );
+    const teamWeeksAtRiskDelta = safeDelta(
+      currentSnapshot.teamWeeksAtRisk,
+      priorSnapshot.teamWeeksAtRisk
+    );
+    const improvingCount = [bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter(
+      (d) => d != null && d < -2
+    ).length;
+    const worseningCount = [bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter(
+      (d) => d != null && d > 2
+    ).length;
     let overallDirection = 'stable';
     if (improvingCount >= 2) overallDirection = 'improving';
     else if (worseningCount >= 2) overallDirection = 'deteriorating';
-    const maxAbs = Math.max(...([bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter((d) => d != null).map(Math.abs)));
+    const maxAbs = Math.max(
+      ...[bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter((d) => d != null).map(Math.abs)
+    );
     deltasVsPriorHalf = {
-      bdiDelta, attritionRiskDelta, executionDragDelta, managerEffectivenessDelta, teamWeeksAtRiskDelta,
+      bdiDelta,
+      attritionRiskDelta,
+      executionDragDelta,
+      managerEffectivenessDelta,
+      teamWeeksAtRiskDelta,
       overallDirection,
       overallDirectionStrength: maxAbs > 10 ? 'strong' : maxAbs > 4 ? 'moderate' : 'weak',
     };
@@ -670,14 +851,26 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
   let deltasVsPriorYear = { yoyDataAvailable: false };
   if (priorYearSnapshot) {
     const bdiDelta = safeDelta(currentSnapshot.avgBDI, priorYearSnapshot.avgBDI);
-    const attritionRiskDelta = safeDelta(currentSnapshot.avgAttritionRisk, priorYearSnapshot.avgAttritionRisk);
-    const executionDragDelta = safeDelta(currentSnapshot.executionDragAvg, priorYearSnapshot.executionDragAvg);
+    const attritionRiskDelta = safeDelta(
+      currentSnapshot.avgAttritionRisk,
+      priorYearSnapshot.avgAttritionRisk
+    );
+    const executionDragDelta = safeDelta(
+      currentSnapshot.executionDragAvg,
+      priorYearSnapshot.executionDragAvg
+    );
     const improvingCount = [bdiDelta, attritionRiskDelta].filter((d) => d != null && d < -2).length;
     const worseningCount = [bdiDelta, attritionRiskDelta].filter((d) => d != null && d > 2).length;
     let overallDirection = 'stable';
     if (improvingCount >= 1) overallDirection = 'improving';
     else if (worseningCount >= 1) overallDirection = 'deteriorating';
-    deltasVsPriorYear = { bdiDelta, attritionRiskDelta, executionDragDelta, overallDirection, yoyDataAvailable: true };
+    deltasVsPriorYear = {
+      bdiDelta,
+      attritionRiskDelta,
+      executionDragDelta,
+      overallDirection,
+      yoyDataAvailable: true,
+    };
   }
 
   // ── AI narrative ──────────────────────────────────────────────────────────────
@@ -723,7 +916,9 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
   }
 
   console.log(`✅ [SemiAnnualReport] ${reportH.label} generated for org ${orgId}`);
-  console.log(`   BDI: ${currentSnapshot.avgBDI} | Trajectory: ${aiSummary.organizationalTrajectory} | YoY: ${deltasVsPriorYear.yoyDataAvailable}`);
+  console.log(
+    `   BDI: ${currentSnapshot.avgBDI} | Trajectory: ${aiSummary.organizationalTrajectory} | YoY: ${deltasVsPriorYear.yoyDataAvailable}`
+  );
 
   return report;
 }
@@ -732,7 +927,9 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
 
 export async function generateSemiAnnualReportsForAllOrgs(options = {}) {
   const orgs = await Organization.find({});
-  console.log(`\n📊 [SemiAnnualReport] Generating semi-annual reports for ${orgs.length} organizations...`);
+  console.log(
+    `\n📊 [SemiAnnualReport] Generating semi-annual reports for ${orgs.length} organizations...`
+  );
 
   let successCount = 0;
   let skippedCount = 0;
@@ -744,7 +941,12 @@ export async function generateSemiAnnualReportsForAllOrgs(options = {}) {
       const report = await generateSemiAnnualReportForOrg(org._id, options);
       if (report) {
         successCount++;
-        results.push({ orgId: org._id, orgName: org.name, status: 'generated', halfLabel: report.halfLabel });
+        results.push({
+          orgId: org._id,
+          orgName: org.name,
+          status: 'generated',
+          halfLabel: report.halfLabel,
+        });
         await sendSemiAnnualReportEmail(org, report);
       } else {
         skippedCount++;
@@ -757,7 +959,9 @@ export async function generateSemiAnnualReportsForAllOrgs(options = {}) {
     }
   }
 
-  console.log(`✅ [SemiAnnualReport] Done: ${successCount} generated, ${skippedCount} skipped, ${failedCount} failed`);
+  console.log(
+    `✅ [SemiAnnualReport] Done: ${successCount} generated, ${skippedCount} skipped, ${failedCount} failed`
+  );
   return { successCount, skippedCount, failedCount, results };
 }
 

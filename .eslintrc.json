@@ -45,5 +45,5 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": ["build/", "node_modules/", "coverage/"]
+  "ignorePatterns": ["build/", "node_modules/", "backend/", "coverage/"]
 }

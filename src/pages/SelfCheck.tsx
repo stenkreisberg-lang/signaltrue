@@ -7,9 +7,8 @@ import ResultsScreen from '../components/FitQuestionnaire/ResultsScreen';
 import { QuestionnaireSubmission } from '../components/FitQuestionnaire/types';
 
 // API base URL - use proxy in dev, full URL in production
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://signaltrue-backend.onrender.com' 
-  : '';
+const API_BASE =
+  process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
 
 // Analytics tracking function
 const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
@@ -17,10 +16,10 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[SelfCheck Analytics] ${eventName}`, data);
   }
-  
+
   // Track event - can be connected to analytics provider
   // window.analytics?.track(eventName, data);
-  
+
   // Also send to backend for internal tracking
   try {
     fetch(`${API_BASE}/api/fit-questionnaire/track`, {
@@ -35,7 +34,7 @@ const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
 
 const SelfCheck = () => {
   const navigate = useNavigate();
-  
+
   const {
     currentStep,
     totalSteps,
@@ -81,36 +80,39 @@ const SelfCheck = () => {
     navigate('/');
   }, [navigate]);
 
-  const handleSubmitEmail = useCallback(async (email: string, consent: boolean) => {
-    if (!result) return;
+  const handleSubmitEmail = useCallback(
+    async (email: string, consent: boolean) => {
+      if (!result) return;
 
-    const submission: QuestionnaireSubmission = {
-      email,
-      score: result.score,
-      tier: result.tier,
-      answers,
-      consentGiven: consent,
-    };
+      const submission: QuestionnaireSubmission = {
+        email,
+        score: result.score,
+        tier: result.tier,
+        answers,
+        consentGiven: consent,
+      };
 
-    const response = await fetch(`${API_BASE}/api/fit-questionnaire/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(submission),
-    });
+      const response = await fetch(`${API_BASE}/api/fit-questionnaire/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submission),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to submit questionnaire');
-    }
+      if (!response.ok) {
+        throw new Error('Failed to submit questionnaire');
+      }
 
-    // Track email submission
-    trackEvent('self_check_email_submitted', {
-      score: result.score,
-      tier: result.tier,
-      consentGiven: consent,
-    });
-  }, [result, answers]);
+      // Track email submission
+      trackEvent('self_check_email_submitted', {
+        score: result.score,
+        tier: result.tier,
+        consentGiven: consent,
+      });
+    },
+    [result, answers]
+  );
 
   const handleReset = useCallback(() => {
     reset();
@@ -126,9 +128,7 @@ const SelfCheck = () => {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Activity className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="text-lg font-display font-semibold text-foreground">
-            SignalTrue
-          </span>
+          <span className="text-lg font-display font-semibold text-foreground">SignalTrue</span>
         </Link>
         <button
           onClick={handleClose}
@@ -149,7 +149,7 @@ const SelfCheck = () => {
               totalSteps={totalSteps}
               onSelect={selectAnswer}
               onBack={goBack}
-              selectedValue={answers.find(a => a.questionId === currentQuestion.id)?.value}
+              selectedValue={answers.find((a) => a.questionId === currentQuestion.id)?.value}
             />
           ) : result ? (
             <ResultsScreen

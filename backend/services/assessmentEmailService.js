@@ -45,9 +45,9 @@ function generateRecommendations(result, inputs) {
         'Audit recurring meetings – cancel or reduce frequency of meetings without clear outcomes',
         'Implement "No Meeting" blocks (e.g., Tuesday/Thursday mornings)',
         'Set default meeting durations to 25 or 50 minutes instead of 30/60',
-        'Require agenda and desired outcomes for all meetings'
+        'Require agenda and desired outcomes for all meetings',
       ],
-      expectedImpact: 'Recovering 2-3 hours per person weekly can yield 5-8% productivity gains'
+      expectedImpact: 'Recovering 2-3 hours per person weekly can yield 5-8% productivity gains',
     });
   } else if (factors.meetingLoad >= 10) {
     recommendations.push({
@@ -59,9 +59,9 @@ function generateRecommendations(result, inputs) {
       actions: [
         'Review meeting necessity – could this be an async update?',
         'Shorten standing meetings by 10-15 minutes',
-        'Designate one meeting-free day per week'
+        'Designate one meeting-free day per week',
       ],
-      expectedImpact: 'Small reductions compound: 1h/week saved = 52 hours/year per person'
+      expectedImpact: 'Small reductions compound: 1h/week saved = 52 hours/year per person',
     });
   }
 
@@ -72,14 +72,15 @@ function generateRecommendations(result, inputs) {
       priority: 'High',
       icon: '🔄',
       title: 'Address Back-to-Back Meeting Patterns',
-      description: 'High frequency of consecutive meetings creates context-switching overhead and eliminates recovery time between sessions.',
+      description:
+        'High frequency of consecutive meetings creates context-switching overhead and eliminates recovery time between sessions.',
       actions: [
         'Implement 5-10 minute buffer policies between meetings',
         'Block "focus time" in calendars as non-negotiable',
         'Use scheduling tools that enforce gaps (Clockwise, Reclaim)',
-        'Encourage walking meetings for 1:1s to create natural transitions'
+        'Encourage walking meetings for 1:1s to create natural transitions',
       ],
-      expectedImpact: 'Reducing fragmentation can improve deep work capacity by 20-30%'
+      expectedImpact: 'Reducing fragmentation can improve deep work capacity by 20-30%',
     });
   } else if (workload.backToBackFrequency === 'medium') {
     recommendations.push({
@@ -87,13 +88,14 @@ function generateRecommendations(result, inputs) {
       priority: 'Medium',
       icon: '🔄',
       title: 'Reduce Calendar Fragmentation',
-      description: 'Moderate back-to-back patterns suggest opportunities to consolidate meetings and protect focus time.',
+      description:
+        'Moderate back-to-back patterns suggest opportunities to consolidate meetings and protect focus time.',
       actions: [
         'Group similar meetings on specific days',
         'Schedule collaborative work in morning, focus work in afternoon (or vice versa)',
-        'Review meeting distribution across the week'
+        'Review meeting distribution across the week',
       ],
-      expectedImpact: 'Better time-blocking can add 1-2 focused hours daily'
+      expectedImpact: 'Better time-blocking can add 1-2 focused hours daily',
     });
   }
 
@@ -110,9 +112,9 @@ function generateRecommendations(result, inputs) {
         'Implement "quiet hours" policies for non-urgent communications',
         'Use scheduled send for emails/messages',
         'Lead by example – leaders avoiding after-hours sets cultural norms',
-        'Review workload distribution – some team members may be overloaded'
+        'Review workload distribution – some team members may be overloaded',
       ],
-      expectedImpact: 'Reducing after-hours work by 50% can decrease burnout indicators by 35%'
+      expectedImpact: 'Reducing after-hours work by 50% can decrease burnout indicators by 35%',
     });
   } else if (workload.afterHoursPerWeek >= 2) {
     recommendations.push({
@@ -124,9 +126,9 @@ function generateRecommendations(result, inputs) {
       actions: [
         'Identify root causes: deadlines, timezone collaboration, or overflow work',
         'Set clear expectations about response times outside work hours',
-        'Consider async-first policies for non-urgent items'
+        'Consider async-first policies for non-urgent items',
       ],
-      expectedImpact: 'Proactive boundary management prevents escalation to burnout'
+      expectedImpact: 'Proactive boundary management prevents escalation to burnout',
     });
   }
 
@@ -142,9 +144,9 @@ function generateRecommendations(result, inputs) {
         'Invest in async documentation and knowledge bases',
         'Implement clear decision-making frameworks (RACI, DRI)',
         'Use team topologies to reduce cross-team dependencies',
-        'Regular review of meeting necessity across teams'
+        'Regular review of meeting necessity across teams',
       ],
-      expectedImpact: 'Reducing coordination tax by 10% at this scale = significant cost savings'
+      expectedImpact: 'Reducing coordination tax by 10% at this scale = significant cost savings',
     });
   }
 
@@ -161,9 +163,16 @@ function generateRecommendations(result, inputs) {
         'Implement stay interviews for key talent',
         'Review workload distribution for equity',
         'Create clear growth paths and recognition systems',
-        'Address systemic issues revealed by exit interviews'
+        'Address systemic issues revealed by exit interviews',
       ],
-      expectedImpact: 'Reducing attrition by 2% could save ' + formatCurrency(company.teamSize * 0.02 * company.averageSalary * (retention.roleType === 'manager' ? 2 : 0.8))
+      expectedImpact:
+        'Reducing attrition by 2% could save ' +
+        formatCurrency(
+          company.teamSize *
+            0.02 *
+            company.averageSalary *
+            (retention.roleType === 'manager' ? 2 : 0.8)
+        ),
     });
   }
 
@@ -174,14 +183,15 @@ function generateRecommendations(result, inputs) {
       priority: 'High',
       icon: '🎯',
       title: 'Reclaim Deep Work Capacity',
-      description: 'Your team\'s focus time is significantly compromised by meetings and fragmentation. Knowledge workers need 4+ hours of uninterrupted time for complex work.',
+      description:
+        "Your team's focus time is significantly compromised by meetings and fragmentation. Knowledge workers need 4+ hours of uninterrupted time for complex work.",
       actions: [
         'Audit available focus blocks across the team',
         'Implement "Maker Schedule" principles – cluster meetings, protect mornings or afternoons',
         'Create team agreements about interruption protocols',
-        'Consider "Focus Fridays" or similar initiatives'
+        'Consider "Focus Fridays" or similar initiatives',
       ],
-      expectedImpact: 'Each additional hour of focus time can increase output quality by 15-25%'
+      expectedImpact: 'Each additional hour of focus time can increase output quality by 15-25%',
     });
   }
 
@@ -194,30 +204,39 @@ function generateRecommendations(result, inputs) {
 function calculateDerivedMetrics(result, inputs) {
   const { workload, company, retention } = inputs;
   const hoursPerYear = 2080;
-  
+
   // Focus Time Available
   const workHoursPerWeek = 40;
-  const focusTimePerWeek = Math.max(0, workHoursPerWeek - workload.meetingHoursPerWeek - (workload.afterHoursPerWeek * 0.5));
-  const focusTimePercent = (focusTimePerWeek / workHoursPerWeek * 100).toFixed(0);
-  
+  const focusTimePerWeek = Math.max(
+    0,
+    workHoursPerWeek - workload.meetingHoursPerWeek - workload.afterHoursPerWeek * 0.5
+  );
+  const focusTimePercent = ((focusTimePerWeek / workHoursPerWeek) * 100).toFixed(0);
+
   // Collaboration Tax
-  const collaborationTaxPercent = ((workload.meetingHoursPerWeek / workHoursPerWeek) * 100).toFixed(0);
-  
+  const collaborationTaxPercent = ((workload.meetingHoursPerWeek / workHoursPerWeek) * 100).toFixed(
+    0
+  );
+
   // Burnout Risk Indicator (simplified)
   let burnoutRisk = 'Low';
-  if (workload.afterHoursPerWeek >= 5 || (workload.meetingHoursPerWeek >= 15 && workload.backToBackFrequency === 'high')) {
+  if (
+    workload.afterHoursPerWeek >= 5 ||
+    (workload.meetingHoursPerWeek >= 15 && workload.backToBackFrequency === 'high')
+  ) {
     burnoutRisk = 'High';
   } else if (workload.afterHoursPerWeek >= 2 || workload.meetingHoursPerWeek >= 12) {
     burnoutRisk = 'Moderate';
   }
-  
+
   // Productivity Potential
-  const wastedMeetingHours = workload.meetingHoursPerWeek * (result.assumptions?.meetingWastePercent || 0.25);
+  const wastedMeetingHours =
+    workload.meetingHoursPerWeek * (result.assumptions?.meetingWastePercent || 0.25);
   const potentialRecoveryHoursYear = wastedMeetingHours * company.teamSize * 52;
-  
+
   // Cost per hour of waste
   const loadedHourlyRate = (company.averageSalary * company.overheadMultiplier) / hoursPerYear;
-  
+
   return {
     focusTimePerWeek: focusTimePerWeek.toFixed(1),
     focusTimePercent,
@@ -227,7 +246,9 @@ function calculateDerivedMetrics(result, inputs) {
     potentialRecoveryHoursYear: Math.round(potentialRecoveryHoursYear),
     loadedHourlyRate: loadedHourlyRate.toFixed(2),
     meetingCostPerPersonWeek: formatCurrency(workload.meetingHoursPerWeek * loadedHourlyRate),
-    totalMeetingCostWeek: formatCurrency(workload.meetingHoursPerWeek * loadedHourlyRate * company.teamSize)
+    totalMeetingCostWeek: formatCurrency(
+      workload.meetingHoursPerWeek * loadedHourlyRate * company.teamSize
+    ),
   };
 }
 
@@ -236,7 +257,7 @@ function calculateDerivedMetrics(result, inputs) {
  */
 export async function sendAssessmentResultsEmail(email, result, inputs) {
   const resend = getResendClient();
-  
+
   if (!resend) {
     console.log('⚠️ Resend not configured. Skipping user results email.');
     return { success: false, reason: 'resend_not_configured' };
@@ -254,24 +275,27 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
 
   const riskColors = {
     low: '#22c55e',
-    emerging: '#f59e0b', 
-    high: '#ef4444'
+    emerging: '#f59e0b',
+    high: '#ef4444',
   };
 
   const riskLabels = {
     low: 'Low Risk',
     emerging: 'Emerging Risk',
-    high: 'High Risk'
+    high: 'High Risk',
   };
 
   const riskDescriptions = {
     low: 'Your organization shows healthy workload patterns. Continue monitoring to maintain this balance.',
-    emerging: 'Your organization shows patterns that often precede overload. Proactive intervention is recommended.',
-    high: 'Your organization shows significant workload risk patterns. Immediate attention is recommended to prevent burnout and attrition.'
+    emerging:
+      'Your organization shows patterns that often precede overload. Proactive intervention is recommended.',
+    high: 'Your organization shows significant workload risk patterns. Immediate attention is recommended to prevent burnout and attrition.',
   };
 
   // Generate recommendations HTML
-  const recommendationsHtml = recommendations.map((rec, index) => `
+  const recommendationsHtml = recommendations
+    .map(
+      (rec, index) => `
     <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 4px solid ${rec.priority === 'High' ? '#ef4444' : '#f59e0b'};">
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
         <span style="font-size: 24px; margin-right: 12px;">${rec.icon}</span>
@@ -284,12 +308,14 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
       <div style="background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
         <p style="margin: 0 0 8px 0; font-weight: 600; color: #1a1a2e; font-size: 13px;">Recommended Actions:</p>
         <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 13px;">
-          ${rec.actions.map(action => `<li style="margin-bottom: 6px;">${action}</li>`).join('')}
+          ${rec.actions.map((action) => `<li style="margin-bottom: 6px;">${action}</li>`).join('')}
         </ul>
       </div>
       <p style="margin: 0; color: #6366f1; font-size: 13px; font-weight: 500;">💡 Expected Impact: ${rec.expectedImpact}</p>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
 
   try {
     await resend.emails.send({
@@ -536,7 +562,7 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
   </div>
 </body>
 </html>
-      `
+      `,
     });
 
     // CC superadmin for verification
@@ -545,12 +571,11 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
       html: `Workload Assessment results for ${email}`,
       originalRecipient: email,
       reportType: 'workload_assessment',
-      orgName: email.split('@')[1] || 'Unknown'
+      orgName: email.split('@')[1] || 'Unknown',
     });
 
     console.log(`[Assessment Email] Comprehensive report sent to: ${email}`);
     return { success: true };
-
   } catch (error) {
     console.error('[Assessment Email] Failed to send results:', error);
     return { success: false, error: error.message };
@@ -562,7 +587,7 @@ export async function sendAssessmentResultsEmail(email, result, inputs) {
  */
 export async function sendAssessmentLeadNotification(email, result, inputs) {
   const resend = getResendClient();
-  
+
   if (!resend) {
     console.log('⚠️ Resend not configured. Skipping internal notification.');
     return { success: false, reason: 'resend_not_configured' };
@@ -579,7 +604,7 @@ export async function sendAssessmentLeadNotification(email, result, inputs) {
   const riskLabels = {
     low: '🟢 Low Risk',
     emerging: '🟡 Emerging Risk',
-    high: '🔴 High Risk'
+    high: '🔴 High Risk',
   };
 
   try {
@@ -631,24 +656,27 @@ export async function sendAssessmentLeadNotification(email, result, inputs) {
     </tr>
   </table>
 
-  ${result.insights && result.insights.length > 0 ? `
+  ${
+    result.insights && result.insights.length > 0
+      ? `
   <h3 style="margin-top: 24px;">Key Insights</h3>
   <ul>
-    ${result.insights.map(insight => `<li>${insight}</li>`).join('')}
+    ${result.insights.map((insight) => `<li>${insight}</li>`).join('')}
   </ul>
-  ` : ''}
+  `
+      : ''
+  }
 
   <p style="margin-top: 24px; color: #64748b; font-size: 12px;">
     Submitted at: ${new Date().toISOString()}
   </p>
 </body>
 </html>
-      `
+      `,
     });
 
     console.log(`[Assessment Email] Lead notification sent for: ${email}`);
     return { success: true };
-
   } catch (error) {
     console.error('[Assessment Email] Failed to send lead notification:', error);
     return { success: false, error: error.message };

@@ -2,6 +2,7 @@ import BehavioralDriftIndex from '../models/behavioralDriftIndex.js';
 import Team from '../models/team.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import DriftTimeline from '../models/driftTimeline.js';
+import DriftPlaybook from '../models/driftPlaybook.js';
 
 /**
  * Behavioral Drift Index Service
@@ -13,17 +14,17 @@ import DriftTimeline from '../models/driftTimeline.js';
  */
 export async function calculateBDI(teamId, periodStart, periodEnd) {
   try {
-    const team = await Team.findById(teamId).populate('orgId');
+    const team = await Team.findById(teamId);
     if (!team) {
       throw new Error('Team not found');
     }
 
     // Get current period metrics
     const metrics = await getTeamMetrics(teamId, periodStart, periodEnd);
-    
+
     // Get or establish baseline (first 30 days)
     const baseline = await getOrEstablishBaseline(teamId);
-    
+
     // Create BDI record
     const bdi = new BehavioralDriftIndex({
       orgId: team.orgId,
@@ -36,17 +37,34 @@ export async function calculateBDI(teamId, periodStart, periodEnd) {
         responseTime: { value: metrics.responseTime },
         asyncParticipation: { value: metrics.asyncParticipation },
         focusTime: { value: metrics.focusTime },
-        collaborationBreadth: { value: metrics.collaborationBreadth }
+        collaborationBreadth: { value: metrics.collaborationBreadth },
       },
-      baseline
+      baseline,
     });
 
     // Save will trigger pre-save hook to calculate drift
     await bdi.save();
-    
+
+    if (bdi.state !== 'Stable') {
+      const playbooks = await DriftPlaybook.find({
+        isActive: true,
+        'appliesTo.driftStates': bdi.state,
+      }).limit(3);
+
+      bdi.recommendedPlaybooks = playbooks.map((playbook) => ({
+        playbookId: playbook._id,
+        name: playbook.name,
+        why: playbook.why,
+        expectedEffect: playbook.expectedEffect.description,
+        reversibility: playbook.reversibility.note,
+        timebound: playbook.action.timebound,
+      }));
+      await bdi.save();
+    }
+
     // Update drift timeline if state changed
     await updateDriftTimeline(teamId, bdi);
-    
+
     return bdi;
   } catch (error) {
     console.error('Error calculating BDI:', error);
@@ -59,13 +77,13 @@ export async function calculateBDI(teamId, periodStart, periodEnd) {
  */
 async function getTeamMetrics(teamId, periodStart, periodEnd) {
   const team = await Team.findById(teamId);
-  
+
   // Get daily metrics for the period
   const dailyMetrics = await MetricsDaily.find({
     teamId,
-    date: { $gte: periodStart, $lte: periodEnd }
+    date: { $gte: periodStart, $lte: periodEnd },
   }).sort({ date: -1 });
-  
+
   if (dailyMetrics.length === 0) {
     // Use current team signals if no daily metrics
     return {
@@ -74,28 +92,31 @@ async function getTeamMetrics(teamId, periodStart, periodEnd) {
       responseTime: team.slackSignals?.avgResponseDelayHours || 0,
       asyncParticipation: team.slackSignals?.messageCount || 0,
       focusTime: team.calendarSignals?.focusHoursWeek || 0,
-      collaborationBreadth: 10 // placeholder, need to track unique collaborators
+      collaborationBreadth: 10, // placeholder, need to track unique collaborators
     };
   }
-  
+
   // Average metrics over the period
-  const avgMetrics = dailyMetrics.reduce((acc, day) => {
-    acc.meetingLoad += day.meetingHours || 0;
-    acc.afterHoursActivity += day.afterHoursPercent || 0;
-    acc.responseTime += day.avgResponseHours || 0;
-    acc.asyncParticipation += day.messageCount || 0;
-    acc.focusTime += day.focusHours || 0;
-    acc.collaborationBreadth += day.uniqueCollaborators || 0;
-    return acc;
-  }, {
-    meetingLoad: 0,
-    afterHoursActivity: 0,
-    responseTime: 0,
-    asyncParticipation: 0,
-    focusTime: 0,
-    collaborationBreadth: 0
-  });
-  
+  const avgMetrics = dailyMetrics.reduce(
+    (acc, day) => {
+      acc.meetingLoad += day.meetingHoursWeek || 0;
+      acc.afterHoursActivity += (day.afterHoursRate || 0) * 100;
+      acc.responseTime += (day.responseMedianMins || 0) / 60;
+      acc.asyncParticipation += day.messageCount || 0;
+      acc.focusTime += day.focusHoursWeek || 0;
+      acc.collaborationBreadth += day.uniqueContacts || 0;
+      return acc;
+    },
+    {
+      meetingLoad: 0,
+      afterHoursActivity: 0,
+      responseTime: 0,
+      asyncParticipation: 0,
+      focusTime: 0,
+      collaborationBreadth: 0,
+    }
+  );
+
   const count = dailyMetrics.length;
   return {
     meetingLoad: avgMetrics.meetingLoad / count,
@@ -103,7 +124,7 @@ async function getTeamMetrics(teamId, periodStart, periodEnd) {
     responseTime: avgMetrics.responseTime / count,
     asyncParticipation: avgMetrics.asyncParticipation / count,
     focusTime: avgMetrics.focusTime / count,
-    collaborationBreadth: avgMetrics.collaborationBreadth / count
+    collaborationBreadth: avgMetrics.collaborationBreadth / count,
   };
 }
 
@@ -114,19 +135,19 @@ async function getOrEstablishBaseline(teamId) {
   // Check if baseline exists in BDI records
   const existingBDI = await BehavioralDriftIndex.findOne({
     teamId,
-    'baseline.establishedDate': { $exists: true }
+    'baseline.establishedDate': { $exists: true },
   }).sort({ 'baseline.establishedDate': 1 });
-  
+
   if (existingBDI && existingBDI.baseline) {
     return existingBDI.baseline;
   }
-  
+
   // Establish new baseline from first 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
+
   const metrics = await getTeamMetrics(teamId, thirtyDaysAgo, new Date());
-  
+
   return {
     meetingLoad: metrics.meetingLoad,
     afterHoursActivity: metrics.afterHoursActivity,
@@ -135,7 +156,7 @@ async function getOrEstablishBaseline(teamId) {
     focusTime: metrics.focusTime,
     collaborationBreadth: metrics.collaborationBreadth,
     establishedDate: new Date(),
-    sampleSize: 30
+    sampleSize: 30,
   };
 }
 
@@ -144,13 +165,13 @@ async function getOrEstablishBaseline(teamId) {
  */
 async function updateDriftTimeline(teamId, bdi) {
   const team = await Team.findById(teamId);
-  
+
   // Find active timeline or create new one
   let timeline = await DriftTimeline.findOne({
     teamId,
-    status: 'Active'
+    status: 'Active',
   });
-  
+
   if (!timeline) {
     // Create new timeline
     timeline = new DriftTimeline({
@@ -158,9 +179,9 @@ async function updateDriftTimeline(teamId, bdi) {
       teamId,
       timelineId: `${teamId}-${Date.now()}`,
       status: 'Active',
-      events: []
+      events: [],
     });
-    
+
     // Add baseline event
     timeline.events.push({
       phase: 'Baseline',
@@ -168,21 +189,21 @@ async function updateDriftTimeline(teamId, bdi) {
       title: 'Baseline Established',
       description: `Team baseline established over ${bdi.baseline.sampleSize} days`,
       details: {
-        driftState: 'Stable'
+        driftState: 'Stable',
       },
       icon: '📊',
-      severity: 'info'
+      severity: 'info',
     });
   }
-  
+
   // Check if state changed
   const lastEvent = timeline.events[timeline.events.length - 1];
   const lastState = lastEvent?.details?.driftState;
-  
+
   if (lastState !== bdi.state) {
     // State changed - add new event
     let phase, title, icon, severity;
-    
+
     if (bdi.state === 'Early Drift' && lastState === 'Stable') {
       phase = 'First Signal';
       title = 'First Drift Signal Detected';
@@ -204,34 +225,34 @@ async function updateDriftTimeline(teamId, bdi) {
       icon = '📈';
       severity = 'warning';
     }
-    
+
     timeline.events.push({
       phase,
       timestamp: new Date(),
       title,
       description: bdi.summary || 'Behavioral patterns showing deviation from baseline',
       details: {
-        signals: bdi.topDrivers.map(d => ({
+        signals: bdi.topDrivers.map((d) => ({
           name: d.signal,
           value: d.currentValue,
-          change: d.change
+          change: d.change,
         })),
         driftState: bdi.state,
-        confidenceLevel: bdi.confidence?.level
+        confidenceLevel: bdi.confidence?.level,
       },
       icon,
-      severity
+      severity,
     });
   }
-  
+
   await timeline.save();
-  
+
   // If drift resolved, mark timeline as resolved
   if (bdi.state === 'Stable' && timeline.status === 'Active') {
     timeline.status = 'Resolved';
     await timeline.save();
   }
-  
+
   return timeline;
 }
 
@@ -248,9 +269,7 @@ export async function getLatestBDI(teamId) {
  * Get BDI history for a team
  */
 export async function getBDIHistory(teamId, limit = 30) {
-  return await BehavioralDriftIndex.find({ teamId })
-    .sort({ periodStart: -1 })
-    .limit(limit);
+  return await BehavioralDriftIndex.find({ teamId }).sort({ periodStart: -1 }).limit(limit);
 }
 
 /**
@@ -258,23 +277,21 @@ export async function getBDIHistory(teamId, limit = 30) {
  */
 export async function getOrgBDISummary(orgId) {
   const teams = await Team.find({ orgId });
-  const teamIds = teams.map(t => t._id);
-  
+  const teamIds = teams.map((t) => t._id);
+
   // Get latest BDI for each team
-  const bdis = await Promise.all(
-    teamIds.map(teamId => getLatestBDI(teamId))
-  );
-  
+  const bdis = await Promise.all(teamIds.map((teamId) => getLatestBDI(teamId)));
+
   // Aggregate statistics
   const summary = {
     totalTeams: teams.length,
-    stable: bdis.filter(b => b?.state === 'Stable').length,
-    earlyDrift: bdis.filter(b => b?.state === 'Early Drift').length,
-    developingDrift: bdis.filter(b => b?.state === 'Developing Drift').length,
-    criticalDrift: bdis.filter(b => b?.state === 'Critical Drift').length,
-    avgDriftScore: bdis.reduce((sum, b) => sum + (b?.driftScore || 0), 0) / bdis.length
+    stable: bdis.filter((b) => b?.state === 'Stable').length,
+    earlyDrift: bdis.filter((b) => b?.state === 'Early Drift').length,
+    developingDrift: bdis.filter((b) => b?.state === 'Developing Drift').length,
+    criticalDrift: bdis.filter((b) => b?.state === 'Critical Drift').length,
+    avgDriftScore: bdis.reduce((sum, b) => sum + (b?.driftScore || 0), 0) / bdis.length,
   };
-  
+
   return summary;
 }
 
@@ -282,5 +299,5 @@ export default {
   calculateBDI,
   getLatestBDI,
   getBDIHistory,
-  getOrgBDISummary
+  getOrgBDISummary,
 };

@@ -9,10 +9,7 @@ const router = express.Router();
 router.get('/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
-    const events = await DriftEvent.find({ teamId })
-      .sort({ date: -1 })
-      .limit(10)
-      .lean();
+    const events = await DriftEvent.find({ teamId }).sort({ date: -1 }).limit(10).lean();
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: err.message });

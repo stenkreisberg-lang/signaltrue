@@ -10,7 +10,7 @@ import {
   updateROISettings,
   calculateROISummary,
   calculateDriftCostProjection,
-  getROIDashboardBanner
+  getROIDashboardBanner,
 } from '../services/roiService.js';
 
 const router = express.Router();
@@ -25,9 +25,9 @@ router.get('/settings', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const settings = await getROISettings(orgId);
-    
+
     res.json({
       success: true,
       settings: {
@@ -42,8 +42,8 @@ router.get('/settings', authenticateToken, async (req, res) => {
         showROIOverlay: settings.showROIOverlay,
         roiPeriod: settings.roiPeriod,
         costFactors: settings.costFactors,
-        updatedAt: settings.updatedAt
-      }
+        updatedAt: settings.updatedAt,
+      },
     });
   } catch (error) {
     console.error('[ROI API] Error getting settings:', error);
@@ -61,10 +61,10 @@ router.put('/settings', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const updates = req.body;
     const settings = await updateROISettings(orgId, updates, req.user.userId);
-    
+
     res.json({
       success: true,
       message: 'ROI settings updated successfully',
@@ -79,8 +79,8 @@ router.put('/settings', authenticateToken, async (req, res) => {
         overheadMultiplier: settings.overheadMultiplier,
         showROIOverlay: settings.showROIOverlay,
         roiPeriod: settings.roiPeriod,
-        costFactors: settings.costFactors
-      }
+        costFactors: settings.costFactors,
+      },
     });
   } catch (error) {
     console.error('[ROI API] Error updating settings:', error);
@@ -98,10 +98,10 @@ router.get('/summary', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { period = 30 } = req.query;
     const summary = await calculateROISummary(orgId, { periodDays: parseInt(period) });
-    
+
     res.json(summary);
   } catch (error) {
     console.error('[ROI API] Error getting summary:', error);
@@ -119,10 +119,12 @@ router.get('/drift-cost', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { days = 30 } = req.query;
-    const projection = await calculateDriftCostProjection(orgId, { projectionDays: parseInt(days) });
-    
+    const projection = await calculateDriftCostProjection(orgId, {
+      projectionDays: parseInt(days),
+    });
+
     res.json(projection);
   } catch (error) {
     console.error('[ROI API] Error getting drift cost:', error);
@@ -140,12 +142,12 @@ router.get('/banner', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const banner = await getROIDashboardBanner(orgId);
-    
+
     res.json({
       success: true,
-      banner
+      banner,
     });
   } catch (error) {
     console.error('[ROI API] Error getting banner:', error);
@@ -163,13 +165,13 @@ router.post('/toggle-overlay', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const { show } = req.body;
     const settings = await updateROISettings(orgId, { showROIOverlay: show }, req.user.userId);
-    
+
     res.json({
       success: true,
-      showROIOverlay: settings.showROIOverlay
+      showROIOverlay: settings.showROIOverlay,
     });
   } catch (error) {
     console.error('[ROI API] Error toggling overlay:', error);
@@ -185,18 +187,18 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const { period = 30 } = req.query;
-    
+
     // Import Team model
     const Team = (await import('../models/team.js')).default;
     const team = await Team.findById(teamId).lean();
-    
+
     if (!team) {
       return res.status(404).json({ message: 'Team not found' });
     }
-    
+
     // Calculate team-specific ROI (simplified version)
     const settings = await getROISettings(team.orgId);
-    
+
     res.json({
       success: true,
       teamId,
@@ -204,7 +206,7 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
       currency: settings.currency,
       currencySymbol: settings.currencySymbol,
       periodDays: parseInt(period),
-      message: 'Team-level ROI calculation available in summary endpoint'
+      message: 'Team-level ROI calculation available in summary endpoint',
     });
   } catch (error) {
     console.error('[ROI API] Error getting team ROI:', error);

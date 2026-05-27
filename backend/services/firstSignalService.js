@@ -11,7 +11,7 @@ import MetricsDaily from '../models/metricsDaily.js';
 /**
  * Compute the first signal for a team immediately after integration connect
  * Returns the highest-priority signal that shows drift
- * 
+ *
  * @param {ObjectId} teamId - Team to analyze
  * @param {ObjectId} orgId - Organization context
  * @returns {Object|null} - { signalType, value, baseline, delta, statement, context, severity }
@@ -19,7 +19,7 @@ import MetricsDaily from '../models/metricsDaily.js';
 export async function computeFirstSignal(teamId, orgId) {
   try {
     const startTime = Date.now();
-    
+
     // Fetch team baseline and recent metrics (last 4 weeks)
     const team = await Team.findById(teamId).select('baseline name');
     if (!team || !team.baseline) {
@@ -31,7 +31,7 @@ export async function computeFirstSignal(teamId, orgId) {
 
     const recentMetrics = await MetricsDaily.find({
       teamId,
-      date: { $gte: fourWeeksAgo }
+      date: { $gte: fourWeeksAgo },
     })
       .sort({ date: -1 })
       .limit(28)
@@ -81,11 +81,12 @@ function checkMeetingLoadDeviation(metrics, baseline, teamName) {
 
   // Calculate recent average (last 2 weeks)
   const recentTwoWeeks = metrics.slice(0, 14);
-  const validMeetings = recentTwoWeeks.filter(m => m.meetingLoadIndex != null);
-  
+  const validMeetings = recentTwoWeeks.filter((m) => m.meetingLoadIndex != null);
+
   if (validMeetings.length < 5) return null;
 
-  const recentAvg = validMeetings.reduce((sum, m) => sum + m.meetingLoadIndex, 0) / validMeetings.length;
+  const recentAvg =
+    validMeetings.reduce((sum, m) => sum + m.meetingLoadIndex, 0) / validMeetings.length;
   const baselineValue = baseline.meetingLoadIndex;
   const delta = ((recentAvg - baselineValue) / baselineValue) * 100;
 
@@ -100,7 +101,7 @@ function checkMeetingLoadDeviation(metrics, baseline, teamName) {
       statement: `${teamName}'s meeting load increased by +${Math.round(delta)}% over the last 6 weeks.`,
       context: 'This pattern usually precedes focus loss and delivery delays.',
       severity: delta > 40 ? 'CRITICAL' : 'RISK',
-      detectedAt: new Date()
+      detectedAt: new Date(),
     };
   }
 
@@ -115,11 +116,12 @@ function checkAfterHoursTrend(metrics, baseline, teamName) {
   if (!baseline.afterHoursActivity) return null;
 
   const recentFourWeeks = metrics.slice(0, 28);
-  const validAfterHours = recentFourWeeks.filter(m => m.afterHoursActivity != null);
-  
+  const validAfterHours = recentFourWeeks.filter((m) => m.afterHoursActivity != null);
+
   if (validAfterHours.length < 10) return null;
 
-  const recentAvg = validAfterHours.reduce((sum, m) => sum + m.afterHoursActivity, 0) / validAfterHours.length;
+  const recentAvg =
+    validAfterHours.reduce((sum, m) => sum + m.afterHoursActivity, 0) / validAfterHours.length;
   const baselineValue = baseline.afterHoursActivity;
   const delta = ((recentAvg - baselineValue) / baselineValue) * 100;
 
@@ -134,7 +136,7 @@ function checkAfterHoursTrend(metrics, baseline, teamName) {
       statement: `${teamName}'s after-hours activity increased by +${Math.round(delta)}% over the last 4 weeks.`,
       context: 'This pattern tends to precede burnout risk and disengagement.',
       severity: delta > 30 ? 'CRITICAL' : 'RISK',
-      detectedAt: new Date()
+      detectedAt: new Date(),
     };
   }
 
@@ -149,11 +151,12 @@ function checkResponseLatency(metrics, baseline, teamName) {
   if (!baseline.responseLatency) return null;
 
   const recentTwoWeeks = metrics.slice(0, 14);
-  const validLatency = recentTwoWeeks.filter(m => m.responseLatency != null);
-  
+  const validLatency = recentTwoWeeks.filter((m) => m.responseLatency != null);
+
   if (validLatency.length < 5) return null;
 
-  const recentAvg = validLatency.reduce((sum, m) => sum + m.responseLatency, 0) / validLatency.length;
+  const recentAvg =
+    validLatency.reduce((sum, m) => sum + m.responseLatency, 0) / validLatency.length;
   const baselineValue = baseline.responseLatency;
   const delta = ((recentAvg - baselineValue) / baselineValue) * 100;
 
@@ -168,7 +171,7 @@ function checkResponseLatency(metrics, baseline, teamName) {
       statement: `${teamName}'s response time increased by +${Math.round(delta)}% over the last 2 weeks.`,
       context: 'This pattern tends to precede delivery delays and quality issues.',
       severity: delta > 50 ? 'CRITICAL' : 'RISK',
-      detectedAt: new Date()
+      detectedAt: new Date(),
     };
   }
 

@@ -25,7 +25,7 @@ import OpenAI from 'openai';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
-const MODEL    = process.env.OPENAI_MODEL   ?? 'gpt-4o-mini';
+const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const MAX_TOKENS = parseInt(process.env.EXPLANATION_MAX_TOKENS ?? '400', 10);
 
 // Lazy-initialise client — only created if OPENAI_API_KEY is set
@@ -73,15 +73,15 @@ export async function generateExplanation(input) {
 
 async function callLLM(client, input) {
   const systemPrompt = buildSystemPrompt();
-  const userPrompt   = buildUserPrompt(input);
+  const userPrompt = buildUserPrompt(input);
 
   const response = await client.chat.completions.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
-    temperature: 0.3,       // Low temperature — factual, consistent output
+    temperature: 0.3, // Low temperature — factual, consistent output
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user',   content: userPrompt   },
+      { role: 'user', content: userPrompt },
     ],
   });
 
@@ -127,12 +127,10 @@ function buildUserPrompt(input) {
 
   const topDriverSummary = (topDrivers ?? [])
     .slice(0, 3)
-    .map(d => `${d.driver} (score: ${d.score})`)
+    .map((d) => `${d.driver} (score: ${d.score})`)
     .join(', ');
 
-  const patternSummary = (patterns ?? [])
-    .map(p => p.title)
-    .join(', ') || 'none detected';
+  const patternSummary = (patterns ?? []).map((p) => p.title).join(', ') || 'none detected';
 
   return `Generate a plain-language explanation for the following team engagement strain result.
 
@@ -160,45 +158,43 @@ Remember: speak only to team-level patterns. Do not identify individuals. Do not
 // ── Fallback Rule-Based Explanation ───────────────────────────────────────────
 
 function buildFallbackExplanation(input) {
-  const {
-    engagementStrainRisk,
-    riskState,
-    trend,
-    subscores,
-    topDrivers,
-    confidenceLabel,
-  } = input;
+  const { engagementStrainRisk, riskState, trend, subscores, topDrivers, confidenceLabel } = input;
 
   const score = engagementStrainRisk ?? 0;
   const state = riskState ?? 'watch';
 
   // Opening sentence based on risk state
-  const opening = {
-    healthy:  `This team's engagement strain risk score of ${score} places it in the healthy range this week.`,
-    watch:    `This team's engagement strain risk score of ${score} is in the watch range, warranting light monitoring.`,
-    strain:   `This team's engagement strain risk score of ${score} indicates elevated strain this week.`,
-    critical: `This team's engagement strain risk score of ${score} is in the critical range and requires prompt attention.`,
-  }[state] ?? `Engagement strain risk this week is ${score}.`;
+  const opening =
+    {
+      healthy: `This team's engagement strain risk score of ${score} places it in the healthy range this week.`,
+      watch: `This team's engagement strain risk score of ${score} is in the watch range, warranting light monitoring.`,
+      strain: `This team's engagement strain risk score of ${score} indicates elevated strain this week.`,
+      critical: `This team's engagement strain risk score of ${score} is in the critical range and requires prompt attention.`,
+    }[state] ?? `Engagement strain risk this week is ${score}.`;
 
   // Trend sentence
   const trendMap = {
-    rising:    'The score has been rising compared to last week.',
+    rising: 'The score has been rising compared to last week.',
     improving: 'The score has improved compared to last week.',
-    stable:    'The score is stable week-over-week.',
+    stable: 'The score is stable week-over-week.',
   };
   const trendSentence = trendMap[trend] ?? '';
 
   // Top driver sentence
   let driverSentence = '';
   if (topDrivers?.length) {
-    const names = topDrivers.slice(0, 2).map(d => formatDriverName(d.driver)).join(' and ');
+    const names = topDrivers
+      .slice(0, 2)
+      .map((d) => formatDriverName(d.driver))
+      .join(' and ');
     driverSentence = `The primary contributing factors are ${names}.`;
   } else if (subscores) {
     const sorted = Object.entries(subscores)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 2)
       .map(([k]) => formatDriverName(k));
-    if (sorted.length) driverSentence = `The highest-scoring dimensions are ${sorted.join(' and ')}.`;
+    if (sorted.length)
+      driverSentence = `The highest-scoring dimensions are ${sorted.join(' and ')}.`;
   }
 
   // Confidence caveat
@@ -206,23 +202,21 @@ function buildFallbackExplanation(input) {
     confidenceLabel === 'low'
       ? 'Data confidence is low this week; interpret this score with caution until more signal data is available.'
       : confidenceLabel === 'moderate'
-      ? 'Data confidence is moderate — results are directionally reliable but may shift as more data accumulates.'
-      : '';
+        ? 'Data confidence is moderate — results are directionally reliable but may shift as more data accumulates.'
+        : '';
 
-  return [opening, trendSentence, driverSentence, confidenceSentence]
-    .filter(Boolean)
-    .join(' ');
+  return [opening, trendSentence, driverSentence, confidenceSentence].filter(Boolean).join(' ');
 }
 
 function formatDriverName(key) {
   const labels = {
-    recoveryDebt:            'Recovery Debt',
-    focusErosion:            'Focus Erosion',
-    coordinationFriction:    'Coordination Friction',
-    responsivenessPressure:  'Responsiveness Pressure',
+    recoveryDebt: 'Recovery Debt',
+    focusErosion: 'Focus Erosion',
+    coordinationFriction: 'Coordination Friction',
+    responsivenessPressure: 'Responsiveness Pressure',
     collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap:       'Manager Support Gap',
-    workloadVolatility:      'Workload Volatility',
+    managerSupportGap: 'Manager Support Gap',
+    workloadVolatility: 'Workload Volatility',
   };
   return labels[key] ?? key;
 }

@@ -1,7 +1,7 @@
 /**
  * Risk Calculation Service
  * Implements the diagnosis, decision & impact layer logic
- * 
+ *
  * Key responsibilities:
  * - Calculate metric deviations from baseline
  * - Compute risk scores (overload, execution, retention strain)
@@ -26,13 +26,13 @@ import { analyzeTeamEquity } from './equitySignalsService.js';
  * Map metric keys to MetricsDaily fields
  */
 const METRIC_FIELD_MAP = {
-  'after_hours_activity': 'afterHoursRate',
-  'meeting_load': 'meetingLoadIndex',
-  'back_to_back_meetings': 'meetingHoursWeek',
-  'focus_time': 'focusTimeRatio',
-  'response_time': 'responseMedianMins',
-  'participation_drift': 'uniqueContacts',
-  'meeting_fragmentation': 'meetingHoursWeek'
+  after_hours_activity: 'afterHoursRate',
+  meeting_load: 'meetingLoadIndex',
+  back_to_back_meetings: 'meetingHoursWeek',
+  focus_time: 'focusTimeRatio',
+  response_time: 'responseMedianMins',
+  participation_drift: 'uniqueContacts',
+  meeting_fragmentation: 'meetingHoursWeek',
 };
 
 /**
@@ -42,21 +42,22 @@ async function getCurrentMetrics(teamId) {
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
-  
+
   const metrics = {};
-  
+
   for (const [metricKey, fieldName] of Object.entries(METRIC_FIELD_MAP)) {
     const dailyMetrics = await MetricsDaily.find({
       teamId,
-      date: { $gte: startDate, $lte: endDate }
-    }).select(fieldName).lean();
-    
-    const values = dailyMetrics.map(m => m[fieldName]).filter(v => v != null);
-    metrics[metricKey] = values.length > 0 
-      ? values.reduce((sum, v) => sum + v, 0) / values.length 
-      : 0;
+      date: { $gte: startDate, $lte: endDate },
+    })
+      .select(fieldName)
+      .lean();
+
+    const values = dailyMetrics.map((m) => m[fieldName]).filter((v) => v != null);
+    metrics[metricKey] =
+      values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
   }
-  
+
   return metrics;
 }
 
@@ -66,13 +67,13 @@ async function getCurrentMetrics(teamId) {
 async function getBaselines(teamId) {
   const baseline = await Baseline.findOne({ teamId }).lean();
   const baselines = {};
-  
+
   if (baseline && baseline.metrics) {
     for (const metricKey of Object.keys(METRIC_FIELD_MAP)) {
       baselines[metricKey] = baseline.metrics[metricKey]?.mean || 0;
     }
   }
-  
+
   return baselines;
 }
 
@@ -81,14 +82,14 @@ async function getBaselines(teamId) {
  */
 function calculateDeviation(currentValue, baselineMean, isHigherBetter = false) {
   if (!baselineMean || baselineMean === 0) return 0;
-  
+
   let deviation = (currentValue - baselineMean) / baselineMean;
-  
+
   // For metrics where higher is better (e.g., focus_time), invert the deviation
   if (isHigherBetter) {
     deviation = -deviation;
   }
-  
+
   // Clamp to [-1, +1]
   return Math.max(-1, Math.min(1, deviation));
 }
@@ -104,7 +105,7 @@ function getRiskBand(score) {
 
 /**
  * Calculate Overload Risk
- * 
+ *
  * Formula:
  * overload_risk =
  *   0.35 * deviation(after_hours_activity) +
@@ -116,30 +117,30 @@ export async function calculateOverloadRisk(teamId, weekStart) {
   // Fetch current metrics and baselines
   const metrics = await getCurrentMetrics(teamId);
   const baselines = await getBaselines(teamId);
-  
+
   const weights = {
     after_hours_activity: 0.35,
-    meeting_load: 0.30,
-    back_to_back_meetings: 0.20,
-    focus_time: 0.15
+    meeting_load: 0.3,
+    back_to_back_meetings: 0.2,
+    focus_time: 0.15,
   };
-  
+
   const deviations = {};
   let score = 0;
   const drivers = [];
-  
+
   for (const [metricKey, weight] of Object.entries(weights)) {
     const currentValue = metrics[metricKey] || 0;
     const baselineMean = baselines[metricKey] || 0;
     const isHigherBetter = metricKey === 'focus_time';
-    
+
     const deviation = calculateDeviation(currentValue, baselineMean, isHigherBetter);
     deviations[metricKey] = deviation;
-    
+
     // Only positive deviations contribute to risk
     const contributionScore = Math.max(0, deviation) * weight;
     score += contributionScore;
-    
+
     // Store driver if it contributes
     if (deviation > 0.1) {
       drivers.push({
@@ -149,17 +150,17 @@ export async function calculateOverloadRisk(teamId, weekStart) {
         metricKey,
         contributionWeight: weight,
         deviation,
-        explanationText: getDeviationExplanation(metricKey, deviation, currentValue, baselineMean)
+        explanationText: getDeviationExplanation(metricKey, deviation, currentValue, baselineMean),
       });
     }
   }
-  
+
   // Convert to 0-100 scale
   score = Math.round(score * 100);
-  
+
   const band = getRiskBand(score);
   const confidence = determineConfidence(baselines);
-  
+
   // Save risk
   const risk = await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'overload' },
@@ -167,23 +168,23 @@ export async function calculateOverloadRisk(teamId, weekStart) {
       score,
       band,
       confidence,
-      explanation: getOverloadExplanation(score, band, drivers)
+      explanation: getOverloadExplanation(score, band, drivers),
     },
     { upsert: true, new: true }
   );
-  
+
   // Save drivers
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'overload' });
   if (drivers.length > 0) {
     await RiskDriver.insertMany(drivers);
   }
-  
+
   return { risk, drivers };
 }
 
 /**
  * Calculate Execution Risk
- * 
+ *
  * Formula:
  * execution_risk =
  *   0.30 * deviation(response_time) +
@@ -195,29 +196,29 @@ export async function calculateExecutionRisk(teamId, weekStart) {
   // Fetch current metrics and baselines
   const metrics = await getCurrentMetrics(teamId);
   const baselines = await getBaselines(teamId);
-  
+
   const weights = {
-    response_time: 0.30,
+    response_time: 0.3,
     participation_drift: 0.25,
     meeting_fragmentation: 0.25,
-    focus_time: 0.20
+    focus_time: 0.2,
   };
-  
+
   const deviations = {};
   let score = 0;
   const drivers = [];
-  
+
   for (const [metricKey, weight] of Object.entries(weights)) {
     const currentValue = metrics[metricKey] || 0;
     const baselineMean = baselines[metricKey] || 0;
     const isHigherBetter = metricKey === 'focus_time';
-    
+
     const deviation = calculateDeviation(currentValue, baselineMean, isHigherBetter);
     deviations[metricKey] = deviation;
-    
+
     const contributionScore = Math.max(0, deviation) * weight;
     score += contributionScore;
-    
+
     if (deviation > 0.1) {
       drivers.push({
         teamId,
@@ -226,37 +227,37 @@ export async function calculateExecutionRisk(teamId, weekStart) {
         metricKey,
         contributionWeight: weight,
         deviation,
-        explanationText: getDeviationExplanation(metricKey, deviation, currentValue, baselineMean)
+        explanationText: getDeviationExplanation(metricKey, deviation, currentValue, baselineMean),
       });
     }
   }
-  
+
   score = Math.round(score * 100);
   const band = getRiskBand(score);
   const confidence = determineConfidence(baselines);
-  
+
   const risk = await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'execution' },
     {
       score,
       band,
       confidence,
-      explanation: getExecutionExplanation(score, band, drivers)
+      explanation: getExecutionExplanation(score, band, drivers),
     },
     { upsert: true, new: true }
   );
-  
+
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'execution' });
   if (drivers.length > 0) {
     await RiskDriver.insertMany(drivers);
   }
-  
+
   return { risk, drivers };
 }
 
 /**
  * Calculate Retention Strain Risk
- * 
+ *
  * Formula (based on 3-week trend slopes):
  * retention_strain_risk =
  *   0.40 * slope(after_hours_activity) +
@@ -268,32 +269,34 @@ export async function calculateRetentionStrainRisk(teamId, weekStart) {
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 21); // 3 weeks
-  
+
   const metricsHistory = await MetricsDaily.find({
     teamId,
-    date: { $gte: startDate, $lte: endDate }
-  }).sort({ date: 1 }).lean();
-  
+    date: { $gte: startDate, $lte: endDate },
+  })
+    .sort({ date: 1 })
+    .lean();
+
   const baselines = await getBaselines(teamId);
-  
+
   const weights = {
-    after_hours_activity: 0.40,
-    meeting_load: 0.30,
-    response_time: 0.30
+    after_hours_activity: 0.4,
+    meeting_load: 0.3,
+    response_time: 0.3,
   };
-  
+
   const slopes = {};
   let score = 0;
   const drivers = [];
-  
+
   for (const [metricKey, weight] of Object.entries(weights)) {
     const slope = calculateTrendSlope(metricsHistory, metricKey);
     slopes[metricKey] = slope;
-    
+
     // Positive slope (increasing trend) contributes to retention strain
     const contributionScore = Math.max(0, slope) * weight;
     score += contributionScore;
-    
+
     if (slope > 0.1) {
       drivers.push({
         teamId,
@@ -302,31 +305,31 @@ export async function calculateRetentionStrainRisk(teamId, weekStart) {
         metricKey,
         contributionWeight: weight,
         deviation: slope,
-        explanationText: getTrendExplanation(metricKey, slope)
+        explanationText: getTrendExplanation(metricKey, slope),
       });
     }
   }
-  
+
   score = Math.round(score * 100);
   const band = getRiskBand(score);
   const confidence = determineConfidence(baselines);
-  
+
   const risk = await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'retention_strain' },
     {
       score,
       band,
       confidence,
-      explanation: getRetentionStrainExplanation(score, band, drivers)
+      explanation: getRetentionStrainExplanation(score, band, drivers),
     },
     { upsert: true, new: true }
   );
-  
+
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'retention_strain' });
   if (drivers.length > 0) {
     await RiskDriver.insertMany(drivers);
   }
-  
+
   return { risk, drivers };
 }
 
@@ -336,24 +339,24 @@ export async function calculateRetentionStrainRisk(teamId, weekStart) {
 function calculateTrendSlope(metricsHistory, metricKey) {
   // metricsHistory should be array of last 3 weeks
   if (!metricsHistory || metricsHistory.length < 2) return 0;
-  
+
   const fieldName = METRIC_FIELD_MAP[metricKey];
   if (!fieldName) return 0;
-  
-  const values = metricsHistory.map(m => m[fieldName] || 0);
-  
+
+  const values = metricsHistory.map((m) => m[fieldName] || 0);
+
   // Simple linear regression slope
   const n = values.length;
   const x = Array.from({ length: n }, (_, i) => i);
   const y = values;
-  
+
   const sumX = x.reduce((a, b) => a + b, 0);
   const sumY = y.reduce((a, b) => a + b, 0);
   const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
   const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
-  
+
   const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  
+
   // Normalize slope
   const meanY = sumY / n;
   return meanY !== 0 ? slope / meanY : 0;
@@ -361,7 +364,7 @@ function calculateTrendSlope(metricsHistory, metricKey) {
 
 /**
  * Determine Team State based on risk scores
- * 
+ *
  * Logic:
  * - healthy: all risks < 35
  * - strained: any risk ≥ 35
@@ -369,22 +372,24 @@ function calculateTrendSlope(metricsHistory, metricKey) {
  * - breaking: execution_risk ≥ 65 for 2+ weeks
  */
 export async function determineTeamState(teamId, weekStart, risks, previousStates = []) {
-  const overloadRisk = risks.find(r => r.riskType === 'overload');
-  const executionRisk = risks.find(r => r.riskType === 'execution');
-  const retentionRisk = risks.find(r => r.riskType === 'retention_strain');
-  
+  const overloadRisk = risks.find((r) => r.riskType === 'overload');
+  const executionRisk = risks.find((r) => r.riskType === 'execution');
+  const retentionRisk = risks.find((r) => r.riskType === 'retention_strain');
+
   let state = 'healthy';
   let summaryText = 'Team patterns are within normal range.';
   let dominantRisk = 'none';
-  
+
   // Check for breaking state (execution risk high for 2+ weeks)
   const recentExecutionRisks = await RiskWeekly.find({
     teamId,
     riskType: 'execution',
     weekStart: { $lte: weekStart },
-    score: { $gte: 65 }
-  }).sort({ weekStart: -1 }).limit(2);
-  
+    score: { $gte: 65 },
+  })
+    .sort({ weekStart: -1 })
+    .limit(2);
+
   if (recentExecutionRisks.length >= 2) {
     state = 'breaking';
     summaryText = 'Coordination patterns have degraded significantly for multiple weeks.';
@@ -393,22 +398,24 @@ export async function determineTeamState(teamId, weekStart, risks, previousState
   // Check for overloaded state
   else if (overloadRisk && overloadRisk.score >= 65) {
     state = 'overloaded';
-    summaryText = 'Work intensity is exceeding the team\'s ability to recover.';
+    summaryText = "Work intensity is exceeding the team's ability to recover.";
     dominantRisk = 'overload';
   }
   // Check for strained state
-  else if ((overloadRisk && overloadRisk.score >= 35) ||
-           (executionRisk && executionRisk.score >= 35) ||
-           (retentionRisk && retentionRisk.score >= 35)) {
+  else if (
+    (overloadRisk && overloadRisk.score >= 35) ||
+    (executionRisk && executionRisk.score >= 35) ||
+    (retentionRisk && retentionRisk.score >= 35)
+  ) {
     state = 'strained';
-    
+
     // Determine which risk is dominant
     const maxRisk = [overloadRisk, executionRisk, retentionRisk]
-      .filter(r => r)
+      .filter((r) => r)
       .sort((a, b) => b.score - a.score)[0];
-    
+
     dominantRisk = maxRisk.riskType;
-    
+
     if (dominantRisk === 'overload') {
       summaryText = 'Coordination pressure is rising compared to normal patterns.';
     } else if (dominantRisk === 'execution') {
@@ -417,14 +424,17 @@ export async function determineTeamState(teamId, weekStart, risks, previousState
       summaryText = 'Sustained pressure patterns may increase exit risk.';
     }
   }
-  
+
   // Determine confidence
-  const confidence = risks.every(r => r.confidence === 'high') ? 'high' :
-                     risks.some(r => r.confidence === 'low') ? 'low' : 'medium';
-  
+  const confidence = risks.every((r) => r.confidence === 'high')
+    ? 'high'
+    : risks.some((r) => r.confidence === 'low')
+      ? 'low'
+      : 'medium';
+
   // Calculate intelligence scores
   const intelligenceScores = await calculateIntelligenceScores(teamId);
-  
+
   const teamState = await TeamState.findOneAndUpdate(
     { teamId, weekStart },
     {
@@ -432,11 +442,11 @@ export async function determineTeamState(teamId, weekStart, risks, previousState
       confidence,
       summaryText,
       dominantRisk,
-      intelligenceScores
+      intelligenceScores,
     },
     { upsert: true, new: true }
   );
-  
+
   return teamState;
 }
 
@@ -449,34 +459,36 @@ async function calculateIntelligenceScores(teamId) {
     if (!team) {
       return getEmptyIntelligenceScores();
     }
-    
+
     const [attrition, manager, crisis, network, succession, equity] = await Promise.all([
       getTeamRiskSummary(teamId).catch(() => null),
-      team.managerId ? calculateManagerEffectiveness(team.managerId, teamId).catch(() => null) : null,
+      team.managerId
+        ? calculateManagerEffectiveness(team.managerId, teamId).catch(() => null)
+        : null,
       detectTeamCrisis(teamId).catch(() => null),
       analyzeNetworkHealth(teamId).catch(() => null),
       analyzeTeamSuccessionRisk(teamId).catch(() => null),
-      analyzeTeamEquity(teamId).catch(() => null)
+      analyzeTeamEquity(teamId).catch(() => null),
     ]);
-    
+
     return {
       attritionRisk: {
         highRiskCount: attrition?.highRiskCount || 0,
         criticalRiskCount: attrition?.criticalRiskCount || 0,
-        avgRiskScore: attrition?.avgRiskScore || 0
+        avgRiskScore: attrition?.avgRiskScore || 0,
       },
       managerEffectiveness: manager?.effectivenessScore || null,
       crisisActive: crisis?.length > 0 || false,
       networkHealth: {
         siloScore: network?.siloScore || 0,
         bottleneckCount: network?.bottlenecks?.length || 0,
-        isolatedMemberCount: network?.isolatedMembers?.length || 0
+        isolatedMemberCount: network?.isolatedMembers?.length || 0,
       },
       successionRisk: {
         busFactor: succession?.busFactor || 100,
-        criticalRoleCount: succession?.criticalRoles?.length || 0
+        criticalRoleCount: succession?.criticalRoles?.length || 0,
       },
-      equityScore: equity?.overallEquityScore || 100
+      equityScore: equity?.overallEquityScore || 100,
     };
   } catch (error) {
     console.error('Error calculating intelligence scores:', error);
@@ -489,20 +501,20 @@ function getEmptyIntelligenceScores() {
     attritionRisk: {
       highRiskCount: 0,
       criticalRiskCount: 0,
-      avgRiskScore: 0
+      avgRiskScore: 0,
     },
     managerEffectiveness: null,
     crisisActive: false,
     networkHealth: {
       siloScore: 0,
       bottleneckCount: 0,
-      isolatedMemberCount: 0
+      isolatedMemberCount: 0,
     },
     successionRisk: {
       busFactor: 100,
-      criticalRoleCount: 0
+      criticalRoleCount: 0,
     },
-    equityScore: 100
+    equityScore: 100,
   };
 }
 
@@ -512,7 +524,7 @@ function getEmptyIntelligenceScores() {
 function getDeviationExplanation(metricKey, deviation, currentValue, baselineMean) {
   const percentChange = Math.round(Math.abs(deviation) * 100);
   const direction = deviation > 0 ? 'higher' : 'lower';
-  
+
   const metricNames = {
     after_hours_activity: 'After-hours activity',
     meeting_load: 'Meeting load',
@@ -520,22 +532,22 @@ function getDeviationExplanation(metricKey, deviation, currentValue, baselineMea
     focus_time: 'Focus time',
     response_time: 'Response time',
     participation_drift: 'Participation drift',
-    meeting_fragmentation: 'Meeting fragmentation'
+    meeting_fragmentation: 'Meeting fragmentation',
   };
-  
+
   return `${metricNames[metricKey]} is ${percentChange}% ${direction} than baseline`;
 }
 
 function getTrendExplanation(metricKey, slope) {
   const trendStrength = Math.abs(slope) > 0.3 ? 'strongly' : 'gradually';
   const direction = slope > 0 ? 'increasing' : 'decreasing';
-  
+
   const metricNames = {
     after_hours_activity: 'After-hours activity',
     meeting_load: 'Meeting load',
-    response_time: 'Response time'
+    response_time: 'Response time',
   };
-  
+
   return `${metricNames[metricKey]} has been ${trendStrength} ${direction} over the past 3 weeks`;
 }
 
@@ -543,16 +555,16 @@ function getOverloadExplanation(score, band, drivers) {
   if (band === 'green') {
     return 'Work intensity is within normal range.';
   }
-  
+
   const topDrivers = drivers
-    .sort((a, b) => (b.deviation * b.contributionWeight) - (a.deviation * a.contributionWeight))
+    .sort((a, b) => b.deviation * b.contributionWeight - a.deviation * a.contributionWeight)
     .slice(0, 2);
-  
+
   if (topDrivers.length === 0) {
     return 'Work intensity is elevated but manageable.';
   }
-  
-  const driverTexts = topDrivers.map(d => d.explanationText).join('. ');
+
+  const driverTexts = topDrivers.map((d) => d.explanationText).join('. ');
   return `${driverTexts}.`;
 }
 
@@ -560,16 +572,16 @@ function getExecutionExplanation(score, band, drivers) {
   if (band === 'green') {
     return 'Coordination patterns are efficient.';
   }
-  
+
   const topDrivers = drivers
-    .sort((a, b) => (b.deviation * b.contributionWeight) - (a.deviation * a.contributionWeight))
+    .sort((a, b) => b.deviation * b.contributionWeight - a.deviation * a.contributionWeight)
     .slice(0, 2);
-  
+
   if (topDrivers.length === 0) {
     return 'Coordination efficiency is slightly reduced.';
   }
-  
-  const driverTexts = topDrivers.map(d => d.explanationText).join('. ');
+
+  const driverTexts = topDrivers.map((d) => d.explanationText).join('. ');
   return `${driverTexts}.`;
 }
 
@@ -577,23 +589,23 @@ function getRetentionStrainExplanation(score, band, drivers) {
   if (band === 'green') {
     return 'Pressure patterns are stable.';
   }
-  
+
   const topDrivers = drivers
-    .sort((a, b) => (b.deviation * b.contributionWeight) - (a.deviation * a.contributionWeight))
+    .sort((a, b) => b.deviation * b.contributionWeight - a.deviation * a.contributionWeight)
     .slice(0, 2);
-  
+
   if (topDrivers.length === 0) {
     return 'Some sustained pressure detected.';
   }
-  
-  const driverTexts = topDrivers.map(d => d.explanationText).join('. ');
+
+  const driverTexts = topDrivers.map((d) => d.explanationText).join('. ');
   return `${driverTexts}.`;
 }
 
 function determineConfidence(baselines) {
   // If we have solid baselines, confidence is medium/high
   // If baselines are sparse or recent, confidence is low
-  const hasBaselines = Object.values(baselines).some(v => v > 0);
+  const hasBaselines = Object.values(baselines).some((v) => v > 0);
   return hasBaselines ? 'medium' : 'low';
 }
 
@@ -601,5 +613,5 @@ export default {
   calculateOverloadRisk,
   calculateExecutionRisk,
   calculateRetentionStrainRisk,
-  determineTeamState
+  determineTeamState,
 };

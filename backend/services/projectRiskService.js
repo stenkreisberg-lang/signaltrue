@@ -14,19 +14,19 @@ export async function analyzeTeamProjects(teamId) {
   try {
     // Step 1: Discover projects from meeting titles and Slack channels
     const projects = await discoverProjects(teamId);
-    
+
     if (projects.length === 0) {
       return [];
     }
-    
+
     const results = [];
-    
+
     // Step 2: Analyze risk for each project
     for (const project of projects) {
       const risk = await analyzeProjectRisk(teamId, project);
       results.push(risk);
     }
-    
+
     return results;
   } catch (error) {
     console.error('[Project Risk] Error analyzing team projects:', error);
@@ -40,19 +40,19 @@ export async function analyzeTeamProjects(teamId) {
 async function discoverProjects(teamId) {
   // Placeholder - in production, query Google Calendar API for recurring meetings
   // and Slack API for project channels
-  
+
   // Mock data showing how it would work:
   return [
     {
       name: 'Q1 Product Launch',
       source: 'calendar_meeting_title', // from "Q1 Launch - Weekly Planning"
-      meetingId: 'meeting_123'
+      meetingId: 'meeting_123',
     },
     {
       name: 'Mobile App Redesign',
       source: 'slack_channel', // from #mobile-redesign channel
-      channelId: 'C123456'
-    }
+      channelId: 'C123456',
+    },
   ];
 }
 
@@ -62,29 +62,29 @@ async function discoverProjects(teamId) {
 async function analyzeProjectRisk(teamId, project) {
   // Get calendar signals
   const calendarSignals = await getCalendarSignals(teamId, project);
-  
+
   // Get Slack signals
   const slackSignals = await getSlackSignals(teamId, project);
-  
+
   // Calculate risk score
   const riskScore = calculateProjectRiskScore(calendarSignals, slackSignals);
-  
+
   // Determine risk level
   const riskLevel = getRiskLevel(riskScore);
-  
+
   // Generate prediction
   const prediction = generatePrediction(riskScore, calendarSignals, slackSignals);
-  
+
   // Determine confidence
   const confidence = determineConfidence(calendarSignals, slackSignals);
-  
+
   // Generate recommendations
   const recommendedActions = generateRecommendations(calendarSignals, slackSignals);
-  
+
   // Save or update
   const team = await Team.findById(teamId);
   let risk = await ProjectRisk.findOne({ teamId, projectName: project.name });
-  
+
   if (risk) {
     Object.assign(risk, {
       riskScore,
@@ -94,7 +94,7 @@ async function analyzeProjectRisk(teamId, project) {
       prediction,
       confidence,
       recommendedActions,
-      lastAnalyzed: new Date()
+      lastAnalyzed: new Date(),
     });
   } else {
     risk = new ProjectRisk({
@@ -108,10 +108,10 @@ async function analyzeProjectRisk(teamId, project) {
       slackSignals,
       prediction,
       confidence,
-      recommendedActions
+      recommendedActions,
     });
   }
-  
+
   await risk.save();
   return risk;
 }
@@ -125,18 +125,18 @@ async function getCalendarSignals(teamId, project) {
     emergencyMeetingsSpike: {
       baseline: 2,
       current: 8,
-      detected: true
+      detected: true,
     },
     meetingDurationIncrease: {
       baselineMinutes: 30,
       currentMinutes: 90,
       percentChange: 200,
-      detected: true
+      detected: true,
     },
     externalMeetingsIncrease: {
       count: 12,
-      detected: true
-    }
+      detected: true,
+    },
   };
 }
 
@@ -149,21 +149,21 @@ async function getSlackSignals(teamId, project) {
     escalationKeywords: {
       count: 45,
       keywords: ['urgent', 'blocker', 'help needed', 'critical', 'deadline'],
-      detected: true
+      detected: true,
     },
     questionResponseTime: {
       baselineHours: 2,
       currentHours: 8,
-      detected: true
+      detected: true,
     },
     afterHoursSpike: {
       percentChange: 85,
-      detected: true
+      detected: true,
     },
     deadlineMentions: {
       count: 18,
-      detected: true
-    }
+      detected: true,
+    },
   };
 }
 
@@ -172,18 +172,18 @@ async function getSlackSignals(teamId, project) {
  */
 function calculateProjectRiskScore(calendar, slack) {
   let score = 0;
-  
+
   // Calendar signals (40% weight)
   if (calendar.emergencyMeetingsSpike.detected) score += 25;
   if (calendar.meetingDurationIncrease.detected) score += 20;
   if (calendar.externalMeetingsIncrease.detected) score += 15;
-  
+
   // Slack signals (60% weight)
   if (slack.escalationKeywords.detected) score += 25;
   if (slack.questionResponseTime.detected) score += 10;
   if (slack.afterHoursSpike.detected) score += 20;
   if (slack.deadlineMentions.detected) score += 10;
-  
+
   return Math.min(score, 100);
 }
 
@@ -216,7 +216,7 @@ function generatePrediction(score, calendar, slack) {
  */
 function determineConfidence(calendar, slack) {
   let signals = 0;
-  
+
   if (calendar.emergencyMeetingsSpike.detected) signals++;
   if (calendar.meetingDurationIncrease.detected) signals++;
   if (calendar.externalMeetingsIncrease.detected) signals++;
@@ -224,7 +224,7 @@ function determineConfidence(calendar, slack) {
   if (slack.questionResponseTime.detected) signals++;
   if (slack.afterHoursSpike.detected) signals++;
   if (slack.deadlineMentions.detected) signals++;
-  
+
   if (signals >= 5) return 'high';
   if (signals >= 3) return 'medium';
   return 'low';
@@ -235,27 +235,27 @@ function determineConfidence(calendar, slack) {
  */
 function generateRecommendations(calendar, slack) {
   const recs = [];
-  
+
   if (calendar.emergencyMeetingsSpike.detected) {
     recs.push('Reduce emergency meetings - establish regular sync cadence');
   }
-  
+
   if (calendar.meetingDurationIncrease.detected) {
     recs.push('Meetings getting longer indicates indecision - clarify decision-making authority');
   }
-  
+
   if (slack.escalationKeywords.detected) {
     recs.push('High escalation language - identify and remove blockers');
   }
-  
+
   if (slack.questionResponseTime.detected) {
     recs.push('Team members stuck waiting for answers - improve async communication');
   }
-  
+
   if (slack.afterHoursSpike.detected) {
     recs.push('Team working excessive after-hours - review scope or extend timeline');
   }
-  
+
   return recs;
 }
 
@@ -266,11 +266,11 @@ export async function getHighRiskProjects(orgId, minRiskScore = 55) {
   try {
     const projects = await ProjectRisk.find({
       orgId,
-      riskScore: { $gte: minRiskScore }
+      riskScore: { $gte: minRiskScore },
     })
-    .populate('teamId', 'name')
-    .sort({ riskScore: -1 });
-    
+      .populate('teamId', 'name')
+      .sort({ riskScore: -1 });
+
     return projects;
   } catch (error) {
     console.error('[Project Risk] Error fetching high-risk projects:', error);
@@ -281,5 +281,5 @@ export async function getHighRiskProjects(orgId, minRiskScore = 55) {
 export default {
   analyzeTeamProjects,
   analyzeProjectRisk,
-  getHighRiskProjects
+  getHighRiskProjects,
 };

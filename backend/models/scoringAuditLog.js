@@ -47,17 +47,17 @@ const scoringAuditLogSchema = new mongoose.Schema(
     // Snapshot of the raw inputs fed into the scoring run
     inputSnapshot: {
       weekStart: Date,
-      metricsUsed: { type: Object, default: {} },    // { metricKey: value, ... }
-      baselines: { type: Object, default: {} },       // { metricKey: baselineMean, ... }
-      baselineConfidence: { type: Number },           // 0–1
+      metricsUsed: { type: Object, default: {} }, // { metricKey: value, ... }
+      baselines: { type: Object, default: {} }, // { metricKey: baselineMean, ... }
+      baselineConfidence: { type: Number }, // 0–1
       teamSize: { type: Number },
     },
 
     // Outputs produced
     outputSnapshot: {
-      scores: { type: Object, default: {} },          // { bdi: 72, overload: 48, ... }
-      bands: { type: Object, default: {} },           // { overload: 'yellow', ... }
-      state: String,                                  // 'healthy' | 'strained' | ...
+      scores: { type: Object, default: {} }, // { bdi: 72, overload: 48, ... }
+      bands: { type: Object, default: {} }, // { overload: 'yellow', ... }
+      state: String, // 'healthy' | 'strained' | ...
       drivers: { type: Array, default: [] },
     },
 

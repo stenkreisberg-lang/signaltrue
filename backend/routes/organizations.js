@@ -22,12 +22,11 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
-
 // Middleware to check master admin
 function requireMasterAdmin(req, res, next) {
   if (!req.user.isMasterAdmin) {
-    return res.status(403).json({ 
-      message: 'Forbidden: Master admin access required' 
+    return res.status(403).json({
+      message: 'Forbidden: Master admin access required',
     });
   }
   next();
@@ -37,21 +36,23 @@ function requireMasterAdmin(req, res, next) {
 router.get('/', authenticateToken, requireMasterAdmin, async (req, res) => {
   try {
     const orgs = await Organization.find().sort({ createdAt: -1 });
-    
+
     // Get counts for each org
-    const orgsWithCounts = await Promise.all(orgs.map(async (org) => {
-      const teamCount = await Team.countDocuments({ orgId: org._id });
-      const userCount = await User.countDocuments({ orgId: org._id });
-      
-      return {
-        ...org.toObject(),
-        stats: {
-          teams: teamCount,
-          users: userCount
-        }
-      };
-    }));
-    
+    const orgsWithCounts = await Promise.all(
+      orgs.map(async (org) => {
+        const teamCount = await Team.countDocuments({ orgId: org._id });
+        const userCount = await User.countDocuments({ orgId: org._id });
+
+        return {
+          ...org.toObject(),
+          stats: {
+            teams: teamCount,
+            users: userCount,
+          },
+        };
+      })
+    );
+
     res.json(orgsWithCounts);
   } catch (error) {
     console.error('Get organizations error:', error);
@@ -63,19 +64,19 @@ router.get('/', authenticateToken, requireMasterAdmin, async (req, res) => {
 router.get('/:orgId', authenticateToken, requireMasterAdmin, async (req, res) => {
   try {
     const org = await Organization.findById(req.params.orgId);
-    
+
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    
+
     // Get detailed stats
     const teams = await Team.find({ orgId: org._id });
     const users = await User.find({ orgId: org._id }).select('-password');
-    
+
     res.json({
       ...org.toObject(),
       teams,
-      users
+      users,
     });
   } catch (error) {
     console.error('Get organization error:', error);
@@ -99,7 +100,7 @@ router.post('/', authenticateToken, requireMasterAdmin, async (req, res) => {
       name,
       industry: industry.trim(),
       size,
-      subscription: subscription || { plan: 'trial', status: 'active' }
+      subscription: subscription || { plan: 'trial', status: 'active' },
     });
 
     await org.save();
@@ -115,21 +116,21 @@ router.post('/', authenticateToken, requireMasterAdmin, async (req, res) => {
 router.put('/:orgId', authenticateToken, requireMasterAdmin, async (req, res) => {
   try {
     const { name, industry, size, subscription, settings } = req.body;
-    
+
     const org = await Organization.findById(req.params.orgId);
-    
+
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    
+
     if (name) org.name = name;
     if (industry !== undefined) org.industry = industry;
     if (size !== undefined) org.size = size;
     if (subscription) org.subscription = { ...org.subscription, ...subscription };
     if (settings) org.settings = { ...org.settings, ...settings };
-    
+
     await org.save();
-    
+
     res.json(org);
   } catch (error) {
     console.error('Update organization error:', error);
@@ -141,20 +142,20 @@ router.put('/:orgId', authenticateToken, requireMasterAdmin, async (req, res) =>
 router.delete('/:orgId', authenticateToken, requireMasterAdmin, async (req, res) => {
   try {
     const org = await Organization.findById(req.params.orgId);
-    
+
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    
+
     // Delete all associated teams
     await Team.deleteMany({ orgId: org._id });
-    
+
     // Delete all associated users
     await User.deleteMany({ orgId: org._id });
-    
+
     // Delete the organization
     await Organization.findByIdAndDelete(org._id);
-    
+
     res.json({ message: 'Organization and all associated data deleted successfully' });
   } catch (error) {
     console.error('Delete organization error:', error);

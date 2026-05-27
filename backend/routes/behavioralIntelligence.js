@@ -4,51 +4,47 @@
  */
 
 import express from 'express';
-import { authenticateToken, requireAdmin, requireHROrAdmin } from '../middleware/auth.js';
+import {
+  authenticateToken,
+  requireAdmin,
+  requireHROrAdmin,
+  requireOrganizationAccess,
+} from '../middleware/auth.js';
 import {
   calculateAttritionRisk,
   calculateTeamAttritionRisk,
   getHighRiskIndividuals,
-  getTeamRiskSummary
+  getTeamRiskSummary,
 } from '../services/attritionRiskService.js';
 import {
   calculateManagerEffectiveness,
   getOrgManagerEffectiveness,
-  getManagersNeedingCoaching
+  getManagersNeedingCoaching,
 } from '../services/managerEffectivenessService.js';
 import {
   runCrisisDetection,
   detectTeamCrisis,
   getActiveCrises,
   acknowledgeCrisis,
-  resolveCrisis
+  resolveCrisis,
 } from '../services/crisisDetectionService.js';
-import {
-  analyzeTeamProjects,
-  getHighRiskProjects
-} from '../services/projectRiskService.js';
-import {
-  analyzeNetworkHealth,
-  getOrgNetworkHealth
-} from '../services/networkHealthService.js';
+import { analyzeTeamProjects, getHighRiskProjects } from '../services/projectRiskService.js';
+import { analyzeNetworkHealth, getOrgNetworkHealth } from '../services/networkHealthService.js';
 import {
   analyzeTeamSuccessionRisk,
   analyzeIndividualSuccessionRisk,
-  getCriticalSuccessionRisks
+  getCriticalSuccessionRisks,
 } from '../services/successionRiskService.js';
-import {
-  analyzeTeamEquity,
-  getOrgEquityIssues
-} from '../services/equitySignalsService.js';
+import { analyzeTeamEquity, getOrgEquityIssues } from '../services/equitySignalsService.js';
 import {
   analyzeMeetingROI,
   analyzeTeamRecentMeetings,
-  getLowROIMeetings
+  getLowROIMeetings,
 } from '../services/enhancedMeetingROIService.js';
 import {
   analyzeUserOutlookSignals,
   analyzeTeamOutlookSignals,
-  getCriticalOutlookSignals
+  getCriticalOutlookSignals,
 } from '../services/outlookSignalsService.js';
 
 const router = express.Router();
@@ -65,7 +61,7 @@ router.get('/attrition/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const summary = await getTeamRiskSummary(teamId);
-    
+
     res.json(summary);
   } catch (error) {
     console.error('[Intelligence API] Error fetching team attrition summary:', error);
@@ -77,67 +73,83 @@ router.get('/attrition/team/:teamId', authenticateToken, async (req, res) => {
  * GET /api/intelligence/attrition/org/:orgId
  * Get all high-risk individuals (HR only - privacy-sensitive)
  */
-router.get('/attrition/org/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { minRiskScore } = req.query;
-    
-    const highRisk = await getHighRiskIndividuals(
-      orgId,
-      minRiskScore ? parseInt(minRiskScore) : 60
-    );
-    
-    res.json({
-      count: highRisk.length,
-      individuals: highRisk
-    });
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching high-risk individuals:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/attrition/org/:orgId',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { minRiskScore } = req.query;
+
+      const highRisk = await getHighRiskIndividuals(
+        orgId,
+        minRiskScore ? parseInt(minRiskScore) : 60
+      );
+
+      res.json({
+        count: highRisk.length,
+        individuals: highRisk,
+      });
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching high-risk individuals:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 /**
  * POST /api/intelligence/attrition/:userId/calculate
  * Trigger attrition risk calculation for a user
  */
-router.post('/attrition/:userId/calculate', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { teamId } = req.body;
-    
-    if (!teamId) {
-      return res.status(400).json({ message: 'teamId required in body' });
+router.post(
+  '/attrition/:userId/calculate',
+  authenticateToken,
+  requireHROrAdmin,
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { teamId } = req.body;
+
+      if (!teamId) {
+        return res.status(400).json({ message: 'teamId required in body' });
+      }
+
+      const risk = await calculateAttritionRisk(userId, teamId);
+
+      res.json(risk);
+    } catch (error) {
+      console.error('[Intelligence API] Error calculating attrition risk:', error);
+      res.status(500).json({ message: error.message });
     }
-    
-    const risk = await calculateAttritionRisk(userId, teamId);
-    
-    res.json(risk);
-  } catch (error) {
-    console.error('[Intelligence API] Error calculating attrition risk:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 /**
  * POST /api/intelligence/attrition/team/:teamId/calculate
  * Trigger attrition risk calculation for entire team
  */
-router.post('/attrition/team/:teamId/calculate', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    
-    const risks = await calculateTeamAttritionRisk(teamId);
-    
-    res.json({
-      count: risks.length,
-      risks
-    });
-  } catch (error) {
-    console.error('[Intelligence API] Error calculating team attrition risk:', error);
-    res.status(500).json({ message: error.message });
+router.post(
+  '/attrition/team/:teamId/calculate',
+  authenticateToken,
+  requireHROrAdmin,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+
+      const risks = await calculateTeamAttritionRisk(teamId);
+
+      res.json({
+        count: risks.length,
+        risks,
+      });
+    } catch (error) {
+      console.error('[Intelligence API] Error calculating team attrition risk:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // MANAGER EFFECTIVENESS ENDPOINTS
@@ -147,63 +159,80 @@ router.post('/attrition/team/:teamId/calculate', authenticateToken, requireHROrA
  * GET /api/intelligence/managers/:orgId
  * Get all managers with effectiveness scores
  */
-router.get('/managers/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const managers = await getOrgManagerEffectiveness(orgId);
-    
-    res.json({
-      count: managers.length,
-      managers
-    });
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching manager effectiveness:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/managers/:orgId',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const managers = await getOrgManagerEffectiveness(orgId);
+
+      res.json({
+        count: managers.length,
+        managers,
+      });
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching manager effectiveness:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 /**
  * GET /api/intelligence/managers/coaching/:orgId
  * Get managers needing coaching
  */
-router.get('/managers/coaching/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const managers = await getManagersNeedingCoaching(orgId);
-    
-    res.json({
-      count: managers.length,
-      managers
-    });
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching managers needing coaching:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/managers/coaching/:orgId',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const managers = await getManagersNeedingCoaching(orgId);
+
+      res.json({
+        count: managers.length,
+        managers,
+      });
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching managers needing coaching:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 /**
  * POST /api/intelligence/managers/:managerId/calculate
  * Trigger manager effectiveness calculation
  */
-router.post('/managers/:managerId/calculate', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { managerId } = req.params;
-    const { teamId } = req.body;
-    
-    if (!teamId) {
-      return res.status(400).json({ message: 'teamId required in body' });
+router.post(
+  '/managers/:managerId/calculate',
+  authenticateToken,
+  requireHROrAdmin,
+  async (req, res) => {
+    try {
+      const { managerId } = req.params;
+      const { teamId } = req.body;
+
+      if (!teamId) {
+        return res.status(400).json({ message: 'teamId required in body' });
+      }
+
+      const effectiveness = await calculateManagerEffectiveness(managerId, teamId);
+
+      res.json(effectiveness);
+    } catch (error) {
+      console.error('[Intelligence API] Error calculating manager effectiveness:', error);
+      res.status(500).json({ message: error.message });
     }
-    
-    const effectiveness = await calculateManagerEffectiveness(managerId, teamId);
-    
-    res.json(effectiveness);
-  } catch (error) {
-    console.error('[Intelligence API] Error calculating manager effectiveness:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 // ============================================
 // CRISIS DETECTION ENDPOINTS
@@ -213,15 +242,15 @@ router.post('/managers/:managerId/calculate', authenticateToken, requireHROrAdmi
  * GET /api/intelligence/crisis/:orgId
  * Get active crises for organization
  */
-router.get('/crisis/:orgId', authenticateToken, async (req, res) => {
+router.get('/crisis/:orgId', authenticateToken, requireOrganizationAccess(), async (req, res) => {
   try {
     const { orgId } = req.params;
-    
+
     const crises = await getActiveCrises(orgId);
-    
+
     res.json({
       count: crises.length,
-      crises
+      crises,
     });
   } catch (error) {
     console.error('[Intelligence API] Error fetching active crises:', error);
@@ -236,13 +265,13 @@ router.get('/crisis/:orgId', authenticateToken, async (req, res) => {
 router.get('/crisis/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
-    
+
     const crisis = await detectTeamCrisis(teamId);
-    
+
     if (!crisis) {
       return res.json({ crisis: null, message: 'No crisis detected' });
     }
-    
+
     res.json({ crisis });
   } catch (error) {
     console.error('[Intelligence API] Error detecting team crisis:', error);
@@ -257,14 +286,14 @@ router.get('/crisis/team/:teamId', authenticateToken, async (req, res) => {
 router.post('/crisis/:crisisId/acknowledge', authenticateToken, async (req, res) => {
   try {
     const { crisisId } = req.params;
-    const userId = req.user._id || req.user.id;
-    
+    const userId = req.user.userId;
+
     const crisis = await acknowledgeCrisis(crisisId, userId);
-    
+
     if (!crisis) {
       return res.status(404).json({ message: 'Crisis not found' });
     }
-    
+
     res.json(crisis);
   } catch (error) {
     console.error('[Intelligence API] Error acknowledging crisis:', error);
@@ -280,14 +309,14 @@ router.post('/crisis/:crisisId/resolve', authenticateToken, async (req, res) => 
   try {
     const { crisisId } = req.params;
     const { notes } = req.body;
-    const userId = req.user._id || req.user.id;
-    
+    const userId = req.user.userId;
+
     const crisis = await resolveCrisis(crisisId, userId, notes);
-    
+
     if (!crisis) {
       return res.status(404).json({ message: 'Crisis not found' });
     }
-    
+
     res.json(crisis);
   } catch (error) {
     console.error('[Intelligence API] Error resolving crisis:', error);
@@ -302,11 +331,11 @@ router.post('/crisis/:crisisId/resolve', authenticateToken, async (req, res) => 
 router.post('/crisis/run-detection', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const crises = await runCrisisDetection();
-    
+
     res.json({
       message: 'Crisis detection completed',
       count: crises.length,
-      crises
+      crises,
     });
   } catch (error) {
     console.error('[Intelligence API] Error running crisis detection:', error);
@@ -326,7 +355,7 @@ router.get('/projects/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const projects = await analyzeTeamProjects(teamId);
-    
+
     res.json(projects);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing team projects:', error);
@@ -338,19 +367,25 @@ router.get('/projects/team/:teamId', authenticateToken, async (req, res) => {
  * GET /api/intelligence/projects/org/:orgId/high-risk
  * Get all high-risk projects for org
  */
-router.get('/projects/org/:orgId/high-risk', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { minRiskScore } = req.query;
-    
-    const projects = await getHighRiskProjects(orgId, parseInt(minRiskScore) || 55);
-    
-    res.json(projects);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching high-risk projects:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/projects/org/:orgId/high-risk',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { minRiskScore } = req.query;
+
+      const projects = await getHighRiskProjects(orgId, parseInt(minRiskScore) || 55);
+
+      res.json(projects);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching high-risk projects:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // NETWORK HEALTH ENDPOINTS
@@ -364,7 +399,7 @@ router.post('/network/team/:teamId/analyze', authenticateToken, async (req, res)
   try {
     const { teamId } = req.params;
     const health = await analyzeNetworkHealth(teamId);
-    
+
     res.json(health);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing network health:', error);
@@ -376,17 +411,23 @@ router.post('/network/team/:teamId/analyze', authenticateToken, async (req, res)
  * GET /api/intelligence/network/org/:orgId
  * Get network health for all teams in org
  */
-router.get('/network/org/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const health = await getOrgNetworkHealth(orgId);
-    
-    res.json(health);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching org network health:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/network/org/:orgId',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const health = await getOrgNetworkHealth(orgId);
+
+      res.json(health);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching org network health:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // SUCCESSION RISK ENDPOINTS
@@ -400,7 +441,7 @@ router.post('/succession/team/:teamId/analyze', authenticateToken, async (req, r
   try {
     const { teamId } = req.params;
     const risks = await analyzeTeamSuccessionRisk(teamId);
-    
+
     res.json(risks);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing succession risk:', error);
@@ -416,9 +457,9 @@ router.post('/succession/user/:userId/analyze', authenticateToken, async (req, r
   try {
     const { userId } = req.params;
     const { teamId } = req.body;
-    
+
     const risk = await analyzeIndividualSuccessionRisk(userId, teamId);
-    
+
     res.json(risk);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing individual succession risk:', error);
@@ -430,19 +471,25 @@ router.post('/succession/user/:userId/analyze', authenticateToken, async (req, r
  * GET /api/intelligence/succession/org/:orgId/critical
  * Get critical succession risks for org
  */
-router.get('/succession/org/:orgId/critical', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { minRiskScore } = req.query;
-    
-    const risks = await getCriticalSuccessionRisks(orgId, parseInt(minRiskScore) || 65);
-    
-    res.json(risks);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching critical succession risks:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/succession/org/:orgId/critical',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { minRiskScore } = req.query;
+
+      const risks = await getCriticalSuccessionRisks(orgId, parseInt(minRiskScore) || 65);
+
+      res.json(risks);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching critical succession risks:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // EQUITY SIGNALS ENDPOINTS
@@ -456,7 +503,7 @@ router.post('/equity/team/:teamId/analyze', authenticateToken, async (req, res) 
   try {
     const { teamId } = req.params;
     const equity = await analyzeTeamEquity(teamId);
-    
+
     res.json(equity);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing team equity:', error);
@@ -468,19 +515,25 @@ router.post('/equity/team/:teamId/analyze', authenticateToken, async (req, res) 
  * GET /api/intelligence/equity/org/:orgId/issues
  * Get equity issues for org
  */
-router.get('/equity/org/:orgId/issues', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { maxScore } = req.query;
-    
-    const issues = await getOrgEquityIssues(orgId, parseInt(maxScore) || 65);
-    
-    res.json(issues);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching equity issues:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/equity/org/:orgId/issues',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { maxScore } = req.query;
+
+      const issues = await getOrgEquityIssues(orgId, parseInt(maxScore) || 65);
+
+      res.json(issues);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching equity issues:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // ENHANCED MEETING ROI ENDPOINTS
@@ -494,9 +547,9 @@ router.post('/meeting-roi/:meetingId/analyze', authenticateToken, async (req, re
   try {
     const { meetingId } = req.params;
     const { teamId } = req.body;
-    
+
     const roi = await analyzeMeetingROI(meetingId, teamId);
-    
+
     res.json(roi);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing meeting ROI:', error);
@@ -512,9 +565,9 @@ router.post('/meeting-roi/team/:teamId/analyze-recent', authenticateToken, async
   try {
     const { teamId } = req.params;
     const { days } = req.query;
-    
+
     const meetings = await analyzeTeamRecentMeetings(teamId, parseInt(days) || 7);
-    
+
     res.json(meetings);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing recent meetings:', error);
@@ -526,19 +579,25 @@ router.post('/meeting-roi/team/:teamId/analyze-recent', authenticateToken, async
  * GET /api/intelligence/meeting-roi/org/:orgId/low-roi
  * Get low ROI meetings for org
  */
-router.get('/meeting-roi/org/:orgId/low-roi', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { maxScore } = req.query;
-    
-    const meetings = await getLowROIMeetings(orgId, parseInt(maxScore) || 40);
-    
-    res.json(meetings);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching low ROI meetings:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/meeting-roi/org/:orgId/low-roi',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { maxScore } = req.query;
+
+      const meetings = await getLowROIMeetings(orgId, parseInt(maxScore) || 40);
+
+      res.json(meetings);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching low ROI meetings:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // OUTLOOK SIGNALS ENDPOINTS
@@ -552,9 +611,9 @@ router.post('/outlook/user/:userId/analyze', authenticateToken, async (req, res)
   try {
     const { userId } = req.params;
     const { teamId, periodDays } = req.body;
-    
+
     const signals = await analyzeUserOutlookSignals(userId, teamId, parseInt(periodDays) || 30);
-    
+
     res.json(signals);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing user Outlook signals:', error);
@@ -570,9 +629,9 @@ router.post('/outlook/team/:teamId/analyze', authenticateToken, async (req, res)
   try {
     const { teamId } = req.params;
     const { periodDays } = req.query;
-    
+
     const signals = await analyzeTeamOutlookSignals(teamId, parseInt(periodDays) || 30);
-    
+
     res.json(signals);
   } catch (error) {
     console.error('[Intelligence API] Error analyzing team Outlook signals:', error);
@@ -584,18 +643,24 @@ router.post('/outlook/team/:teamId/analyze', authenticateToken, async (req, res)
  * GET /api/intelligence/outlook/org/:orgId/critical
  * Get critical Outlook signals for org
  */
-router.get('/outlook/org/:orgId/critical', authenticateToken, requireHROrAdmin, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { maxScore } = req.query;
-    
-    const signals = await getCriticalOutlookSignals(orgId, parseInt(maxScore) || 50);
-    
-    res.json(signals);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching critical Outlook signals:', error);
-    res.status(500).json({ message: error.message });
+router.get(
+  '/outlook/org/:orgId/critical',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { maxScore } = req.query;
+
+      const signals = await getCriticalOutlookSignals(orgId, parseInt(maxScore) || 50);
+
+      res.json(signals);
+    } catch (error) {
+      console.error('[Intelligence API] Error fetching critical Outlook signals:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 export default router;

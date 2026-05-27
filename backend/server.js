@@ -1,12 +1,12 @@
 // Force redeploy
-import cron from "node-cron";
-import cors from "cors";
-import compression from "compression";
-import mongoose from "mongoose";
-import express from "express";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import fs from "node:fs/promises";
+import cron from 'node-cron';
+import cors from 'cors';
+import compression from 'compression';
+import mongoose from 'mongoose';
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs/promises';
 import dotenv from 'dotenv';
 // mongodb-memory-server is now loaded dynamically only when USE_IN_MEMORY_DB=1
 
@@ -36,120 +36,131 @@ if (process.env.USE_IN_MEMORY_DB !== '1') {
 
 const missingRequired = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
 if (missingRequired.length > 0) {
-  console.error('❌ Missing REQUIRED environment variables, server cannot start:', missingRequired.join(', '));
+  console.error(
+    '❌ Missing REQUIRED environment variables, server cannot start:',
+    missingRequired.join(', ')
+  );
   process.exit(1);
 }
 
 const OPTIONAL_ENV_VARS = [
-  'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SLACK_BOT_TOKEN',
-  'GOOGLE_SERVICE_ACCOUNT', 'STRIPE_SECRET_KEY', 'FRONTEND_URL'
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASS',
+  'SLACK_BOT_TOKEN',
+  'GOOGLE_SERVICE_ACCOUNT',
+  'STRIPE_SECRET_KEY',
+  'FRONTEND_URL',
 ];
 const missingOptional = OPTIONAL_ENV_VARS.filter((key) => !process.env[key]);
 if (missingOptional.length > 0) {
-  console.warn('⚠️ Missing OPTIONAL environment variables, some features may be disabled:', missingOptional.join(', '));
+  console.warn(
+    '⚠️ Missing OPTIONAL environment variables, some features may be disabled:',
+    missingOptional.join(', ')
+  );
 }
 
 // --- Route Imports ---
-import consentAuditRoutes from "./routes/consentAudit.js";
-import driftEventsRoutes from "./routes/driftEvents.js";
-import benchmarksRoutes from "./routes/benchmarks.js";
-import narrativeRoutes from "./routes/narrativeRoutes.js";
-import focusRoutes from "./routes/focusRoutes.js";
-import forecastRoutes from "./routes/forecastRoutes.js";
-import leaderRoutes from "./routes/leaderRoutes.js";
-import outcomesRoutes from "./routes/outcomesRoutes.js";
-import resilienceRoutes from "./routes/resilienceRoutes.js";
-import integrationsRoutes from "./routes/integrations.js";
-import billingRoutes from "./routes/billing.js";
-import stripeWebhookRoutes from "./routes/stripe-webhook.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import exportRoutes from "./routes/exportRoutes.js";
-import adminExportRoutes from "./routes/adminExport.js";
-import adminCleanupRoutes from "./routes/adminCleanup.js";
-import programRoutes from "./routes/programRoutes.js";
-import timelineRoutes from "./routes/timelineRoutes.js";
-import onboardingRoutes from "./routes/onboarding.js";
-import oauthRoutes from "./routes/oauth.js";
-import invitesRoutes from "./routes/invites.js";
-import playbookRoutes from "./routes/playbook.js";
-import oneOnOneRoutes from "./routes/oneOnOne.js";
-import weeklyBriefRoutes from "./routes/weeklyBrief.js";
-import weekContextRoutes from "./routes/weekContextRoutes.js";
-import authRoutes from "./routes/auth.js";
-import teamMembersRoutes from "./routes/teamMembers.js";
-import organizationRoutes from "./routes/organizations.js";
-import projectRoutes from "./routes/projects.js";
-import analyticsRoutes from "./routes/analytics.js";
-import teamRoutes from "./routes/teamRoutes.js";
-import teamManagementRoutes from "./routes/teams.js";
-import employeeSyncRoutes from "./routes/employeeSync.js";
-import slackRoutes from "./routes/slackRoutes.js";
-import googleChatRoutes from "./routes/googleChatRoutes.js";
-import historyRoutes from "./routes/historyRoutes.js";
-import calibrationRoutes from "./routes/calibration.js";
-import signalsRoutes from "./routes/signals.js";
-import actionsRoutes from "./routes/actions.js";
-import dcrRoutes from "./routes/dcr.js";
-import firstSignalRoutes from "./routes/firstSignal.js";
-import interventionsRoutes from "./routes/interventions.js";
-import privacyRoutes from "./routes/privacy.js";
-import comparisonsRoutes from "./routes/comparisons.js";
-import bdiRoutes from "./routes/bdiRoutes.js";
-import insightsRoutes from "./routes/insights.js";
-import loopClosingRoutes from "./routes/loopClosingRoutes.js";
-import learningRoutes from "./routes/learning.js";
-import behavioralIntelligenceRoutes from "./routes/behavioralIntelligence.js";
-import reportsRoutes from "./routes/reports.js";
-import subscriptionRoutes from "./routes/subscriptions.js";
-import fitQuestionnaireRoutes from "./routes/fitQuestionnaire.js";
-import chatRoutes from "./routes/chat.js";
-import assessmentRoutes from "./routes/assessment.js";
-import trialRoutes from "./routes/trial.js";
-import superadminRoutes from "./routes/superadmin.js";
-import passwordResetRoutes from "./routes/passwordReset.js";
-import calendarRoutes from "./routes/calendarRoutes.js";
-import costOfDriftRoutes from "./routes/costOfDrift.js";
-import blogRoutes from "./routes/blog.js";
-import managerCoachingRoutes from "./routes/managerCoaching.js";
-import driftDiagnosticRoutes from "./routes/drift.js";
-import teamStateRoutes from "./routes/teamStateRoutes.js";
-import reminderCronRoutes from "./routes/reminderCron.js";
-import leadsRoutes from "./routes/leads.js";
-import engagementStrainRoutes from "./routes/engagementStrainRoutes.js";
+import consentAuditRoutes from './routes/consentAudit.js';
+import driftEventsRoutes from './routes/driftEvents.js';
+import benchmarksRoutes from './routes/benchmarks.js';
+import narrativeRoutes from './routes/narrativeRoutes.js';
+import focusRoutes from './routes/focusRoutes.js';
+import forecastRoutes from './routes/forecastRoutes.js';
+import leaderRoutes from './routes/leaderRoutes.js';
+import outcomesRoutes from './routes/outcomesRoutes.js';
+import resilienceRoutes from './routes/resilienceRoutes.js';
+import integrationsRoutes from './routes/integrations.js';
+import billingRoutes from './routes/billing.js';
+import stripeWebhookRoutes from './routes/stripe-webhook.js';
+import adminRoutes from './routes/adminRoutes.js';
+import exportRoutes from './routes/exportRoutes.js';
+import adminExportRoutes from './routes/adminExport.js';
+import adminCleanupRoutes from './routes/adminCleanup.js';
+import programRoutes from './routes/programRoutes.js';
+import timelineRoutes from './routes/timelineRoutes.js';
+import onboardingRoutes from './routes/onboarding.js';
+import oauthRoutes from './routes/oauth.js';
+import invitesRoutes from './routes/invites.js';
+import playbookRoutes from './routes/playbook.js';
+import oneOnOneRoutes from './routes/oneOnOne.js';
+import weeklyBriefRoutes from './routes/weeklyBrief.js';
+import weekContextRoutes from './routes/weekContextRoutes.js';
+import authRoutes from './routes/auth.js';
+import teamMembersRoutes from './routes/teamMembers.js';
+import organizationRoutes from './routes/organizations.js';
+import projectRoutes from './routes/projects.js';
+import analyticsRoutes from './routes/analytics.js';
+import teamRoutes from './routes/teamRoutes.js';
+import teamManagementRoutes from './routes/teams.js';
+import employeeSyncRoutes from './routes/employeeSync.js';
+import slackRoutes from './routes/slackRoutes.js';
+import googleChatRoutes from './routes/googleChatRoutes.js';
+import historyRoutes from './routes/historyRoutes.js';
+import calibrationRoutes from './routes/calibration.js';
+import signalsRoutes from './routes/signals.js';
+import actionsRoutes from './routes/actions.js';
+import dcrRoutes from './routes/dcr.js';
+import firstSignalRoutes from './routes/firstSignal.js';
+import interventionsRoutes from './routes/interventions.js';
+import privacyRoutes from './routes/privacy.js';
+import comparisonsRoutes from './routes/comparisons.js';
+import bdiRoutes from './routes/bdiRoutes.js';
+import insightsRoutes from './routes/insights.js';
+import loopClosingRoutes from './routes/loopClosingRoutes.js';
+import learningRoutes from './routes/learning.js';
+import behavioralIntelligenceRoutes from './routes/behavioralIntelligence.js';
+import reportsRoutes from './routes/reports.js';
+import subscriptionRoutes from './routes/subscriptions.js';
+import fitQuestionnaireRoutes from './routes/fitQuestionnaire.js';
+import chatRoutes from './routes/chat.js';
+import assessmentRoutes from './routes/assessment.js';
+import trialRoutes from './routes/trial.js';
+import superadminRoutes from './routes/superadmin.js';
+import passwordResetRoutes from './routes/passwordReset.js';
+import calendarRoutes from './routes/calendarRoutes.js';
+import costOfDriftRoutes from './routes/costOfDrift.js';
+import blogRoutes from './routes/blog.js';
+import managerCoachingRoutes from './routes/managerCoaching.js';
+import driftDiagnosticRoutes from './routes/drift.js';
+import teamStateRoutes from './routes/teamStateRoutes.js';
+import reminderCronRoutes from './routes/reminderCron.js';
+import leadsRoutes from './routes/leads.js';
+import engagementStrainRoutes from './routes/engagementStrainRoutes.js';
 
 // --- Category-King Integration Routes ---
-import categoryKingIntegrationsRoutes from "./routes/categoryKingIntegrations.js";
-import integrationDashboardRoutes from "./routes/integrationDashboard.js";
-import aiCopilotRoutes from "./routes/aiCopilot.js";
-import integrationDebugRoutes from "./routes/integrationDebug.js";
+import categoryKingIntegrationsRoutes from './routes/categoryKingIntegrations.js';
+import integrationDashboardRoutes from './routes/integrationDashboard.js';
+import aiCopilotRoutes from './routes/aiCopilot.js';
+import integrationDebugRoutes from './routes/integrationDebug.js';
 
 // --- Privacy, DSAR & Internal Scoring Routes ---
-import privacyDSARRoutes from "./routes/privacyDSARRoutes.js";
-import internalScoringRoutes from "./routes/internalScoringRoutes.js";
+import privacyDSARRoutes from './routes/privacyDSARRoutes.js';
+import internalScoringRoutes from './routes/internalScoringRoutes.js';
 
 // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
-import oarRoutes from "./routes/oarRoutes.js";
-import roiRoutes from "./routes/roiRoutes.js";
-import goalRoutes from "./routes/goalRoutes.js";
-import bellNotificationRoutes from "./routes/bellNotificationRoutes.js";
-import journeyRoutes from "./routes/journeyRoutes.js";
+import oarRoutes from './routes/oarRoutes.js';
+import roiRoutes from './routes/roiRoutes.js';
+import goalRoutes from './routes/goalRoutes.js';
+import bellNotificationRoutes from './routes/bellNotificationRoutes.js';
+import journeyRoutes from './routes/journeyRoutes.js';
 
 // --- Middleware Imports ---
 import { privacyGate, privacyGateOrg } from './middleware/privacyGate.js';
-import { authenticateToken } from "./middleware/auth.js";
-import auditConsent from "./middleware/consentAudit.js";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { 
+import { authenticateToken } from './middleware/auth.js';
+import auditConsent from './middleware/consentAudit.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import {
   applySecurityMiddleware,
   authLimiter,
   intelligenceLimiter,
   adminLimiter,
-  apiLimiter
+  apiLimiter,
 } from './middleware/security.js';
 
 // --- Service Imports ---
-import { refreshAllTeamsFromSlack } from "./services/slackService.js";
-import { refreshAllTeamsCalendars } from "./services/calendarService.js";
+import { refreshAllTeamsFromSlack } from './services/slackService.js';
+import { refreshAllTeamsCalendars } from './services/calendarService.js';
 import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 import { runCrisisDetection } from './services/crisisDetectionService.js';
@@ -168,27 +179,29 @@ const PORT = process.env.PORT || 8080;
 async function main() {
   try {
     // --- Database Connection ---
-    if (process.env.NODE_ENV !== "test") {
-      if (process.env.USE_IN_MEMORY_DB === "1") {
-        console.log("Attempting to start in-memory MongoDB...");
+    if (process.env.NODE_ENV !== 'test') {
+      if (process.env.USE_IN_MEMORY_DB === '1') {
+        console.log('Attempting to start in-memory MongoDB...');
         // Dynamic import - only loads the package when actually needed
         const { MongoMemoryServer } = await import('mongodb-memory-server');
         const mem = await MongoMemoryServer.create();
         const uri = mem.getUri();
         await mongoose.connect(uri);
-        console.log("✅ In-memory MongoDB started and connected.");
-        mongoose.connection.on('error', err => {
+        console.log('✅ In-memory MongoDB started and connected.');
+        mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });
       } else if (process.env.MONGO_URI) {
-        console.log("Attempting to connect to MongoDB Atlas...");
+        console.log('Attempting to connect to MongoDB Atlas...');
         await mongoose.connect(process.env.MONGO_URI);
-        console.log("✅ MongoDB connected");
-        mongoose.connection.on('error', err => {
+        console.log('✅ MongoDB connected');
+        mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });
       } else {
-        console.error("❌ No MONGO_URI provided and USE_IN_MEMORY_DB is not '1'. Database connection failed.");
+        console.error(
+          "❌ No MONGO_URI provided and USE_IN_MEMORY_DB is not '1'. Database connection failed."
+        );
         process.exit(1);
       }
     }
@@ -207,55 +220,58 @@ async function main() {
         } else {
           callback(new Error('Not allowed by CORS'));
         }
-      }
+      },
     };
     app.use(cors(corsOptions));
     app.set('trust proxy', 1);
-    
+
     // --- Response Compression (gzip) ---
-    app.use(compression({
-      filter: (req, res) => {
-        if (req.headers['x-no-compression']) return false;
-        return compression.filter(req, res);
-      },
-      level: 6 // Balance between speed and compression ratio
-    }));
-    
+    app.use(
+      compression({
+        filter: (req, res) => {
+          if (req.headers['x-no-compression']) return false;
+          return compression.filter(req, res);
+        },
+        level: 6, // Balance between speed and compression ratio
+      })
+    );
+
     // --- Security Middleware ---
     // Apply core security (headers, sanitization, monitoring)
     applySecurityMiddleware(app);
-    
+
     // Apply rate limiting to auth endpoints
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/register', authLimiter);
-    
+
     // Apply rate limiting to intelligence endpoints
     app.use('/api/intelligence', intelligenceLimiter);
-    
+
     // Apply rate limiting to admin endpoints
     app.use('/api/admin', adminLimiter);
-    
+
     // Apply general rate limiting to all API routes
     app.use('/api/', apiLimiter);
-    
+
+    app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRoutes);
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
     // --- Static Assets ---
-    const uploadsDir = path.join(__dirname, "uploads");
+    const uploadsDir = path.join(__dirname, 'uploads');
     await fs.mkdir(uploadsDir, { recursive: true });
-    app.use("/uploads", express.static(uploadsDir));
+    app.use('/uploads', express.static(uploadsDir));
 
     // --- API Routes ---
-    app.get("/", (req, res) => res.send("SignalTrue backend is running 🚀"));
-    
+    app.get('/', (req, res) => res.send('SignalTrue backend is running 🚀'));
+
     // Health check endpoint for monitoring
-    app.get("/api/health", async (req, res) => {
+    app.get('/api/health', async (req, res) => {
       try {
         const dbState = mongoose.connection.readyState;
-        const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
-        
+        const dbStatus =
+          dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+
         res.json({
           status: dbState === 1 ? 'healthy' : 'degraded',
           timestamp: new Date().toISOString(),
@@ -263,62 +279,61 @@ async function main() {
           database: dbStatus,
           memory: {
             used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
-            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
-          }
+            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB',
+          },
         });
       } catch (error) {
         res.status(503).json({ status: 'unhealthy', error: error.message });
       }
     });
-    
-    app.use("/api/admin-export", adminExportRoutes);
-    app.use("/api/benchmarks", benchmarksRoutes);
-    app.use("/api/oneonone", oneOnOneRoutes);
-    app.use("/api/playbook", playbookRoutes);
-    app.use("/api/weekly-brief", weeklyBriefRoutes);
-    app.use("/api/week-context", weekContextRoutes);
-    app.use("/api", oauthRoutes);
-    app.use("/api/invites", invitesRoutes);
-    app.use("/api/auth", authRoutes);
-    app.use("/api/team-members", teamMembersRoutes);
-    app.use("/api/organizations", organizationRoutes);
-    app.use("/api/projects", projectRoutes);
-    app.use("/api/analytics", analyticsRoutes);
-    app.use("/api/teams", teamRoutes);
-    app.use("/api/team-management", teamManagementRoutes);
-    app.use("/api/employee-sync", employeeSyncRoutes);
-    app.use("/api/slack", slackRoutes);
-    app.use("/api/google-chat", googleChatRoutes);
-    app.use("/api/history", historyRoutes);
-    app.use("/api/calibration", calibrationRoutes);
-    app.use("/api/signals", signalsRoutes);
-    app.use("/api/actions", actionsRoutes);
-    app.use("/api/dcr", dcrRoutes);
-    app.use("/api/first-signal", firstSignalRoutes);
-    app.use("/api/interventions", interventionsRoutes);
-    app.use("/api/privacy", privacyRoutes);
-    app.use("/api/comparisons", comparisonsRoutes);
-    app.use("/api/bdi", privacyGate, bdiRoutes);
-    app.use("/api/indices", privacyGate, bdiRoutes);
-    app.use("/api/capacity", privacyGate, bdiRoutes);
-    app.use("/api/timeline", privacyGate, bdiRoutes);
-    app.use("/api/playbooks", privacyGate, bdiRoutes);
-    app.use("/api/dashboard", privacyGate, bdiRoutes);
-    app.use("/api/narrative", narrativeRoutes);
-    app.use("/api/focus", focusRoutes);
-    app.use("/api/forecast", forecastRoutes);
-    app.use("/api/leader", leaderRoutes);
-    app.use("/api/outcomes", outcomesRoutes);
-    app.use("/api/resilience", resilienceRoutes);
-    app.use("/api", integrationsRoutes);
-    app.use("/api", billingRoutes);
-    app.use("/api", stripeWebhookRoutes);
-    app.use("/api", adminRoutes);
-    app.use("/api", exportRoutes);
-    app.use("/api", adminCleanupRoutes);
-    app.use("/api", programRoutes);
-    app.use("/api", timelineRoutes);
-    app.use("/api", onboardingRoutes);
+
+    app.use('/api/admin-export', adminExportRoutes);
+    app.use('/api/benchmarks', benchmarksRoutes);
+    app.use('/api/oneonone', authenticateToken, oneOnOneRoutes);
+    app.use('/api/playbook', playbookRoutes);
+    app.use('/api/weekly-brief', authenticateToken, weeklyBriefRoutes);
+    app.use('/api/week-context', weekContextRoutes);
+    app.use('/api', oauthRoutes);
+    app.use('/api/invites', invitesRoutes);
+    app.use('/api/auth', authRoutes);
+    app.use('/api/team-members', teamMembersRoutes);
+    app.use('/api/organizations', organizationRoutes);
+    app.use('/api/projects', authenticateToken, projectRoutes);
+    app.use('/api/analytics', analyticsRoutes);
+    app.use('/api/teams', authenticateToken, teamRoutes);
+    app.use('/api/team-management', teamManagementRoutes);
+    app.use('/api/employee-sync', employeeSyncRoutes);
+    app.use('/api/slack', authenticateToken, slackRoutes);
+    app.use('/api/google-chat', authenticateToken, googleChatRoutes);
+    app.use('/api/history', authenticateToken, historyRoutes);
+    app.use('/api/calibration', calibrationRoutes);
+    app.use('/api/signals', signalsRoutes);
+    app.use('/api/actions', actionsRoutes);
+    app.use('/api/dcr', dcrRoutes);
+    app.use('/api/first-signal', firstSignalRoutes);
+    app.use('/api/interventions', interventionsRoutes);
+    app.use('/api/privacy', privacyRoutes);
+    app.use('/api/comparisons', comparisonsRoutes);
+    app.use('/api/bdi', privacyGate, bdiRoutes);
+    app.use('/api/indices', privacyGate, bdiRoutes);
+    app.use('/api/capacity', privacyGate, bdiRoutes);
+    app.use('/api/timeline', privacyGate, bdiRoutes);
+    app.use('/api/playbooks', privacyGate, bdiRoutes);
+    app.use('/api/dashboard', privacyGate, bdiRoutes);
+    app.use('/api/narrative', narrativeRoutes);
+    app.use('/api/focus', focusRoutes);
+    app.use('/api/forecast', forecastRoutes);
+    app.use('/api/leader', leaderRoutes);
+    app.use('/api/outcomes', outcomesRoutes);
+    app.use('/api/resilience', resilienceRoutes);
+    app.use('/api', integrationsRoutes);
+    app.use('/api', billingRoutes);
+    app.use('/api', adminRoutes);
+    app.use('/api', exportRoutes);
+    app.use('/api', adminCleanupRoutes);
+    app.use('/api', programRoutes);
+    app.use('/api', timelineRoutes);
+    app.use('/api', onboardingRoutes);
     app.use('/api/drift-events', driftEventsRoutes);
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
     app.use('/api/insights', privacyGate, insightsRoutes);
@@ -330,54 +345,54 @@ async function main() {
     app.use('/api/fit-questionnaire', fitQuestionnaireRoutes);
     app.use('/api/team-state', teamStateRoutes);
     app.use('/api/reminders', reminderCronRoutes);
-    
+
     // --- AI Chat Assistant (public, no auth required) ---
     app.use('/api/chat', chatRoutes);
-    
+
     // --- Assessment & Cost Calculator (public, no auth required) ---
     app.use('/api/assessment', assessmentRoutes);
-    
+
     // --- Drift Diagnostic Routes (public, no auth required) ---
     app.use('/api/drift', driftDiagnosticRoutes);
-    
+
     // --- Trial Management (mixed auth - some public, some protected) ---
     app.use('/api/trial', trialRoutes);
-    
+
     // --- Superadmin Routes (master_admin only) ---
     app.use('/api/superadmin', superadminRoutes);
-    
+
     // --- Integration Debug Routes (superadmin only) ---
     app.use('/api/debug', integrationDebugRoutes);
-    
+
     // --- Password Reset Routes (public, no auth required) ---
     app.use('/api/auth', passwordResetRoutes);
-    
+
     // --- Calendar Routes ---
     app.use('/api', calendarRoutes);
-    
+
     // --- Cost of Drift Routes (Executive ROI view) ---
     app.use('/api/cost-of-drift', costOfDriftRoutes);
-    
+
     // --- Blog Routes (public read, API key for write) ---
     app.use('/api/blog', blogRoutes);
-    
+
     // --- Leads Routes (public, no auth required - landing page forms) ---
     app.use('/api/leads', leadsRoutes);
-    
+
     // --- Manager Coaching Routes ---
     app.use('/api/manager-coaching', managerCoachingRoutes);
-    
+
     // --- Category-King Integration Routes ---
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);
     app.use('/api/integration-dashboard', integrationDashboardRoutes);
     app.use('/api/ai', aiCopilotRoutes);
-    
+
     // --- Privacy DSAR Routes ---
     app.use('/api/privacy', privacyDSARRoutes);
-    
+
     // --- Internal Scoring Routes (service-token protected) ---
     app.use('/internal/scoring', internalScoringRoutes);
-    
+
     // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
     app.use('/api/oar', oarRoutes);
     app.use('/api/roi', roiRoutes);
@@ -387,7 +402,7 @@ async function main() {
 
     // --- Engagement Strain Risk Routes ---
     app.use('/api/engagement-strain', engagementStrainRoutes);
-    
+
     // --- Analytics Tracking (public, no auth required) ---
     app.post('/api/analytics/track', (req, res) => {
       const { event, data, timestamp } = req.body;
@@ -405,7 +420,7 @@ async function main() {
     app.use(errorHandler);
 
     // --- Cron Jobs ---
-    if (process.env.NODE_ENV !== "test") {
+    if (process.env.NODE_ENV !== 'test') {
       if (process.env.SLACK_BOT_TOKEN) {
         cron.schedule('0 2 * * *', async () => {
           console.log('⏰ Running scheduled Slack data refresh...');
@@ -417,7 +432,7 @@ async function main() {
         });
         console.log('⏰ Cron job scheduled: Slack refresh daily at 2 AM');
       }
-      
+
       // Calendar data sync - daily at 2:30 AM
       cron.schedule('30 2 * * *', async () => {
         console.log('⏰ Running scheduled Calendar data refresh...');
@@ -429,7 +444,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Calendar refresh daily at 2:30 AM');
-      
+
       // Microsoft/Google integration sync - every 15 minutes from 6am-10pm
       cron.schedule('*/15 6-22 * * *', async () => {
         console.log('⏰ Running scheduled integration data pull (Google/Microsoft)...');
@@ -441,13 +456,13 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Integration data pull every 15 minutes (6am-10pm)');
-      
+
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
-      
+
       // Start Category-King integration sync scheduler
       scheduleIntegrationJobs();
-      
+
       // Crisis detection - every 15 minutes (real-time anomaly detection)
       cron.schedule('*/15 * * * *', async () => {
         console.log('⏰ Running crisis detection...');
@@ -458,7 +473,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Crisis detection every 15 minutes');
-      
+
       // Attrition risk calculation - daily at 3 AM
       cron.schedule('0 3 * * *', async () => {
         console.log('⏰ Running attrition risk calculation...');
@@ -473,7 +488,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Attrition risk daily at 3 AM');
-      
+
       // Manager effectiveness - monthly on 1st at 4 AM
       cron.schedule('0 4 1 * *', async () => {
         console.log('⏰ Running manager effectiveness calculation...');
@@ -490,7 +505,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Manager effectiveness monthly on 1st at 4 AM');
-      
+
       // Project risk analysis - daily at 2 AM
       cron.schedule('0 2 * * *', async () => {
         console.log('⏰ Running project risk analysis...');
@@ -506,7 +521,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Project risk daily at 2 AM');
-      
+
       // Network health analysis - weekly on Sundays at 5 AM
       cron.schedule('0 5 * * 0', async () => {
         console.log('⏰ Running network health analysis...');
@@ -522,7 +537,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Network health weekly on Sundays at 5 AM');
-      
+
       // Succession risk analysis - monthly on 15th at 3 AM
       cron.schedule('0 3 15 * *', async () => {
         console.log('⏰ Running succession risk analysis...');
@@ -538,7 +553,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Succession risk monthly on 15th at 3 AM');
-      
+
       // Equity signals analysis - weekly on Mondays at 6 AM
       cron.schedule('0 6 * * 1', async () => {
         console.log('⏰ Running equity signals analysis...');
@@ -554,7 +569,7 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Equity signals weekly on Mondays at 6 AM');
-      
+
       // Outlook signals analysis - daily at 4 AM
       cron.schedule('0 4 * * *', async () => {
         console.log('⏰ Running Outlook signals analysis...');
@@ -570,26 +585,29 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Outlook signals daily at 4 AM');
-      
+
       // ── WEEKLY REPORTS + EMAILS: Self-healing scheduler ──
       // Replaces the old fragile cron jobs with a persistent, watchdog-backed system.
       // See backend/services/weeklyEmailScheduler.js for full documentation.
       const { initWeeklyEmailScheduler } = await import('./services/weeklyEmailScheduler.js');
       initWeeklyEmailScheduler();
-      
+
       // Monthly reports generation + email - 1st of month at 4:00 AM
       cron.schedule('0 4 1 * *', async () => {
         console.log('⏰ Generating monthly reports for all organizations...');
         try {
-          const { generateMonthlyReportForOrg, sendMonthlyReportEmail } = await import('./services/monthlyReportService.js');
+          const { generateMonthlyReportForOrg, sendMonthlyReportEmail } =
+            await import('./services/monthlyReportService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
           const orgs = await Organization.find({});
-          
+
           for (const org of orgs) {
             try {
               const report = await generateMonthlyReportForOrg(org._id);
               if (report) {
-                console.log(`  ✅ ${org.name}: BDI ${report.orgHealth.avgBDI.toFixed(1)}/100 (${report.orgHealth.bdiTrend})`);
+                console.log(
+                  `  ✅ ${org.name}: BDI ${report.orgHealth.avgBDI.toFixed(1)}/100 (${report.orgHealth.bdiTrend})`
+                );
                 await sendMonthlyReportEmail(org._id, report);
               }
             } catch (err) {
@@ -608,9 +626,12 @@ async function main() {
       cron.schedule('0 5 1 1,4,7,10 *', async () => {
         console.log('⏰ Generating quarterly reports for all organizations...');
         try {
-          const { generateQuarterlyReportsForAllOrgs } = await import('./services/quarterlyReportService.js');
+          const { generateQuarterlyReportsForAllOrgs } =
+            await import('./services/quarterlyReportService.js');
           const result = await generateQuarterlyReportsForAllOrgs();
-          console.log(`✅ Quarterly reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`);
+          console.log(
+            `✅ Quarterly reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`
+          );
         } catch (err) {
           console.error('❌ Quarterly reports generation failed:', err.message);
         }
@@ -622,9 +643,12 @@ async function main() {
       cron.schedule('0 6 1 1,7 *', async () => {
         console.log('⏰ Generating semi-annual reports for all organizations...');
         try {
-          const { generateSemiAnnualReportsForAllOrgs } = await import('./services/semiAnnualReportService.js');
+          const { generateSemiAnnualReportsForAllOrgs } =
+            await import('./services/semiAnnualReportService.js');
           const result = await generateSemiAnnualReportsForAllOrgs();
-          console.log(`✅ Semi-annual reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`);
+          console.log(
+            `✅ Semi-annual reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`
+          );
         } catch (err) {
           console.error('❌ Semi-annual reports generation failed:', err.message);
         }
@@ -649,7 +673,14 @@ async function main() {
         console.log('⏰ Running retention data purge for all orgs...');
         try {
           const results = await purgeAllOrgs();
-          const total = results.reduce((s, r) => s + Object.values(r).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0), 0);
+          const total = results.reduce(
+            (s, r) =>
+              s +
+              Object.values(r)
+                .filter((v) => typeof v === 'number')
+                .reduce((a, b) => a + b, 0),
+            0
+          );
           console.log(`✅ Retention purge completed. Total records removed: ${total}`);
         } catch (err) {
           console.error('❌ Retention purge failed:', err.message);
@@ -666,7 +697,9 @@ async function main() {
             const now = new Date();
             const day = now.getUTCDay();
             const diff = day === 0 ? -6 : 1 - day;
-            return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+            return new Date(
+              Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff)
+            );
           })();
           for (const org of orgs) {
             try {
@@ -693,7 +726,9 @@ async function main() {
             const now = new Date();
             const day = now.getUTCDay();
             const diff = day === 0 ? -6 : 1 - day;
-            return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+            return new Date(
+              Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff)
+            );
           })();
           for (const org of orgs) {
             const teams = await Team.find({ orgId: org._id }).select('_id').lean();
@@ -710,14 +745,13 @@ async function main() {
     }
 
     // --- Start Server ---
-    if (process.env.NODE_ENV !== "test") {
+    if (process.env.NODE_ENV !== 'test') {
       app.listen(PORT, () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
       });
     }
-
   } catch (error) {
-    console.error("❌ Server startup failed:", error);
+    console.error('❌ Server startup failed:', error);
     process.exit(1);
   }
 }

@@ -5,16 +5,16 @@ const ForgotPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
-  
+
   // State for forgot password (request reset)
   const [email, setEmail] = useState('');
   const [requestSent, setRequestSent] = useState(false);
-  
+
   // State for reset password (with token)
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
-  
+
   // Shared state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -94,8 +94,18 @@ const ForgotPassword: React.FC = () => {
           <div className="max-w-md w-full space-y-8">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-                <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="h-8 w-8 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
               <h2 className="text-3xl font-bold text-gray-900">Password Reset!</h2>
@@ -115,9 +125,7 @@ const ForgotPassword: React.FC = () => {
             <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
               Reset Your Password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Enter your new password below
-            </p>
+            <p className="mt-2 text-center text-sm text-gray-600">Enter your new password below</p>
           </div>
 
           <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
@@ -145,7 +153,10 @@ const ForgotPassword: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="confirm-password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -182,8 +193,18 @@ const ForgotPassword: React.FC = () => {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                className="h-8 w-8 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-gray-900">Check Your Email</h2>
@@ -256,10 +277,7 @@ const ForgotPassword: React.FC = () => {
           </button>
 
           <div className="text-center">
-            <Link
-              to="/login"
-              className="text-sm text-blue-600 hover:text-blue-500 font-medium"
-            >
+            <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
               ← Back to Login
             </Link>
           </div>

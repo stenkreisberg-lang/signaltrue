@@ -3,12 +3,12 @@ import { colors, typography, spacing, radius, shadows, transitions } from '../st
 
 /**
  * Button Component System
- * 
+ *
  * Variants:
  * - primary: Main conversion actions (Request access, Sign up)
  * - secondary: Secondary actions (Learn more, See sample)
  * - tertiary: Navigation actions (Login, plain text links)
- * 
+ *
  * RULES:
  * - Login must ALWAYS use variant="tertiary"
  * - Only ONE primary button per screen section
@@ -52,7 +52,7 @@ const variants = {
       boxShadow: `0 0 0 3px ${colors.focusRing}`,
     },
   },
-  
+
   secondary: {
     default: {
       ...baseStyles,
@@ -73,7 +73,7 @@ const variants = {
       boxShadow: `0 0 0 3px ${colors.focusRing}`,
     },
   },
-  
+
   tertiary: {
     default: {
       ...baseStyles,
@@ -130,26 +130,26 @@ const inverseVariants = {
   },
 };
 
-function Button({ 
-  children, 
-  variant = 'primary', 
+function Button({
+  children,
+  variant = 'primary',
   inverse = false,
   as = 'button',
   className = '',
   style = {},
-  ...props 
+  ...props
 }) {
   const Component = as;
   const variantSet = inverse ? inverseVariants : variants;
   const defaultStyle = variantSet[variant]?.default || variants.primary.default;
-  
+
   const [isHover, setIsHover] = React.useState(false);
   const [isActive, setIsActive] = React.useState(false);
   const [isFocus, setIsFocus] = React.useState(false);
-  
+
   // Combine styles based on state
   let combinedStyle = { ...defaultStyle, ...style };
-  
+
   if (isHover && variantSet[variant]?.hover) {
     combinedStyle = { ...combinedStyle, ...variantSet[variant].hover };
   }
@@ -159,13 +159,16 @@ function Button({
   if (isFocus && variantSet[variant]?.focus) {
     combinedStyle = { ...combinedStyle, ...variantSet[variant].focus };
   }
-  
+
   return (
     <Component
       className={className}
       style={combinedStyle}
       onMouseEnter={() => setIsHover(true)}
-      onMouseLeave={() => { setIsHover(false); setIsActive(false); }}
+      onMouseLeave={() => {
+        setIsHover(false);
+        setIsActive(false);
+      }}
       onMouseDown={() => setIsActive(true)}
       onMouseUp={() => setIsActive(false)}
       onFocus={() => setIsFocus(true)}

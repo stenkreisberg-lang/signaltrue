@@ -1,9 +1,9 @@
 /**
  * Feature Gate Component
- * 
+ *
  * Conditionally renders components based on subscription tier.
  * BLOCKS rendering entirely - no greyed-out content.
- * 
+ *
  * This enforces the power boundary at the UI level.
  */
 
@@ -20,11 +20,11 @@ interface FeatureGateProps {
 /**
  * FeatureGate - Conditionally render based on feature access
  */
-export const FeatureGate: React.FC<FeatureGateProps> = ({ 
-  feature, 
-  children, 
+export const FeatureGate: React.FC<FeatureGateProps> = ({
+  feature,
+  children,
   fallback = null,
-  showUpgrade = false 
+  showUpgrade = false,
 }) => {
   const { hasFeature, loading, getUpgradeSuggestion } = useSubscription();
 
@@ -41,9 +41,9 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
           <div className="upgrade-prompt">
             <h3>🔒 Feature Locked</h3>
             <p>{getUpgradeSuggestion(feature)}</p>
-            <button 
+            <button
               className="btn-upgrade"
-              onClick={() => window.location.href = '/settings/subscription'}
+              onClick={() => (window.location.href = '/settings/subscription')}
             >
               View Plans
             </button>
@@ -66,11 +66,7 @@ interface PlanGateProps {
 /**
  * PlanGate - Conditionally render based on plan tier
  */
-export const PlanGate: React.FC<PlanGateProps> = ({ 
-  requiredPlan, 
-  children, 
-  fallback = null 
-}) => {
+export const PlanGate: React.FC<PlanGateProps> = ({ requiredPlan, children, fallback = null }) => {
   const { getPlanId, loading } = useSubscription();
 
   if (loading) {
@@ -79,7 +75,7 @@ export const PlanGate: React.FC<PlanGateProps> = ({
 
   const currentPlanId = getPlanId();
   const planHierarchy = ['team', 'leadership', 'custom'];
-  
+
   const currentIndex = planHierarchy.indexOf(currentPlanId || '');
   const requiredIndex = planHierarchy.indexOf(requiredPlan);
 
@@ -100,17 +96,17 @@ interface RoleGateProps {
 export const RoleGate: React.FC<RoleGateProps> = ({ allowedRoles, children }) => {
   // This would need to integrate with your existing AuthContext
   // For now, placeholder implementation
-  
+
   // TODO: Integrate with actual auth context
   // const { user } = useAuth();
   // const userRole = user?.role;
-  
-  // const allowed = Array.isArray(allowedRoles) 
+
+  // const allowed = Array.isArray(allowedRoles)
   //   ? allowedRoles.includes(userRole)
   //   : allowedRoles === userRole;
 
   // return allowed ? <>{children}</> : null;
-  
+
   return <>{children}</>;
 };
 
@@ -132,13 +128,13 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, title }) 
       <p className="current-plan">Current Plan: {getPlanName()}</p>
       <p className="upgrade-message">{getUpgradeSuggestion(feature)}</p>
       <div className="upgrade-actions">
-        <button 
+        <button
           className="btn-primary"
-          onClick={() => window.location.href = '/settings/subscription'}
+          onClick={() => (window.location.href = '/settings/subscription')}
         >
           View Plans
         </button>
-        <button 
+        <button
           className="btn-secondary"
           onClick={() => window.open('mailto:sales@signaltrue.com', '_blank')}
         >
@@ -166,29 +162,18 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features }) => {
 
   return (
     <div className="feature-list">
-      {features.map(feature => {
+      {features.map((feature) => {
         const accessible = hasFeature(feature.key);
         const inPlan = planHasFeature(feature.key);
 
         return (
-          <div 
-            key={feature.key} 
-            className={`feature-item ${accessible ? 'accessible' : 'locked'}`}
-          >
-            <span className="feature-icon">
-              {accessible ? '✓' : '🔒'}
-            </span>
+          <div key={feature.key} className={`feature-item ${accessible ? 'accessible' : 'locked'}`}>
+            <span className="feature-icon">{accessible ? '✓' : '🔒'}</span>
             <span className="feature-name">{feature.name}</span>
             {inPlan && !accessible && (
-              <span className="feature-note">
-                (Available to other roles in your plan)
-              </span>
+              <span className="feature-note">(Available to other roles in your plan)</span>
             )}
-            {!inPlan && (
-              <span className="feature-upgrade">
-                (Upgrade required)
-              </span>
-            )}
+            {!inPlan && <span className="feature-upgrade">(Upgrade required)</span>}
           </div>
         );
       })}

@@ -1,4 +1,5 @@
 import express from 'express';
+import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import { Resend } from 'resend';
 import Lead from '../models/lead.js';
 
@@ -15,7 +16,8 @@ const getResendClient = () => {
 const FROM_EMAIL = process.env.EMAIL_FROM || 'SignalTrue <notifications@signaltrue.ai>';
 const INTERNAL_NOTIFICATION_EMAIL = 'sten.kreisberg@signaltrue.ai';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://signaltrue.ai';
-const CALENDAR_LINK = process.env.CALENDAR_LINK || 'https://calendly.com/sten-kreisberg-signaltrue/30min';
+const CALENDAR_LINK =
+  process.env.CALENDAR_LINK || 'https://calendly.com/sten-kreisberg-signaltrue/30min';
 
 /**
  * Extract first name from full name
@@ -32,7 +34,7 @@ function extractFirstName(fullName) {
 function generateClientEmailHTML(lead) {
   const firstName = extractFirstName(lead.name);
   const greeting = firstName ? `Tere, ${firstName}!` : 'Tere!';
-  
+
   return `
 <!DOCTYPE html>
 <html lang="et">
@@ -142,10 +144,10 @@ function generateClientEmailHTML(lead) {
  * Generate internal notification email for the sales team
  */
 function generateInternalNotificationHTML(lead) {
-  const challengeSection = lead.challenge 
-    ? `<p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 16px 0 0;"><strong>Peamine väljakutse:</strong><br>${lead.challenge}</p>` 
+  const challengeSection = lead.challenge
+    ? `<p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 16px 0 0;"><strong>Peamine väljakutse:</strong><br>${lead.challenge}</p>`
     : '';
-  
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -206,14 +208,14 @@ function generateInternalNotificationHTML(lead) {
 router.post('/', async (req, res) => {
   try {
     const { name, title, organization, email, challenge, source, tag, timestamp } = req.body;
-    
+
     // Validate required fields
     if (!name || !email || !source) {
-      return res.status(400).json({ 
-        message: 'Missing required fields: name, email, and source are required' 
+      return res.status(400).json({
+        message: 'Missing required fields: name, email, and source are required',
       });
     }
-    
+
     // Create lead record
     const lead = new Lead({
       name,
@@ -223,15 +225,15 @@ router.post('/', async (req, res) => {
       challenge,
       source,
       tag,
-      submittedAt: timestamp ? new Date(timestamp) : new Date()
+      submittedAt: timestamp ? new Date(timestamp) : new Date(),
     });
-    
+
     await lead.save();
     console.log(`✅ Lead saved: ${email} from ${source}`);
-    
+
     // Send emails
     const resend = getResendClient();
-    
+
     if (resend) {
       // 1. Send thank-you email to client (Estonian)
       try {
@@ -239,40 +241,39 @@ router.post('/', async (req, res) => {
           from: FROM_EMAIL,
           to: email,
           subject: 'Täname registreerimise eest – SignalTrue',
-          html: generateClientEmailHTML(lead)
+          html: generateClientEmailHTML(lead),
         });
         lead.clientEmailSent = true;
         console.log(`✅ Client email sent to: ${email}`);
       } catch (emailError) {
         console.error('❌ Failed to send client email:', emailError);
       }
-      
+
       // 2. Send internal notification
       try {
         await resend.emails.send({
           from: FROM_EMAIL,
           to: INTERNAL_NOTIFICATION_EMAIL,
           subject: `🎯 New Lead: ${name} (${organization || 'Unknown org'}) – ${source}`,
-          html: generateInternalNotificationHTML(lead)
+          html: generateInternalNotificationHTML(lead),
         });
         lead.internalNotificationSent = true;
         console.log(`✅ Internal notification sent to: ${INTERNAL_NOTIFICATION_EMAIL}`);
       } catch (emailError) {
         console.error('❌ Failed to send internal notification:', emailError);
       }
-      
+
       // Update lead with email status
       await lead.save();
     } else {
       console.warn('⚠️ RESEND_API_KEY not configured – emails not sent');
     }
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       message: 'Lead captured successfully',
-      leadId: lead._id
+      leadId: lead._id,
     });
-    
   } catch (error) {
     console.error('❌ Lead submission error:', error);
     res.status(500).json({ message: error.message || 'Failed to capture lead' });
@@ -283,15 +284,13 @@ router.post('/', async (req, res) => {
  * GET /api/leads
  * List all leads (admin only - add auth middleware in production)
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, requireMasterAdmin, async (req, res) => {
   try {
     const { source, limit = 50 } = req.query;
-    
+
     const query = source ? { source } : {};
-    const leads = await Lead.find(query)
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
-    
+    const leads = await Lead.find(query).sort({ createdAt: -1 }).limit(parseInt(limit));
+
     res.json(leads);
   } catch (error) {
     console.error('❌ Error fetching leads:', error);

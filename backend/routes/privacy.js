@@ -6,7 +6,8 @@
 
 import express from 'express';
 import Organization from '../models/organizationModel.js';
-import { authenticateToken } from '../middleware/auth.js';
+import IntegrationConnection from '../models/integrationConnection.js';
+import { authenticateToken, requireHROrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -15,52 +16,31 @@ const router = express.Router();
  * Returns timestamped log of data pulls for an organization
  * Admin-only view showing: source, timestamp, aggregation level
  */
-router.get('/transparency-log', authenticateToken, async (req, res) => {
+router.get('/transparency-log', authenticateToken, requireHROrAdmin, async (req, res) => {
   try {
     const { orgId } = req.user;
-    
-    // In production, this would query actual data access logs
-    // For now, we'll return a structured format showing what WOULD be logged
-    
-    const mockLog = [
-      {
-        timestamp: new Date(Date.now() - 86400000 * 1), // 1 day ago
-        source: 'Slack',
-        action: 'Sync public channel messages',
-        aggregationLevel: 'Team-level counts only',
-        recordsProcessed: 1247,
-        individualDataAccessed: false
-      },
-      {
-        timestamp: new Date(Date.now() - 86400000 * 1),
-        source: 'Google Calendar',
-        action: 'Sync meeting metadata',
-        aggregationLevel: 'Duration and frequency aggregates',
-        recordsProcessed: 89,
-        individualDataAccessed: false
-      },
-      {
-        timestamp: new Date(Date.now() - 86400000 * 2),
-        source: 'Slack',
-        action: 'Sync public channel messages',
-        aggregationLevel: 'Team-level counts only',
-        recordsProcessed: 1189,
-        individualDataAccessed: false
-      },
-      {
-        timestamp: new Date(Date.now() - 86400000 * 2),
-        source: 'Google Calendar',
-        action: 'Sync meeting metadata',
-        aggregationLevel: 'Duration and frequency aggregates',
-        recordsProcessed: 92,
-        individualDataAccessed: false
-      }
-    ];
-    
+
+    const connections = await IntegrationConnection.find({ orgId })
+      .select('integrationType sync measurementScope coverage')
+      .lean();
+    const logEntries = connections
+      .filter((connection) => connection.sync?.lastSuccessfulSyncAt || connection.sync?.lastSyncAt)
+      .map((connection) => ({
+        timestamp: connection.sync.lastSuccessfulSyncAt || connection.sync.lastSyncAt,
+        source: connection.integrationType,
+        action: 'Integration metadata synchronization',
+        aggregationLevel: connection.measurementScope || 'metadata only',
+        recordsProcessed: connection.coverage?.mappedUsers || 0,
+        individualDataAccessed: false,
+        status: connection.sync?.lastSyncStatus || 'unknown',
+      }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     res.json({
       orgId,
-      logEntries: mockLog,
-      disclaimer: 'This log shows aggregated data pulls only. No individual messages or email content is ever accessed.'
+      logEntries,
+      disclaimer:
+        'This log reports recorded metadata synchronization activity. No individual messages or email content is included.',
     });
   } catch (error) {
     console.error('[Privacy] Error fetching transparency log:', error);
@@ -76,13 +56,13 @@ router.get('/transparency-log', authenticateToken, async (req, res) => {
 router.get('/explainer/:orgSlug', async (req, res) => {
   try {
     const { orgSlug } = req.params;
-    
+
     // Verify org exists
     const org = await Organization.findOne({ slug: orgSlug });
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    
+
     // Return public explainer content
     res.json({
       orgName: org.name,
@@ -91,7 +71,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
           'Aggregated activity patterns (team-level)',
           'Meeting frequency and duration (metadata only, no content)',
           'Message volume and response timing (counts only, no message content)',
-          'Work hour patterns (after-hours activity, focus time blocks)'
+          'Work hour patterns (after-hours activity, focus time blocks)',
         ],
         whatWeNeverTrack: [
           'Message content from Slack, email, or any communication tool',
@@ -99,23 +79,23 @@ router.get('/explainer/:orgSlug', async (req, res) => {
           'File contents or document text',
           'Individual performance scores or rankings',
           'Browsing history or screen activity',
-          'Keystroke logging or surveillance'
+          'Keystroke logging or surveillance',
         ],
         howWeProtect: [
           'All data aggregated to team level (minimum 5 people per team)',
           'GDPR compliant data handling and storage',
           'OAuth-only access (read-only permissions)',
           'End-to-end encryption for all data in transit and at rest',
-          'No data sold to third parties ever'
+          'No data sold to third parties ever',
         ],
         yourRights: [
           'Request data deletion at any time',
-          'Export your organization\'s aggregated data',
+          "Export your organization's aggregated data",
           'Revoke integration access instantly',
-          'View transparency log of all data pulls (admins)'
-        ]
+          'View transparency log of all data pulls (admins)',
+        ],
       },
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
     console.error('[Privacy] Error fetching explainer:', error);
@@ -134,30 +114,36 @@ router.get('/policy', async (req, res) => {
       sections: [
         {
           title: 'What We Track',
-          content: 'We analyze aggregated team activity patterns including meeting frequency, message volume, response timing, and work hour patterns. All data is team-level only (minimum 5 people).'
+          content:
+            'We analyze aggregated team activity patterns including meeting frequency, message volume, response timing, and work hour patterns. All data is team-level only (minimum 5 people).',
         },
         {
           title: 'What We Never Track',
-          content: 'We never access message content, email content, file contents, or any individual surveillance data. No keystroke logging, screen monitoring, or individual performance scoring.'
+          content:
+            'We never access message content, email content, file contents, or any individual surveillance data. No keystroke logging, screen monitoring, or individual performance scoring.',
         },
         {
           title: 'Data Security',
-          content: 'All data is encrypted in transit and at rest. We use OAuth-only access with read-only permissions. GDPR compliant. No data sold to third parties.'
+          content:
+            'All data is encrypted in transit and at rest. We use OAuth-only access with read-only permissions. GDPR compliant. No data sold to third parties.',
         },
         {
           title: 'Aggregation Thresholds',
-          content: 'All metrics require minimum 5 people per team. Individual-level data is never stored or displayed. Patterns shown are team averages only.'
+          content:
+            'All metrics require minimum 5 people per team. Individual-level data is never stored or displayed. Patterns shown are team averages only.',
         },
         {
           title: 'Data Retention',
-          content: 'Free tier: 7 days. Detection tier: 30 days. Impact Proof tier: 90 days. Data auto-deleted after retention period.'
+          content:
+            'Free tier: 7 days. Detection tier: 30 days. Impact Proof tier: 90 days. Data auto-deleted after retention period.',
         },
         {
           title: 'Your Rights',
-          content: 'Request data deletion, export aggregated data, revoke integration access, view transparency log (admins).'
-        }
-      ]
-    }
+          content:
+            'Request data deletion, export aggregated data, revoke integration access, view transparency log (admins).',
+        },
+      ],
+    },
   });
 });
 

@@ -27,7 +27,7 @@ interface Props {
 
 /**
  * HRAdminOnboarding - Onboarding screen for HR admins
- * 
+ *
  * Shows two options:
  * 1. Invite IT Admin (recommended) - Send email invitation to IT admin for setup
  * 2. Set up integrations myself - Go directly to dashboard to configure
@@ -56,7 +56,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
       setSuccess(true);
       setEmail('');
       setName('');
-      
+
       // Show success message
       setTimeout(() => {
         setSuccess(false);
@@ -87,18 +87,20 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
           <div style={styles.iconContainer}>
             <span style={styles.icon}>👋</span>
           </div>
-          
+
           <h1 style={styles.title}>Welcome to SignalTrue!</h1>
           <p style={styles.subtitle}>
-            You're the first person from <strong>{status.orgName || 'your organization'}</strong> to join.
+            You're the first person from <strong>{status.orgName || 'your organization'}</strong> to
+            join.
           </p>
 
           <div style={styles.divider} />
 
           <h2 style={styles.sectionTitle}>Next Step: Connect Your Tools</h2>
           <p style={styles.description}>
-            SignalTrue analyzes your team's communication patterns to detect early signs of disengagement.
-            To get started, we need to connect to your collaboration tools (Slack/Google Chat + Calendar).
+            SignalTrue analyzes your team's communication patterns to detect early signs of
+            disengagement. To get started, we need to connect to your collaboration tools
+            (Slack/Google Chat + Calendar).
           </p>
 
           <div style={styles.optionsContainer}>
@@ -113,27 +115,21 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 Send an invitation to your IT administrator. They'll handle the integration setup
                 and ensure proper permissions are configured.
               </p>
-              
+
               {!showInviteForm ? (
-                <button
-                  onClick={() => setShowInviteForm(true)}
-                  style={styles.primaryButton}
-                >
+                <button onClick={() => setShowInviteForm(true)} style={styles.primaryButton}>
                   Invite IT Admin
                 </button>
               ) : (
                 <form onSubmit={handleInvite} style={styles.inviteForm}>
                   {success && (
                     <div style={styles.successBanner}>
-                      ✅ Invitation sent successfully! They'll receive an email with setup instructions.
+                      ✅ Invitation sent successfully! They'll receive an email with setup
+                      instructions.
                     </div>
                   )}
-                  
-                  {error && (
-                    <div style={styles.errorBanner}>
-                      ❌ {error}
-                    </div>
-                  )}
+
+                  {error && <div style={styles.errorBanner}>❌ {error}</div>}
 
                   <input
                     type="text"
@@ -143,7 +139,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                     required
                     style={styles.input}
                   />
-                  
+
                   <input
                     type="email"
                     placeholder="IT Admin Email"
@@ -152,7 +148,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                     required
                     style={styles.input}
                   />
-                  
+
                   <div style={styles.buttonGroup}>
                     <button
                       type="button"
@@ -162,11 +158,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                     >
                       Cancel
                     </button>
-                    <button
-                      type="submit"
-                      style={styles.primaryButton}
-                      disabled={loading}
-                    >
+                    <button type="submit" style={styles.primaryButton} disabled={loading}>
                       {loading ? 'Sending...' : 'Send Invitation'}
                     </button>
                   </div>
@@ -181,10 +173,10 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 Set Up Myself
               </h3>
               <p style={styles.optionDescription}>
-                You can configure the integrations yourself if you have admin access
-                to your organization's Slack workspace and Google Workspace.
+                You can configure the integrations yourself if you have admin access to your
+                organization's Slack workspace and Google Workspace.
               </p>
-              <button 
+              <button
                 onClick={() => navigate('/dashboard?setup=true')}
                 style={styles.secondaryButton}
               >
@@ -195,8 +187,8 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
 
           <div style={styles.helpBox}>
             <p style={styles.helpText}>
-              <strong>Need help?</strong> Our integrations only request read-only permissions
-              and all data is anonymized at the team level. Contact{' '}
+              <strong>Need help?</strong> Our integrations only request read-only permissions and
+              all data is anonymized at the team level. Contact{' '}
               <a href="mailto:support@signaltrue.com" style={styles.link}>
                 support@signaltrue.com
               </a>{' '}

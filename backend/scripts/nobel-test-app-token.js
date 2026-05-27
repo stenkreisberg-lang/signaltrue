@@ -22,7 +22,9 @@ function decodeJwt(token) {
   try {
     const [, payload] = token.split('.');
     return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function main() {
@@ -37,19 +39,16 @@ async function main() {
 
   // ── 1. Get token ──
   console.log('\n[1] Requesting client_credentials token...');
-  const tokenRes = await fetch(
-    `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        scope: 'https://graph.microsoft.com/.default',
-        grant_type: 'client_credentials',
-      }).toString(),
-    }
-  );
+  const tokenRes = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials',
+    }).toString(),
+  });
   const tokenData = await tokenRes.json();
 
   if (tokenData.error) {
@@ -79,9 +78,10 @@ async function main() {
     console.error('   7. Re-run this script — roles should then include "Calendars.Read"');
   } else {
     const hasCalendars = claims.roles.includes('Calendars.Read');
-    console.log(hasCalendars
-      ? '\n✅ Token has Calendars.Read application permission!'
-      : '\n⚠️  Token lacks Calendars.Read — add Application permission in Azure AD'
+    console.log(
+      hasCalendars
+        ? '\n✅ Token has Calendars.Read application permission!'
+        : '\n⚠️  Token lacks Calendars.Read — add Application permission in Azure AD'
     );
   }
 
@@ -91,7 +91,7 @@ async function main() {
   const User = (await import('../models/user.js')).default;
 
   const testUser = await User.findOne({
-    'externalIds.microsoftUserId': { $exists: true, $ne: null }
+    'externalIds.microsoftUserId': { $exists: true, $ne: null },
   }).lean();
 
   if (!testUser) {
@@ -106,14 +106,16 @@ async function main() {
     if (calRes.ok) {
       const calData = await calRes.json();
       console.log(`✅ SUCCESS — got ${(calData.value || []).length} events for ${testUser.email}`);
-      (calData.value || []).slice(0, 3).forEach(e =>
-        console.log(`   • ${e.subject} @ ${e.start?.dateTime}`)
-      );
+      (calData.value || [])
+        .slice(0, 3)
+        .forEach((e) => console.log(`   • ${e.subject} @ ${e.start?.dateTime}`));
     } else {
       const errText = await calRes.text();
       console.error(`❌ ${calRes.status} — ${errText.slice(0, 300)}`);
       if (calRes.status === 403) {
-        console.error('\n   This confirms "Calendars.Read" Application permission has NOT been granted.');
+        console.error(
+          '\n   This confirms "Calendars.Read" Application permission has NOT been granted.'
+        );
         console.error('   Follow the steps above to add and consent the permission in Azure AD.');
       }
     }
@@ -123,4 +125,7 @@ async function main() {
   console.log('\n=== Done ===\n');
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

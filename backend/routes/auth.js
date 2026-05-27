@@ -13,7 +13,7 @@ import {
   validateUserRegistration,
   validateLogin,
   validateEmail,
-  validateRequest
+  validateRequest,
 } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -99,7 +99,7 @@ router.post('/register-master', requireApiKey, async (req, res) => {
       password,
       name,
       role: 'master_admin',
-      isMasterAdmin: true
+      isMasterAdmin: true,
     });
     await user.save();
 
@@ -110,7 +110,7 @@ router.post('/register-master', requireApiKey, async (req, res) => {
         role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
+        isMasterAdmin: user.isMasterAdmin,
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -126,8 +126,8 @@ router.post('/register-master', requireApiKey, async (req, res) => {
         role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
-      }
+        isMasterAdmin: user.isMasterAdmin,
+      },
     });
   } catch (error) {
     console.error('Register master admin error:', error);
@@ -138,7 +138,7 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 // Register new user
 router.post('/register', validateUserRegistration, async (req, res) => {
   try {
-    const { email, password, name, firstName, lastName, role, teamId, orgId, companyName, company } = req.body;
+    const { email, password, name, firstName, lastName, companyName, company } = req.body;
 
     // Support both 'companyName' and 'company' from frontend
     const resolvedCompanyName = companyName || company;
@@ -152,7 +152,7 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     // Parse firstName and lastName from name if not provided separately
     let resolvedFirstName = firstName;
     let resolvedLastName = lastName;
-    
+
     if (!resolvedFirstName || !resolvedLastName) {
       const nameParts = (name || '').trim().split(/\s+/);
       resolvedFirstName = formatName(nameParts[0] || '');
@@ -161,17 +161,30 @@ router.post('/register', validateUserRegistration, async (req, res) => {
       resolvedFirstName = formatName(resolvedFirstName);
       resolvedLastName = formatName(resolvedLastName);
     }
-    
+
     // Build full name with proper formatting
-    const fullName = resolvedLastName 
-      ? `${resolvedFirstName} ${resolvedLastName}` 
+    const fullName = resolvedLastName
+      ? `${resolvedFirstName} ${resolvedLastName}`
       : resolvedFirstName;
 
     // Optional: block consumer email domains
-    const consumerDomains = new Set(['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','yandex.com','zoho.com']);
+    const consumerDomains = new Set([
+      'gmail.com',
+      'yahoo.com',
+      'hotmail.com',
+      'outlook.com',
+      'aol.com',
+      'icloud.com',
+      'protonmail.com',
+      'mail.com',
+      'yandex.com',
+      'zoho.com',
+    ]);
     const emailDomain = (email.split('@')[1] || '').toLowerCase();
     if (consumerDomains.has(emailDomain)) {
-      return res.status(400).json({ message: 'Please use your professional work email (consumer domains are not accepted).' });
+      return res.status(400).json({
+        message: 'Please use your professional work email (consumer domains are not accepted).',
+      });
     }
 
     // Check if user already exists
@@ -180,16 +193,17 @@ router.post('/register', validateUserRegistration, async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
-    let resolvedOrgId = orgId;
-    let resolvedTeamId = teamId;
+    let resolvedOrgId;
+    let resolvedTeamId;
 
-    // If no org/team provided, auto-provision an Organization and a default Team
+    // Public registration always creates an isolated organization and team.
+    // Joining an existing organization must go through an authenticated invite flow.
     if (!resolvedOrgId || !resolvedTeamId) {
       try {
         // Determine organization name: prefer companyName, else derive from email domain
         const domain = (email.split('@')[1] || '').split('.')[0];
         const orgName = resolvedCompanyName || domain.charAt(0).toUpperCase() + domain.slice(1);
-        
+
         const newOrg = new Organization({ name: orgName, domain });
         await newOrg.save();
         resolvedOrgId = newOrg._id;
@@ -201,22 +215,19 @@ router.post('/register', validateUserRegistration, async (req, res) => {
         });
         await defaultTeam.save();
         resolvedTeamId = defaultTeam._id;
-
       } catch (provisionError) {
         console.error('Error during org/team auto-provisioning:', provisionError);
         return res.status(500).json({ message: 'Failed to provision new organization/team.' });
       }
     }
 
-    // Determine role: First user in org becomes hr_admin, others default to viewer
-    let userRole = role || 'viewer';
-    if (!role) {
-      const existingUsersCount = await User.countDocuments({ orgId: resolvedOrgId });
-      if (existingUsersCount === 0) {
-        // This is the first user in the organization - make them HR admin
-        userRole = 'hr_admin';
-        console.log('First user in organization - assigning hr_admin role');
-      }
+    // The initial owner of a newly provisioned organization is the only
+    // elevated role that public registration may issue.
+    let userRole = 'viewer';
+    const existingUsersCount = await User.countDocuments({ orgId: resolvedOrgId });
+    if (existingUsersCount === 0) {
+      userRole = 'hr_admin';
+      console.log('First user in organization - assigning hr_admin role');
     }
 
     // Create new user
@@ -259,7 +270,7 @@ router.post('/register', validateUserRegistration, async (req, res) => {
             orgId: resolvedOrgId,
             reminderType: 'new-user-connect',
             subject: "You're almost there — finish connecting tools to see real signals",
-            emailId: result.emailId
+            emailId: result.emailId,
           });
           console.log(`[Reminder] Sent new user reminder to ${user.email}`);
         }
@@ -306,7 +317,10 @@ router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password').populate('teamId').populate('orgId');
+    const user = await User.findOne({ email })
+      .select('+password')
+      .populate('teamId')
+      .populate('orgId');
 
     if (!user) {
       // Note: Specific error messages can be a security risk (user enumeration), but are used here for better UX as requested.
@@ -339,8 +353,12 @@ router.post('/login', validateLogin, async (req, res) => {
         email: user.email, // Send back encrypted email
         name: user.name,
         role: user.role,
-        teamId: user.teamId?._id ? String(user.teamId._id) : (user.teamId ? String(user.teamId) : null),
-        orgId: user.orgId?._id ? String(user.orgId._id) : (user.orgId ? String(user.orgId) : null),
+        teamId: user.teamId?._id
+          ? String(user.teamId._id)
+          : user.teamId
+            ? String(user.teamId)
+            : null,
+        orgId: user.orgId?._id ? String(user.orgId._id) : user.orgId ? String(user.orgId) : null,
         isMasterAdmin: user.isMasterAdmin,
       },
     });
@@ -362,7 +380,9 @@ router.get('/me', authenticateToken, async (req, res) => {
     let orgSlug = null;
     let orgName = null;
     if (user.orgId) {
-      const org = await Organization.findById(user.orgId).select({ slug: 1, name: 1 }).catch(() => null);
+      const org = await Organization.findById(user.orgId)
+        .select({ slug: 1, name: 1 })
+        .catch(() => null);
       orgSlug = org?.slug || null;
       orgName = org?.name || null;
     }
@@ -375,7 +395,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       teamId: user.teamId,
       orgId: user.orgId,
       orgSlug,
-      orgName
+      orgName,
     });
   } catch (error) {
     console.error('Get user error:', error);
@@ -389,16 +409,18 @@ router.post('/forgot-password', validateEmail(), validateRequest, async (req, re
     const { email } = req.body;
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    
+
     // Always return success to prevent email enumeration
     if (!user) {
-      return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+      return res.json({
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      });
     }
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    
+
     // Save token and expiry (1 hour)
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
@@ -425,7 +447,7 @@ router.post('/forgot-password', validateEmail(), validateRequest, async (req, re
               <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
               <p style="color: #666; font-size: 12px;">Or copy this link: ${resetUrl}</p>
             </div>
-          `
+          `,
         });
         console.log('Password reset email sent to:', email, 'Result:', JSON.stringify(result));
       } catch (emailError) {
@@ -436,7 +458,9 @@ router.post('/forgot-password', validateEmail(), validateRequest, async (req, re
       console.log('Resend not configured. Reset URL:', resetUrl);
     }
 
-    res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+    res.json({
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ message: 'Error processing request' });
@@ -447,7 +471,7 @@ router.post('/forgot-password', validateEmail(), validateRequest, async (req, re
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, token, newPassword } = req.body;
-    
+
     if (!email || !token || !newPassword) {
       return res.status(400).json({ message: 'Email, token, and new password are required' });
     }
@@ -462,11 +486,13 @@ router.post('/reset-password', async (req, res) => {
     const user = await User.findOne({
       email: email.toLowerCase(),
       resetPasswordToken: tokenHash,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token. Please request a new password reset.' });
+      return res
+        .status(400)
+        .json({ message: 'Invalid or expired reset token. Please request a new password reset.' });
     }
 
     // Update password and clear reset fields
@@ -475,23 +501,27 @@ router.post('/reset-password', async (req, res) => {
     user.resetPasswordExpires = null;
     await user.save();
 
-    res.json({ message: 'Password has been reset successfully. You can now log in with your new password.' });
+    res.json({
+      message: 'Password has been reset successfully. You can now log in with your new password.',
+    });
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'Error resetting password' });
   }
 });
 
-// Create master admin - PUBLIC endpoint for initial setup
+// Create master admin - setup endpoint protected by a configured bootstrap secret
 // POST /api/auth/create-master-admin
 // Body: { email, password, name, secretKey }
 router.post('/create-master-admin', async (req, res) => {
   try {
     const { email, password, name, secretKey } = req.body;
-    
-    // Simple secret key check (can be changed to env variable)
-    const MASTER_ADMIN_SECRET = process.env.MASTER_ADMIN_SECRET || 'signaltrue-master-2026';
-    
+
+    const MASTER_ADMIN_SECRET = process.env.MASTER_ADMIN_SECRET;
+    if (!MASTER_ADMIN_SECRET) {
+      return res.status(503).json({ message: 'Master admin bootstrap is not configured' });
+    }
+
     if (secretKey !== MASTER_ADMIN_SECRET) {
       return res.status(403).json({ message: 'Invalid secret key' });
     }
@@ -516,7 +546,7 @@ router.post('/create-master-admin', async (req, res) => {
           role: existing.role,
           teamId: existing.teamId,
           orgId: existing.orgId,
-          isMasterAdmin: existing.isMasterAdmin
+          isMasterAdmin: existing.isMasterAdmin,
         },
         JWT_SECRET,
         { expiresIn: '7d' }
@@ -530,8 +560,8 @@ router.post('/create-master-admin', async (req, res) => {
           email: existing.email,
           name: existing.name,
           role: existing.role,
-          isMasterAdmin: existing.isMasterAdmin
-        }
+          isMasterAdmin: existing.isMasterAdmin,
+        },
       });
     }
 
@@ -541,7 +571,7 @@ router.post('/create-master-admin', async (req, res) => {
       password,
       name,
       role: 'master_admin',
-      isMasterAdmin: true
+      isMasterAdmin: true,
     });
     await user.save();
 
@@ -549,19 +579,21 @@ router.post('/create-master-admin', async (req, res) => {
     const org = new Organization({
       name: 'Master Admin Organization',
       domain: email.split('@')[1],
-      ownerId: user._id
+      ownerId: user._id,
     });
     await org.save();
 
     // Create a default team for the master admin
     const team = new Team({
       name: 'Master Admin Team',
-      organizationId: org._id,
-      members: [{
-        userId: user._id,
-        role: 'admin',
-        joinedAt: new Date()
-      }]
+      orgId: org._id,
+      members: [
+        {
+          userId: user._id,
+          role: 'admin',
+          joinedAt: new Date(),
+        },
+      ],
     });
     await team.save();
 
@@ -577,7 +609,7 @@ router.post('/create-master-admin', async (req, res) => {
         role: user.role,
         teamId: team._id,
         orgId: org._id,
-        isMasterAdmin: user.isMasterAdmin
+        isMasterAdmin: user.isMasterAdmin,
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -593,8 +625,8 @@ router.post('/create-master-admin', async (req, res) => {
         role: user.role,
         orgId: org._id,
         teamId: team._id,
-        isMasterAdmin: user.isMasterAdmin
-      }
+        isMasterAdmin: user.isMasterAdmin,
+      },
     });
   } catch (error) {
     console.error('Create master admin error:', error);

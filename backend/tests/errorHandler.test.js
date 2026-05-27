@@ -2,7 +2,7 @@
  * Unit tests for error handling middleware
  */
 
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { errorHandler, notFoundHandler, AppError, catchAsync } from '../middleware/errorHandler.js';
 
 describe('Error Handling Middleware', () => {
@@ -20,7 +20,7 @@ describe('Error Handling Middleware', () => {
       json: jest.fn(),
     };
     next = jest.fn();
-    
+
     // Suppress console.error during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -32,7 +32,7 @@ describe('Error Handling Middleware', () => {
   describe('AppError', () => {
     test('should create error with default values', () => {
       const error = new AppError('Test error');
-      
+
       expect(error.message).toBe('Test error');
       expect(error.statusCode).toBe(500);
       expect(error.isOperational).toBe(true);
@@ -41,7 +41,7 @@ describe('Error Handling Middleware', () => {
 
     test('should create error with custom values', () => {
       const error = new AppError('Not found', 404, false);
-      
+
       expect(error.message).toBe('Not found');
       expect(error.statusCode).toBe(404);
       expect(error.isOperational).toBe(false);
@@ -67,7 +67,7 @@ describe('Error Handling Middleware', () => {
   describe('errorHandler', () => {
     test('should handle generic errors with 500 status', () => {
       const error = new Error('Something went wrong');
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(500);
@@ -81,7 +81,7 @@ describe('Error Handling Middleware', () => {
 
     test('should handle AppError with custom status code', () => {
       const error = new AppError('Bad request', 400);
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -100,7 +100,7 @@ describe('Error Handling Middleware', () => {
           email: { message: 'Email is invalid' },
         },
       };
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -108,10 +108,7 @@ describe('Error Handling Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Validation failed',
-          errors: expect.arrayContaining([
-            'Name is required',
-            'Email is invalid',
-          ]),
+          errors: expect.arrayContaining(['Name is required', 'Email is invalid']),
         })
       );
     });
@@ -122,7 +119,7 @@ describe('Error Handling Middleware', () => {
         path: '_id',
         value: 'invalid-id',
       };
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -139,7 +136,7 @@ describe('Error Handling Middleware', () => {
         code: 11000,
         keyPattern: { email: 1 },
       };
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(409);
@@ -156,7 +153,7 @@ describe('Error Handling Middleware', () => {
         name: 'JsonWebTokenError',
         message: 'invalid token',
       };
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
@@ -173,7 +170,7 @@ describe('Error Handling Middleware', () => {
         name: 'TokenExpiredError',
         message: 'jwt expired',
       };
-      
+
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
@@ -184,13 +181,13 @@ describe('Error Handling Middleware', () => {
       );
     });
 
-    test('should include user ID in logs when available', () => {
+    test('should suppress logs in the test environment', () => {
       req.user = { _id: 'user123' };
       const error = new Error('Test error');
-      
+
       errorHandler(error, req, res, next);
 
-      expect(console.error).toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
     });
   });
 

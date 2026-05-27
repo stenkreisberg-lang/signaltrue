@@ -1,12 +1,12 @@
 /**
  * Execution Drag Indicator Service
  * Detects when coordination overhead eats execution capacity
- * 
+ *
  * Measures:
  * - Message volume growth
  * - Meeting count growth
  * - Response time slowdown
- * 
+ *
  * Output:
  * - Execution Drag = coordination growth – response efficiency
  * - Warning state indicator
@@ -19,9 +19,9 @@ import MetricsDaily from '../models/metricsDaily.js';
  * Execution Drag thresholds
  */
 const DRAG_THRESHOLDS = {
-  LOW: 0,       // Drag <= 0 = efficient
+  LOW: 0, // Drag <= 0 = efficient
   MODERATE: 10, // Drag 0-10 = moderate drag
-  HIGH: 20      // Drag > 20 = high drag
+  HIGH: 20, // Drag > 20 = high drag
 };
 
 /**
@@ -44,10 +44,10 @@ function calculateGrowthRate(previous, current) {
 function calculateCoordinationLoad(metrics) {
   const meetingWeight = 2; // Meetings are heavier coordination
   const messageWeight = 1;
-  
+
   const meetingLoad = (metrics.meetingCount || 0) * meetingWeight;
-  const messageLoad = (metrics.messageVolume || 0) / 100 * messageWeight; // Normalize
-  
+  const messageLoad = ((metrics.messageVolume || 0) / 100) * messageWeight; // Normalize
+
   return meetingLoad + messageLoad;
 }
 
@@ -60,10 +60,10 @@ function calculateCoordinationLoad(metrics) {
 function calculateResponseEfficiency(metrics) {
   // Lower response time = higher efficiency
   const responseTimeScore = Math.max(0, 100 - (metrics.avgResponseMinutes || 0));
-  
+
   // Lower fragmentation = higher efficiency
   const fragmentationScore = Math.max(0, 100 - (metrics.fragmentation || 0) * 5);
-  
+
   return (responseTimeScore + fragmentationScore) / 2;
 }
 
@@ -76,7 +76,7 @@ function calculateResponseEfficiency(metrics) {
 function calculateExecutionCapacity(metrics) {
   const focusTimeRatio = metrics.focusTimeRatio || 0.5;
   const efficiency = calculateResponseEfficiency(metrics);
-  
+
   return focusTimeRatio * efficiency;
 }
 
@@ -102,9 +102,9 @@ function generateDragExplanation(drag, state, trends) {
   if (state === 'efficient') {
     return 'Execution capacity is keeping pace with coordination demands';
   }
-  
+
   const causes = [];
-  
+
   if (trends.meetingGrowth > 10) {
     causes.push('meeting volume increase');
   }
@@ -114,17 +114,17 @@ function generateDragExplanation(drag, state, trends) {
   if (trends.responseTimeChange > 10) {
     causes.push('slower response times');
   }
-  
+
   if (causes.length === 0) {
     causes.push('coordination overhead');
   }
-  
+
   const causeText = causes.join(' and ');
-  
+
   if (state === 'moderate') {
     return `Coordination cost is growing faster than capacity due to ${causeText}`;
   }
-  
+
   return `Significant execution drag detected. ${causeText.charAt(0).toUpperCase() + causeText.slice(1)} is consuming execution capacity`;
 }
 
@@ -143,14 +143,14 @@ export async function computeExecutionDrag(teamId, currentPeriod, previousPeriod
   if (!previousPeriod) {
     const historicalMetrics = await MetricsDaily.find({
       teamId,
-      date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
+      date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
     }).sort({ date: 1 });
-    
+
     if (historicalMetrics.length >= 7) {
       const midpoint = Math.floor(historicalMetrics.length / 2);
       const firstHalf = historicalMetrics.slice(0, midpoint);
       const secondHalf = historicalMetrics.slice(midpoint);
-      
+
       previousPeriod = aggregateMetrics(firstHalf);
       currentPeriod = currentPeriod || aggregateMetrics(secondHalf);
     }
@@ -187,7 +187,7 @@ export async function computeExecutionDrag(teamId, currentPeriod, previousPeriod
     focusTimeChange: calculateGrowthRate(
       previousPeriod?.focusTimeRatio || 0.5,
       currentPeriod?.focusTimeRatio || 0.5
-    )
+    ),
   };
 
   // Determine state
@@ -200,34 +200,34 @@ export async function computeExecutionDrag(teamId, currentPeriod, previousPeriod
     teamId,
     orgId: team.orgId,
     calculatedAt: new Date(),
-    
+
     executionDrag: Math.round(executionDrag * 10) / 10,
     dragState,
     explanation,
-    
+
     // Breakdown
     coordinationGrowth: Math.round(coordinationGrowth * 10) / 10,
     capacityChange: Math.round(capacityChange * 10) / 10,
-    
+
     // Detailed trends
     trends: {
       meetingGrowth: Math.round(trends.meetingGrowth * 10) / 10,
       messageGrowth: Math.round(trends.messageGrowth * 10) / 10,
       responseTimeChange: Math.round(trends.responseTimeChange * 10) / 10,
-      focusTimeChange: Math.round(trends.focusTimeChange * 10) / 10
+      focusTimeChange: Math.round(trends.focusTimeChange * 10) / 10,
     },
-    
+
     // Period data for visualization
     currentPeriod: {
       coordination: Math.round(currCoordination * 10) / 10,
-      capacity: Math.round(currCapacity * 10) / 10
+      capacity: Math.round(currCapacity * 10) / 10,
     },
     previousPeriod: {
       coordination: Math.round(prevCoordination * 10) / 10,
-      capacity: Math.round(prevCapacity * 10) / 10
+      capacity: Math.round(prevCapacity * 10) / 10,
     },
-    
-    hasData: !!(currentPeriod && previousPeriod)
+
+    hasData: !!(currentPeriod && previousPeriod),
   };
 }
 
@@ -243,16 +243,19 @@ function aggregateMetrics(dailyMetrics) {
       messageVolume: 0,
       avgResponseMinutes: 0,
       focusTimeRatio: 0.5,
-      fragmentation: 0
+      fragmentation: 0,
     };
   }
 
-  const sum = dailyMetrics.reduce((acc, m) => ({
-    meetingHours: acc.meetingHours + (m.meetingHoursWeek || 0),
-    responseTime: acc.responseTime + (m.responseMedianMins || 0),
-    focusRatio: acc.focusRatio + (m.focusTimeRatio || 0),
-    afterHours: acc.afterHours + (m.afterHoursRate || 0)
-  }), { meetingHours: 0, responseTime: 0, focusRatio: 0, afterHours: 0 });
+  const sum = dailyMetrics.reduce(
+    (acc, m) => ({
+      meetingHours: acc.meetingHours + (m.meetingHoursWeek || 0),
+      responseTime: acc.responseTime + (m.responseMedianMins || 0),
+      focusRatio: acc.focusRatio + (m.focusTimeRatio || 0),
+      afterHours: acc.afterHours + (m.afterHoursRate || 0),
+    }),
+    { meetingHours: 0, responseTime: 0, focusRatio: 0, afterHours: 0 }
+  );
 
   const count = dailyMetrics.length;
 
@@ -261,7 +264,7 @@ function aggregateMetrics(dailyMetrics) {
     messageVolume: sum.afterHours * 10, // Proxy from after-hours activity
     avgResponseMinutes: sum.responseTime / count,
     focusTimeRatio: sum.focusRatio / count,
-    fragmentation: sum.responseTime / 10 // Proxy
+    fragmentation: sum.responseTime / 10, // Proxy
   };
 }
 
@@ -272,10 +275,14 @@ function aggregateMetrics(dailyMetrics) {
  */
 export function getDragStateColor(state) {
   switch (state) {
-    case 'efficient': return '#22c55e';
-    case 'moderate': return '#eab308';
-    case 'high': return '#ef4444';
-    default: return '#6b7280';
+    case 'efficient':
+      return '#22c55e';
+    case 'moderate':
+      return '#eab308';
+    case 'high':
+      return '#ef4444';
+    default:
+      return '#6b7280';
   }
 }
 
@@ -291,12 +298,12 @@ export async function getExecutionDragHistory(teamId, weeks = 8) {
 
   const metrics = await MetricsDaily.find({
     teamId,
-    date: { $gte: startDate }
+    date: { $gte: startDate },
   }).sort({ date: 1 });
 
   // Group by week
   const byWeek = {};
-  metrics.forEach(m => {
+  metrics.forEach((m) => {
     const weekNum = Math.floor((new Date(m.date) - startDate) / (7 * 24 * 60 * 60 * 1000));
     if (!byWeek[weekNum]) byWeek[weekNum] = [];
     byWeek[weekNum].push(m);
@@ -304,7 +311,9 @@ export async function getExecutionDragHistory(teamId, weeks = 8) {
 
   // Calculate drag for each week
   const weeklyDrag = [];
-  const weekNums = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
+  const weekNums = Object.keys(byWeek)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   for (let i = 1; i < weekNums.length; i++) {
     const prevWeek = aggregateMetrics(byWeek[weekNums[i - 1]]);
@@ -323,7 +332,7 @@ export async function getExecutionDragHistory(teamId, weeks = 8) {
       date: new Date(startDate.getTime() + weekNums[i] * 7 * 24 * 60 * 60 * 1000),
       drag: Math.round((coordGrowth - capChange) * 10) / 10,
       coordinationGrowth: Math.round(coordGrowth * 10) / 10,
-      capacityChange: Math.round(capChange * 10) / 10
+      capacityChange: Math.round(capChange * 10) / 10,
     });
   }
 
@@ -334,5 +343,5 @@ export default {
   computeExecutionDrag,
   getExecutionDragHistory,
   getDragStateColor,
-  DRAG_THRESHOLDS
+  DRAG_THRESHOLDS,
 };

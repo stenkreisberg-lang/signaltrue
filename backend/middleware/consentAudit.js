@@ -14,11 +14,12 @@ export default async function auditConsent(req, res, next) {
     await ConsentAudit.create({
       org_id: user.orgId,
       user_id: user._id,
-      action: req.method === 'POST' && req.path.includes('consent') ? 'consent_given' : 'data_accessed',
+      action:
+        req.method === 'POST' && req.path.includes('consent') ? 'consent_given' : 'data_accessed',
       endpoint: req.originalUrl,
       ip: req.ip,
       user_agent: req.headers['user-agent'],
-      details: {}
+      details: {},
     });
   } catch (err) {
     // Don't block request on audit failure

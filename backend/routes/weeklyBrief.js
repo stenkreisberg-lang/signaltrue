@@ -1,11 +1,11 @@
 import express from 'express';
 import { sendWeeklyBrief, generateWeeklyBrief } from '../services/weeklyBriefService.js';
-import Organization from '../models/organizationModel.js';
+import { requireHROrAdmin, requireOrganizationAccess } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // POST /api/weekly-brief/:orgId/send — trigger manual send
-router.post('/:orgId/send', async (req, res) => {
+router.post('/:orgId/send', requireHROrAdmin, requireOrganizationAccess(), async (req, res) => {
   try {
     await sendWeeklyBrief(req.params.orgId);
     res.json({ message: 'Weekly HR brief sent.' });
@@ -15,7 +15,7 @@ router.post('/:orgId/send', async (req, res) => {
 });
 
 // GET /api/weekly-brief/:orgId/preview — preview the email content
-router.get('/:orgId/preview', async (req, res) => {
+router.get('/:orgId/preview', requireHROrAdmin, requireOrganizationAccess(), async (req, res) => {
   try {
     const html = await generateWeeklyBrief(req.params.orgId);
     res.send(html);

@@ -43,7 +43,7 @@ router.post('/stripe/webhook', async (req, res) => {
           const { default: Organization } = await import('../models/organizationModel.js');
           const meta = session.metadata || {};
           const rawPlan = (meta.plan || '').toString();
-          const normalizedPlan = rawPlan === 'pro' ? 'professional' : (rawPlan || 'starter');
+          const normalizedPlan = rawPlan === 'pro' ? 'professional' : rawPlan || 'starter';
           const customerId = session.customer;
           const subscriptionId = session.subscription;
           const orgSlug = (meta.orgSlug || 'default').toString().toLowerCase();
@@ -53,16 +53,20 @@ router.post('/stripe/webhook', async (req, res) => {
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
             subscription: {
-              plan: ['starter', 'professional', 'enterprise', 'trial'].includes(normalizedPlan) ? normalizedPlan : 'starter',
-              status: 'active'
-            }
+              plan: ['starter', 'professional', 'enterprise', 'trial'].includes(normalizedPlan)
+                ? normalizedPlan
+                : 'starter',
+              status: 'active',
+            },
           };
 
           await Organization.findOneAndUpdate(
             { slug: orgSlug },
             {
               $setOnInsert: {
-                name: orgSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Default Org',
+                name:
+                  orgSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) ||
+                  'Default Org',
                 industry: 'General',
               },
               $set: update,
@@ -72,7 +76,11 @@ router.post('/stripe/webhook', async (req, res) => {
         } catch (e) {
           console.error('Webhook persist error (checkout.session.completed):', e.message);
         }
-        console.log('✅ Checkout completed:', { customer: session.customer, subscription: session.subscription, mode: session.mode });
+        console.log('✅ Checkout completed:', {
+          customer: session.customer,
+          subscription: session.subscription,
+          mode: session.mode,
+        });
         break;
       }
       case 'customer.subscription.created':
@@ -100,11 +108,13 @@ router.post('/stripe/webhook', async (req, res) => {
               $set: {
                 stripeSubscriptionId: sub.id,
                 'subscription.status': appStatus,
-                'subscription.expiresAt': sub.cancel_at ? new Date(sub.cancel_at * 1000) : undefined,
-              }
+                'subscription.expiresAt': sub.cancel_at
+                  ? new Date(sub.cancel_at * 1000)
+                  : undefined,
+              },
             }
           );
-          
+
           // If subscription has a default payment method, save the card details
           if (sub.default_payment_method) {
             try {
@@ -119,7 +129,7 @@ router.post('/stripe/webhook', async (req, res) => {
                       'paymentMethod.expiryMonth': pm.card.exp_month,
                       'paymentMethod.expiryYear': pm.card.exp_year,
                       'paymentMethod.expiryReminderSent': false, // Reset when card updated
-                    }
+                    },
                   }
                 );
                 console.log(`💳 Saved card ending ${pm.card.last4} for customer ${sub.customer}`);
@@ -131,7 +141,12 @@ router.post('/stripe/webhook', async (req, res) => {
         } catch (e) {
           console.error('Webhook persist error (subscription.*):', e.message);
         }
-        console.log(`ℹ️ Subscription event (${event.type}):`, { id: sub.id, status: sub.status, customer: sub.customer, current_period_end: sub.current_period_end });
+        console.log(`ℹ️ Subscription event (${event.type}):`, {
+          id: sub.id,
+          status: sub.status,
+          customer: sub.customer,
+          current_period_end: sub.current_period_end,
+        });
         break;
       }
       case 'payment_method.attached': {
@@ -149,10 +164,12 @@ router.post('/stripe/webhook', async (req, res) => {
                   'paymentMethod.expiryMonth': pm.card.exp_month,
                   'paymentMethod.expiryYear': pm.card.exp_year,
                   'paymentMethod.expiryReminderSent': false, // Reset reminder when new card added
-                }
+                },
               }
             );
-            console.log(`💳 Payment method attached: **** ${pm.card.last4} exp ${pm.card.exp_month}/${pm.card.exp_year}`);
+            console.log(
+              `💳 Payment method attached: **** ${pm.card.last4} exp ${pm.card.exp_month}/${pm.card.exp_year}`
+            );
           } catch (e) {
             console.error('Webhook persist error (payment_method.attached):', e.message);
           }

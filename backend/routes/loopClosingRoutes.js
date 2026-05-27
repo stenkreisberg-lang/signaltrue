@@ -17,7 +17,7 @@ import {
   computeMeetingROI,
   storeMeetingROI,
   getMeetingROIHistory,
-  getLatestMeetingROI
+  getLatestMeetingROI,
 } from '../services/meetingROIService.js';
 import {
   computeFocusForecast,
@@ -25,41 +25,35 @@ import {
   getFocusForecastHistory,
   getLatestFocusForecast,
   calculateFocusBlocks,
-  calculateFragmentationIndex
+  calculateFragmentationIndex,
 } from '../services/focusForecastService.js';
 import {
   computeWorkHealthDelta,
   storeWorkHealthDelta,
   getWorkHealthDeltaHistory,
   getLatestWorkHealthDelta,
-  formatReportForPDF
+  formatReportForPDF,
 } from '../services/workHealthDeltaService.js';
 import {
   computeAfterHoursCost,
   storeAfterHoursCost,
   getAfterHoursCostHistory,
-  getLatestAfterHoursCost
+  getLatestAfterHoursCost,
 } from '../services/afterHoursCostService.js';
 import {
   computeMeetingCollision,
   storeMeetingCollision,
   getMeetingCollisionHistory,
   getLatestMeetingCollision,
-  formatHeatmapForDisplay
+  formatHeatmapForDisplay,
 } from '../services/meetingCollisionService.js';
 import {
   runSimulation,
   getInterventionPresets,
-  INTERVENTION_TYPES
+  INTERVENTION_TYPES,
 } from '../services/interventionSimulatorService.js';
-import {
-  computeLoadBalanceIndex,
-  generateSampleMetrics
-} from '../services/loadBalanceService.js';
-import {
-  computeExecutionDrag,
-  getExecutionDragHistory
-} from '../services/executionDragService.js';
+import { computeLoadBalanceIndex, generateSampleMetrics } from '../services/loadBalanceService.js';
+import { computeExecutionDrag, getExecutionDragHistory } from '../services/executionDragService.js';
 import Team from '../models/team.js';
 import MetricsDaily from '../models/metricsDaily.js';
 
@@ -84,7 +78,7 @@ function getUserOrgId(user) {
 router.get('/meeting-roi/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
-    
+
     // Verify team access
     const team = await Team.findById(teamId);
     if (!team) {
@@ -97,7 +91,7 @@ router.get('/meeting-roi/:teamId', authenticateToken, async (req, res) => {
     }
 
     const latestROI = await getLatestMeetingROI(teamId);
-    
+
     if (!latestROI) {
       // Return default values if no data yet
       return res.json({
@@ -106,7 +100,7 @@ router.get('/meeting-roi/:teamId', authenticateToken, async (req, res) => {
         lowROIPercentage: 50,
         meetingCount: 0,
         message: 'No meeting data available yet',
-        hasData: false
+        hasData: false,
       });
     }
 
@@ -182,7 +176,7 @@ router.get('/focus-forecast/:teamId', authenticateToken, async (req, res) => {
         warningState: 'Stable',
         focusCapacityChange: 0,
         forecastMessage: 'Insufficient data for forecast',
-        hasData: false
+        hasData: false,
       });
     }
 
@@ -214,39 +208,44 @@ router.get('/focus-forecast/:teamId/history', authenticateToken, async (req, res
  * POST /api/loop-closing/focus-forecast/:teamId/compute
  * Trigger Focus Forecast computation
  */
-router.post('/focus-forecast/:teamId/compute', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    
-    // Get historical metrics for trend calculation
-    const historicalMetrics = await MetricsDaily.find({
-      teamId,
-      date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
-    }).sort({ date: 1 });
+router.post(
+  '/focus-forecast/:teamId/compute',
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    const historicalData = historicalMetrics.map(m => ({
-      date: m.date,
-      focusBlocks: m.focusTimeRatio ? m.focusTimeRatio * 5 : 0, // Convert ratio to blocks
-      fragmentation: m.responseMedianMins || 0
-    }));
+      // Get historical metrics for trend calculation
+      const historicalMetrics = await MetricsDaily.find({
+        teamId,
+        date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+      }).sort({ date: 1 });
 
-    // Get latest metrics for current state
-    const latestMetric = historicalMetrics[historicalMetrics.length - 1];
-    
-    const forecastData = await computeFocusForecast(teamId, {
-      currentFocusBlocks: latestMetric?.focusTimeRatio ? latestMetric.focusTimeRatio * 5 : 0,
-      currentFragmentation: latestMetric?.responseMedianMins || 0,
-      currentAfterHoursRate: latestMetric?.afterHoursRate || 0,
-      historicalData
-    });
+      const historicalData = historicalMetrics.map((m) => ({
+        date: m.date,
+        focusBlocks: m.focusTimeRatio ? m.focusTimeRatio * 5 : 0, // Convert ratio to blocks
+        fragmentation: m.responseMedianMins || 0,
+      }));
 
-    const saved = await storeFocusForecast(forecastData);
-    res.json({ success: true, data: saved });
-  } catch (error) {
-    console.error('[Loop Closing] Focus forecast compute error:', error);
-    res.status(500).json({ message: error.message });
+      // Get latest metrics for current state
+      const latestMetric = historicalMetrics[historicalMetrics.length - 1];
+
+      const forecastData = await computeFocusForecast(teamId, {
+        currentFocusBlocks: latestMetric?.focusTimeRatio ? latestMetric.focusTimeRatio * 5 : 0,
+        currentFragmentation: latestMetric?.responseMedianMins || 0,
+        currentAfterHoursRate: latestMetric?.afterHoursRate || 0,
+        historicalData,
+      });
+
+      const saved = await storeFocusForecast(forecastData);
+      res.json({ success: true, data: saved });
+    } catch (error) {
+      console.error('[Loop Closing] Focus forecast compute error:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // WORK HEALTH DELTA REPORT ENDPOINTS
@@ -276,7 +275,7 @@ router.get('/health-delta/:teamId', authenticateToken, async (req, res) => {
         teamId,
         overallStatus: 'stable',
         summaryMessage: 'Insufficient data for comparison',
-        hasData: false
+        hasData: false,
       });
     }
 
@@ -368,51 +367,57 @@ router.get('/dashboard/:teamId', authenticateToken, async (req, res) => {
     const [meetingROI, focusForecast, healthDelta] = await Promise.all([
       getLatestMeetingROI(teamId),
       getLatestFocusForecast(teamId),
-      getLatestWorkHealthDelta(teamId)
+      getLatestWorkHealthDelta(teamId),
     ]);
 
     res.json({
       teamId,
       teamName: team.name,
-      
-      meetingROI: meetingROI ? {
-        roiScore: meetingROI.roiScore,
-        lowROIPercentage: meetingROI.lowROIPercentage,
-        meetingCount: meetingROI.meetingCount,
-        updatedAt: meetingROI.updatedAt,
-        hasData: true
-      } : {
-        roiScore: 50,
-        lowROIPercentage: 50,
-        hasData: false
-      },
 
-      focusForecast: focusForecast ? {
-        warningState: focusForecast.warningState,
-        focusCapacityChange: focusForecast.focusCapacityChange,
-        forecastMessage: focusForecast.forecastMessage,
-        currentFocusBlocksPerDay: focusForecast.currentFocusBlocksPerDay,
-        updatedAt: focusForecast.updatedAt,
-        hasData: true
-      } : {
-        warningState: 'Stable',
-        focusCapacityChange: 0,
-        hasData: false
-      },
+      meetingROI: meetingROI
+        ? {
+            roiScore: meetingROI.roiScore,
+            lowROIPercentage: meetingROI.lowROIPercentage,
+            meetingCount: meetingROI.meetingCount,
+            updatedAt: meetingROI.updatedAt,
+            hasData: true,
+          }
+        : {
+            roiScore: 50,
+            lowROIPercentage: 50,
+            hasData: false,
+          },
 
-      healthDelta: healthDelta ? {
-        overallStatus: healthDelta.overallStatus,
-        summaryMessage: healthDelta.summaryMessage,
-        deltas: healthDelta.deltas,
-        deltaStatus: healthDelta.deltaStatus,
-        periodStart: healthDelta.periodStart,
-        periodEnd: healthDelta.periodEnd,
-        updatedAt: healthDelta.updatedAt,
-        hasData: true
-      } : {
-        overallStatus: 'stable',
-        hasData: false
-      }
+      focusForecast: focusForecast
+        ? {
+            warningState: focusForecast.warningState,
+            focusCapacityChange: focusForecast.focusCapacityChange,
+            forecastMessage: focusForecast.forecastMessage,
+            currentFocusBlocksPerDay: focusForecast.currentFocusBlocksPerDay,
+            updatedAt: focusForecast.updatedAt,
+            hasData: true,
+          }
+        : {
+            warningState: 'Stable',
+            focusCapacityChange: 0,
+            hasData: false,
+          },
+
+      healthDelta: healthDelta
+        ? {
+            overallStatus: healthDelta.overallStatus,
+            summaryMessage: healthDelta.summaryMessage,
+            deltas: healthDelta.deltas,
+            deltaStatus: healthDelta.deltaStatus,
+            periodStart: healthDelta.periodStart,
+            periodEnd: healthDelta.periodEnd,
+            updatedAt: healthDelta.updatedAt,
+            hasData: true,
+          }
+        : {
+            overallStatus: 'stable',
+            hasData: false,
+          },
     });
   } catch (error) {
     console.error('[Loop Closing] Dashboard error:', error);
@@ -432,7 +437,7 @@ router.post('/compute-all/:teamId', authenticateToken, requireAdmin, async (req,
     const results = {
       meetingROI: null,
       focusForecast: null,
-      healthDelta: null
+      healthDelta: null,
     };
 
     // Compute Meeting ROI (would need calendar data in production)
@@ -447,22 +452,22 @@ router.post('/compute-all/:teamId', authenticateToken, requireAdmin, async (req,
     try {
       const historicalMetrics = await MetricsDaily.find({
         teamId,
-        date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }
+        date: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
       }).sort({ date: 1 });
 
-      const historicalData = historicalMetrics.map(m => ({
+      const historicalData = historicalMetrics.map((m) => ({
         date: m.date,
         focusBlocks: m.focusTimeRatio ? m.focusTimeRatio * 5 : 0,
-        fragmentation: m.responseMedianMins || 0
+        fragmentation: m.responseMedianMins || 0,
       }));
 
       const latestMetric = historicalMetrics[historicalMetrics.length - 1];
-      
+
       const forecastData = await computeFocusForecast(teamId, {
         currentFocusBlocks: latestMetric?.focusTimeRatio ? latestMetric.focusTimeRatio * 5 : 0,
         currentFragmentation: latestMetric?.responseMedianMins || 0,
         currentAfterHoursRate: latestMetric?.afterHoursRate || 0,
-        historicalData
+        historicalData,
       });
 
       results.focusForecast = await storeFocusForecast(forecastData);
@@ -515,7 +520,7 @@ router.get('/after-hours/:teamId', authenticateToken, async (req, res) => {
         afterHoursHours: 0,
         estimatedCost: 0,
         message: 'No after-hours data available yet',
-        hasData: false
+        hasData: false,
       });
     }
 
@@ -591,20 +596,20 @@ router.get('/collision/:teamId', authenticateToken, async (req, res) => {
         summary: {
           redZoneHours: 0,
           focusWindowHours: 0,
-          congestionRate: 0
+          congestionRate: 0,
         },
         message: 'No calendar data available yet',
-        hasData: false
+        hasData: false,
       });
     }
 
     // Format heatmap for frontend display
     const formattedHeatmap = formatHeatmapForDisplay(latestCollision.heatmap);
 
-    res.json({ 
-      ...latestCollision.toObject(), 
+    res.json({
+      ...latestCollision.toObject(),
       formattedHeatmap,
-      hasData: true 
+      hasData: true,
     });
   } catch (error) {
     console.error('[Loop Closing] Collision heatmap error:', error);
@@ -670,62 +675,73 @@ router.get('/full-dashboard/:teamId', authenticateToken, async (req, res) => {
     }
 
     // Fetch all metrics in parallel
-    const [meetingROI, focusForecast, healthDelta, afterHoursCost, meetingCollision] = await Promise.all([
-      getLatestMeetingROI(teamId),
-      getLatestFocusForecast(teamId),
-      getLatestWorkHealthDelta(teamId),
-      getLatestAfterHoursCost(teamId),
-      getLatestMeetingCollision(teamId)
-    ]);
+    const [meetingROI, focusForecast, healthDelta, afterHoursCost, meetingCollision] =
+      await Promise.all([
+        getLatestMeetingROI(teamId),
+        getLatestFocusForecast(teamId),
+        getLatestWorkHealthDelta(teamId),
+        getLatestAfterHoursCost(teamId),
+        getLatestMeetingCollision(teamId),
+      ]);
 
     res.json({
       teamId,
       teamName: team.name,
-      
+
       // Phase 1
-      meetingROI: meetingROI ? {
-        roiScore: meetingROI.roiScore,
-        lowROIPercentage: meetingROI.lowROIPercentage,
-        meetingCount: meetingROI.meetingCount,
-        updatedAt: meetingROI.updatedAt,
-        hasData: true
-      } : { hasData: false },
+      meetingROI: meetingROI
+        ? {
+            roiScore: meetingROI.roiScore,
+            lowROIPercentage: meetingROI.lowROIPercentage,
+            meetingCount: meetingROI.meetingCount,
+            updatedAt: meetingROI.updatedAt,
+            hasData: true,
+          }
+        : { hasData: false },
 
-      focusForecast: focusForecast ? {
-        warningState: focusForecast.warningState,
-        focusCapacityChange: focusForecast.focusCapacityChange,
-        forecastMessage: focusForecast.forecastMessage,
-        updatedAt: focusForecast.updatedAt,
-        hasData: true
-      } : { hasData: false },
+      focusForecast: focusForecast
+        ? {
+            warningState: focusForecast.warningState,
+            focusCapacityChange: focusForecast.focusCapacityChange,
+            forecastMessage: focusForecast.forecastMessage,
+            updatedAt: focusForecast.updatedAt,
+            hasData: true,
+          }
+        : { hasData: false },
 
-      healthDelta: healthDelta ? {
-        overallStatus: healthDelta.overallStatus,
-        summaryMessage: healthDelta.summaryMessage,
-        deltas: healthDelta.deltas,
-        deltaStatus: healthDelta.deltaStatus,
-        updatedAt: healthDelta.updatedAt,
-        hasData: true
-      } : { hasData: false },
+      healthDelta: healthDelta
+        ? {
+            overallStatus: healthDelta.overallStatus,
+            summaryMessage: healthDelta.summaryMessage,
+            deltas: healthDelta.deltas,
+            deltaStatus: healthDelta.deltaStatus,
+            updatedAt: healthDelta.updatedAt,
+            hasData: true,
+          }
+        : { hasData: false },
 
       // Phase 2
-      afterHoursCost: afterHoursCost ? {
-        equivalentFTE: afterHoursCost.equivalentFTE,
-        afterHoursHours: afterHoursCost.afterHoursHours,
-        estimatedCost: afterHoursCost.estimatedCost,
-        monthlyAccumulated: afterHoursCost.monthlyAccumulated,
-        updatedAt: afterHoursCost.updatedAt,
-        hasData: true
-      } : { hasData: false },
+      afterHoursCost: afterHoursCost
+        ? {
+            equivalentFTE: afterHoursCost.equivalentFTE,
+            afterHoursHours: afterHoursCost.afterHoursHours,
+            estimatedCost: afterHoursCost.estimatedCost,
+            monthlyAccumulated: afterHoursCost.monthlyAccumulated,
+            updatedAt: afterHoursCost.updatedAt,
+            hasData: true,
+          }
+        : { hasData: false },
 
-      meetingCollision: meetingCollision ? {
-        summary: meetingCollision.summary,
-        redZoneCount: meetingCollision.redZones?.length || 0,
-        focusWindowCount: meetingCollision.focusWindows?.length || 0,
-        formattedHeatmap: formatHeatmapForDisplay(meetingCollision.heatmap),
-        updatedAt: meetingCollision.updatedAt,
-        hasData: true
-      } : { hasData: false }
+      meetingCollision: meetingCollision
+        ? {
+            summary: meetingCollision.summary,
+            redZoneCount: meetingCollision.redZones?.length || 0,
+            focusWindowCount: meetingCollision.focusWindows?.length || 0,
+            formattedHeatmap: formatHeatmapForDisplay(meetingCollision.heatmap),
+            updatedAt: meetingCollision.updatedAt,
+            hasData: true,
+          }
+        : { hasData: false },
     });
   } catch (error) {
     console.error('[Loop Closing] Full dashboard error:', error);
@@ -787,16 +803,16 @@ router.post('/simulator/:teamId/quick', authenticateToken, async (req, res) => {
     const { presetId, meetings = [] } = req.body;
 
     const presets = getInterventionPresets();
-    const preset = presets.find(p => p.id === presetId);
+    const preset = presets.find((p) => p.id === presetId);
 
     if (!preset) {
       return res.status(400).json({ message: 'Invalid preset ID' });
     }
 
     const result = await runSimulation(teamId, meetings, [preset.intervention]);
-    res.json({ 
-      ...result, 
-      presetUsed: preset.name 
+    res.json({
+      ...result,
+      presetUsed: preset.name,
     });
   } catch (error) {
     console.error('[Loop Closing] Quick simulation error:', error);
@@ -828,12 +844,15 @@ router.get('/load-balance/:teamId', authenticateToken, async (req, res) => {
     // Generate sample metrics based on team aggregates
     // In production, this would come from actual per-member data
     const teamSize = team.metadata?.actualSize || 5;
-    const sampleMetrics = generateSampleMetrics({
-      avgMeetingHours: 15,
-      avgAfterHours: 3,
-      avgResponsePressure: 50,
-      variance: 0.4
-    }, teamSize);
+    const sampleMetrics = generateSampleMetrics(
+      {
+        avgMeetingHours: 15,
+        avgAfterHours: 3,
+        avgResponsePressure: 50,
+        variance: 0.4,
+      },
+      teamSize
+    );
 
     const result = await computeLoadBalanceIndex(teamId, sampleMetrics);
     res.json(result);
@@ -910,18 +929,23 @@ router.get('/execution-drag/:teamId/history', authenticateToken, async (req, res
  * POST /api/loop-closing/execution-drag/:teamId/compute
  * Compute Execution Drag with explicit period data
  */
-router.post('/execution-drag/:teamId/compute', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { currentPeriod, previousPeriod } = req.body;
+router.post(
+  '/execution-drag/:teamId/compute',
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { currentPeriod, previousPeriod } = req.body;
 
-    const result = await computeExecutionDrag(teamId, currentPeriod, previousPeriod);
-    res.json(result);
-  } catch (error) {
-    console.error('[Loop Closing] Execution drag compute error:', error);
-    res.status(500).json({ message: error.message });
+      const result = await computeExecutionDrag(teamId, currentPeriod, previousPeriod);
+      res.json(result);
+    } catch (error) {
+      console.error('[Loop Closing] Execution drag compute error:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 // ============================================
 // COMPLETE DASHBOARD WITH ALL PHASES
@@ -952,74 +976,92 @@ router.get('/complete-dashboard/:teamId', authenticateToken, async (req, res) =>
       afterHoursCost,
       meetingCollision,
       loadBalance,
-      executionDrag
+      executionDrag,
     ] = await Promise.all([
       getLatestMeetingROI(teamId),
       getLatestFocusForecast(teamId),
       getLatestWorkHealthDelta(teamId),
       getLatestAfterHoursCost(teamId),
       getLatestMeetingCollision(teamId),
-      computeLoadBalanceIndex(teamId, generateSampleMetrics({
-        avgMeetingHours: 15, avgAfterHours: 3, avgResponsePressure: 50
-      }, team.metadata?.actualSize || 5)),
-      computeExecutionDrag(teamId)
+      computeLoadBalanceIndex(
+        teamId,
+        generateSampleMetrics(
+          {
+            avgMeetingHours: 15,
+            avgAfterHours: 3,
+            avgResponsePressure: 50,
+          },
+          team.metadata?.actualSize || 5
+        )
+      ),
+      computeExecutionDrag(teamId),
     ]);
 
     res.json({
       teamId,
       teamName: team.name,
-      
+
       // Phase 1
       phase1: {
-        meetingROI: meetingROI ? {
-          roiScore: meetingROI.roiScore,
-          lowROIPercentage: meetingROI.lowROIPercentage,
-          hasData: true
-        } : { hasData: false },
-        focusForecast: focusForecast ? {
-          warningState: focusForecast.warningState,
-          focusCapacityChange: focusForecast.focusCapacityChange,
-          forecastMessage: focusForecast.forecastMessage,
-          hasData: true
-        } : { hasData: false },
-        healthDelta: healthDelta ? {
-          overallStatus: healthDelta.overallStatus,
-          summaryMessage: healthDelta.summaryMessage,
-          deltas: healthDelta.deltas,
-          hasData: true
-        } : { hasData: false }
+        meetingROI: meetingROI
+          ? {
+              roiScore: meetingROI.roiScore,
+              lowROIPercentage: meetingROI.lowROIPercentage,
+              hasData: true,
+            }
+          : { hasData: false },
+        focusForecast: focusForecast
+          ? {
+              warningState: focusForecast.warningState,
+              focusCapacityChange: focusForecast.focusCapacityChange,
+              forecastMessage: focusForecast.forecastMessage,
+              hasData: true,
+            }
+          : { hasData: false },
+        healthDelta: healthDelta
+          ? {
+              overallStatus: healthDelta.overallStatus,
+              summaryMessage: healthDelta.summaryMessage,
+              deltas: healthDelta.deltas,
+              hasData: true,
+            }
+          : { hasData: false },
       },
-      
+
       // Phase 2
       phase2: {
-        afterHoursCost: afterHoursCost ? {
-          equivalentFTE: afterHoursCost.equivalentFTE,
-          afterHoursHours: afterHoursCost.afterHoursHours,
-          hasData: true
-        } : { hasData: false },
-        meetingCollision: meetingCollision ? {
-          summary: meetingCollision.summary,
-          redZoneCount: meetingCollision.redZones?.length || 0,
-          hasData: true
-        } : { hasData: false }
+        afterHoursCost: afterHoursCost
+          ? {
+              equivalentFTE: afterHoursCost.equivalentFTE,
+              afterHoursHours: afterHoursCost.afterHoursHours,
+              hasData: true,
+            }
+          : { hasData: false },
+        meetingCollision: meetingCollision
+          ? {
+              summary: meetingCollision.summary,
+              redZoneCount: meetingCollision.redZones?.length || 0,
+              hasData: true,
+            }
+          : { hasData: false },
       },
-      
+
       // Phase 3
       phase3: {
         loadBalance: {
           loadBalanceIndex: loadBalance.loadBalanceIndex,
           balanceState: loadBalance.balanceState,
           explanation: loadBalance.explanation,
-          hasData: loadBalance.hasData
+          hasData: loadBalance.hasData,
         },
         executionDrag: {
           executionDrag: executionDrag.executionDrag,
           dragState: executionDrag.dragState,
           explanation: executionDrag.explanation,
-          hasData: executionDrag.hasData
+          hasData: executionDrag.hasData,
         },
-        simulatorPresets: getInterventionPresets().slice(0, 3) // Top 3 presets
-      }
+        simulatorPresets: getInterventionPresets().slice(0, 3), // Top 3 presets
+      },
     });
   } catch (error) {
     console.error('[Loop Closing] Complete dashboard error:', error);

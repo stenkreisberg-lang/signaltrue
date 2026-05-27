@@ -13,7 +13,7 @@ function TeamMembers() {
     // Get current user from localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setCurrentUser(user);
-    
+
     fetchMembers();
   }, []);
 
@@ -22,7 +22,7 @@ function TeamMembers() {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/api/team-members`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -46,7 +46,7 @@ function TeamMembers() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newMember),
       });
@@ -78,7 +78,7 @@ function TeamMembers() {
       const response = await fetch(`${API_BASE}/api/team-members/${userId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -102,7 +102,7 @@ function TeamMembers() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ role: newRole }),
       });
@@ -126,20 +126,13 @@ function TeamMembers() {
       <div style={styles.header}>
         <h2 style={styles.title}>Team Members</h2>
         {isAdmin && (
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            style={styles.addButton}
-          >
+          <button onClick={() => setShowAddForm(!showAddForm)} style={styles.addButton}>
             {showAddForm ? 'Cancel' : '+ Add Member'}
           </button>
         )}
       </div>
 
-      {error && (
-        <div style={styles.error}>
-          {error}
-        </div>
-      )}
+      {error && <div style={styles.error}>{error}</div>}
 
       {showAddForm && isAdmin && (
         <form onSubmit={handleAddMember} style={styles.form}>

@@ -11,7 +11,7 @@ import User from '../models/user.js';
 
 async function check() {
   await mongoose.connect(process.env.MONGO_URI);
-  
+
   const user = await User.findOne({ email: 'sten.kreisberg@gmail.com' }).select('+password');
   console.log('User found:', !!user);
   if (user) {
@@ -21,15 +21,17 @@ async function check() {
     console.log('teamId:', user.teamId);
     console.log('isMasterAdmin:', user.isMasterAdmin);
     console.log('accountStatus:', user.accountStatus);
-    
+
     try {
-      const isMatch = await user.comparePassword('Superadmin123');
+      const password = process.env.SUPERADMIN_RESET_PASSWORD;
+      if (!password) throw new Error('SUPERADMIN_RESET_PASSWORD is required');
+      const isMatch = await user.comparePassword(password);
       console.log('Password matches:', isMatch);
     } catch (err) {
       console.log('Password compare error:', err.message);
     }
   }
-  
+
   await mongoose.disconnect();
 }
 

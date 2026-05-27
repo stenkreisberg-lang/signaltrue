@@ -29,36 +29,50 @@ console.log('token type (typ):', payload.typ);
 
 // 2. Try /me to confirm what account this token belongs to
 console.log('\n=== /me IDENTITY ===');
-const meRes = await fetch('https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName', {
-  headers: { Authorization: `Bearer ${token}` }
-});
+const meRes = await fetch(
+  'https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName',
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
 const me = await meRes.json();
 console.log(JSON.stringify(me, null, 2));
 
 // 3. Try /organization to confirm tenant
 console.log('\n=== /organization ===');
-const orgRes = await fetch('https://graph.microsoft.com/v1.0/organization?$select=id,displayName,verifiedDomains', {
-  headers: { Authorization: `Bearer ${token}` }
-});
+const orgRes = await fetch(
+  'https://graph.microsoft.com/v1.0/organization?$select=id,displayName,verifiedDomains',
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
 const orgData = await orgRes.json();
 console.log(JSON.stringify(orgData?.value?.[0] || orgData, null, 2));
 
 // 4. Try listing users (needs User.Read.All)
 console.log('\n=== /users LIST (first 3) ===');
-const usersRes = await fetch('https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail&$top=3', {
-  headers: { Authorization: `Bearer ${token}` }
-});
+const usersRes = await fetch(
+  'https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail&$top=3',
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
 const usersData = await usersRes.json();
 console.log('status:', usersRes.status);
 console.log(JSON.stringify(usersData, null, 2));
 
 // 5. Try accessing a specific known user's calendar directly
 // Use the HR admin's Microsoft ID
-const hrAdmin = await (await import('../models/user.js')).default.findOne({ orgId: org._id, role: 'hr_admin' }).lean();
+const hrAdmin = await (await import('../models/user.js')).default
+  .findOne({ orgId: org._id, role: 'hr_admin' })
+  .lean();
 if (hrAdmin?.externalIds?.microsoftUserId) {
-  console.log(`\n=== /users/${hrAdmin.externalIds.microsoftUserId}/calendarview (${hrAdmin.email}) ===`);
+  console.log(
+    `\n=== /users/${hrAdmin.externalIds.microsoftUserId}/calendarview (${hrAdmin.email}) ===`
+  );
   const now = new Date();
-  const until = new Date(now); until.setDate(until.getDate() + 7);
+  const until = new Date(now);
+  until.setDate(until.getDate() + 7);
   const calRes = await fetch(
     `https://graph.microsoft.com/v1.0/users/${hrAdmin.externalIds.microsoftUserId}/calendarview?startDateTime=${now.toISOString()}&endDateTime=${until.toISOString()}&$top=3`,
     { headers: { Authorization: `Bearer ${token}` } }

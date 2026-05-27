@@ -1,8 +1,8 @@
 /**
  * Active Monitoring - Primary signal monitoring screen
  * Per SignalTrue Product Spec Section 7
- * 
- * "SignalTrue continuously watches for early risk patterns 
+ *
+ * "SignalTrue continuously watches for early risk patterns
  * across workload, recovery, and collaboration."
  */
 
@@ -33,8 +33,8 @@ export default function ActiveMonitoring() {
       const signalsRes = await api.get(`/signals/org/${userRes.data.orgId}`, {
         params: {
           status: 'open,acknowledged',
-          limit: 10
-        }
+          limit: 10,
+        },
       });
 
       const rawSignals = signalsRes.data.signals || [];
@@ -59,16 +59,15 @@ export default function ActiveMonitoring() {
       // Fetch interventions for these signals
       if (top5.length > 0) {
         const interventionRes = await api.get(`/interventions/team/${userRes.data.teamId}`, {
-          params: { status: 'active,pending-recheck' }
+          params: { status: 'active,pending-recheck' },
         });
-        
+
         const interventionMap = {};
-        (interventionRes.data.interventions || []).forEach(int => {
+        (interventionRes.data.interventions || []).forEach((int) => {
           interventionMap[int.signalId] = int;
         });
         setInterventions(interventionMap);
       }
-
     } catch (err) {
       console.error('[ActiveMonitoring] Error loading data:', err);
       setError(err.message || 'Failed to load signals');
@@ -78,9 +77,9 @@ export default function ActiveMonitoring() {
   };
 
   const handleActionTaken = (intervention) => {
-    setInterventions(prev => ({
+    setInterventions((prev) => ({
       ...prev,
-      [intervention.signalId]: intervention
+      [intervention.signalId]: intervention,
     }));
   };
 
@@ -124,12 +123,22 @@ export default function ActiveMonitoring() {
             </Link>
           </div>
           <div style={styles.navRight}>
-            <Link to="/app/overview" style={styles.navLink}>Team Overview</Link>
-            <Link to="/app/signals" style={styles.navLink}>Signals</Link>
+            <Link to="/app/overview" style={styles.navLink}>
+              Team Overview
+            </Link>
+            <Link to="/app/signals" style={styles.navLink}>
+              Signals
+            </Link>
             <span style={styles.navLinkActive}>Active Monitoring</span>
-            <Link to="/app/actions" style={styles.navLink}>Actions</Link>
-            <Link to="/app/executive-summary" style={styles.navLink}>Executive Summary</Link>
-            <Link to="/app/privacy" style={styles.navLink}>Signal Coverage</Link>
+            <Link to="/app/actions" style={styles.navLink}>
+              Actions
+            </Link>
+            <Link to="/app/executive-summary" style={styles.navLink}>
+              Executive Summary
+            </Link>
+            <Link to="/app/privacy" style={styles.navLink}>
+              Signal Coverage
+            </Link>
             {user && (
               <div style={styles.userMenu}>
                 <span style={styles.userName}>{user.name || user.email}</span>
@@ -150,7 +159,8 @@ export default function ActiveMonitoring() {
             <div>
               <h2 style={styles.title}>Active Monitoring</h2>
               <p style={styles.subtitle}>
-                SignalTrue continuously watches for early risk patterns across workload, recovery, and collaboration.
+                SignalTrue continuously watches for early risk patterns across workload, recovery,
+                and collaboration.
               </p>
             </div>
             {signals.length > 0 && (
@@ -167,8 +177,8 @@ export default function ActiveMonitoring() {
               <h3 style={styles.emptyTitle}>No Active Risk Signals Detected</h3>
               {/* CRITICAL COPY per spec Section 7 */}
               <p style={styles.emptyText}>
-                We are currently monitoring workload intensity, recovery time, and collaboration patterns. 
-                Directional signals typically emerge within 7–10 days.
+                We are currently monitoring workload intensity, recovery time, and collaboration
+                patterns. Directional signals typically emerge within 7–10 days.
               </p>
               <Link to="/app/overview" style={styles.emptyButton}>
                 Go to Team Overview
@@ -192,8 +202,8 @@ export default function ActiveMonitoring() {
           {signals.length > 0 && (
             <div style={styles.footerNote}>
               <p style={styles.footerText}>
-                Signals are updated every 24 hours based on team activity patterns. 
-                Taking action early prevents larger problems later.
+                Signals are updated every 24 hours based on team activity patterns. Taking action
+                early prevents larger problems later.
               </p>
             </div>
           )}
@@ -210,12 +220,13 @@ export default function ActiveMonitoring() {
 function SignalCard({ signal, intervention, onActionTaken, rank }) {
   const [expanded, setExpanded] = useState(rank === 1);
 
-  const driftIndicator = signal.trendDirection || (signal.delta > 0 ? '↑' : signal.delta < 0 ? '↓' : '→');
+  const driftIndicator =
+    signal.trendDirection || (signal.delta > 0 ? '↑' : signal.delta < 0 ? '↓' : '→');
   const timeSinceDetection = getTimeSince(signal.detectedAt || signal.createdAt);
   const signalTypeDisplay = getSignalTypeDisplay(signal.signalType);
 
   return (
-    <div style={{...styles.signalCard, borderColor: getSeverityColor(signal.severity)}}>
+    <div style={{ ...styles.signalCard, borderColor: getSeverityColor(signal.severity) }}>
       {/* Card Header */}
       <div style={styles.cardHeader} onClick={() => setExpanded(!expanded)}>
         <div style={styles.cardLeft}>
@@ -234,12 +245,8 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
           </div>
         </div>
         <div style={styles.cardRight}>
-          <span style={styles.severityBadge(signal.severity)}>
-            {signal.severity}
-          </span>
-          <button style={styles.expandButton}>
-            {expanded ? '−' : '+'}
-          </button>
+          <span style={styles.severityBadge(signal.severity)}>{signal.severity}</span>
+          <button style={styles.expandButton}>{expanded ? '−' : '+'}</button>
         </div>
       </div>
 
@@ -251,19 +258,25 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
             <div style={styles.interpretBox}>
               <h4 style={styles.interpretLabel}>What changed</h4>
               <p style={styles.interpretText}>
-                {signal.interpretation?.whatIsChanging || signal.description || 'Pattern deviation detected'}
+                {signal.interpretation?.whatIsChanging ||
+                  signal.description ||
+                  'Pattern deviation detected'}
               </p>
             </div>
             <div style={styles.interpretBox}>
               <h4 style={styles.interpretLabel}>Likely cause</h4>
               <p style={styles.interpretText}>
-                {signal.interpretation?.whyItMatters || signal.consequence || 'May impact team performance'}
+                {signal.interpretation?.whyItMatters ||
+                  signal.consequence ||
+                  'May impact team performance'}
               </p>
             </div>
             <div style={styles.interpretBox}>
               <h4 style={styles.interpretLabel}>Suggested first step</h4>
               <p style={styles.interpretText}>
-                {signal.interpretation?.whatBreaksIfIgnored || signal.actions?.[0]?.description || 'Review and assess impact'}
+                {signal.interpretation?.whatBreaksIfIgnored ||
+                  signal.actions?.[0]?.description ||
+                  'Review and assess impact'}
               </p>
             </div>
           </div>
@@ -281,8 +294,9 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
               </div>
               <div style={styles.metricRow}>
                 <span style={styles.metricLabel}>Change:</span>
-                <span style={{...styles.metricValue, color: '#dc2626', fontWeight: 600}}>
-                  {signal.delta > 0 ? '+' : ''}{signal.delta?.toFixed(1) || 0}%
+                <span style={{ ...styles.metricValue, color: '#dc2626', fontWeight: 600 }}>
+                  {signal.delta > 0 ? '+' : ''}
+                  {signal.delta?.toFixed(1) || 0}%
                 </span>
               </div>
             </div>
@@ -290,10 +304,7 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
 
           {/* Recommended Action */}
           {!intervention && signal.actions && (
-            <RecommendedAction
-              signal={signal}
-              onActionTaken={onActionTaken}
-            />
+            <RecommendedAction signal={signal} onActionTaken={onActionTaken} />
           )}
 
           {/* Intervention Status */}
@@ -317,8 +328,14 @@ function SignalCard({ signal, intervention, onActionTaken, rank }) {
                   </div>
                   <div style={styles.outcomeRow}>
                     <span>Change:</span>
-                    <span style={{ fontWeight: 600, color: intervention.outcomeDelta.improved ? '#10b981' : '#dc2626' }}>
-                      {intervention.outcomeDelta.percentChange > 0 ? '+' : ''}{intervention.outcomeDelta.percentChange}%
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: intervention.outcomeDelta.improved ? '#10b981' : '#dc2626',
+                      }}
+                    >
+                      {intervention.outcomeDelta.percentChange > 0 ? '+' : ''}
+                      {intervention.outcomeDelta.percentChange}%
                       {intervention.outcomeDelta.improved ? ' ✓' : ''}
                     </span>
                   </div>
@@ -349,7 +366,7 @@ function getSeverityColor(severity) {
   const colors = {
     CRITICAL: '#dc2626',
     RISK: '#f59e0b',
-    INFO: '#3b82f6'
+    INFO: '#3b82f6',
   };
   return colors[severity] || '#6b7280';
 }
@@ -365,39 +382,43 @@ function getSignalTypeDisplay(signalType) {
     'recovery-deficit': 'Recovery Deficit',
     'handoff-bottleneck': 'Handoff Bottleneck',
     'context-switching': 'Context Switching Index',
-    'context_switching': 'Context Switching Index',
+    context_switching: 'Context Switching Index',
     'network-bottleneck': 'Network Bottleneck',
-    'network_bottleneck': 'Network Bottleneck',
+    network_bottleneck: 'Network Bottleneck',
     'rework-churn': 'Rework & Churn',
-    'rework_churn': 'Rework & Churn',
+    rework_churn: 'Rework & Churn',
     'meeting-load-spike': 'Coordination Risk',
-    'meeting_load_drift': 'Coordination Risk',
+    meeting_load_drift: 'Coordination Risk',
     'after-hours-creep': 'Boundary Erosion',
     'response-delay-increase': 'Execution Drag',
-    'responsiveness_pressure': 'Execution Drag',
+    responsiveness_pressure: 'Execution Drag',
     'sentiment-decline': 'Morale Volatility',
-    'recovery_gap_index': 'Recovery Deficit',
-    'focus_fragmentation': 'Focus Erosion',
-    'engagement_asymmetry': 'Engagement Gap',
-    'signal_convergence': 'Multi-Signal Alert'
+    recovery_gap_index: 'Recovery Deficit',
+    focus_fragmentation: 'Focus Erosion',
+    engagement_asymmetry: 'Engagement Gap',
+    signal_convergence: 'Multi-Signal Alert',
   };
-  return mapping[signalType] || signalType?.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Signal';
+  return (
+    mapping[signalType] ||
+    signalType?.replace(/[-_]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) ||
+    'Signal'
+  );
 }
 
 function getActionStatusText(status) {
   const mapping = {
-    'Open': 'Unaddressed',
-    'open': 'Unaddressed',
-    'Acknowledged': 'In progress',
-    'acknowledged': 'In progress',
-    'active': 'In progress',
+    Open: 'Unaddressed',
+    open: 'Unaddressed',
+    Acknowledged: 'In progress',
+    acknowledged: 'In progress',
+    active: 'In progress',
     'In Progress': 'In progress',
     'in-progress': 'In progress',
     'pending-recheck': 'Stabilizing',
-    'completed': 'Resolved',
-    'Resolved': 'Resolved',
-    'abandoned': 'Abandoned',
-    'Ignored': 'Dismissed'
+    completed: 'Resolved',
+    Resolved: 'Resolved',
+    abandoned: 'Abandoned',
+    Ignored: 'Dismissed',
   };
   return mapping[status] || status;
 }
@@ -647,8 +668,10 @@ const styles = {
     fontWeight: 600,
     padding: '0.25rem 0.625rem',
     borderRadius: '12px',
-    background: status === 'completed' ? '#d1fae5' : status === 'pending-recheck' ? '#fef3c7' : '#dbeafe',
-    color: status === 'completed' ? '#065f46' : status === 'pending-recheck' ? '#92400e' : '#1e40af',
+    background:
+      status === 'completed' ? '#d1fae5' : status === 'pending-recheck' ? '#fef3c7' : '#dbeafe',
+    color:
+      status === 'completed' ? '#065f46' : status === 'pending-recheck' ? '#92400e' : '#1e40af',
   }),
   cardRight: {
     display: 'flex',

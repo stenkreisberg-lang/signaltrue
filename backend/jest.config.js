@@ -23,9 +23,6 @@ export default {
     },
   },
   coverageReporters: ['text', 'lcov', 'html'],
-  testMatch: [
-    '**/tests/**/*.test.js',
-    '**/__tests__/**/*.js',
-  ],
+  testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.js'],
   verbose: true,
 };

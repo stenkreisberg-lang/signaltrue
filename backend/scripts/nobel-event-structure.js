@@ -20,25 +20,33 @@ thisWeekStart.setHours(0, 0, 0, 0);
 const sample = await WorkEvent.find({
   orgId: org._id,
   eventType: 'meeting',
-  timestamp: { $gte: thisWeekStart }
-}).limit(5).lean();
+  timestamp: { $gte: thisWeekStart },
+})
+  .limit(5)
+  .lean();
 
 console.log('=== SAMPLE MEETING EVENTS ===');
 for (const e of sample) {
-  console.log(JSON.stringify({
-    userId: e.userId || 'NULL',
-    source: e.source,
-    timestamp: e.timestamp,
-    metadata: {
-      subject: e.metadata?.subject || e.metadata?.title,
-      durationMinutes: e.metadata?.durationMinutes,
-      attendeeCount: e.metadata?.attendeeCount,
-      organizer: e.metadata?.organizer,
-      attendees: e.metadata?.attendees?.slice(0, 3),
-      calendarUserId: e.metadata?.calendarUserId || e.metadata?.userId,
-      userEmail: e.metadata?.userEmail || e.metadata?.email,
-    }
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        userId: e.userId || 'NULL',
+        source: e.source,
+        timestamp: e.timestamp,
+        metadata: {
+          subject: e.metadata?.subject || e.metadata?.title,
+          durationMinutes: e.metadata?.durationMinutes,
+          attendeeCount: e.metadata?.attendeeCount,
+          organizer: e.metadata?.organizer,
+          attendees: e.metadata?.attendees?.slice(0, 3),
+          calendarUserId: e.metadata?.calendarUserId || e.metadata?.userId,
+          userEmail: e.metadata?.userEmail || e.metadata?.email,
+        },
+      },
+      null,
+      2
+    )
+  );
   console.log('---');
 }
 
@@ -46,18 +54,22 @@ for (const e of sample) {
 const allEvents = await WorkEvent.find({
   orgId: org._id,
   eventType: 'meeting',
-  timestamp: { $gte: thisWeekStart }
+  timestamp: { $gte: thisWeekStart },
 }).lean();
 
 const metaKeys = new Set();
 for (const e of allEvents) {
-  if (e.metadata) Object.keys(e.metadata).forEach(k => metaKeys.add(k));
+  if (e.metadata) Object.keys(e.metadata).forEach((k) => metaKeys.add(k));
 }
 console.log('\n=== ALL METADATA KEYS PRESENT ===');
 console.log([...metaKeys].sort().join(', '));
 
 // Check how many events have each potential user identifier
-let withUserId = 0, withMetaEmail = 0, withMetaUserId = 0, withAttendees = 0, withOrganizer = 0;
+let withUserId = 0,
+  withMetaEmail = 0,
+  withMetaUserId = 0,
+  withAttendees = 0,
+  withOrganizer = 0;
 for (const e of allEvents) {
   if (e.userId) withUserId++;
   if (e.metadata?.email || e.metadata?.userEmail) withMetaEmail++;

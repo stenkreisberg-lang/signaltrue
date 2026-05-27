@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  DollarSign, 
-  TrendingUp, 
+import {
+  DollarSign,
+  TrendingUp,
   TrendingDown,
   AlertTriangle,
   Clock,
@@ -11,7 +11,7 @@ import {
   RefreshCw,
   HelpCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -83,7 +83,7 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       let url: string;
       if (showOrgLevel && orgId) {
         url = `${API_URL}/api/cost-of-drift/org/${orgId}`;
@@ -94,11 +94,11 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
       }
 
       const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) throw new Error('Failed to fetch cost of drift');
-      
+
       const result = await response.json();
       setData(result);
       setError(null);
@@ -115,7 +115,7 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -208,16 +208,20 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
           <h3 className="font-semibold text-slate-200 mb-2">How we calculate this</h3>
           <div className="text-sm text-slate-400 space-y-2">
             <p>
-              <strong className="text-slate-300">Formula:</strong> Cost = (Meeting Hours Lost + Execution Delay + Rework Hours) × Avg Hourly Cost
+              <strong className="text-slate-300">Formula:</strong> Cost = (Meeting Hours Lost +
+              Execution Delay + Rework Hours) × Avg Hourly Cost
             </p>
             <p>
-              <strong className="text-slate-300">Meeting Hours Lost:</strong> Hours spent in meetings above your baseline
+              <strong className="text-slate-300">Meeting Hours Lost:</strong> Hours spent in
+              meetings above your baseline
             </p>
             <p>
-              <strong className="text-slate-300">Execution Delay:</strong> Focus time erosion + response time slowdown
+              <strong className="text-slate-300">Execution Delay:</strong> Focus time erosion +
+              response time slowdown
             </p>
             <p>
-              <strong className="text-slate-300">Rework Hours:</strong> Estimated from after-hours catch-up activity
+              <strong className="text-slate-300">Rework Hours:</strong> Estimated from after-hours
+              catch-up activity
             </p>
             <p className="text-xs text-slate-500 mt-3">
               * Shown as a range (±20%) to reflect estimate uncertainty. Actual costs may vary.
@@ -232,20 +236,33 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
         <div className="text-center mb-6">
           <p className="text-sm text-slate-400 mb-1">Estimated Weekly Cost</p>
           <div className="text-4xl font-bold text-amber-400">
-            {formatRange(costEstimate.lowEstimate, costEstimate.highEstimate, costEstimate.currency)}
+            {formatRange(
+              costEstimate.lowEstimate,
+              costEstimate.highEstimate,
+              costEstimate.currency
+            )}
           </div>
           {trend && (
-            <div className={`inline-flex items-center gap-1 mt-2 text-sm ${
-              trend.direction === 'improving' ? 'text-green-400' :
-              trend.direction === 'worsening' ? 'text-red-400' : 'text-slate-400'
-            }`}>
+            <div
+              className={`inline-flex items-center gap-1 mt-2 text-sm ${
+                trend.direction === 'improving'
+                  ? 'text-green-400'
+                  : trend.direction === 'worsening'
+                    ? 'text-red-400'
+                    : 'text-slate-400'
+              }`}
+            >
               {trend.direction === 'improving' ? (
                 <TrendingDown className="w-4 h-4" />
               ) : trend.direction === 'worsening' ? (
                 <TrendingUp className="w-4 h-4" />
               ) : null}
               <span>
-                {trend.direction === 'improving' ? 'Down' : trend.direction === 'worsening' ? 'Up' : 'Stable'} 
+                {trend.direction === 'improving'
+                  ? 'Down'
+                  : trend.direction === 'worsening'
+                    ? 'Up'
+                    : 'Stable'}
                 {trend.percentChange > 0 ? ` ${trend.percentChange}%` : ''} vs last week
               </span>
             </div>
@@ -263,7 +280,11 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
           <div className="bg-slate-900/50 rounded-lg p-4 text-center">
             <p className="text-xs text-slate-400 mb-1">Quarterly Impact</p>
             <p className="text-lg font-semibold text-slate-100">
-              {formatRange(projections.quarterlyLow, projections.quarterlyHigh, costEstimate.currency)}
+              {formatRange(
+                projections.quarterlyLow,
+                projections.quarterlyHigh,
+                costEstimate.currency
+              )}
             </p>
           </div>
           <div className="bg-slate-900/50 rounded-lg p-4 text-center">
@@ -295,11 +316,16 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
                 <Calendar className="w-5 h-5 text-blue-400" />
                 <div>
                   <p className="text-sm font-medium text-slate-200">Meeting Overload</p>
-                  <p className="text-xs text-slate-400">{breakdown.meetingHoursLost.toFixed(1)} excess hours/week</p>
+                  <p className="text-xs text-slate-400">
+                    {breakdown.meetingHoursLost.toFixed(1)} excess hours/week
+                  </p>
                 </div>
               </div>
               <span className="text-slate-300">
-                {formatCurrency(breakdown.meetingHoursLost * assumptions.avgHourlyCost, costEstimate.currency)}
+                {formatCurrency(
+                  breakdown.meetingHoursLost * assumptions.avgHourlyCost,
+                  costEstimate.currency
+                )}
               </span>
             </div>
 
@@ -308,11 +334,16 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
                 <Clock className="w-5 h-5 text-purple-400" />
                 <div>
                   <p className="text-sm font-medium text-slate-200">Execution Delay</p>
-                  <p className="text-xs text-slate-400">{breakdown.executionDelayHours.toFixed(1)} hours lost/week</p>
+                  <p className="text-xs text-slate-400">
+                    {breakdown.executionDelayHours.toFixed(1)} hours lost/week
+                  </p>
                 </div>
               </div>
               <span className="text-slate-300">
-                {formatCurrency(breakdown.executionDelayHours * assumptions.avgHourlyCost, costEstimate.currency)}
+                {formatCurrency(
+                  breakdown.executionDelayHours * assumptions.avgHourlyCost,
+                  costEstimate.currency
+                )}
               </span>
             </div>
 
@@ -321,11 +352,16 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
                 <RefreshCw className="w-5 h-5 text-orange-400" />
                 <div>
                   <p className="text-sm font-medium text-slate-200">Rework & Catch-up</p>
-                  <p className="text-xs text-slate-400">{breakdown.reworkHours.toFixed(1)} hours/week</p>
+                  <p className="text-xs text-slate-400">
+                    {breakdown.reworkHours.toFixed(1)} hours/week
+                  </p>
                 </div>
               </div>
               <span className="text-slate-300">
-                {formatCurrency(breakdown.reworkHours * assumptions.avgHourlyCost, costEstimate.currency)}
+                {formatCurrency(
+                  breakdown.reworkHours * assumptions.avgHourlyCost,
+                  costEstimate.currency
+                )}
               </span>
             </div>
           </div>
@@ -341,7 +377,8 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
             <p className="text-sm text-slate-300">
               By addressing these drift patterns, you could save up to{' '}
               <strong className="text-green-400">
-                {formatCurrency(interventionSavings.potentialWeeklySavings, costEstimate.currency)}/week
+                {formatCurrency(interventionSavings.potentialWeeklySavings, costEstimate.currency)}
+                /week
               </strong>
             </p>
             {interventionSavings.implementedSavings > 0 && (

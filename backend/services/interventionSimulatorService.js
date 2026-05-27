@@ -1,12 +1,12 @@
 /**
  * Intervention Simulator Service (What-If Engine)
  * Lets teams see impact before enforcing change
- * 
+ *
  * Simulations:
  * - Remove selected meetings
  * - Shorten meetings (60 → 25/50)
  * - Insert no-meeting blocks
- * 
+ *
  * Recalculates:
  * - Focus time
  * - Fragmentation
@@ -25,7 +25,7 @@ export const INTERVENTION_TYPES = {
   SHORTEN_MEETING: 'shorten_meeting',
   ADD_FOCUS_BLOCK: 'add_focus_block',
   NO_MEETING_DAY: 'no_meeting_day',
-  CONSOLIDATE_MEETINGS: 'consolidate_meetings'
+  CONSOLIDATE_MEETINGS: 'consolidate_meetings',
 };
 
 /**
@@ -36,7 +36,7 @@ export const INTERVENTION_TYPES = {
  */
 function applyRemoveMeeting(meetings, params) {
   const idsToRemove = new Set(params.meetingIds || []);
-  return meetings.filter(m => !idsToRemove.has(m.id));
+  return meetings.filter((m) => !idsToRemove.has(m.id));
 }
 
 /**
@@ -48,18 +48,18 @@ function applyRemoveMeeting(meetings, params) {
 function applyShortenMeeting(meetings, params) {
   const targetDuration = params.targetDuration || 25;
   const targetIds = params.meetingIds ? new Set(params.meetingIds) : null;
-  
-  return meetings.map(m => {
+
+  return meetings.map((m) => {
     if (targetIds && !targetIds.has(m.id)) return m;
-    
+
     const currentDuration = m.durationMinutes || 60;
-    
+
     // Only shorten if meeting is longer than target
     if (currentDuration > targetDuration) {
       return {
         ...m,
         durationMinutes: targetDuration,
-        endTime: new Date(new Date(m.startTime).getTime() + targetDuration * 60000).toISOString()
+        endTime: new Date(new Date(m.startTime).getTime() + targetDuration * 60000).toISOString(),
       };
     }
     return m;
@@ -74,16 +74,16 @@ function applyShortenMeeting(meetings, params) {
  */
 function applyAddFocusBlock(meetings, params) {
   const { day, startHour, endHour } = params;
-  
-  return meetings.filter(m => {
+
+  return meetings.filter((m) => {
     const meetingStart = new Date(m.startTime);
     const meetingDay = meetingStart.getDay() - 1; // Convert to Mon=0
     if (meetingDay < 0 || meetingDay > 4) return true; // Keep weekend meetings
     if (meetingDay !== day) return true;
-    
+
     const meetingHour = meetingStart.getHours();
-    const meetingEndHour = meetingHour + ((m.durationMinutes || 60) / 60);
-    
+    const meetingEndHour = meetingHour + (m.durationMinutes || 60) / 60;
+
     // Remove if meeting overlaps with focus block
     return !(meetingHour < endHour && meetingEndHour > startHour);
   });
@@ -97,8 +97,8 @@ function applyAddFocusBlock(meetings, params) {
  */
 function applyNoMeetingDay(meetings, params) {
   const targetDay = params.day;
-  
-  return meetings.filter(m => {
+
+  return meetings.filter((m) => {
     const meetingStart = new Date(m.startTime);
     const meetingDay = meetingStart.getDay() - 1; // Convert to Mon=0
     return meetingDay !== targetDay;
@@ -113,18 +113,18 @@ function applyNoMeetingDay(meetings, params) {
  */
 function applyConsolidateMeetings(meetings, params) {
   const targetDays = new Set(params.targetDays || [1, 3]); // Default Tue/Thu
-  
+
   // Identify recurring meetings
-  const recurring = meetings.filter(m => m.isRecurring);
-  const adHoc = meetings.filter(m => !m.isRecurring);
-  
+  const recurring = meetings.filter((m) => m.isRecurring);
+  const adHoc = meetings.filter((m) => !m.isRecurring);
+
   // Move recurring meetings to target days (simulation - just count impact)
   // In reality, this would redistribute meetings
-  const movedRecurring = recurring.filter(m => {
+  const movedRecurring = recurring.filter((m) => {
     const day = new Date(m.startTime).getDay() - 1;
     return targetDays.has(day);
   });
-  
+
   return [...movedRecurring, ...adHoc];
 }
 
@@ -161,11 +161,11 @@ function calculateMetrics(meetings, messages = []) {
   const focusBlocks = calculateFocusBlocks(meetings);
   const fragmentation = calculateFragmentationIndex(meetings, messages);
   const afterHoursActivity = calculateAfterHoursActivity(messages);
-  
+
   // Calculate total meeting hours
   const totalMeetingMinutes = meetings.reduce((sum, m) => sum + (m.durationMinutes || 60), 0);
   const totalMeetingHours = totalMeetingMinutes / 60;
-  
+
   // Calculate focus time (assuming 8h workday, 5 days)
   const workHoursPerWeek = 40;
   const focusTimeHours = workHoursPerWeek - totalMeetingHours;
@@ -178,7 +178,7 @@ function calculateMetrics(meetings, messages = []) {
     fragmentation: Math.round(fragmentation * 10) / 10,
     meetingHours: Math.round(totalMeetingHours * 10) / 10,
     meetingCount: meetings.length,
-    afterHoursHours: afterHoursActivity.afterHoursHours
+    afterHoursHours: afterHoursActivity.afterHoursHours,
   };
 }
 
@@ -217,10 +217,10 @@ export async function runSimulation(teamId, meetings, interventions = [], option
   for (const intervention of interventions) {
     const beforeCount = modifiedMeetings.length;
     modifiedMeetings = applyIntervention(modifiedMeetings, intervention);
-    
+
     appliedInterventions.push({
       ...intervention,
-      meetingsAffected: beforeCount - modifiedMeetings.length
+      meetingsAffected: beforeCount - modifiedMeetings.length,
     });
   }
 
@@ -233,7 +233,7 @@ export async function runSimulation(teamId, meetings, interventions = [], option
     focusTimePercent: afterMetrics.focusTimePercent - beforeMetrics.focusTimePercent,
     fragmentation: percentChange(beforeMetrics.fragmentation, afterMetrics.fragmentation),
     meetingHours: percentChange(beforeMetrics.meetingHours, afterMetrics.meetingHours),
-    afterHoursHours: percentChange(beforeMetrics.afterHoursHours, afterMetrics.afterHoursHours)
+    afterHoursHours: percentChange(beforeMetrics.afterHoursHours, afterMetrics.afterHoursHours),
   };
 
   // Generate summary message
@@ -248,31 +248,32 @@ export async function runSimulation(teamId, meetings, interventions = [], option
     summaryParts.push(`meeting hours ${deltas.meetingHours}%`);
   }
 
-  const summaryMessage = summaryParts.length > 0
-    ? `If applied: ${summaryParts.join(', ')}`
-    : 'No significant impact detected';
+  const summaryMessage =
+    summaryParts.length > 0
+      ? `If applied: ${summaryParts.join(', ')}`
+      : 'No significant impact detected';
 
   return {
     teamId,
     orgId: team.orgId,
     simulatedAt: new Date(),
-    
+
     before: beforeMetrics,
     after: afterMetrics,
     deltas,
-    
+
     interventions: appliedInterventions,
     meetingsRemoved: meetings.length - modifiedMeetings.length,
-    
+
     summaryMessage,
-    
+
     // Impact assessment
     impact: {
       focusTimeGained: Math.max(0, afterMetrics.focusTimeHours - beforeMetrics.focusTimeHours),
       meetingsReduced: meetings.length - modifiedMeetings.length,
       fragmentationReduced: Math.max(0, beforeMetrics.fragmentation - afterMetrics.fragmentation),
-      isPositive: deltas.focusTimePercent > 0 || deltas.fragmentation < 0
-    }
+      isPositive: deltas.focusTimePercent > 0 || deltas.fragmentation < 0,
+    },
   };
 }
 
@@ -288,8 +289,8 @@ export function getInterventionPresets() {
       description: 'Apply the 25-minute meeting rule',
       intervention: {
         type: INTERVENTION_TYPES.SHORTEN_MEETING,
-        params: { targetDuration: 25 }
-      }
+        params: { targetDuration: 25 },
+      },
     },
     {
       id: 'shorten_to_50',
@@ -297,8 +298,8 @@ export function getInterventionPresets() {
       description: 'Give 10 minutes back between meetings',
       intervention: {
         type: INTERVENTION_TYPES.SHORTEN_MEETING,
-        params: { targetDuration: 50 }
-      }
+        params: { targetDuration: 50 },
+      },
     },
     {
       id: 'no_meeting_friday',
@@ -306,8 +307,8 @@ export function getInterventionPresets() {
       description: 'Clear all Friday meetings for focus work',
       intervention: {
         type: INTERVENTION_TYPES.NO_MEETING_DAY,
-        params: { day: 4 } // Friday
-      }
+        params: { day: 4 }, // Friday
+      },
     },
     {
       id: 'no_meeting_wednesday',
@@ -315,8 +316,8 @@ export function getInterventionPresets() {
       description: 'Mid-week focus day',
       intervention: {
         type: INTERVENTION_TYPES.NO_MEETING_DAY,
-        params: { day: 2 } // Wednesday
-      }
+        params: { day: 2 }, // Wednesday
+      },
     },
     {
       id: 'morning_focus_block',
@@ -324,8 +325,8 @@ export function getInterventionPresets() {
       description: 'Protect mornings for deep work',
       intervention: {
         type: INTERVENTION_TYPES.ADD_FOCUS_BLOCK,
-        params: { day: null, startHour: 9, endHour: 12 } // All days
-      }
+        params: { day: null, startHour: 9, endHour: 12 }, // All days
+      },
     },
     {
       id: 'afternoon_focus_block',
@@ -333,8 +334,8 @@ export function getInterventionPresets() {
       description: 'Protect afternoons for deep work',
       intervention: {
         type: INTERVENTION_TYPES.ADD_FOCUS_BLOCK,
-        params: { day: null, startHour: 14, endHour: 17 }
-      }
+        params: { day: null, startHour: 14, endHour: 17 },
+      },
     },
     {
       id: 'consolidate_to_tue_thu',
@@ -342,9 +343,9 @@ export function getInterventionPresets() {
       description: 'Move recurring meetings to meeting days',
       intervention: {
         type: INTERVENTION_TYPES.CONSOLIDATE_MEETINGS,
-        params: { targetDays: [1, 3] } // Tuesday, Thursday
-      }
-    }
+        params: { targetDays: [1, 3] }, // Tuesday, Thursday
+      },
+    },
   ];
 }
 
@@ -366,5 +367,5 @@ export default {
   runSimulation,
   applyIntervention,
   getInterventionPresets,
-  INTERVENTION_TYPES
+  INTERVENTION_TYPES,
 };

@@ -24,7 +24,9 @@ export async function detectDriftForAllTeams({ windowDays = 7, thresholdMap = nu
 
   for (const team of teams) {
     if (!team.baseline || !team.baseline.signals) continue;
-    const rows = await MetricsDaily.find({ teamId: team._id, date: { $gte: since } }).sort({ date: 1 });
+    const rows = await MetricsDaily.find({ teamId: team._id, date: { $gte: since } }).sort({
+      date: 1,
+    });
     if (!rows.length) continue;
 
     // Core metrics only
@@ -43,17 +45,20 @@ export async function detectDriftForAllTeams({ windowDays = 7, thresholdMap = nu
     for (const metric of metrics) {
       const baseline = team.baseline.signals[metric.key];
       if (baseline == null) continue;
-      const arr = rows.map(r => r[metric.key]).filter(x => x != null);
+      const arr = rows.map((r) => r[metric.key]).filter((x) => x != null);
       if (!arr.length) continue;
-      const avg = arr.reduce((a,b) => a + b, 0) / arr.length;
-      const std = arr.length > 1 ? Math.sqrt(arr.map(x => (x-avg)*(x-avg)).reduce((a,b) => a+b,0)/arr.length) : 0;
+      const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+      const std =
+        arr.length > 1
+          ? Math.sqrt(arr.map((x) => (x - avg) * (x - avg)).reduce((a, b) => a + b, 0) / arr.length)
+          : 0;
       let threshold = thresholdMap?.[metric.key] ?? defaultThresholds[metric.key];
       let percentChange = ((avg - baseline) / (baseline || 1)) * 100;
       let zscore = std ? (avg - baseline) / std : 0;
       let breach = false;
       if (['recoveryDays'].includes(metric.key)) {
         breach = avg > threshold;
-      } else if (['energyIndex','focusTimeRatio'].includes(metric.key)) {
+      } else if (['energyIndex', 'focusTimeRatio'].includes(metric.key)) {
         breach = avg < threshold;
       } else {
         breach = Math.abs(percentChange) >= threshold;
@@ -73,9 +78,13 @@ export async function detectDriftForAllTeams({ windowDays = 7, thresholdMap = nu
           basis: 'percent',
           details: { avg, baseline, percentChange, zscore, threshold },
           drivers: contributions
-            .sort((a,b) => Math.abs(b.change) - Math.abs(a.change))
-            .slice(0,3)
-            .map(c => ({ metric: c.metric, delta: c.change, direction: c.change > 0 ? 'up' : 'down' })),
+            .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+            .slice(0, 3)
+            .map((c) => ({
+              metric: c.metric,
+              delta: c.change,
+              direction: c.change > 0 ? 'up' : 'down',
+            })),
           recommendation,
         });
       }

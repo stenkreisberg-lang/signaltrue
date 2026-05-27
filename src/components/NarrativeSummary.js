@@ -13,8 +13,8 @@ export default function NarrativeSummary({ orgId, dark }) {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE}/api/narrative/weekly/${orgId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!res.ok) throw new Error('Failed to fetch narrative');
       const data = await res.json();
@@ -36,7 +36,7 @@ export default function NarrativeSummary({ orgId, dark }) {
     padding: '24px',
     borderRadius: '16px',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    marginBottom: '24px'
+    marginBottom: '24px',
   };
 
   const headingStyle = {
@@ -45,22 +45,22 @@ export default function NarrativeSummary({ orgId, dark }) {
     marginBottom: '16px',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '8px',
   };
 
   const narrativeStyle = {
     fontSize: '15px',
     lineHeight: '1.6',
     whiteSpace: 'pre-wrap',
-    color: dark ? '#d1d5db' : '#374151'
+    color: dark ? '#d1d5db' : '#374151',
   };
 
   return (
     <div style={containerStyle}>
       <h2 style={headingStyle}>
         📝 Weekly Executive Summary
-        <button 
-          onClick={fetchNarrative} 
+        <button
+          onClick={fetchNarrative}
           disabled={loading}
           style={{
             marginLeft: 'auto',
@@ -71,7 +71,7 @@ export default function NarrativeSummary({ orgId, dark }) {
             border: 'none',
             fontSize: '13px',
             fontWeight: '500',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
           {loading ? 'Generating...' : 'Refresh'}

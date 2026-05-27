@@ -1,10 +1,10 @@
 /**
  * Alert Type Definitions
- * 
+ *
  * Based on the SignalTrue Product Execution Spec.
  * Defines 7 structured alert types with persistence rules,
  * severity mapping, and recommendation templates.
- * 
+ *
  * Alert principles:
  * - Minimum 2 weeks persistence for emerging alerts
  * - Minimum 3 weeks or large spike for elevated alerts
@@ -15,7 +15,7 @@
 
 // Severity thresholds for normalized scores (0-100 scale)
 export const SEVERITY_THRESHOLDS = {
-  stable:   { min: 0,  max: 59 },
+  stable: { min: 0, max: 59 },
   emerging: { min: 60, max: 69 },
   elevated: { min: 70, max: 79 },
   critical: { min: 80, max: 100 },
@@ -36,7 +36,12 @@ export function scoreToSeverity(score) {
  * z = (current_value - baseline_mean) / max(baseline_stddev, epsilon)
  * normalized_score = clamp(50 + 15 * z, 0, 100)
  */
-export function computeNormalizedScore(currentValue, baselineMean, baselineStddev, epsilon = 0.001) {
+export function computeNormalizedScore(
+  currentValue,
+  baselineMean,
+  baselineStddev,
+  epsilon = 0.001
+) {
   const z = (currentValue - baselineMean) / Math.max(baselineStddev, epsilon);
   return Math.max(0, Math.min(100, 50 + 15 * z));
 }
@@ -57,7 +62,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '70-79': 'elevated',
-      '80+':   'critical',
+      '80+': 'critical',
     },
     minPersistenceWeeks: 2,
     recommendations: [
@@ -78,7 +83,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '70-79': 'elevated',
-      '80+':   'critical',
+      '80+': 'critical',
     },
     minPersistenceWeeks: 2,
     recommendations: [
@@ -99,7 +104,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '72-79': 'elevated',
-      '80+':   'critical',
+      '80+': 'critical',
     },
     minPersistenceWeeks: 2,
     recommendations: [
@@ -120,7 +125,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '70-79': 'elevated',
-      '80+':   'critical',
+      '80+': 'critical',
     },
     minPersistenceWeeks: 2,
     recommendations: [
@@ -141,7 +146,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '75-84': 'elevated',
-      '85+':   'critical',
+      '85+': 'critical',
     },
     minPersistenceWeeks: 2,
     recommendations: [
@@ -162,7 +167,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       'TRS 30-40': 'elevated',
-      'TRS < 30':  'critical',
+      'TRS < 30': 'critical',
     },
     minPersistenceWeeks: 3,
     recommendations: [
@@ -184,7 +189,7 @@ export const ALERT_TYPES = {
     ],
     severityMapping: {
       '75-79': 'elevated',
-      '80+':   'critical',
+      '80+': 'critical',
     },
     minPersistenceWeeks: 1, // Critical: can fire faster
     recommendations: [
@@ -204,12 +209,12 @@ export const ALERT_TYPES = {
  * OSI = 0.22*MLI + 0.22*REI + 0.20*CSI + 0.16*FFR + 0.10*(100-TRS) + 0.10*MCR
  */
 export const OSI_WEIGHTS = {
-  meeting_load:          0.22,
-  recovery_erosion:      0.22,
-  coordination_strain:   0.20,
-  focus_fragmentation:   0.16,  // FFR = 100 - FIS
-  team_rhythm_instability: 0.10, // 100 - TRS
-  manager_capacity_risk: 0.10,
+  meeting_load: 0.22,
+  recovery_erosion: 0.22,
+  coordination_strain: 0.2,
+  focus_fragmentation: 0.16, // FFR = 100 - FIS
+  team_rhythm_instability: 0.1, // 100 - TRS
+  manager_capacity_risk: 0.1,
 };
 
 /**
@@ -217,11 +222,11 @@ export const OSI_WEIGHTS = {
  * EDR = 0.35*CSI + 0.25*FFR + 0.20*MLI + 0.10*MCR + 0.10*DV
  */
 export const EDR_WEIGHTS = {
-  coordination_strain:   0.35,
-  focus_fragmentation:   0.25,
-  meeting_load:          0.20,
-  manager_capacity_risk: 0.10,
-  drift_velocity:        0.10,
+  coordination_strain: 0.35,
+  focus_fragmentation: 0.25,
+  meeting_load: 0.2,
+  manager_capacity_risk: 0.1,
+  drift_velocity: 0.1,
 };
 
 export default {

@@ -1,6 +1,6 @@
 /**
  * Superadmin Notification Service
- * 
+ *
  * Sends copies of all client reports to the superadmin for verification.
  * This allows the superadmin to review data quality and presentation.
  */
@@ -61,7 +61,9 @@ export async function ccSuperadmin({ subject, html, originalRecipient, reportTyp
       return null;
     }
 
-    console.log(`[Superadmin CC] Report copy sent: ${reportType} for ${orgName || originalRecipient} (id: ${result.data?.id})`);
+    console.log(
+      `[Superadmin CC] Report copy sent: ${reportType} for ${orgName || originalRecipient} (id: ${result.data?.id})`
+    );
     return result;
   } catch (error) {
     console.error('[Superadmin CC] Failed to send copy:', error.message);
@@ -98,7 +100,12 @@ export async function notifySuperadmin({ title, message, type, data = {} }) {
             <table style="width: 100%; font-size: 14px;">
               <tr><td style="padding: 4px 0; color: #6b7280;">Type:</td><td style="padding: 4px 0; color: #111827;">${type}</td></tr>
               <tr><td style="padding: 4px 0; color: #6b7280;">Timestamp:</td><td style="padding: 4px 0; color: #111827;">${new Date().toISOString()}</td></tr>
-              ${Object.entries(data).map(([k, v]) => `<tr><td style="padding: 4px 0; color: #6b7280;">${k}:</td><td style="padding: 4px 0; color: #111827;">${v}</td></tr>`).join('')}
+              ${Object.entries(data)
+                .map(
+                  ([k, v]) =>
+                    `<tr><td style="padding: 4px 0; color: #6b7280;">${k}:</td><td style="padding: 4px 0; color: #111827;">${v}</td></tr>`
+                )
+                .join('')}
             </table>
           </div>
         </div>
@@ -136,16 +143,16 @@ export async function notifySuperadmin({ title, message, type, data = {} }) {
  */
 export async function notifyIntegrationConnected(org, integration, scope = null) {
   const integrationName = scope ? `${integration} (${scope})` : integration;
-  
+
   await notifySuperadmin({
     title: 'New Integration Connected',
     message: `A client has connected a new integration. Review the dashboard to monitor their data.`,
     type: 'integration_connected',
     data: {
-      'Organization': org?.name || org?.slug || 'Unknown',
-      'Integration': integrationName,
+      Organization: org?.name || org?.slug || 'Unknown',
+      Integration: integrationName,
       'Connected At': new Date().toLocaleString(),
-    }
+    },
   });
 }
 

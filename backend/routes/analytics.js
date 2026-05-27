@@ -1,7 +1,7 @@
-import express from "express";
-import Analytics from "../models/analytics.js";
+import express from 'express';
+import Analytics from '../models/analytics.js';
 
-import Project from "../models/project.js";
+import Project from '../models/project.js';
 
 const router = express.Router();
 
@@ -18,14 +18,14 @@ const DEFINED_EVENTS = [
   'trial_started',
   'trial_phase_changed',
   'paywall_shown',
-  'pricing_page_viewed'
+  'pricing_page_viewed',
 ];
 
 // POST - Record an analytics event
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { eventName, payload, projectId } = req.body;
-    if (!eventName || typeof eventName !== "string") {
+    if (!eventName || typeof eventName !== 'string') {
       return res.status(400).json({ message: "'eventName' is required" });
     }
 
@@ -38,24 +38,24 @@ router.post("/", async (req, res) => {
 });
 
 // POST /track - Simplified tracking endpoint for frontend
-router.post("/track", async (req, res) => {
+router.post('/track', async (req, res) => {
   try {
     const { event, data, timestamp } = req.body;
-    if (!event || typeof event !== "string") {
+    if (!event || typeof event !== 'string') {
       return res.status(400).json({ message: "'event' is required" });
     }
 
-    const doc = new Analytics({ 
-      eventName: event, 
-      payload: { ...data, timestamp: timestamp || new Date().toISOString() }
+    const doc = new Analytics({
+      eventName: event,
+      payload: { ...data, timestamp: timestamp || new Date().toISOString() },
     });
     await doc.save();
-    
+
     // Log in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Analytics Track] ${event}`, data);
     }
-    
+
     res.status(201).json({ success: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -63,12 +63,12 @@ router.post("/track", async (req, res) => {
 });
 
 // GET - Get defined events list
-router.get("/events", async (req, res) => {
+router.get('/events', async (req, res) => {
   res.json({ events: DEFINED_EVENTS });
 });
 
 // GET - Get event counts for conversion funnel
-router.get("/funnel", async (req, res) => {
+router.get('/funnel', async (req, res) => {
   try {
     const funnelEvents = [
       'assessment_started',
@@ -76,20 +76,20 @@ router.get("/funnel", async (req, res) => {
       'email_submitted',
       'monthly_report_viewed',
       'ceo_summary_generated',
-      'upgrade_cta_clicked'
+      'upgrade_cta_clicked',
     ];
-    
+
     const counts = await Analytics.aggregate([
       { $match: { eventName: { $in: funnelEvents } } },
-      { $group: { _id: "$eventName", count: { $sum: 1 } } }
+      { $group: { _id: '$eventName', count: { $sum: 1 } } },
     ]);
-    
+
     // Format as funnel stages
-    const funnel = funnelEvents.map(event => ({
+    const funnel = funnelEvents.map((event) => ({
       stage: event,
-      count: counts.find(c => c._id === event)?.count || 0
+      count: counts.find((c) => c._id === event)?.count || 0,
     }));
-    
+
     res.json({ funnel });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -97,7 +97,7 @@ router.get("/funnel", async (req, res) => {
 });
 
 // GET - summary stats for analytics dashboard
-router.get("/summary", async (req, res) => {
+router.get('/summary', async (req, res) => {
   try {
     const totalProjects = await Project.countDocuments();
     const favoriteCount = await Project.countDocuments({ favorite: true });
@@ -112,7 +112,9 @@ router.get("/summary", async (req, res) => {
           _id: {
             $floor: {
               $divide: [
-                { $divide: [{ $subtract: ["$createdAt", eightWeeksAgo] }, 1000 * 60 * 60 * 24 * 7] },
+                {
+                  $divide: [{ $subtract: ['$createdAt', eightWeeksAgo] }, 1000 * 60 * 60 * 24 * 7],
+                },
                 1,
               ],
             },
@@ -124,7 +126,7 @@ router.get("/summary", async (req, res) => {
 
     // event counts
     const events = await Analytics.aggregate([
-      { $group: { _id: "$eventName", count: { $sum: 1 } } },
+      { $group: { _id: '$eventName', count: { $sum: 1 } } },
     ]);
 
     // recent events for quick inspection
@@ -137,4 +139,3 @@ router.get("/summary", async (req, res) => {
 });
 
 export default router;
-

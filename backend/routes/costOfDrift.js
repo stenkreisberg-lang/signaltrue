@@ -17,13 +17,13 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const { periodDays, hourlyCost } = req.query;
-    
+
     const options = {};
     if (periodDays) options.periodDays = parseInt(periodDays);
     if (hourlyCost) options.hourlyCost = parseFloat(hourlyCost);
-    
+
     const result = await calculateCostOfDrift(teamId, options);
-    
+
     res.json(result);
   } catch (error) {
     console.error('[CostOfDrift API] Error:', error);
@@ -39,13 +39,13 @@ router.get('/org/:orgId', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.params;
     const { periodDays, hourlyCost } = req.query;
-    
+
     const options = {};
     if (periodDays) options.periodDays = parseInt(periodDays);
     if (hourlyCost) options.hourlyCost = parseFloat(hourlyCost);
-    
+
     const result = await calculateOrgCostOfDrift(orgId, options);
-    
+
     res.json(result);
   } catch (error) {
     console.error('[CostOfDrift API] Error:', error);
@@ -63,9 +63,9 @@ router.get('/summary', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const result = await calculateOrgCostOfDrift(orgId);
-    
+
     res.json(result);
   } catch (error) {
     console.error('[CostOfDrift API] Error:', error);

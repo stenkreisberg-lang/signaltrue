@@ -31,10 +31,10 @@ try {
 if (ms.expiry && new Date(ms.expiry) <= new Date()) {
   console.log('⚠️  Token expired at:', new Date(ms.expiry).toISOString());
   console.log('   Attempting refresh...');
-  
+
   const refreshToken = decryptString(ms.refreshToken);
   const tenant = process.env.MS_APP_TENANT || 'common';
-  
+
   const response = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -42,16 +42,16 @@ if (ms.expiry && new Date(ms.expiry) <= new Date()) {
       client_id: process.env.MS_APP_CLIENT_ID,
       client_secret: process.env.MS_APP_CLIENT_SECRET,
       refresh_token: refreshToken,
-      grant_type: 'refresh_token'
-    }).toString()
+      grant_type: 'refresh_token',
+    }).toString(),
   });
-  
+
   if (!response.ok) {
     const errText = await response.text();
     console.error('❌ Refresh failed:', errText);
     process.exit(1);
   }
-  
+
   const tokens = await response.json();
   accessToken = tokens.access_token;
   console.log('✅ Token refreshed');
@@ -60,7 +60,7 @@ if (ms.expiry && new Date(ms.expiry) <= new Date()) {
 // Test 1: /me - basic auth check
 console.log('\n--- Test 1: /me ---');
 const meRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-  headers: { Authorization: `Bearer ${accessToken}` }
+  headers: { Authorization: `Bearer ${accessToken}` },
 });
 if (meRes.ok) {
   const me = await meRes.json();
@@ -75,7 +75,7 @@ const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 const until = new Date();
 const calUrl = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&$top=5`;
 const calRes = await fetch(calUrl, {
-  headers: { Authorization: `Bearer ${accessToken}` }
+  headers: { Authorization: `Bearer ${accessToken}` },
 });
 if (calRes.ok) {
   const calData = await calRes.json();
@@ -90,7 +90,7 @@ if (calRes.ok) {
 // Test 3: Teams - joined teams
 console.log('\n--- Test 3: Teams - Joined Teams ---');
 const teamsRes = await fetch('https://graph.microsoft.com/v1.0/me/joinedTeams', {
-  headers: { Authorization: `Bearer ${accessToken}` }
+  headers: { Authorization: `Bearer ${accessToken}` },
 });
 if (teamsRes.ok) {
   const teamsData = await teamsRes.json();
@@ -99,14 +99,14 @@ if (teamsRes.ok) {
   for (const t of teams) {
     console.log('   Team:', t.displayName, '(id:', t.id + ')');
   }
-  
+
   // Test 4: Get channels + messages from first team
   if (teams.length > 0) {
     const firstTeam = teams[0];
     console.log('\n--- Test 4: Channels for team:', firstTeam.displayName, '---');
-    
+
     const chRes = await fetch(`https://graph.microsoft.com/v1.0/teams/${firstTeam.id}/channels`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (chRes.ok) {
       const chData = await chRes.json();
@@ -115,12 +115,12 @@ if (teamsRes.ok) {
       for (const ch of channels.slice(0, 5)) {
         console.log('   Channel:', ch.displayName, '(id:', ch.id + ')');
       }
-      
+
       // Test 5: Get messages from first channel
       if (channels.length > 0) {
         const firstChannel = channels[0];
         console.log('\n--- Test 5: Messages in', firstChannel.displayName, '---');
-        
+
         const msgRes = await fetch(
           `https://graph.microsoft.com/v1.0/teams/${firstTeam.id}/channels/${firstChannel.id}/messages?$top=5`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -130,7 +130,10 @@ if (teamsRes.ok) {
           const msgs = msgData.value || [];
           console.log('✅ Messages found:', msgs.length);
           for (const m of msgs.slice(0, 3)) {
-            console.log('   [' + new Date(m.createdDateTime).toLocaleString() + '] from:', m.from?.user?.displayName || 'unknown');
+            console.log(
+              '   [' + new Date(m.createdDateTime).toLocaleString() + '] from:',
+              m.from?.user?.displayName || 'unknown'
+            );
           }
         } else {
           const errText = await msgRes.text();

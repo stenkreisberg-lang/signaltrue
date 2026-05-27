@@ -28,9 +28,7 @@ import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import TeamSizeGate from '../models/teamSizeGate.js';
 
 import { aggregateWeeklyMetrics } from './engagementWeeklyMetricsService.js';
-import {
-  computeAndSaveBaseline,
-} from './engagementBaselineService.js';
+import { computeAndSaveBaseline } from './engagementBaselineService.js';
 import { calculateSubscores } from './engagementSubscoreService.js';
 import {
   calculateOverallScore,
@@ -59,9 +57,7 @@ export const SCORING_VERSION = '2.0.0';
 export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
   const weekStartStr = toDateStr(weekStart);
 
-  console.info(
-    `[EngagementWeeklyJob] Starting for org ${orgId}, week ${weekStartStr}`
-  );
+  console.info(`[EngagementWeeklyJob] Starting for org ${orgId}, week ${weekStartStr}`);
 
   const teams = await Team.find({ orgId }).lean();
 
@@ -78,10 +74,7 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
         processed++;
       }
     } catch (err) {
-      console.error(
-        `[EngagementWeeklyJob] Error for team ${team._id}:`,
-        err.message
-      );
+      console.error(`[EngagementWeeklyJob] Error for team ${team._id}:`, err.message);
       errors.push({ teamId: String(team._id), error: err.message });
     }
   }
@@ -167,13 +160,13 @@ async function runForTeam(orgId, teamId, weekStartStr) {
         confidenceScore,
         confidenceLabel,
         subscores: {
-          recoveryDebt:            subscores.recoveryDebt,
-          focusErosion:            subscores.focusErosion,
-          coordinationFriction:    subscores.coordinationFriction,
-          responsivenessPressure:  subscores.responsivenessPressure,
+          recoveryDebt: subscores.recoveryDebt,
+          focusErosion: subscores.focusErosion,
+          coordinationFriction: subscores.coordinationFriction,
+          responsivenessPressure: subscores.responsivenessPressure,
           collaborationWithdrawal: subscores.collaborationWithdrawal,
-          managerSupportGap:       subscores.managerSupportGap,
-          workloadVolatility:      subscores.workloadVolatility,
+          managerSupportGap: subscores.managerSupportGap,
+          workloadVolatility: subscores.workloadVolatility,
         },
         topDrivers,
         patterns,

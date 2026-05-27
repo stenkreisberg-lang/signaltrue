@@ -129,13 +129,13 @@ export async function bridgeSignalsForOrg(orgId) {
         'deviation.deltaPercent': ck.whatChanged?.[0]?.deltaPercent ?? 0,
         'deviation.sustainedDays': ck.trendDays || 0,
         'consequence.statement': ck.explanation || 'Pattern detected — see drivers for detail.',
-        drivers: (ck.drivers || []).map(d => ({
+        drivers: (ck.drivers || []).map((d) => ({
           name: d.source || d.description,
           contribution: d.contribution,
           metric: d.source,
           change: d.description,
         })),
-        recommendedActions: (ck.recommendedActions || []).map(a => ({
+        recommendedActions: (ck.recommendedActions || []).map((a) => ({
           action: a.action,
           expectedEffect: a.expectedImpact,
           effort: a.effort ? a.effort.charAt(0).toUpperCase() + a.effort.slice(1) : 'Medium',
@@ -157,7 +157,9 @@ export async function bridgeSignalsForOrg(orgId) {
     else if (result.modifiedCount) updated++;
   }
 
-  console.log(`[SignalBridge] Org ${orgId}: ${created} created, ${updated} updated, ${skipped} skipped`);
+  console.log(
+    `[SignalBridge] Org ${orgId}: ${created} created, ${updated} updated, ${skipped} skipped`
+  );
   return { created, updated, skipped };
 }
 

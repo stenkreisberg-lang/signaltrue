@@ -33,7 +33,10 @@ const TeamManagement: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamFunction, setNewTeamFunction] = useState('Other');
-  const [moveUserModal, setMoveUserModal] = useState<{ user: User | null; currentTeamId: string | null }>({ user: null, currentTeamId: null });
+  const [moveUserModal, setMoveUserModal] = useState<{
+    user: User | null;
+    currentTeamId: string | null;
+  }>({ user: null, currentTeamId: null });
   const [selectedTargetTeam, setSelectedTargetTeam] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -48,7 +51,7 @@ const TeamManagement: React.FC = () => {
       setLoading(true);
       const response = await api.get('/team-management/organization');
       setTeams(response.data);
-      
+
       // Auto-select first team if none selected
       if (!selectedTeam && response.data.length > 0) {
         selectTeam(response.data[0]);
@@ -81,14 +84,14 @@ const TeamManagement: React.FC = () => {
       setError('');
       const response = await api.post('/team-management', {
         name: newTeamName,
-        function: newTeamFunction
+        function: newTeamFunction,
       });
 
       setSuccess('Team created successfully!');
       setNewTeamName('');
       setNewTeamFunction('Other');
       setShowCreateForm(false);
-      
+
       setTimeout(() => setSuccess(''), 3000);
       await loadTeams();
     } catch (err: any) {
@@ -97,17 +100,21 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleDeleteTeam = async (teamId: string) => {
-    if (!window.confirm('Are you sure you want to delete this team? All members must be moved to other teams first.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this team? All members must be moved to other teams first.'
+      )
+    ) {
       return;
     }
 
     try {
       setError('');
       await api.delete(`/team-management/${teamId}`);
-      
+
       setSuccess('Team deleted successfully!');
       setTimeout(() => setSuccess(''), 3000);
-      
+
       setSelectedTeam(null);
       setTeamMembers([]);
       await loadTeams();
@@ -117,9 +124,9 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleMoveUser = async (userId: string, userName: string, currentTeamId: string) => {
-    const user = teamMembers.find(m => m._id === userId);
+    const user = teamMembers.find((m) => m._id === userId);
     if (!user) return;
-    
+
     setMoveUserModal({ user, currentTeamId });
     setSelectedTargetTeam('');
   };
@@ -130,14 +137,14 @@ const TeamManagement: React.FC = () => {
     try {
       setError('');
       await api.put(`/team-management/${selectedTargetTeam}/members/${moveUserModal.user._id}`);
-      
+
       setSuccess('User moved successfully!');
       setTimeout(() => setSuccess(''), 3000);
-      
+
       // Close modal
       setMoveUserModal({ user: null, currentTeamId: null });
       setSelectedTargetTeam('');
-      
+
       // Refresh team members
       if (selectedTeam) {
         selectTeam(selectedTeam);
@@ -149,17 +156,21 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleRemoveUser = async (userId: string, teamId: string) => {
-    if (!window.confirm('Are you sure you want to remove this user from the organization entirely? This cannot be undone.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to remove this user from the organization entirely? This cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
       setError('');
       await api.delete(`/team-management/${teamId}/members/${userId}`);
-      
+
       setSuccess('User removed successfully!');
       setTimeout(() => setSuccess(''), 3000);
-      
+
       // Refresh team members
       if (selectedTeam) {
         selectTeam(selectedTeam);
@@ -183,27 +194,18 @@ const TeamManagement: React.FC = () => {
       <div style={styles.header}>
         <div>
           <h2 style={styles.title}>Team Management</h2>
-          <p style={styles.subtitle}>Create teams, assign members, and manage your organization structure</p>
+          <p style={styles.subtitle}>
+            Create teams, assign members, and manage your organization structure
+          </p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          style={styles.createButton}
-        >
+        <button onClick={() => setShowCreateForm(!showCreateForm)} style={styles.createButton}>
           {showCreateForm ? '✕ Cancel' : '+ Create Team'}
         </button>
       </div>
 
-      {error && (
-        <div style={styles.errorBanner}>
-          ❌ {error}
-        </div>
-      )}
+      {error && <div style={styles.errorBanner}>❌ {error}</div>}
 
-      {success && (
-        <div style={styles.successBanner}>
-          ✅ {success}
-        </div>
-      )}
+      {success && <div style={styles.successBanner}>✅ {success}</div>}
 
       {showCreateForm && (
         <div style={styles.createForm}>
@@ -342,14 +344,18 @@ const TeamManagement: React.FC = () => {
 
       <div style={styles.helpBox}>
         <p style={styles.helpText}>
-          <strong>💡 Tip:</strong> Create teams based on your organization structure (departments, squads, etc.).
-          Each team will have their own dashboard showing only their collaboration signals and health metrics.
+          <strong>💡 Tip:</strong> Create teams based on your organization structure (departments,
+          squads, etc.). Each team will have their own dashboard showing only their collaboration
+          signals and health metrics.
         </p>
       </div>
 
       {/* Move User Modal */}
       {moveUserModal.user && (
-        <div style={styles.modalOverlay} onClick={() => setMoveUserModal({ user: null, currentTeamId: null })}>
+        <div
+          style={styles.modalOverlay}
+          onClick={() => setMoveUserModal({ user: null, currentTeamId: null })}
+        >
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 style={styles.modalTitle}>Move {moveUserModal.user.name}</h3>
             <p style={styles.modalText}>
@@ -363,8 +369,8 @@ const TeamManagement: React.FC = () => {
             >
               <option value="">-- Select Team --</option>
               {teams
-                .filter(t => t._id !== moveUserModal.currentTeamId)
-                .map(team => (
+                .filter((t) => t._id !== moveUserModal.currentTeamId)
+                .map((team) => (
                   <option key={team._id} value={team._id}>
                     {team.name} ({team.memberCount} members)
                   </option>
@@ -384,7 +390,7 @@ const TeamManagement: React.FC = () => {
                 style={{
                   ...styles.submitButton,
                   opacity: selectedTargetTeam ? 1 : 0.5,
-                  cursor: selectedTargetTeam ? 'pointer' : 'not-allowed'
+                  cursor: selectedTargetTeam ? 'pointer' : 'not-allowed',
                 }}
               >
                 Move User

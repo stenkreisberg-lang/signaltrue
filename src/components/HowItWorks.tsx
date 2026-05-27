@@ -1,4 +1,4 @@
-import { Activity, BarChart2, AlertCircle, TrendingUp } from "lucide-react";
+import { Activity, BarChart2, AlertCircle, TrendingUp } from 'lucide-react';
 
 /*
  * CATEGORY KING POSITIONING:
@@ -8,28 +8,32 @@ import { Activity, BarChart2, AlertCircle, TrendingUp } from "lucide-react";
 
 const steps = [
   {
-    number: "01",
+    number: '01',
     icon: Activity,
-    title: "Detect drift",
-    description: "We learn normal work patterns and detect statistically meaningful deviations from each team's own baseline.",
+    title: 'Detect drift',
+    description:
+      "We learn normal work patterns and detect statistically meaningful deviations from each team's own baseline.",
   },
   {
-    number: "02",
+    number: '02',
     icon: BarChart2,
-    title: "Explain the cause",
-    description: "We identify which behaviors and structures are driving the drift, so you know why, not just what.",
+    title: 'Explain the cause',
+    description:
+      'We identify which behaviors and structures are driving the drift, so you know why, not just what.',
   },
   {
-    number: "03",
+    number: '03',
     icon: AlertCircle,
-    title: "Recommend intervention",
-    description: "We suggest concrete actions, ranked by expected impact and feasibility. Not tips. A plan.",
+    title: 'Recommend intervention',
+    description:
+      'We suggest concrete actions, ranked by expected impact and feasibility. Not tips. A plan.',
   },
   {
-    number: "04",
+    number: '04',
     icon: TrendingUp,
-    title: "Measure the effect",
-    description: "We show whether the intervention worked and learn from it. Decisions improve over time.",
+    title: 'Measure the effect',
+    description:
+      'We show whether the intervention worked and learn from it. Decisions improve over time.',
   },
 ];
 
@@ -46,14 +50,15 @@ const HowItWorks = () => {
             From drift to decision. Not dashboards.
           </h2>
           <p className="text-muted-foreground">
-            SignalTrue does not just surface data. It turns behavioral evidence into decision-grade guidance.
+            SignalTrue does not just surface data. It turns behavioral evidence into decision-grade
+            guidance.
           </p>
         </div>
 
         {/* Steps grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (
-            <div 
+            <div
               key={index}
               className="group relative animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
@@ -62,7 +67,7 @@ const HowItWorks = () => {
               {index < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-12 left-full w-full h-px bg-gradient-to-r from-border to-transparent -translate-x-4" />
               )}
-              
+
               <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-card h-full">
                 {/* Number badge */}
                 <div className="flex items-center justify-between mb-6">
@@ -77,9 +82,7 @@ const HowItWorks = () => {
                 <h3 className="text-xl font-display font-semibold mb-3 text-foreground">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {step.description}
-                </p>
+                <p className="text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </div>
           ))}

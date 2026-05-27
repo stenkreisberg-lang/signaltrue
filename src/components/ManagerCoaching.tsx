@@ -17,7 +17,7 @@ import {
   RefreshCw,
   Send,
   Copy,
-  ThumbsUp
+  ThumbsUp,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -88,9 +88,9 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const targetTeamId = teamId || localStorage.getItem('teamId');
-      
+
       const response = await fetch(`${API_URL}/api/manager-coaching/${targetTeamId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -98,7 +98,7 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
         setData(getMockData());
         return;
       }
-      
+
       const result = await response.json();
       setData(result);
     } catch (err) {
@@ -118,30 +118,34 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
         id: '1',
         type: 'warning',
         title: 'After-hours activity elevated',
-        message: 'Your team has been 34% more active after 6pm compared to baseline. This sustained pattern over 3 weeks may lead to burnout. Consider discussing workload in your next team meeting.',
-        dismissed: false
+        message:
+          'Your team has been 34% more active after 6pm compared to baseline. This sustained pattern over 3 weeks may lead to burnout. Consider discussing workload in your next team meeting.',
+        dismissed: false,
       },
       {
         id: '2',
         type: 'action',
         title: 'Schedule 1:1 with Alex',
-        message: "It's been 3 weeks since your last 1:1 with Alex Chen. Their response time has also increased 45%. A check-in might help surface any blockers.",
-        dismissed: false
+        message:
+          "It's been 3 weeks since your last 1:1 with Alex Chen. Their response time has also increased 45%. A check-in might help surface any blockers.",
+        dismissed: false,
       },
       {
         id: '3',
         type: 'recognition',
         title: 'Team focus time improved',
-        message: 'Great progress! Your team gained an average of 2.3 hours of focus time per week after implementing "No Meeting Wednesdays." Keep it going!',
-        dismissed: false
+        message:
+          'Great progress! Your team gained an average of 2.3 hours of focus time per week after implementing "No Meeting Wednesdays." Keep it going!',
+        dismissed: false,
       },
       {
         id: '4',
         type: 'observation',
         title: 'Meeting patterns shifting',
-        message: 'Your team spends 28% of time in meetings (up from 22%). Consider auditing recurring meetings to see which can be async.',
-        dismissed: false
-      }
+        message:
+          'Your team spends 28% of time in meetings (up from 22%). Consider auditing recurring meetings to see which can be async.',
+        dismissed: false,
+      },
     ],
     scorecard: {
       overallScore: 76,
@@ -151,50 +155,72 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
         teamHealth: { score: 82, trend: 'up' },
         responseTime: { score: 68, trend: 'down' },
         oneOnOneConsistency: { score: 75, trend: 'stable' },
-        teamSentiment: { score: 78, trend: 'up' }
-      }
+        teamSentiment: { score: 78, trend: 'up' },
+      },
     },
     teamSignals: [
-      { type: 'after-hours', severity: 'high', message: 'After-hours activity 34% above baseline', metric: 'afterHoursRate', percentChange: 34 },
-      { type: 'meeting-load', severity: 'medium', message: 'Meeting load increased 18%', metric: 'meetingLoad', percentChange: 18 },
-      { type: 'focus-time', severity: 'low', message: 'Focus time improved 12%', metric: 'focusTime', percentChange: 12 }
+      {
+        type: 'after-hours',
+        severity: 'high',
+        message: 'After-hours activity 34% above baseline',
+        metric: 'afterHoursRate',
+        percentChange: 34,
+      },
+      {
+        type: 'meeting-load',
+        severity: 'medium',
+        message: 'Meeting load increased 18%',
+        metric: 'meetingLoad',
+        percentChange: 18,
+      },
+      {
+        type: 'focus-time',
+        severity: 'low',
+        message: 'Focus time improved 12%',
+        metric: 'focusTime',
+        percentChange: 12,
+      },
     ],
     oneOnOneAgenda: [
       {
         topic: 'Workload & After-Hours',
         context: 'Team after-hours activity is 34% above baseline for 3 weeks',
-        suggestedQuestion: "I've noticed the team has been putting in some late hours recently. How are you feeling about your current workload? Is there anything blocking progress during core hours?",
-        priority: 'high'
+        suggestedQuestion:
+          "I've noticed the team has been putting in some late hours recently. How are you feeling about your current workload? Is there anything blocking progress during core hours?",
+        priority: 'high',
       },
       {
         topic: 'Meeting Effectiveness',
         context: 'Meeting time increased from 22% to 28% of work week',
-        suggestedQuestion: 'We seem to have more meetings lately. Which ones feel valuable and which feel like they could be an email or async update?',
-        priority: 'medium'
+        suggestedQuestion:
+          'We seem to have more meetings lately. Which ones feel valuable and which feel like they could be an email or async update?',
+        priority: 'medium',
       },
       {
         topic: 'Recognition & Growth',
         context: 'Team sentiment improved after "No Meeting Wednesdays"',
-        suggestedQuestion: "The focus time initiative seems to be working well. What's been the biggest benefit for you? Any other changes you'd like to experiment with?",
-        priority: 'medium'
+        suggestedQuestion:
+          "The focus time initiative seems to be working well. What's been the biggest benefit for you? Any other changes you'd like to experiment with?",
+        priority: 'medium',
       },
       {
         topic: 'Collaboration Patterns',
         context: 'Cross-team collaboration reduced by 15%',
-        suggestedQuestion: 'How are things going with collaborating across teams? Are there any dependencies or handoffs that have been tricky lately?',
-        priority: 'low'
-      }
-    ]
+        suggestedQuestion:
+          'How are things going with collaborating across teams? Are there any dependencies or handoffs that have been tricky lately?',
+        priority: 'low',
+      },
+    ],
   });
 
   const dismissNudge = async (nudgeId: string) => {
     if (!data) return;
-    
+
     setData({
       ...data,
-      weeklyNudges: data.weeklyNudges.map(n => 
+      weeklyNudges: data.weeklyNudges.map((n) =>
         n.id === nudgeId ? { ...n, dismissed: true } : n
-      )
+      ),
     });
 
     // API call to dismiss
@@ -202,7 +228,7 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
       const token = localStorage.getItem('token');
       await fetch(`${API_URL}/api/manager-coaching/nudge/${nudgeId}/dismiss`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
       console.error('Error dismissing nudge:', err);
@@ -211,11 +237,14 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
 
   const copyAgendaToClipboard = () => {
     if (!data) return;
-    
-    const agendaText = data.oneOnOneAgenda.map(item => 
-      `## ${item.topic}\n${item.context}\n\nSuggested question: "${item.suggestedQuestion}"\n`
-    ).join('\n---\n\n');
-    
+
+    const agendaText = data.oneOnOneAgenda
+      .map(
+        (item) =>
+          `## ${item.topic}\n${item.context}\n\nSuggested question: "${item.suggestedQuestion}"\n`
+      )
+      .join('\n---\n\n');
+
     navigator.clipboard.writeText(agendaText);
     setCopiedAgenda(true);
     setTimeout(() => setCopiedAgenda(false), 2000);
@@ -223,19 +252,27 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
 
   const getNudgeIcon = (type: string) => {
     switch (type) {
-      case 'warning': return AlertTriangle;
-      case 'action': return Target;
-      case 'recognition': return Star;
-      default: return Lightbulb;
+      case 'warning':
+        return AlertTriangle;
+      case 'action':
+        return Target;
+      case 'recognition':
+        return Star;
+      default:
+        return Lightbulb;
     }
   };
 
   const getNudgeColor = (type: string) => {
     switch (type) {
-      case 'warning': return 'text-amber-400 bg-amber-500/20 border-amber-500/30';
-      case 'action': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
-      case 'recognition': return 'text-green-400 bg-green-500/20 border-green-500/30';
-      default: return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
+      case 'warning':
+        return 'text-amber-400 bg-amber-500/20 border-amber-500/30';
+      case 'action':
+        return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+      case 'recognition':
+        return 'text-green-400 bg-green-500/20 border-green-500/30';
+      default:
+        return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
     }
   };
 
@@ -267,7 +304,7 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
     );
   }
 
-  const activeNudges = data.weeklyNudges.filter(n => !n.dismissed);
+  const activeNudges = data.weeklyNudges.filter((n) => !n.dismissed);
 
   return (
     <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
@@ -285,14 +322,14 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
               </p>
             </div>
           </div>
-          
+
           {/* Tabs */}
           <div className="flex bg-slate-900/50 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('nudges')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'nudges' 
-                  ? 'bg-slate-700 text-slate-100' 
+                activeTab === 'nudges'
+                  ? 'bg-slate-700 text-slate-100'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -306,8 +343,8 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
             <button
               onClick={() => setActiveTab('scorecard')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'scorecard' 
-                  ? 'bg-slate-700 text-slate-100' 
+                activeTab === 'scorecard'
+                  ? 'bg-slate-700 text-slate-100'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -316,8 +353,8 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
             <button
               onClick={() => setActiveTab('agenda')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'agenda' 
-                  ? 'bg-slate-700 text-slate-100' 
+                activeTab === 'agenda'
+                  ? 'bg-slate-700 text-slate-100'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -342,21 +379,14 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
               activeNudges.map((nudge) => {
                 const NudgeIcon = getNudgeIcon(nudge.type);
                 const colorClass = getNudgeColor(nudge.type);
-                
+
                 return (
-                  <div 
-                    key={nudge.id}
-                    className={`p-4 rounded-lg border ${colorClass}`}
-                  >
+                  <div key={nudge.id} className={`p-4 rounded-lg border ${colorClass}`}>
                     <div className="flex items-start gap-3">
                       <NudgeIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <h4 className="font-semibold text-slate-100 mb-1">
-                          {nudge.title}
-                        </h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                          {nudge.message}
-                        </p>
+                        <h4 className="font-semibold text-slate-100 mb-1">{nudge.title}</h4>
+                        <p className="text-sm text-slate-300 leading-relaxed">{nudge.message}</p>
                         <div className="flex items-center gap-3 mt-3">
                           <button
                             onClick={() => dismissNudge(nudge.id)}
@@ -391,21 +421,31 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
             <div className="text-center mb-6 p-6 bg-slate-900/30 rounded-lg">
               <p className="text-sm text-slate-400 mb-2">Your Manager Effectiveness Score</p>
               <div className="flex items-center justify-center gap-4">
-                <span className={`text-5xl font-bold ${
-                  data.scorecard.overallScore >= 75 ? 'text-green-400' :
-                  data.scorecard.overallScore >= 50 ? 'text-amber-400' : 'text-red-400'
-                }`}>
+                <span
+                  className={`text-5xl font-bold ${
+                    data.scorecard.overallScore >= 75
+                      ? 'text-green-400'
+                      : data.scorecard.overallScore >= 50
+                        ? 'text-amber-400'
+                        : 'text-red-400'
+                  }`}
+                >
                   {data.scorecard.overallScore}
                 </span>
                 <div className="text-left">
                   <div className="flex items-center gap-1">
                     {React.createElement(getTrendIcon(data.scorecard.trend), {
                       className: `w-4 h-4 ${
-                        data.scorecard.trend === 'improving' ? 'text-green-400' :
-                        data.scorecard.trend === 'declining' ? 'text-red-400' : 'text-slate-400'
-                      }`
+                        data.scorecard.trend === 'improving'
+                          ? 'text-green-400'
+                          : data.scorecard.trend === 'declining'
+                            ? 'text-red-400'
+                            : 'text-slate-400'
+                      }`,
                     })}
-                    <span className="text-sm text-slate-300 capitalize">{data.scorecard.trend}</span>
+                    <span className="text-sm text-slate-300 capitalize">
+                      {data.scorecard.trend}
+                    </span>
                   </div>
                   <span className="text-sm text-slate-400">{data.scorecard.rank}</span>
                 </div>
@@ -418,11 +458,11 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
                 { key: 'teamHealth', label: 'Team Health', icon: Users },
                 { key: 'responseTime', label: 'Responsiveness', icon: Clock },
                 { key: 'oneOnOneConsistency', label: '1:1 Consistency', icon: Calendar },
-                { key: 'teamSentiment', label: 'Team Sentiment', icon: MessageSquare }
+                { key: 'teamSentiment', label: 'Team Sentiment', icon: MessageSquare },
               ].map(({ key, label, icon: Icon }) => {
                 const metric = data.scorecard.metrics[key as keyof typeof data.scorecard.metrics];
                 const TrendIconComponent = getTrendIcon(metric.trend);
-                
+
                 return (
                   <div key={key} className="p-4 bg-slate-900/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
@@ -430,16 +470,26 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
                       <span className="text-sm text-slate-400">{label}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-2xl font-bold ${
-                        metric.score >= 75 ? 'text-green-400' :
-                        metric.score >= 50 ? 'text-amber-400' : 'text-red-400'
-                      }`}>
+                      <span
+                        className={`text-2xl font-bold ${
+                          metric.score >= 75
+                            ? 'text-green-400'
+                            : metric.score >= 50
+                              ? 'text-amber-400'
+                              : 'text-red-400'
+                        }`}
+                      >
                         {metric.score}
                       </span>
-                      <TrendIconComponent className={`w-4 h-4 ${
-                        metric.trend === 'up' ? 'text-green-400' :
-                        metric.trend === 'down' ? 'text-red-400' : 'text-slate-400'
-                      }`} />
+                      <TrendIconComponent
+                        className={`w-4 h-4 ${
+                          metric.trend === 'up'
+                            ? 'text-green-400'
+                            : metric.trend === 'down'
+                              ? 'text-red-400'
+                              : 'text-slate-400'
+                        }`}
+                      />
                     </div>
                   </div>
                 );
@@ -447,7 +497,8 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
             </div>
 
             <p className="text-xs text-slate-500 text-center mt-4">
-              Score based on team outcomes, not surveillance. Your individual messages are never read.
+              Score based on team outcomes, not surveillance. Your individual messages are never
+              read.
             </p>
           </div>
         )}
@@ -480,33 +531,35 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
 
             <div className="space-y-4">
               {data.oneOnOneAgenda.map((item, index) => (
-                <div 
+                <div
                   key={index}
                   className={`p-4 rounded-lg border ${
-                    item.priority === 'high' ? 'border-red-500/30 bg-red-500/5' :
-                    item.priority === 'medium' ? 'border-amber-500/30 bg-amber-500/5' :
-                    'border-slate-700 bg-slate-900/30'
+                    item.priority === 'high'
+                      ? 'border-red-500/30 bg-red-500/5'
+                      : item.priority === 'medium'
+                        ? 'border-amber-500/30 bg-amber-500/5'
+                        : 'border-slate-700 bg-slate-900/30'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                      item.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                      item.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-slate-700 text-slate-400'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 text-xs font-medium rounded ${
+                        item.priority === 'high'
+                          ? 'bg-red-500/20 text-red-400'
+                          : item.priority === 'medium'
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'bg-slate-700 text-slate-400'
+                      }`}
+                    >
                       {item.priority}
                     </span>
                     <h4 className="font-medium text-slate-200">{item.topic}</h4>
                   </div>
-                  
-                  <p className="text-xs text-slate-500 mb-2">
-                    Context: {item.context}
-                  </p>
-                  
+
+                  <p className="text-xs text-slate-500 mb-2">Context: {item.context}</p>
+
                   <div className="p-3 bg-slate-800 rounded-lg">
-                    <p className="text-sm text-slate-200 italic">
-                      "{item.suggestedQuestion}"
-                    </p>
+                    <p className="text-sm text-slate-200 italic">"{item.suggestedQuestion}"</p>
                   </div>
                 </div>
               ))}

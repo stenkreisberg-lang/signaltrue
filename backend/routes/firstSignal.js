@@ -19,7 +19,7 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -28,7 +28,7 @@ router.get('/', authenticateToken, async (req, res) => {
     if (user.firstSignalShown && user.firstSignalData) {
       return res.json({
         alreadyShown: true,
-        signal: user.firstSignalData
+        signal: user.firstSignalData,
       });
     }
 
@@ -39,7 +39,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Compute first signal
     const signal = await computeFirstSignal(user.teamId, user.orgId);
-    
+
     if (!signal) {
       return res.json({ signal: null, reason: 'No drift detected' });
     }
@@ -63,7 +63,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/acknowledge', authenticateToken, async (req, res) => {
   try {
     const { action } = req.body;
-    
+
     const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -71,7 +71,7 @@ router.post('/acknowledge', authenticateToken, async (req, res) => {
 
     // Mark as shown
     user.firstSignalShown = true;
-    
+
     // Log the user's choice for analytics
     if (user.firstSignalData) {
       user.firstSignalData.userAction = action;
@@ -80,10 +80,10 @@ router.post('/acknowledge', authenticateToken, async (req, res) => {
 
     await user.save();
 
-    res.json({ 
+    res.json({
       message: 'First signal acknowledged',
       action,
-      redirectTo: action === 'see-why' ? '/app/signals' : '/dashboard'
+      redirectTo: action === 'see-why' ? '/app/signals' : '/dashboard',
     });
   } catch (error) {
     console.error('[FirstSignal Acknowledge] Error:', error);

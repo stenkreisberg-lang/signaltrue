@@ -16,9 +16,9 @@
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_TEAM_SIZE = 8;          // Minimum active people for team reporting
+export const MIN_TEAM_SIZE = 8; // Minimum active people for team reporting
 export const MIN_METRIC_CONTRIBUTORS = 5; // Minimum people contributing to a metric
-export const CONCENTRATION_THRESHOLD = 0.40; // Fraction above which to flag concentration
+export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
 // ── Team Size Gate ─────────────────────────────────────────────────────────────
 
@@ -49,10 +49,7 @@ export function checkTeamSize(activePeopleCount, min = MIN_TEAM_SIZE) {
  * @param {number} [min]              — override minimum (default: MIN_METRIC_CONTRIBUTORS)
  * @returns {boolean}                 — true means: suppress this metric
  */
-export function suppressMetricIfTooFew(
-  activePeopleCount,
-  min = MIN_METRIC_CONTRIBUTORS
-) {
+export function suppressMetricIfTooFew(activePeopleCount, min = MIN_METRIC_CONTRIBUTORS) {
   return typeof activePeopleCount !== 'number' || activePeopleCount < min;
 }
 
@@ -73,10 +70,7 @@ export function suppressMetricIfTooFew(
  * Example output when concentrated:
  *   { concentrated: true, message: "concentrated pattern detected" }
  */
-export function detectConcentratedPattern(
-  perPersonValues,
-  threshold = CONCENTRATION_THRESHOLD
-) {
+export function detectConcentratedPattern(perPersonValues, threshold = CONCENTRATION_THRESHOLD) {
   if (!Array.isArray(perPersonValues) || perPersonValues.length === 0) {
     return { concentrated: false, message: null };
   }

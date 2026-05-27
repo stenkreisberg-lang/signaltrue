@@ -1,6 +1,6 @@
 /**
  * Global Error Handling Middleware
- * 
+ *
  * Catches all errors passed to next(error) and unhandled route errors.
  * Provides consistent error responses across the application.
  */
@@ -44,18 +44,18 @@ export const errorHandler = (err, req, res, next) => {
       path: req.path,
       method: req.method,
       ip: req.ip,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
   }
 
   // Handle specific error types
   if (err.name === 'ValidationError') {
     // Mongoose validation error
-    const errors = Object.values(err.errors).map(e => e.message);
+    const errors = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({
       status: 'error',
       message: 'Validation failed',
-      errors
+      errors,
     });
   }
 
@@ -63,7 +63,7 @@ export const errorHandler = (err, req, res, next) => {
     // Mongoose invalid ObjectId
     return res.status(400).json({
       status: 'error',
-      message: 'Invalid ID format'
+      message: 'Invalid ID format',
     });
   }
 
@@ -72,21 +72,21 @@ export const errorHandler = (err, req, res, next) => {
     const field = Object.keys(err.keyPattern)[0];
     return res.status(409).json({
       status: 'error',
-      message: `A record with this ${field} already exists`
+      message: `A record with this ${field} already exists`,
     });
   }
 
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       status: 'error',
-      message: 'Invalid authentication token'
+      message: 'Invalid authentication token',
     });
   }
 
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json({
       status: 'error',
-      message: 'Authentication token has expired'
+      message: 'Authentication token has expired',
     });
   }
 
@@ -95,7 +95,7 @@ export const errorHandler = (err, req, res, next) => {
     status: err.status,
     message: err.message,
     // Include stack trace in development mode only
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 

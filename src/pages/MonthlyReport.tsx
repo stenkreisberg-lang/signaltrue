@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FileText, 
-  TrendingUp, 
+import {
+  FileText,
+  TrendingUp,
   TrendingDown,
   Minus,
-  Share2, 
+  Share2,
   AlertTriangle,
   CheckCircle,
   Lock,
   ArrowRight,
   Calendar,
   Users,
-  Clock
+  Clock,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -83,7 +83,7 @@ const MonthlyReportPage: React.FC = () => {
 
         const response = await fetch(`${API_BASE_URL}/api/trial/monthly-report`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -91,12 +91,12 @@ const MonthlyReportPage: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           setReport(data.report);
-          
+
           // Mark as viewed
           await fetch(`${API_BASE_URL}/api/trial/mark-milestone`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ milestone: 'monthlyReportViewed' }),
@@ -121,7 +121,7 @@ const MonthlyReportPage: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/trial/generate-ceo-summary`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -173,8 +173,8 @@ const MonthlyReportPage: React.FC = () => {
                 Your report is being prepared
               </h1>
               <p className="text-muted-foreground mb-8">
-                Your first monthly report will be available on day 30 of your trial. 
-                Continue using SignalTrue to build accurate baselines.
+                Your first monthly report will be available on day 30 of your trial. Continue using
+                SignalTrue to build accurate baselines.
               </p>
               <Button variant="hero" onClick={() => navigate('/app')}>
                 Back to Dashboard
@@ -208,16 +208,12 @@ const MonthlyReportPage: React.FC = () => {
                     <span className="px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
                       Free Report
                     </span>
-                    <span className="text-sm text-muted-foreground">
-                      First month included
-                    </span>
+                    <span className="text-sm text-muted-foreground">First month included</span>
                   </div>
                   <h1 className="text-3xl font-display font-bold text-foreground mb-2">
                     {report.summary.title}
                   </h1>
-                  <p className="text-muted-foreground">
-                    {report.summary.subtitle}
-                  </p>
+                  <p className="text-muted-foreground">{report.summary.subtitle}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Period</p>
@@ -244,7 +240,9 @@ const MonthlyReportPage: React.FC = () => {
                 <div className="text-center">
                   <Users className="w-6 h-6 text-warning mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">Teams at Risk</p>
-                  <p className="text-2xl font-bold text-foreground">{report.patterns.teamsAtRisk}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {report.patterns.teamsAtRisk}
+                  </p>
                 </div>
               </div>
 
@@ -257,18 +255,25 @@ const MonthlyReportPage: React.FC = () => {
                   </h3>
                   <div className="space-y-3">
                     {report.concernAreas.map((area, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-warning/5 border border-warning/20">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 rounded-lg bg-warning/5 border border-warning/20"
+                      >
                         <div>
-                          <span className="font-medium text-foreground capitalize">{area.type}</span>
+                          <span className="font-medium text-foreground capitalize">
+                            {area.type}
+                          </span>
                           <span className="text-sm text-muted-foreground ml-2">
                             {area.affectedTeams} team{area.affectedTeams !== 1 ? 's' : ''} affected
                           </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          area.severity === 'structural' 
-                            ? 'bg-destructive/10 text-destructive' 
-                            : 'bg-warning/10 text-warning'
-                        }`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            area.severity === 'structural'
+                              ? 'bg-destructive/10 text-destructive'
+                              : 'bg-warning/10 text-warning'
+                          }`}
+                        >
                           {area.severity}
                         </span>
                       </div>
@@ -284,20 +289,18 @@ const MonthlyReportPage: React.FC = () => {
                     <Share2 className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground mb-1">
-                      Share leadership summary
-                    </h3>
+                    <h3 className="font-semibold text-foreground mb-1">Share leadership summary</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Generate a CEO-ready one-pager summarizing organizational workload signals. 
+                      Generate a CEO-ready one-pager summarizing organizational workload signals.
                       Designed for HR leaders to forward to executives.
                     </p>
                     {ceoSummaryUrl ? (
                       <div className="flex items-center gap-3">
                         <CheckCircle className="w-5 h-5 text-success" />
                         <span className="text-sm text-foreground">Summary ready!</span>
-                        <a 
-                          href={ceoSummaryUrl} 
-                          target="_blank" 
+                        <a
+                          href={ceoSummaryUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline text-sm font-medium"
                         >
@@ -338,7 +341,7 @@ const MonthlyReportPage: React.FC = () => {
                     {report.lockedContent.message}
                   </h3>
                 </div>
-                
+
                 {/* Placeholder for locked recommendations */}
                 <div className="space-y-4 opacity-50 blur-sm pointer-events-none">
                   <div className="p-4 rounded-lg bg-secondary/50">
@@ -356,11 +359,9 @@ const MonthlyReportPage: React.FC = () => {
                   <h4 className="text-xl font-display font-bold text-foreground mb-2">
                     Continue receiving early signals and recommendations
                   </h4>
-                  <p className="text-muted-foreground mb-6">
-                    {report.lockedContent.note}
-                  </p>
-                  <Button 
-                    variant="hero" 
+                  <p className="text-muted-foreground mb-6">{report.lockedContent.note}</p>
+                  <Button
+                    variant="hero"
                     size="xl"
                     onClick={() => navigate(report.lockedContent.ctaLink)}
                   >

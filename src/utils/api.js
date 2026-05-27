@@ -4,9 +4,7 @@ import axios from 'axios';
 // The base URL can be relative ('/api').
 // In production, REACT_APP_API_URL should be set to the absolute URL of your backend.
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'development' 
-    ? '/api' 
-    : `${process.env.REACT_APP_API_URL}/api`,
+  baseURL: process.env.NODE_ENV === 'development' ? '/api' : `${process.env.REACT_APP_API_URL}/api`,
   timeout: 30000, // 30 second timeout
 });
 
@@ -37,12 +35,12 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     // Handle network errors
     if (!error.response) {
       console.error('Network error - API may be unavailable');
     }
-    
+
     return Promise.reject(error);
   }
 );

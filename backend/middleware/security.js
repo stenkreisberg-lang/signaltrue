@@ -1,6 +1,6 @@
 /**
  * Security Middleware - Enterprise-Grade Protection
- * 
+ *
  * Implements:
  * - Rate limiting (DDoS protection, brute force prevention)
  * - Input validation & sanitization
@@ -26,14 +26,14 @@ export const apiLimiter = rateLimit({
   max: 100, // 100 requests per window per IP
   message: {
     error: 'Too many requests from this IP',
-    retryAfter: '15 minutes'
+    retryAfter: '15 minutes',
   },
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false,
   skip: (req) => {
     // Skip rate limiting for health checks
     return req.path === '/api/health';
-  }
+  },
 });
 
 /**
@@ -46,11 +46,11 @@ export const authLimiter = rateLimit({
   message: {
     error: 'Too many authentication attempts',
     retryAfter: '15 minutes',
-    hint: 'For account recovery, contact support@signaltrue.ai'
+    hint: 'For account recovery, contact support@signaltrue.ai',
   },
   skipSuccessfulRequests: true, // Don't count successful logins
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 /**
@@ -62,10 +62,10 @@ export const passwordResetLimiter = rateLimit({
   max: 3, // Only 3 reset requests per hour
   message: {
     error: 'Too many password reset requests',
-    retryAfter: '1 hour'
+    retryAfter: '1 hour',
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 /**
@@ -77,10 +77,10 @@ export const intelligenceLimiter = rateLimit({
   max: 20, // 20 requests per minute (reasonable for dashboards)
   message: {
     error: 'Rate limit exceeded for intelligence endpoints',
-    retryAfter: '1 minute'
+    retryAfter: '1 minute',
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 /**
@@ -92,10 +92,10 @@ export const adminLimiter = rateLimit({
   max: 30, // 30 requests per 5 minutes
   message: {
     error: 'Admin endpoint rate limit exceeded',
-    retryAfter: '5 minutes'
+    retryAfter: '5 minutes',
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // ============================================
@@ -112,12 +112,12 @@ export function sanitizeMongoInput(req, res, next) {
     if (req.body) {
       req.body = sanitizeObject(req.body);
     }
-    
+
     // Sanitize params
     if (req.params) {
       req.params = sanitizeObject(req.params);
     }
-    
+
     next();
   } catch (error) {
     console.error('[Security] Sanitization error:', error);
@@ -132,33 +132,33 @@ function sanitizeObject(obj) {
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeObject(item));
+    return obj.map((item) => sanitizeObject(item));
   }
-  
+
   const sanitized = {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
     // Replace $ and . in keys
     const cleanKey = key.replace(/[\$\.]/g, '_');
-    
+
     // Recursively sanitize nested objects
     if (typeof value === 'object' && value !== null) {
       sanitized[cleanKey] = sanitizeObject(value);
     } else {
       sanitized[cleanKey] = value;
     }
-    
+
     // Log if we sanitized something
     if (cleanKey !== key) {
       console.warn('[Security] Sanitized potentially malicious key:', {
         original: key,
-        sanitized: cleanKey
+        sanitized: cleanKey,
       });
     }
   }
-  
+
   return sanitized;
 }
 
@@ -168,16 +168,16 @@ function sanitizeObject(obj) {
  */
 export const preventParameterPollution = hpp({
   whitelist: [
-    'teamId', 
-    'orgId', 
-    'userId', 
-    'startDate', 
+    'teamId',
+    'orgId',
+    'userId',
+    'startDate',
     'endDate',
     'status',
     'role',
     'limit',
-    'page'
-  ]
+    'page',
+  ],
 });
 
 // ============================================
@@ -193,50 +193,50 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       scriptSrc: ["'self'", "'unsafe-inline'"], // Remove unsafe-inline in production
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
       connectSrc: [
         "'self'",
-        "https://api.signaltrue.ai",
-        "https://signaltrue-backend.onrender.com",
-        "https://slack.com",
-        "https://www.googleapis.com",
-        "https://graph.microsoft.com"
+        'https://api.signaltrue.ai',
+        'https://signaltrue-backend.onrender.com',
+        'https://slack.com',
+        'https://www.googleapis.com',
+        'https://graph.microsoft.com',
       ],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
-      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
-    }
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
   },
-  
+
   // Strict Transport Security (HTTPS enforcement)
   hsts: {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
-    preload: true
+    preload: true,
   },
-  
+
   // Prevent clickjacking
   frameguard: {
-    action: 'deny'
+    action: 'deny',
   },
-  
+
   // Prevent MIME sniffing
   noSniff: true,
-  
+
   // XSS Protection (legacy browsers)
   xssFilter: true,
-  
+
   // Hide X-Powered-By header
   hidePoweredBy: true,
-  
+
   // Referrer Policy
   referrerPolicy: {
-    policy: 'strict-origin-when-cross-origin'
-  }
+    policy: 'strict-origin-when-cross-origin',
+  },
 });
 
 // ============================================
@@ -256,10 +256,10 @@ export function securityLogger(req, res, next) {
       method: req.method,
       path: req.path,
       ip: req.ip,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
-  
+
   // Log failed auth attempts
   res.on('finish', () => {
     if (req.path.includes('/auth/') && res.statusCode === 401) {
@@ -267,11 +267,11 @@ export function securityLogger(req, res, next) {
         path: req.path,
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   });
-  
+
   next();
 }
 
@@ -288,15 +288,15 @@ export function detectSuspiciousActivity(req, res, next) {
     // Script tags
     /<script>/i,
     // Command injection
-    /(\||&&|;|\$\()/
+    /(\||&&|;|\$\()/,
   ];
-  
+
   const requestString = JSON.stringify({
     body: req.body,
     query: req.query,
-    params: req.params
+    params: req.params,
   });
-  
+
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(requestString)) {
       console.error('[Security] SUSPICIOUS ACTIVITY DETECTED', {
@@ -305,14 +305,14 @@ export function detectSuspiciousActivity(req, res, next) {
         path: req.path,
         method: req.method,
         userAgent: req.headers['user-agent'],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       // In production, consider blocking the request:
       // return res.status(403).json({ message: 'Forbidden' });
     }
   }
-  
+
   next();
 }
 
@@ -326,34 +326,34 @@ export function detectSuspiciousActivity(req, res, next) {
  */
 export function ipFilter(options = {}) {
   const { whitelist = [], blacklist = [] } = options;
-  
+
   return (req, res, next) => {
     const clientIp = req.ip || req.connection.remoteAddress;
-    
+
     // Check blacklist first
     if (blacklist.length > 0 && blacklist.includes(clientIp)) {
       console.warn('[Security] Blocked IP from blacklist', {
         ip: clientIp,
-        path: req.path
+        path: req.path,
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Access denied',
-        reason: 'IP_BLACKLISTED'
+        reason: 'IP_BLACKLISTED',
       });
     }
-    
+
     // Check whitelist if enabled
     if (whitelist.length > 0 && !whitelist.includes(clientIp)) {
       console.warn('[Security] Blocked IP not in whitelist', {
         ip: clientIp,
-        path: req.path
+        path: req.path,
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Access denied',
-        reason: 'IP_NOT_WHITELISTED'
+        reason: 'IP_NOT_WHITELISTED',
       });
     }
-    
+
     next();
   };
 }
@@ -367,21 +367,21 @@ export function ipFilter(options = {}) {
  */
 export function applySecurityMiddleware(app) {
   console.log('🔒 Applying enterprise security middleware...');
-  
+
   // 1. Security headers (must be first)
   app.use(securityHeaders);
-  
+
   // 2. Input sanitization
   app.use(sanitizeMongoInput);
   app.use(preventParameterPollution);
-  
+
   // 3. Monitoring & logging
   app.use(securityLogger);
   app.use(detectSuspiciousActivity);
-  
+
   // 4. Rate limiting (applied to specific routes in server.js)
   // Applied selectively to avoid limiting health checks
-  
+
   console.log('✅ Security middleware active');
 }
 
@@ -392,21 +392,21 @@ export default {
   passwordResetLimiter,
   intelligenceLimiter,
   adminLimiter,
-  
+
   // Sanitization
   sanitizeMongoInput,
   preventParameterPollution,
-  
+
   // Headers
   securityHeaders,
-  
+
   // Monitoring
   securityLogger,
   detectSuspiciousActivity,
-  
+
   // IP filtering
   ipFilter,
-  
+
   // Combined setup
-  applySecurityMiddleware
+  applySecurityMiddleware,
 };

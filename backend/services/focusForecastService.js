@@ -1,12 +1,12 @@
 /**
  * Focus Recovery Forecast Service
  * Predicts near-future focus loss using linear extrapolation
- * 
+ *
  * Inputs:
  * - focus_blocks_per_day (≥90 min uninterrupted)
  * - fragmentation_index (number of context switches/day)
  * - after_hours_activity_rate
- * 
+ *
  * Output:
  * - Focus capacity forecast for next 14 days
  * - Warning state: Stable / Degrading / Critical
@@ -27,7 +27,10 @@ function linearRegression(points) {
   }
 
   const n = points.length;
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumX2 = 0;
 
   points.forEach(({ x, y }) => {
     sumX += x;
@@ -36,7 +39,7 @@ function linearRegression(points) {
     sumX2 += x * x;
   });
 
-  const denominator = (n * sumX2 - sumX * sumX);
+  const denominator = n * sumX2 - sumX * sumX;
   if (denominator === 0) {
     return { slope: 0, intercept: sumY / n };
   }
@@ -50,7 +53,7 @@ function linearRegression(points) {
 /**
  * Calculate focus blocks from calendar data
  * A focus block is ≥90 minutes of uninterrupted time
- * 
+ *
  * @param {Array} meetings - Calendar events
  * @param {number} workdayHours - Working hours per day (default 8)
  * @returns {number} - Number of focus blocks per day
@@ -62,13 +65,11 @@ export function calculateFocusBlocks(meetings, workdayHours = 8) {
   }
 
   // Sort meetings by start time
-  const sorted = [...meetings].sort((a, b) => 
-    new Date(a.startTime) - new Date(b.startTime)
-  );
+  const sorted = [...meetings].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
   // Group meetings by day
   const byDay = {};
-  sorted.forEach(meeting => {
+  sorted.forEach((meeting) => {
     const day = new Date(meeting.startTime).toDateString();
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(meeting);
@@ -77,10 +78,10 @@ export function calculateFocusBlocks(meetings, workdayHours = 8) {
   let totalFocusBlocks = 0;
   const days = Object.keys(byDay);
 
-  days.forEach(day => {
+  days.forEach((day) => {
     const dayMeetings = byDay[day];
     let focusBlocks = 0;
-    
+
     // Assume 9am-5pm workday
     const dayStart = new Date(day);
     dayStart.setHours(9, 0, 0, 0);
@@ -89,18 +90,20 @@ export function calculateFocusBlocks(meetings, workdayHours = 8) {
 
     // Find gaps between meetings
     let lastEnd = dayStart;
-    
-    dayMeetings.forEach(meeting => {
+
+    dayMeetings.forEach((meeting) => {
       const meetingStart = new Date(meeting.startTime);
-      const meetingEnd = new Date(meeting.endTime || 
-        new Date(meetingStart.getTime() + (meeting.durationMinutes || 30) * 60000));
-      
+      const meetingEnd = new Date(
+        meeting.endTime ||
+          new Date(meetingStart.getTime() + (meeting.durationMinutes || 30) * 60000)
+      );
+
       // Gap before this meeting
       const gapMinutes = (meetingStart - lastEnd) / (1000 * 60);
       if (gapMinutes >= 90) {
         focusBlocks += Math.floor(gapMinutes / 90);
       }
-      
+
       lastEnd = new Date(Math.max(lastEnd.getTime(), meetingEnd.getTime()));
     });
 
@@ -124,9 +127,9 @@ export function calculateFocusBlocks(meetings, workdayHours = 8) {
  */
 export function calculateFragmentationIndex(meetings, messages = []) {
   const byDay = {};
-  
+
   // Count meetings as context switches
-  meetings.forEach(meeting => {
+  meetings.forEach((meeting) => {
     const day = new Date(meeting.startTime).toDateString();
     if (!byDay[day]) byDay[day] = { meetings: 0, messageBlocks: 0 };
     byDay[day].meetings++;
@@ -135,19 +138,17 @@ export function calculateFragmentationIndex(meetings, messages = []) {
   // Count message bursts as context switches
   // A "burst" is a cluster of messages within 5 minutes
   if (messages.length > 0) {
-    const sorted = [...messages].sort((a, b) => 
-      new Date(a.timestamp) - new Date(b.timestamp)
-    );
+    const sorted = [...messages].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     let lastBurstTime = null;
-    sorted.forEach(msg => {
+    sorted.forEach((msg) => {
       const msgTime = new Date(msg.timestamp);
       const day = msgTime.toDateString();
-      
+
       if (!byDay[day]) byDay[day] = { meetings: 0, messageBlocks: 0 };
-      
+
       // New burst if > 30 min since last message
-      if (!lastBurstTime || (msgTime - lastBurstTime) > 30 * 60 * 1000) {
+      if (!lastBurstTime || msgTime - lastBurstTime > 30 * 60 * 1000) {
         byDay[day].messageBlocks++;
         lastBurstTime = msgTime;
       }
@@ -176,11 +177,11 @@ export function calculateAfterHoursRate(messages, workingHours = { start: 9, end
   if (!messages || messages.length === 0) return 0;
 
   let afterHoursCount = 0;
-  
-  messages.forEach(msg => {
+
+  messages.forEach((msg) => {
     const hour = new Date(msg.timestamp).getHours();
     const day = new Date(msg.timestamp).getDay();
-    
+
     // After hours: before start, after end, or weekends
     if (hour < workingHours.start || hour >= workingHours.end || day === 0 || day === 6) {
       afterHoursCount++;
@@ -204,7 +205,7 @@ function determineWarningState(focusTrend, fragmentationTrend) {
   if (focusTrend < -0.05 || fragmentationTrend > 0.3) {
     return 'Critical';
   }
-  
+
   if (focusDegrading || fragmentationIncreasing) {
     return 'Degrading';
   }
@@ -220,14 +221,14 @@ function determineWarningState(focusTrend, fragmentationTrend) {
  */
 function generateForecastMessage(focusChange, warningState) {
   const absChange = Math.abs(Math.round(focusChange));
-  
+
   if (warningState === 'Critical') {
     if (focusChange < 0) {
       return `Critical: Team projected to lose ~${absChange}% focus capacity in 14 days`;
     }
     return `Critical fragmentation detected; focus time under pressure`;
   }
-  
+
   if (warningState === 'Degrading') {
     if (focusChange < 0) {
       return `At current trend, team will lose ~${absChange}% focus capacity in 14 days`;
@@ -238,7 +239,7 @@ function generateForecastMessage(focusChange, warningState) {
   if (focusChange > 5) {
     return `Focus capacity trending up: +${absChange}% projected over 14 days`;
   }
-  
+
   return `Focus capacity stable for the next 14 days`;
 }
 
@@ -256,17 +257,17 @@ export async function computeFocusForecast(teamId, options = {}) {
     currentFocusBlocks = 0,
     currentFragmentation = 0,
     currentAfterHoursRate = 0,
-    historicalData = [] // Array of { date, focusBlocks, fragmentation }
+    historicalData = [], // Array of { date, focusBlocks, fragmentation }
   } = options;
 
   // Build data points for regression (x = day index, y = metric)
-  const focusPoints = historicalData.map((d, i) => ({ 
-    x: i, 
-    y: d.focusBlocks || 0 
+  const focusPoints = historicalData.map((d, i) => ({
+    x: i,
+    y: d.focusBlocks || 0,
   }));
-  const fragmentationPoints = historicalData.map((d, i) => ({ 
-    x: i, 
-    y: d.fragmentation || 0 
+  const fragmentationPoints = historicalData.map((d, i) => ({
+    x: i,
+    y: d.fragmentation || 0,
   }));
 
   // Add current day
@@ -297,29 +298,29 @@ export async function computeFocusForecast(teamId, options = {}) {
   const trendData = focusPoints.slice(-14).map((fp, i) => ({
     date: new Date(Date.now() - (14 - i) * 24 * 60 * 60 * 1000),
     focusBlocks: fp.y,
-    fragmentation: fragmentationPoints[i]?.y || 0
+    fragmentation: fragmentationPoints[i]?.y || 0,
   }));
 
   return {
     teamId,
     orgId: team.orgId,
     date: new Date(),
-    
+
     currentFocusBlocksPerDay: currentFocusBlocks,
     currentFragmentationIndex: currentFragmentation,
     currentAfterHoursRate,
-    
+
     focusBlocksTrend: Math.round(focusTrend * 1000) / 1000,
     fragmentationTrend: Math.round(fragTrend * 1000) / 1000,
     afterHoursTrend: 0, // Would need historical after-hours data
-    
+
     forecastedFocusBlocks: Math.round(forecastedFocusBlocks * 10) / 10,
     forecastedFragmentation: Math.round(forecastedFragmentation * 10) / 10,
     focusCapacityChange: Math.round(focusCapacityChange * 10) / 10,
-    
+
     warningState,
     forecastMessage,
-    trendData
+    trendData,
   };
 }
 
@@ -333,8 +334,8 @@ export async function storeFocusForecast(forecastData) {
     teamId: forecastData.teamId,
     date: {
       $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      $lt: new Date(new Date().setHours(23, 59, 59, 999))
-    }
+      $lt: new Date(new Date().setHours(23, 59, 59, 999)),
+    },
   });
 
   if (existing) {
@@ -357,7 +358,7 @@ export async function getFocusForecastHistory(teamId, days = 30) {
 
   return FocusForecast.find({
     teamId,
-    date: { $gte: startDate }
+    date: { $gte: startDate },
   }).sort({ date: 1 });
 }
 
@@ -378,5 +379,5 @@ export default {
   calculateFocusBlocks,
   calculateFragmentationIndex,
   calculateAfterHoursRate,
-  linearRegression
+  linearRegression,
 };

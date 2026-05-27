@@ -1,85 +1,85 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Activity } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Activity } from 'lucide-react';
 
 const AcceptInvitation = () => {
   const [searchParams] = useSearchParams();
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [invitationData, setInvitationData] = useState<any>(null);
   const navigate = useNavigate();
 
-  const token = searchParams.get("token");
+  const token = searchParams.get('token');
 
   useEffect(() => {
     // You could fetch invitation details here to show company name, role, etc.
     // For now, we'll just validate the token exists
     if (!token) {
-      setError("Invalid invitation link - no token provided");
+      setError('Invalid invitation link - no token provided');
     }
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError('Password must be at least 6 characters');
       return;
     }
 
     if (!token) {
-      setError("Invalid invitation link");
+      setError('Invalid invitation link');
       return;
     }
 
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/api/onboarding/accept`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, name, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to accept invitation");
+        throw new Error(data.message || 'Failed to accept invitation');
       }
 
       // Store token and user data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("orgId", data.user.orgId);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('orgId', data.user.orgId);
       if (data.user.teamId) {
-        localStorage.setItem("teamId", data.user.teamId);
+        localStorage.setItem('teamId', data.user.teamId);
       }
 
       // Redirect based on role
-      if (data.user.role === "it_admin") {
+      if (data.user.role === 'it_admin') {
         // IT admin goes to integrations setup
-        navigate("/dashboard?onboarding=integrations");
-      } else if (data.user.role === "hr_admin") {
+        navigate('/dashboard?onboarding=integrations');
+      } else if (data.user.role === 'hr_admin') {
         // HR admin goes to main dashboard
-        navigate("/dashboard");
+        navigate('/dashboard');
       } else {
         // Default to dashboard
-        navigate("/dashboard");
+        navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -99,9 +99,7 @@ const AcceptInvitation = () => {
         {/* Accept Invitation Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
           <h1 className="text-2xl font-bold mb-2">Accept Your Invitation</h1>
-          <p className="text-muted-foreground mb-6">
-            Set up your account to get started
-          </p>
+          <p className="text-muted-foreground mb-6">Set up your account to get started</p>
 
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
@@ -148,17 +146,13 @@ const AcceptInvitation = () => {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || !token}
-            >
-              {loading ? "Creating Account..." : "Accept Invitation"}
+            <Button type="submit" className="w-full" disabled={loading || !token}>
+              {loading ? 'Creating Account...' : 'Accept Invitation'}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>

@@ -13,7 +13,10 @@ await mongoose.connect(process.env.MONGO_URI);
 const org = await Organization.findOne({ domain: /nobeldigital/i }).lean();
 
 const total = await User.countDocuments({ orgId: org._id });
-const withMsId = await User.countDocuments({ orgId: org._id, 'externalIds.microsoftUserId': { $exists: true, $ne: null } });
+const withMsId = await User.countDocuments({
+  orgId: org._id,
+  'externalIds.microsoftUserId': { $exists: true, $ne: null },
+});
 const withEmail = await User.countDocuments({ orgId: org._id, email: { $exists: true, $ne: '' } });
 
 console.log(`Total users:                  ${total}`);

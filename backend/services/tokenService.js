@@ -43,7 +43,9 @@ export async function getMicrosoftAppToken(tenantId) {
   const token = data.access_token;
   const expiresAt = Date.now() + (data.expires_in || 3600) * 1000;
   appTokenCache.set(tenantId, { token, expiresAt });
-  console.log(`[MicrosoftAppToken] Got app-only token for tenant ${tenantId}, expires in ${data.expires_in}s`);
+  console.log(
+    `[MicrosoftAppToken] Got app-only token for tenant ${tenantId}, expires in ${data.expires_in}s`
+  );
   return token;
 }
 

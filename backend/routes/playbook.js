@@ -3,7 +3,6 @@ import { getRecommendation } from '../services/playbookService.js';
 
 const router = express.Router();
 
-
 // GET /api/playbook/:metric/:direction — get recommendation for a metric and direction
 router.get('/:metric/:direction', (req, res) => {
   try {

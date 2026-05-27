@@ -14,7 +14,7 @@ function getStripe() {
  * POST /api/billing/create-checkout-session
  * Creates Stripe Checkout for subscription
  * Body: { plan: 'visibility' | 'interpretation' }
- * 
+ *
  * Plans:
  *   - visibility: €299/month
  *   - interpretation: €499/month
@@ -31,7 +31,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
     // Map plan names to Stripe Price IDs
     // Set these in your environment after creating products in Stripe Dashboard
     const priceMap = {
-      visibility: process.env.STRIPE_PRICE_VISIBILITY,      // €299/month
+      visibility: process.env.STRIPE_PRICE_VISIBILITY, // €299/month
       interpretation: process.env.STRIPE_PRICE_INTERPRETATION, // €499/month
       // Legacy names for backwards compatibility
       starter: process.env.STRIPE_PRICE_VISIBILITY,
@@ -40,15 +40,15 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
 
     const priceId = priceMap[plan];
     if (!priceId) {
-      return res.status(400).json({ 
-        message: `Unknown plan '${plan}'. Available: visibility (€299), interpretation (€499)` 
+      return res.status(400).json({
+        message: `Unknown plan '${plan}'. Available: visibility (€299), interpretation (€499)`,
       });
     }
 
     // Get user's org info
     const { default: Organization } = await import('../models/organizationModel.js');
     const org = await Organization.findById(req.user.orgId);
-    
+
     // Create or get customer
     let customerId = org?.stripeCustomerId;
     if (!customerId) {
@@ -58,10 +58,10 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
         metadata: {
           orgId: req.user.orgId?.toString() || '',
           orgSlug: org?.slug || '',
-        }
+        },
       });
       customerId = customer.id;
-      
+
       // Save customer ID to org
       if (org) {
         await Organization.findByIdAndUpdate(org._id, { stripeCustomerId: customerId });
@@ -73,9 +73,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
       mode: 'subscription',
       allow_promotion_codes: true,
       payment_method_types: ['card'],
-      line_items: [
-        { price: priceId, quantity: 1 }
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       metadata: {
         plan: String(plan),
         orgSlug: org?.slug || '',
@@ -86,7 +84,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
           plan: String(plan),
           orgSlug: org?.slug || '',
           orgId: req.user.orgId?.toString() || '',
-        }
+        },
       },
       success_url: `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/dashboard?payment=success`,
       cancel_url: `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/pricing?payment=cancelled`,
@@ -112,7 +110,7 @@ router.post('/billing/portal-session', authenticateToken, async (req, res) => {
 
     const { default: Organization } = await import('../models/organizationModel.js');
     const org = await Organization.findById(req.user.orgId);
-    
+
     if (!org?.stripeCustomerId) {
       return res.status(400).json({ message: 'No billing account found. Subscribe first.' });
     }
@@ -137,7 +135,7 @@ router.get('/billing/status', authenticateToken, async (req, res) => {
   try {
     const { default: Organization } = await import('../models/organizationModel.js');
     const org = await Organization.findById(req.user.orgId);
-    
+
     if (!org) {
       return res.json({
         plan: 'trial',
@@ -148,12 +146,13 @@ router.get('/billing/status', authenticateToken, async (req, res) => {
     }
 
     const trialEnd = org.trial?.endDate ? new Date(org.trial.endDate) : null;
-    const trialDaysRemaining = trialEnd 
+    const trialDaysRemaining = trialEnd
       ? Math.max(0, Math.ceil((trialEnd - new Date()) / (1000 * 60 * 60 * 24)))
       : 0;
 
     const isTrialActive = trialDaysRemaining > 0 && !org.stripeSubscriptionId;
-    const hasActiveSubscription = !!org.stripeSubscriptionId && org.subscription?.status === 'active';
+    const hasActiveSubscription =
+      !!org.stripeSubscriptionId && org.subscription?.status === 'active';
 
     res.json({
       plan: org.subscription?.plan || 'trial',

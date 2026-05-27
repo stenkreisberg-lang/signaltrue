@@ -1,25 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 
 export default function TimelineModal({ team, baseline, onClose, dark }) {
   const [history, setHistory] = useState([]);
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchHistory();
-  }, [team._id, days]);
-
   async function fetchHistory() {
     setLoading(true);
     try {
       const res = await axios.get(`/api/teams/${team._id}/history?days=${days}`);
       // Format data for Recharts (newest first, but chart shows oldest to newest)
-      const formatted = res.data.reverse().map(item => ({
-        date: new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      const formatted = res.data.reverse().map((item) => ({
+        date: new Date(item.timestamp).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        }),
         bdi: item.bdi,
-        timestamp: item.timestamp
+        timestamp: item.timestamp,
       }));
       setHistory(formatted);
     } catch (err) {
@@ -28,6 +37,10 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    fetchHistory();
+  }, [team._id, days]);
 
   const modalOverlayStyle = {
     position: 'fixed',
@@ -40,7 +53,7 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
-    animation: 'fadeIn 0.2s ease-out'
+    animation: 'fadeIn 0.2s ease-out',
   };
 
   const modalStyle = {
@@ -53,7 +66,7 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     maxHeight: '80vh',
     overflowY: 'auto',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    position: 'relative'
+    position: 'relative',
   };
 
   const closeButtonStyle = {
@@ -66,13 +79,13 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     cursor: 'pointer',
     color: dark ? '#9ca3af' : '#6b7280',
     lineHeight: 1,
-    padding: '4px 8px'
+    padding: '4px 8px',
   };
 
   const headerStyle = {
     marginBottom: '24px',
     paddingBottom: '16px',
-    borderBottom: `2px solid ${dark ? '#374151' : '#e5e7eb'}`
+    borderBottom: `2px solid ${dark ? '#374151' : '#e5e7eb'}`,
   };
 
   const titleStyle = {
@@ -81,14 +94,14 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     background: 'linear-gradient(135deg, #6366f1, #a855f7)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    marginBottom: '8px'
+    marginBottom: '8px',
   };
 
   const statsRowStyle = {
     display: 'flex',
     gap: '16px',
     marginBottom: '24px',
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
   };
 
   const statCardStyle = {
@@ -97,7 +110,7 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     padding: '16px',
     borderRadius: '12px',
     backgroundColor: dark ? '#374151' : '#f9fafb',
-    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`
+    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
   };
 
   const statLabelStyle = {
@@ -105,22 +118,29 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
     color: dark ? '#9ca3af' : '#6b7280',
     marginBottom: '4px',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.5px',
   };
 
   const statValueStyle = {
     fontSize: '24px',
     fontWeight: 'bold',
-    color: dark ? '#f3f4f6' : '#111827'
+    color: dark ? '#f3f4f6' : '#111827',
   };
 
-  const changeColor = baseline && baseline.percentChange > 0 ? '#10b981' : baseline && baseline.percentChange < 0 ? '#ef4444' : '#6b7280';
+  const changeColor =
+    baseline && baseline.percentChange > 0
+      ? '#10b981'
+      : baseline && baseline.percentChange < 0
+        ? '#ef4444'
+        : '#6b7280';
 
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-        <button style={closeButtonStyle} onClick={onClose}>×</button>
-        
+        <button style={closeButtonStyle} onClick={onClose}>
+          ×
+        </button>
+
         <div style={headerStyle}>
           <h2 style={titleStyle}>{team.name} Timeline</h2>
           <p style={{ fontSize: '14px', color: dark ? '#9ca3af' : '#6b7280' }}>
@@ -141,7 +161,9 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
             <div style={statCardStyle}>
               <div style={statLabelStyle}>Change</div>
               <div style={{ ...statValueStyle, color: changeColor }}>
-                {baseline.change >= 0 ? '+' : ''}{baseline.change} ({baseline.percentChange >= 0 ? '+' : ''}{baseline.percentChange.toFixed(1)}%)
+                {baseline.change >= 0 ? '+' : ''}
+                {baseline.change} ({baseline.percentChange >= 0 ? '+' : ''}
+                {baseline.percentChange.toFixed(1)}%)
               </div>
             </div>
             <div style={statCardStyle}>
@@ -153,8 +175,8 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
 
         <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <label style={{ fontSize: '14px', fontWeight: '500' }}>Time Range:</label>
-          <select 
-            value={days} 
+          <select
+            value={days}
             onChange={(e) => setDays(Number(e.target.value))}
             style={{
               padding: '8px 12px',
@@ -163,7 +185,7 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
               backgroundColor: dark ? '#374151' : 'white',
               color: dark ? 'white' : '#111827',
               fontSize: '14px',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             <option value={7}>Last 7 days</option>
@@ -175,11 +197,15 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
         </div>
 
         {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}>
+          <div
+            style={{ padding: '60px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}
+          >
             Loading history...
           </div>
         ) : history.length === 0 ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}>
+          <div
+            style={{ padding: '60px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}
+          >
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
             <p>No historical data available yet.</p>
             <p style={{ fontSize: '14px', marginTop: '8px' }}>
@@ -191,37 +217,37 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
             <ResponsiveContainer>
               <LineChart data={history} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#374151' : '#e5e7eb'} />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   stroke={dark ? '#9ca3af' : '#6b7280'}
                   style={{ fontSize: '12px' }}
                 />
-                <YAxis 
+                <YAxis
                   stroke={dark ? '#9ca3af' : '#6b7280'}
                   style={{ fontSize: '12px' }}
                   domain={[0, 100]}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: dark ? '#374151' : '#ffffff',
                     border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '8px',
-                    color: dark ? '#f3f4f6' : '#111827'
+                    color: dark ? '#f3f4f6' : '#111827',
                   }}
                 />
                 <Legend />
                 {baseline && (
-                  <ReferenceLine 
-                    y={baseline.baselineBdi} 
-                    stroke="#8b5cf6" 
-                    strokeDasharray="5 5" 
+                  <ReferenceLine
+                    y={baseline.baselineBdi}
+                    stroke="#8b5cf6"
+                    strokeDasharray="5 5"
                     label={{ value: 'Baseline', fill: '#8b5cf6', fontSize: 12 }}
                   />
                 )}
-                <Line 
-                  type="monotone" 
-                  dataKey="bdi" 
-                  stroke="#6366f1" 
+                <Line
+                  type="monotone"
+                  dataKey="bdi"
+                  stroke="#6366f1"
                   strokeWidth={3}
                   dot={{ fill: '#6366f1', r: 4 }}
                   activeDot={{ r: 6 }}
@@ -232,17 +258,19 @@ export default function TimelineModal({ team, baseline, onClose, dark }) {
           </div>
         )}
 
-        <div style={{ 
-          marginTop: '24px', 
-          padding: '16px', 
-          backgroundColor: dark ? '#374151' : '#f9fafb',
-          borderRadius: '12px',
-          fontSize: '14px',
-          color: dark ? '#d1d5db' : '#4b5563'
-        }}>
-          <strong>📈 About BDI Trends:</strong> The Burn-Down Index tracks team health over time. 
-          Lower scores indicate better rhythm and sustainability. Snapshots are automatically created 
-          during scheduled Slack data refreshes.
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '16px',
+            backgroundColor: dark ? '#374151' : '#f9fafb',
+            borderRadius: '12px',
+            fontSize: '14px',
+            color: dark ? '#d1d5db' : '#4b5563',
+          }}
+        >
+          <strong>📈 About BDI Trends:</strong> The Burn-Down Index tracks team health over time.
+          Lower scores indicate better rhythm and sustainability. Snapshots are automatically
+          created during scheduled Slack data refreshes.
         </div>
       </div>
     </div>

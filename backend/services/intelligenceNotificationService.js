@@ -12,19 +12,19 @@ import Team from '../models/team.js';
  */
 export async function notifyAttritionRisk(teamId, riskData) {
   if (riskData.riskScore < 60) return; // Only notify for high risk (≥60)
-  
+
   try {
     const team = await Team.findById(teamId);
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const severity = riskData.riskScore >= 80 ? 'critical' : 'high';
     const userName = riskData.userId?.name || 'Team member';
-    
+
     const notification = {
       type: 'attrition_risk',
       severity,
@@ -34,20 +34,20 @@ export async function notifyAttritionRisk(teamId, riskData) {
         teamId,
         userId: riskData.userId,
         riskScore: riskData.riskScore,
-        signals: riskData.behavioralIndicators
+        signals: riskData.behavioralIndicators,
       },
-      link: `/dashboard/attrition?userId=${riskData.userId}`
+      link: `/dashboard/attrition?userId=${riskData.userId}`,
     };
-    
+
     console.log(`[Intelligence Notification] Attrition risk alert:`, {
       user: userName,
       score: riskData.riskScore,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     // TODO: Integrate with your notification system
     // For now, just log. You can add email/Slack integration here.
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending attrition risk notification:', error);
@@ -59,19 +59,19 @@ export async function notifyAttritionRisk(teamId, riskData) {
  */
 export async function notifyManagerCoaching(managerId, effectivenessData) {
   if (!effectivenessData || effectivenessData.effectivenessScore >= 65) return;
-  
+
   try {
     const team = await Team.findOne({ managerId });
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const severity = effectivenessData.effectivenessScore < 45 ? 'critical' : 'high';
     const managerName = effectivenessData.managerId?.name || 'Manager';
-    
+
     const notification = {
       type: 'manager_coaching',
       severity,
@@ -81,17 +81,17 @@ export async function notifyManagerCoaching(managerId, effectivenessData) {
         managerId,
         teamId: team._id,
         score: effectivenessData.effectivenessScore,
-        improvementAreas: effectivenessData.improvementAreas
+        improvementAreas: effectivenessData.improvementAreas,
       },
-      link: `/dashboard/managers?managerId=${managerId}`
+      link: `/dashboard/managers?managerId=${managerId}`,
     };
-    
+
     console.log(`[Intelligence Notification] Manager coaching alert:`, {
       manager: managerName,
       score: effectivenessData.effectivenessScore,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending manager coaching notification:', error);
@@ -105,19 +105,19 @@ export async function notifyCrisisEvent(teamId, crisisData) {
   try {
     const team = await Team.findById(teamId).populate('orgId');
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const crisisTypes = {
       'team-collapse': 'Team Collapse',
       'mass-exodus': 'Mass Exodus',
       'sudden-silence': 'Sudden Silence',
-      'conflict-spike': 'Conflict Spike'
+      'conflict-spike': 'Conflict Spike',
     };
-    
+
     const notification = {
       type: 'crisis_event',
       severity: 'critical',
@@ -128,21 +128,21 @@ export async function notifyCrisisEvent(teamId, crisisData) {
         crisisId: crisisData._id,
         crisisType: crisisData.crisisType,
         severity: crisisData.severity,
-        confidence: crisisData.confidence
+        confidence: crisisData.confidence,
       },
       link: `/dashboard/overview?teamId=${teamId}`,
-      urgent: true
+      urgent: true,
     };
-    
+
     console.log(`[Intelligence Notification] CRISIS ALERT:`, {
       team: team.name,
       type: crisisData.crisisType,
       severity: crisisData.severity,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     // TODO: Send immediate alerts (email, SMS, Slack)
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending crisis notification:', error);
@@ -154,16 +154,16 @@ export async function notifyCrisisEvent(teamId, crisisData) {
  */
 export async function notifySuccessionRisk(teamId, successionData) {
   if (!successionData || successionData.busFactor >= 50) return;
-  
+
   try {
     const team = await Team.findById(teamId);
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const notification = {
       type: 'succession_risk',
       severity: successionData.busFactor < 30 ? 'critical' : 'high',
@@ -172,17 +172,17 @@ export async function notifySuccessionRisk(teamId, successionData) {
       data: {
         teamId,
         busFactor: successionData.busFactor,
-        criticalRoles: successionData.criticalRoles
+        criticalRoles: successionData.criticalRoles,
       },
-      link: `/dashboard/succession?teamId=${teamId}`
+      link: `/dashboard/succession?teamId=${teamId}`,
     };
-    
+
     console.log(`[Intelligence Notification] Succession risk alert:`, {
       team: team.name,
       busFactor: successionData.busFactor,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending succession risk notification:', error);
@@ -194,16 +194,16 @@ export async function notifySuccessionRisk(teamId, successionData) {
  */
 export async function notifyEquityIssue(teamId, equityData) {
   if (!equityData || equityData.overallEquityScore >= 70) return;
-  
+
   try {
     const team = await Team.findById(teamId);
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const issues = [];
     if (equityData.responseTimeEquity?.equityScore < 70) {
       issues.push(`Response time inequity (${equityData.responseTimeEquity.equityScore}/100)`);
@@ -214,7 +214,7 @@ export async function notifyEquityIssue(teamId, equityData) {
     if (equityData.voiceEquity?.equityScore < 70) {
       issues.push(`Voice inequity (${equityData.voiceEquity.equityScore}/100)`);
     }
-    
+
     const notification = {
       type: 'equity_issue',
       severity: equityData.overallEquityScore < 50 ? 'high' : 'medium',
@@ -223,17 +223,17 @@ export async function notifyEquityIssue(teamId, equityData) {
       data: {
         teamId,
         overallScore: equityData.overallEquityScore,
-        issues: equityData.inequities
+        issues: equityData.inequities,
       },
-      link: `/dashboard/equity?teamId=${teamId}`
+      link: `/dashboard/equity?teamId=${teamId}`,
     };
-    
+
     console.log(`[Intelligence Notification] Equity issue alert:`, {
       team: team.name,
       score: equityData.overallEquityScore,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending equity issue notification:', error);
@@ -245,16 +245,16 @@ export async function notifyEquityIssue(teamId, equityData) {
  */
 export async function notifyNetworkHealth(teamId, networkData) {
   if (!networkData || networkData.siloScore < 70) return;
-  
+
   try {
     const team = await Team.findById(teamId);
     if (!team) return;
-    
-    const hrUsers = await User.find({ 
-      orgId: team.orgId, 
-      role: { $in: ['hr_admin', 'admin', 'master_admin'] }
+
+    const hrUsers = await User.find({
+      orgId: team.orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
     });
-    
+
     const notification = {
       type: 'network_health',
       severity: networkData.siloScore >= 85 ? 'high' : 'medium',
@@ -264,17 +264,17 @@ export async function notifyNetworkHealth(teamId, networkData) {
         teamId,
         siloScore: networkData.siloScore,
         bottlenecks: networkData.bottlenecks,
-        isolatedMembers: networkData.isolatedMembers
+        isolatedMembers: networkData.isolatedMembers,
       },
-      link: `/dashboard/network?teamId=${teamId}`
+      link: `/dashboard/network?teamId=${teamId}`,
     };
-    
+
     console.log(`[Intelligence Notification] Network health alert:`, {
       team: team.name,
       siloScore: networkData.siloScore,
-      recipients: hrUsers.length
+      recipients: hrUsers.length,
     });
-    
+
     return notification;
   } catch (error) {
     console.error('Error sending network health notification:', error);
@@ -287,5 +287,5 @@ export default {
   notifyCrisisEvent,
   notifySuccessionRisk,
   notifyEquityIssue,
-  notifyNetworkHealth
+  notifyNetworkHealth,
 };

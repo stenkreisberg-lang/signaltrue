@@ -5,15 +5,19 @@ import User from '../models/user.js'; // Import User model
 import IntegrationConnection from '../models/integrationConnection.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { encryptString, decryptString } from '../utils/crypto.js';
-import { syncEmployeesFromSlack, syncEmployeesFromGoogle, syncEmployeesFromMicrosoft } from '../services/employeeSyncService.js';
+import {
+  syncEmployeesFromSlack,
+  syncEmployeesFromGoogle,
+  syncEmployeesFromMicrosoft,
+} from '../services/employeeSyncService.js';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
-import { 
-  getSlackImmediateInsights, 
-  getCalendarImmediateInsights, 
+import {
+  getSlackImmediateInsights,
+  getCalendarImmediateInsights,
   getMicrosoftImmediateInsights,
   getGoogleChatImmediateInsights,
-  getOrgVsBenchmarks 
+  getOrgVsBenchmarks,
 } from '../services/immediateInsightsService.js';
 import { triggerImmediateSync } from '../services/integrationSyncScheduler.js';
 
@@ -49,43 +53,43 @@ router.get('/integrations/immediate-insights', authenticateToken, async (req, re
     if (!orgId) {
       return res.json({ message: 'No organization found', insights: {} });
     }
-    
+
     const org = await Organization.findById(orgId).lean();
     if (!org) {
       return res.json({ message: 'Organization not found', insights: {} });
     }
-    
+
     // Collect all immediate insights from integrations
     const insights = {};
-    
+
     // Slack insights
     if (org.integrations?.slack?.immediateInsights) {
       insights.slack = org.integrations.slack.immediateInsights;
     }
-    
+
     // Google Calendar insights
     if (org.integrations?.google?.immediateInsights) {
       insights.google = org.integrations.google.immediateInsights;
     }
-    
+
     // Google Chat insights
     if (org.integrations?.googleChat?.immediateInsights) {
       insights.googleChat = org.integrations.googleChat.immediateInsights;
     }
-    
+
     // Microsoft insights
     if (org.integrations?.microsoft?.immediateInsights) {
       insights.microsoft = org.integrations.microsoft.immediateInsights;
     }
-    
+
     // Calculate aggregate stats
-    const totalMeetingsThisWeek = 
-      (insights.google?.stats?.meetingsThisWeek || 0) + 
+    const totalMeetingsThisWeek =
+      (insights.google?.stats?.meetingsThisWeek || 0) +
       (insights.microsoft?.stats?.meetingsThisWeek || 0);
-    
+
     const totalUsers = insights.slack?.stats?.activeUsers || 0;
     const totalChannels = insights.slack?.stats?.channelCount || 0;
-    
+
     res.json({
       insights,
       summary: {
@@ -98,10 +102,11 @@ router.get('/integrations/immediate-insights', authenticateToken, async (req, re
       calibrationStatus: {
         inProgress: org.calibrationStatus !== 'complete',
         daysRemaining: org.calibrationDaysRemaining || 30,
-        message: org.calibrationStatus === 'complete' 
-          ? 'Baseline established - full insights available'
-          : 'Collecting baseline data. Industry benchmarks shown for comparison.',
-      }
+        message:
+          org.calibrationStatus === 'complete'
+            ? 'Baseline established - full insights available'
+            : 'Collecting baseline data. Industry benchmarks shown for comparison.',
+      },
     });
   } catch (e) {
     console.error('Error in /integrations/immediate-insights:', e);
@@ -116,7 +121,7 @@ router.get('/integrations/benchmarks', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.json({ message: 'No organization found', benchmarks: null });
     }
-    
+
     const comparison = await getOrgVsBenchmarks(orgId);
     res.json(comparison);
   } catch (e) {
@@ -193,17 +198,29 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         },
         oauth: {
           slack: !!process.env.SLACK_CLIENT_ID ? '/integrations/slack/oauth/start' : null,
-          google: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start?scope=calendar' : null,
-          calendar: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google/oauth/start?scope=calendar' : null,
-          googleChat: !!process.env.GOOGLE_CLIENT_ID ? '/integrations/google-chat/oauth/start' : null,
-          teams: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=teams' : null,
-          outlook: !!process.env.MS_APP_CLIENT_ID ? '/integrations/microsoft/oauth/start?scope=outlook' : null,
+          google: !!process.env.GOOGLE_CLIENT_ID
+            ? '/integrations/google/oauth/start?scope=calendar'
+            : null,
+          calendar: !!process.env.GOOGLE_CLIENT_ID
+            ? '/integrations/google/oauth/start?scope=calendar'
+            : null,
+          googleChat: !!process.env.GOOGLE_CLIENT_ID
+            ? '/integrations/google-chat/oauth/start'
+            : null,
+          teams: !!process.env.MS_APP_CLIENT_ID
+            ? '/integrations/microsoft/oauth/start?scope=teams'
+            : null,
+          outlook: !!process.env.MS_APP_CLIENT_ID
+            ? '/integrations/microsoft/oauth/start?scope=outlook'
+            : null,
           jira: !!process.env.JIRA_CLIENT_ID ? '/integrations/jira/oauth/start' : null,
           asana: !!process.env.ASANA_CLIENT_ID ? '/integrations/asana/oauth/start' : null,
           hubspot: !!process.env.HUBSPOT_CLIENT_ID ? '/integrations/hubspot/oauth/start' : null,
-          pipedrive: !!process.env.PIPEDRIVE_CLIENT_ID ? '/integrations/pipedrive/oauth/start' : null,
+          pipedrive: !!process.env.PIPEDRIVE_CLIENT_ID
+            ? '/integrations/pipedrive/oauth/start'
+            : null,
           notion: !!process.env.NOTION_CLIENT_ID ? '/integrations/notion/oauth/start' : null,
-        }
+        },
       });
     }
 
@@ -214,12 +231,12 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     }
 
     // Fetch IntegrationConnection records for category king integrations
-    const integrationConnections = await IntegrationConnection.find({ 
-      orgId, 
+    const integrationConnections = await IntegrationConnection.find({
+      orgId,
       integrationType: { $in: ['jira', 'asana', 'hubspot', 'pipedrive', 'notion'] },
-      status: 'connected'
+      status: 'connected',
     }).lean();
-    
+
     // Convert to lookup map
     const connectedIntegrations = {};
     const integrationDetails = {};
@@ -249,10 +266,10 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     // --- Check Connected Status (based on data in DB) ---
     const msScope = organization.integrations?.microsoft?.scope;
     const msHasToken = !!organization.integrations?.microsoft?.accessToken;
-    
+
     const connected = {
       slack: !!organization.integrations?.slack?.accessToken,
-      google: !!(organization.integrations?.google?.accessToken),
+      google: !!organization.integrations?.google?.accessToken,
       googleChat: !!organization.integrations?.googleChat?.accessToken,
       teams: msHasToken && (msScope === 'teams' || msScope === 'both'),
       outlook: msHasToken && (msScope === 'outlook' || msScope === 'both'),
@@ -260,7 +277,8 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       jira: !!organization.integrations?.jira?.accessToken || !!connectedIntegrations.jira,
       asana: !!organization.integrations?.asana?.accessToken || !!connectedIntegrations.asana,
       hubspot: !!organization.integrations?.hubspot?.accessToken || !!connectedIntegrations.hubspot,
-      pipedrive: !!organization.integrations?.pipedrive?.accessToken || !!connectedIntegrations.pipedrive,
+      pipedrive:
+        !!organization.integrations?.pipedrive?.accessToken || !!connectedIntegrations.pipedrive,
       notion: !!organization.integrations?.notion?.accessToken || !!connectedIntegrations.notion,
     };
 
@@ -269,7 +287,10 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       slack: connected.slack,
       googleChat: connected.googleChat,
       teams: connected.teams,
-      googleCalendar: connected.google || (organization.integrations?.google?.scope === 'calendar' && !!organization.integrations?.google?.accessToken),
+      googleCalendar:
+        connected.google ||
+        (organization.integrations?.google?.scope === 'calendar' &&
+          !!organization.integrations?.google?.accessToken),
       outlook: connected.outlook,
       jira: connected.jira,
       asana: connected.asana,
@@ -280,40 +301,61 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
 
     // --- Provide Connection Details ---
     const details = {
-      slack: connected.slack ? {
-        teamName: organization.integrations.slack.teamName,
-        teamId: organization.integrations.slack.teamId,
-      } : null,
-      google: connected.google ? {
-        email: organization.integrations.google?.email || user.email,
-      } : null,
-      googleChat: connected.googleChat ? {
-        email: organization.integrations.googleChat.email,
-      } : null,
-      teams: connected.teams ? {
-        email: organization.integrations.microsoft?.email,
-        user: organization.integrations.microsoft?.user,
-      } : null,
-      outlook: connected.outlook ? {
-        email: organization.integrations.microsoft?.email,
-        user: organization.integrations.microsoft?.user,
-      } : null,
-      jira: connected.jira ? (integrationDetails.jira || {
-        site: organization.integrations.jira?.siteName || organization.integrations.jira?.cloudId,
-      }) : null,
-      asana: connected.asana ? (integrationDetails.asana || {
-        email: organization.integrations.asana?.email,
-        workspace: organization.integrations.asana?.workspaceName,
-      }) : null,
-      hubspot: connected.hubspot ? (integrationDetails.hubspot || {
-        portalId: organization.integrations.hubspot?.portalId,
-      }) : null,
-      pipedrive: connected.pipedrive ? (integrationDetails.pipedrive || {
-        companyDomain: organization.integrations.pipedrive?.companyDomain,
-      }) : null,
-      notion: connected.notion ? (integrationDetails.notion || {
-        workspaceName: organization.integrations.notion?.workspaceName,
-      }) : null,
+      slack: connected.slack
+        ? {
+            teamName: organization.integrations.slack.teamName,
+            teamId: organization.integrations.slack.teamId,
+          }
+        : null,
+      google: connected.google
+        ? {
+            email: organization.integrations.google?.email || user.email,
+          }
+        : null,
+      googleChat: connected.googleChat
+        ? {
+            email: organization.integrations.googleChat.email,
+          }
+        : null,
+      teams: connected.teams
+        ? {
+            email: organization.integrations.microsoft?.email,
+            user: organization.integrations.microsoft?.user,
+          }
+        : null,
+      outlook: connected.outlook
+        ? {
+            email: organization.integrations.microsoft?.email,
+            user: organization.integrations.microsoft?.user,
+          }
+        : null,
+      jira: connected.jira
+        ? integrationDetails.jira || {
+            site:
+              organization.integrations.jira?.siteName || organization.integrations.jira?.cloudId,
+          }
+        : null,
+      asana: connected.asana
+        ? integrationDetails.asana || {
+            email: organization.integrations.asana?.email,
+            workspace: organization.integrations.asana?.workspaceName,
+          }
+        : null,
+      hubspot: connected.hubspot
+        ? integrationDetails.hubspot || {
+            portalId: organization.integrations.hubspot?.portalId,
+          }
+        : null,
+      pipedrive: connected.pipedrive
+        ? integrationDetails.pipedrive || {
+            companyDomain: organization.integrations.pipedrive?.companyDomain,
+          }
+        : null,
+      notion: connected.notion
+        ? integrationDetails.notion || {
+            workspaceName: organization.integrations.notion?.workspaceName,
+          }
+        : null,
     };
 
     // --- OAuth Start URLs ---
@@ -322,21 +364,42 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     const orgSlug = organization.slug || 'default';
     const orgIdStr = organization._id.toString();
     const oauth = {
-      slack: available.slack ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      google: available.google ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      calendar: available.google ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      googleChat: available.googleChat ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      teams: available.teams ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      outlook: available.outlook ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      jira: available.jira ? `/integrations/jira/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      asana: available.asana ? `/integrations/asana/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      hubspot: available.hubspot ? `/integrations/hubspot/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      pipedrive: available.pipedrive ? `/integrations/pipedrive/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
-      notion: available.notion ? `/integrations/notion/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}` : null,
+      slack: available.slack
+        ? `/integrations/slack/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      google: available.google
+        ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      calendar: available.google
+        ? `/integrations/google/oauth/start?scope=calendar&orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      googleChat: available.googleChat
+        ? `/integrations/google-chat/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      teams: available.teams
+        ? `/integrations/microsoft/oauth/start?scope=teams&orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      outlook: available.outlook
+        ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      jira: available.jira
+        ? `/integrations/jira/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      asana: available.asana
+        ? `/integrations/asana/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      hubspot: available.hubspot
+        ? `/integrations/hubspot/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      pipedrive: available.pipedrive
+        ? `/integrations/pipedrive/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
+      notion: available.notion
+        ? `/integrations/notion/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
+        : null,
     };
 
     res.json({ available, connected, connections, details, oauth });
-
   } catch (err) {
     console.error('Error in /integrations/status:', err);
     res.status(500).json({ message: 'An internal server error occurred.' });
@@ -344,12 +407,32 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
 });
 
 // --- Helpers ---
-function b64(json) {
-  return Buffer.from(JSON.stringify(json)).toString('base64url');
+function signState(json) {
+  const payload = Buffer.from(JSON.stringify(json)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(payload)
+    .digest('base64url');
+  return `${payload}.${signature}`;
 }
 
-function b64parse(str) {
-  try { return JSON.parse(Buffer.from(String(str || ''), 'base64url').toString('utf8')); } catch { return {}; }
+function parseSignedState(str) {
+  try {
+    const [payload, supplied] = String(str || '').split('.');
+    const expected = crypto
+      .createHmac('sha256', process.env.JWT_SECRET)
+      .update(payload)
+      .digest('base64url');
+    if (
+      !supplied ||
+      supplied.length !== expected.length ||
+      !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))
+    )
+      return {};
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    return {};
+  }
 }
 
 function getAppUrl() {
@@ -363,8 +446,8 @@ function getAppUrl() {
 // Determine the effective backend base URL and Google redirect URI.
 // Falls back to the current request host if env var is missing or clearly wrong.
 function getBackendBaseUrl(req) {
-  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
-  const host = (req.headers['x-forwarded-host'] || req.get('host'));
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host');
   return `${proto}://${host}`;
 }
 
@@ -378,17 +461,18 @@ function getGoogleRedirectUri(req) {
 
 // --- Slack OAuth ---
 // GET /api/integrations/slack/oauth/start?orgId=xxx or ?orgSlug=acme
-router.get('/integrations/slack/oauth/start', async (req, res) => {
+router.get('/integrations/slack/oauth/start', authenticateToken, async (req, res) => {
   const clientId = process.env.SLACK_CLIENT_ID;
   const redirectUri = process.env.SLACK_REDIRECT_URI;
   if (!clientId || !redirectUri) {
-    return res.status(503).json({ message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.' });
+    return res
+      .status(503)
+      .json({ message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.' });
   }
-  // Support both orgId and orgSlug for flexibility
-  const state = b64({ 
-    orgId: req.query.orgId || null,
-    orgSlug: req.query.orgSlug || null, 
-    nonce: crypto.randomBytes(8).toString('hex') 
+  const state = signState({
+    orgId: req.user.orgId?.toString() || null,
+    userId: req.user.userId?.toString() || null,
+    nonce: crypto.randomBytes(8).toString('hex'),
   });
   const url = new URL('https://slack.com/oauth/v2/authorize');
   url.searchParams.set('client_id', clientId);
@@ -409,16 +493,17 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
     // Allow override of redirect_uri via query to match whatever was used during authorization
     // This helps when the initial auth used a frontend callback (e.g., https://www.signaltrue.ai/auth/slack/callback)
     // and the backend needs to pass the exact same value to Slack's token endpoint.
-    const redirectUri = (req.query.redirect_uri && /^https?:\/\//.test(String(req.query.redirect_uri)))
-      ? String(req.query.redirect_uri)
-      : process.env.SLACK_REDIRECT_URI;
+    const redirectUri =
+      req.query.redirect_uri && /^https?:\/\//.test(String(req.query.redirect_uri))
+        ? String(req.query.redirect_uri)
+        : process.env.SLACK_REDIRECT_URI;
     if (!clientId || !clientSecret || !redirectUri) {
       return res.status(503).send('Slack OAuth not configured.');
     }
 
     const { code, state } = req.query;
     console.log('Slack OAuth callback - raw state:', state);
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     console.log('Slack OAuth callback - parsed state:', JSON.stringify(parsed));
     const orgId = parsed.orgId || null;
     const orgSlug = parsed.orgSlug || null;
@@ -433,7 +518,7 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
         client_secret: clientSecret,
         code: String(code || ''),
         redirect_uri: redirectUri,
-      }).toString()
+      }).toString(),
     });
     const data = await tokenRes.json();
     if (!data.ok) {
@@ -451,7 +536,7 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
       if (!org && orgSlug) {
         org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
       }
-      
+
       if (org) {
         await Organization.findByIdAndUpdate(org._id, {
           $set: {
@@ -464,40 +549,40 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
               teamName: data.team?.name,
               authedUser: data.authed_user,
               installed: true,
-              sync: { enabled: true }
-            }
-          }
+              sync: { enabled: true },
+            },
+          },
         });
         console.log('Slack OAuth: saved token for org', org._id);
 
         // Get immediate insights (runs in background, doesn't block redirect)
         getSlackImmediateInsights(org._id, data.access_token)
-          .then(insights => {
+          .then((insights) => {
             console.log('Slack immediate insights:', JSON.stringify(insights));
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Slack immediate insights error:', err.message);
           });
 
         // Trigger an immediate core sync (populate initial work events/metrics)
         triggerImmediateSync(org._id)
-          .then(results => {
+          .then((results) => {
             console.log('Slack immediate sync results:', results);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Slack immediate sync error:', err.message);
           });
 
         // Trigger employee sync in background
         syncEmployeesFromSlack(org._id)
-          .then(result => {
+          .then((result) => {
             console.log('Slack employee sync completed:', result.stats);
             // Check if integrations are now complete and notify HR
             notifyHRIntegrationsComplete(org._id);
             // Notify superadmin about new integration
             notifyIntegrationConnected(org, 'slack');
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Slack employee sync failed:', err.message);
           });
       } else {
@@ -517,22 +602,25 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
 
 // --- Google OAuth (Gmail/Calendar) ---
 // GET /api/integrations/google/oauth/start?scope=gmail|calendar&orgId=xxx
-router.get('/integrations/google/oauth/start', async (req, res) => {
+router.get('/integrations/google/oauth/start', authenticateToken, async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = getGoogleRedirectUri(req);
   if (!clientId || !redirectUri) {
-    return res.status(503).json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI.' });
+    return res.status(503).json({
+      message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI.',
+    });
   }
   const scopeParam = String(req.query.scope || 'calendar');
-  const scopesCore = ['openid','email','profile'];
-  const scopes = scopeParam === 'gmail'
-    ? ['https://www.googleapis.com/auth/gmail.readonly', ...scopesCore]
-    : ['https://www.googleapis.com/auth/calendar.readonly', ...scopesCore];
-  const state = b64({ 
-    orgId: req.query.orgId || null,
-    orgSlug: req.query.orgSlug || null, 
-    scope: scopeParam, 
-    nonce: crypto.randomBytes(8).toString('hex') 
+  const scopesCore = ['openid', 'email', 'profile'];
+  const scopes =
+    scopeParam === 'gmail'
+      ? ['https://www.googleapis.com/auth/gmail.readonly', ...scopesCore]
+      : ['https://www.googleapis.com/auth/calendar.readonly', ...scopesCore];
+  const state = signState({
+    orgId: req.user.orgId?.toString() || null,
+    userId: req.user.userId?.toString() || null,
+    scope: scopeParam,
+    nonce: crypto.randomBytes(8).toString('hex'),
   });
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', clientId);
@@ -555,11 +643,11 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       return res.status(503).send('Google OAuth not configured.');
     }
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const orgId = parsed.orgId || null;
     const orgSlug = parsed.orgSlug || null;
     const scopeParam = String(parsed.scope || 'calendar');
-    
+
     console.log('Google OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug, 'scope:', scopeParam);
     console.log('Google OAuth redirect URI used:', redirectUri);
 
@@ -571,19 +659,21 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
+        grant_type: 'authorization_code',
+      }).toString(),
     });
     const tokens = await tokenRes.json();
-    console.log('Google OAuth tokens received:', { 
-      hasAccessToken: !!tokens.access_token, 
+    console.log('Google OAuth tokens received:', {
+      hasAccessToken: !!tokens.access_token,
       hasRefreshToken: !!tokens.refresh_token,
       error: tokens.error,
-      errorDescription: tokens.error_description
+      errorDescription: tokens.error_description,
     });
     if (tokens.error) {
       console.error('Google OAuth error:', tokens);
-      return res.status(400).send(`Google authorization failed: ${tokens.error_description || tokens.error}`);
+      return res
+        .status(400)
+        .send(`Google authorization failed: ${tokens.error_description || tokens.error}`);
     }
 
     try {
@@ -591,7 +681,7 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       let googleUser = null;
       try {
         const ui = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-          headers: { Authorization: `Bearer ${tokens.access_token}` }
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
         });
         if (ui.ok) {
           googleUser = await ui.json();
@@ -606,19 +696,19 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
       if (!org && orgSlug) {
         org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
       }
-      
+
       if (org) {
         console.log('[Google OAuth] Saving to org:', org._id, 'scope:', scopeParam);
-        
+
         const googleIntegration = {
           scope: scopeParam,
           refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
           accessToken: tokens.access_token ? encryptString(tokens.access_token) : '',
           expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
           email: googleUser?.email || '',
-          user: googleUser || {}
+          user: googleUser || {},
         };
-        
+
         await Organization.findByIdAndUpdate(org._id, {
           $set: {
             'integrations.google.scope': googleIntegration.scope,
@@ -626,30 +716,30 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
             'integrations.google.accessToken': googleIntegration.accessToken,
             'integrations.google.expiry': googleIntegration.expiry,
             'integrations.google.email': googleIntegration.email,
-            'integrations.google.user': googleIntegration.user
-          }
+            'integrations.google.user': googleIntegration.user,
+          },
         });
         console.log('[Google OAuth] Saved successfully to org:', org._id);
-        
+
         // Get immediate calendar insights (runs in background, doesn't block redirect)
         if (scopeParam === 'calendar' && tokens.access_token) {
           getCalendarImmediateInsights(org._id, tokens.access_token)
-            .then(insights => {
+            .then((insights) => {
               console.log('Google Calendar immediate insights:', JSON.stringify(insights));
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('Google Calendar immediate insights error:', err.message);
             });
         }
         // Trigger immediate core sync for calendar (populate events/metrics)
         triggerImmediateSync(org._id)
-          .then(results => {
+          .then((results) => {
             console.log('Google immediate sync results:', results);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Google immediate sync error:', err.message);
           });
-        
+
         // Notify superadmin about new integration
         notifyIntegrationConnected(org, 'google', scopeParam);
       } else {
@@ -669,28 +759,33 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
 
 // --- Google Chat OAuth ---
 // GET /api/integrations/google-chat/oauth/start?orgId=xxx or ?orgSlug=acme
-router.get('/integrations/google-chat/oauth/start', async (req, res) => {
+router.get('/integrations/google-chat/oauth/start', authenticateToken, async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_CHAT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
+  const redirectUri =
+    process.env.GOOGLE_CHAT_REDIRECT_URI ||
+    `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
   if (!clientId || !redirectUri) {
-    return res.status(503).json({ message: 'Google Chat OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CHAT_REDIRECT_URI.' });
+    return res.status(503).json({
+      message:
+        'Google Chat OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CHAT_REDIRECT_URI.',
+    });
   }
-  
+
   // Google Chat API scopes
   const scopes = [
     'https://www.googleapis.com/auth/chat.messages.readonly', // Read messages
-    'https://www.googleapis.com/auth/chat.spaces.readonly',   // Read spaces/rooms
+    'https://www.googleapis.com/auth/chat.spaces.readonly', // Read spaces/rooms
     'openid',
     'email',
-    'profile'
+    'profile',
   ];
-  
-  const state = b64({ 
-    orgId: req.query.orgId || null,
-    orgSlug: req.query.orgSlug || null, 
-    nonce: crypto.randomBytes(8).toString('hex') 
+
+  const state = signState({
+    orgId: req.user.orgId?.toString() || null,
+    userId: req.user.userId?.toString() || null,
+    nonce: crypto.randomBytes(8).toString('hex'),
   });
-  
+
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', redirectUri);
@@ -700,7 +795,7 @@ router.get('/integrations/google-chat/oauth/start', async (req, res) => {
   url.searchParams.set('scope', scopes.join(' '));
   url.searchParams.set('prompt', 'consent');
   url.searchParams.set('state', state);
-  
+
   return res.redirect(String(url));
 });
 
@@ -709,17 +804,19 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_CHAT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
-    
+    const redirectUri =
+      process.env.GOOGLE_CHAT_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
+
     if (!clientId || !clientSecret || !redirectUri) {
       return res.status(503).send('Google Chat OAuth not configured.');
     }
-    
+
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const orgId = parsed.orgId || null;
     const orgSlug = parsed.orgSlug || null;
-    
+
     console.log('Google Chat OAuth callback - orgId:', orgId, 'orgSlug:', orgSlug);
 
     // Exchange code for tokens
@@ -731,10 +828,10 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
+        grant_type: 'authorization_code',
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
     if (tokens.error) {
       console.error('Google Chat OAuth error:', tokens);
@@ -746,7 +843,7 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
       let googleUser = null;
       try {
         const ui = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-          headers: { Authorization: `Bearer ${tokens.access_token}` }
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
         });
         if (ui.ok) {
           googleUser = await ui.json();
@@ -761,55 +858,61 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
       if (!org && orgSlug) {
         org = await Organization.findOne({ $or: [{ slug: orgSlug }, { domain: orgSlug }] });
       }
-      
+
       if (org) {
         console.log('[Google Chat OAuth] Saving to org:', org._id);
-        
+
         await Organization.findByIdAndUpdate(org._id, {
           $set: {
-            'integrations.googleChat.refreshToken': tokens.refresh_token ? encryptString(tokens.refresh_token) : '',
-            'integrations.googleChat.accessToken': tokens.access_token ? encryptString(tokens.access_token) : '',
-            'integrations.googleChat.expiry': tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+            'integrations.googleChat.refreshToken': tokens.refresh_token
+              ? encryptString(tokens.refresh_token)
+              : '',
+            'integrations.googleChat.accessToken': tokens.access_token
+              ? encryptString(tokens.access_token)
+              : '',
+            'integrations.googleChat.expiry': tokens.expires_in
+              ? new Date(Date.now() + tokens.expires_in * 1000)
+              : null,
             'integrations.googleChat.email': googleUser?.email || '',
             'integrations.googleChat.user': googleUser || {},
-            'integrations.googleChat.sync.enabled': true
-          }
+            'integrations.googleChat.sync.enabled': true,
+          },
         });
-        
+
         console.log('[Google Chat OAuth] Saved successfully to org:', org._id);
-        
+
         // Get immediate Google Chat insights (runs in background)
         if (tokens.access_token) {
           getGoogleChatImmediateInsights(org._id, tokens.access_token)
-            .then(insights => {
+            .then((insights) => {
               console.log('Google Chat immediate insights:', JSON.stringify(insights));
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('Google Chat immediate insights error:', err.message);
             });
         }
         // Trigger immediate core sync for Google Chat
         triggerImmediateSync(org._id)
-          .then(results => {
+          .then((results) => {
             console.log('Google Chat immediate sync results:', results);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Google Chat immediate sync error:', err.message);
           });
-        
+
         // Notify superadmin about new integration
         notifyIntegrationConnected(org, 'googleChat');
 
         // Trigger employee sync in background (if Directory API is available)
         syncEmployeesFromGoogle(org._id)
-          .then(result => {
+          .then((result) => {
             if (result.success) {
               console.log('Google Workspace employee sync completed:', result.stats);
             } else {
               console.log('Google Workspace employee sync skipped:', result.message);
             }
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Google Workspace employee sync failed:', err.message);
           });
       } else {
@@ -829,15 +932,23 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
 
 // --- Microsoft OAuth (Outlook/Teams) ---
 // GET /api/integrations/microsoft/oauth/start?scope=outlook|teams|both&orgSlug=acme&orgId=xxx
-router.get('/integrations/microsoft/oauth/start', async (req, res) => {
+router.get('/integrations/microsoft/oauth/start', authenticateToken, async (req, res) => {
   const clientId = process.env.MS_APP_CLIENT_ID;
   const tenant = process.env.MS_APP_TENANT || 'common';
   const redirectUri = process.env.MS_APP_REDIRECT_URI;
   if (!clientId || !redirectUri) {
-    return res.status(503).json({ message: 'Microsoft OAuth not configured. Set MS_APP_CLIENT_ID and MS_APP_REDIRECT_URI.' });
+    return res.status(503).json({
+      message: 'Microsoft OAuth not configured. Set MS_APP_CLIENT_ID and MS_APP_REDIRECT_URI.',
+    });
   }
   const scopeParam = String(req.query.scope || 'outlook');
-  const scopesCore = ['openid','email','profile','offline_access','https://graph.microsoft.com/User.Read'];
+  const scopesCore = [
+    'openid',
+    'email',
+    'profile',
+    'offline_access',
+    'https://graph.microsoft.com/User.Read',
+  ];
   // Always request both Outlook + Teams scopes so one token covers everything
   const teamsScopes = [
     'https://graph.microsoft.com/Team.ReadBasic.All',
@@ -849,15 +960,13 @@ router.get('/integrations/microsoft/oauth/start', async (req, res) => {
     'https://graph.microsoft.com/Mail.Read',
   ];
   // Employee directory scope — allows listing org users so HR can see employees
-  const directoryScopes = [
-    'https://graph.microsoft.com/User.Read.All',
-  ];
+  const directoryScopes = ['https://graph.microsoft.com/User.Read.All'];
   const scopes = [...scopesCore, ...outlookScopes, ...teamsScopes, ...directoryScopes];
-  const state = b64({ 
-    orgSlug: req.query.orgSlug || 'default', 
-    orgId: req.query.orgId || null,
-    scope: scopeParam, 
-    nonce: crypto.randomBytes(8).toString('hex') 
+  const state = signState({
+    orgId: req.user.orgId?.toString() || null,
+    userId: req.user.userId?.toString() || null,
+    scope: scopeParam,
+    nonce: crypto.randomBytes(8).toString('hex'),
   });
   // Use 'common' so any tenant's admin can connect — Microsoft will resolve the real tenant
   // from the signed-in account during the flow.
@@ -887,7 +996,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       return res.status(503).send('Microsoft OAuth not configured.');
     }
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const orgSlug = String(parsed.orgSlug || 'default');
     const orgId = parsed.orgId || null;
     const scopeParam = String(parsed.scope || 'outlook');
@@ -900,8 +1009,8 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         client_secret: clientSecret,
         code: String(code || ''),
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
+        grant_type: 'authorization_code',
+      }).toString(),
     });
     const tokens = await tokenRes.json();
     if (tokens.error) {
@@ -914,7 +1023,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       let msUser = null;
       try {
         const meRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-          headers: { Authorization: `Bearer ${tokens.access_token}` }
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
         });
         if (meRes.ok) msUser = await meRes.json();
       } catch {}
@@ -923,7 +1032,9 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       let tenantId;
       if (tokens.id_token) {
         try {
-          const payload = JSON.parse(Buffer.from(tokens.id_token.split('.')[1], 'base64').toString('utf8'));
+          const payload = JSON.parse(
+            Buffer.from(tokens.id_token.split('.')[1], 'base64').toString('utf8')
+          );
           tenantId = payload.tid || payload.tenant || undefined;
         } catch {}
       }
@@ -932,8 +1043,16 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       // If token has both Calendar and Teams scopes, store 'both'
       const grantedScopes = tokens.scope || '';
       const hasCalendar = grantedScopes.includes('Calendars.Read');
-      const hasTeams = grantedScopes.includes('Team.ReadBasic') || grantedScopes.includes('ChannelMessage.Read');
-      const effectiveScope = (hasCalendar && hasTeams) ? 'both' : (hasTeams ? 'teams' : (hasCalendar ? 'outlook' : scopeParam));
+      const hasTeams =
+        grantedScopes.includes('Team.ReadBasic') || grantedScopes.includes('ChannelMessage.Read');
+      const effectiveScope =
+        hasCalendar && hasTeams
+          ? 'both'
+          : hasTeams
+            ? 'teams'
+            : hasCalendar
+              ? 'outlook'
+              : scopeParam;
 
       // Prefer lookup by orgId if available, fall back to slug
       let updatedOrg;
@@ -948,15 +1067,20 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
                 accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
                 expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
                 email: msUser?.userPrincipalName || msUser?.mail || null,
-                user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
-                tenantId: tenantId
-              }
-            }
+                user: msUser
+                  ? {
+                      upn: msUser.userPrincipalName || msUser.mail,
+                      displayName: msUser.displayName,
+                    }
+                  : undefined,
+                tenantId: tenantId,
+              },
+            },
           },
           { new: true }
         );
       }
-      
+
       // Fallback to slug lookup if orgId not found or not provided
       if (!updatedOrg) {
         updatedOrg = await Organization.findOneAndUpdate(
@@ -970,49 +1094,54 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
                 accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
                 expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
                 email: msUser?.userPrincipalName || msUser?.mail || null,
-                user: msUser ? { upn: msUser.userPrincipalName || msUser.mail, displayName: msUser.displayName } : undefined,
-                tenantId: tenantId
-              }
-            }
+                user: msUser
+                  ? {
+                      upn: msUser.userPrincipalName || msUser.mail,
+                      displayName: msUser.displayName,
+                    }
+                  : undefined,
+                tenantId: tenantId,
+              },
+            },
           },
           { upsert: true, new: true }
         );
       }
-      
+
       // Check if all integrations are complete and notify HR admins
       if (updatedOrg) {
         // Get immediate Microsoft insights (runs in background)
         if (tokens.access_token) {
           getMicrosoftImmediateInsights(updatedOrg._id, tokens.access_token, scopeParam)
-            .then(insights => {
+            .then((insights) => {
               console.log('Microsoft immediate insights:', JSON.stringify(insights));
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('Microsoft immediate insights error:', err.message);
             });
         }
-        
+
         notifyHRIntegrationsComplete(updatedOrg._id);
         // Notify superadmin about new integration
         notifyIntegrationConnected(updatedOrg, 'microsoft', scopeParam);
         // Trigger immediate core sync for Microsoft (Outlook/Teams)
         triggerImmediateSync(updatedOrg._id)
-          .then(results => {
+          .then((results) => {
             console.log('Microsoft immediate sync results:', results);
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Microsoft immediate sync error:', err.message);
           });
         // Trigger employee sync in background (uses Graph /users with User.Read.All)
         syncEmployeesFromMicrosoft(updatedOrg._id, tokens.access_token)
-          .then(result => {
+          .then((result) => {
             if (result.success) {
               console.log('Microsoft employee sync completed:', result.stats);
             } else {
               console.log('Microsoft employee sync skipped:', result.message);
             }
           })
-          .catch(err => {
+          .catch((err) => {
             console.error('Microsoft employee sync failed:', err.message);
           });
       }
@@ -1034,7 +1163,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
 router.post('/integrations/:provider/disconnect', authenticateToken, async (req, res) => {
   try {
     const provider = String(req.params.provider || '').toLowerCase();
-    if (!['slack','google','google-chat','googlechat','microsoft'].includes(provider)) {
+    if (!['slack', 'google', 'google-chat', 'googlechat', 'microsoft'].includes(provider)) {
       return res.status(400).json({ message: 'Unsupported provider' });
     }
     const orgId = req.user?.orgId;
@@ -1044,24 +1173,37 @@ router.post('/integrations/:provider/disconnect', authenticateToken, async (req,
 
     if (provider === 'slack') {
       org.integrations.slack = {
-        accessToken: '', botUserId: '', team: {}, authedUser: {}
+        accessToken: '',
+        botUserId: '',
+        team: {},
+        authedUser: {},
       };
     } else if (provider === 'google') {
       // Clear organization-level Google integration
       org.integrations.google = {
-        scope: '', refreshToken: '', accessToken: '', expiry: undefined
+        scope: '',
+        refreshToken: '',
+        accessToken: '',
+        expiry: undefined,
       };
       // Also clear user-level Google tokens (for Calendar)
       await User.findByIdAndUpdate(req.user.userId, {
-        $unset: { google: 1 }
+        $unset: { google: 1 },
       });
     } else if (provider === 'google-chat' || provider === 'googlechat') {
       org.integrations.googleChat = {
-        refreshToken: '', accessToken: '', expiry: undefined, email: '', user: {}
+        refreshToken: '',
+        accessToken: '',
+        expiry: undefined,
+        email: '',
+        user: {},
       };
     } else if (provider === 'microsoft') {
       org.integrations.microsoft = {
-        scope: '', refreshToken: '', accessToken: '', expiry: undefined
+        scope: '',
+        refreshToken: '',
+        accessToken: '',
+        expiry: undefined,
       };
     }
 

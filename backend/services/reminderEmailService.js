@@ -161,7 +161,10 @@ export function generateNewUserReminderEmail(firstName, connectUrl) {
     </p>
   `;
 
-  return generateEmailTemplate(content, "You're almost there — finish connecting tools to see real signals");
+  return generateEmailTemplate(
+    content,
+    "You're almost there — finish connecting tools to see real signals"
+  );
 }
 
 /**
@@ -204,7 +207,7 @@ export function generateITAdminReminderEmail(itAdminName, hrAdminName, setupUrl)
     </p>
   `;
 
-  return generateEmailTemplate(content, "IT action needed — complete the integration setup");
+  return generateEmailTemplate(content, 'IT action needed — complete the integration setup');
 }
 
 /**
@@ -272,7 +275,10 @@ export function generateFollowUpReminderEmail(firstName, connectUrl, hoursElapse
     </p>
   `;
 
-  return generateEmailTemplate(content, `${hoursElapsed} hours in — your SignalTrue dashboard is still empty`);
+  return generateEmailTemplate(
+    content,
+    `${hoursElapsed} hours in — your SignalTrue dashboard is still empty`
+  );
 }
 
 /**
@@ -309,7 +315,10 @@ export function generateITAdminUrgentReminderEmail(itAdminName, hrAdminName, set
     </p>
   `;
 
-  return generateEmailTemplate(content, "Urgent: Teams waiting for SignalTrue data — complete setup");
+  return generateEmailTemplate(
+    content,
+    'Urgent: Teams waiting for SignalTrue data — complete setup'
+  );
 }
 
 /**
@@ -317,7 +326,7 @@ export function generateITAdminUrgentReminderEmail(itAdminName, hrAdminName, set
  */
 export async function sendReminderEmail({ to, subject, html, tags = [] }) {
   const resend = getResendClient();
-  
+
   if (!resend) {
     console.log(`[Reminder Email] Resend not configured. Would send to: ${to}`);
     console.log(`[Reminder Email] Subject: ${subject}`);
@@ -363,9 +372,9 @@ function getFirstName(user) {
 export async function sendNewUserReminder(user) {
   const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
-  
+
   const html = generateNewUserReminderEmail(firstName, connectUrl);
-  
+
   return sendReminderEmail({
     to: user.email,
     subject: "You're almost there — finish connecting tools to see real signals",
@@ -379,15 +388,15 @@ export async function sendNewUserReminder(user) {
  */
 export async function sendITAdminReminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
   // Format IT admin name properly
-  const formattedName = itAdminName 
+  const formattedName = itAdminName
     ? itAdminName.charAt(0).toUpperCase() + itAdminName.slice(1).toLowerCase()
     : '';
   const formattedHRName = hrAdminName
     ? hrAdminName.charAt(0).toUpperCase() + hrAdminName.slice(1).toLowerCase()
     : '';
-    
+
   const html = generateITAdminReminderEmail(formattedName, formattedHRName, setupUrl);
-  
+
   return sendReminderEmail({
     to: itAdminEmail,
     subject: 'IT action needed — complete the integration setup',
@@ -402,9 +411,9 @@ export async function sendITAdminReminder(itAdminEmail, itAdminName, hrAdminName
 export async function sendUserFollowUpReminder(user, hoursElapsed = 24) {
   const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
-  
+
   const html = generateFollowUpReminderEmail(firstName, connectUrl, hoursElapsed);
-  
+
   return sendReminderEmail({
     to: user.email,
     subject: `${hoursElapsed} hours in — your SignalTrue dashboard is still empty`,
@@ -418,7 +427,7 @@ export async function sendUserFollowUpReminder(user, hoursElapsed = 24) {
  */
 export async function sendITAdminUrgentReminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
   const html = generateITAdminUrgentReminderEmail(itAdminName, hrAdminName, setupUrl);
-  
+
   return sendReminderEmail({
     to: itAdminEmail,
     subject: 'Urgent: Teams waiting for SignalTrue data — complete setup',
@@ -476,7 +485,7 @@ export function generateUserWeek2ReminderEmail(firstName, connectUrl) {
     </p>
   `;
 
-  return generateEmailTemplate(content, "Still no signals detected — 7 days since signup");
+  return generateEmailTemplate(content, 'Still no signals detected — 7 days since signup');
 }
 
 /**
@@ -533,7 +542,10 @@ export function generateUserWeek3ReminderEmail(firstName, connectUrl) {
     </p>
   `;
 
-  return generateEmailTemplate(content, "Your early-warning system is still inactive — final reminder");
+  return generateEmailTemplate(
+    content,
+    'Your early-warning system is still inactive — final reminder'
+  );
 }
 
 /**
@@ -573,7 +585,7 @@ export function generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setu
     </p>
   `;
 
-  return generateEmailTemplate(content, "Integration setup still pending — 7 days");
+  return generateEmailTemplate(content, 'Integration setup still pending — 7 days');
 }
 
 /**
@@ -581,7 +593,7 @@ export function generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setu
  */
 export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setupUrl) {
   const securityUrl = 'https://www.signaltrue.ai/trust';
-  
+
   const content = `
     <p style="margin: 0 0 20px 0; font-size: 18px; color: ${BRAND_COLORS.text}; line-height: 1.6;">
       Hi ${itAdminName || 'there'},
@@ -623,7 +635,10 @@ export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setu
     </p>
   `;
 
-  return generateEmailTemplate(content, "SignalTrue is not active in your organization — final reminder");
+  return generateEmailTemplate(
+    content,
+    'SignalTrue is not active in your organization — final reminder'
+  );
 }
 
 // ============================================================
@@ -636,9 +651,9 @@ export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setu
 export async function sendUserWeek2Reminder(user) {
   const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
-  
+
   const html = generateUserWeek2ReminderEmail(firstName, connectUrl);
-  
+
   return sendReminderEmail({
     to: user.email,
     subject: 'Still no signals detected',
@@ -653,9 +668,9 @@ export async function sendUserWeek2Reminder(user) {
 export async function sendUserWeek3Reminder(user) {
   const firstName = getFirstName(user);
   const connectUrl = `https://www.signaltrue.ai/integrations?token=${user._id}`;
-  
+
   const html = generateUserWeek3ReminderEmail(firstName, connectUrl);
-  
+
   return sendReminderEmail({
     to: user.email,
     subject: 'Your early-warning system is still inactive',
@@ -678,9 +693,9 @@ function formatNameProperly(name) {
 export async function sendITAdminWeek2Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
   const formattedITName = formatNameProperly(itAdminName);
   const formattedHRName = formatNameProperly(hrAdminName);
-  
+
   const html = generateITAdminWeek2ReminderEmail(formattedITName, formattedHRName, setupUrl);
-  
+
   return sendReminderEmail({
     to: itAdminEmail,
     subject: 'Integration setup still pending',
@@ -695,9 +710,9 @@ export async function sendITAdminWeek2Reminder(itAdminEmail, itAdminName, hrAdmi
 export async function sendITAdminWeek3Reminder(itAdminEmail, itAdminName, hrAdminName, setupUrl) {
   const formattedITName = formatNameProperly(itAdminName);
   const formattedHRName = formatNameProperly(hrAdminName);
-  
+
   const html = generateITAdminWeek3ReminderEmail(formattedITName, formattedHRName, setupUrl);
-  
+
   return sendReminderEmail({
     to: itAdminEmail,
     subject: 'SignalTrue is not active in your organization',

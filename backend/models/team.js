@@ -1,140 +1,152 @@
 import mongoose from 'mongoose';
 
-
-const teamSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  orgId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Organization',
-    required: true 
-  },
-  zone: { type: String, enum: ['Recovery', 'Stable', 'Watch', 'Surge'], default: 'Stable' },
-  bdi: { type: Number, default: 50 },
-  trend: { type: Number, default: 0 }, // percent change (calculated from history)
-  favorite: { type: Boolean, default: false },
-  
-  // Energy Index (computed from capability indicators)
-  energyIndex: { type: Number, default: 50 },
-  
-  // Capability Indicators (NEW FRAMEWORK)
-  resilienceScore: { type: Number, default: 50 }, // was Recovery
-  executionCapacityScore: { type: Number, default: 50 }, // was Focus
-  decisionSpeedScore: { type: Number, default: 50 }, // was Response Time
-  structuralHealthScore: { type: Number, default: 50 }, // was Collaboration
-  // Decision Closure Rate is stored separately in DCR model
-  
-  // Drift detection
-  drift: { type: String }, // human-readable drift explanation
-  recommendedAction: { type: String }, // AI-recommended action
-  
-  // Team metadata for role-based benchmarking
-  metadata: {
-    function: { 
-      type: String, 
-      enum: ['Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Support', 'Operations', 'Other'] 
+const teamSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      required: true,
     },
-    sizeBand: { 
-      type: String, 
-      enum: ['1-5', '6-10', '11-20', '21-50', '50+'] 
+    zone: { type: String, enum: ['Recovery', 'Stable', 'Watch', 'Surge'], default: 'Stable' },
+    bdi: { type: Number, default: 50 },
+    trend: { type: Number, default: 0 }, // percent change (calculated from history)
+    favorite: { type: Boolean, default: false },
+
+    // Energy Index (computed from capability indicators)
+    energyIndex: { type: Number, default: 50 },
+
+    // Capability Indicators (NEW FRAMEWORK)
+    resilienceScore: { type: Number, default: 50 }, // was Recovery
+    executionCapacityScore: { type: Number, default: 50 }, // was Focus
+    decisionSpeedScore: { type: Number, default: 50 }, // was Response Time
+    structuralHealthScore: { type: Number, default: 50 }, // was Collaboration
+    // Decision Closure Rate is stored separately in DCR model
+
+    // Drift detection
+    drift: { type: String }, // human-readable drift explanation
+    recommendedAction: { type: String }, // AI-recommended action
+
+    // Team metadata for role-based benchmarking
+    metadata: {
+      function: {
+        type: String,
+        enum: [
+          'Engineering',
+          'Product',
+          'Design',
+          'Marketing',
+          'Sales',
+          'Support',
+          'Operations',
+          'Other',
+        ],
+      },
+      sizeBand: {
+        type: String,
+        enum: ['1-5', '6-10', '11-20', '21-50', '50+'],
+      },
+      actualSize: { type: Number },
     },
-    actualSize: { type: Number }
-  },
 
-  // Baseline for comparison
-  baseline: {
-    bdi: { type: Number },
-    date: { type: Date },
-    signals: {
-      slack: { type: Object },
-      calendar: { type: Object }
-    }
-  },
+    // Baseline for comparison
+    baseline: {
+      bdi: { type: Number },
+      date: { type: Date },
+      signals: {
+        slack: { type: Object },
+        calendar: { type: Object },
+      },
+    },
 
-  // Seasonality flags (e.g., summer, q4, etc.)
-  seasonalityFlags: {
-    type: Object,
-    default: {}
-  },
+    // Seasonality flags (e.g., summer, q4, etc.)
+    seasonalityFlags: {
+      type: Object,
+      default: {},
+    },
 
-  // Driver weights for BDI decomposition
-  driverWeights: {
-    type: Object,
-    default: {}
-  },
+    // Driver weights for BDI decomposition
+    driverWeights: {
+      type: Object,
+      default: {},
+    },
 
-  // Historical BDI snapshots (most recent first)
-  bdiHistory: [{
-    bdi: { type: Number, required: true },
-    timestamp: { type: Date, default: Date.now },
+    // Historical BDI snapshots (most recent first)
+    bdiHistory: [
+      {
+        bdi: { type: Number, required: true },
+        timestamp: { type: Date, default: Date.now },
+        slackSignals: {
+          messageCount: { type: Number },
+          avgResponseDelayHours: { type: Number },
+          sentiment: { type: Number },
+        },
+        calendarSignals: {
+          meetingHoursWeek: { type: Number },
+          afterHoursMeetings: { type: Number },
+          recoveryScore: { type: Number },
+        },
+      },
+    ],
+
+    // Current Signals
     slackSignals: {
-      messageCount: { type: Number },
-      avgResponseDelayHours: { type: Number },
-      sentiment: { type: Number }
+      messageCount: { type: Number, default: 0 },
+      avgResponseDelayHours: { type: Number, default: 0 },
+      sentiment: { type: Number, default: 0 },
+    },
+    googleChatSignals: {
+      messageCount: { type: Number, default: 0 },
+      avgResponseDelayHours: { type: Number, default: 0 },
+      afterHoursCount: { type: Number, default: 0 },
+      afterHoursPercentage: { type: Number, default: 0 },
+      avgThreadDepth: { type: Number, default: 0 },
+      sentiment: { type: Number, default: 0 },
+      adHocMeetingCount: { type: Number, default: 0 },
+      estimatedMeetingHours: { type: Number, default: 0 },
+      adHocAfterHoursMeetings: { type: Number, default: 0 },
     },
     calendarSignals: {
-      meetingHoursWeek: { type: Number },
-      afterHoursMeetings: { type: Number },
-      recoveryScore: { type: Number }
-    }
-  }],
+      meetingHoursWeek: { type: Number, default: 0 },
+      afterHoursMeetings: { type: Number, default: 0 },
+      recoveryScore: { type: Number, default: 0 },
+      focusHoursWeek: { type: Number, default: 0 },
+      focusToMeetingRatio: { type: Number, default: 0 },
+    },
 
-  // Current Signals
-  slackSignals: {
-    messageCount: { type: Number, default: 0 },
-    avgResponseDelayHours: { type: Number, default: 0 },
-    sentiment: { type: Number, default: 0 },
+    // Slack channel ID for integration
+    slackChannelId: { type: String },
+
+    // Google Chat space ID for integration
+    googleChatSpaceId: { type: String },
+
+    // Google Calendar ID for integration
+    calendarId: { type: String },
+
+    // Optional playbook generated by OpenAI
+    playbook: { type: String, default: '' },
+
+    // ── Composite Drift Scores (Scoring Engine v1.0) ─────────────────────────
+    // Populated by scoringEngineService.runFullScoring()
+    capacityDriftScore: { type: Number, default: null },
+    coordinationDragScore: { type: Number, default: null },
+    cohesionDriftScore: { type: Number, default: null },
+    overallDriftScore: { type: Number, default: null },
+    driftScoreUpdatedAt: { type: Date },
+
+    // ── Work schedule config (used for after-hours detection) ────────────────
+    // timezone: IANA timezone string, e.g. 'America/New_York'
+    timezone: { type: String, default: 'UTC' },
+    workConfig: {
+      workdayStart: { type: String, default: '09:00' }, // HH:MM local time
+      workdayEnd: { type: String, default: '17:00' }, // HH:MM local time
+    },
+
+    // ── Privacy gate flags ────────────────────────────────────────────────────
+    analyticsEnabled: { type: Boolean, default: true }, // false when actualSize < minTeamSizeForAnalytics
+    privacyGateFiredAt: { type: Date },
   },
-  googleChatSignals: {
-    messageCount: { type: Number, default: 0 },
-    avgResponseDelayHours: { type: Number, default: 0 },
-    afterHoursCount: { type: Number, default: 0 },
-    afterHoursPercentage: { type: Number, default: 0 },
-    avgThreadDepth: { type: Number, default: 0 },
-    sentiment: { type: Number, default: 0 },
-    adHocMeetingCount: { type: Number, default: 0 },
-    estimatedMeetingHours: { type: Number, default: 0 },
-    adHocAfterHoursMeetings: { type: Number, default: 0 },
-  },
-  calendarSignals: {
-    meetingHoursWeek: { type: Number, default: 0 },
-    afterHoursMeetings: { type: Number, default: 0 },
-    recoveryScore: { type: Number, default: 0 },
-    focusHoursWeek: { type: Number, default: 0 },
-    focusToMeetingRatio: { type: Number, default: 0 },
-  },
-
-  // Slack channel ID for integration
-  slackChannelId: { type: String },
-
-  // Google Chat space ID for integration
-  googleChatSpaceId: { type: String },
-
-  // Google Calendar ID for integration
-  calendarId: { type: String },
-
-  // Optional playbook generated by OpenAI
-  playbook: { type: String, default: '' },
-
-  // ── Composite Drift Scores (Scoring Engine v1.0) ─────────────────────────
-  // Populated by scoringEngineService.runFullScoring()
-  capacityDriftScore:     { type: Number, default: null },
-  coordinationDragScore:  { type: Number, default: null },
-  cohesionDriftScore:     { type: Number, default: null },
-  overallDriftScore:      { type: Number, default: null },
-  driftScoreUpdatedAt:    { type: Date },
-
-  // ── Work schedule config (used for after-hours detection) ────────────────
-  // timezone: IANA timezone string, e.g. 'America/New_York'
-  timezone: { type: String, default: 'UTC' },
-  workConfig: {
-    workdayStart: { type: String, default: '09:00' }, // HH:MM local time
-    workdayEnd:   { type: String, default: '17:00' }, // HH:MM local time
-  },
-
-  // ── Privacy gate flags ────────────────────────────────────────────────────
-  analyticsEnabled:    { type: Boolean, default: true },   // false when actualSize < minTeamSizeForAnalytics
-  privacyGateFiredAt:  { type: Date },
-
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 export default mongoose.model('Team', teamSchema);

@@ -15,28 +15,25 @@ import Team from '../models/team.js';
 export async function syncEmployeesFromSlack(orgId) {
   try {
     console.log('[EmployeeSync] Starting Slack employee sync for org:', orgId);
-    
+
     const org = await Organization.findById(orgId);
     if (!org || !org.integrations?.slack?.accessToken) {
       throw new Error('Slack integration not found or not connected');
     }
 
     const slackClient = new WebClient(org.integrations.slack.accessToken);
-    
+
     // Fetch all users from Slack workspace
     const response = await slackClient.users.list({
-      limit: 1000 // Adjust if you have more than 1000 employees
+      limit: 1000, // Adjust if you have more than 1000 employees
     });
 
     if (!response.ok) {
       throw new Error('Failed to fetch Slack users');
     }
 
-    const slackUsers = response.members.filter(member => 
-      !member.deleted && 
-      !member.is_bot && 
-      !member.is_app_user &&
-      member.profile?.email // Must have email
+    const slackUsers = response.members.filter(
+      (member) => !member.deleted && !member.is_bot && !member.is_app_user && member.profile?.email // Must have email
     );
 
     console.log(`[EmployeeSync] Found ${slackUsers.length} active Slack users`);
@@ -45,7 +42,7 @@ export async function syncEmployeesFromSlack(orgId) {
       created: 0,
       updated: 0,
       skipped: 0,
-      errors: []
+      errors: [],
     };
 
     // Get or create a default "Unassigned" team
@@ -56,8 +53,8 @@ export async function syncEmployeesFromSlack(orgId) {
         orgId,
         metadata: {
           function: 'Other',
-          sizeBand: '1-5'
-        }
+          sizeBand: '1-5',
+        },
       });
       await unassignedTeam.save();
       console.log('[EmployeeSync] Created "Unassigned" team');
@@ -69,17 +66,14 @@ export async function syncEmployeesFromSlack(orgId) {
         const name = slackUser.profile.real_name || slackUser.name || email.split('@')[0];
 
         // Check if user already exists
-        let user = await User.findOne({ 
-          $or: [
-            { email },
-            { 'externalIds.slackUserId': slackUser.id }
-          ]
+        let user = await User.findOne({
+          $or: [{ email }, { 'externalIds.slackUserId': slackUser.id }],
         });
 
         if (user) {
           // Update existing user with Slack info
           let updated = false;
-          
+
           if (!user.externalIds?.slackUserId) {
             user.externalIds = user.externalIds || {};
             user.externalIds.slackUserId = slackUser.id;
@@ -125,13 +119,13 @@ export async function syncEmployeesFromSlack(orgId) {
             teamId: unassignedTeam._id,
             externalIds: {
               slackUserId: slackUser.id,
-              slackTeamId: org.integrations.slack.teamId
+              slackTeamId: org.integrations.slack.teamId,
             },
             profile: {
               avatar: slackUser.profile.image_192,
               title: slackUser.profile.title,
-              department: slackUser.profile.department
-            }
+              department: slackUser.profile.department,
+            },
           });
 
           await newUser.save();
@@ -139,29 +133,34 @@ export async function syncEmployeesFromSlack(orgId) {
           console.log(`[EmployeeSync] Created new user: ${email}`);
         }
       } catch (error) {
-        console.error(`[EmployeeSync] Error processing user ${slackUser.profile?.email}:`, error.message);
+        console.error(
+          `[EmployeeSync] Error processing user ${slackUser.profile?.email}:`,
+          error.message
+        );
         syncStats.errors.push({
           email: slackUser.profile?.email,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     // Mark users who are no longer in Slack as inactive
-    const slackUserIds = slackUsers.map(u => u.id);
+    const slackUserIds = slackUsers.map((u) => u.id);
     const inactiveResult = await User.updateMany(
       {
         orgId,
         'externalIds.slackUserId': { $exists: true, $nin: slackUserIds },
-        accountStatus: { $ne: 'inactive' }
+        accountStatus: { $ne: 'inactive' },
       },
       {
-        $set: { accountStatus: 'inactive' }
+        $set: { accountStatus: 'inactive' },
       }
     );
 
     if (inactiveResult.modifiedCount > 0) {
-      console.log(`[EmployeeSync] Marked ${inactiveResult.modifiedCount} users as inactive (left Slack workspace)`);
+      console.log(
+        `[EmployeeSync] Marked ${inactiveResult.modifiedCount} users as inactive (left Slack workspace)`
+      );
     }
 
     // Update organization with sync timestamp
@@ -173,15 +172,15 @@ export async function syncEmployeesFromSlack(orgId) {
       updated: syncStats.updated,
       skipped: syncStats.skipped,
       inactivated: inactiveResult.modifiedCount,
-      errors: syncStats.errors.length
+      errors: syncStats.errors.length,
     });
 
     return {
       success: true,
       stats: {
         ...syncStats,
-        inactivated: inactiveResult.modifiedCount
-      }
+        inactivated: inactiveResult.modifiedCount,
+      },
     };
   } catch (error) {
     console.error('[EmployeeSync] Slack sync failed:', error);
@@ -196,7 +195,7 @@ export async function syncEmployeesFromSlack(orgId) {
 export async function syncEmployeesFromGoogle(orgId) {
   try {
     console.log('[EmployeeSync] Starting Google Workspace employee sync for org:', orgId);
-    
+
     const org = await Organization.findById(orgId);
     if (!org || !org.integrations?.googleChat?.accessToken) {
       throw new Error('Google Workspace integration not found or not connected');
@@ -205,12 +204,12 @@ export async function syncEmployeesFromGoogle(orgId) {
     // Note: This requires Google Directory API (Admin SDK)
     // You'll need to add the scope: https://www.googleapis.com/auth/admin.directory.user.readonly
     // For now, we'll implement the basic structure
-    
+
     const { google } = await import('googleapis');
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({
       access_token: org.integrations.googleChat.accessToken,
-      refresh_token: org.integrations.googleChat.refreshToken
+      refresh_token: org.integrations.googleChat.refreshToken,
     });
 
     const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
@@ -219,7 +218,7 @@ export async function syncEmployeesFromGoogle(orgId) {
       created: 0,
       updated: 0,
       skipped: 0,
-      errors: []
+      errors: [],
     };
 
     // Get or create "Unassigned" team
@@ -230,8 +229,8 @@ export async function syncEmployeesFromGoogle(orgId) {
         orgId,
         metadata: {
           function: 'Other',
-          sizeBand: '1-5'
-        }
+          sizeBand: '1-5',
+        },
       });
       await unassignedTeam.save();
     }
@@ -241,7 +240,7 @@ export async function syncEmployeesFromGoogle(orgId) {
       const response = await admin.users.list({
         customer: 'my_customer',
         maxResults: 500,
-        orderBy: 'email'
+        orderBy: 'email',
       });
 
       const googleUsers = response.data.users || [];
@@ -258,10 +257,7 @@ export async function syncEmployeesFromGoogle(orgId) {
 
           // Check if user exists
           let user = await User.findOne({
-            $or: [
-              { email },
-              { 'externalIds.googleUserId': googleUser.id }
-            ]
+            $or: [{ email }, { 'externalIds.googleUserId': googleUser.id }],
           });
 
           if (user) {
@@ -305,14 +301,14 @@ export async function syncEmployeesFromGoogle(orgId) {
               orgId,
               teamId: unassignedTeam._id,
               externalIds: {
-                googleUserId: googleUser.id
+                googleUserId: googleUser.id,
               },
               profile: {
                 avatar: googleUser.thumbnailPhotoUrl,
                 title: googleUser.organizations?.[0]?.title,
                 department: googleUser.organizations?.[0]?.department,
-                phone: googleUser.phones?.[0]?.value
-              }
+                phone: googleUser.phones?.[0]?.value,
+              },
             });
 
             await newUser.save();
@@ -320,24 +316,27 @@ export async function syncEmployeesFromGoogle(orgId) {
             console.log(`[EmployeeSync] Created new user from Google: ${email}`);
           }
         } catch (error) {
-          console.error(`[EmployeeSync] Error processing Google user ${googleUser.primaryEmail}:`, error.message);
+          console.error(
+            `[EmployeeSync] Error processing Google user ${googleUser.primaryEmail}:`,
+            error.message
+          );
           syncStats.errors.push({
             email: googleUser.primaryEmail,
-            error: error.message
+            error: error.message,
           });
         }
       }
 
       // Mark inactive users
-      const googleUserIds = googleUsers.map(u => u.id);
+      const googleUserIds = googleUsers.map((u) => u.id);
       const inactiveResult = await User.updateMany(
         {
           orgId,
           'externalIds.googleUserId': { $exists: true, $nin: googleUserIds },
-          accountStatus: { $ne: 'inactive' }
+          accountStatus: { $ne: 'inactive' },
         },
         {
-          $set: { accountStatus: 'inactive' }
+          $set: { accountStatus: 'inactive' },
         }
       );
 
@@ -350,25 +349,27 @@ export async function syncEmployeesFromGoogle(orgId) {
         updated: syncStats.updated,
         skipped: syncStats.skipped,
         inactivated: inactiveResult.modifiedCount,
-        errors: syncStats.errors.length
+        errors: syncStats.errors.length,
       });
 
       return {
         success: true,
         stats: {
           ...syncStats,
-          inactivated: inactiveResult.modifiedCount
-        }
+          inactivated: inactiveResult.modifiedCount,
+        },
       };
     } catch (apiError) {
       // If Directory API is not enabled or no permission, return partial success
       if (apiError.code === 403 || apiError.code === 404) {
         console.warn('[EmployeeSync] Google Directory API not available. Employee sync skipped.');
-        console.warn('[EmployeeSync] To enable: Add Admin SDK API and scope: https://www.googleapis.com/auth/admin.directory.user.readonly');
+        console.warn(
+          '[EmployeeSync] To enable: Add Admin SDK API and scope: https://www.googleapis.com/auth/admin.directory.user.readonly'
+        );
         return {
           success: false,
           message: 'Google Directory API not enabled. Please enable Admin SDK.',
-          stats: syncStats
+          stats: syncStats,
         };
       }
       throw apiError;
@@ -391,9 +392,9 @@ export async function getSyncStatus(orgId) {
   const totalUsers = await User.countDocuments({ orgId });
   const pendingUsers = await User.countDocuments({ orgId, accountStatus: 'pending' });
   const activeUsers = await User.countDocuments({ orgId, accountStatus: 'active' });
-  const unassignedUsers = await User.countDocuments({ 
-    orgId, 
-    teamId: await Team.findOne({ orgId, name: 'Unassigned' }).then(t => t?._id)
+  const unassignedUsers = await User.countDocuments({
+    orgId,
+    teamId: await Team.findOne({ orgId, name: 'Unassigned' }).then((t) => t?._id),
   });
 
   return {
@@ -406,7 +407,7 @@ export async function getSyncStatus(orgId) {
     lastMicrosoftSync: org.integrations?.microsoft?.lastEmployeeSync,
     slackConnected: !!org.integrations?.slack?.accessToken,
     googleConnected: !!org.integrations?.googleChat?.accessToken,
-    microsoftConnected: !!org.integrations?.microsoft?.accessToken
+    microsoftConnected: !!org.integrations?.microsoft?.accessToken,
   };
 }
 
@@ -437,7 +438,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       created: 0,
       updated: 0,
       skipped: 0,
-      errors: []
+      errors: [],
     };
 
     // Get or create "Unassigned" team for this org
@@ -448,8 +449,8 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
         orgId,
         metadata: {
           function: 'Other',
-          sizeBand: '1-5'
-        }
+          sizeBand: '1-5',
+        },
       });
       await unassignedTeam.save();
       console.log('[EmployeeSync] Created "Unassigned" team for org:', orgId);
@@ -457,24 +458,28 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
 
     // Fetch users from Microsoft Graph (with pagination)
     let allMsUsers = [];
-    let nextLink = 'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,mobilePhone,accountEnabled';
+    let nextLink =
+      'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,mobilePhone,accountEnabled';
 
     while (nextLink) {
       const response = await fetch(nextLink, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (!response.ok) {
         const errBody = await response.text();
         // If 403 Forbidden, the User.Read.All scope isn't granted yet
         if (response.status === 403) {
-          console.warn('[EmployeeSync] Microsoft User.Read.All not granted. Employee list unavailable.');
+          console.warn(
+            '[EmployeeSync] Microsoft User.Read.All not granted. Employee list unavailable.'
+          );
           console.warn('[EmployeeSync] User needs to re-authorize with the updated OAuth scopes.');
           return {
             success: false,
             needsReauth: true,
-            message: 'User.Read.All permission not granted. Please disconnect and reconnect Microsoft to grant employee listing permission.',
-            stats: syncStats
+            message:
+              'User.Read.All permission not granted. Please disconnect and reconnect Microsoft to grant employee listing permission.',
+            stats: syncStats,
           };
         }
         throw new Error(`Microsoft Graph /users failed: ${response.status} ${errBody}`);
@@ -487,9 +492,8 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
     }
 
     // Filter to enabled users with email
-    const activeUsers = allMsUsers.filter(u =>
-      u.accountEnabled !== false &&
-      (u.mail || u.userPrincipalName)
+    const activeUsers = allMsUsers.filter(
+      (u) => u.accountEnabled !== false && (u.mail || u.userPrincipalName)
     );
 
     // Filter by organization's email domain (if set) to avoid importing
@@ -497,16 +501,22 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
     const orgDomain = org.domain?.toLowerCase().replace(/^@/, '');
     let domainFilteredUsers = activeUsers;
     if (orgDomain) {
-      domainFilteredUsers = activeUsers.filter(u => {
+      domainFilteredUsers = activeUsers.filter((u) => {
         const email = (u.mail || u.userPrincipalName || '').toLowerCase();
         return email.endsWith(`@${orgDomain}`);
       });
-      console.log(`[EmployeeSync] Domain filter @${orgDomain}: ${activeUsers.length} → ${domainFilteredUsers.length} users`);
+      console.log(
+        `[EmployeeSync] Domain filter @${orgDomain}: ${activeUsers.length} → ${domainFilteredUsers.length} users`
+      );
     } else {
-      console.log(`[EmployeeSync] No org domain set — importing all ${activeUsers.length} tenant users. Set org.domain to filter.`);
+      console.log(
+        `[EmployeeSync] No org domain set — importing all ${activeUsers.length} tenant users. Set org.domain to filter.`
+      );
     }
 
-    console.log(`[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`);
+    console.log(
+      `[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`
+    );
 
     for (const msUser of domainFilteredUsers) {
       try {
@@ -514,17 +524,18 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
         const name = msUser.displayName || email.split('@')[0];
 
         // Skip service accounts / shared mailboxes (heuristic)
-        if (email.startsWith('no-reply') || email.startsWith('noreply') || email.includes('shared')) {
+        if (
+          email.startsWith('no-reply') ||
+          email.startsWith('noreply') ||
+          email.includes('shared')
+        ) {
           syncStats.skipped++;
           continue;
         }
 
         // Check if user already exists
         let user = await User.findOne({
-          $or: [
-            { email },
-            { 'externalIds.microsoftUserId': msUser.id }
-          ]
+          $or: [{ email }, { 'externalIds.microsoftUserId': msUser.id }],
         });
 
         if (user) {
@@ -543,7 +554,10 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
             updated = true;
           }
 
-          if (msUser.department && (!user.profile?.department || user.profile.department !== msUser.department)) {
+          if (
+            msUser.department &&
+            (!user.profile?.department || user.profile.department !== msUser.department)
+          ) {
             user.profile = user.profile || {};
             user.profile.department = msUser.department;
             updated = true;
@@ -573,14 +587,14 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
             orgId,
             teamId: unassignedTeam._id,
             externalIds: {
-              microsoftUserId: msUser.id
+              microsoftUserId: msUser.id,
             },
             profile: {
               title: msUser.jobTitle || undefined,
               department: msUser.department || undefined,
               phone: msUser.mobilePhone || undefined,
-              officeLocation: msUser.officeLocation || undefined
-            }
+              officeLocation: msUser.officeLocation || undefined,
+            },
           });
 
           await newUser.save();
@@ -588,29 +602,32 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
           console.log(`[EmployeeSync] Created new user from Microsoft: ${email}`);
         }
       } catch (error) {
-        console.error(`[EmployeeSync] Error processing MS user ${msUser.mail || msUser.userPrincipalName}:`, error.message);
+        console.error(
+          `[EmployeeSync] Error processing MS user ${msUser.mail || msUser.userPrincipalName}:`,
+          error.message
+        );
         syncStats.errors.push({
           email: msUser.mail || msUser.userPrincipalName,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     // Update last sync timestamp
     await Organization.findByIdAndUpdate(orgId, {
-      $set: { 'integrations.microsoft.lastEmployeeSync': new Date() }
+      $set: { 'integrations.microsoft.lastEmployeeSync': new Date() },
     });
 
     console.log('[EmployeeSync] Microsoft sync complete:', {
       created: syncStats.created,
       updated: syncStats.updated,
       skipped: syncStats.skipped,
-      errors: syncStats.errors.length
+      errors: syncStats.errors.length,
     });
 
     return {
       success: true,
-      stats: syncStats
+      stats: syncStats,
     };
   } catch (error) {
     console.error('[EmployeeSync] Microsoft sync failed:', error);

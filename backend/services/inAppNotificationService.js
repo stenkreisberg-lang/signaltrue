@@ -19,9 +19,7 @@ export async function createInAppNotification(data) {
  */
 export async function broadcastInAppNotification(userIds, notificationData) {
   const notifications = await Promise.all(
-    userIds.map(userId => 
-      createInAppNotification({ ...notificationData, userId })
-    )
+    userIds.map((userId) => createInAppNotification({ ...notificationData, userId }))
   );
   return notifications;
 }
@@ -31,8 +29,8 @@ export async function broadcastInAppNotification(userIds, notificationData) {
  */
 export async function notifyOrganization(orgId, notificationData) {
   const users = await User.find({ orgId, status: 'active' }).select('_id').lean();
-  const userIds = users.map(u => u._id);
-  
+  const userIds = users.map((u) => u._id);
+
   return await broadcastInAppNotification(userIds, { ...notificationData, orgId });
 }
 
@@ -45,38 +43,34 @@ export async function getUserNotifications(userId, options = {}) {
     offset = 0,
     type = null,
     unreadOnly = false,
-    includeDismissed = false
+    includeDismissed = false,
   } = options;
-  
+
   const query = { userId };
-  
+
   if (type) {
     query.type = Array.isArray(type) ? { $in: type } : type;
   }
-  
+
   if (unreadOnly) {
     query.read = false;
   }
-  
+
   if (!includeDismissed) {
     query.dismissed = false;
   }
-  
+
   const [notifications, total, unreadCount] = await Promise.all([
-    Notification.find(query)
-      .sort({ createdAt: -1 })
-      .skip(offset)
-      .limit(limit)
-      .lean(),
+    Notification.find(query).sort({ createdAt: -1 }).skip(offset).limit(limit).lean(),
     Notification.countDocuments(query),
-    Notification.getUnreadCount(userId)
+    Notification.getUnreadCount(userId),
   ]);
-  
+
   return {
     notifications,
     total,
     unreadCount,
-    hasMore: offset + notifications.length < total
+    hasMore: offset + notifications.length < total,
   };
 }
 
@@ -92,11 +86,11 @@ export async function getUnreadCount(userId) {
  */
 export async function markAsRead(notificationId, userId) {
   const notification = await Notification.findOne({ _id: notificationId, userId });
-  
+
   if (!notification) {
     throw new Error('Notification not found');
   }
-  
+
   return await notification.markAsRead();
 }
 
@@ -113,11 +107,11 @@ export async function markAllAsRead(userId) {
  */
 export async function dismissNotification(notificationId, userId) {
   const notification = await Notification.findOne({ _id: notificationId, userId });
-  
+
   if (!notification) {
     throw new Error('Notification not found');
   }
-  
+
   return await notification.dismiss();
 }
 
@@ -138,10 +132,11 @@ export async function deleteNotification(notificationId, userId) {
  */
 export async function notifyMetricAlert(userId, orgId, data) {
   const { teamId, teamName, metricType, currentValue, previousValue, threshold, alertLevel } = data;
-  
+
   const direction = currentValue > previousValue ? '↑' : '↓';
-  const priority = alertLevel === 'critical' ? 'urgent' : alertLevel === 'warning' ? 'high' : 'normal';
-  
+  const priority =
+    alertLevel === 'critical' ? 'urgent' : alertLevel === 'warning' ? 'high' : 'normal';
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -156,8 +151,8 @@ export async function notifyMetricAlert(userId, orgId, data) {
       previousValue,
       threshold,
       actionUrl: `/dashboard/teams/${teamId}`,
-      actionLabel: 'View Team'
-    }
+      actionLabel: 'View Team',
+    },
   });
 }
 
@@ -166,7 +161,7 @@ export async function notifyMetricAlert(userId, orgId, data) {
  */
 export async function notifyDriftDetected(userId, orgId, data) {
   const { teamId, teamName, driftEventId, metricType, magnitude, direction } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -180,8 +175,8 @@ export async function notifyDriftDetected(userId, orgId, data) {
       metricType,
       metricValue: magnitude,
       actionUrl: `/dashboard/drift/${driftEventId}`,
-      actionLabel: 'View Drift'
-    }
+      actionLabel: 'View Drift',
+    },
   });
 }
 
@@ -190,7 +185,7 @@ export async function notifyDriftDetected(userId, orgId, data) {
  */
 export async function notifyInterventionDue(userId, orgId, data) {
   const { interventionId, teamId, teamName, actionType } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -202,8 +197,8 @@ export async function notifyInterventionDue(userId, orgId, data) {
       interventionId,
       teamId,
       actionUrl: `/interventions/${interventionId}`,
-      actionLabel: 'Record Outcome'
-    }
+      actionLabel: 'Record Outcome',
+    },
   });
 }
 
@@ -212,7 +207,7 @@ export async function notifyInterventionDue(userId, orgId, data) {
  */
 export async function notifyInterventionComplete(userId, orgId, data) {
   const { interventionId, teamId, teamName, actionType, impact } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -225,8 +220,8 @@ export async function notifyInterventionComplete(userId, orgId, data) {
       teamId,
       metricValue: impact,
       actionUrl: `/interventions/${interventionId}`,
-      actionLabel: 'View Results'
-    }
+      actionLabel: 'View Results',
+    },
   });
 }
 
@@ -235,11 +230,11 @@ export async function notifyInterventionComplete(userId, orgId, data) {
  */
 export async function notifyGoalProgress(userId, orgId, data) {
   const { goalId, goalTitle, progress, milestone } = data;
-  
-  const message = milestone 
+
+  const message = milestone
     ? `Milestone reached: "${milestone}" on "${goalTitle}"`
     : `Goal "${goalTitle}" is now at ${progress}% progress`;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -251,8 +246,8 @@ export async function notifyGoalProgress(userId, orgId, data) {
       goalId,
       metricValue: progress,
       actionUrl: `/goals/${goalId}`,
-      actionLabel: 'View Goal'
-    }
+      actionLabel: 'View Goal',
+    },
   });
 }
 
@@ -261,7 +256,7 @@ export async function notifyGoalProgress(userId, orgId, data) {
  */
 export async function notifyGoalAtRisk(userId, orgId, data) {
   const { goalId, goalTitle, progress, daysRemaining } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -273,8 +268,8 @@ export async function notifyGoalAtRisk(userId, orgId, data) {
       goalId,
       metricValue: progress,
       actionUrl: `/goals/${goalId}`,
-      actionLabel: 'View Goal'
-    }
+      actionLabel: 'View Goal',
+    },
   });
 }
 
@@ -283,7 +278,7 @@ export async function notifyGoalAtRisk(userId, orgId, data) {
  */
 export async function notifyRecommendation(userId, orgId, data) {
   const { teamId, teamName, recommendationType, reason, confidence } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -295,8 +290,8 @@ export async function notifyRecommendation(userId, orgId, data) {
       teamId,
       metadata: { recommendationType, reason, confidence },
       actionUrl: `/dashboard/recommendations`,
-      actionLabel: 'View Recommendation'
-    }
+      actionLabel: 'View Recommendation',
+    },
   });
 }
 
@@ -305,7 +300,7 @@ export async function notifyRecommendation(userId, orgId, data) {
  */
 export async function notifyCrisis(userId, orgId, data) {
   const { teamId, teamName, crisisType, severity, description } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -317,8 +312,8 @@ export async function notifyCrisis(userId, orgId, data) {
       teamId,
       metadata: { crisisType, severity },
       actionUrl: `/dashboard/crisis`,
-      actionLabel: 'View Crisis'
-    }
+      actionLabel: 'View Crisis',
+    },
   });
 }
 
@@ -327,7 +322,7 @@ export async function notifyCrisis(userId, orgId, data) {
  */
 export async function notifySystem(userId, orgId, data) {
   const { title, message, actionUrl, actionLabel } = data;
-  
+
   return await createInAppNotification({
     userId,
     orgId,
@@ -337,8 +332,8 @@ export async function notifySystem(userId, orgId, data) {
     message,
     data: {
       actionUrl,
-      actionLabel
-    }
+      actionLabel,
+    },
   });
 }
 
@@ -347,12 +342,12 @@ export async function notifySystem(userId, orgId, data) {
  */
 export async function sendBroadcast(orgId, data, senderId) {
   const { title, message, targetOrgId } = data;
-  
+
   const query = targetOrgId ? { orgId: targetOrgId, status: 'active' } : { status: 'active' };
   const users = await User.find(query).select('_id orgId').lean();
-  
+
   const notifications = await Promise.all(
-    users.map(user => 
+    users.map((user) =>
       createInAppNotification({
         userId: user._id,
         orgId: user.orgId,
@@ -361,15 +356,15 @@ export async function sendBroadcast(orgId, data, senderId) {
         title,
         message,
         data: {
-          metadata: { sentBy: senderId }
-        }
+          metadata: { sentBy: senderId },
+        },
       })
     )
   );
-  
+
   return {
     sent: notifications.length,
-    message: `Broadcast sent to ${notifications.length} users`
+    message: `Broadcast sent to ${notifications.length} users`,
   };
 }
 
@@ -383,11 +378,12 @@ export async function notifyWelcome(userId, orgId) {
     type: 'welcome',
     priority: 'normal',
     title: 'Welcome to SignalTrue! 👋',
-    message: 'Your account is set up. Start by connecting your integrations to see team health insights.',
+    message:
+      'Your account is set up. Start by connecting your integrations to see team health insights.',
     data: {
       actionUrl: '/settings/integrations',
-      actionLabel: 'Connect Integrations'
-    }
+      actionLabel: 'Connect Integrations',
+    },
   });
 }
 
@@ -396,12 +392,12 @@ export async function notifyWelcome(userId, orgId) {
  */
 export async function cleanupOldNotifications(daysOld = 60) {
   const cutoff = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
-  
+
   const result = await Notification.deleteMany({
     createdAt: { $lt: cutoff },
-    read: true
+    read: true,
   });
-  
+
   return { deleted: result.deletedCount };
 }
 
@@ -426,5 +422,5 @@ export default {
   notifySystem,
   sendBroadcast,
   notifyWelcome,
-  cleanupOldNotifications
+  cleanupOldNotifications,
 };

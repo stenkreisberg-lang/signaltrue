@@ -13,16 +13,16 @@ const getResendClient = () => {
 
 // Question data for email summary
 const questions = [
-  { id: 1, text: "How many employees does your company have?" },
-  { id: 2, text: "How are your teams structured?" },
-  { id: 3, text: "How do most people work?" },
-  { id: 4, text: "Where does daily collaboration mainly happen?" },
-  { id: 5, text: "How would you describe your current meeting culture?" },
-  { id: 6, text: "How early can you detect burnout risk today?" },
-  { id: 7, text: "How often are you surprised by attrition?" },
-  { id: 8, text: "How confident are you that workload is fairly distributed?" },
-  { id: 9, text: "Is your HR work more reactive or preventive?" },
-  { id: 10, text: "How involved is leadership in people health early?" },
+  { id: 1, text: 'How many employees does your company have?' },
+  { id: 2, text: 'How are your teams structured?' },
+  { id: 3, text: 'How do most people work?' },
+  { id: 4, text: 'Where does daily collaboration mainly happen?' },
+  { id: 5, text: 'How would you describe your current meeting culture?' },
+  { id: 6, text: 'How early can you detect burnout risk today?' },
+  { id: 7, text: 'How often are you surprised by attrition?' },
+  { id: 8, text: 'How confident are you that workload is fairly distributed?' },
+  { id: 9, text: 'Is your HR work more reactive or preventive?' },
+  { id: 10, text: 'How involved is leadership in people health early?' },
 ];
 
 // Tier configurations
@@ -33,8 +33,8 @@ const tierConfig = {
     bgColor: '#dcfce7',
     summary: 'SignalTrue is designed exactly for organizations like yours.',
     recommendations: [
-      'Your team structure and collaboration patterns are ideal for SignalTrue\'s team-level analytics.',
-      'You\'ll benefit most from our early-warning signals for burnout and attrition risk.',
+      "Your team structure and collaboration patterns are ideal for SignalTrue's team-level analytics.",
+      "You'll benefit most from our early-warning signals for burnout and attrition risk.",
       'Consider starting with a focused pilot on 2-3 teams to see immediate value.',
     ],
   },
@@ -57,7 +57,7 @@ const tierConfig = {
     recommendations: [
       'As your organization grows, team-level visibility becomes more critical.',
       'Consider SignalTrue once you have multiple teams using Slack, Google Chat, or Microsoft Teams.',
-      'We\'d love to stay in touch and help when the timing is right.',
+      "We'd love to stay in touch and help when the timing is right.",
     ],
   },
 };
@@ -65,24 +65,26 @@ const tierConfig = {
 // Generate branded HTML email for user
 const generateUserEmail = (submission) => {
   const config = tierConfig[submission.tier] || tierConfig['good-fit'];
-  
-  const answersHtml = submission.answers.map((answer) => {
-    const question = questions.find(q => q.id === answer.questionId);
-    return `
+
+  const answersHtml = submission.answers
+    .map((answer) => {
+      const question = questions.find((q) => q.id === answer.questionId);
+      return `
       <tr>
         <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #374151;">
           ${question?.text || `Question ${answer.questionId}`}
         </td>
         <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #6366f1; font-weight: 600;">
-          ${answer.value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          ${answer.value.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
         </td>
       </tr>
     `;
-  }).join('');
+    })
+    .join('');
 
-  const recommendationsHtml = config.recommendations.map(rec => 
-    `<li style="margin-bottom: 8px; color: #374151;">${rec}</li>`
-  ).join('');
+  const recommendationsHtml = config.recommendations
+    .map((rec) => `<li style="margin-bottom: 8px; color: #374151;">${rec}</li>`)
+    .join('');
 
   return `
 <!DOCTYPE html>
@@ -214,18 +216,20 @@ const generateUserEmail = (submission) => {
 // Generate internal notification email
 const generateInternalEmail = (submission) => {
   const config = tierConfig[submission.tier] || tierConfig['good-fit'];
-  
+
   // Extract company size (Q1) and work model (Q3) for quick reference
-  const companySizeAnswer = submission.answers.find(a => a.questionId === 1);
-  const workModelAnswer = submission.answers.find(a => a.questionId === 3);
-  
+  const companySizeAnswer = submission.answers.find((a) => a.questionId === 1);
+  const workModelAnswer = submission.answers.find((a) => a.questionId === 3);
+
   const companySize = companySizeAnswer?.value?.replace(/-/g, ' ') || 'Not provided';
   const workModel = workModelAnswer?.value?.replace(/-/g, ' ') || 'Not provided';
-  
-  const answersText = submission.answers.map((answer) => {
-    const question = questions.find(q => q.id === answer.questionId);
-    return `  - Q${answer.questionId}: ${question?.text || ''}\n    Answer: ${answer.value}`;
-  }).join('\n');
+
+  const answersText = submission.answers
+    .map((answer) => {
+      const question = questions.find((q) => q.id === answer.questionId);
+      return `  - Q${answer.questionId}: ${question?.text || ''}\n    Answer: ${answer.value}`;
+    })
+    .join('\n');
 
   return `
 🚨 New SignalTrue Fit Assessment Lead
@@ -259,8 +263,8 @@ router.post('/submit', async (req, res) => {
 
     // Validate required fields
     if (!email || !score || !tier || !answers) {
-      return res.status(400).json({ 
-        message: 'Missing required fields: email, score, tier, answers' 
+      return res.status(400).json({
+        message: 'Missing required fields: email, score, tier, answers',
       });
     }
 
@@ -289,7 +293,7 @@ router.post('/submit', async (req, res) => {
       // Send branded email to user
       // Use signaltrue.ai domain (verified in Resend)
       const fromEmail = 'SignalTrue <notifications@signaltrue.ai>';
-      
+
       try {
         await resend.emails.send({
           from: fromEmail,
@@ -321,11 +325,10 @@ router.post('/submit', async (req, res) => {
       console.log('Fit Assessment Submission:', JSON.stringify(submission, null, 2));
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      message: 'Assessment submitted successfully' 
+      message: 'Assessment submitted successfully',
     });
-
   } catch (error) {
     console.error('❌ Fit questionnaire submission error:', error.message);
     res.status(500).json({ message: 'Failed to submit assessment' });

@@ -17,20 +17,29 @@ const org = await Organization.findOne({ domain: 'nobeldigital.ee' });
 const conns = await IntegrationConnection.find({ orgId: org._id }).lean();
 console.log('IntegrationConnections for NobelDigital:', conns.length);
 for (const c of conns) {
-  console.log(`  provider=${c.provider}, platform=${c.platform}, type=${c.type}, hasAccessToken=${!!c.accessToken}`);
+  console.log(
+    `  provider=${c.provider}, platform=${c.platform}, type=${c.type}, hasAccessToken=${!!c.accessToken}`
+  );
 }
 
 // Check org.integrations embedded doc
 console.log('\nOrg.integrations:');
 const integrations = org.integrations || {};
 if (integrations.microsoft) {
-  console.log('  microsoft:', JSON.stringify({
-    connected: integrations.microsoft.connected,
-    scope: integrations.microsoft.scope,
-    hasAccessToken: !!integrations.microsoft.accessToken,
-    tokenExpiry: integrations.microsoft.tokenExpiry,
-    email: integrations.microsoft.email,
-  }, null, 2));
+  console.log(
+    '  microsoft:',
+    JSON.stringify(
+      {
+        connected: integrations.microsoft.connected,
+        scope: integrations.microsoft.scope,
+        hasAccessToken: !!integrations.microsoft.accessToken,
+        tokenExpiry: integrations.microsoft.tokenExpiry,
+        email: integrations.microsoft.email,
+      },
+      null,
+      2
+    )
+  );
 }
 
 await mongoose.disconnect();

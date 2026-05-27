@@ -15,41 +15,43 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
   }
 
   const statusConfig = {
-    'Green': { 
+    Green: {
       color: 'green',
       bgColor: 'bg-green-900/20',
       borderColor: 'border-green-700',
       textColor: 'text-green-400',
-      icon: '✓'
+      icon: '✓',
     },
-    'Yellow': { 
+    Yellow: {
       color: 'yellow',
       bgColor: 'bg-yellow-900/20',
       borderColor: 'border-yellow-700',
       textColor: 'text-yellow-400',
-      icon: '⚠️'
+      icon: '⚠️',
     },
-    'Red': { 
+    Red: {
       color: 'red',
       bgColor: 'bg-red-900/20',
       borderColor: 'border-red-700',
       textColor: 'text-red-400',
-      icon: '🔴'
-    }
+      icon: '🔴',
+    },
   };
 
   const config = statusConfig[capacity.status] || statusConfig['Green'];
 
   const trendConfig = {
-    'improving': { icon: '↗', color: 'text-green-400' },
-    'stable': { icon: '→', color: 'text-slate-400' },
-    'declining': { icon: '↘', color: 'text-red-400' }
+    improving: { icon: '↗', color: 'text-green-400' },
+    stable: { icon: '→', color: 'text-slate-400' },
+    declining: { icon: '↘', color: 'text-red-400' },
   };
 
   const trend = trendConfig[capacity.deviation?.trend] || trendConfig['stable'];
 
   return (
-    <div className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}>
+    <div
+      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-slate-100">Capacity Status</h2>
@@ -61,22 +63,14 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
         <div className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg`}>
           <span className={`font-semibold ${config.textColor}`}>{capacity.status}</span>
         </div>
-        <div className="text-3xl font-bold text-slate-100">
-          {capacity.capacityScore}/100
-        </div>
-        {capacity.deviation && (
-          <div className={`text-lg ${trend.color}`}>
-            {trend.icon}
-          </div>
-        )}
+        <div className="text-3xl font-bold text-slate-100">{capacity.capacityScore}/100</div>
+        {capacity.deviation && <div className={`text-lg ${trend.color}`}>{trend.icon}</div>}
       </div>
 
       {/* ONE-SENTENCE EXPLANATION (CRITICAL - ALWAYS SHOW) */}
       {capacity.explanation && (
         <div className="bg-slate-900/50 rounded-lg p-3 mb-4">
-          <p className="text-slate-200 leading-relaxed">
-            {capacity.explanation}
-          </p>
+          <p className="text-slate-200 leading-relaxed">{capacity.explanation}</p>
         </div>
       )}
 
@@ -90,11 +84,11 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
               </h3>
               <div className="space-y-2">
                 {capacity.drivers.map((driver, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`flex items-center justify-between rounded px-3 py-2 ${
-                      driver.direction === 'negative' 
-                        ? 'bg-red-900/10 border border-red-900/30' 
+                      driver.direction === 'negative'
+                        ? 'bg-red-900/10 border border-red-900/30'
                         : 'bg-green-900/10 border border-green-900/30'
                     }`}
                   >
@@ -103,12 +97,14 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
                       <span className="text-slate-300">{driver.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={driver.direction === 'negative' ? 'text-red-400' : 'text-green-400'}>
+                      <span
+                        className={
+                          driver.direction === 'negative' ? 'text-red-400' : 'text-green-400'
+                        }
+                      >
                         {driver.direction === 'negative' ? '↓' : '↑'}
                       </span>
-                      <span className="font-semibold text-slate-300">
-                        {driver.change}
-                      </span>
+                      <span className="font-semibold text-slate-300">{driver.change}</span>
                     </div>
                   </div>
                 ))}
@@ -121,10 +117,13 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
             <div className="mb-4 bg-slate-900/30 rounded-lg p-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-400">Change from baseline:</span>
-                <span className={`font-semibold ${
-                  capacity.deviation.absolute > 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {capacity.deviation.absolute > 0 ? '+' : ''}{capacity.deviation.absolute?.toFixed(0)} points
+                <span
+                  className={`font-semibold ${
+                    capacity.deviation.absolute > 0 ? 'text-green-400' : 'text-red-400'
+                  }`}
+                >
+                  {capacity.deviation.absolute > 0 ? '+' : ''}
+                  {capacity.deviation.absolute?.toFixed(0)} points
                 </span>
               </div>
             </div>
@@ -138,7 +137,10 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
               </h3>
               <div className="space-y-2">
                 {capacity.recommendedActions.map((action, i) => (
-                  <div key={i} className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-2">
+                  <div
+                    key={i}
+                    className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-2"
+                  >
                     <div className="font-semibold text-blue-400 text-sm">{action.action}</div>
                     {action.expectedEffect && (
                       <div className="text-xs text-slate-400 mt-1">{action.expectedEffect}</div>
@@ -153,14 +155,14 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
           {capacity.warnings && capacity.warnings.length > 0 && (
             <div className="mb-4">
               {capacity.warnings.map((warning, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`rounded-lg px-3 py-2 mb-2 ${
-                    warning.severity === 'critical' 
-                      ? 'bg-red-900/20 border border-red-700 text-red-400' 
+                    warning.severity === 'critical'
+                      ? 'bg-red-900/20 border border-red-700 text-red-400'
                       : warning.severity === 'warning'
-                      ? 'bg-yellow-900/20 border border-yellow-700 text-yellow-400'
-                      : 'bg-blue-900/20 border border-blue-700 text-blue-400'
+                        ? 'bg-yellow-900/20 border border-yellow-700 text-yellow-400'
+                        : 'bg-blue-900/20 border border-blue-700 text-blue-400'
                   }`}
                 >
                   <span className="text-sm">{warning.message}</span>
@@ -171,7 +173,7 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
 
           {/* Interpretation */}
           <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
-            {capacity.interpretation || 
+            {capacity.interpretation ||
               "Capacity reflects the team's ability to sustain current workload without long-term strain. Changes are driven by observable working patterns, not self-reported sentiment."}
           </div>
         </>

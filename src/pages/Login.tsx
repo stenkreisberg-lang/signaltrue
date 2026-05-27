@@ -1,51 +1,51 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Activity } from "lucide-react";
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Activity } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || 'Login failed');
       }
 
       // Store token
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("orgId", data.user.orgId);
-      localStorage.setItem("teamId", data.user.teamId);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('orgId', data.user.orgId);
+      localStorage.setItem('teamId', data.user.teamId);
 
       // Redirect based on role
       if (data.user.role === 'master_admin' && !data.user.orgId) {
         // Superadmin users go to superadmin dashboard
-        navigate("/superadmin");
+        navigate('/superadmin');
       } else {
         // Regular users go to dashboard (will route based on role/onboarding status)
-        navigate("/dashboard");
+        navigate('/dashboard');
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -68,15 +68,13 @@ const Login = () => {
           {/* Context text per spec */}
           <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
             <p className="text-sm text-muted-foreground text-center">
-              You're entering a system designed to reveal early organizational strain. 
+              You're entering a system designed to reveal early organizational strain.
               <strong className="text-foreground"> Not to monitor people.</strong>
             </p>
           </div>
 
           <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
-          <p className="text-muted-foreground mb-6">
-            Sign in to your account
-          </p>
+          <p className="text-muted-foreground mb-6">Sign in to your account</p>
 
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
@@ -114,17 +112,13 @@ const Login = () => {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Sign in"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don't have an account?{' '}
             <Link to="/register" className="text-primary hover:underline">
               Sign up
             </Link>

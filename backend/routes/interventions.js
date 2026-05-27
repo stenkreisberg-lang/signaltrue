@@ -20,8 +20,19 @@ const router = express.Router();
  */
 router.post('/', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
-    const { signalId, teamId, orgId, signalType, actionTaken, actionType, expectedEffect, effort, timeframe, metricBefore } = req.body;
-    
+    const {
+      signalId,
+      teamId,
+      orgId,
+      signalType,
+      actionTaken,
+      actionType,
+      expectedEffect,
+      effort,
+      timeframe,
+      metricBefore,
+    } = req.body;
+
     let resolvedTeamId = teamId;
     let resolvedOrgId = orgId;
     let resolvedSignalType = signalType;
@@ -39,9 +50,11 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       resolvedMetricBefore = metricBefore || signal.currentValue;
     } else if (!teamId || !orgId) {
       // Team-centric intervention requires teamId and orgId when no signalId
-      return res.status(400).json({ message: 'Either signalId or both teamId and orgId are required' });
+      return res
+        .status(400)
+        .json({ message: 'Either signalId or both teamId and orgId are required' });
     }
-    
+
     // Create intervention
     const intervention = new Intervention({
       signalId: signalId || undefined,
@@ -55,17 +68,17 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       timeframe,
       startDate: new Date(),
       outcomeDelta: {
-        metricBefore: resolvedMetricBefore
+        metricBefore: resolvedMetricBefore,
       },
-      createdBy: req.user.userId
+      createdBy: req.user.userId,
     });
-    
+
     await intervention.save();
-    
+
     res.status(201).json({
       message: 'Intervention logged successfully',
       intervention,
-      recheckDate: intervention.recheckDate
+      recheckDate: intervention.recheckDate,
     });
   } catch (error) {
     console.error('[Interventions] Error creating intervention:', error);
@@ -81,24 +94,26 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
 router.get('/pending', authenticateToken, requireTier('detection'), async (req, res) => {
   try {
     const now = new Date();
-    
+
     const pendingInterventions = await Intervention.find({
       orgId: req.user.orgId,
       status: { $in: ['active', 'pending-recheck'] },
-      recheckDate: { $lte: now }
+      recheckDate: { $lte: now },
     })
       .populate('signalId', 'signalType currentValue severity')
       .populate('teamId', 'name')
       .sort({ recheckDate: 1 })
       .limit(20);
-    
+
     res.json({
       count: pendingInterventions.length,
-      interventions: pendingInterventions
+      interventions: pendingInterventions,
     });
   } catch (error) {
     console.error('[Interventions] Error fetching pending:', error);
-    res.status(500).json({ message: 'Failed to fetch pending interventions', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to fetch pending interventions', error: error.message });
   }
 });
 
@@ -111,19 +126,19 @@ router.get('/team/:teamId', authenticateToken, requireTier('detection'), async (
   try {
     const { teamId } = req.params;
     const { status } = req.query;
-    
+
     const filter = { teamId };
     if (status) {
       filter.status = status;
     }
-    
+
     const interventions = await Intervention.find(filter)
       .populate('signalId', 'signalType currentValue severity detectedAt')
       .populate('createdBy', 'name email')
       .populate('acknowledgedBy', 'name email')
       .sort({ createdAt: -1 })
       .limit(50);
-    
+
     res.json({ interventions });
   } catch (error) {
     console.error('[Interventions] Error fetching team interventions:', error);
@@ -140,31 +155,31 @@ router.put('/:id/outcome', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { metricAfter, userNotes } = req.body;
-    
+
     const intervention = await Intervention.findById(id);
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
-    
+
     // If metricAfter provided, compute outcome
     if (metricAfter !== undefined) {
       await intervention.computeOutcome(metricAfter);
     }
-    
+
     // Mark as acknowledged
     intervention.acknowledgedBy = req.user.userId;
     intervention.acknowledgedAt = new Date();
     intervention.status = 'completed';
-    
+
     if (userNotes) {
       intervention.userNotes = userNotes;
     }
-    
+
     await intervention.save();
-    
+
     res.json({
       message: 'Intervention outcome updated',
-      intervention
+      intervention,
     });
   } catch (error) {
     console.error('[Interventions] Error updating outcome:', error);
@@ -179,40 +194,40 @@ router.put('/:id/outcome', authenticateToken, async (req, res) => {
 router.post('/:id/auto-compute', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const intervention = await Intervention.findById(id).populate('signalId');
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
-    
+
     // Fetch current metric value from recent metrics
     const recentMetric = await MetricsDaily.findOne({
       teamId: intervention.teamId,
-      date: { $gte: intervention.recheckDate }
+      date: { $gte: intervention.recheckDate },
     })
       .sort({ date: -1 })
       .select(getMetricField(intervention.signalType));
-    
+
     if (!recentMetric) {
       return res.status(404).json({ message: 'No recent metric data available for auto-compute' });
     }
-    
+
     const metricField = getMetricField(intervention.signalType);
     const currentValue = recentMetric[metricField];
-    
+
     if (currentValue === undefined) {
       return res.status(404).json({ message: 'Metric value not found in recent data' });
     }
-    
+
     // Compute outcome
     const outcome = await intervention.computeOutcome(currentValue);
     intervention.status = 'pending-recheck'; // Waiting for user acknowledgment
     await intervention.save();
-    
+
     res.json({
       message: 'Outcome computed automatically',
       intervention,
-      outcome
+      outcome,
     });
   } catch (error) {
     console.error('[Interventions] Error auto-computing outcome:', error);
@@ -227,17 +242,17 @@ router.post('/:id/auto-compute', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const intervention = await Intervention.findById(id);
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
-    
+
     intervention.status = 'abandoned';
     intervention.acknowledgedBy = req.user.userId;
     intervention.acknowledgedAt = new Date();
     await intervention.save();
-    
+
     res.json({ message: 'Intervention marked as abandoned' });
   } catch (error) {
     console.error('[Interventions] Error abandoning intervention:', error);
@@ -257,7 +272,7 @@ function getMetricField(signalType) {
     'morale-volatility': 'sentimentScore',
     'dependency-spread': 'collaborationBreadth',
     'recovery-deficit': 'recoveryScore',
-    'handoff-bottleneck': 'handoffDelay'
+    'handoff-bottleneck': 'handoffDelay',
   };
   return mapping[signalType] || 'value';
 }

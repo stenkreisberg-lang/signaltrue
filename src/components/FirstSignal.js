@@ -79,10 +79,7 @@ export default function FirstSignal() {
         <div style={styles.card}>
           <h1 style={styles.errorTitle}>Unable to Load Signal</h1>
           <p style={styles.errorText}>{error}</p>
-          <button
-            style={styles.primaryButton}
-            onClick={() => navigate('/dashboard')}
-          >
+          <button style={styles.primaryButton} onClick={() => navigate('/dashboard')}>
             Continue to Dashboard
           </button>
         </div>
@@ -99,9 +96,7 @@ export default function FirstSignal() {
       <div style={styles.card}>
         {/* Header */}
         <div style={styles.header}>
-          <div style={styles.severityBadge(signal.severity)}>
-            {signal.severity}
-          </div>
+          <div style={styles.severityBadge(signal.severity)}>{signal.severity}</div>
           <h1 style={styles.title}>Something is drifting.</h1>
         </div>
 
@@ -127,7 +122,7 @@ export default function FirstSignal() {
           </div>
           <div style={styles.detailRow}>
             <span style={styles.detailLabel}>Change:</span>
-            <span style={{...styles.detailValue, color: '#dc2626', fontWeight: 600}}>
+            <span style={{ ...styles.detailValue, color: '#dc2626', fontWeight: 600 }}>
               +{signal.delta}%
             </span>
           </div>
@@ -135,10 +130,7 @@ export default function FirstSignal() {
 
         {/* Action CTAs */}
         <div style={styles.actions}>
-          <button
-            style={styles.primaryButton}
-            onClick={() => handleAction('see-why')}
-          >
+          <button style={styles.primaryButton} onClick={() => handleAction('see-why')}>
             See why this matters
           </button>
           <button

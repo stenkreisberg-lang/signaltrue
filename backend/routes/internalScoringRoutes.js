@@ -42,7 +42,9 @@ function requireServiceToken(req, res, next) {
   }
 
   if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
-    return res.status(401).json({ error: true, message: 'Invalid service token', code: 'UNAUTHORIZED' });
+    return res
+      .status(401)
+      .json({ error: true, message: 'Invalid service token', code: 'UNAUTHORIZED' });
   }
   return next();
 }
@@ -54,8 +56,10 @@ function resolveWeekStart(body) {
   // Default: most recent Monday 00:00 UTC
   const now = new Date();
   const day = now.getUTCDay(); // 0=Sun, 1=Mon, ...
-  const diff = (day === 0 ? -6 : 1 - day);
-  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff)
+  );
   return monday;
 }
 
@@ -70,7 +74,9 @@ router.post('/run/:teamId', requireServiceToken, async (req, res) => {
     return res.json({ data: result });
   } catch (err) {
     console.error('[/internal/scoring/run]', err.message);
-    return res.status(500).json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
+    return res
+      .status(500)
+      .json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
   }
 });
 
@@ -83,7 +89,9 @@ router.post('/run-org/:orgId', requireServiceToken, async (req, res) => {
     return res.json({ data: results, meta: { count: results.length } });
   } catch (err) {
     console.error('[/internal/scoring/run-org]', err.message);
-    return res.status(500).json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
+    return res
+      .status(500)
+      .json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
   }
 });
 
@@ -95,7 +103,9 @@ router.post('/bdi/:teamId', requireServiceToken, async (req, res) => {
     return res.json({ data: result });
   } catch (err) {
     console.error('[/internal/scoring/bdi]', err.message);
-    return res.status(500).json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
+    return res
+      .status(500)
+      .json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
   }
 });
 
@@ -107,7 +117,9 @@ router.post('/risks/:teamId', requireServiceToken, async (req, res) => {
     return res.json({ data: result });
   } catch (err) {
     console.error('[/internal/scoring/risks]', err.message);
-    return res.status(500).json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
+    return res
+      .status(500)
+      .json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
   }
 });
 
@@ -115,11 +127,17 @@ router.post('/risks/:teamId', requireServiceToken, async (req, res) => {
 router.post('/composite/:teamId', requireServiceToken, async (req, res) => {
   try {
     const weekStart = resolveWeekStart(req.body);
-    const result = await runCompositeDrift(req.params.teamId, weekStart, req.body?.trigger ?? 'manual');
+    const result = await runCompositeDrift(
+      req.params.teamId,
+      weekStart,
+      req.body?.trigger ?? 'manual'
+    );
     return res.json({ data: result });
   } catch (err) {
     console.error('[/internal/scoring/composite]', err.message);
-    return res.status(500).json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
+    return res
+      .status(500)
+      .json({ error: true, message: err.message, code: err.code ?? 'SCORING_ERROR' });
   }
 });
 
@@ -131,20 +149,22 @@ router.get('/status/:teamId', requireServiceToken, async (req, res) => {
       .lean();
 
     if (!lastRun) {
-      return res.status(404).json({ error: true, message: 'No scoring runs found for this team.', code: 'NOT_FOUND' });
+      return res
+        .status(404)
+        .json({ error: true, message: 'No scoring runs found for this team.', code: 'NOT_FOUND' });
     }
 
     return res.json({
       data: {
-        teamId:            lastRun.teamId,
-        runAt:             lastRun.runAt,
-        trigger:           lastRun.trigger,
-        scoreType:         lastRun.scoreType,
-        scoringVersion:    lastRun.scoringVersion,
+        teamId: lastRun.teamId,
+        runAt: lastRun.runAt,
+        trigger: lastRun.trigger,
+        scoreType: lastRun.scoreType,
+        scoringVersion: lastRun.scoringVersion,
         privacySuppressed: lastRun.privacySuppressed,
-        outputSnapshot:    lastRun.outputSnapshot,
-        durationMs:        lastRun.durationMs,
-        error:             lastRun.error,
+        outputSnapshot: lastRun.outputSnapshot,
+        durationMs: lastRun.durationMs,
+        error: lastRun.error,
       },
     });
   } catch (err) {

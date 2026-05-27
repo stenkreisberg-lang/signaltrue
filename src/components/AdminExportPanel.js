@@ -17,14 +17,35 @@ export default function AdminExportPanel() {
 
   return (
     <div style={{ margin: '24px 0', background: '#f9fafb', borderRadius: 8, padding: 16 }}>
-      <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 12 }}>Admin Controls & Data Export</h3>
-      <a href={`${api.defaults.baseURL}/admin-export/users/export`} target="_blank" rel="noopener noreferrer" style={{ marginRight: 16 }}>Export Users (CSV)</a>
-      <a href={`${api.defaults.baseURL}/admin-export/teams/export`} target="_blank" rel="noopener noreferrer">Export Teams (CSV)</a>
+      <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 12 }}>
+        Admin Controls & Data Export
+      </h3>
+      <a
+        href={`${api.defaults.baseURL}/admin-export/users/export`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ marginRight: 16 }}
+      >
+        Export Users (CSV)
+      </a>
+      <a
+        href={`${api.defaults.baseURL}/admin-export/teams/export`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Export Teams (CSV)
+      </a>
       <div style={{ marginTop: 16 }}>
         <b>All Users:</b>
-        {loading ? <div>Loading...</div> : (
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {users.map(u => <li key={u._id}>{u.email} ({u.role})</li>)}
+            {users.map((u) => (
+              <li key={u._id}>
+                {u.email} ({u.role})
+              </li>
+            ))}
           </ul>
         )}
       </div>

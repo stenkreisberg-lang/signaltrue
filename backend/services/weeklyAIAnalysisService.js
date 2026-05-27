@@ -17,45 +17,121 @@ import getProvider from '../utils/aiProvider.js';
 
 // ─── Industry benchmarks (secondary reference only) ───
 const INDUSTRY_BENCHMARKS = {
-  'Technology':       { meetingHoursPerWeek: 12, afterHoursPct: 18, b2bThreshold: 6, description: 'Tech companies typically run meeting-heavy but tolerate more async.' },
-  'SaaS':             { meetingHoursPerWeek: 14, afterHoursPct: 20, b2bThreshold: 7, description: 'SaaS teams skew toward higher meeting density due to cross-functional syncs.' },
-  'Digital Agency':   { meetingHoursPerWeek: 10, afterHoursPct: 22, b2bThreshold: 5, description: 'Agencies often have deadline-driven bursts with high after-hours.' },
-  'Consulting':       { meetingHoursPerWeek: 16, afterHoursPct: 25, b2bThreshold: 8, description: 'Consulting is inherently meeting-heavy.' },
-  'Financial Services': { meetingHoursPerWeek: 14, afterHoursPct: 15, b2bThreshold: 6, description: 'Financial firms have regulatory rhythm.' },
-  'Healthcare':       { meetingHoursPerWeek: 8, afterHoursPct: 12, b2bThreshold: 4, description: 'Healthcare teams have shift-based boundaries.' },
-  'Manufacturing':    { meetingHoursPerWeek: 7, afterHoursPct: 10, b2bThreshold: 3, description: 'Manufacturing has clear shift boundaries.' },
-  'Education':        { meetingHoursPerWeek: 9, afterHoursPct: 20, b2bThreshold: 5, description: 'Education has term-driven cycles.' },
-  'Retail':           { meetingHoursPerWeek: 6, afterHoursPct: 15, b2bThreshold: 3, description: 'Retail HQ teams have moderate meeting loads.' },
-  'Nonprofit':        { meetingHoursPerWeek: 10, afterHoursPct: 22, b2bThreshold: 5, description: 'Nonprofits often have lean teams doing broad work.' },
-  'Other':            { meetingHoursPerWeek: 11, afterHoursPct: 17, b2bThreshold: 5, description: 'Cross-industry average.' },
+  Technology: {
+    meetingHoursPerWeek: 12,
+    afterHoursPct: 18,
+    b2bThreshold: 6,
+    description: 'Tech companies typically run meeting-heavy but tolerate more async.',
+  },
+  SaaS: {
+    meetingHoursPerWeek: 14,
+    afterHoursPct: 20,
+    b2bThreshold: 7,
+    description: 'SaaS teams skew toward higher meeting density due to cross-functional syncs.',
+  },
+  'Digital Agency': {
+    meetingHoursPerWeek: 10,
+    afterHoursPct: 22,
+    b2bThreshold: 5,
+    description: 'Agencies often have deadline-driven bursts with high after-hours.',
+  },
+  Consulting: {
+    meetingHoursPerWeek: 16,
+    afterHoursPct: 25,
+    b2bThreshold: 8,
+    description: 'Consulting is inherently meeting-heavy.',
+  },
+  'Financial Services': {
+    meetingHoursPerWeek: 14,
+    afterHoursPct: 15,
+    b2bThreshold: 6,
+    description: 'Financial firms have regulatory rhythm.',
+  },
+  Healthcare: {
+    meetingHoursPerWeek: 8,
+    afterHoursPct: 12,
+    b2bThreshold: 4,
+    description: 'Healthcare teams have shift-based boundaries.',
+  },
+  Manufacturing: {
+    meetingHoursPerWeek: 7,
+    afterHoursPct: 10,
+    b2bThreshold: 3,
+    description: 'Manufacturing has clear shift boundaries.',
+  },
+  Education: {
+    meetingHoursPerWeek: 9,
+    afterHoursPct: 20,
+    b2bThreshold: 5,
+    description: 'Education has term-driven cycles.',
+  },
+  Retail: {
+    meetingHoursPerWeek: 6,
+    afterHoursPct: 15,
+    b2bThreshold: 3,
+    description: 'Retail HQ teams have moderate meeting loads.',
+  },
+  Nonprofit: {
+    meetingHoursPerWeek: 10,
+    afterHoursPct: 22,
+    b2bThreshold: 5,
+    description: 'Nonprofits often have lean teams doing broad work.',
+  },
+  Other: {
+    meetingHoursPerWeek: 11,
+    afterHoursPct: 17,
+    b2bThreshold: 5,
+    description: 'Cross-industry average.',
+  },
 };
 
 // ─── Build the prompt ───
 function buildPrompt(data) {
   const {
-    orgName, industry, orgSize, teamCount, employeeCount,
-    tw, lw, sixWeekAvg,
-    twMeetings, lwMeetings, twMessages, lwMessages,
-    twSignals, lwSignals, twCKSignals, lwCKSignals,
-    teamBDIData, observations, risks,
-    connectedSources, contextTags, teamStatus,
+    orgName,
+    industry,
+    orgSize,
+    teamCount,
+    employeeCount,
+    tw,
+    lw,
+    sixWeekAvg,
+    twMeetings,
+    lwMeetings,
+    twMessages,
+    lwMessages,
+    twSignals,
+    lwSignals,
+    twCKSignals,
+    lwCKSignals,
+    teamBDIData,
+    observations,
+    risks,
+    connectedSources,
+    contextTags,
+    teamStatus,
   } = data;
 
   const bench = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['Other'];
 
   const signalSummary = [
-    ...twSignals.map(s => `${s.signalType} (severity: ${s.severity}, team: ${s.teamId?.name || 'org-level'})`),
-    ...twCKSignals.map(s => `${s.signalType} (severity: ${s.severity}/100)`),
+    ...twSignals.map(
+      (s) => `${s.signalType} (severity: ${s.severity}, team: ${s.teamId?.name || 'org-level'})`
+    ),
+    ...twCKSignals.map((s) => `${s.signalType} (severity: ${s.severity}/100)`),
   ];
 
-  const bdiSummary = teamBDIData.map(t => {
+  const bdiSummary = teamBDIData.map((t) => {
     const prev = t.prevBDI ? `prev: ${t.prevBDI.driftScore}` : 'no previous';
     return `${t.teamName}: score ${t.bdi.driftScore}/100, state "${t.bdi.driftState}", confidence ${t.bdi.confidence} (${prev})`;
   });
 
-  const contextTagsStr = (contextTags || []).length > 0
-    ? contextTags.map(t => `${t.tag} (${t.confidenceReduction} confidence reduction)`).join(', ')
-    : 'None';
+  const contextTagsStr =
+    (contextTags || []).length > 0
+      ? contextTags
+          .map((t) => `${t.tag} (${t.confidenceReduction} confidence reduction)`)
+          .join(', ')
+      : 'None';
 
   return `You are SignalTrue's senior workplace intelligence analyst. You write weekly briefings for HR leaders.
 
@@ -93,8 +169,8 @@ THIS WEEK vs LAST WEEK vs 6-WEEK AVERAGE:
 INDUSTRY BENCHMARK (${industry}, secondary reference only):
 - Typical meeting hours/week: ${bench.meetingHoursPerWeek}h | After-hours: ${bench.afterHoursPct}%
 
-ACTIVE SIGNALS: ${signalSummary.length > 0 ? signalSummary.map(s => `- ${s}`).join('\n') : '- None detected'}
-TEAM HEALTH (BDI): ${bdiSummary.length > 0 ? bdiSummary.map(b => `- ${b}`).join('\n') : '- No BDI data'}
+ACTIVE SIGNALS: ${signalSummary.length > 0 ? signalSummary.map((s) => `- ${s}`).join('\n') : '- None detected'}
+TEAM HEALTH (BDI): ${bdiSummary.length > 0 ? bdiSummary.map((b) => `- ${b}`).join('\n') : '- No BDI data'}
 
 ───────────────────────────────────────
 Respond in EXACTLY this JSON format:
@@ -144,7 +220,8 @@ Respond in EXACTLY this JSON format:
 // ─── Main export ───
 export async function generateWeeklyAIAnalysis(data) {
   const hasOpenAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim().length > 5;
-  const hasAnthropic = process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim().length > 5;
+  const hasAnthropic =
+    process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim().length > 5;
   if (!hasOpenAI && !hasAnthropic) {
     console.log('[WeeklyAI] No AI provider key set — skipping AI analysis');
     return null;
@@ -169,11 +246,16 @@ export async function generateWeeklyAIAnalysis(data) {
       return null;
     }
 
-    const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const jsonStr = raw
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim();
     const analysis = JSON.parse(jsonStr);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[WeeklyAI] Analysis generated in ${elapsed}s (${response.usage?.total_tokens || '?'} tokens)`);
+    console.log(
+      `[WeeklyAI] Analysis generated in ${elapsed}s (${response.usage?.total_tokens || '?'} tokens)`
+    );
 
     return analysis;
   } catch (err) {

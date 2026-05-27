@@ -7,7 +7,7 @@ const STATE_CONFIG = {
     textColor: 'text-green-800',
     borderColor: 'border-green-200',
     label: 'Healthy',
-    description: 'Team operating within sustainable norms'
+    description: 'Team operating within sustainable norms',
   },
   strained: {
     color: 'yellow',
@@ -15,7 +15,7 @@ const STATE_CONFIG = {
     textColor: 'text-yellow-800',
     borderColor: 'border-yellow-200',
     label: 'Strained',
-    description: 'Early pressure signals detected'
+    description: 'Early pressure signals detected',
   },
   overloaded: {
     color: 'orange',
@@ -23,7 +23,7 @@ const STATE_CONFIG = {
     textColor: 'text-orange-800',
     borderColor: 'border-orange-200',
     label: 'Overloaded',
-    description: 'Sustained pressure affecting capacity'
+    description: 'Sustained pressure affecting capacity',
   },
   breaking: {
     color: 'red',
@@ -31,8 +31,8 @@ const STATE_CONFIG = {
     textColor: 'text-red-800',
     borderColor: 'border-red-200',
     label: 'Breaking',
-    description: 'Critical state requiring immediate intervention'
-  }
+    description: 'Critical state requiring immediate intervention',
+  },
 };
 
 function TeamStateBadge({ state, confidence, showDescription = true }) {
@@ -43,23 +43,15 @@ function TeamStateBadge({ state, confidence, showDescription = true }) {
       <div className="flex items-center gap-3">
         <div className={`px-4 py-2 rounded-lg border-2 ${config.bgColor} ${config.borderColor}`}>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${config.textColor === 'text-green-800' ? 'bg-green-500' : config.textColor === 'text-yellow-800' ? 'bg-yellow-500' : config.textColor === 'text-orange-800' ? 'bg-orange-500' : 'bg-red-500'}`}></div>
-            <span className={`font-semibold ${config.textColor}`}>
-              {config.label}
-            </span>
+            <div
+              className={`w-3 h-3 rounded-full ${config.textColor === 'text-green-800' ? 'bg-green-500' : config.textColor === 'text-yellow-800' ? 'bg-yellow-500' : config.textColor === 'text-orange-800' ? 'bg-orange-500' : 'bg-red-500'}`}
+            ></div>
+            <span className={`font-semibold ${config.textColor}`}>{config.label}</span>
           </div>
         </div>
-        {confidence && (
-          <span className="text-sm text-gray-500">
-            {confidence}% confidence
-          </span>
-        )}
+        {confidence && <span className="text-sm text-gray-500">{confidence}% confidence</span>}
       </div>
-      {showDescription && (
-        <p className="mt-2 text-sm text-gray-600">
-          {config.description}
-        </p>
-      )}
+      {showDescription && <p className="mt-2 text-sm text-gray-600">{config.description}</p>}
     </div>
   );
 }

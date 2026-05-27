@@ -15,7 +15,7 @@ export default function RecommendedAction({ signal, onActionTaken }) {
 
   // Get actions from signal (assumes signal has actions array from template)
   const actions = signal.actions || [];
-  const primaryAction = actions.find(a => !a.isInactionOption) || actions[0];
+  const primaryAction = actions.find((a) => !a.isInactionOption) || actions[0];
 
   const handleTakeAction = async (action) => {
     setTakingAction(true);
@@ -29,7 +29,7 @@ export default function RecommendedAction({ signal, onActionTaken }) {
         expectedEffect: action.expectedEffect,
         effort: action.effort,
         timeframe: action.timeframe,
-        metricBefore: signal.currentValue || signal.value
+        metricBefore: signal.currentValue || signal.value,
       });
 
       const data = response.data;
@@ -42,7 +42,7 @@ export default function RecommendedAction({ signal, onActionTaken }) {
       setSelectedAction({
         ...action,
         intervention: data.intervention,
-        recheckDate: data.recheckDate
+        recheckDate: data.recheckDate,
       });
     } catch (err) {
       console.error('[RecommendedAction] Error logging intervention:', err);
@@ -76,10 +76,10 @@ export default function RecommendedAction({ signal, onActionTaken }) {
           <div>
             <p style={styles.recheckTitle}>We'll check back in {daysUntilRecheck} days</p>
             <p style={styles.recheckDate}>
-              {recheckDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric' 
+              {recheckDate.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
               })}
             </p>
             <p style={styles.recheckSubtext}>
@@ -116,7 +116,7 @@ export default function RecommendedAction({ signal, onActionTaken }) {
           </div>
 
           <button
-            style={{...styles.primaryButton, opacity: takingAction ? 0.6 : 1}}
+            style={{ ...styles.primaryButton, opacity: takingAction ? 0.6 : 1 }}
             onClick={() => handleTakeAction(primaryAction)}
             disabled={takingAction}
           >
@@ -124,10 +124,7 @@ export default function RecommendedAction({ signal, onActionTaken }) {
           </button>
 
           {!showActions && actions.length > 1 && (
-            <button
-              style={styles.moreButton}
-              onClick={() => setShowActions(true)}
-            >
+            <button style={styles.moreButton} onClick={() => setShowActions(true)}>
               See {actions.length - 1} more option{actions.length > 2 ? 's' : ''}
             </button>
           )}
@@ -137,40 +134,35 @@ export default function RecommendedAction({ signal, onActionTaken }) {
       {/* All Actions (expandable) */}
       {showActions && (
         <div style={styles.allActions}>
-          {actions.filter(a => a !== primaryAction).map((action, idx) => (
-            <div key={idx} style={styles.alternativeCard}>
-              <div style={styles.alternativeHeader}>
-                <span style={styles.effortBadge(action.effort)}>{action.effort}</span>
-                <span style={styles.timeframe}>{action.timeframe}</span>
+          {actions
+            .filter((a) => a !== primaryAction)
+            .map((action, idx) => (
+              <div key={idx} style={styles.alternativeCard}>
+                <div style={styles.alternativeHeader}>
+                  <span style={styles.effortBadge(action.effort)}>{action.effort}</span>
+                  <span style={styles.timeframe}>{action.timeframe}</span>
+                </div>
+                <p style={styles.alternativeText}>{action.action}</p>
+                <p style={styles.alternativeEffect}>{action.expectedEffect}</p>
+                {action.isInactionOption && action.inactionCost && (
+                  <p style={styles.inactionWarning}>⚠️ {action.inactionCost}</p>
+                )}
+                <button
+                  style={styles.alternativeButton}
+                  onClick={() => handleTakeAction(action)}
+                  disabled={takingAction}
+                >
+                  {action.isInactionOption ? 'Do Nothing (Monitor)' : 'Take This Instead'}
+                </button>
               </div>
-              <p style={styles.alternativeText}>{action.action}</p>
-              <p style={styles.alternativeEffect}>{action.expectedEffect}</p>
-              {action.isInactionOption && action.inactionCost && (
-                <p style={styles.inactionWarning}>
-                  ⚠️ {action.inactionCost}
-                </p>
-              )}
-              <button
-                style={styles.alternativeButton}
-                onClick={() => handleTakeAction(action)}
-                disabled={takingAction}
-              >
-                {action.isInactionOption ? 'Do Nothing (Monitor)' : 'Take This Instead'}
-              </button>
-            </div>
-          ))}
-          <button
-            style={styles.collapseButton}
-            onClick={() => setShowActions(false)}
-          >
+            ))}
+          <button style={styles.collapseButton} onClick={() => setShowActions(false)}>
             Collapse options
           </button>
         </div>
       )}
 
-      {error && (
-        <div style={styles.error}>{error}</div>
-      )}
+      {error && <div style={styles.error}>{error}</div>}
     </div>
   );
 }

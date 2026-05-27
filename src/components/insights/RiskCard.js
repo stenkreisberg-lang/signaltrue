@@ -6,28 +6,28 @@ const BAND_CONFIG = {
     borderColor: 'border-green-300',
     textColor: 'text-green-800',
     dotColor: 'bg-green-500',
-    label: 'Low Risk'
+    label: 'Low Risk',
   },
   yellow: {
     bgColor: 'bg-yellow-50',
     borderColor: 'border-yellow-300',
     textColor: 'text-yellow-800',
     dotColor: 'bg-yellow-500',
-    label: 'Moderate Risk'
+    label: 'Moderate Risk',
   },
   red: {
     bgColor: 'bg-red-50',
     borderColor: 'border-red-300',
     textColor: 'text-red-800',
     dotColor: 'bg-red-500',
-    label: 'High Risk'
-  }
+    label: 'High Risk',
+  },
 };
 
 const RISK_NAMES = {
   overload: 'Overload Risk',
   execution: 'Execution Risk',
-  retention_strain: 'Retention Strain'
+  retention_strain: 'Retention Strain',
 };
 
 function RiskCard({ risk }) {
@@ -36,33 +36,27 @@ function RiskCard({ risk }) {
   const riskName = RISK_NAMES[risk.riskType] || risk.riskType;
 
   return (
-    <div className={`rounded-lg border-2 ${config.borderColor} ${config.bgColor} p-5 transition-all hover:shadow-md`}>
+    <div
+      className={`rounded-lg border-2 ${config.borderColor} ${config.bgColor} p-5 transition-all hover:shadow-md`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-semibold text-gray-900">{riskName}</h3>
           <div className="flex items-center gap-2 mt-1">
             <div className={`w-2 h-2 rounded-full ${config.dotColor}`}></div>
-            <span className={`text-sm font-medium ${config.textColor}`}>
-              {config.label}
-            </span>
+            <span className={`text-sm font-medium ${config.textColor}`}>{config.label}</span>
           </div>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${config.textColor}`}>
-            {Math.round(risk.score)}
-          </div>
-          <div className="text-xs text-gray-500">
-            {risk.confidence}% conf.
-          </div>
+          <div className={`text-2xl font-bold ${config.textColor}`}>{Math.round(risk.score)}</div>
+          <div className="text-xs text-gray-500">{risk.confidence}% conf.</div>
         </div>
       </div>
 
       {/* Explanation */}
       {risk.explanationText && (
-        <p className="text-sm text-gray-700 mb-3 leading-relaxed">
-          {risk.explanationText}
-        </p>
+        <p className="text-sm text-gray-700 mb-3 leading-relaxed">{risk.explanationText}</p>
       )}
 
       {/* Drivers Toggle */}
@@ -93,9 +87,7 @@ function RiskCard({ risk }) {
                       </span>
                     </div>
                     {driver.explanationText && (
-                      <p className="text-gray-600 text-xs ml-2">
-                        {driver.explanationText}
-                      </p>
+                      <p className="text-gray-600 text-xs ml-2">{driver.explanationText}</p>
                     )}
                   </div>
                 ))}

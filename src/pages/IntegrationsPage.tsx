@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import IntegrationDashboard from '../components/IntegrationDashboard';
 import AICopilotPanel from '../components/AICopilotPanel';
-import {
-  Link2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  ArrowLeft,
-  Settings
-} from 'lucide-react';
+import { Link2, CheckCircle2, XCircle, AlertTriangle, ArrowLeft, Settings } from 'lucide-react';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -28,7 +21,7 @@ interface Signal {
 
 /**
  * Integrations Page
- * 
+ *
  * Main page for managing Category-King integrations.
  * Handles OAuth callbacks and displays integration dashboard.
  */
@@ -50,7 +43,7 @@ export default function IntegrationsPage() {
       setCallbackStatus({
         success: false,
         source,
-        message: errorParam
+        message: errorParam,
       });
       return;
     }
@@ -63,41 +56,40 @@ export default function IntegrationsPage() {
   // Exchange OAuth code for tokens
   const handleOAuthCallback = async (source: string, code: string) => {
     setLoading(true);
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/callback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code }),
       });
-      
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || 'Connection failed');
       }
-      
+
       setCallbackStatus({
         success: true,
         source,
-        message: `${formatSourceName(source)} connected successfully!`
+        message: `${formatSourceName(source)} connected successfully!`,
       });
-      
+
       // Clear URL params
       navigate('/integrations', { replace: true });
-      
+
       // Fetch updated signals
       fetchSignals();
-      
     } catch (err) {
       setCallbackStatus({
         success: false,
         source,
-        message: err instanceof Error ? err.message : 'Connection failed'
+        message: err instanceof Error ? err.message : 'Connection failed',
       });
     } finally {
       setLoading(false);
@@ -108,13 +100,13 @@ export default function IntegrationsPage() {
   const fetchSignals = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       const res = await fetch(`${API_BASE}/api/signals?source=category-king`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setSignals(data.signals || []);
@@ -140,7 +132,7 @@ export default function IntegrationsPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            
+
             <div>
               <h1 className="text-xl font-bold text-gray-900">Integrations</h1>
               <p className="text-sm text-gray-500">
@@ -148,9 +140,9 @@ export default function IntegrationsPage() {
               </p>
             </div>
           </div>
-          
+
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/dashboard')}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <Settings className="w-5 h-5" />
@@ -160,9 +152,7 @@ export default function IntegrationsPage() {
 
       {/* Callback Status Banner */}
       {callbackStatus && (
-        <div className={`px-6 py-4 ${
-          callbackStatus.success ? 'bg-green-50' : 'bg-red-50'
-        }`}>
+        <div className={`px-6 py-4 ${callbackStatus.success ? 'bg-green-50' : 'bg-red-50'}`}>
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               {callbackStatus.success ? (
@@ -174,7 +164,7 @@ export default function IntegrationsPage() {
                 {callbackStatus.message}
               </span>
             </div>
-            
+
             <button
               onClick={() => setCallbackStatus(null)}
               className="text-gray-400 hover:text-gray-600"
@@ -200,32 +190,25 @@ export default function IntegrationsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Integration Dashboard */}
           <div className="lg:col-span-2">
-            <IntegrationDashboard 
-              orgId={null}
-              onIntegrationChange={fetchSignals}
-            />
+            <IntegrationDashboard orgId={null} onIntegrationChange={fetchSignals} />
           </div>
-          
+
           {/* AI Copilot Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                AI Insights
-              </h2>
-              
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">AI Insights</h2>
+
               <AICopilotPanel
                 orgId={null}
                 signals={signals as any}
                 viewerRole="TEAM_LEAD"
                 onActionTaken={() => {}}
               />
-              
+
               {/* Getting Started Tips */}
               {signals.length === 0 && (
                 <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                  <h3 className="font-medium text-indigo-900 mb-2">
-                    Getting Started
-                  </h3>
+                  <h3 className="font-medium text-indigo-900 mb-2">Getting Started</h3>
                   <ol className="space-y-2 text-sm text-indigo-700">
                     <li className="flex items-start gap-2">
                       <span className="font-bold">1.</span>
@@ -259,8 +242,8 @@ export default function IntegrationsPage() {
             <div>
               <h3 className="font-semibold text-gray-900">Privacy First</h3>
               <p className="text-gray-600 mt-1">
-                SignalTrue only accesses <strong>metadata</strong>—timestamps, counts, and patterns. 
-                We never read email content, document text, chat messages, or any personally 
+                SignalTrue only accesses <strong>metadata</strong>—timestamps, counts, and patterns.
+                We never read email content, document text, chat messages, or any personally
                 identifiable information. All data is encrypted in transit and at rest.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -298,7 +281,7 @@ function formatSourceName(source: string): string {
     notion: 'Notion',
     hubspot: 'HubSpot',
     pipedrive: 'Pipedrive',
-    basecamp: 'Basecamp'
+    basecamp: 'Basecamp',
   };
   return names[source] || source;
 }

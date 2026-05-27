@@ -1,6 +1,6 @@
 /**
  * Password Reset Routes
- * 
+ *
  * Provides forgot password functionality:
  * 1. POST /api/auth/forgot-password - Send reset link to email
  * 2. POST /api/auth/reset-password - Reset password with token
@@ -31,12 +31,12 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
-    
+
     // Always return success to prevent email enumeration
     if (!user) {
       console.log(`Password reset requested for non-existent email: ${email}`);
-      return res.json({ 
-        message: 'If an account exists with this email, a password reset link has been sent.' 
+      return res.json({
+        message: 'If an account exists with this email, a password reset link has been sent.',
       });
     }
 
@@ -48,7 +48,7 @@ router.post('/forgot-password', async (req, res) => {
     resetTokens.set(token, {
       userId: user._id.toString(),
       email: user.email,
-      expiry
+      expiry,
     });
 
     // Clean up expired tokens periodically
@@ -71,7 +71,7 @@ router.post('/forgot-password', async (req, res) => {
       try {
         const { Resend } = await import('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
-        
+
         await resend.emails.send({
           from: process.env.EMAIL_FROM || 'SignalTrue <noreply@signaltrue.ai>',
           to: user.email,
@@ -96,7 +96,7 @@ router.post('/forgot-password', async (req, res) => {
                 SignalTrue - Team Health Analytics
               </p>
             </div>
-          `
+          `,
         });
         console.log(`[Password Reset] Email sent successfully to ${user.email}`);
       } catch (emailErr) {
@@ -104,16 +104,17 @@ router.post('/forgot-password', async (req, res) => {
         // Continue - still return success since token was generated
       }
     } else {
-      console.log('[Password Reset] No email service configured. Token generated but email not sent.');
+      console.log(
+        '[Password Reset] No email service configured. Token generated but email not sent.'
+      );
       console.log(`[Password Reset] Manual reset URL: ${resetUrl}`);
     }
 
-    res.json({ 
+    res.json({
       message: 'If an account exists with this email, a password reset link has been sent.',
       // In development, include the URL for testing
-      ...(process.env.NODE_ENV !== 'production' && { resetUrl })
+      ...(process.env.NODE_ENV !== 'production' && { resetUrl }),
     });
-
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ message: 'An error occurred. Please try again.' });
@@ -138,19 +139,21 @@ router.post('/reset-password', async (req, res) => {
 
     // Validate token
     const tokenData = resetTokens.get(token);
-    
+
     if (!tokenData) {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
     if (tokenData.expiry < Date.now()) {
       resetTokens.delete(token);
-      return res.status(400).json({ message: 'Reset token has expired. Please request a new one.' });
+      return res
+        .status(400)
+        .json({ message: 'Reset token has expired. Please request a new one.' });
     }
 
     // Find user and update password
     const user = await User.findById(tokenData.userId);
-    
+
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
@@ -164,10 +167,9 @@ router.post('/reset-password', async (req, res) => {
 
     console.log(`[Password Reset] Password successfully reset for ${user.email}`);
 
-    res.json({ 
-      message: 'Password reset successfully. You can now log in with your new password.' 
+    res.json({
+      message: 'Password reset successfully. You can now log in with your new password.',
     });
-
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'An error occurred. Please try again.' });
@@ -197,11 +199,10 @@ router.get('/verify-reset-token', async (req, res) => {
       return res.json({ valid: false, message: 'Token has expired' });
     }
 
-    res.json({ 
-      valid: true, 
-      email: tokenData.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') // Mask email
+    res.json({
+      valid: true,
+      email: tokenData.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // Mask email
     });
-
   } catch (error) {
     console.error('Verify reset token error:', error);
     res.status(500).json({ valid: false, message: 'An error occurred' });

@@ -126,13 +126,13 @@ const engagementStrainWeeklySchema = new mongoose.Schema(
 
     // ── 7 Subscores (spec Section 3) ─────────────────────────────────────────
     subscores: {
-      recoveryDebt:               { type: Number, min: 0, max: 100 },
-      focusErosion:               { type: Number, min: 0, max: 100 },
-      coordinationFriction:       { type: Number, min: 0, max: 100 },
-      responsivenessPressure:     { type: Number, min: 0, max: 100 },
-      collaborationWithdrawal:    { type: Number, min: 0, max: 100 },
-      managerSupportGap:          { type: Number, min: 0, max: 100 },
-      workloadVolatility:         { type: Number, min: 0, max: 100 },
+      recoveryDebt: { type: Number, min: 0, max: 100 },
+      focusErosion: { type: Number, min: 0, max: 100 },
+      coordinationFriction: { type: Number, min: 0, max: 100 },
+      responsivenessPressure: { type: Number, min: 0, max: 100 },
+      collaborationWithdrawal: { type: Number, min: 0, max: 100 },
+      managerSupportGap: { type: Number, min: 0, max: 100 },
+      workloadVolatility: { type: Number, min: 0, max: 100 },
     },
 
     // Top 2–3 subscores driving the overall score this week

@@ -33,13 +33,11 @@ export async function upsertDailyMetricsFromTeam(team) {
     // 7. Engagement Recovery Index
     recoveryDays: Number(team.recoveryDays || 0),
     // 8. Team Energy Index (Composite - auto-tuned weights)
-    energyIndex: Number(team.energyIndex != null ? team.energyIndex : (team.bdi != null ? (100 - team.bdi) : 0)),
+    energyIndex: Number(
+      team.energyIndex != null ? team.energyIndex : team.bdi != null ? 100 - team.bdi : 0
+    ),
   };
-  await MetricsDaily.findOneAndUpdate(
-    { teamId: team._id, date },
-    { $set: doc },
-    { upsert: true }
-  );
+  await MetricsDaily.findOneAndUpdate({ teamId: team._id, date }, { $set: doc }, { upsert: true });
 }
 
 export async function buildBaselinesForAllTeams({ minDays = 7, windowDays = 30 } = {}) {
@@ -47,14 +45,16 @@ export async function buildBaselinesForAllTeams({ minDays = 7, windowDays = 30 }
   const teams = await Team.find({});
 
   for (const team of teams) {
-    const rows = await MetricsDaily.find({ teamId: team._id, date: { $gte: since } }).sort({ date: 1 });
+    const rows = await MetricsDaily.find({ teamId: team._id, date: { $gte: since } }).sort({
+      date: 1,
+    });
     if (rows.length < minDays) continue;
 
-    const avg = (arr) => (arr.length ? arr.reduce((a,b) => a + b, 0) / arr.length : 0);
+    const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
     const std = (arr) => {
       if (arr.length < 2) return 0;
       const m = avg(arr);
-      const v = avg(arr.map(x => (x - m) * (x - m)));
+      const v = avg(arr.map((x) => (x - m) * (x - m)));
       return Math.sqrt(v);
     };
 
@@ -63,18 +63,18 @@ export async function buildBaselinesForAllTeams({ minDays = 7, windowDays = 30 }
       bdi: team.bdi,
       date: new Date(),
       signals: {
-        meetingLoadIndex: avg(rows.map(r => r.meetingLoadIndex)),
-        afterHoursRate: avg(rows.map(r => r.afterHoursRate)),
-        responseMedianMins: avg(rows.map(r => r.responseMedianMins)),
-        responseLatencyTrend: avg(rows.map(r => r.responseLatencyTrend)),
-        sentimentAvg: avg(rows.map(r => r.sentimentAvg)),
-        sentimentShift: avg(rows.map(r => r.sentimentShift)),
-        uniqueContacts: avg(rows.map(r => r.uniqueContacts)),
-        networkBreadthChange: avg(rows.map(r => r.networkBreadthChange)),
-        focusTimeRatio: avg(rows.map(r => r.focusTimeRatio)),
-        recoveryDays: avg(rows.map(r => r.recoveryDays)),
-        energyIndex: avg(rows.map(r => r.energyIndex)),
-      }
+        meetingLoadIndex: avg(rows.map((r) => r.meetingLoadIndex)),
+        afterHoursRate: avg(rows.map((r) => r.afterHoursRate)),
+        responseMedianMins: avg(rows.map((r) => r.responseMedianMins)),
+        responseLatencyTrend: avg(rows.map((r) => r.responseLatencyTrend)),
+        sentimentAvg: avg(rows.map((r) => r.sentimentAvg)),
+        sentimentShift: avg(rows.map((r) => r.sentimentShift)),
+        uniqueContacts: avg(rows.map((r) => r.uniqueContacts)),
+        networkBreadthChange: avg(rows.map((r) => r.networkBreadthChange)),
+        focusTimeRatio: avg(rows.map((r) => r.focusTimeRatio)),
+        recoveryDays: avg(rows.map((r) => r.recoveryDays)),
+        energyIndex: avg(rows.map((r) => r.energyIndex)),
+      },
     };
 
     await team.save();

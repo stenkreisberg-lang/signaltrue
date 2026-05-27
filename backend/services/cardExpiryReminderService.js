@@ -1,6 +1,6 @@
 /**
  * Card Expiry Reminder Service
- * 
+ *
  * Checks for payment methods expiring within 1 month and sends reminders.
  * Should be run daily via cron job or scheduler.
  */
@@ -10,17 +10,18 @@ import Organization from '../models/organizationModel.js';
 import User from '../models/userModel.js';
 
 // Initialize email transporter (same pattern as other services)
-const emailTransporter = process.env.EMAIL_HOST && process.env.EMAIL_USER
-  ? nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
-  : null;
+const emailTransporter =
+  process.env.EMAIL_HOST && process.env.EMAIL_USER
+    ? nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '587'),
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      })
+    : null;
 
 /**
  * Check for expiring cards and send reminders
@@ -32,7 +33,7 @@ export const checkExpiringCards = async () => {
     const now = new Date();
     const currentMonth = now.getMonth() + 1; // 1-12
     const currentYear = now.getFullYear();
-    
+
     // Calculate next month
     let targetMonth = currentMonth + 1;
     let targetYear = currentYear;
@@ -41,24 +42,30 @@ export const checkExpiringCards = async () => {
       targetYear = currentYear + 1;
     }
 
-    console.log(`[CardExpiryReminder] Checking for cards expiring in ${targetMonth}/${targetYear}...`);
+    console.log(
+      `[CardExpiryReminder] Checking for cards expiring in ${targetMonth}/${targetYear}...`
+    );
 
     // Find organizations with cards expiring next month that haven't been reminded
     const expiringOrgs = await Organization.find({
       'paymentMethod.expiryMonth': targetMonth,
       'paymentMethod.expiryYear': targetYear,
-      'paymentMethod.expiryReminderSent': { $ne: true }
+      'paymentMethod.expiryReminderSent': { $ne: true },
     }).lean();
 
-    console.log(`[CardExpiryReminder] Found ${expiringOrgs.length} organizations with expiring cards`);
+    console.log(
+      `[CardExpiryReminder] Found ${expiringOrgs.length} organizations with expiring cards`
+    );
 
     for (const org of expiringOrgs) {
       try {
         // Find the org admin to send the reminder
         const admins = await User.find({
           orgId: org._id,
-          role: { $in: ['admin', 'owner'] }
-        }).select('email name').lean();
+          role: { $in: ['admin', 'owner'] },
+        })
+          .select('email name')
+          .lean();
 
         if (admins.length === 0) {
           console.log(`[CardExpiryReminder] No admin found for org ${org.name}, skipping`);
@@ -66,14 +73,14 @@ export const checkExpiringCards = async () => {
         }
 
         const card = org.paymentMethod;
-        const adminEmails = admins.map(a => a.email);
-        
+        const adminEmails = admins.map((a) => a.email);
+
         // Send reminder email
         if (!emailTransporter) {
           console.log(`[CardExpiryReminder] Email not configured, skipping email for ${org.name}`);
           continue;
         }
-        
+
         const emailContent = {
           from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
           to: adminEmails,
@@ -96,7 +103,7 @@ export const checkExpiringCards = async () => {
                 Questions? Reply to this email or contact support@signaltrue.io
               </p>
             </div>
-          `
+          `,
         };
 
         await emailTransporter.sendMail(emailContent);
@@ -107,15 +114,20 @@ export const checkExpiringCards = async () => {
           { $set: { 'paymentMethod.expiryReminderSent': true } }
         );
 
-        console.log(`[CardExpiryReminder] Sent reminder to ${org.name} (${adminEmails.join(', ')})`);
+        console.log(
+          `[CardExpiryReminder] Sent reminder to ${org.name} (${adminEmails.join(', ')})`
+        );
       } catch (emailError) {
-        console.error(`[CardExpiryReminder] Failed to send reminder for org ${org.name}:`, emailError);
+        console.error(
+          `[CardExpiryReminder] Failed to send reminder for org ${org.name}:`,
+          emailError
+        );
       }
     }
 
     return {
       checked: expiringOrgs.length,
-      reminded: expiringOrgs.length
+      reminded: expiringOrgs.length,
     };
   } catch (error) {
     console.error('[CardExpiryReminder] Error checking expiring cards:', error);

@@ -62,57 +62,63 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
     activePeopleCount,
 
     // ── Calendar ──────────────────────────────────────────────────────────────
-    meetingHoursPerPerson:          wMean(days, 'calendar.meetingHoursPerPerson'),
-    attendeeHoursPerPerson:         wMean(days, 'calendar.attendeeHoursPerPerson'),
-    recurringMeetingRatio:          wMean(days, 'calendar.recurringMeetingRatio'),
-    avgAttendeeCount:               wMean(days, 'calendar.avgAttendeeCount'),
-    backToBackMeetingCount:         sumField(days, 'calendar.backToBackMeetingCount'),
-    fragmentedDayRatio:             wMean(days, 'calendar.fragmentedDayRatio'),
-    focusHoursAvailablePerPerson:   wMean(days, 'calendar.focusHoursAvailablePerPerson'),
-    focusBlocks90mCountPerPerson:   perPerson(days, 'calendar.focusBlocks90mCount'),
-    manager1to1MinutesPerPerson:    wMean(days, 'calendar.manager1to1MinutesPerPerson'),
-    cancelled1to1Count:             sumField(days, 'calendar.cancelled1to1Count'),
-    afterHoursMeetingMinutes:       sumField(days, 'calendar.afterHoursMeetingMinutes'),
+    meetingHoursPerPerson: wMean(days, 'calendar.meetingHoursPerPerson'),
+    attendeeHoursPerPerson: wMean(days, 'calendar.attendeeHoursPerPerson'),
+    recurringMeetingRatio: wMean(days, 'calendar.recurringMeetingRatio'),
+    avgAttendeeCount: wMean(days, 'calendar.avgAttendeeCount'),
+    backToBackMeetingCount: sumField(days, 'calendar.backToBackMeetingCount'),
+    fragmentedDayRatio: wMean(days, 'calendar.fragmentedDayRatio'),
+    focusHoursAvailablePerPerson: wMean(days, 'calendar.focusHoursAvailablePerPerson'),
+    focusBlocks90mCountPerPerson: perPerson(days, 'calendar.focusBlocks90mCount'),
+    manager1to1MinutesPerPerson: wMean(days, 'calendar.manager1to1MinutesPerPerson'),
+    cancelled1to1Count: sumField(days, 'calendar.cancelled1to1Count'),
+    afterHoursMeetingMinutes: sumField(days, 'calendar.afterHoursMeetingMinutes'),
 
     // Derived: after_hours_meeting_ratio (for Recovery Debt)
     afterHoursMeetingRatio: derivedAfterHoursMeetingRatio(days),
 
     // ── Messaging ─────────────────────────────────────────────────────────────
-    messagesSentPerPerson:          wMean(days, 'messaging.messagesSentPerPerson'),
-    afterHoursMessageRatio:         wMean(days, 'messaging.afterHoursMessageRatio'),
-    medianResponseMinutes:          medianOfMedians(days, 'messaging.medianResponseMinutes'),
-    p90ResponseMinutes:             medianOfMedians(days, 'messaging.p90ResponseMinutes'),
-    uniqueCollaboratorsPerPerson:   wMean(days, 'messaging.uniqueCollaboratorsPerPerson'),
-    publicChannelRatio:             wMean(days, 'messaging.publicChannelRatio'),
-    dmRatio:                        wMean(days, 'messaging.dmRatio'),
-    threadParticipationRate:        wMean(days, 'messaging.threadParticipationRate'),
-    reciprocityRatio:               wMean(days, 'messaging.reciprocityRatio'),
+    messagesSentPerPerson: wMean(days, 'messaging.messagesSentPerPerson'),
+    afterHoursMessageRatio: wMean(days, 'messaging.afterHoursMessageRatio'),
+    medianResponseMinutes: medianOfMedians(days, 'messaging.medianResponseMinutes'),
+    p90ResponseMinutes: medianOfMedians(days, 'messaging.p90ResponseMinutes'),
+    uniqueCollaboratorsPerPerson: wMean(days, 'messaging.uniqueCollaboratorsPerPerson'),
+    publicChannelRatio: wMean(days, 'messaging.publicChannelRatio'),
+    dmRatio: wMean(days, 'messaging.dmRatio'),
+    threadParticipationRate: wMean(days, 'messaging.threadParticipationRate'),
+    reciprocityRatio: wMean(days, 'messaging.reciprocityRatio'),
 
     // ── Email ─────────────────────────────────────────────────────────────────
-    afterHoursEmailRatio:           wMean(days, 'email.afterHoursEmailRatio'),
-    medianReplyMinutes:             medianOfMedians(days, 'email.medianReplyMinutes'),
+    afterHoursEmailRatio: wMean(days, 'email.afterHoursEmailRatio'),
+    medianReplyMinutes: medianOfMedians(days, 'email.medianReplyMinutes'),
 
     // ── After-hours composite (all sources) for Recovery Debt ─────────────────
     afterHoursActivityRatio: derivedAfterHoursActivityRatio(days),
 
     // ── Workload Volatility inputs (week-over-week) ───────────────────────────
-    weekOverWeekMeetingLoadChange:    weekOverWeekChange(
-      days, prevDays, 'calendar.meetingHoursPerPerson'
+    weekOverWeekMeetingLoadChange: weekOverWeekChange(
+      days,
+      prevDays,
+      'calendar.meetingHoursPerPerson'
     ),
-    weekOverWeekMessageVolumeChange:  weekOverWeekChange(
-      days, prevDays, 'messaging.messagesSentPerPerson'
+    weekOverWeekMessageVolumeChange: weekOverWeekChange(
+      days,
+      prevDays,
+      'messaging.messagesSentPerPerson'
     ),
-    weekOverWeekAfterHoursChange:     weekOverWeekChange(
-      days, prevDays, 'calendar.afterHoursMeetingMinutes'
+    weekOverWeekAfterHoursChange: weekOverWeekChange(
+      days,
+      prevDays,
+      'calendar.afterHoursMeetingMinutes'
     ),
-    newRecurringMeetingsCount:        estimateNewRecurringMeetings(days, prevDays),
-    activitySpikeDays:                countActivitySpikeDays(days),
+    newRecurringMeetingsCount: estimateNewRecurringMeetings(days, prevDays),
+    activitySpikeDays: countActivitySpikeDays(days),
 
     // Integration coverage — majority vote across the week
     integrationCoverage: {
-      hasCalendar:     majorityTrue(days, 'integrationCoverage.hasCalendar'),
-      hasMessaging:    majorityTrue(days, 'integrationCoverage.hasMessaging'),
-      hasEmail:        majorityTrue(days, 'integrationCoverage.hasEmail'),
+      hasCalendar: majorityTrue(days, 'integrationCoverage.hasCalendar'),
+      hasMessaging: majorityTrue(days, 'integrationCoverage.hasMessaging'),
+      hasEmail: majorityTrue(days, 'integrationCoverage.hasEmail'),
       hasOrgStructure: majorityTrue(days, 'integrationCoverage.hasOrgStructure'),
     },
   };
@@ -127,17 +133,16 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
  */
 function derivedAfterHoursActivityRatio(days) {
   if (days.length === 0) return 0;
-  const ratios = days
-    .map((d) => {
-      const msgRatio = d.messaging?.afterHoursMessageRatio ?? 0;
-      const emailRatio = d.email?.afterHoursEmailRatio ?? 0;
-      const meetRatio = d.calendar?.afterHoursMeetingMinutes > 0
-        ? d.calendar.afterHoursMeetingMinutes /
-          Math.max(d.calendar.meetingHoursTotal * 60, 1)
+  const ratios = days.map((d) => {
+    const msgRatio = d.messaging?.afterHoursMessageRatio ?? 0;
+    const emailRatio = d.email?.afterHoursEmailRatio ?? 0;
+    const meetRatio =
+      d.calendar?.afterHoursMeetingMinutes > 0
+        ? d.calendar.afterHoursMeetingMinutes / Math.max(d.calendar.meetingHoursTotal * 60, 1)
         : 0;
-      // Simple average of the three source ratios (equal weight)
-      return (msgRatio + emailRatio + meetRatio) / 3;
-    });
+    // Simple average of the three source ratios (equal weight)
+    return (msgRatio + emailRatio + meetRatio) / 3;
+  });
   return round4(median(ratios));
 }
 
@@ -183,9 +188,7 @@ function estimateNewRecurringMeetings(days, prevDays) {
 function countActivitySpikeDays(days) {
   if (days.length === 0) return 0;
   const activityValues = days.map(
-    (d) =>
-      (d.messaging?.messagesSentTotal ?? 0) +
-      (d.calendar?.meetingHoursTotal ?? 0) * 60
+    (d) => (d.messaging?.messagesSentTotal ?? 0) + (d.calendar?.meetingHoursTotal ?? 0) * 60
   );
   const med = median(activityValues);
   if (med === 0) return 0;
@@ -229,10 +232,7 @@ function sumField(days, field) {
 
 function perPerson(days, countField) {
   const total = sumField(days, countField);
-  const people = Math.max(
-    1,
-    Math.round(weightedMean(days, 'activePeopleCount', null))
-  );
+  const people = Math.max(1, Math.round(weightedMean(days, 'activePeopleCount', null)));
   return round4(total / people);
 }
 
@@ -269,9 +269,7 @@ function median(arr) {
   if (!arr || arr.length === 0) return 0;
   const sorted = [...arr].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 function round4(v) {

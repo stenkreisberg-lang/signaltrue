@@ -54,14 +54,23 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
 
   // Fetch all weekly records for this org + week
   const teams = await Team.find({ orgId }).select('_id name managerId').lean();
-  const teamIds = teams.map(t => t._id);
+  const teamIds = teams.map((t) => t._id);
 
   const records = await EngagementStrainWeekly.find(
     { teamId: { $in: teamIds }, weekStart },
     {
-      teamId: 1, weekStart: 1, engagementStrainRisk: 1, engagementConditionsScore: 1,
-      riskState: 1, trend: 1, confidenceLabel: 1, confidenceScore: 1,
-      subscores: 1, topDrivers: 1, patterns: 1, recommendedActions: 1,
+      teamId: 1,
+      weekStart: 1,
+      engagementStrainRisk: 1,
+      engagementConditionsScore: 1,
+      riskState: 1,
+      trend: 1,
+      confidenceLabel: 1,
+      confidenceScore: 1,
+      subscores: 1,
+      topDrivers: 1,
+      patterns: 1,
+      recommendedActions: 1,
       activePeopleCount: 1,
     }
   ).lean();
@@ -72,13 +81,14 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
   }
 
   // Build a teamId → name lookup
-  const teamMap = Object.fromEntries(teams.map(t => [String(t._id), t.name ?? 'Unnamed team']));
+  const teamMap = Object.fromEntries(teams.map((t) => [String(t._id), t.name ?? 'Unnamed team']));
 
   // Sort records: critical → strain → watch → healthy
   const BAND = { critical: 0, strain: 1, watch: 2, healthy: 3 };
-  const sorted = [...records].sort((a, b) =>
-    (BAND[a.riskState] ?? 4) - (BAND[b.riskState] ?? 4) ||
-    (b.engagementStrainRisk ?? 0) - (a.engagementStrainRisk ?? 0)
+  const sorted = [...records].sort(
+    (a, b) =>
+      (BAND[a.riskState] ?? 4) - (BAND[b.riskState] ?? 4) ||
+      (b.engagementStrainRisk ?? 0) - (a.engagementStrainRisk ?? 0)
   );
 
   const html = buildEmailHtml(orgId, weekStart, sorted, teamMap);
@@ -96,7 +106,9 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
   }
 
   if (!transport) {
-    console.log(`[EngagementEmail] SMTP not configured — would send to ${admins.map(a => a.email).join(', ')}`);
+    console.log(
+      `[EngagementEmail] SMTP not configured — would send to ${admins.map((a) => a.email).join(', ')}`
+    );
     console.log(`[EngagementEmail] Subject: ${subject}`);
     return { sent: 0, skipped: admins.length };
   }
@@ -123,9 +135,9 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
 // ── Subject line ────────────────────────────────────────────────────────────────
 
 function buildSubject(sorted, weekStart) {
-  const critical = sorted.filter(r => r.riskState === 'critical').length;
-  const strain   = sorted.filter(r => r.riskState === 'strain').length;
-  const date     = formatDateShort(weekStart);
+  const critical = sorted.filter((r) => r.riskState === 'critical').length;
+  const strain = sorted.filter((r) => r.riskState === 'strain').length;
+  const date = formatDateShort(weekStart);
 
   if (critical > 0) {
     return `⚠️ SignalTrue Engagement Report — ${critical} team${critical > 1 ? 's' : ''} in critical range (${date})`;
@@ -141,17 +153,22 @@ function buildSubject(sorted, weekStart) {
 function buildEmailHtml(orgId, weekStart, records, teamMap) {
   const date = formatDateFull(weekStart);
 
-  const critical = records.filter(r => r.riskState === 'critical').length;
-  const strain   = records.filter(r => r.riskState === 'strain').length;
-  const watch    = records.filter(r => r.riskState === 'watch').length;
-  const healthy  = records.filter(r => r.riskState === 'healthy').length;
+  const critical = records.filter((r) => r.riskState === 'critical').length;
+  const strain = records.filter((r) => r.riskState === 'strain').length;
+  const watch = records.filter((r) => r.riskState === 'watch').length;
+  const healthy = records.filter((r) => r.riskState === 'healthy').length;
 
-  const teamRows = records.map(r => buildTeamRow(r, teamMap)).join('');
+  const teamRows = records.map((r) => buildTeamRow(r, teamMap)).join('');
 
   const urgentActions = records
-    .flatMap(r => (r.recommendedActions ?? []).filter(a => a.priority === 'urgent').map(a => ({
-      ...a, teamName: teamMap[String(r.teamId)] ?? 'Unknown team'
-    })))
+    .flatMap((r) =>
+      (r.recommendedActions ?? [])
+        .filter((a) => a.priority === 'urgent')
+        .map((a) => ({
+          ...a,
+          teamName: teamMap[String(r.teamId)] ?? 'Unknown team',
+        }))
+    )
     .slice(0, 5);
 
   const appUrl = process.env.FRONTEND_URL ?? 'https://app.signaltrue.com';
@@ -188,9 +205,9 @@ function buildEmailHtml(orgId, weekStart, records, teamMap) {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 ${critical > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#ef4444;">${critical} Critical</span></td>` : ''}
-                ${strain   > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#f97316;">${strain} Strain</span></td>` : ''}
-                ${watch    > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#f59e0b;">${watch} Watch</span></td>` : ''}
-                ${healthy  > 0 ? `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#22c55e;">${healthy} Healthy</span></td>` : ''}
+                ${strain > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#f97316;">${strain} Strain</span></td>` : ''}
+                ${watch > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#f59e0b;">${watch} Watch</span></td>` : ''}
+                ${healthy > 0 ? `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#22c55e;">${healthy} Healthy</span></td>` : ''}
               </tr>
             </table>
           </td>
@@ -199,22 +216,30 @@ function buildEmailHtml(orgId, weekStart, records, teamMap) {
         <tr><td style="height:24px;"></td></tr>
 
         <!-- Urgent actions (if any) -->
-        ${urgentActions.length > 0 ? `
+        ${
+          urgentActions.length > 0
+            ? `
         <tr>
           <td style="background:#450a0a;border:1px solid #7f1d1d;border-radius:12px;padding:20px;margin-bottom:24px;">
             <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.06em;">
               ⚠️ Urgent Actions Required
             </p>
-            ${urgentActions.map(a => `
+            ${urgentActions
+              .map(
+                (a) => `
             <div style="margin-bottom:12px;">
               <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#fca5a5;">${a.title}</p>
               <p style="margin:0 0 2px;font-size:13px;color:#fecaca;">${a.description}</p>
               <p style="margin:0;font-size:12px;color:#9ca3af;">Team: ${a.teamName}</p>
-            </div>`).join('<hr style="border:none;border-top:1px solid #7f1d1d;margin:12px 0;">')}
+            </div>`
+              )
+              .join('<hr style="border:none;border-top:1px solid #7f1d1d;margin:12px 0;">')}
           </td>
         </tr>
         <tr><td style="height:24px;"></td></tr>
-        ` : ''}
+        `
+            : ''
+        }
 
         <!-- Team breakdown -->
         <tr>
@@ -261,25 +286,31 @@ function buildEmailHtml(orgId, weekStart, records, teamMap) {
 }
 
 function buildTeamRow(record, teamMap) {
-  const teamName  = teamMap[String(record.teamId)] ?? 'Unknown team';
-  const score     = record.engagementStrainRisk ?? 0;
+  const teamName = teamMap[String(record.teamId)] ?? 'Unknown team';
+  const score = record.engagementStrainRisk ?? 0;
   const riskState = record.riskState ?? 'watch';
-  const trend     = record.trend ?? 'stable';
+  const trend = record.trend ?? 'stable';
 
-  const stateColor = {
-    critical: '#ef4444', strain: '#f97316', watch: '#f59e0b', healthy: '#22c55e',
-  }[riskState] ?? '#f59e0b';
+  const stateColor =
+    {
+      critical: '#ef4444',
+      strain: '#f97316',
+      watch: '#f59e0b',
+      healthy: '#22c55e',
+    }[riskState] ?? '#f59e0b';
 
-  const stateLabel = {
-    critical: 'Critical', strain: 'Strain', watch: 'Watch', healthy: 'Healthy',
-  }[riskState] ?? 'Watch';
+  const stateLabel =
+    {
+      critical: 'Critical',
+      strain: 'Strain',
+      watch: 'Watch',
+      healthy: 'Healthy',
+    }[riskState] ?? 'Watch';
 
   const trendSymbol = trend === 'rising' ? '↑' : trend === 'improving' ? '↓' : '→';
-  const trendColor  = trend === 'rising' ? '#ef4444' : trend === 'improving' ? '#22c55e' : '#94a3b8';
+  const trendColor = trend === 'rising' ? '#ef4444' : trend === 'improving' ? '#22c55e' : '#94a3b8';
 
-  const topDriver = record.topDrivers?.[0]
-    ? formatDriverName(record.topDrivers[0].driver)
-    : null;
+  const topDriver = record.topDrivers?.[0] ? formatDriverName(record.topDrivers[0].driver) : null;
 
   const barWidth = Math.min(score, 100);
 
@@ -305,12 +336,16 @@ function buildTeamRow(record, teamMap) {
             </div>
           </td>
         </tr>
-        ${topDriver ? `
+        ${
+          topDriver
+            ? `
         <tr>
           <td colspan="2" style="padding-top:6px;">
             <span style="font-size:11px;color:#64748b;">Top driver: ${topDriver}</span>
           </td>
-        </tr>` : ''}
+        </tr>`
+            : ''
+        }
       </table>
     </td>
   </tr>
@@ -321,25 +356,32 @@ function buildTeamRow(record, teamMap) {
 
 function formatDateShort(iso) {
   return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
 function formatDateFull(iso) {
   return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
 function formatDriverName(key) {
   const labels = {
-    recoveryDebt:            'Recovery Debt',
-    focusErosion:            'Focus Erosion',
-    coordinationFriction:    'Coordination Friction',
-    responsivenessPressure:  'Responsiveness Pressure',
+    recoveryDebt: 'Recovery Debt',
+    focusErosion: 'Focus Erosion',
+    coordinationFriction: 'Coordination Friction',
+    responsivenessPressure: 'Responsiveness Pressure',
     collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap:       'Manager Support Gap',
-    workloadVolatility:      'Workload Volatility',
+    managerSupportGap: 'Manager Support Gap',
+    workloadVolatility: 'Workload Volatility',
   };
   return labels[key] ?? key;
 }

@@ -26,9 +26,7 @@ const DEFAULT_MIN_SIZE = 5;
 async function resolveMinSize(orgId) {
   if (!orgId) return DEFAULT_MIN_SIZE;
   try {
-    const org = await Organization.findById(orgId)
-      .select('minTeamSizeForAnalytics')
-      .lean();
+    const org = await Organization.findById(orgId).select('minTeamSizeForAnalytics').lean();
     return org?.minTeamSizeForAnalytics ?? DEFAULT_MIN_SIZE;
   } catch {
     return DEFAULT_MIN_SIZE;
@@ -53,7 +51,9 @@ export async function privacyGate(req, res, next) {
       .lean();
 
     if (!team) {
-      return res.status(404).json({ error: true, message: 'Team not found', code: 'TEAM_NOT_FOUND' });
+      return res
+        .status(404)
+        .json({ error: true, message: 'Team not found', code: 'TEAM_NOT_FOUND' });
     }
 
     const minSize = await resolveMinSize(team.orgId);
@@ -135,11 +135,15 @@ export async function privacyGateOrg(req, res, next) {
  */
 export async function checkPrivacyGate(teamId) {
   try {
-    const team = await Team.findById(teamId)
-      .select('metadata.actualSize orgId')
-      .lean();
+    const team = await Team.findById(teamId).select('metadata.actualSize orgId').lean();
 
-    if (!team) return { passed: false, reason: 'team_not_found', actualSize: 0, minRequired: DEFAULT_MIN_SIZE };
+    if (!team)
+      return {
+        passed: false,
+        reason: 'team_not_found',
+        actualSize: 0,
+        minRequired: DEFAULT_MIN_SIZE,
+      };
 
     const minSize = await resolveMinSize(team.orgId);
     const actualSize = team.metadata?.actualSize ?? 0;

@@ -38,7 +38,7 @@ const EPSILON = 0.001; // prevent division by zero in robust-z
  * @returns {Object}       — the saved EngagementBaseline document
  */
 export async function computeAndSaveBaseline(orgId, teamId, asOfDate = new Date()) {
-  const endDate = toDateStr(addDays(asOfDate, -1));      // yesterday
+  const endDate = toDateStr(addDays(asOfDate, -1)); // yesterday
   const startDate = toDateStr(addDays(asOfDate, -BASELINE_WINDOW_DAYS));
 
   // Fetch all EngagementTeamDaily records in the baseline window
@@ -134,10 +134,7 @@ export async function computeBaselinesForOrg(orgId, asOfDate = new Date()) {
       const result = await computeAndSaveBaseline(orgId, team._id, asOfDate);
       results.push(result);
     } catch (err) {
-      console.error(
-        `[EngagementBaseline] Error for team ${team._id}:`,
-        err.message
-      );
+      console.error(`[EngagementBaseline] Error for team ${team._id}:`, err.message);
     }
   }
 
@@ -185,38 +182,44 @@ function computeAllMetricBaselines(activeDocs) {
 
   return {
     // Calendar
-    meetingHoursPerPerson:        buildMetricBaseline(extract('calendar.meetingHoursPerPerson')),
-    attendeeHoursPerPerson:       buildMetricBaseline(extract('calendar.attendeeHoursPerPerson')),
-    recurringMeetingRatio:        buildMetricBaseline(extract('calendar.recurringMeetingRatio')),
-    avgAttendeeCount:             buildMetricBaseline(extract('calendar.avgAttendeeCount')),
-    backToBackMeetingCount:       buildMetricBaseline(extract('calendar.backToBackMeetingCount')),
-    fragmentedDayRatio:           buildMetricBaseline(extract('calendar.fragmentedDayRatio')),
-    focusHoursAvailablePerPerson: buildMetricBaseline(extract('calendar.focusHoursAvailablePerPerson')),
-    focusBlocks90mCount:          buildMetricBaseline(extract('calendar.focusBlocks90mCount')),
-    manager1to1MinutesPerPerson:  buildMetricBaseline(extract('calendar.manager1to1MinutesPerPerson')),
-    cancelled1to1Count:           buildMetricBaseline(extract('calendar.cancelled1to1Count')),
-    afterHoursMeetingMinutes:     buildMetricBaseline(extract('calendar.afterHoursMeetingMinutes')),
+    meetingHoursPerPerson: buildMetricBaseline(extract('calendar.meetingHoursPerPerson')),
+    attendeeHoursPerPerson: buildMetricBaseline(extract('calendar.attendeeHoursPerPerson')),
+    recurringMeetingRatio: buildMetricBaseline(extract('calendar.recurringMeetingRatio')),
+    avgAttendeeCount: buildMetricBaseline(extract('calendar.avgAttendeeCount')),
+    backToBackMeetingCount: buildMetricBaseline(extract('calendar.backToBackMeetingCount')),
+    fragmentedDayRatio: buildMetricBaseline(extract('calendar.fragmentedDayRatio')),
+    focusHoursAvailablePerPerson: buildMetricBaseline(
+      extract('calendar.focusHoursAvailablePerPerson')
+    ),
+    focusBlocks90mCount: buildMetricBaseline(extract('calendar.focusBlocks90mCount')),
+    manager1to1MinutesPerPerson: buildMetricBaseline(
+      extract('calendar.manager1to1MinutesPerPerson')
+    ),
+    cancelled1to1Count: buildMetricBaseline(extract('calendar.cancelled1to1Count')),
+    afterHoursMeetingMinutes: buildMetricBaseline(extract('calendar.afterHoursMeetingMinutes')),
 
     // Messaging
-    messagesSentPerPerson:        buildMetricBaseline(extract('messaging.messagesSentPerPerson')),
-    afterHoursMessageRatio:       buildMetricBaseline(extract('messaging.afterHoursMessageRatio')),
-    medianResponseMinutes:        buildMetricBaseline(
+    messagesSentPerPerson: buildMetricBaseline(extract('messaging.messagesSentPerPerson')),
+    afterHoursMessageRatio: buildMetricBaseline(extract('messaging.afterHoursMessageRatio')),
+    medianResponseMinutes: buildMetricBaseline(
       activeDocs.map((d) => d.messaging?.medianResponseMinutes).filter((v) => v !== null)
     ),
-    p90ResponseMinutes:           buildMetricBaseline(
+    p90ResponseMinutes: buildMetricBaseline(
       activeDocs.map((d) => d.messaging?.p90ResponseMinutes).filter((v) => v !== null)
     ),
-    uniqueCollaboratorsPerPerson: buildMetricBaseline(extract('messaging.uniqueCollaboratorsPerPerson')),
-    publicChannelRatio:           buildMetricBaseline(extract('messaging.publicChannelRatio')),
-    dmRatio:                      buildMetricBaseline(extract('messaging.dmRatio')),
-    threadParticipationRate:      buildMetricBaseline(extract('messaging.threadParticipationRate')),
-    reciprocityRatio:             buildMetricBaseline(
+    uniqueCollaboratorsPerPerson: buildMetricBaseline(
+      extract('messaging.uniqueCollaboratorsPerPerson')
+    ),
+    publicChannelRatio: buildMetricBaseline(extract('messaging.publicChannelRatio')),
+    dmRatio: buildMetricBaseline(extract('messaging.dmRatio')),
+    threadParticipationRate: buildMetricBaseline(extract('messaging.threadParticipationRate')),
+    reciprocityRatio: buildMetricBaseline(
       activeDocs.map((d) => d.messaging?.reciprocityRatio).filter((v) => v !== null)
     ),
 
     // Email
-    afterHoursEmailRatio:         buildMetricBaseline(extract('email.afterHoursEmailRatio')),
-    medianReplyMinutes:           buildMetricBaseline(
+    afterHoursEmailRatio: buildMetricBaseline(extract('email.afterHoursEmailRatio')),
+    medianReplyMinutes: buildMetricBaseline(
       activeDocs.map((d) => d.email?.medianReplyMinutes).filter((v) => v !== null)
     ),
   };
@@ -287,9 +290,7 @@ function median(arr) {
   if (!arr || arr.length === 0) return 0;
   const sorted = [...arr].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 function stdDev(arr) {

@@ -14,14 +14,20 @@ await mongoose.connect(process.env.MONGO_URI);
 console.log('✅ Connected to MongoDB');
 
 const org = await Organization.findOne({ domain: 'nobeldigital.ee' });
-if (!org) { console.error('Org not found'); process.exit(1); }
+if (!org) {
+  console.error('Org not found');
+  process.exit(1);
+}
 
 console.log(`Generating weekly brief for ${org.name}...`);
 const html = await generateWeeklyBrief(org._id);
 
 // Save HTML to file for preview
 const outPath = path.resolve(__dirname, '../weekly-brief-preview.html');
-fs.writeFileSync(outPath, `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Weekly Brief Preview</title><style>body{background:#f3f4f6;padding:40px 20px;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}</style></head><body>${html}</body></html>`);
+fs.writeFileSync(
+  outPath,
+  `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Weekly Brief Preview</title><style>body{background:#f3f4f6;padding:40px 20px;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}</style></head><body>${html}</body></html>`
+);
 console.log(`\n✅ Brief saved to: ${outPath}`);
 
 // Also strip HTML and print text version for quick review

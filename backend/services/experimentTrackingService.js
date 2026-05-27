@@ -14,13 +14,13 @@ import { recordActionOutcome } from './learningLoopService.js';
  * Map metric keys to actual MetricsDaily fields
  */
 const METRIC_FIELD_MAP = {
-  'after_hours_activity': 'afterHoursRate',
-  'meeting_load': 'meetingLoadIndex',
-  'back_to_back_meetings': 'meetingHoursWeek',
-  'focus_time': 'focusTimeRatio',
-  'response_time': 'responseMedianMins',
-  'participation_drift': 'uniqueContacts',
-  'meeting_fragmentation': 'meetingHoursWeek'
+  after_hours_activity: 'afterHoursRate',
+  meeting_load: 'meetingLoadIndex',
+  back_to_back_meetings: 'meetingHoursWeek',
+  focus_time: 'focusTimeRatio',
+  response_time: 'responseMedianMins',
+  participation_drift: 'uniqueContacts',
+  meeting_fragmentation: 'meetingHoursWeek',
 };
 
 /**
@@ -28,39 +28,40 @@ const METRIC_FIELD_MAP = {
  */
 async function capturePreMetrics(teamId, successMetrics) {
   const preMetrics = [];
-  
+
   // Get most recent week's metrics (last 7 days average)
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
-  
+
   for (const sm of successMetrics) {
     const fieldName = METRIC_FIELD_MAP[sm.metricKey];
     if (!fieldName) continue;
-    
+
     // Get average over last 7 days
     const metrics = await MetricsDaily.find({
       teamId,
-      date: { $gte: startDate, $lte: endDate }
-    }).select(fieldName).lean();
-    
-    const values = metrics.map(m => m[fieldName]).filter(v => v != null);
-    const avgValue = values.length > 0 
-      ? values.reduce((sum, v) => sum + v, 0) / values.length 
-      : null;
-    
+      date: { $gte: startDate, $lte: endDate },
+    })
+      .select(fieldName)
+      .lean();
+
+    const values = metrics.map((m) => m[fieldName]).filter((v) => v != null);
+    const avgValue =
+      values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : null;
+
     // Get baseline for comparison
     const baseline = await Baseline.findOne({ teamId }).lean();
     const baselineValue = baseline?.metrics?.[sm.metricKey]?.mean || null;
-    
+
     preMetrics.push({
       metricKey: sm.metricKey,
       value: avgValue,
       baseline: baselineValue,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
-  
+
   return preMetrics;
 }
 
@@ -69,39 +70,40 @@ async function capturePreMetrics(teamId, successMetrics) {
  */
 async function capturePostMetrics(teamId, successMetrics, startDate) {
   const postMetrics = [];
-  
+
   // Get most recent week's metrics (last 7 days average)
   const endDate = new Date();
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  
+
   for (const sm of successMetrics) {
     const fieldName = METRIC_FIELD_MAP[sm.metricKey];
     if (!fieldName) continue;
-    
+
     // Get average over last 7 days
     const metrics = await MetricsDaily.find({
       teamId,
-      date: { $gte: weekAgo, $lte: endDate }
-    }).select(fieldName).lean();
-    
-    const values = metrics.map(m => m[fieldName]).filter(v => v != null);
-    const avgValue = values.length > 0 
-      ? values.reduce((sum, v) => sum + v, 0) / values.length 
-      : null;
-    
+      date: { $gte: weekAgo, $lte: endDate },
+    })
+      .select(fieldName)
+      .lean();
+
+    const values = metrics.map((m) => m[fieldName]).filter((v) => v != null);
+    const avgValue =
+      values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : null;
+
     // Get baseline for comparison
     const baseline = await Baseline.findOne({ teamId }).lean();
     const baselineValue = baseline?.metrics?.[sm.metricKey]?.mean || null;
-    
+
     postMetrics.push({
       metricKey: sm.metricKey,
       value: avgValue,
       baseline: baselineValue,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
-  
+
   return postMetrics;
 }
 
@@ -110,32 +112,32 @@ async function capturePostMetrics(teamId, successMetrics, startDate) {
  */
 async function completeExperiment(experimentId) {
   const experiment = await Experiment.findById(experimentId).populate('actionId');
-  
+
   if (!experiment || experiment.status !== 'running') {
     throw new Error('Experiment not found or not running');
   }
-  
+
   // Capture post-metrics
   const postMetrics = await capturePostMetrics(
     experiment.teamId,
     experiment.successMetrics,
     experiment.startDate
   );
-  
+
   experiment.postMetrics = postMetrics;
   experiment.status = 'completed';
   await experiment.save();
-  
+
   // Mark action as completed
   const action = await TeamAction.findById(experiment.actionId);
   if (action) {
     action.status = 'completed';
     await action.save();
   }
-  
+
   // Generate impact analysis
   const impact = await generateImpact(experiment);
-  
+
   return { experiment, impact };
 }
 
@@ -146,69 +148,69 @@ async function generateImpact(experiment) {
   const metricChanges = [];
   let totalPositiveSignals = 0;
   let totalNegativeSignals = 0;
-  
+
   // Compare pre vs post metrics
   for (const successMetric of experiment.successMetrics) {
-    const pre = experiment.preMetrics.find(m => m.metricKey === successMetric.metricKey);
-    const post = experiment.postMetrics.find(m => m.metricKey === successMetric.metricKey);
-    
+    const pre = experiment.preMetrics.find((m) => m.metricKey === successMetric.metricKey);
+    const post = experiment.postMetrics.find((m) => m.metricKey === successMetric.metricKey);
+
     if (!pre || !post || pre.value === null || post.value === null) {
       continue; // Skip if data missing
     }
-    
+
     const delta = post.value - pre.value;
     const percentChange = (delta / pre.value) * 100;
-    
+
     const expectedDirection = successMetric.expectedDirection;
     const actualDirection = delta > 0 ? 'increase' : delta < 0 ? 'decrease' : 'unchanged';
-    const movedAsExpected = (expectedDirection === actualDirection);
-    
+    const movedAsExpected = expectedDirection === actualDirection;
+
     metricChanges.push({
       metricKey: successMetric.metricKey,
       preValue: pre.value,
       postValue: post.value,
       delta,
       percentChange,
-      movedAsExpected
+      movedAsExpected,
     });
-    
+
     if (movedAsExpected && Math.abs(percentChange) > 5) {
       totalPositiveSignals++;
     } else if (!movedAsExpected && Math.abs(percentChange) > 5) {
       totalNegativeSignals++;
     }
   }
-  
+
   // Classify result
   let result = 'neutral';
   let confidence = 50;
-  
+
   if (totalPositiveSignals >= 2 && totalNegativeSignals === 0) {
     result = 'positive';
-    confidence = Math.min(90, 60 + (totalPositiveSignals * 10));
+    confidence = Math.min(90, 60 + totalPositiveSignals * 10);
   } else if (totalNegativeSignals >= 2) {
     result = 'negative';
-    confidence = Math.min(90, 60 + (totalNegativeSignals * 10));
+    confidence = Math.min(90, 60 + totalNegativeSignals * 10);
   } else if (totalPositiveSignals >= 1 && totalNegativeSignals === 0) {
     result = 'positive';
     confidence = 60;
   }
-  
+
   // Generate summary
   const summaryText = generateImpactSummary(result, metricChanges, experiment);
-  
+
   // Generate next step
   const nextStep = generateNextStep(result, experiment);
-  
+
   const impact = await Impact.create({
     experimentId: experiment._id,
     result,
     confidence: confidence > 75 ? 'high' : confidence > 50 ? 'medium' : 'low',
     summaryText,
     nextStep,
-    metricChanges
+    metricChanges,
   });
-  
+
   // LEARNING LOOP: Record this outcome for future AI recommendations
   try {
     await recordActionOutcome(experiment._id);
@@ -217,7 +219,7 @@ async function generateImpact(experiment) {
     console.error('Failed to record learning:', learningError);
     // Don't fail the whole impact generation if learning fails
   }
-  
+
   return impact;
 }
 
@@ -226,18 +228,18 @@ async function generateImpact(experiment) {
  */
 function generateImpactSummary(result, metricChanges, experiment) {
   const action = experiment.actionId;
-  
+
   if (result === 'positive') {
     const improvedMetrics = metricChanges
-      .filter(m => m.movedAsExpected && Math.abs(m.percentChange) > 5)
-      .map(m => m.metricKey.replace(/_/g, ' '));
-    
+      .filter((m) => m.movedAsExpected && Math.abs(m.percentChange) > 5)
+      .map((m) => m.metricKey.replace(/_/g, ' '));
+
     return `"${action.title}" improved ${improvedMetrics.join(', ')} without negative side effects. Consider making this permanent.`;
   } else if (result === 'negative') {
     const worsenedMetrics = metricChanges
-      .filter(m => !m.movedAsExpected && Math.abs(m.percentChange) > 5)
-      .map(m => m.metricKey.replace(/_/g, ' '));
-    
+      .filter((m) => !m.movedAsExpected && Math.abs(m.percentChange) > 5)
+      .map((m) => m.metricKey.replace(/_/g, ' '));
+
     return `"${action.title}" did not produce expected results. ${worsenedMetrics.join(', ')} moved in the wrong direction. Try a different approach.`;
   } else {
     return `"${action.title}" showed minimal impact. Metrics remained stable. May need more time or a stronger intervention.`;
@@ -262,14 +264,14 @@ function generateNextStep(result, experiment) {
  */
 async function checkExpiredExperiments() {
   const now = new Date();
-  
+
   const expiredExperiments = await Experiment.find({
     status: 'running',
-    endDate: { $lte: now }
+    endDate: { $lte: now },
   });
-  
+
   const results = [];
-  
+
   for (const exp of expiredExperiments) {
     try {
       const { experiment, impact } = await completeExperiment(exp._id);
@@ -278,7 +280,7 @@ async function checkExpiredExperiments() {
       results.push({ experiment: exp, impact: null, error: error.message });
     }
   }
-  
+
   return results;
 }
 
@@ -287,5 +289,5 @@ export {
   capturePostMetrics,
   completeExperiment,
   generateImpact,
-  checkExpiredExperiments
+  checkExpiredExperiments,
 };

@@ -1,41 +1,51 @@
-import express from "express";
-import Project from "../models/project.js";
-import multer from "multer";
-import path from "path";
-import fs from "fs/promises";
-import { fileURLToPath } from "url";
-import { requireApiKey } from "../middleware/auth.js";
-import { scanFile } from "../utils/virusScan.js";
-import { saveFileLocal, saveFileS3 } from "../utils/storage.js";
-import { validateProjectCreation, validateObjectId, validateRequest } from "../middleware/validation.js";
+import express from 'express';
+import Project from '../models/project.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+import { requireApiKey, isMasterAdmin } from '../middleware/auth.js';
+import { scanFile } from '../utils/virusScan.js';
+import { saveFileLocal, saveFileS3 } from '../utils/storage.js';
+import {
+  validateProjectCreation,
+  validateObjectId,
+  validateRequest,
+} from '../middleware/validation.js';
 
 // Define allowed file types
 const ALLOWED_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "application/pdf",
-  "text/plain",
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/gif',
+  'application/pdf',
+  'text/plain',
   // Allow generic binary uploads (curl may send this for small files)
-  "application/octet-stream",
-  "text/csv",
+  'application/octet-stream',
+  'text/csv',
 ];
 
 // Configure multer v3
 const upload = multer({
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
 });
 
 const router = express.Router();
 
+function projectFilter(req, id) {
+  const filter = id ? { _id: id } : {};
+  if (!isMasterAdmin(req.user)) filter.orgId = req.user.orgId;
+  return filter;
+}
+
 // POST - Create a new project
-router.post("/", validateProjectCreation, async (req, res) => {
+router.post('/', validateProjectCreation, async (req, res) => {
   try {
     const { name, description, favorite } = req.body;
-    if (!description || typeof description !== "string" || description.trim() === "") {
+    if (!description || typeof description !== 'string' || description.trim() === '') {
       return res.status(400).json({ message: "'description' is required" });
     }
 
@@ -51,9 +61,13 @@ router.post("/", validateProjectCreation, async (req, res) => {
           .map((s) => ({ title: String(s.title), done: !!s.done }))
       : [];
 
-    const safeStatus = typeof status === "string" && ["open", "in-progress", "done"].includes(status) ? status : "open";
+    const safeStatus =
+      typeof status === 'string' && ['open', 'in-progress', 'done'].includes(status)
+        ? status
+        : 'open';
 
     const project = new Project({
+      orgId: req.user.orgId,
       name: name.trim(),
       description: description.trim(),
       favorite: !!favorite,
@@ -70,9 +84,9 @@ router.post("/", validateProjectCreation, async (req, res) => {
 });
 
 // GET - List all projects
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const projects = await Project.find().sort({ createdAt: -1 }); // newest first
+    const projects = await Project.find(projectFilter(req)).sort({ createdAt: -1 }); // newest first
     res.json(projects);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -80,7 +94,7 @@ router.get("/", async (req, res) => {
 });
 
 // PUT - Update project (edit name, description, or favorite)
-router.put("/:id", async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     // Only update fields that were actually provided in the request body.
     // This prevents accidental overwrites with `undefined` when the client
@@ -88,26 +102,29 @@ router.put("/:id", async (req, res) => {
     const updates = {};
     const { name, description, favorite, status, notes, tags, subtasks } = req.body;
     if (name !== undefined) {
-      if (typeof name !== "string" || name.trim() === "") {
+      if (typeof name !== 'string' || name.trim() === '') {
         return res.status(400).json({ message: "'name' must be a non-empty string" });
       }
       updates.name = name.trim();
     }
     if (description !== undefined) {
-      if (typeof description !== "string" || description.trim() === "") {
+      if (typeof description !== 'string' || description.trim() === '') {
         return res.status(400).json({ message: "'description' must be a non-empty string" });
       }
       updates.description = description.trim();
     }
     if (favorite !== undefined) updates.favorite = !!favorite;
     if (status !== undefined) {
-      if (typeof status !== "string" || !["open", "in-progress", "done"].includes(status)) {
-        return res.status(400).json({ message: "'status' must be 'open', 'in-progress' or 'done'" });
+      if (typeof status !== 'string' || !['open', 'in-progress', 'done'].includes(status)) {
+        return res
+          .status(400)
+          .json({ message: "'status' must be 'open', 'in-progress' or 'done'" });
       }
       updates.status = status;
     }
     if (notes !== undefined) {
-      if (!Array.isArray(notes)) return res.status(400).json({ message: "'notes' must be an array" });
+      if (!Array.isArray(notes))
+        return res.status(400).json({ message: "'notes' must be an array" });
       updates.notes = notes.map((n) => String(n));
     }
     if (tags !== undefined) {
@@ -115,19 +132,18 @@ router.put("/:id", async (req, res) => {
       updates.tags = tags.map((t) => String(t));
     }
     if (subtasks !== undefined) {
-      if (!Array.isArray(subtasks)) return res.status(400).json({ message: "'subtasks' must be an array" });
+      if (!Array.isArray(subtasks))
+        return res.status(400).json({ message: "'subtasks' must be an array" });
       updates.subtasks = subtasks
         .filter((s) => s && s.title)
         .map((s) => ({ title: String(s.title), done: !!s.done }));
     }
 
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    );
+    const project = await Project.findOneAndUpdate(projectFilter(req, req.params.id), updates, {
+      new: true,
+    });
     if (!project) {
-      return res.status(404).json({ message: "Project not found" });
+      return res.status(404).json({ message: 'Project not found' });
     }
     res.json(project);
   } catch (err) {
@@ -136,13 +152,13 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE - Remove project
-router.delete("/:id", async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Project.findByIdAndDelete(req.params.id);
+    const deleted = await Project.findOneAndDelete(projectFilter(req, req.params.id));
     if (!deleted) {
-      return res.status(404).json({ message: "Project not found" });
+      return res.status(404).json({ message: 'Project not found' });
     }
-    res.json({ message: "Project deleted" });
+    res.json({ message: 'Project deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -150,11 +166,11 @@ router.delete("/:id", async (req, res) => {
 
 // POST - Upload attachment for a project
 // Protect attachment endpoints with API key auth (optional via API_KEY env)
-router.post("/:id/attachments", requireApiKey, async (req, res) => {
+router.post('/:id/attachments', requireApiKey, async (req, res) => {
   try {
     // Handle file upload with proper error catching
     await new Promise((resolve, reject) => {
-      upload.single("file")(req, res, (err) => {
+      upload.single('file')(req, res, (err) => {
         if (err) reject(err);
         else resolve();
       });
@@ -162,7 +178,7 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
 
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ message: 'No file uploaded' });
     }
 
     // Strict mimetype validation: only accept known allowed mimetypes.
@@ -171,22 +187,27 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
     const mimetype = file.mimetype;
     if (!mimetype || !ALLOWED_TYPES.includes(mimetype)) {
       return res.status(400).json({
-        message: "Invalid file type. Allowed types: images (png,jpeg,gif), PDFs, and text files (plain/csv). Please set a valid Content-Type."
+        message:
+          'Invalid file type. Allowed types: images (png,jpeg,gif), PDFs, and text files (plain/csv). Please set a valid Content-Type.',
       });
     }
 
-  // Resolve uploads directory relative to this routes file to avoid
-  // depending on the process CWD. That ensures we always write to
-  // backend/uploads.
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const uploadsDir = path.join(__dirname, "..", "uploads");
-  await fs.mkdir(uploadsDir, { recursive: true });
+    // Resolve uploads directory relative to this routes file to avoid
+    // depending on the process CWD. That ensures we always write to
+    // backend/uploads.
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    await fs.mkdir(uploadsDir, { recursive: true });
 
     // Determine original filename and a safe filename
-    const originalname = file.originalname || file.originalName || file.clientReportedFileName || `upload-${Date.now()}.bin`;
-    const safeBase = originalname.replace(/[^a-zA-Z0-9.\-]/g, "_");
-    const filename = Date.now() + "-" + safeBase;
+    const originalname =
+      file.originalname ||
+      file.originalName ||
+      file.clientReportedFileName ||
+      `upload-${Date.now()}.bin`;
+    const safeBase = originalname.replace(/[^a-zA-Z0-9.\-]/g, '_');
+    const filename = Date.now() + '-' + safeBase;
     const filePath = path.join(uploadsDir, filename);
 
     // Save file to configured storage backend
@@ -197,26 +218,26 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
         await saveFileLocal(uploadsDir, filename, file.buffer);
       } else if (file.stream) {
         // stream to a temp file then move
-        const tmpPath = filePath + ".tmp";
+        const tmpPath = filePath + '.tmp';
         const stream = file.stream;
-        const writable = (await import("fs")).createWriteStream(tmpPath);
+        const writable = (await import('fs')).createWriteStream(tmpPath);
         await new Promise((resolve, reject) => {
           stream.pipe(writable);
-          stream.on("error", reject);
-          writable.on("finish", resolve);
-          writable.on("error", reject);
+          stream.on('error', reject);
+          writable.on('finish', resolve);
+          writable.on('error', reject);
         });
         await fs.rename(tmpPath, filePath);
       } else if (file.path) {
         // some middleware might save to a temp path
         await fs.copyFile(file.path, filePath);
       } else {
-        throw new Error("Unsupported upload payload");
+        throw new Error('Unsupported upload payload');
       }
     } else {
       // S3 save: get body and content type
       const key = filename;
-      const contentType = file.mimetype || "application/octet-stream";
+      const contentType = file.mimetype || 'application/octet-stream';
       if (file.buffer) {
         await saveFileS3(key, file.buffer, contentType);
       } else if (file.stream) {
@@ -226,7 +247,7 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
         const data = await fs.readFile(file.path);
         await saveFileS3(key, data, contentType);
       } else {
-        throw new Error("Unsupported upload payload for S3");
+        throw new Error('Unsupported upload payload for S3');
       }
     }
 
@@ -234,7 +255,7 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
     const scan = await scanFile(filePath);
     if (!scan.ok) {
       await fs.unlink(filePath).catch(() => {});
-      return res.status(400).json({ message: "File failed virus scan" });
+      return res.status(400).json({ message: 'File failed virus scan' });
     }
 
     const attachment = {
@@ -246,8 +267,8 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
       uploadedAt: new Date(),
     };
 
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
+    const project = await Project.findOneAndUpdate(
+      projectFilter(req, req.params.id),
       { $push: { attachments: attachment } },
       { new: true }
     );
@@ -255,37 +276,37 @@ router.post("/:id/attachments", requireApiKey, async (req, res) => {
     if (!project) {
       // Clean up file if project not found
       await fs.unlink(filePath).catch(console.error);
-      return res.status(404).json({ message: "Project not found" });
+      return res.status(404).json({ message: 'Project not found' });
     }
 
     res.status(201).json({ attachment, project });
   } catch (err) {
-    console.error("File upload error:", err);
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({ message: "File too large (max: 5MB)" });
+    console.error('File upload error:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File too large (max: 5MB)' });
     }
-    res.status(500).json({ message: err.message || "Error uploading file" });
+    res.status(500).json({ message: err.message || 'Error uploading file' });
   }
 });
 
 // DELETE - Remove an attachment from a project and delete the file
-router.delete("/:id/attachments/:filename", requireApiKey, async (req, res) => {
+router.delete('/:id/attachments/:filename', requireApiKey, async (req, res) => {
   try {
-  const { id, filename } = req.params;
-  const project = await Project.findById(id);
-    if (!project) return res.status(404).json({ message: "Project not found" });
+    const { id, filename } = req.params;
+    const project = await Project.findOne(projectFilter(req, id));
+    if (!project) return res.status(404).json({ message: 'Project not found' });
 
     const att = project.attachments.find((a) => a.filename === filename);
-    if (!att) return res.status(404).json({ message: "Attachment not found" });
+    if (!att) return res.status(404).json({ message: 'Attachment not found' });
 
     // remove file from disk (use same uploads dir as upload handler)
-    const { fileURLToPath: _f } = await import("url");
+    const { fileURLToPath: _f } = await import('url');
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const filePath = path.join(__dirname, "..", "uploads", filename);
+    const filePath = path.join(__dirname, '..', 'uploads', filename);
     try {
       await fs.unlink(filePath).catch((e) => {
-        if (e && e.code !== "ENOENT") console.error("Error deleting file", e);
+        if (e && e.code !== 'ENOENT') console.error('Error deleting file', e);
       });
     } catch (e) {
       // ignore
@@ -295,7 +316,7 @@ router.delete("/:id/attachments/:filename", requireApiKey, async (req, res) => {
     project.attachments = project.attachments.filter((a) => a.filename !== filename);
     await project.save();
 
-    res.json({ message: "Attachment deleted", project });
+    res.json({ message: 'Attachment deleted', project });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

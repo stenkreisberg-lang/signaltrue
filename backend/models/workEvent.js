@@ -2,238 +2,254 @@ import mongoose from 'mongoose';
 
 /**
  * WorkEvent model - Normalized event stream for all integrations
- * 
+ *
  * Per Category-King spec:
  * - Append-only event stream
  * - Stores only metadata (no content bodies)
  * - Batch backfill on connect (last 90 days), then incremental sync
  */
 
-const workEventSchema = new mongoose.Schema({
-  orgId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Organization',
-    required: true,
-    index: true
-  },
-  
-  // Source integration
-  source: {
-    type: String,
-    required: true,
-    enum: [
-      'jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp',
-      'slack', 'calendar',
-      // Core integration adapters
-      'microsoft-outlook', 'microsoft-teams', 'google-calendar', 'google-chat'
-    ],
-    index: true
-  },
-  
-  // Event type per source
-  eventType: {
-    type: String,
-    required: true,
-    enum: [
-      // Jira/Asana events
-      'task_created',
-      'task_status_changed',
-      'task_assigned',
-      'task_comment_added',
-      'task_reopened',
-      'task_due_date_changed',
-      'task_priority_changed',
-      'task_completed',
-      'task_moved_sections',
-      
-      // Gmail events
-      'email_sent',
-      'email_received',
-      
-      // Google Meet events
-      'meet_started',
-      'meet_ended',
-      'meet_participant_joined',
-      
-      // Notion events
-      'page_created',
-      'page_updated',
-      'comment_added',
-      'database_updated',
-      'page_shared',
-      
-      // CRM events (HubSpot/Pipedrive)
-      'deal_created',
-      'deal_stage_changed',
-      'deal_close_date_changed',
-      'ticket_created',
-      'activity_created',
-      
-      // Basecamp events
-      'post_created',
-      'todo_created',
-      'todo_completed',
-      'checkin_response',
-
-      // Core integration generic types (Slack, Teams, Google Chat, Calendar)
-      'message',
-      'meeting'
-    ],
-    index: true
-  },
-  
-  // Actor (who performed the action)
-  actorUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    index: true
-  },
-  
-  // Target (who was affected, e.g., email recipient, task assignee)
-  targetUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    index: true
-  },
-  
-  // Team association
-  teamId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Team',
-    index: true
-  },
-  
-  // When the event occurred
-  timestamp: {
-    type: Date,
-    required: true,
-    index: true
-  },
-  
-  // External ID for deduplication
-  externalId: {
-    type: String,
-    index: true
-  },
-  
-  // Structured metadata (strict allowlist per source)
-  metadata: {
-    // --- Jira/Asana fields ---
-    issueId: String,
-    issueKey: String,
-    projectId: String,
-    issueType: String,
-    priority: String,
-    statusCurrent: String,
-    statusPrevious: String,
-    assigneeUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    reporterUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    cycleTimeStartedAt: Date,
-    cycleTimeCompletedAt: Date,
-    reopenCount: Number,
-    commentCountDelta: Number,
-    dueOn: Date,
-    sectionName: String,
-    
-    // --- Gmail fields ---
-    messageIdHash: String,
-    threadIdHash: String,
-    toCount: Number,
-    ccCount: Number,
-    bccCount: Number,
-    isExternal: Boolean,
-    replyLatencySeconds: Number,
-    isAfterHours: Boolean,
-    
-    // --- Google Meet / Calendar fields ---
-    meetingIdHash: String,
-    startTime: Date,
-    endTime: Date,
-    participantCountPeak: Number,
-    isExternalParticipant: Boolean,
-    isAdHoc: Boolean,
-    durationMinutes: Number,
-
-    // --- Engagement Strain: calendar enrichment fields ---
-    // Populated at ingestion time by calendar adapters
-    is1to1: Boolean,                      // attendee_count == 2
-    isManagerOneOnOne: Boolean,           // 1:1 where one party is the team manager
-    isFocusBlock: Boolean,                // blocked focus/no-meeting time
-    isAllHands: Boolean,                  // company/all-hands event
-    isRecurring: Boolean,                 // recurring series
-    isCancelled: Boolean,                 // cancelled before it ran
-    isRescheduled: Boolean,               // rescheduled from original time
-    attendeeCount: Number,                // total attendee count
-    internalAttendeeCount: Number,        // internal-only attendees
-    externalAttendeeCount: Number,        // external attendees
-    organizerHash: String,                // hashed organizer identity
-    attendeeHashes: [String],             // hashed attendee identities
-    meetingType: {                        // derived classification
-      type: String,
-      enum: ['one_on_one', 'team', 'all_hands', 'external', 'cross_team', 'focus_block', 'other']
+const workEventSchema = new mongoose.Schema(
+  {
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      required: true,
+      index: true,
     },
-    
-    // --- Notion fields ---
-    pageIdHash: String,
-    parentDbId: String,
-    collaboratorCount: Number,
-    editChurn: Number,
-    
-    // --- CRM fields (HubSpot/Pipedrive) ---
-    dealIdHash: String,
-    ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    amount: Number,
-    stage: String,
-    stagePrevious: String,
-    stageChangeCount: Number,
-    closeDatePrevious: Date,
-    closeDateCurrent: Date,
-    ticketId: String,
-    activityType: String,
-    
-    // --- Basecamp fields ---
-    postIdHash: String,
-    todoIdHash: String,
-    responseGapSeconds: Number,
 
-    // --- Engagement Strain: messaging enrichment fields ---
-    // Populated at ingestion time by messaging adapters (Slack, Teams, Google Chat)
-    channelType: {                        // public / private / dm / group_dm
+    // Source integration
+    source: {
       type: String,
-      enum: ['public', 'private', 'dm', 'group_dm']
+      required: true,
+      enum: [
+        'jira',
+        'asana',
+        'gmail',
+        'meet',
+        'notion',
+        'hubspot',
+        'pipedrive',
+        'basecamp',
+        'slack',
+        'calendar',
+        // Core integration adapters
+        'microsoft-outlook',
+        'microsoft-teams',
+        'google-calendar',
+        'google-chat',
+      ],
+      index: true,
     },
-    channelHash: String,                  // hashed channel/conversation id
-    isReply: Boolean,                     // is a reply to another message
-    recipientHashes: [String],            // hashed recipient identities (DMs/group DMs)
-    mentionedUserHashes: [String],        // hashed @-mentioned user identities
-    reactionCount: Number,                // emoji reactions received
-    messageLengthBucket: {               // bucketed message length (no content stored)
+
+    // Event type per source
+    eventType: {
       type: String,
-      enum: ['short', 'medium', 'long']  // <50 chars / 50-300 / >300
+      required: true,
+      enum: [
+        // Jira/Asana events
+        'task_created',
+        'task_status_changed',
+        'task_assigned',
+        'task_comment_added',
+        'task_reopened',
+        'task_due_date_changed',
+        'task_priority_changed',
+        'task_completed',
+        'task_moved_sections',
+
+        // Gmail events
+        'email_sent',
+        'email_received',
+
+        // Google Meet events
+        'meet_started',
+        'meet_ended',
+        'meet_participant_joined',
+
+        // Notion events
+        'page_created',
+        'page_updated',
+        'comment_added',
+        'database_updated',
+        'page_shared',
+
+        // CRM events (HubSpot/Pipedrive)
+        'deal_created',
+        'deal_stage_changed',
+        'deal_close_date_changed',
+        'ticket_created',
+        'activity_created',
+
+        // Basecamp events
+        'post_created',
+        'todo_created',
+        'todo_completed',
+        'checkin_response',
+
+        // Core integration generic types (Slack, Teams, Google Chat, Calendar)
+        'message',
+        'meeting',
+      ],
+      index: true,
     },
-    hasAttachment: Boolean               // whether message had a file/link attachment
+
+    // Actor (who performed the action)
+    actorUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
+
+    // Target (who was affected, e.g., email recipient, task assignee)
+    targetUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
+
+    // Team association
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team',
+      index: true,
+    },
+
+    // When the event occurred
+    timestamp: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+
+    // External ID for deduplication
+    externalId: {
+      type: String,
+      index: true,
+    },
+
+    // Structured metadata (strict allowlist per source)
+    metadata: {
+      // --- Jira/Asana fields ---
+      issueId: String,
+      issueKey: String,
+      projectId: String,
+      issueType: String,
+      priority: String,
+      statusCurrent: String,
+      statusPrevious: String,
+      assigneeUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      reporterUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      cycleTimeStartedAt: Date,
+      cycleTimeCompletedAt: Date,
+      reopenCount: Number,
+      commentCountDelta: Number,
+      dueOn: Date,
+      sectionName: String,
+
+      // --- Gmail fields ---
+      messageIdHash: String,
+      threadIdHash: String,
+      toCount: Number,
+      ccCount: Number,
+      bccCount: Number,
+      isExternal: Boolean,
+      replyLatencySeconds: Number,
+      isAfterHours: Boolean,
+
+      // --- Google Meet / Calendar fields ---
+      meetingIdHash: String,
+      startTime: Date,
+      endTime: Date,
+      participantCountPeak: Number,
+      isExternalParticipant: Boolean,
+      isAdHoc: Boolean,
+      durationMinutes: Number,
+
+      // --- Engagement Strain: calendar enrichment fields ---
+      // Populated at ingestion time by calendar adapters
+      is1to1: Boolean, // attendee_count == 2
+      isManagerOneOnOne: Boolean, // 1:1 where one party is the team manager
+      isFocusBlock: Boolean, // blocked focus/no-meeting time
+      isAllHands: Boolean, // company/all-hands event
+      isRecurring: Boolean, // recurring series
+      isCancelled: Boolean, // cancelled before it ran
+      isRescheduled: Boolean, // rescheduled from original time
+      attendeeCount: Number, // total attendee count
+      internalAttendeeCount: Number, // internal-only attendees
+      externalAttendeeCount: Number, // external attendees
+      organizerHash: String, // hashed organizer identity
+      attendeeHashes: [String], // hashed attendee identities
+      meetingType: {
+        // derived classification
+        type: String,
+        enum: ['one_on_one', 'team', 'all_hands', 'external', 'cross_team', 'focus_block', 'other'],
+      },
+
+      // --- Notion fields ---
+      pageIdHash: String,
+      parentDbId: String,
+      collaboratorCount: Number,
+      editChurn: Number,
+
+      // --- CRM fields (HubSpot/Pipedrive) ---
+      dealIdHash: String,
+      ownerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      amount: Number,
+      stage: String,
+      stagePrevious: String,
+      stageChangeCount: Number,
+      closeDatePrevious: Date,
+      closeDateCurrent: Date,
+      ticketId: String,
+      activityType: String,
+
+      // --- Basecamp fields ---
+      postIdHash: String,
+      todoIdHash: String,
+      responseGapSeconds: Number,
+
+      // --- Engagement Strain: messaging enrichment fields ---
+      // Populated at ingestion time by messaging adapters (Slack, Teams, Google Chat)
+      channelType: {
+        // public / private / dm / group_dm
+        type: String,
+        enum: ['public', 'private', 'dm', 'group_dm'],
+      },
+      channelHash: String, // hashed channel/conversation id
+      isReply: Boolean, // is a reply to another message
+      recipientHashes: [String], // hashed recipient identities (DMs/group DMs)
+      mentionedUserHashes: [String], // hashed @-mentioned user identities
+      reactionCount: Number, // emoji reactions received
+      messageLengthBucket: {
+        // bucketed message length (no content stored)
+        type: String,
+        enum: ['short', 'medium', 'long'], // <50 chars / 50-300 / >300
+      },
+      hasAttachment: Boolean, // whether message had a file/link attachment
+    },
+
+    // Privacy marker (always metadata_only for compliance)
+    privacyLevel: {
+      type: String,
+      enum: ['metadata_only'],
+      default: 'metadata_only',
+    },
+
+    // Processing flags
+    processed: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    processedAt: Date,
   },
-  
-  // Privacy marker (always metadata_only for compliance)
-  privacyLevel: {
-    type: String,
-    enum: ['metadata_only'],
-    default: 'metadata_only'
-  },
-  
-  // Processing flags
-  processed: {
-    type: Boolean,
-    default: false,
-    index: true
-  },
-  processedAt: Date
-  
-}, { 
-  timestamps: true,
-  // Optimize for append-only pattern
-  capped: false 
-});
+  {
+    timestamps: true,
+    // Optimize for append-only pattern
+    capped: false,
+  }
+);
 
 // Compound indexes for common queries
 workEventSchema.index({ orgId: 1, source: 1, timestamp: -1 });

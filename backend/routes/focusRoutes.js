@@ -19,11 +19,11 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
 
     // Compute historical trend (last 12 weeks)
     const historicalRatios = bdiHistory
-      .filter(h => h.calendarSignals?.meetingHoursWeek && h.calendarSignals?.focusHoursWeek)
+      .filter((h) => h.calendarSignals?.meetingHoursWeek && h.calendarSignals?.focusHoursWeek)
       .slice(0, 12)
-      .map(h => ({
+      .map((h) => ({
         date: h.timestamp,
-        ratio: h.calendarSignals.focusHoursWeek / h.calendarSignals.meetingHoursWeek
+        ratio: h.calendarSignals.focusHoursWeek / h.calendarSignals.meetingHoursWeek,
       }));
 
     res.json({
@@ -31,10 +31,13 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
       current: {
         focusHours,
         meetingHours,
-        ratio: ratio ? ratio.toFixed(2) : null
+        ratio: ratio ? ratio.toFixed(2) : null,
       },
       historical: historicalRatios,
-      recommendation: ratio < 1 ? 'Consider adding focus blocks to balance meeting load' : 'Good focus-to-meeting balance'
+      recommendation:
+        ratio < 1
+          ? 'Consider adding focus blocks to balance meeting load'
+          : 'Good focus-to-meeting balance',
     });
   } catch (err) {
     console.error('Focus ratio error', err);
@@ -50,7 +53,7 @@ router.get('/org/:orgId', authenticateToken, async (req, res) => {
     const teams = await Team.find({ orgId });
     if (!teams.length) return res.json({ teams: [], avgRatio: null });
 
-    const teamRatios = teams.map(t => {
+    const teamRatios = teams.map((t) => {
       const focusHours = t.calendarSignals.focusHoursWeek || 0;
       const meetingHours = t.calendarSignals.meetingHoursWeek || 0;
       const ratio = meetingHours > 0 ? focusHours / meetingHours : null;
@@ -59,12 +62,14 @@ router.get('/org/:orgId', authenticateToken, async (req, res) => {
         teamName: t.name,
         focusHours,
         meetingHours,
-        ratio: ratio ? parseFloat(ratio.toFixed(2)) : null
+        ratio: ratio ? parseFloat(ratio.toFixed(2)) : null,
       };
     });
 
-    const validRatios = teamRatios.filter(t => t.ratio !== null).map(t => t.ratio);
-    const avgRatio = validRatios.length ? (validRatios.reduce((a, b) => a + b, 0) / validRatios.length).toFixed(2) : null;
+    const validRatios = teamRatios.filter((t) => t.ratio !== null).map((t) => t.ratio);
+    const avgRatio = validRatios.length
+      ? (validRatios.reduce((a, b) => a + b, 0) / validRatios.length).toFixed(2)
+      : null;
 
     res.json({ teams: teamRatios, avgRatio: parseFloat(avgRatio) });
   } catch (err) {

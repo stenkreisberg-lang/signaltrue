@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Sparkles, 
-  ChevronDown, 
-  ChevronUp, 
-  CheckCircle2, 
+import {
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
   AlertTriangle,
   Clock,
   Users,
@@ -14,12 +14,12 @@ import {
   Copy,
   ExternalLink,
   Brain,
-  Shield
+  Shield,
 } from 'lucide-react';
 
 /**
  * AI Copilot Panel Component
- * 
+ *
  * Displays AI-generated insights, actions, and message templates
  * for signals on Org, Team, and Individual views.
  */
@@ -30,25 +30,25 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const severityColors = {
   high: 'bg-red-100 text-red-800 border-red-200',
   medium: 'bg-amber-100 text-amber-800 border-amber-200',
-  low: 'bg-blue-100 text-blue-800 border-blue-200'
+  low: 'bg-blue-100 text-blue-800 border-blue-200',
 };
 
 // Action effort badges
 const effortColors = {
   low: 'bg-green-100 text-green-700',
   medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-orange-100 text-orange-700'
+  high: 'bg-orange-100 text-orange-700',
 };
 
-export default function AICopilotPanel({ 
-  orgId, 
-  teamId = null, 
+export default function AICopilotPanel({
+  orgId,
+  teamId = null,
   userId = null,
   viewerRole = 'TEAM_LEAD',
   signals = [],
   connectors = {},
   onActionTaken,
-  className = ''
+  className = '',
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -57,7 +57,7 @@ export default function AICopilotPanel({
     summary: true,
     actions: true,
     templates: false,
-    explainability: false
+    explainability: false,
   });
   const [feedbackGiven, setFeedbackGiven] = useState({});
   const [copiedTemplate, setCopiedTemplate] = useState(null);
@@ -65,18 +65,18 @@ export default function AICopilotPanel({
   // Fetch copilot response
   const fetchCopilotResponse = useCallback(async () => {
     if (!signals || signals.length === 0) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const res = await fetch(`${API_BASE}/api/ai/copilot`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           teamId,
@@ -87,18 +87,17 @@ export default function AICopilotPanel({
           policies: {
             core_hours_local: { start: '08:00', end: '18:00' },
             language: 'en',
-            privacy_mode: 'metadata_only'
-          }
-        })
+            privacy_mode: 'metadata_only',
+          },
+        }),
       });
-      
+
       if (!res.ok) {
         throw new Error('Failed to get AI insights');
       }
-      
+
       const data = await res.json();
       setResponse(data);
-      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -114,9 +113,9 @@ export default function AICopilotPanel({
 
   // Toggle section expansion
   const toggleSection = (section) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -124,24 +123,23 @@ export default function AICopilotPanel({
   const handleFeedback = async (signalType, helpful) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       await fetch(`${API_BASE}/api/ai/copilot/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           signal_type: signalType,
-          helpful
-        })
+          helpful,
+        }),
       });
-      
-      setFeedbackGiven(prev => ({
+
+      setFeedbackGiven((prev) => ({
         ...prev,
-        [signalType]: helpful ? 'up' : 'down'
+        [signalType]: helpful ? 'up' : 'down',
       }));
-      
     } catch (err) {
       console.error('Feedback error:', err);
     }
@@ -185,7 +183,7 @@ export default function AICopilotPanel({
             <p className="text-xs text-gray-500">Powered by research-backed analysis</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={fetchCopilotResponse}
@@ -194,7 +192,7 @@ export default function AICopilotPanel({
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          
+
           <button
             onClick={() => toggleSection('explainability')}
             className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -234,11 +232,13 @@ export default function AICopilotPanel({
             icon={<Sparkles className="w-4 h-4 text-indigo-500" />}
           >
             <p className="text-gray-700 mb-4">{response.summary}</p>
-            
+
             {/* Evidence Bullets */}
             {response.evidence && response.evidence.length > 0 && (
               <div className="space-y-2 mb-4">
-                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">What Changed</h4>
+                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  What Changed
+                </h4>
                 <ul className="space-y-1">
                   {response.evidence.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -249,11 +249,13 @@ export default function AICopilotPanel({
                 </ul>
               </div>
             )}
-            
+
             {/* Likely Causes */}
             {response.likely_causes && response.likely_causes.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Likely Drivers</h4>
+                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Likely Drivers
+                </h4>
                 <ul className="space-y-1">
                   {response.likely_causes.map((cause, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -264,7 +266,7 @@ export default function AICopilotPanel({
                 </ul>
               </div>
             )}
-            
+
             {/* Confidence Note */}
             {response.confidence_notes && response.confidence_notes.length > 0 && (
               <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
@@ -285,28 +287,18 @@ export default function AICopilotPanel({
           >
             <div className="space-y-3">
               {(response.recommended_actions || []).map((action, i) => (
-                <ActionCard
-                  key={i}
-                  action={action}
-                  onTaken={() => onActionTaken?.(action)}
-                />
+                <ActionCard key={i} action={action} onTaken={() => onActionTaken?.(action)} />
               ))}
             </div>
-            
+
             {/* Playbooks */}
             {response.playbooks && (
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {response.playbooks.team_lead_7d && response.playbooks.team_lead_7d.length > 0 && (
-                  <PlaybookCard
-                    title="Team Lead 7-Day"
-                    items={response.playbooks.team_lead_7d}
-                  />
+                  <PlaybookCard title="Team Lead 7-Day" items={response.playbooks.team_lead_7d} />
                 )}
                 {response.playbooks.hr_7d && response.playbooks.hr_7d.length > 0 && (
-                  <PlaybookCard
-                    title="HR 7-Day"
-                    items={response.playbooks.hr_7d}
-                  />
+                  <PlaybookCard title="HR 7-Day" items={response.playbooks.hr_7d} />
                 )}
               </div>
             )}
@@ -328,7 +320,7 @@ export default function AICopilotPanel({
                   copied={copiedTemplate === 'manager'}
                 />
               )}
-              
+
               {response.message_templates?.hr_to_leader && (
                 <TemplateCard
                   title="HR to Leader"
@@ -337,7 +329,7 @@ export default function AICopilotPanel({
                   copied={copiedTemplate === 'hr'}
                 />
               )}
-              
+
               {response.message_templates?.exec_summary && (
                 <TemplateCard
                   title="Executive Summary"
@@ -363,27 +355,36 @@ export default function AICopilotPanel({
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">Privacy First</h4>
-                  <p>We only analyze metadata—timestamps, counts, and patterns. We never read email content, document text, or chat messages.</p>
+                  <p>
+                    We only analyze metadata—timestamps, counts, and patterns. We never read email
+                    content, document text, or chat messages.
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <Brain className="w-3 h-3 text-blue-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">Research-Backed</h4>
-                  <p>Our signals are grounded in the Job Demands-Resources (JD-R) model, after-hours email research, and meeting fatigue studies.</p>
+                  <p>
+                    Our signals are grounded in the Job Demands-Resources (JD-R) model, after-hours
+                    email research, and meeting fatigue studies.
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-3 h-3 text-purple-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">Actions from Playbook</h4>
-                  <p>Recommended actions come from a deterministic playbook, not AI generation. The AI only helps explain patterns in plain language.</p>
+                  <p>
+                    Recommended actions come from a deterministic playbook, not AI generation. The
+                    AI only helps explain patterns in plain language.
+                  </p>
                 </div>
               </div>
             </div>
@@ -396,8 +397,8 @@ export default function AICopilotPanel({
               <button
                 onClick={() => handleFeedback('general', true)}
                 className={`p-2 rounded-lg transition-colors ${
-                  feedbackGiven.general === 'up' 
-                    ? 'bg-green-100 text-green-600' 
+                  feedbackGiven.general === 'up'
+                    ? 'bg-green-100 text-green-600'
                     : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -406,8 +407,8 @@ export default function AICopilotPanel({
               <button
                 onClick={() => handleFeedback('general', false)}
                 className={`p-2 rounded-lg transition-colors ${
-                  feedbackGiven.general === 'down' 
-                    ? 'bg-red-100 text-red-600' 
+                  feedbackGiven.general === 'down'
+                    ? 'bg-red-100 text-red-600'
                     : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -444,12 +445,8 @@ function CollapsibleSection({ title, expanded, onToggle, icon, badge, children }
           <ChevronDown className="w-4 h-4 text-gray-400" />
         )}
       </button>
-      
-      {expanded && (
-        <div className="px-4 pb-4">
-          {children}
-        </div>
-      )}
+
+      {expanded && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
@@ -461,11 +458,9 @@ function ActionCard({ action, onTaken }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <p className="font-medium text-gray-900 text-sm">{action.action}</p>
-          {action.why && (
-            <p className="text-xs text-gray-500 mt-1">{action.why}</p>
-          )}
+          {action.why && <p className="text-xs text-gray-500 mt-1">{action.why}</p>}
         </div>
-        
+
         {onTaken && (
           <button
             onClick={onTaken}
@@ -476,7 +471,7 @@ function ActionCard({ action, onTaken }) {
           </button>
         )}
       </div>
-      
+
       <div className="flex items-center gap-3 mt-2">
         {action.owner && (
           <span className="text-xs text-gray-500">
@@ -484,13 +479,15 @@ function ActionCard({ action, onTaken }) {
             {action.owner}
           </span>
         )}
-        
+
         {action.effort && (
-          <span className={`text-xs px-2 py-0.5 rounded ${effortColors[action.effort] || effortColors.medium}`}>
+          <span
+            className={`text-xs px-2 py-0.5 rounded ${effortColors[action.effort] || effortColors.medium}`}
+          >
             {action.effort} effort
           </span>
         )}
-        
+
         {action.time_to_effect && (
           <span className="text-xs text-gray-500">
             <Clock className="w-3 h-3 inline mr-1" />
@@ -528,25 +525,17 @@ function TemplateCard({ title, template, onCopy, copied }) {
         <button
           onClick={() => onCopy(template.body)}
           className={`p-1.5 rounded transition-colors ${
-            copied 
-              ? 'bg-green-100 text-green-600' 
-              : 'hover:bg-blue-100 text-blue-500'
+            copied ? 'bg-green-100 text-green-600' : 'hover:bg-blue-100 text-blue-500'
           }`}
         >
-          {copied ? (
-            <CheckCircle2 className="w-3 h-3" />
-          ) : (
-            <Copy className="w-3 h-3" />
-          )}
+          {copied ? <CheckCircle2 className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
         </button>
       </div>
-      
+
       {template.subject && (
-        <p className="text-xs text-blue-800 font-medium mb-1">
-          Subject: {template.subject}
-        </p>
+        <p className="text-xs text-blue-800 font-medium mb-1">Subject: {template.subject}</p>
       )}
-      
+
       <p className="text-xs text-blue-900 whitespace-pre-wrap">
         {template.body?.substring(0, 200)}...
       </p>

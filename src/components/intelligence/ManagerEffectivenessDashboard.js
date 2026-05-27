@@ -13,18 +13,12 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
   const [managers, setManagers] = useState([]);
   const [filter, setFilter] = useState('all'); // all, excellent, good, needs-improvement, critical
 
-  useEffect(() => {
-    if (!orgId) return;
-    fetchManagers();
-  }, [orgId]);
-
   const fetchManagers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${API_URL}/api/intelligence/managers/${orgId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get(`${API_URL}/api/intelligence/managers/${orgId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setManagers(response.data.managers || []);
       setLoading(false);
     } catch (error) {
@@ -33,15 +27,22 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
     }
   };
 
-  const filteredManagers = managers.filter(m => {
+  useEffect(() => {
+    if (!orgId) return;
+    fetchManagers();
+  }, [orgId]);
+
+  const filteredManagers = managers.filter((m) => {
     if (filter === 'all') return true;
     return m.effectivenessLevel === filter;
   });
 
-  const excellentCount = managers.filter(m => m.effectivenessLevel === 'excellent').length;
-  const goodCount = managers.filter(m => m.effectivenessLevel === 'good').length;
-  const needsImprovementCount = managers.filter(m => m.effectivenessLevel === 'needs-improvement').length;
-  const criticalCount = managers.filter(m => m.effectivenessLevel === 'critical').length;
+  const excellentCount = managers.filter((m) => m.effectivenessLevel === 'excellent').length;
+  const goodCount = managers.filter((m) => m.effectivenessLevel === 'good').length;
+  const needsImprovementCount = managers.filter(
+    (m) => m.effectivenessLevel === 'needs-improvement'
+  ).length;
+  const criticalCount = managers.filter((m) => m.effectivenessLevel === 'critical').length;
 
   if (loading) {
     return (
@@ -91,31 +92,47 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
       <div style={styles.filters}>
         <button
           onClick={() => setFilter('all')}
-          style={filter === 'all' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'all' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn
+          }
         >
           All ({managers.length})
         </button>
         <button
           onClick={() => setFilter('excellent')}
-          style={filter === 'excellent' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'excellent'
+              ? { ...styles.filterBtn, ...styles.filterActive }
+              : styles.filterBtn
+          }
         >
           Excellent ({excellentCount})
         </button>
         <button
           onClick={() => setFilter('good')}
-          style={filter === 'good' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'good' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn
+          }
         >
           Good ({goodCount})
         </button>
         <button
           onClick={() => setFilter('needs-improvement')}
-          style={filter === 'needs-improvement' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'needs-improvement'
+              ? { ...styles.filterBtn, ...styles.filterActive }
+              : styles.filterBtn
+          }
         >
           Needs Improvement ({needsImprovementCount})
         </button>
         <button
           onClick={() => setFilter('critical')}
-          style={filter === 'critical' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'critical'
+              ? { ...styles.filterBtn, ...styles.filterActive }
+              : styles.filterBtn
+          }
         >
           Critical ({criticalCount})
         </button>
@@ -130,16 +147,12 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
         ) : (
           filteredManagers
             .sort((a, b) => b.effectivenessScore - a.effectivenessScore)
-            .map(manager => (
+            .map((manager) => (
               <div key={manager._id} style={styles.managerCard}>
                 <div style={styles.managerHeader}>
                   <div style={styles.managerInfo}>
-                    <div style={styles.name}>
-                      {manager.managerId?.name || 'Unknown Manager'}
-                    </div>
-                    <div style={styles.team}>
-                      {manager.teamId?.name || 'Unknown Team'}
-                    </div>
+                    <div style={styles.name}>{manager.managerId?.name || 'Unknown Manager'}</div>
+                    <div style={styles.team}>{manager.teamId?.name || 'Unknown Team'}</div>
                   </div>
                   <div style={styles.scoreBadge}>
                     <div style={getEffectivenessBadgeStyle(manager.effectivenessLevel)}>
@@ -161,7 +174,9 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
                       </div>
                       <div style={styles.metricItem}>
                         <span>Meeting Load:</span>
-                        <span>{manager.calendarMetrics.meetingLoadPerTeamMember?.toFixed(1)}h/week</span>
+                        <span>
+                          {manager.calendarMetrics.meetingLoadPerTeamMember?.toFixed(1)}h/week
+                        </span>
                       </div>
                     </div>
                   )}
@@ -188,7 +203,8 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
                       <div style={styles.metricItem}>
                         <span>Team Health Trend:</span>
                         <span style={getTrendStyle(manager.teamOutcomes.teamHealthTrend)}>
-                          {manager.teamOutcomes.teamHealthTrend > 0 ? '+' : ''}{manager.teamOutcomes.teamHealthTrend?.toFixed(1)}%
+                          {manager.teamOutcomes.teamHealthTrend > 0 ? '+' : ''}
+                          {manager.teamOutcomes.teamHealthTrend?.toFixed(1)}%
                         </span>
                       </div>
                       <div style={styles.metricItem}>
@@ -230,12 +246,8 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
                 )}
 
                 <div style={styles.actions}>
-                  <button style={styles.btnPrimary}>
-                    Schedule Coaching Session
-                  </button>
-                  <button style={styles.btnSecondary}>
-                    View Detailed Report
-                  </button>
+                  <button style={styles.btnPrimary}>Schedule Coaching Session</button>
+                  <button style={styles.btnSecondary}>View Detailed Report</button>
                 </div>
               </div>
             ))
@@ -247,7 +259,7 @@ export default function ManagerEffectivenessDashboard({ orgId }) {
 
 function getEffectivenessBadgeStyle(level) {
   const base = { ...styles.badge };
-  
+
   if (level === 'excellent') {
     return { ...base, background: '#10b981', color: 'white' };
   } else if (level === 'good') {

@@ -1,6 +1,6 @@
 /**
  * Superadmin Routes
- * 
+ *
  * These routes are only accessible to users with role 'master_admin' and no orgId.
  * Provides system-wide management capabilities:
  * - View all organizations
@@ -12,25 +12,14 @@
 
 import express from 'express';
 import mongoose from 'mongoose';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import Team from '../models/team.js';
 
 const router = express.Router();
 
-/**
- * Middleware: Require master_admin role
- */
-function requireSuperadmin(req, res, next) {
-  if (req.user?.role !== 'master_admin') {
-    return res.status(403).json({ 
-      message: 'Forbidden: Superadmin access required',
-      hint: 'This endpoint requires master_admin role'
-    });
-  }
-  next();
-}
+const requireSuperadmin = requireMasterAdmin;
 
 /**
  * GET /api/superadmin/organizations
@@ -44,45 +33,41 @@ router.get('/organizations', authenticateToken, requireSuperadmin, async (req, r
       .lean();
 
     // Get user counts per org
-    const userCounts = await User.aggregate([
-      { $group: { _id: '$orgId', count: { $sum: 1 } } }
-    ]);
+    const userCounts = await User.aggregate([{ $group: { _id: '$orgId', count: { $sum: 1 } } }]);
     const userCountMap = {};
-    userCounts.forEach(uc => {
+    userCounts.forEach((uc) => {
       if (uc._id) userCountMap[uc._id.toString()] = uc.count;
     });
 
     // Get team counts per org
-    const teamCounts = await Team.aggregate([
-      { $group: { _id: '$orgId', count: { $sum: 1 } } }
-    ]);
+    const teamCounts = await Team.aggregate([{ $group: { _id: '$orgId', count: { $sum: 1 } } }]);
     const teamCountMap = {};
-    teamCounts.forEach(tc => {
+    teamCounts.forEach((tc) => {
       if (tc._id) teamCountMap[tc._id.toString()] = tc.count;
     });
 
-    const enrichedOrgs = organizations.map(org => {
+    const enrichedOrgs = organizations.map((org) => {
       // Build integrations object with connection status for all supported integrations
       const integrations = {
         slack: !!(org.integrations?.slack?.accessToken || org.integrations?.slack?.teamName),
         slackTeam: org.integrations?.slack?.teamName || null,
-        google: !!(org.integrations?.google?.accessToken),
-        googleChat: !!(org.integrations?.googleChat?.accessToken),
-        microsoft: !!(org.integrations?.microsoft?.accessToken),
+        google: !!org.integrations?.google?.accessToken,
+        googleChat: !!org.integrations?.googleChat?.accessToken,
+        microsoft: !!org.integrations?.microsoft?.accessToken,
         microsoftScope: org.integrations?.microsoft?.scope || null, // 'teams' or 'outlook'
-        jira: !!(org.integrations?.jira?.accessToken),
-        asana: !!(org.integrations?.asana?.accessToken),
-        hubspot: !!(org.integrations?.hubspot?.accessToken),
-        pipedrive: !!(org.integrations?.pipedrive?.accessToken),
-        gmail: !!(org.integrations?.gmail?.accessToken),
-        notion: !!(org.integrations?.notion?.accessToken),
+        jira: !!org.integrations?.jira?.accessToken,
+        asana: !!org.integrations?.asana?.accessToken,
+        hubspot: !!org.integrations?.hubspot?.accessToken,
+        pipedrive: !!org.integrations?.pipedrive?.accessToken,
+        gmail: !!org.integrations?.gmail?.accessToken,
+        notion: !!org.integrations?.notion?.accessToken,
       };
-      
+
       // Count total connected integrations
-      const connectedCount = Object.entries(integrations)
-        .filter(([key, val]) => val === true && key !== 'slackTeam' && key !== 'microsoftScope')
-        .length;
-      
+      const connectedCount = Object.entries(integrations).filter(
+        ([key, val]) => val === true && key !== 'slackTeam' && key !== 'microsoftScope'
+      ).length;
+
       return {
         id: org._id,
         name: org.name,
@@ -93,24 +78,26 @@ router.get('/organizations', authenticateToken, requireSuperadmin, async (req, r
         trial: {
           isActive: org.trial?.isActive,
           phase: org.trial?.phase,
-          daysRemaining: org.trial?.daysRemaining
+          daysRemaining: org.trial?.daysRemaining,
         },
-        pilot: org.pilot ? {
-          isActive: org.pilot.isActive,
-          endDate: org.pilot.endDate,
-          months: org.pilot.months
-        } : null,
+        pilot: org.pilot
+          ? {
+              isActive: org.pilot.isActive,
+              endDate: org.pilot.endDate,
+              months: org.pilot.months,
+            }
+          : null,
         integrations,
         integrationsConnected: connectedCount,
         userCount: userCountMap[org._id.toString()] || 0,
         teamCount: teamCountMap[org._id.toString()] || 0,
-        createdAt: org.createdAt
+        createdAt: org.createdAt,
       };
     });
 
     res.json({
       total: enrichedOrgs.length,
-      organizations: enrichedOrgs
+      organizations: enrichedOrgs,
     });
   } catch (error) {
     console.error('Superadmin organizations error:', error);
@@ -133,14 +120,12 @@ router.get('/organizations/:id', authenticateToken, requireSuperadmin, async (re
       .select('name email role createdAt lastLogin')
       .lean();
 
-    const teams = await Team.find({ orgId: org._id })
-      .select('name description createdAt')
-      .lean();
+    const teams = await Team.find({ orgId: org._id }).select('name description createdAt').lean();
 
     res.json({
       organization: org,
       users,
-      teams
+      teams,
     });
   } catch (error) {
     console.error('Superadmin org detail error:', error);
@@ -169,8 +154,8 @@ router.post('/organizations', authenticateToken, requireSuperadmin, async (req, 
         isActive: true,
         startDate: new Date(),
         phase: 'baseline',
-        daysRemaining: 30
-      }
+        daysRemaining: 30,
+      },
     });
 
     await org.save();
@@ -179,14 +164,14 @@ router.post('/organizations', authenticateToken, requireSuperadmin, async (req, 
     const team = new Team({
       name: 'General',
       orgId: org._id,
-      description: 'Default team'
+      description: 'Default team',
     });
     await team.save();
 
     res.status(201).json({
       message: 'Organization created',
       organization: org,
-      defaultTeam: team
+      defaultTeam: team,
     });
   } catch (error) {
     console.error('Superadmin create org error:', error);
@@ -234,8 +219,8 @@ router.delete('/organizations/:id', authenticateToken, requireSuperadmin, async 
     // Safety check: don't delete orgs with users
     const userCount = await User.countDocuments({ orgId });
     if (userCount > 0 && !req.query.force) {
-      return res.status(400).json({ 
-        message: `Organization has ${userCount} users. Add ?force=true to delete anyway.`
+      return res.status(400).json({
+        message: `Organization has ${userCount} users. Add ?force=true to delete anyway.`,
       });
     }
 
@@ -269,7 +254,7 @@ router.get('/users', authenticateToken, requireSuperadmin, async (req, res) => {
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { email: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -284,7 +269,7 @@ router.get('/users', authenticateToken, requireSuperadmin, async (req, res) => {
 
     res.json({
       total,
-      users: users.map(u => ({
+      users: users.map((u) => ({
         id: u._id,
         name: u.name,
         email: u.email,
@@ -293,8 +278,8 @@ router.get('/users', authenticateToken, requireSuperadmin, async (req, res) => {
         orgName: u.orgId?.name,
         teamId: u.teamId,
         createdAt: u.createdAt,
-        lastLogin: u.lastLogin
-      }))
+        lastLogin: u.lastLogin,
+      })),
     });
   } catch (error) {
     console.error('Superadmin users error:', error);
@@ -370,22 +355,24 @@ router.get('/stats', authenticateToken, requireSuperadmin, async (req, res) => {
     const [orgCount, userCount, teamCount] = await Promise.all([
       Organization.countDocuments({}),
       User.countDocuments({}),
-      Team.countDocuments({})
+      Team.countDocuments({}),
     ]);
 
     // Users by role
-    const usersByRole = await User.aggregate([
-      { $group: { _id: '$role', count: { $sum: 1 } } }
-    ]);
+    const usersByRole = await User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]);
 
     // Orgs by trial status
     const trialStats = await Organization.aggregate([
-      { $group: { _id: '$trial.phase', count: { $sum: 1 } } }
+      { $group: { _id: '$trial.phase', count: { $sum: 1 } } },
     ]);
 
     // Orgs with integrations
-    const withSlack = await Organization.countDocuments({ 'integrations.slack.accessToken': { $exists: true, $ne: null } });
-    const withGoogle = await Organization.countDocuments({ 'integrations.google.accessToken': { $exists: true, $ne: null } });
+    const withSlack = await Organization.countDocuments({
+      'integrations.slack.accessToken': { $exists: true, $ne: null },
+    });
+    const withGoogle = await Organization.countDocuments({
+      'integrations.google.accessToken': { $exists: true, $ne: null },
+    });
 
     // Recent signups (last 7 days)
     const weekAgo = new Date();
@@ -397,18 +384,18 @@ router.get('/stats', authenticateToken, requireSuperadmin, async (req, res) => {
       totals: {
         organizations: orgCount,
         users: userCount,
-        teams: teamCount
+        teams: teamCount,
       },
-      usersByRole: Object.fromEntries(usersByRole.map(r => [r._id || 'unknown', r.count])),
-      trialPhases: Object.fromEntries(trialStats.map(t => [t._id || 'unknown', t.count])),
+      usersByRole: Object.fromEntries(usersByRole.map((r) => [r._id || 'unknown', r.count])),
+      trialPhases: Object.fromEntries(trialStats.map((t) => [t._id || 'unknown', t.count])),
       integrations: {
         withSlack,
-        withGoogle
+        withGoogle,
       },
       recentActivity: {
         usersLast7Days: recentUsers,
-        orgsLast7Days: recentOrgs
-      }
+        orgsLast7Days: recentOrgs,
+      },
     });
   } catch (error) {
     console.error('Superadmin stats error:', error);
@@ -437,7 +424,7 @@ router.post('/impersonate/:userId', authenticateToken, requireSuperadmin, async 
         orgId: user.orgId,
         teamId: user.teamId,
         impersonatedBy: req.user.userId,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+        exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
       },
       process.env.JWT_SECRET
     );
@@ -447,7 +434,7 @@ router.post('/impersonate/:userId', authenticateToken, requireSuperadmin, async 
       user: { name: user.name, email: user.email, role: user.role },
       token,
       expiresIn: '1 hour',
-      warning: 'This token allows full access as this user. Use responsibly.'
+      warning: 'This token allows full access as this user. Use responsibly.',
     });
   } catch (error) {
     console.error('Superadmin impersonate error:', error);
@@ -459,213 +446,243 @@ router.post('/impersonate/:userId', authenticateToken, requireSuperadmin, async 
  * POST /api/superadmin/organizations/:id/grant-pilot
  * Grant 6-month free pilot to an organization
  */
-router.post('/organizations/:id/grant-pilot', authenticateToken, requireSuperadmin, async (req, res) => {
-  try {
-    const { months = 6 } = req.body;
-    
-    const org = await Organization.findById(req.params.id);
-    if (!org) {
-      return res.status(404).json({ message: 'Organization not found' });
+router.post(
+  '/organizations/:id/grant-pilot',
+  authenticateToken,
+  requireSuperadmin,
+  async (req, res) => {
+    try {
+      const { months = 6 } = req.body;
+
+      const org = await Organization.findById(req.params.id);
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      const now = new Date();
+      const pilotEndDate = new Date(now);
+      pilotEndDate.setMonth(pilotEndDate.getMonth() + months);
+
+      // Update organization with pilot status
+      org.pilot = {
+        isActive: true,
+        startDate: now,
+        endDate: pilotEndDate,
+        grantedBy: req.user.userId,
+        grantedAt: now,
+        months: months,
+      };
+
+      // Also extend trial to match pilot period
+      org.trial = {
+        ...org.trial,
+        startDate: org.trial?.startDate || now,
+        endDate: pilotEndDate,
+        isPilot: true,
+      };
+
+      // Set subscription to pilot plan
+      org.subscription = {
+        plan: 'pilot',
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: pilotEndDate,
+      };
+
+      await org.save();
+
+      console.log(
+        `[Superadmin] Granted ${months}-month pilot to org ${org.name} (${org._id}) by ${req.user.email}`
+      );
+
+      res.json({
+        success: true,
+        message: `Granted ${months}-month free pilot to ${org.name}`,
+        pilot: org.pilot,
+        expiresAt: pilotEndDate.toISOString(),
+      });
+    } catch (error) {
+      console.error('Grant pilot error:', error);
+      res.status(500).json({ message: error.message });
     }
-
-    const now = new Date();
-    const pilotEndDate = new Date(now);
-    pilotEndDate.setMonth(pilotEndDate.getMonth() + months);
-
-    // Update organization with pilot status
-    org.pilot = {
-      isActive: true,
-      startDate: now,
-      endDate: pilotEndDate,
-      grantedBy: req.user.userId,
-      grantedAt: now,
-      months: months
-    };
-    
-    // Also extend trial to match pilot period
-    org.trial = {
-      ...org.trial,
-      startDate: org.trial?.startDate || now,
-      endDate: pilotEndDate,
-      isPilot: true
-    };
-
-    // Set subscription to pilot plan
-    org.subscription = {
-      plan: 'pilot',
-      status: 'active',
-      currentPeriodStart: now,
-      currentPeriodEnd: pilotEndDate
-    };
-
-    await org.save();
-
-    console.log(`[Superadmin] Granted ${months}-month pilot to org ${org.name} (${org._id}) by ${req.user.email}`);
-
-    res.json({
-      success: true,
-      message: `Granted ${months}-month free pilot to ${org.name}`,
-      pilot: org.pilot,
-      expiresAt: pilotEndDate.toISOString()
-    });
-  } catch (error) {
-    console.error('Grant pilot error:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 /**
  * POST /api/superadmin/organizations/:id/revoke-pilot
  * Revoke pilot status from an organization
  */
-router.post('/organizations/:id/revoke-pilot', authenticateToken, requireSuperadmin, async (req, res) => {
-  try {
-    const org = await Organization.findById(req.params.id);
-    if (!org) {
-      return res.status(404).json({ message: 'Organization not found' });
+router.post(
+  '/organizations/:id/revoke-pilot',
+  authenticateToken,
+  requireSuperadmin,
+  async (req, res) => {
+    try {
+      const org = await Organization.findById(req.params.id);
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      org.pilot = {
+        isActive: false,
+        revokedBy: req.user.userId,
+        revokedAt: new Date(),
+      };
+
+      // Reset subscription
+      org.subscription = {
+        plan: 'trial',
+        status: 'expired',
+      };
+
+      await org.save();
+
+      console.log(
+        `[Superadmin] Revoked pilot from org ${org.name} (${org._id}) by ${req.user.email}`
+      );
+
+      res.json({
+        success: true,
+        message: `Revoked pilot from ${org.name}`,
+      });
+    } catch (error) {
+      console.error('Revoke pilot error:', error);
+      res.status(500).json({ message: error.message });
     }
-
-    org.pilot = {
-      isActive: false,
-      revokedBy: req.user.userId,
-      revokedAt: new Date()
-    };
-
-    // Reset subscription
-    org.subscription = {
-      plan: 'trial',
-      status: 'expired'
-    };
-
-    await org.save();
-
-    console.log(`[Superadmin] Revoked pilot from org ${org.name} (${org._id}) by ${req.user.email}`);
-
-    res.json({
-      success: true,
-      message: `Revoked pilot from ${org.name}`
-    });
-  } catch (error) {
-    console.error('Revoke pilot error:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 /**
  * POST /api/superadmin/organizations/:id/login-as-admin
  * Issue a token impersonating the org's admin (or HR manager) user.
  * Stores who initiated the impersonation for audit purposes.
  */
-router.post('/organizations/:id/login-as-admin', authenticateToken, requireSuperadmin, async (req, res) => {
-  try {
-    const org = await Organization.findById(req.params.id).lean();
-    if (!org) {
-      return res.status(404).json({ message: 'Organization not found' });
+router.post(
+  '/organizations/:id/login-as-admin',
+  authenticateToken,
+  requireSuperadmin,
+  async (req, res) => {
+    try {
+      const org = await Organization.findById(req.params.id).lean();
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      // Find best user to impersonate: prefer 'admin' or 'hr_manager', fallback to any user
+      const adminUser =
+        (await User.findOne({
+          orgId: org._id,
+          role: { $in: ['admin', 'hr_manager', 'org_admin'] },
+        }).lean()) || (await User.findOne({ orgId: org._id }).lean());
+
+      if (!adminUser) {
+        return res.status(404).json({ message: 'No users found in this organization' });
+      }
+
+      const jwt = await import('jsonwebtoken');
+      const token = jwt.default.sign(
+        {
+          userId: adminUser._id,
+          email: adminUser.email,
+          role: adminUser.role,
+          orgId: adminUser.orgId,
+          teamId: adminUser.teamId,
+          impersonatedBy: req.user.userId,
+          impersonatedByEmail: req.user.email,
+          impersonatingOrg: org.name,
+          exp: Math.floor(Date.now() / 1000) + 4 * 60 * 60, // 4 hours
+        },
+        process.env.JWT_SECRET
+      );
+
+      console.log(
+        `[Superadmin] ${req.user.email} is impersonating org "${org.name}" as ${adminUser.email}`
+      );
+
+      res.json({
+        message: `Logged in as admin of ${org.name}`,
+        token,
+        user: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+          role: adminUser.role,
+          orgId: adminUser.orgId,
+          orgName: org.name,
+        },
+        org: { id: org._id, name: org.name },
+        expiresIn: '4 hours',
+      });
+    } catch (error) {
+      console.error('Superadmin login-as-admin error:', error);
+      res.status(500).json({ message: error.message });
     }
-
-    // Find best user to impersonate: prefer 'admin' or 'hr_manager', fallback to any user
-    const adminUser = await User.findOne({
-      orgId: org._id,
-      role: { $in: ['admin', 'hr_manager', 'org_admin'] }
-    }).lean()
-    || await User.findOne({ orgId: org._id }).lean();
-
-    if (!adminUser) {
-      return res.status(404).json({ message: 'No users found in this organization' });
-    }
-
-    const jwt = await import('jsonwebtoken');
-    const token = jwt.default.sign(
-      {
-        userId: adminUser._id,
-        email: adminUser.email,
-        role: adminUser.role,
-        orgId: adminUser.orgId,
-        teamId: adminUser.teamId,
-        impersonatedBy: req.user.userId,
-        impersonatedByEmail: req.user.email,
-        impersonatingOrg: org.name,
-        exp: Math.floor(Date.now() / 1000) + (4 * 60 * 60) // 4 hours
-      },
-      process.env.JWT_SECRET
-    );
-
-    console.log(`[Superadmin] ${req.user.email} is impersonating org "${org.name}" as ${adminUser.email}`);
-
-    res.json({
-      message: `Logged in as admin of ${org.name}`,
-      token,
-      user: {
-        id: adminUser._id,
-        name: adminUser.name,
-        email: adminUser.email,
-        role: adminUser.role,
-        orgId: adminUser.orgId,
-        orgName: org.name
-      },
-      org: { id: org._id, name: org.name },
-      expiresIn: '4 hours'
-    });
-  } catch (error) {
-    console.error('Superadmin login-as-admin error:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 /**
  * POST /api/superadmin/organizations/:id/cleanup-domain
  * Remove all users whose email doesn't match the org's domain.
  * Optionally pass { "domain": "example.com" } to set the domain first.
  */
-router.post('/organizations/:id/cleanup-domain', authenticateToken, requireSuperadmin, async (req, res) => {
-  try {
-    const org = await Organization.findById(req.params.id);
-    if (!org) {
-      return res.status(404).json({ message: 'Organization not found' });
+router.post(
+  '/organizations/:id/cleanup-domain',
+  authenticateToken,
+  requireSuperadmin,
+  async (req, res) => {
+    try {
+      const org = await Organization.findById(req.params.id);
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      // Optionally update domain first
+      if (req.body.domain) {
+        org.domain = req.body.domain.toLowerCase().replace(/^@/, '');
+        await org.save();
+      }
+
+      const cleanDomain = org.domain;
+      if (!cleanDomain) {
+        return res.status(400).json({
+          message: 'Organization has no domain set. Pass { "domain": "example.com" } in body.',
+        });
+      }
+
+      // Find non-matching users (any source)
+      const domainRegex = new RegExp(`@${cleanDomain.replace(/\./g, '\\.')}$`, 'i');
+      const nonDomainUsers = await User.find({
+        orgId: org._id,
+        email: { $exists: true, $ne: null, $not: domainRegex },
+      });
+
+      const count = nonDomainUsers.length;
+      const removedEmails = nonDomainUsers.map((u) => u.email);
+
+      if (count > 0) {
+        await User.deleteMany({ _id: { $in: nonDomainUsers.map((u) => u._id) } });
+      }
+
+      const remaining = await User.countDocuments({ orgId: org._id });
+
+      console.log(
+        `[Superadmin] Cleanup @${cleanDomain} on ${org.name}: removed ${count}, remaining ${remaining}. By ${req.user.email}`
+      );
+
+      res.json({
+        success: true,
+        orgName: org.name,
+        domain: cleanDomain,
+        removed: count,
+        removedEmails,
+        remaining,
+        message: `Removed ${count} users not matching @${cleanDomain}. ${remaining} employees remain.`,
+      });
+    } catch (error) {
+      console.error('Superadmin cleanup-domain error:', error);
+      res.status(500).json({ message: error.message });
     }
-
-    // Optionally update domain first
-    if (req.body.domain) {
-      org.domain = req.body.domain.toLowerCase().replace(/^@/, '');
-      await org.save();
-    }
-
-    const cleanDomain = org.domain;
-    if (!cleanDomain) {
-      return res.status(400).json({ message: 'Organization has no domain set. Pass { "domain": "example.com" } in body.' });
-    }
-
-    // Find non-matching users (any source)
-    const domainRegex = new RegExp(`@${cleanDomain.replace(/\./g, '\\.')}$`, 'i');
-    const nonDomainUsers = await User.find({
-      orgId: org._id,
-      email: { $exists: true, $ne: null, $not: domainRegex }
-    });
-
-    const count = nonDomainUsers.length;
-    const removedEmails = nonDomainUsers.map(u => u.email);
-
-    if (count > 0) {
-      await User.deleteMany({ _id: { $in: nonDomainUsers.map(u => u._id) } });
-    }
-
-    const remaining = await User.countDocuments({ orgId: org._id });
-
-    console.log(`[Superadmin] Cleanup @${cleanDomain} on ${org.name}: removed ${count}, remaining ${remaining}. By ${req.user.email}`);
-
-    res.json({
-      success: true,
-      orgName: org.name,
-      domain: cleanDomain,
-      removed: count,
-      removedEmails,
-      remaining,
-      message: `Removed ${count} users not matching @${cleanDomain}. ${remaining} employees remain.`
-    });
-  } catch (error) {
-    console.error('Superadmin cleanup-domain error:', error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 export default router;

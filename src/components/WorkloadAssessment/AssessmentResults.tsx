@@ -24,7 +24,10 @@ interface AssessmentResultsProps {
   onTrackEvent?: (event: string, data?: Record<string, unknown>) => void;
 }
 
-const RISK_STYLES: Record<RiskLevel, { bg: string; text: string; icon: React.ElementType; label: string }> = {
+const RISK_STYLES: Record<
+  RiskLevel,
+  { bg: string; text: string; icon: React.ElementType; label: string }
+> = {
   low: {
     bg: 'bg-success/10',
     text: 'text-success',
@@ -74,8 +77,11 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
       setEmailSubmitted(true);
       setShowFullBreakdown(true);
       onTrackEvent?.('email_submitted', { riskLevel: result.riskScore.level });
-      onTrackEvent?.('cost_viewed', { 
-        costRange: formatCostRange(result.costBreakdown.totalCostLow, result.costBreakdown.totalCostHigh),
+      onTrackEvent?.('cost_viewed', {
+        costRange: formatCostRange(
+          result.costBreakdown.totalCostLow,
+          result.costBreakdown.totalCostHigh
+        ),
         riskLevel: result.riskScore.level,
       });
     } catch (err) {
@@ -97,7 +103,9 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Workload Risk Index</p>
-            <p className="text-2xl font-display font-bold text-foreground">{result.riskScore.total}/100</p>
+            <p className="text-2xl font-display font-bold text-foreground">
+              {result.riskScore.total}/100
+            </p>
           </div>
         </div>
 
@@ -136,22 +144,30 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           <div className="text-center">
             <Clock className="w-5 h-5 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Meeting Load</p>
-            <p className="font-semibold text-foreground">{result.riskScore.factors.meetingLoad}/25</p>
+            <p className="font-semibold text-foreground">
+              {result.riskScore.factors.meetingLoad}/25
+            </p>
           </div>
           <div className="text-center">
             <RefreshCw className="w-5 h-5 text-accent mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Fragmentation</p>
-            <p className="font-semibold text-foreground">{result.riskScore.factors.fragmentation}/25</p>
+            <p className="font-semibold text-foreground">
+              {result.riskScore.factors.fragmentation}/25
+            </p>
           </div>
           <div className="text-center">
             <TrendingUp className="w-5 h-5 text-warning mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">After-Hours</p>
-            <p className="font-semibold text-foreground">{result.riskScore.factors.afterHoursWork}/25</p>
+            <p className="font-semibold text-foreground">
+              {result.riskScore.factors.afterHoursWork}/25
+            </p>
           </div>
           <div className="text-center">
             <BarChart3 className="w-5 h-5 text-destructive mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Focus Loss</p>
-            <p className="font-semibold text-foreground">{result.riskScore.factors.focusTimeLoss}/25</p>
+            <p className="font-semibold text-foreground">
+              {result.riskScore.factors.focusTimeLoss}/25
+            </p>
           </div>
         </div>
       </div>
@@ -167,7 +183,8 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
               Get full report by email
             </h3>
             <p className="text-muted-foreground">
-              Enter your work email to receive a detailed breakdown with cost calculations, assumptions, and how SignalTrue replaces estimates with real signals.
+              Enter your work email to receive a detailed breakdown with cost calculations,
+              assumptions, and how SignalTrue replaces estimates with real signals.
             </p>
           </div>
 
@@ -195,14 +212,12 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 required
               />
               <span className="text-sm text-muted-foreground">
-                I agree to receive my results and occasional updates from SignalTrue. 
-                You can unsubscribe anytime.
+                I agree to receive my results and occasional updates from SignalTrue. You can
+                unsubscribe anytime.
               </span>
             </label>
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button
               type="submit"
@@ -237,7 +252,8 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {inputs.workload.meetingHoursPerWeek}h/week × {inputs.company.teamSize} people × €{result.costBreakdown.loadedHourlyRate.toFixed(2)}/hr × 52 weeks
+                  {inputs.workload.meetingHoursPerWeek}h/week × {inputs.company.teamSize} people × €
+                  {result.costBreakdown.loadedHourlyRate.toFixed(2)}/hr × 52 weeks
                 </p>
               </div>
 
@@ -250,7 +266,8 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {(result.assumptions.meetingWastePercent * 100).toFixed(0)}% of meeting time assumed unproductive
+                  {(result.assumptions.meetingWastePercent * 100).toFixed(0)}% of meeting time
+                  assumed unproductive
                 </p>
               </div>
 
@@ -259,25 +276,33 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-foreground">Turnover Exposure (Range)</span>
                   <span className="font-semibold text-destructive">
-                    {formatCostRange(result.costBreakdown.turnoverExposureLow, result.costBreakdown.turnoverExposureHigh)}
+                    {formatCostRange(
+                      result.costBreakdown.turnoverExposureLow,
+                      result.costBreakdown.turnoverExposureHigh
+                    )}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {inputs.retention.attritionPercent}% attrition × {inputs.company.teamSize} people × €{inputs.company.averageSalary.toLocaleString()} × {(result.assumptions.replacementMultiplier * 100).toFixed(0)}% replacement cost
+                  {inputs.retention.attritionPercent}% attrition × {inputs.company.teamSize} people
+                  × €{inputs.company.averageSalary.toLocaleString()} ×{' '}
+                  {(result.assumptions.replacementMultiplier * 100).toFixed(0)}% replacement cost
                 </p>
               </div>
 
               {/* Total */}
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/30">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-foreground">Total Collaboration Drag (Annual)</span>
+                  <span className="font-semibold text-foreground">
+                    Total Collaboration Drag (Annual)
+                  </span>
                   <span className="text-xl font-bold text-primary">
-                    {formatCostRange(result.costBreakdown.totalCostLow, result.costBreakdown.totalCostHigh)}
+                    {formatCostRange(
+                      result.costBreakdown.totalCostLow,
+                      result.costBreakdown.totalCostHigh
+                    )}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Meeting waste + Turnover exposure
-                </p>
+                <p className="text-sm text-muted-foreground">Meeting waste + Turnover exposure</p>
               </div>
             </div>
           </div>
@@ -297,28 +322,39 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div className="p-3 rounded-lg bg-background">
                 <p className="text-muted-foreground">Salary Assumption</p>
-                <p className="font-medium text-foreground">€{result.assumptions.salary.toLocaleString()}</p>
+                <p className="font-medium text-foreground">
+                  €{result.assumptions.salary.toLocaleString()}
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-background">
                 <p className="text-muted-foreground">Overhead Multiplier</p>
-                <p className="font-medium text-foreground">{result.assumptions.overheadMultiplier}x</p>
+                <p className="font-medium text-foreground">
+                  {result.assumptions.overheadMultiplier}x
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-background">
                 <p className="text-muted-foreground">Meeting Waste %</p>
-                <p className="font-medium text-foreground">{(result.assumptions.meetingWastePercent * 100).toFixed(0)}%</p>
+                <p className="font-medium text-foreground">
+                  {(result.assumptions.meetingWastePercent * 100).toFixed(0)}%
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-background">
                 <p className="text-muted-foreground">Attrition %</p>
-                <p className="font-medium text-foreground">{result.assumptions.attritionPercent}%</p>
+                <p className="font-medium text-foreground">
+                  {result.assumptions.attritionPercent}%
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-background">
                 <p className="text-muted-foreground">Replacement Multiplier</p>
-                <p className="font-medium text-foreground">{(result.assumptions.replacementMultiplier * 100).toFixed(0)}%</p>
+                <p className="font-medium text-foreground">
+                  {(result.assumptions.replacementMultiplier * 100).toFixed(0)}%
+                </p>
               </div>
             </div>
 
             <p className="text-sm text-muted-foreground mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <strong>SignalTrue replaces these assumptions with real workload signals</strong> once connected to your collaboration tools.
+              <strong>SignalTrue replaces these assumptions with real workload signals</strong> once
+              connected to your collaboration tools.
             </p>
           </div>
 
@@ -330,7 +366,8 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                 See how SignalTrue replaces estimates with real signals
               </h3>
               <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Connect your tools and get team-level insights based on actual collaboration patterns, not assumptions.
+                Connect your tools and get team-level insights based on actual collaboration
+                patterns, not assumptions.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -344,11 +381,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
                     <ArrowRight className="w-5 h-5" />
                   </a>
                 </Button>
-                <Button
-                  variant="hero-outline"
-                  size="lg"
-                  onClick={onReset}
-                >
+                <Button variant="hero-outline" size="lg" onClick={onReset}>
                   <RefreshCw className="w-4 h-4" />
                   Recalculate
                 </Button>

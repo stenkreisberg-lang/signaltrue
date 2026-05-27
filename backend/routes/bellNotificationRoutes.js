@@ -12,7 +12,7 @@ import {
   markAllAsRead,
   dismissNotification,
   deleteNotification,
-  sendBroadcast
+  sendBroadcast,
 } from '../services/inAppNotificationService.js';
 
 const router = express.Router();
@@ -24,15 +24,15 @@ const router = express.Router();
 router.get('/bell', authenticateToken, async (req, res) => {
   try {
     const { limit = 10, unreadOnly = 'false' } = req.query;
-    
+
     const result = await getUserNotifications(req.user.userId, {
       limit: parseInt(limit),
-      unreadOnly: unreadOnly === 'true'
+      unreadOnly: unreadOnly === 'true',
     });
-    
+
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     console.error('[Notifications API] Error getting bell notifications:', error);
@@ -47,10 +47,10 @@ router.get('/bell', authenticateToken, async (req, res) => {
 router.get('/unread-count', authenticateToken, async (req, res) => {
   try {
     const count = await getUnreadCount(req.user.userId);
-    
+
     res.json({
       success: true,
-      unreadCount: count
+      unreadCount: count,
     });
   } catch (error) {
     console.error('[Notifications API] Error getting unread count:', error);
@@ -65,17 +65,17 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
 router.get('/all', authenticateToken, async (req, res) => {
   try {
     const { limit = 20, offset = 0, type, unreadOnly = 'false' } = req.query;
-    
+
     const result = await getUserNotifications(req.user.userId, {
       limit: parseInt(limit),
       offset: parseInt(offset),
       type: type || null,
-      unreadOnly: unreadOnly === 'true'
+      unreadOnly: unreadOnly === 'true',
     });
-    
+
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     console.error('[Notifications API] Error getting all notifications:', error);
@@ -90,15 +90,15 @@ router.get('/all', authenticateToken, async (req, res) => {
 router.put('/:id/read', authenticateToken, async (req, res) => {
   try {
     const notification = await markAsRead(req.params.id, req.user.userId);
-    
+
     res.json({
       success: true,
       message: 'Notification marked as read',
       notification: {
         id: notification._id,
         read: notification.read,
-        readAt: notification.readAt
-      }
+        readAt: notification.readAt,
+      },
     });
   } catch (error) {
     console.error('[Notifications API] Error marking as read:', error);
@@ -113,11 +113,11 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
 router.put('/mark-all-read', authenticateToken, async (req, res) => {
   try {
     const result = await markAllAsRead(req.user.userId);
-    
+
     res.json({
       success: true,
       message: `${result.markedCount} notifications marked as read`,
-      markedCount: result.markedCount
+      markedCount: result.markedCount,
     });
   } catch (error) {
     console.error('[Notifications API] Error marking all as read:', error);
@@ -132,14 +132,14 @@ router.put('/mark-all-read', authenticateToken, async (req, res) => {
 router.put('/:id/dismiss', authenticateToken, async (req, res) => {
   try {
     const notification = await dismissNotification(req.params.id, req.user.userId);
-    
+
     res.json({
       success: true,
       message: 'Notification dismissed',
       notification: {
         id: notification._id,
-        dismissed: notification.dismissed
-      }
+        dismissed: notification.dismissed,
+      },
     });
   } catch (error) {
     console.error('[Notifications API] Error dismissing:', error);
@@ -154,14 +154,14 @@ router.put('/:id/dismiss', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const deleted = await deleteNotification(req.params.id, req.user.userId);
-    
+
     if (!deleted) {
       return res.status(404).json({ message: 'Notification not found' });
     }
-    
+
     res.json({
       success: true,
-      message: 'Notification deleted'
+      message: 'Notification deleted',
     });
   } catch (error) {
     console.error('[Notifications API] Error deleting:', error);
@@ -179,18 +179,22 @@ router.post('/broadcast', authenticateToken, async (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'master_admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
-    
+
     const { title, message, targetOrgId } = req.body;
-    
+
     if (!title || !message) {
       return res.status(400).json({ message: 'Title and message are required' });
     }
-    
-    const result = await sendBroadcast(req.user.orgId, { title, message, targetOrgId }, req.user.userId);
-    
+
+    const result = await sendBroadcast(
+      req.user.orgId,
+      { title, message, targetOrgId },
+      req.user.userId
+    );
+
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     console.error('[Notifications API] Error sending broadcast:', error);

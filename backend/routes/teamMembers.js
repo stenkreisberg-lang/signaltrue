@@ -20,9 +20,7 @@ router.get('/', authenticateToken, async (req, res) => {
       query = { teamId };
     }
 
-    const members = await User.find(query)
-      .select('-password')
-      .sort({ role: -1, name: 1 }); // Admins first, then alphabetically
+    const members = await User.find(query).select('-password').sort({ role: -1, name: 1 }); // Admins first, then alphabetically
 
     res.json(members);
   } catch (error) {
@@ -54,7 +52,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       password,
       name,
       role: role || 'viewer',
-      teamId
+      teamId,
     });
 
     await user.save();
@@ -66,8 +64,8 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        teamId: user.teamId
-      }
+        teamId: user.teamId,
+      },
     });
   } catch (error) {
     console.error('Add team member error:', error);
@@ -92,8 +90,8 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
     if (userId === req.user.userId && role === 'viewer') {
       const adminCount = await User.countDocuments({ teamId, role: 'admin' });
       if (adminCount <= 1) {
-        return res.status(400).json({ 
-          message: 'Cannot demote the last admin. Promote another user to admin first.' 
+        return res.status(400).json({
+          message: 'Cannot demote the last admin. Promote another user to admin first.',
         });
       }
     }
@@ -101,7 +99,7 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
     // Update user
     if (role) user.role = role;
     if (name) user.name = name;
-    
+
     await user.save();
 
     res.json({
@@ -111,8 +109,8 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        teamId: user.teamId
-      }
+        teamId: user.teamId,
+      },
     });
   } catch (error) {
     console.error('Update team member error:', error);
@@ -130,8 +128,8 @@ router.delete('/:userId', authenticateToken, requireAdmin, async (req, res) => {
     if (userId === req.user.userId) {
       const adminCount = await User.countDocuments({ teamId, role: 'admin' });
       if (adminCount <= 1) {
-        return res.status(400).json({ 
-          message: 'Cannot delete the last admin. Promote another user to admin first.' 
+        return res.status(400).json({
+          message: 'Cannot delete the last admin. Promote another user to admin first.',
         });
       }
     }

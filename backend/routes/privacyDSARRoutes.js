@@ -11,7 +11,7 @@
 
 import express from 'express';
 import mongoose from 'mongoose';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, isMasterAdmin, requireOrganizationAccess } from '../middleware/auth.js';
 import DSARRequest from '../models/dsarRequest.js';
 import User from '../models/user.js';
 import { purgeOrgData } from '../services/retentionPurgeService.js';
@@ -41,7 +41,7 @@ router.post('/dsar', authenticateToken, async (req, res) => {
 
     // Prevent duplicate pending/processing requests
     const existing = await DSARRequest.findOne({
-      userId: req.user.id,
+      userId: req.user.userId,
       requestType,
       status: { $in: ['pending', 'processing'] },
     });
@@ -56,7 +56,7 @@ router.post('/dsar', authenticateToken, async (req, res) => {
     }
 
     const request = await DSARRequest.create({
-      userId: req.user.id,
+      userId: req.user.userId,
       orgId: req.user.orgId,
       requestType,
       notes: notes?.slice(0, 2000),
@@ -85,7 +85,9 @@ router.post('/dsar', authenticateToken, async (req, res) => {
 
 router.get('/dsar', authenticateToken, async (req, res) => {
   if (!isAdmin(req)) {
-    return res.status(403).json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
+    return res
+      .status(403)
+      .json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
   }
 
   try {
@@ -104,7 +106,10 @@ router.get('/dsar', authenticateToken, async (req, res) => {
       DSARRequest.countDocuments(filter),
     ]);
 
-    return res.json({ data: requests, meta: { total, limit: Number(limit), offset: Number(offset) } });
+    return res.json({
+      data: requests,
+      meta: { total, limit: Number(limit), offset: Number(offset) },
+    });
   } catch (err) {
     console.error('[DSAR GET list]', err.message);
     return res.status(500).json({ error: true, message: err.message });
@@ -122,7 +127,7 @@ router.get('/dsar/:requestId', authenticateToken, async (req, res) => {
     }
 
     // Users can only see their own requests; admins can see all within org
-    const isOwner = request.userId.toString() === req.user.id;
+    const isOwner = request.userId.toString() === String(req.user.userId);
     const isOrgAdmin = isAdmin(req) && request.orgId?.toString() === req.user.orgId?.toString();
 
     if (!isOwner && !isOrgAdmin) {
@@ -141,7 +146,9 @@ router.get('/dsar/:requestId', authenticateToken, async (req, res) => {
 
 router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
   if (!isAdmin(req)) {
-    return res.status(403).json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
+    return res
+      .status(403)
+      .json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
   }
 
   try {
@@ -159,7 +166,10 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
     }
 
     request.status = 'processing';
-    request.processedBy = req.user.id;
+    if (!isMasterAdmin(req.user) && request.orgId?.toString() !== req.user.orgId?.toString()) {
+      return res.status(403).json({ error: true, message: 'Forbidden', code: 'FORBIDDEN' });
+    }
+    request.processedBy = req.user.userId;
     await request.save();
 
     // Execute asynchronously — respond immediately
@@ -204,11 +214,15 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
 
 router.get('/consent/:userId', authenticateToken, async (req, res) => {
   if (!isAdmin(req)) {
-    return res.status(403).json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
+    return res
+      .status(403)
+      .json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
   }
 
   try {
-    const user = await User.findById(req.params.userId)
+    const filter = { _id: req.params.userId };
+    if (!isMasterAdmin(req.user)) filter.orgId = req.user.orgId;
+    const user = await User.findOne(filter)
       .select('email name privacyConsentGivenAt privacyConsentVersion createdAt')
       .lean();
 
@@ -235,9 +249,11 @@ router.get('/consent/:userId', authenticateToken, async (req, res) => {
 // ── POST /api/privacy/purge/:orgId ────────────────────────────────────────────
 // Admin: manually trigger retention purge for an org
 
-router.post('/purge/:orgId', authenticateToken, async (req, res) => {
+router.post('/purge/:orgId', authenticateToken, requireOrganizationAccess(), async (req, res) => {
   if (!isAdmin(req)) {
-    return res.status(403).json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
+    return res
+      .status(403)
+      .json({ error: true, message: 'Admin access required', code: 'FORBIDDEN' });
   }
 
   try {
@@ -269,10 +285,12 @@ router.post('/consent', authenticateToken, async (req, res) => {
   try {
     const { version } = req.body;
     if (!version) {
-      return res.status(400).json({ error: true, message: 'Consent version is required', code: 'MISSING_VERSION' });
+      return res
+        .status(400)
+        .json({ error: true, message: 'Consent version is required', code: 'MISSING_VERSION' });
     }
 
-    await User.findByIdAndUpdate(req.user.id, {
+    await User.findByIdAndUpdate(req.user.userId, {
       privacyConsentGivenAt: new Date(),
       privacyConsentVersion: version,
     });

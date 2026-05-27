@@ -1,17 +1,17 @@
 /**
  * Escalation Service
- * 
+ *
  * Implements tiered escalation logic for team status:
- * 
+ *
  *   Stable → Watch → Emerging Drift → Confirmed Drift → Escalating Risk
- * 
+ *
  * Status is driven by:
  * - Number of deteriorating metrics
  * - Persistence across multiple weeks
  * - Spillover into after-hours
  * - Focus/recovery compression
  * - Confidence level
- * 
+ *
  * Each level has a defined notification action:
  * - Watch: notify HR in weekly report only
  * - Emerging Drift: suggest manager review
@@ -74,7 +74,7 @@ const STATUS_META = {
 
 /**
  * Calculate team status based on metric history
- * 
+ *
  * @param {Object} params
  * @param {Object} params.currentMetrics - This week's metrics
  * @param {Object} params.previousMetrics - Last week's metrics
@@ -94,30 +94,65 @@ export function calculateTeamStatus({
 }) {
   // ─── Identify deteriorating metrics ───
   const deteriorating = [];
-  
+
   // Check each key metric for deterioration (current > baseline upper band or significant WoW worsening)
   const metricChecks = [
-    { key: 'meetingHours', curr: currentMetrics.meetingHours, prev: previousMetrics.meetingHours, higherIsBad: true },
-    { key: 'backToBack', curr: currentMetrics.backToBack, prev: previousMetrics.backToBack, higherIsBad: true },
-    { key: 'afterHoursRatio', curr: currentMetrics.afterHoursRatio, prev: previousMetrics.afterHoursRatio, higherIsBad: true },
-    { key: 'focusTimeAvailability', curr: currentMetrics.focusTimeAvailability, prev: previousMetrics.focusTimeAvailability, higherIsBad: false },
-    { key: 'calendarFragmentation', curr: currentMetrics.calendarFragmentation, prev: previousMetrics.calendarFragmentation, higherIsBad: true },
-    { key: 'recurringBurden', curr: currentMetrics.recurringBurden, prev: previousMetrics.recurringBurden, higherIsBad: true },
-    { key: 'asyncVolume', curr: currentMetrics.asyncVolume, prev: previousMetrics.asyncVolume, higherIsBad: false },
+    {
+      key: 'meetingHours',
+      curr: currentMetrics.meetingHours,
+      prev: previousMetrics.meetingHours,
+      higherIsBad: true,
+    },
+    {
+      key: 'backToBack',
+      curr: currentMetrics.backToBack,
+      prev: previousMetrics.backToBack,
+      higherIsBad: true,
+    },
+    {
+      key: 'afterHoursRatio',
+      curr: currentMetrics.afterHoursRatio,
+      prev: previousMetrics.afterHoursRatio,
+      higherIsBad: true,
+    },
+    {
+      key: 'focusTimeAvailability',
+      curr: currentMetrics.focusTimeAvailability,
+      prev: previousMetrics.focusTimeAvailability,
+      higherIsBad: false,
+    },
+    {
+      key: 'calendarFragmentation',
+      curr: currentMetrics.calendarFragmentation,
+      prev: previousMetrics.calendarFragmentation,
+      higherIsBad: true,
+    },
+    {
+      key: 'recurringBurden',
+      curr: currentMetrics.recurringBurden,
+      prev: previousMetrics.recurringBurden,
+      higherIsBad: true,
+    },
+    {
+      key: 'asyncVolume',
+      curr: currentMetrics.asyncVolume,
+      prev: previousMetrics.asyncVolume,
+      higherIsBad: false,
+    },
   ];
-  
+
   for (const check of metricChecks) {
     if (check.curr == null) continue;
-    
+
     const worsening = check.higherIsBad
-      ? (check.prev != null && check.prev > 0 && ((check.curr - check.prev) / check.prev) > 0.15)
-      : (check.prev != null && check.prev > 0 && ((check.prev - check.curr) / check.prev) > 0.15);
-    
+      ? check.prev != null && check.prev > 0 && (check.curr - check.prev) / check.prev > 0.15
+      : check.prev != null && check.prev > 0 && (check.prev - check.curr) / check.prev > 0.15;
+
     if (worsening) {
       deteriorating.push(check.key);
     }
   }
-  
+
   // ─── Check persistence (how many consecutive weeks have metrics been worsening) ───
   let weeksPersisted = 0;
   if (weeklyHistory.length >= 2) {
@@ -126,14 +161,14 @@ export function calculateTeamStatus({
       const thisWeek = weeklyHistory[i];
       const prevWeek = weeklyHistory[i + 1];
       if (!thisWeek || !prevWeek) break;
-      
+
       let badCount = 0;
       if (thisWeek.meetingHours > prevWeek.meetingHours * 1.1) badCount++;
       if (thisWeek.backToBack > prevWeek.backToBack * 1.1) badCount++;
       if (thisWeek.afterHoursRatio > prevWeek.afterHoursRatio * 1.1) badCount++;
       if (thisWeek.focusTimeAvailability < prevWeek.focusTimeAvailability * 0.9) badCount++;
       if (thisWeek.calendarFragmentation > prevWeek.calendarFragmentation * 1.1) badCount++;
-      
+
       if (badCount >= 2) {
         weeksPersisted++;
       } else {
@@ -141,16 +176,16 @@ export function calculateTeamStatus({
       }
     }
   }
-  
+
   // ─── Check spillover indicators ───
   const hasAfterHoursSpillover = (currentMetrics.afterHoursRatio || 0) > 0.25;
   const hasFocusCompression = (currentMetrics.focusTimeAvailability || 40) < 15; // less than 15 hours
   const hasHighFragmentation = (currentMetrics.calendarFragmentation || 0) > 65;
-  
+
   // ─── Calculate confidence ───
   let confidence = 'Medium';
   const supportingSignals = deteriorating.length;
-  
+
   if (supportingSignals >= 4 && weeksPersisted >= 2) {
     confidence = 'High';
   } else if (supportingSignals >= 2 && weeksPersisted >= 1) {
@@ -158,32 +193,30 @@ export function calculateTeamStatus({
   } else {
     confidence = 'Low';
   }
-  
+
   // Reduce confidence if context tags present
   if (contextTags.length > 0) {
-    const significantTags = contextTags.filter(t => t.confidenceReduction === 'significant');
-    const moderateTags = contextTags.filter(t => t.confidenceReduction === 'moderate');
+    const significantTags = contextTags.filter((t) => t.confidenceReduction === 'significant');
+    const moderateTags = contextTags.filter((t) => t.confidenceReduction === 'moderate');
     if (significantTags.length > 0 && confidence === 'High') confidence = 'Medium';
     else if (significantTags.length > 0 && confidence === 'Medium') confidence = 'Low';
     else if (moderateTags.length > 0 && confidence === 'High') confidence = 'Medium';
   }
-  
+
   // ─── Determine status ───
   let status;
   let reason;
-  
+
   const detCount = deteriorating.length;
-  
+
   if (detCount === 0 && weeksPersisted === 0) {
     // Stable: no meaningful negative movement
     status = STATUS_LEVELS.STABLE;
     reason = 'No meaningful negative movement. Work patterns within normal range.';
-    
   } else if (detCount <= 2 && weeksPersisted === 0) {
     // Watch: 1-2 metrics deteriorating, only 1-week signal
     status = STATUS_LEVELS.WATCH;
     reason = `${detCount} metric(s) showed negative movement this week: ${deteriorating.join(', ')}. One-week signal only — monitoring.`;
-    
   } else if (detCount >= 3 || (detCount >= 2 && weeksPersisted >= 1)) {
     // Emerging Drift: 3+ metrics deteriorating, or 2 metrics for 2 consecutive weeks
     if (weeksPersisted >= 2 && (hasAfterHoursSpillover || hasFocusCompression)) {
@@ -200,21 +233,23 @@ export function calculateTeamStatus({
       status = STATUS_LEVELS.EMERGING_DRIFT;
       reason = `${detCount} metrics deteriorating${weeksPersisted > 0 ? ` for ${weeksPersisted + 1} consecutive weeks` : ''}. Evidence of coordination pressure building.`;
     }
-    
   } else {
     status = STATUS_LEVELS.WATCH;
     reason = `${detCount} metric(s) with negative movement. Monitoring for persistence.`;
   }
-  
+
   // ─── BDI override: if BDI is in Critical Drift, escalate ───
-  if (bdiData?.driftState === 'Critical Drift' && STATUS_ORDER.indexOf(status) < STATUS_ORDER.indexOf(STATUS_LEVELS.CONFIRMED_DRIFT)) {
+  if (
+    bdiData?.driftState === 'Critical Drift' &&
+    STATUS_ORDER.indexOf(status) < STATUS_ORDER.indexOf(STATUS_LEVELS.CONFIRMED_DRIFT)
+  ) {
     status = STATUS_LEVELS.CONFIRMED_DRIFT;
     reason = `BDI indicates Critical Drift (score: ${bdiData.driftScore}/100). ${reason}`;
     confidence = 'High';
   }
-  
+
   const meta = STATUS_META[status];
-  
+
   return {
     status,
     confidence,

@@ -1,8 +1,8 @@
 /**
  * Actions - Suggested Actions page
  * Per SignalTrue Product Spec Section 8
- * 
- * "These actions are derived from observed signal patterns. 
+ *
+ * "These actions are derived from observed signal patterns.
  * They are recommendations, not mandates."
  */
 
@@ -32,10 +32,10 @@ export default function Actions() {
       const allInterventions = interventionRes.data.interventions || [];
 
       // Separate active from completed
-      const active = allInterventions.filter(i => 
+      const active = allInterventions.filter((i) =>
         ['suggested', 'active', 'pending-recheck'].includes(i.status)
       );
-      const completed = allInterventions.filter(i => 
+      const completed = allInterventions.filter((i) =>
         ['completed', 'resolved'].includes(i.status)
       );
 
@@ -45,19 +45,19 @@ export default function Actions() {
       // If no interventions, try to get recommended actions from signals
       if (active.length === 0) {
         const signalsRes = await api.get(`/signals/org/${userRes.data.orgId}`, {
-          params: { status: 'open,acknowledged', limit: 5 }
+          params: { status: 'open,acknowledged', limit: 5 },
         });
 
         const signalActions = [];
-        (signalsRes.data.signals || []).forEach(signal => {
+        (signalsRes.data.signals || []).forEach((signal) => {
           if (signal.actions) {
-            signal.actions.forEach(action => {
+            signal.actions.forEach((action) => {
               signalActions.push({
                 ...action,
                 signalType: signal.signalType,
                 signalId: signal._id,
                 severity: signal.severity,
-                status: 'suggested'
+                status: 'suggested',
               });
             });
           }
@@ -65,7 +65,6 @@ export default function Actions() {
 
         setActions(signalActions.slice(0, 5));
       }
-
     } catch (err) {
       console.error('[Actions] Error:', err);
       // Use demo data
@@ -78,17 +77,18 @@ export default function Actions() {
           expectedImpact: 'Focus Time Ratio +8–12% within 2 weeks.',
           suggestedOwner: 'Team Lead',
           status: 'suggested',
-          severity: 'RISK'
+          severity: 'RISK',
         },
         {
           _id: '2',
           title: 'Protect 2-hour focus blocks daily',
-          description: 'Block calendar time for deep work, disable notifications during focus hours',
+          description:
+            'Block calendar time for deep work, disable notifications during focus hours',
           whyThisHelps: 'Reduces context switching and improves task completion rates.',
           expectedImpact: 'Context Switching Index -15% within 3 weeks.',
           suggestedOwner: 'Leadership',
           status: 'suggested',
-          severity: 'RISK'
+          severity: 'RISK',
         },
         {
           _id: '3',
@@ -98,8 +98,8 @@ export default function Actions() {
           expectedImpact: 'After-hours activity -20% within 2 weeks.',
           suggestedOwner: 'Leadership',
           status: 'suggested',
-          severity: 'INFO'
-        }
+          severity: 'INFO',
+        },
       ]);
     } finally {
       setLoading(false);
@@ -112,13 +112,13 @@ export default function Actions() {
         signalId: action.signalId,
         actionId: action._id,
         actionTaken: action.title,
-        expectedEffect: action.expectedImpact
+        expectedEffect: action.expectedImpact,
       });
-      
+
       // Update local state
-      setActions(prev => prev.map(a => 
-        a._id === action._id ? { ...a, status: 'active' } : a
-      ));
+      setActions((prev) =>
+        prev.map((a) => (a._id === action._id ? { ...a, status: 'active' } : a))
+      );
     } catch (err) {
       console.error('Error taking action:', err);
     }
@@ -135,7 +135,7 @@ export default function Actions() {
       suggested: { bg: '#dbeafe', color: '#1e40af', text: 'Suggested' },
       active: { bg: '#fef3c7', color: '#92400e', text: 'In Progress' },
       'pending-recheck': { bg: '#e0e7ff', color: '#3730a3', text: 'Awaiting Results' },
-      completed: { bg: '#d1fae5', color: '#065f46', text: 'Resolved' }
+      completed: { bg: '#d1fae5', color: '#065f46', text: 'Resolved' },
     };
     return styles[status] || styles.suggested;
   };
@@ -160,12 +160,22 @@ export default function Actions() {
             </Link>
           </div>
           <div style={styles.navRight}>
-            <Link to="/app/overview" style={styles.navLink}>Team Overview</Link>
-            <Link to="/app/signals" style={styles.navLink}>Signals</Link>
-            <Link to="/app/active-monitoring" style={styles.navLink}>Active Monitoring</Link>
+            <Link to="/app/overview" style={styles.navLink}>
+              Team Overview
+            </Link>
+            <Link to="/app/signals" style={styles.navLink}>
+              Signals
+            </Link>
+            <Link to="/app/active-monitoring" style={styles.navLink}>
+              Active Monitoring
+            </Link>
             <span style={styles.navLinkActive}>Actions</span>
-            <Link to="/app/executive-summary" style={styles.navLink}>Executive Summary</Link>
-            <Link to="/app/privacy" style={styles.navLink}>Signal Coverage</Link>
+            <Link to="/app/executive-summary" style={styles.navLink}>
+              Executive Summary
+            </Link>
+            <Link to="/app/privacy" style={styles.navLink}>
+              Signal Coverage
+            </Link>
             {user && (
               <div style={styles.userMenu}>
                 <span style={styles.userName}>{user.name || user.email}</span>
@@ -186,7 +196,8 @@ export default function Actions() {
             <div>
               <h2 style={styles.title}>Suggested Actions</h2>
               <p style={styles.subtitle}>
-                These actions are derived from observed signal patterns. They are recommendations, not mandates.
+                These actions are derived from observed signal patterns. They are recommendations,
+                not mandates.
               </p>
             </div>
           </div>
@@ -197,7 +208,8 @@ export default function Actions() {
               <div style={styles.emptyIcon}>✓</div>
               <h3 style={styles.emptyTitle}>No Actions Required</h3>
               <p style={styles.emptyText}>
-                Current signal patterns are within normal ranges. We'll suggest actions when early intervention could help.
+                Current signal patterns are within normal ranges. We'll suggest actions when early
+                intervention could help.
               </p>
               <Link to="/app/active-monitoring" style={styles.emptyButton}>
                 View Active Monitoring
@@ -211,15 +223,17 @@ export default function Actions() {
                   <div key={action._id || idx} style={styles.actionCard}>
                     <div style={styles.actionHeader}>
                       <h3 style={styles.actionTitle}>{action.title}</h3>
-                      <span style={{
-                        ...styles.statusBadge,
-                        background: badge.bg,
-                        color: badge.color
-                      }}>
+                      <span
+                        style={{
+                          ...styles.statusBadge,
+                          background: badge.bg,
+                          color: badge.color,
+                        }}
+                      >
                         {badge.text}
                       </span>
                     </div>
-                    
+
                     {action.description && (
                       <p style={styles.actionDescription}>{action.description}</p>
                     )}
@@ -247,15 +261,13 @@ export default function Actions() {
 
                     {action.status === 'suggested' && (
                       <div style={styles.actionFooter}>
-                        <button 
+                        <button
                           style={styles.takeActionButton}
                           onClick={() => handleTakeAction(action)}
                         >
                           Take This Action
                         </button>
-                        <button style={styles.dismissButton}>
-                          Not Now
-                        </button>
+                        <button style={styles.dismissButton}>Not Now</button>
                       </div>
                     )}
 

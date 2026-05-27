@@ -5,7 +5,7 @@ import { questions, calculateResult } from './questionnaireData';
 interface UseQuestionnaireReturn {
   currentStep: number;
   totalSteps: number;
-  currentQuestion: typeof questions[0] | null;
+  currentQuestion: (typeof questions)[0] | null;
   answers: QuestionnaireAnswer[];
   result: QuestionnaireResult | null;
   isComplete: boolean;
@@ -32,45 +32,48 @@ export function useQuestionnaire(): UseQuestionnaireReturn {
     setHasStarted(true);
   }, []);
 
-  const selectAnswer = useCallback((value: string, score: number) => {
-    if (!currentQuestion) return;
+  const selectAnswer = useCallback(
+    (value: string, score: number) => {
+      if (!currentQuestion) return;
 
-    // Mark as started on first answer
-    if (!hasStarted) {
-      setHasStarted(true);
-    }
-
-    const newAnswer: QuestionnaireAnswer = {
-      questionId: currentQuestion.id,
-      value,
-      score,
-    };
-
-    // Update or add answer
-    setAnswers(prev => {
-      const existing = prev.findIndex(a => a.questionId === currentQuestion.id);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = newAnswer;
-        return updated;
+      // Mark as started on first answer
+      if (!hasStarted) {
+        setHasStarted(true);
       }
-      return [...prev, newAnswer];
-    });
 
-    // Move to next question or calculate result
-    if (currentStep < totalSteps - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      // Calculate final result
-      const totalScore = [...answers, newAnswer].reduce((sum, a) => sum + a.score, 0);
-      setResult(calculateResult(totalScore));
-      setCurrentStep(totalSteps);
-    }
-  }, [currentQuestion, currentStep, totalSteps, answers, hasStarted]);
+      const newAnswer: QuestionnaireAnswer = {
+        questionId: currentQuestion.id,
+        value,
+        score,
+      };
+
+      // Update or add answer
+      setAnswers((prev) => {
+        const existing = prev.findIndex((a) => a.questionId === currentQuestion.id);
+        if (existing >= 0) {
+          const updated = [...prev];
+          updated[existing] = newAnswer;
+          return updated;
+        }
+        return [...prev, newAnswer];
+      });
+
+      // Move to next question or calculate result
+      if (currentStep < totalSteps - 1) {
+        setCurrentStep((prev) => prev + 1);
+      } else {
+        // Calculate final result
+        const totalScore = [...answers, newAnswer].reduce((sum, a) => sum + a.score, 0);
+        setResult(calculateResult(totalScore));
+        setCurrentStep(totalSteps);
+      }
+    },
+    [currentQuestion, currentStep, totalSteps, answers, hasStarted]
+  );
 
   const goBack = useCallback(() => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
       // Clear result if going back from completion
       if (isComplete) {
         setResult(null);

@@ -1,16 +1,13 @@
 import express from 'express';
+import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
+router.use('/admin/cleanup', authenticateToken, requireMasterAdmin);
 
 // Helper: extract admin token from header or query (supports 'adminToken' and 'token')
 function getProvidedToken(req) {
-  return (
-    req.headers['x-admin-token'] ||
-    req.query.adminToken ||
-    req.query.token ||
-    null
-  );
+  return req.headers['x-admin-token'] || req.query.adminToken || req.query.token || null;
 }
 
 // GET /api/admin/cleanup/orphan-orgs (dryRun=1 to preview)
@@ -32,13 +29,15 @@ router.get('/admin/cleanup/orphan-orgs', async (req, res) => {
 
     const maybeId = /^[0-9a-fA-F]{24}$/;
     const all = await Organization.find({}, { slug: 1, name: 1 });
-    const orphans = all.filter(o => maybeId.test(o.slug) && !['default','signaltrue'].includes(o.slug));
+    const orphans = all.filter(
+      (o) => maybeId.test(o.slug) && !['default', 'signaltrue'].includes(o.slug)
+    );
 
     if (!dry && orphans.length) {
-      const ids = orphans.map(o => o._id);
+      const ids = orphans.map((o) => o._id);
       await Organization.deleteMany({ _id: { $in: ids } });
     }
-    res.json({ count: orphans.length, dryRun: dry, slugs: orphans.map(o => o.slug) });
+    res.json({ count: orphans.length, dryRun: dry, slugs: orphans.map((o) => o.slug) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

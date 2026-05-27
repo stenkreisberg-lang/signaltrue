@@ -3,12 +3,16 @@ import axios from 'axios';
 async function testLogin() {
   try {
     console.log('Attempting to call http://localhost:8080/api/auth/login...');
-    const response = await axios.post('http://localhost:8080/api/auth/login', {
-      email: 'test@test.com',
-      password: 'password123'
-    }, {
-      timeout: 5000 // 5 second timeout
-    });
+    const response = await axios.post(
+      'http://localhost:8080/api/auth/login',
+      {
+        email: 'test@test.com',
+        password: 'password123',
+      },
+      {
+        timeout: 5000, // 5 second timeout
+      }
+    );
     console.log('Response from server:');
     console.log(response.status);
     console.log(response.data);

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 export default function OrgDashboard({ teams, dark }) {
   const [expanded, setExpanded] = useState(false);
@@ -8,7 +20,7 @@ export default function OrgDashboard({ teams, dark }) {
   // Calculate zone distribution
   const zoneDistribution = React.useMemo(() => {
     const zones = { Recovery: 0, Stable: 0, Watch: 0, Surge: 0 };
-    teams.forEach(team => {
+    teams.forEach((team) => {
       if (zones[team.zone] !== undefined) {
         zones[team.zone]++;
       }
@@ -18,13 +30,13 @@ export default function OrgDashboard({ teams, dark }) {
       { name: 'Stable', value: zones.Stable, color: '#3b82f6' },
       { name: 'Watch', value: zones.Watch, color: '#f59e0b' },
       { name: 'Surge', value: zones.Surge, color: '#ef4444' },
-    ].filter(z => z.value > 0); // Only show zones with teams
+    ].filter((z) => z.value > 0); // Only show zones with teams
   }, [teams]);
 
   // Prepare team comparison data
   const teamComparison = React.useMemo(() => {
     return teams
-      .map(team => ({
+      .map((team) => ({
         name: team.name,
         bdi: team.bdi,
         trend: team.trend,
@@ -36,11 +48,11 @@ export default function OrgDashboard({ teams, dark }) {
   // Calculate org-level stats
   const orgStats = React.useMemo(() => {
     if (teams.length === 0) return { avgBdi: 0, totalTeams: 0, atRisk: 0 };
-    
+
     const totalBdi = teams.reduce((sum, t) => sum + t.bdi, 0);
     const avgBdi = Math.round(totalBdi / teams.length);
-    const atRisk = teams.filter(t => t.zone === 'Surge' || t.zone === 'Watch').length;
-    
+    const atRisk = teams.filter((t) => t.zone === 'Surge' || t.zone === 'Watch').length;
+
     return { avgBdi, totalTeams: teams.length, atRisk };
   }, [teams]);
 
@@ -122,10 +134,7 @@ export default function OrgDashboard({ teams, dark }) {
   };
 
   return (
-    <div 
-      style={containerStyle} 
-      onClick={() => !expanded && setExpanded(true)}
-    >
+    <div style={containerStyle} onClick={() => !expanded && setExpanded(true)}>
       <div style={headerStyle}>
         <h2 style={titleStyle}>📊 Organization Overview</h2>
         {expanded && (
@@ -161,7 +170,9 @@ export default function OrgDashboard({ teams, dark }) {
             </div>
             <div style={statCardStyle}>
               <div style={statLabelStyle}>At Risk</div>
-              <div style={{ ...statValueStyle, color: orgStats.atRisk > 0 ? '#ef4444' : '#22c55e' }}>
+              <div
+                style={{ ...statValueStyle, color: orgStats.atRisk > 0 ? '#ef4444' : '#22c55e' }}
+              >
                 {orgStats.atRisk}
               </div>
             </div>
@@ -188,7 +199,7 @@ export default function OrgDashboard({ teams, dark }) {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: dark ? '#374151' : '#ffffff',
                         border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
@@ -198,7 +209,13 @@ export default function OrgDashboard({ teams, dark }) {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ padding: '40px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}>
+                <div
+                  style={{
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: dark ? '#9ca3af' : '#6b7280',
+                  }}
+                >
                   No team data available
                 </div>
               )}
@@ -212,14 +229,14 @@ export default function OrgDashboard({ teams, dark }) {
                   <BarChart data={teamComparison} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#374151' : '#e5e7eb'} />
                     <XAxis type="number" domain={[0, 100]} stroke={dark ? '#9ca3af' : '#6b7280'} />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
+                    <YAxis
+                      dataKey="name"
+                      type="category"
                       width={100}
                       stroke={dark ? '#9ca3af' : '#6b7280'}
                       style={{ fontSize: '12px' }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: dark ? '#374151' : '#ffffff',
                         border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
@@ -230,34 +247,47 @@ export default function OrgDashboard({ teams, dark }) {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ padding: '40px', textAlign: 'center', color: dark ? '#9ca3af' : '#6b7280' }}>
+                <div
+                  style={{
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: dark ? '#9ca3af' : '#6b7280',
+                  }}
+                >
                   No team data available
                 </div>
               )}
             </div>
           </div>
 
-          <div style={{ 
-            marginTop: '24px', 
-            padding: '12px', 
-            backgroundColor: dark ? '#1f2937' : '#f9fafb',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: dark ? '#d1d5db' : '#4b5563',
-            border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
-          }}>
-            💡 <strong>Tip:</strong> Click on individual team cards below to view detailed timelines and AI-powered playbooks.
+          <div
+            style={{
+              marginTop: '24px',
+              padding: '12px',
+              backgroundColor: dark ? '#1f2937' : '#f9fafb',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: dark ? '#d1d5db' : '#4b5563',
+              border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+            }}
+          >
+            💡 <strong>Tip:</strong> Click on individual team cards below to view detailed timelines
+            and AI-powered playbooks.
           </div>
         </>
       ) : (
-        <div style={{ 
-          display: 'flex', 
-          gap: '24px', 
-          alignItems: 'center',
-          color: dark ? '#9ca3af' : '#6b7280',
-          fontSize: '14px',
-        }}>
-          <span>{orgStats.totalTeams} teams • Avg BDI: {orgStats.avgBdi}</span>
+        <div
+          style={{
+            display: 'flex',
+            gap: '24px',
+            alignItems: 'center',
+            color: dark ? '#9ca3af' : '#6b7280',
+            fontSize: '14px',
+          }}
+        >
+          <span>
+            {orgStats.totalTeams} teams • Avg BDI: {orgStats.avgBdi}
+          </span>
           <span style={{ color: orgStats.atRisk > 0 ? '#ef4444' : '#22c55e' }}>
             {orgStats.atRisk} at risk
           </span>

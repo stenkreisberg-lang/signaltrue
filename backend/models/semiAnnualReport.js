@@ -184,7 +184,9 @@ semiAnnualReportSchema.statics.getHistoryForOrg = async function (orgId, limit =
   return this.find({ orgId })
     .sort({ periodEnd: -1 })
     .limit(limit)
-    .select('halfLabel year halfNumber periodStart periodEnd current.avgBDI current.organizationalTrajectory deltasVsPriorHalf.overallDirection generatedAt');
+    .select(
+      'halfLabel year halfNumber periodStart periodEnd current.avgBDI current.organizationalTrajectory deltasVsPriorHalf.overallDirection generatedAt'
+    );
 };
 
 semiAnnualReportSchema.statics.findByLabel = async function (orgId, halfLabel) {

@@ -10,12 +10,12 @@ import { createSnapshot } from '../utils/bdiHistory.js';
 // Initialize Google Calendar API
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
-    credentials: process.env.GOOGLE_SERVICE_ACCOUNT 
+    credentials: process.env.GOOGLE_SERVICE_ACCOUNT
       ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT)
       : undefined,
     scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
   });
-  
+
   return google.calendar({ version: 'v3', auth });
 }
 
@@ -71,7 +71,7 @@ export function analyzeCalendarEvents(events) {
   let weekendCount = 0;
   const daysWithMeetings = new Set();
 
-  events.forEach(event => {
+  events.forEach((event) => {
     if (!event.start || !event.end) return;
 
     const start = new Date(event.start.dateTime || event.start.date);
@@ -96,24 +96,22 @@ export function analyzeCalendarEvents(events) {
 
   const totalMeetingHours = totalMinutes / 60;
   const avgMeetingDuration = events.length > 0 ? totalMinutes / events.length : 0;
-  const meetingDensity = daysWithMeetings.size > 0 
-    ? events.length / daysWithMeetings.size 
-    : 0;
+  const meetingDensity = daysWithMeetings.size > 0 ? events.length / daysWithMeetings.size : 0;
 
   // Calculate recovery score (0-100, higher is better)
   // Penalties: excessive meetings, after-hours, weekends, high density
   let recoveryScore = 100;
-  
+
   // Penalty for total meeting hours (>20 hours/week is concerning)
   const weeklyHours = (totalMeetingHours / 7) * 7; // normalize to weekly
   if (weeklyHours > 20) recoveryScore -= Math.min(30, (weeklyHours - 20) * 2);
-  
+
   // Penalty for after-hours meetings
   recoveryScore -= Math.min(25, afterHoursCount * 5);
-  
+
   // Penalty for weekend meetings
   recoveryScore -= Math.min(20, weekendCount * 10);
-  
+
   // Penalty for high meeting density (>5 meetings/day)
   if (meetingDensity > 5) {
     recoveryScore -= Math.min(15, (meetingDensity - 5) * 3);
@@ -186,7 +184,7 @@ export async function refreshAllTeamsCalendars() {
 /**
  * Calculate BDI with Slack + Calendar signals
  * Formula: (workload*0.3) + (sentiment*0.25) + (responsiveness*0.25) + (recovery*0.2)
- * 
+ *
  * @param {Object} slack - Slack signals
  * @param {Object} calendar - Calendar signals
  */
@@ -195,19 +193,13 @@ function calculateBDI(slack = {}, calendar = {}) {
   const workloadScore = calculateWorkloadScore(slack);
   const sentimentScore = calculateSentimentScore(slack);
   const responsivenessScore = calculateResponsivenessScore(slack);
-  
+
   // Calendar-based recovery score (inverted: lower recovery = higher BDI)
-  const recoveryScore = calendar.recoveryScore !== undefined 
-    ? 100 - calendar.recoveryScore 
-    : 0;
+  const recoveryScore = calendar.recoveryScore !== undefined ? 100 - calendar.recoveryScore : 0;
 
   // Weighted BDI calculation
-  const bdi = (
-    workloadScore * 0.3 +
-    sentimentScore * 0.25 +
-    responsivenessScore * 0.25 +
-    recoveryScore * 0.2
-  );
+  const bdi =
+    workloadScore * 0.3 + sentimentScore * 0.25 + responsivenessScore * 0.25 + recoveryScore * 0.2;
 
   return Math.round(bdi);
 }

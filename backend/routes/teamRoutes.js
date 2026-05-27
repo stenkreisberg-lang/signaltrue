@@ -3,8 +3,17 @@ import Team from '../models/team.js';
 import { requireApiKey } from '../middleware/auth.js';
 import { getExpandedEnergyIndex } from '../services/energyIndexService.js';
 import dotenv from 'dotenv';
+import getProvider from '../utils/aiProvider.js';
+import { incrementUsage, readUsage } from '../utils/aiUsage.js';
+import { isMasterAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+
+function teamFilter(req, teamId) {
+  const filter = teamId ? { _id: teamId } : {};
+  if (!isMasterAdmin(req.user)) filter.orgId = req.user.orgId;
+  return filter;
+}
 
 // PATCH /api/teams/:teamId/drivers
 // Update driverWeights and seasonalityFlags for a team
@@ -16,7 +25,7 @@ router.patch('/:teamId/drivers', async (req, res) => {
     const update = {};
     if (driverWeights) update.driverWeights = driverWeights;
     if (seasonalityFlags) update.seasonalityFlags = seasonalityFlags;
-    const team = await Team.findByIdAndUpdate(teamId, update, { new: true });
+    const team = await Team.findOneAndUpdate(teamFilter(req, teamId), update, { new: true });
     if (!team) return res.status(404).json({ message: 'Team not found' });
     res.json({ message: 'Drivers updated', team });
   } catch (err) {
@@ -35,9 +44,30 @@ async function seedMockTeams() {
   const count = await Team.countDocuments();
   if (count === 0) {
     const mock = [
-      { name: 'Marketing', zone: 'Watch', bdi: 46, trend: -8, favorite: true, slackSignals: { messageCount: 120, avgResponseDelayHours: 3.2, sentiment: -0.2 } },
-      { name: 'Engineering', zone: 'Stable', bdi: 62, trend: 4, favorite: false, slackSignals: { messageCount: 85, avgResponseDelayHours: 6.1, sentiment: 0.1 } },
-      { name: 'Customer Success', zone: 'Surge', bdi: 30, trend: -12, favorite: false, slackSignals: { messageCount: 200, avgResponseDelayHours: 1.5, sentiment: -0.5 } },
+      {
+        name: 'Marketing',
+        zone: 'Watch',
+        bdi: 46,
+        trend: -8,
+        favorite: true,
+        slackSignals: { messageCount: 120, avgResponseDelayHours: 3.2, sentiment: -0.2 },
+      },
+      {
+        name: 'Engineering',
+        zone: 'Stable',
+        bdi: 62,
+        trend: 4,
+        favorite: false,
+        slackSignals: { messageCount: 85, avgResponseDelayHours: 6.1, sentiment: 0.1 },
+      },
+      {
+        name: 'Customer Success',
+        zone: 'Surge',
+        bdi: 30,
+        trend: -12,
+        favorite: false,
+        slackSignals: { messageCount: 200, avgResponseDelayHours: 1.5, sentiment: -0.5 },
+      },
     ];
     await Team.insertMany(mock);
   }
@@ -46,8 +76,7 @@ async function seedMockTeams() {
 // GET /api/teams
 router.get('/', async (req, res) => {
   try {
-    await seedMockTeams();
-    const teams = await Team.find().sort({ favorite: -1, updatedAt: -1 });
+    const teams = await Team.find(teamFilter(req)).sort({ favorite: -1, updatedAt: -1 });
     res.json(teams);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -58,6 +87,9 @@ router.get('/', async (req, res) => {
 router.post('/analyze', async (req, res) => {
   try {
     const { teamId, context, model: requestedModel } = req.body;
+    if (teamId && !(await Team.exists(teamFilter(req, teamId)))) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
     const ip = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
 
     // rate limiting per IP
@@ -118,14 +150,20 @@ router.post('/analyze', async (req, res) => {
     // Log usage if available
     try {
       const usage = completion.usage || null;
-      if (usage) await incrementUsage({ model, promptTokens: usage.prompt_tokens || usage.promptTokens || 0, completionTokens: usage.completion_tokens || usage.completionTokens || 0, totalTokens: usage.total_tokens || usage.totalTokens || 0 });
+      if (usage)
+        await incrementUsage({
+          model,
+          promptTokens: usage.prompt_tokens || usage.promptTokens || 0,
+          completionTokens: usage.completion_tokens || usage.completionTokens || 0,
+          totalTokens: usage.total_tokens || usage.totalTokens || 0,
+        });
     } catch (e) {
       console.warn('Failed to record AI usage', e.message || e);
     }
 
     // Optionally save to team
     if (teamId) {
-      await Team.findByIdAndUpdate(teamId, { playbook }, { new: true });
+      await Team.findOneAndUpdate(teamFilter(req, teamId), { playbook }, { new: true });
     }
 
     res.json({ playbook });
@@ -150,8 +188,8 @@ router.get('/ai-usage', requireApiKey, async (req, res) => {
 router.get('/:teamId/energy-expanded', async (req, res) => {
   try {
     const { teamId } = req.params;
-    const team = await Team.findById(teamId);
-    
+    const team = await Team.findOne(teamFilter(req, teamId));
+
     if (!team) {
       return res.status(404).json({ message: 'Team not found' });
     }

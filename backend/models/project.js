@@ -1,12 +1,18 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const projectSchema = new mongoose.Schema(
   {
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      required: true,
+      index: true,
+    },
     name: { type: String, required: true },
     description: { type: String, required: true },
     favorite: { type: Boolean, default: false }, // ⭐ NEW FIELD
     // Additional fields for Project Details view
-    status: { type: String, enum: ["open", "in-progress", "done"], default: "open" },
+    status: { type: String, enum: ['open', 'in-progress', 'done'], default: 'open' },
     notes: { type: [String], default: [] },
     // Higher-level fields
     goals: { type: [String], default: [] },
@@ -28,8 +34,8 @@ const projectSchema = new mongoose.Schema(
         {
           title: { type: String, required: true },
           description: { type: String },
-          status: { type: String, enum: ["new", "in-progress", "completed"], default: "new" },
-          priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+          status: { type: String, enum: ['new', 'in-progress', 'completed'], default: 'new' },
+          priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
           createdAt: { type: Date, default: Date.now },
         },
       ],
@@ -64,4 +70,4 @@ const projectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Project", projectSchema);
+export default mongoose.model('Project', projectSchema);

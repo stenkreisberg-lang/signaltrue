@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Activity, 
-  Clock, 
-  TrendingUp, 
-  FileText, 
-  AlertTriangle,
-  ArrowRight,
-  X
-} from 'lucide-react';
+import { Activity, Clock, TrendingUp, FileText, AlertTriangle, ArrowRight, X } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface TrialStatus {
@@ -16,7 +8,13 @@ interface TrialStatus {
   isPaid: boolean;
   currentDay: number;
   daysRemaining: number;
-  phase: 'baseline' | 'first_signals' | 'pattern_recognition' | 'pre_close' | 'report_delivered' | 'expired';
+  phase:
+    | 'baseline'
+    | 'first_signals'
+    | 'pattern_recognition'
+    | 'pre_close'
+    | 'report_delivered'
+    | 'expired';
   banner: {
     title: string;
     message: string;
@@ -72,7 +70,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
 
         const response = await fetch(`${API_BASE_URL}/api/trial/status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -125,9 +123,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {status.banner.message}
-            </p>
+            <p className="text-sm text-muted-foreground">{status.banner.message}</p>
             {status.banner.ctaText && status.banner.ctaLink && (
               <Link to={status.banner.ctaLink}>
                 <Button variant="link" size="sm" className="h-auto p-0 mt-2">
@@ -138,7 +134,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
             )}
           </div>
         </div>
-        
+
         {/* Days remaining badge */}
         {status.isActive && status.daysRemaining > 0 && (
           <div className="flex items-center gap-2">
@@ -184,7 +180,7 @@ export const TrialBadge: React.FC = () => {
 
         const response = await fetch(`${API_BASE_URL}/api/trial/status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -206,7 +202,10 @@ export const TrialBadge: React.FC = () => {
   }
 
   return (
-    <Link to="/pricing" className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+    <Link
+      to="/pricing"
+      className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+    >
       <Clock className="w-3 h-3" />
       <span>{status.daysRemaining}d left</span>
     </Link>

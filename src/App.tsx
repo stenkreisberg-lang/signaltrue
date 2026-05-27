@@ -2,7 +2,7 @@ import { Toaster } from './components/ui/toaster';
 import { Toaster as Sonner } from './components/ui/sonner';
 import { TooltipProvider } from './components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ChatWidget from './components/ChatWidget';
@@ -70,10 +70,12 @@ const App = () => (
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<AcceptInvitation />} />
               <Route path="/dashboard" element={<DashboardRouter />} />
+              <Route path="/app" element={<Navigate to="/app/overview" replace />} />
               <Route path="/app/overview" element={<Overview />} />
               <Route path="/app/insights" element={<Insights />} />
               <Route path="/app/insights/:teamId" element={<Insights />} />
               <Route path="/app/signals" element={<Signals />} />
+              <Route path="/app/signals/:signalId" element={<Signals />} />
               <Route path="/app/active-monitoring" element={<ActiveMonitoring />} />
               <Route path="/app/risk-feed" element={<ActiveMonitoring />} /> {/* Legacy redirect */}
               <Route path="/app/actions" element={<Actions />} />
@@ -88,9 +90,12 @@ const App = () => (
               <Route path="/self-check" element={<SelfCheck />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
               <Route path="/integrations/callback" element={<IntegrationsPage />} />
+              <Route path="/settings" element={<Navigate to="/integrations" replace />} />
+              <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<Blog />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/demo" element={<Navigate to="/contact" replace />} />
               <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />
               <Route path="/drift-report/:sessionId" element={<DriftReport />} />
               <Route path="/ehrs-summit-2026" element={<EhrsSummit2026 />} />

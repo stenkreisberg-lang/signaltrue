@@ -1,53 +1,53 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Activity } from "lucide-react";
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Activity } from 'lucide-react';
 
 const Setup = () => {
-  const [email, setEmail] = useState("sten.kreisberg@gmail.com");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("Sten Kreisberg");
-  const [secretKey, setSecretKey] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [email, setEmail] = useState('sten.kreisberg@gmail.com');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('Sten Kreisberg');
+  const [secretKey, setSecretKey] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/api/auth/create-master-admin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name, secretKey }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Master admin creation failed");
+        throw new Error(data.message || 'Master admin creation failed');
       }
 
       // Store token and user data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      if (data.user.orgId) localStorage.setItem("orgId", data.user.orgId);
-      if (data.user.teamId) localStorage.setItem("teamId", data.user.teamId);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user.orgId) localStorage.setItem('orgId', data.user.orgId);
+      if (data.user.teamId) localStorage.setItem('teamId', data.user.teamId);
 
-      setSuccess("Master admin created successfully! Redirecting...");
-      
+      setSuccess('Master admin created successfully! Redirecting...');
+
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
-        navigate("/app/overview");
+        navigate('/app/overview');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -67,9 +67,7 @@ const Setup = () => {
         {/* Setup Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
           <h1 className="text-2xl font-bold mb-2">Master Admin Setup</h1>
-          <p className="text-muted-foreground mb-6">
-            Create the master admin account
-          </p>
+          <p className="text-muted-foreground mb-6">Create the master admin account</p>
 
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
@@ -131,21 +129,17 @@ const Setup = () => {
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Default: signaltrue-master-2026
+                Enter the setup secret configured by your administrator.
               </p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? "Creating..." : "Create Master Admin"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Master Admin'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>

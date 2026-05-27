@@ -1,11 +1,11 @@
 /**
  * Meeting Collision Heatmap Service
  * Exposes structural focus dead zones
- * 
+ *
  * Inputs:
  * - Meeting blocks by weekday/time
  * - Available non-meeting blocks
- * 
+ *
  * Outputs:
  * - Weekly heatmap (Mon–Fri × hours)
  * - Red zones where focus is impossible
@@ -19,9 +19,9 @@ import Team from '../models/team.js';
  * Working day configuration
  */
 const WORK_HOURS = {
-  start: 8,  // 8 AM
-  end: 18,   // 6 PM
-  days: [0, 1, 2, 3, 4] // Monday to Friday (0-indexed from Monday)
+  start: 8, // 8 AM
+  end: 18, // 6 PM
+  days: [0, 1, 2, 3, 4], // Monday to Friday (0-indexed from Monday)
 };
 
 /**
@@ -33,7 +33,7 @@ const WORK_HOURS = {
 export function buildHeatmapGrid(meetings, teamSize = 1) {
   // Initialize grid: 5 days × 10 hours (8am-6pm)
   const grid = [];
-  
+
   for (let day = 0; day < 5; day++) {
     for (let hour = WORK_HOURS.start; hour < WORK_HOURS.end; hour++) {
       grid.push({
@@ -43,40 +43,41 @@ export function buildHeatmapGrid(meetings, teamSize = 1) {
         totalAttendees: 0,
         fragmentationCount: 0,
         collisionDensity: 0,
-        bookedPercentage: 0
+        bookedPercentage: 0,
       });
     }
   }
 
   // Populate grid with meeting data
   const peopleBooked = {}; // Track unique people per slot
-  
-  meetings.forEach(meeting => {
+
+  meetings.forEach((meeting) => {
     const start = new Date(meeting.startTime);
-    const end = new Date(meeting.endTime || 
-      new Date(start.getTime() + (meeting.durationMinutes || 30) * 60000));
-    
+    const end = new Date(
+      meeting.endTime || new Date(start.getTime() + (meeting.durationMinutes || 30) * 60000)
+    );
+
     // Get day of week (0 = Monday)
     let dayOfWeek = start.getDay() - 1; // Convert Sunday=0 to Monday=0
     if (dayOfWeek < 0) dayOfWeek = 6; // Sunday
     if (dayOfWeek > 4) return; // Skip weekends
-    
+
     const startHour = start.getHours();
     const endHour = end.getHours() || startHour + 1;
-    
+
     // Mark all hours this meeting spans
     for (let h = startHour; h < endHour && h < WORK_HOURS.end; h++) {
       if (h < WORK_HOURS.start) continue;
-      
+
       const slotIndex = dayOfWeek * (WORK_HOURS.end - WORK_HOURS.start) + (h - WORK_HOURS.start);
       if (slotIndex >= 0 && slotIndex < grid.length) {
         grid[slotIndex].meetingCount++;
         grid[slotIndex].totalAttendees += meeting.attendeeCount || 1;
-        
+
         // Track unique people booked
         const slotKey = `${dayOfWeek}-${h}`;
         if (!peopleBooked[slotKey]) peopleBooked[slotKey] = new Set();
-        (meeting.attendees || []).forEach(a => peopleBooked[slotKey].add(a));
+        (meeting.attendees || []).forEach((a) => peopleBooked[slotKey].add(a));
       }
     }
   });
@@ -87,7 +88,7 @@ export function buildHeatmapGrid(meetings, teamSize = 1) {
     for (let hour = WORK_HOURS.start; hour < WORK_HOURS.end; hour++) {
       const idx = day * (WORK_HOURS.end - WORK_HOURS.start) + (hour - WORK_HOURS.start);
       const isMeeting = grid[idx].meetingCount > 0;
-      
+
       if (isMeeting !== prevWasMeeting) {
         grid[idx].fragmentationCount++;
       }
@@ -99,17 +100,18 @@ export function buildHeatmapGrid(meetings, teamSize = 1) {
   grid.forEach((slot, idx) => {
     const slotKey = `${slot.day}-${slot.hour}`;
     const bookedPeople = peopleBooked[slotKey]?.size || 0;
-    
-    slot.bookedPercentage = teamSize > 0 
-      ? Math.round((bookedPeople / teamSize) * 100) 
-      : 0;
-    
+
+    slot.bookedPercentage = teamSize > 0 ? Math.round((bookedPeople / teamSize) * 100) : 0;
+
     // Collision density: weighted combination of booking and fragmentation
-    slot.collisionDensity = Math.min(100, Math.round(
-      slot.bookedPercentage * 0.7 + 
-      slot.fragmentationCount * 15 + 
-      Math.min(slot.meetingCount * 10, 30)
-    ));
+    slot.collisionDensity = Math.min(
+      100,
+      Math.round(
+        slot.bookedPercentage * 0.7 +
+          slot.fragmentationCount * 15 +
+          Math.min(slot.meetingCount * 10, 30)
+      )
+    );
   });
 
   return grid;
@@ -122,15 +124,15 @@ export function buildHeatmapGrid(meetings, teamSize = 1) {
  */
 export function identifyRedZones(heatmap) {
   const redZones = [];
-  
+
   // Group by day
   for (let day = 0; day < 5; day++) {
-    const daySlots = heatmap.filter(s => s.day === day);
+    const daySlots = heatmap.filter((s) => s.day === day);
     let zoneStart = null;
-    
+
     daySlots.forEach((slot, idx) => {
       const isRed = slot.collisionDensity >= 70;
-      
+
       if (isRed && zoneStart === null) {
         zoneStart = slot.hour;
       } else if (!isRed && zoneStart !== null) {
@@ -139,21 +141,25 @@ export function identifyRedZones(heatmap) {
           day,
           startHour: zoneStart,
           endHour: slot.hour,
-          severity: daySlots.filter(s => s.hour >= zoneStart && s.hour < slot.hour)
-            .some(s => s.collisionDensity >= 85) ? 'critical' : 'high'
+          severity: daySlots
+            .filter((s) => s.hour >= zoneStart && s.hour < slot.hour)
+            .some((s) => s.collisionDensity >= 85)
+            ? 'critical'
+            : 'high',
         });
         zoneStart = null;
       }
     });
-    
+
     // Close any open zone at end of day
     if (zoneStart !== null) {
       redZones.push({
         day,
         startHour: zoneStart,
         endHour: WORK_HOURS.end,
-        severity: daySlots.filter(s => s.hour >= zoneStart)
-          .some(s => s.collisionDensity >= 85) ? 'critical' : 'high'
+        severity: daySlots.filter((s) => s.hour >= zoneStart).some((s) => s.collisionDensity >= 85)
+          ? 'critical'
+          : 'high',
       });
     }
   }
@@ -168,16 +174,16 @@ export function identifyRedZones(heatmap) {
  */
 export function identifyFocusWindows(heatmap) {
   const focusWindows = [];
-  
+
   for (let day = 0; day < 5; day++) {
-    const daySlots = heatmap.filter(s => s.day === day);
+    const daySlots = heatmap.filter((s) => s.day === day);
     let windowStart = null;
     let quality = 'good';
-    
+
     daySlots.forEach((slot, idx) => {
       const isAvailable = slot.collisionDensity <= 30;
       const isModerate = slot.collisionDensity > 30 && slot.collisionDensity <= 50;
-      
+
       if ((isAvailable || isModerate) && windowStart === null) {
         windowStart = slot.hour;
         quality = isAvailable ? 'good' : 'moderate';
@@ -188,7 +194,7 @@ export function identifyFocusWindows(heatmap) {
             day,
             startHour: windowStart,
             endHour: slot.hour,
-            quality
+            quality,
           });
         }
         windowStart = null;
@@ -197,14 +203,14 @@ export function identifyFocusWindows(heatmap) {
         quality = 'moderate';
       }
     });
-    
+
     // Close any open window at end of day
-    if (windowStart !== null && (WORK_HOURS.end - windowStart) >= 2) {
+    if (windowStart !== null && WORK_HOURS.end - windowStart >= 2) {
       focusWindows.push({
         day,
         startHour: windowStart,
         endHour: WORK_HOURS.end,
-        quality
+        quality,
       });
     }
   }
@@ -221,12 +227,12 @@ export function identifyFocusWindows(heatmap) {
  */
 function calculateSummary(heatmap, redZones, focusWindows) {
   const totalSlots = heatmap.length;
-  const highCollisionSlots = heatmap.filter(s => s.collisionDensity >= 70).length;
-  const lowCollisionSlots = heatmap.filter(s => s.collisionDensity <= 30).length;
-  
+  const highCollisionSlots = heatmap.filter((s) => s.collisionDensity >= 70).length;
+  const lowCollisionSlots = heatmap.filter((s) => s.collisionDensity <= 30).length;
+
   const redZoneHours = redZones.reduce((sum, z) => sum + (z.endHour - z.startHour), 0);
   const focusWindowHours = focusWindows.reduce((sum, w) => sum + (w.endHour - w.startHour), 0);
-  
+
   return {
     totalWorkHours: totalSlots, // 50 hours per week (5 days × 10 hours)
     redZoneHours,
@@ -234,7 +240,7 @@ function calculateSummary(heatmap, redZones, focusWindows) {
     congestionRate: Math.round((highCollisionSlots / totalSlots) * 100),
     focusAvailabilityRate: Math.round((lowCollisionSlots / totalSlots) * 100),
     worstDay: findWorstDay(heatmap),
-    bestDay: findBestDay(heatmap)
+    bestDay: findBestDay(heatmap),
   };
 }
 
@@ -244,11 +250,11 @@ function calculateSummary(heatmap, redZones, focusWindows) {
  * @returns {number} - Day index (0 = Monday)
  */
 function findWorstDay(heatmap) {
-  const dayScores = [0, 1, 2, 3, 4].map(day => {
-    const daySlots = heatmap.filter(s => s.day === day);
+  const dayScores = [0, 1, 2, 3, 4].map((day) => {
+    const daySlots = heatmap.filter((s) => s.day === day);
     return daySlots.reduce((sum, s) => sum + s.collisionDensity, 0) / daySlots.length;
   });
-  
+
   return dayScores.indexOf(Math.max(...dayScores));
 }
 
@@ -258,11 +264,11 @@ function findWorstDay(heatmap) {
  * @returns {number} - Day index (0 = Monday)
  */
 function findBestDay(heatmap) {
-  const dayScores = [0, 1, 2, 3, 4].map(day => {
-    const daySlots = heatmap.filter(s => s.day === day);
+  const dayScores = [0, 1, 2, 3, 4].map((day) => {
+    const daySlots = heatmap.filter((s) => s.day === day);
     return daySlots.reduce((sum, s) => sum + s.collisionDensity, 0) / daySlots.length;
   });
-  
+
   return dayScores.indexOf(Math.min(...dayScores));
 }
 
@@ -301,12 +307,12 @@ export async function computeMeetingCollision(teamId, meetings = [], options = {
     teamId,
     orgId: team.orgId,
     weekStart,
-    
+
     heatmap,
     redZones,
     focusWindows,
-    
-    summary
+
+    summary,
   };
 }
 
@@ -318,13 +324,13 @@ export async function computeMeetingCollision(teamId, meetings = [], options = {
 export async function storeMeetingCollision(collisionData) {
   const weekStart = new Date(collisionData.weekStart);
   weekStart.setHours(0, 0, 0, 0);
-  
+
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
 
   const existing = await MeetingCollision.findOne({
     teamId: collisionData.teamId,
-    weekStart: { $gte: weekStart, $lt: weekEnd }
+    weekStart: { $gte: weekStart, $lt: weekEnd },
   });
 
   if (existing) {
@@ -347,7 +353,7 @@ export async function getMeetingCollisionHistory(teamId, weeks = 8) {
 
   return MeetingCollision.find({
     teamId,
-    weekStart: { $gte: startDate }
+    weekStart: { $gte: startDate },
   }).sort({ weekStart: 1 });
 }
 
@@ -376,13 +382,12 @@ export function formatHeatmapForDisplay(heatmap) {
   const grid = dayNames.map((name, dayIndex) => ({
     day: name,
     slots: heatmap
-      .filter(s => s.day === dayIndex)
-      .map(s => ({
+      .filter((s) => s.day === dayIndex)
+      .map((s) => ({
         hour: s.hour,
         density: s.collisionDensity,
-        status: s.collisionDensity >= 70 ? 'red' : 
-                s.collisionDensity >= 40 ? 'yellow' : 'green'
-      }))
+        status: s.collisionDensity >= 70 ? 'red' : s.collisionDensity >= 40 ? 'yellow' : 'green',
+      })),
   }));
 
   return { grid, hours, dayNames };
@@ -396,5 +401,5 @@ export default {
   buildHeatmapGrid,
   identifyRedZones,
   identifyFocusWindows,
-  formatHeatmapForDisplay
+  formatHeatmapForDisplay,
 };

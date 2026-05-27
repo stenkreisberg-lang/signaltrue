@@ -1,6 +1,6 @@
 /**
  * Authentication Middleware (Scaffold)
- * 
+ *
  * Ready for JWT or Clerk integration when multi-org support is needed.
  * Currently allows all requests (single-org mode).
  */
@@ -13,7 +13,7 @@
 export function requireApiKey(req, res, next) {
   // Check x-api-key header first
   let apiKey = req.headers['x-api-key'];
-  
+
   // Also check Authorization header for Bearer token (used by BabyLoveGrowth, etc.)
   if (!apiKey && req.headers.authorization) {
     const authHeader = req.headers.authorization;
@@ -21,27 +21,29 @@ export function requireApiKey(req, res, next) {
       apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
     }
   }
-  
+
   // Require API_KEY in all environments — no silent bypass
   if (!process.env.API_KEY) {
-    console.error('FATAL: API_KEY environment variable is not set. Admin endpoints are unprotected.');
+    console.error(
+      'FATAL: API_KEY environment variable is not set. Admin endpoints are unprotected.'
+    );
     return res.status(500).json({ message: 'Server misconfiguration: API_KEY not set' });
   }
-  
+
   // Verify API key matches
   if (apiKey !== process.env.API_KEY) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: 'Unauthorized: Invalid or missing API key',
-      hint: 'Include x-api-key header or Authorization: Bearer <token>'
+      hint: 'Include x-api-key header or Authorization: Bearer <token>',
     });
   }
-  
+
   next();
 }
 
 /**
  * JWT Authentication (ENABLED)
- * 
+ *
  * JWT auth is now active for protected routes.
  * Set JWT_SECRET in environment variables.
  */
@@ -49,28 +51,30 @@ export function requireApiKey(req, res, next) {
 import jwt from 'jsonwebtoken';
 
 if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32');
+  throw new Error(
+    'FATAL: JWT_SECRET environment variable is required. Generate one with: openssl rand -hex 32'
+  );
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export function authenticateToken(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  
+
   if (!token) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: 'Unauthorized: No token provided',
-      hint: 'Include Authorization: Bearer <token> header'
+      hint: 'Include Authorization: Bearer <token> header',
     });
   }
-  
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded; // { userId, teamId, email, role }
     next();
   } catch (error) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: 'Unauthorized: Invalid token',
-      error: error.message
+      error: error.message,
     });
   }
 }
@@ -78,8 +82,8 @@ export function authenticateToken(req, res, next) {
 // Require admin role
 export function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin' && req.user.role !== 'master_admin') {
-    return res.status(403).json({ 
-      message: 'Forbidden: Admin access required'
+    return res.status(403).json({
+      message: 'Forbidden: Admin access required',
     });
   }
   next();
@@ -89,12 +93,12 @@ export function requireAdmin(req, res, next) {
 export function requireHROrAdmin(req, res, next) {
   const role = req.user?.role;
   const allowedRoles = ['admin', 'master_admin', 'hr_admin'];
-  
+
   if (!role || !allowedRoles.includes(role)) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       message: 'Forbidden: HR or Admin access required',
       required: allowedRoles,
-      current: role
+      current: role,
     });
   }
   next();
@@ -106,22 +110,49 @@ export function requireRoles(roles) {
   return (req, res, next) => {
     const role = req.user?.role;
     if (!role || !allowed.includes(role)) {
-      return res.status(403).json({ message: 'Forbidden: insufficient role', required: allowed, current: role });
+      return res
+        .status(403)
+        .json({ message: 'Forbidden: insufficient role', required: allowed, current: role });
     }
     next();
   };
 }
 
+export function isMasterAdmin(user) {
+  return user?.role === 'master_admin' && user?.isMasterAdmin === true;
+}
+
+export function requireMasterAdmin(req, res, next) {
+  if (!isMasterAdmin(req.user)) {
+    return res.status(403).json({ message: 'Forbidden: Master admin access required' });
+  }
+  next();
+}
+
+export function requireOrganizationAccess(paramName = 'orgId') {
+  return (req, res, next) => {
+    const requestedOrgId =
+      req.params?.[paramName] || req.body?.[paramName] || req.query?.[paramName];
+    if (!requestedOrgId) {
+      return res.status(400).json({ message: 'Organization ID required' });
+    }
+    if (isMasterAdmin(req.user) || String(req.user?.orgId || '') === String(requestedOrgId)) {
+      return next();
+    }
+    return res.status(403).json({ message: 'Forbidden: Organization access denied' });
+  };
+}
+
 /**
  * Clerk Authentication (Alternative to JWT)
- * 
+ *
  * To enable Clerk:
  * 1. npm install @clerk/clerk-sdk-node
  * 2. Create Clerk application at https://clerk.com
  * 3. Uncomment the code below
  * 4. Set CLERK_SECRET_KEY in environment variables
  * 5. Add requireClerkAuth to protected routes
- * 
+ *
  * Frontend setup:
  * 1. npm install @clerk/clerk-react
  * 2. Wrap App with <ClerkProvider>
@@ -152,7 +183,7 @@ export function getClerkUser(req) {
 
 /**
  * Organization-based filtering (for multi-org)
- * 
+ *
  * When auth is enabled, filter queries by organization:
  */
 
@@ -179,5 +210,5 @@ export default {
   authenticateToken,
   requireAdmin,
   requireHROrAdmin,
-  requireRoles
+  requireRoles,
 };

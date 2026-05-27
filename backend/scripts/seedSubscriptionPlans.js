@@ -1,6 +1,6 @@
 /**
  * Seed Subscription Plans
- * 
+ *
  * Initializes the three pricing tiers in the database.
  * Run this once during deployment or database setup.
  */
@@ -24,18 +24,18 @@ async function seedSubscriptionPlans() {
     console.log('Cleared existing subscription plans');
 
     // Create plans from definitions
-    const plans = Object.values(PLAN_DEFINITIONS).map(planDef => ({
+    const plans = Object.values(PLAN_DEFINITIONS).map((planDef) => ({
       planId: planDef.planId,
       name: planDef.name,
       priceEUR: planDef.priceEUR,
       features: planDef.features,
-      isActive: true
+      isActive: true,
     }));
 
     const createdPlans = await SubscriptionPlan.insertMany(plans);
-    
+
     console.log('\n✅ Successfully seeded subscription plans:');
-    createdPlans.forEach(plan => {
+    createdPlans.forEach((plan) => {
       console.log(`\n${plan.name} (${plan.planId})`);
       console.log(`  Price: ${plan.priceEUR ? `€${plan.priceEUR}` : 'Custom'}`);
       console.log(`  Features:`);
@@ -45,7 +45,6 @@ async function seedSubscriptionPlans() {
     });
 
     console.log('\n🎉 Subscription plans seeded successfully!');
-    
   } catch (error) {
     console.error('Error seeding subscription plans:', error);
     process.exit(1);

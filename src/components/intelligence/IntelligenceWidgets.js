@@ -18,9 +18,7 @@ export function NetworkHealthWidget({ data }) {
       <div style={styles.widgetContent}>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Silo Score:</span>
-          <span style={getSiloScoreStyle(data.siloScore)}>
-            {data.siloScore}/100
-          </span>
+          <span style={getSiloScoreStyle(data.siloScore)}>{data.siloScore}/100</span>
         </div>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Bottlenecks:</span>
@@ -47,9 +45,7 @@ export function SuccessionRiskWidget({ data }) {
       <div style={styles.widgetContent}>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Bus Factor:</span>
-          <span style={getBusFactorStyle(data.busFactor)}>
-            {data.busFactor}/100
-          </span>
+          <span style={getBusFactorStyle(data.busFactor)}>{data.busFactor}/100</span>
         </div>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Critical Roles:</span>
@@ -57,7 +53,8 @@ export function SuccessionRiskWidget({ data }) {
         </div>
         {data.criticalRoles && data.criticalRoles.length > 0 && (
           <div style={styles.warning}>
-            ⚠️ {data.criticalRoles[0].personName} holds {data.criticalRoles[0].knowledgePercentage}% of critical knowledge
+            ⚠️ {data.criticalRoles[0].personName} holds {data.criticalRoles[0].knowledgePercentage}%
+            of critical knowledge
           </div>
         )}
       </div>
@@ -101,7 +98,7 @@ export function EquitySignalsWidget({ data }) {
 export function ProjectRiskWidget({ data }) {
   if (!data || !data.projects) return null;
 
-  const highRiskProjects = data.projects.filter(p => p.riskScore >= 60);
+  const highRiskProjects = data.projects.filter((p) => p.riskScore >= 60);
 
   return (
     <div style={styles.widget}>
@@ -137,7 +134,7 @@ export function ProjectRiskWidget({ data }) {
 export function MeetingROIWidget({ data }) {
   if (!data || !data.meetings) return null;
 
-  const lowROIMeetings = data.meetings.filter(m => m.roiScore < 40);
+  const lowROIMeetings = data.meetings.filter((m) => m.roiScore < 40);
   const avgROI = data.meetings.reduce((sum, m) => sum + m.roiScore, 0) / data.meetings.length;
 
   return (
@@ -149,9 +146,7 @@ export function MeetingROIWidget({ data }) {
       <div style={styles.widgetContent}>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Average ROI:</span>
-          <span style={getROIScoreStyle(avgROI)}>
-            {avgROI.toFixed(0)}/100
-          </span>
+          <span style={getROIScoreStyle(avgROI)}>{avgROI.toFixed(0)}/100</span>
         </div>
         <div style={styles.metric}>
           <span style={styles.metricLabel}>Low ROI Meetings:</span>
@@ -172,7 +167,7 @@ export function MeetingROIWidget({ data }) {
 export function OutlookSignalsWidget({ data }) {
   if (!data) return null;
 
-  const overloadCount = data.signals?.filter(s => s.overloadDetected)?.length || 0;
+  const overloadCount = data.signals?.filter((s) => s.overloadDetected)?.length || 0;
 
   return (
     <div style={styles.widget}>
@@ -223,9 +218,7 @@ export function AttritionRiskSummary({ data }) {
           </span>
         </div>
         {(data.highRiskCount > 0 || data.criticalRiskCount > 0) && (
-          <div style={styles.warning}>
-            ⚠️ Contact HR for retention strategy
-          </div>
+          <div style={styles.warning}>⚠️ Contact HR for retention strategy</div>
         )}
       </div>
     </div>

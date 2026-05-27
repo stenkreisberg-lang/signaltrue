@@ -57,10 +57,7 @@ export function calculateWorkloadRiskScore(inputs: AssessmentInputs): WorkloadRi
 
   // Focus Time Loss Score (0-25 points) - derived from meetings + fragmentation
   // High meetings + high fragmentation = very little focus time
-  const focusTimeLossScore = Math.min(
-    25,
-    (meetingLoadScore * 0.6) + (fragmentationScore * 0.4)
-  );
+  const focusTimeLossScore = Math.min(25, meetingLoadScore * 0.6 + fragmentationScore * 0.4);
 
   const total = Math.round(
     meetingLoadScore + fragmentationScore + afterHoursScore + focusTimeLossScore
@@ -98,7 +95,8 @@ export function calculateCostBreakdown(
   const { company, workload, retention } = inputs;
 
   // A. Loaded Hourly Rate
-  const loadedHourlyRate = (company.averageSalary * company.overheadMultiplier) / WORK_HOURS_PER_YEAR;
+  const loadedHourlyRate =
+    (company.averageSalary * company.overheadMultiplier) / WORK_HOURS_PER_YEAR;
 
   // B. Meeting Cost
   const weeklyMeetingCost = workload.meetingHoursPerWeek * company.teamSize * loadedHourlyRate;
@@ -109,12 +107,13 @@ export function calculateCostBreakdown(
 
   // D. Turnover Exposure Cost (range)
   const expectedExits = company.teamSize * (retention.attritionPercent / 100);
-  
+
   let replacementMultiplier: number;
   if (retention.roleType === 'custom' && retention.customReplacementCost !== undefined) {
     replacementMultiplier = retention.customReplacementCost / 100;
   } else {
-    replacementMultiplier = REPLACEMENT_COSTS[retention.roleType === 'manager' ? 'manager' : 'professional'];
+    replacementMultiplier =
+      REPLACEMENT_COSTS[retention.roleType === 'manager' ? 'manager' : 'professional'];
   }
 
   // Show as range: 80% to 120% of calculated value
@@ -219,10 +218,14 @@ export function calculateAssessmentResult(
 
   // Get replacement multiplier for display
   let replacementMultiplier: number;
-  if (inputs.retention.roleType === 'custom' && inputs.retention.customReplacementCost !== undefined) {
+  if (
+    inputs.retention.roleType === 'custom' &&
+    inputs.retention.customReplacementCost !== undefined
+  ) {
     replacementMultiplier = inputs.retention.customReplacementCost / 100;
   } else {
-    replacementMultiplier = REPLACEMENT_COSTS[inputs.retention.roleType === 'manager' ? 'manager' : 'professional'];
+    replacementMultiplier =
+      REPLACEMENT_COSTS[inputs.retention.roleType === 'manager' ? 'manager' : 'professional'];
   }
 
   const assumptions: AssessmentAssumptions = {

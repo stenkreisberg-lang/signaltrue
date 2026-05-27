@@ -1,13 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, TrendingUp, Clock, AlertTriangle, Activity, Calendar, MessageSquare } from 'lucide-react';
+import {
+  ArrowLeft,
+  Users,
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+  Activity,
+  Calendar,
+  MessageSquare,
+} from 'lucide-react';
 
 interface AnalyticsData {
   teamHealth: {
-    energyIndex?: number;  // deprecated, kept for backwards compat
-    resilienceScore?: number;  // deprecated, kept for backwards compat
-    signalsDetected?: number;  // NEW: count of active signals
-    driftStatus?: 'stable' | 'worsening' | 'stabilizing' | 'recovering';  // NEW: drift trend
+    energyIndex?: number; // deprecated, kept for backwards compat
+    resilienceScore?: number; // deprecated, kept for backwards compat
+    signalsDetected?: number; // NEW: count of active signals
+    driftStatus?: 'stable' | 'worsening' | 'stabilizing' | 'recovering'; // NEW: drift trend
     executionCapacity: number;
     trend: string;
   };
@@ -146,7 +155,10 @@ const TeamAnalytics: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center text-red-600">
           <p>{error}</p>
-          <button onClick={() => navigate('/dashboard')} className="mt-4 text-blue-600 hover:underline">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="mt-4 text-blue-600 hover:underline"
+          >
             Return to Dashboard
           </button>
         </div>
@@ -167,7 +179,9 @@ const TeamAnalytics: React.FC = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Team Analytics</h1>
-            <p className="text-sm text-gray-500">Comprehensive view of team performance and health</p>
+            <p className="text-sm text-gray-500">
+              Comprehensive view of team performance and health
+            </p>
           </div>
         </div>
       </header>
@@ -180,36 +194,52 @@ const TeamAnalytics: React.FC = () => {
             Team Signal Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`${getScoreBg(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)} rounded-xl p-6`}>
+            <div
+              className={`${getScoreBg(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)} rounded-xl p-6`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Signals Detected</span>
                 <TrendingUp className="w-5 h-5 text-gray-500" />
               </div>
-              <div className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}>
+              <div
+                className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}
+              >
                 {analytics?.teamHealth.signalsDetected ?? analytics?.teamHealth.energyIndex ?? 0}
               </div>
               <p className="text-sm text-gray-600 mt-1">Active drift signals requiring attention</p>
             </div>
 
-            <div className={`${getScoreBg(analytics?.teamHealth.driftStatus === 'stable' ? 90 : analytics?.teamHealth.driftStatus === 'worsening' ? 40 : 70)} rounded-xl p-6`}>
+            <div
+              className={`${getScoreBg(analytics?.teamHealth.driftStatus === 'stable' ? 90 : analytics?.teamHealth.driftStatus === 'worsening' ? 40 : 70)} rounded-xl p-6`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Drift Status</span>
                 <Users className="w-5 h-5 text-gray-500" />
               </div>
-              <div className={`text-2xl font-bold ${analytics?.teamHealth.driftStatus === 'stable' ? 'text-green-600' : analytics?.teamHealth.driftStatus === 'worsening' ? 'text-red-600' : 'text-yellow-600'}`}>
-                {analytics?.teamHealth.driftStatus === 'stable' ? 'Stable' : 
-                 analytics?.teamHealth.driftStatus === 'worsening' ? 'Worsening' : 
-                 analytics?.teamHealth.driftStatus === 'recovering' ? 'Recovering' : 'Stabilizing'}
+              <div
+                className={`text-2xl font-bold ${analytics?.teamHealth.driftStatus === 'stable' ? 'text-green-600' : analytics?.teamHealth.driftStatus === 'worsening' ? 'text-red-600' : 'text-yellow-600'}`}
+              >
+                {analytics?.teamHealth.driftStatus === 'stable'
+                  ? 'Stable'
+                  : analytics?.teamHealth.driftStatus === 'worsening'
+                    ? 'Worsening'
+                    : analytics?.teamHealth.driftStatus === 'recovering'
+                      ? 'Recovering'
+                      : 'Stabilizing'}
               </div>
               <p className="text-sm text-gray-600 mt-1">Overall organizational drift trend</p>
             </div>
 
-            <div className={`${getScoreBg(analytics?.teamHealth.executionCapacity || 0)} rounded-xl p-6`}>
+            <div
+              className={`${getScoreBg(analytics?.teamHealth.executionCapacity || 0)} rounded-xl p-6`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Execution Capacity</span>
                 <Clock className="w-5 h-5 text-gray-500" />
               </div>
-              <div className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.executionCapacity || 0)}`}>
+              <div
+                className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.executionCapacity || 0)}`}
+              >
                 {analytics?.teamHealth.executionCapacity}%
               </div>
               <p className="text-sm text-gray-600 mt-1">Capacity to deliver on goals</p>
@@ -229,15 +259,21 @@ const TeamAnalytics: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Slack Messages (This Week)</span>
-                  <span className="font-semibold text-gray-900">{analytics?.communicationMetrics.slackMessages.toLocaleString()}</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics?.communicationMetrics.slackMessages.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Avg Response Time</span>
-                  <span className="font-semibold text-gray-900">{analytics?.communicationMetrics.avgResponseTime} hours</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics?.communicationMetrics.avgResponseTime} hours
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-3">
                   <span className="text-gray-600">After-Hours Messages</span>
-                  <span className={`font-semibold ${(analytics?.communicationMetrics.afterHoursPercentage || 0) > 20 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span
+                    className={`font-semibold ${(analytics?.communicationMetrics.afterHoursPercentage || 0) > 20 ? 'text-red-600' : 'text-green-600'}`}
+                  >
                     {analytics?.communicationMetrics.afterHoursPercentage}%
                   </span>
                 </div>
@@ -255,15 +291,21 @@ const TeamAnalytics: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Meeting Hours (Weekly)</span>
-                  <span className="font-semibold text-gray-900">{analytics?.meetingMetrics.totalHours}h</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics?.meetingMetrics.totalHours}h
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Focus Hours (Weekly)</span>
-                  <span className="font-semibold text-gray-900">{analytics?.meetingMetrics.focusHours}h</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics?.meetingMetrics.focusHours}h
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-3">
                   <span className="text-gray-600">Meeting-to-Focus Ratio</span>
-                  <span className={`font-semibold ${(analytics?.meetingMetrics.meetingToFocusRatio || 0) > 1 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span
+                    className={`font-semibold ${(analytics?.meetingMetrics.meetingToFocusRatio || 0) > 1 ? 'text-red-600' : 'text-green-600'}`}
+                  >
                     {analytics?.meetingMetrics.meetingToFocusRatio.toFixed(2)}
                   </span>
                 </div>
@@ -283,7 +325,9 @@ const TeamAnalytics: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Attrition Risk</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(analytics?.risks.attritionRisk || 0)}`}>
+              <div
+                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.attritionRisk || 0)}`}
+              >
                 {analytics?.risks.attritionRisk}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
@@ -298,7 +342,9 @@ const TeamAnalytics: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Burnout Risk</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(analytics?.risks.burnoutRisk || 0)}`}>
+              <div
+                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.burnoutRisk || 0)}`}
+              >
                 {analytics?.risks.burnoutRisk}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
@@ -313,7 +359,9 @@ const TeamAnalytics: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Collaboration Risk</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(analytics?.risks.collaborationRisk || 0)}`}>
+              <div
+                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.collaborationRisk || 0)}`}
+              >
                 {analytics?.risks.collaborationRisk}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">

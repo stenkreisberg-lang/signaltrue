@@ -17,48 +17,51 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
   }
 
   const stateConfig = {
-    'Stable': { 
-      color: 'green', 
-      bgColor: 'bg-green-900/20', 
+    Stable: {
+      color: 'green',
+      bgColor: 'bg-green-900/20',
       borderColor: 'border-green-700',
       textColor: 'text-green-400',
-      icon: '✓'
+      icon: '✓',
     },
-    'Early Drift': { 
-      color: 'yellow', 
-      bgColor: 'bg-yellow-900/20', 
+    'Early Drift': {
+      color: 'yellow',
+      bgColor: 'bg-yellow-900/20',
       borderColor: 'border-yellow-700',
       textColor: 'text-yellow-400',
-      icon: '⚠️'
+      icon: '⚠️',
     },
-    'Developing Drift': { 
-      color: 'orange', 
-      bgColor: 'bg-orange-900/20', 
+    'Developing Drift': {
+      color: 'orange',
+      bgColor: 'bg-orange-900/20',
       borderColor: 'border-orange-700',
       textColor: 'text-orange-400',
-      icon: '⚠️'
+      icon: '⚠️',
     },
-    'Critical Drift': { 
-      color: 'red', 
-      bgColor: 'bg-red-900/20', 
+    'Critical Drift': {
+      color: 'red',
+      bgColor: 'bg-red-900/20',
       borderColor: 'border-red-700',
       textColor: 'text-red-400',
-      icon: '🔴'
-    }
+      icon: '🔴',
+    },
   };
 
   const config = stateConfig[bdi.state] || stateConfig['Stable'];
 
   const confidenceLevelConfig = {
-    'Low': { color: 'text-slate-400', icon: '◐' },
-    'Medium': { color: 'text-yellow-400', icon: '◑' },
-    'High': { color: 'text-green-400', icon: '●' }
+    Low: { color: 'text-slate-400', icon: '◐' },
+    Medium: { color: 'text-yellow-400', icon: '◑' },
+    High: { color: 'text-green-400', icon: '●' },
   };
 
-  const confidenceConfig = confidenceLevelConfig[bdi.confidence?.level] || confidenceLevelConfig['Low'];
+  const confidenceConfig =
+    confidenceLevelConfig[bdi.confidence?.level] || confidenceLevelConfig['Low'];
 
   return (
-    <div className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}>
+    <div
+      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -73,17 +76,11 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
         <div className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg`}>
           <span className={`font-semibold ${config.textColor}`}>{bdi.state}</span>
         </div>
-        <div className="text-3xl font-bold text-slate-100">
-          {bdi.driftScore}/100
-        </div>
+        <div className="text-3xl font-bold text-slate-100">{bdi.driftScore}/100</div>
       </div>
 
       {/* Summary */}
-      {bdi.summary && (
-        <p className="text-slate-300 mb-4 leading-relaxed">
-          {bdi.summary}
-        </p>
-      )}
+      {bdi.summary && <p className="text-slate-300 mb-4 leading-relaxed">{bdi.summary}</p>}
 
       {showDetails && (
         <>
@@ -95,11 +92,16 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
               </h3>
               <div className="space-y-2">
                 {bdi.topDrivers.slice(0, 3).map((driver, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-900/50 rounded px-3 py-2">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between bg-slate-900/50 rounded px-3 py-2"
+                  >
                     <span className="text-slate-300 capitalize">
                       {driver.signal.replace(/([A-Z])/g, ' $1').trim()}
                     </span>
-                    <span className={`font-semibold ${driver.change.startsWith('+') ? 'text-red-400' : 'text-green-400'}`}>
+                    <span
+                      className={`font-semibold ${driver.change.startsWith('+') ? 'text-red-400' : 'text-green-400'}`}
+                    >
                       {driver.change}
                     </span>
                   </div>
@@ -154,14 +156,14 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
 
           {/* Interpretation */}
           <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
-            {bdi.interpretation || 
+            {bdi.interpretation ||
               "Behavioral Drift Index shows whether a team's working patterns are changing compared to their own historical baseline. It detects early coordination and capacity issues before outcomes are affected."}
           </div>
 
           {/* View Details Link */}
           {teamId && (
             <div className="mt-4">
-              <Link 
+              <Link
                 to={`/app/teams/${teamId}/drift`}
                 className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
               >

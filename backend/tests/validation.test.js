@@ -2,13 +2,12 @@
  * Unit tests for validation middleware
  */
 
-import { describe, test, expect, jest } from '@jest/globals';
-import { validateRequest } from '../middleware/validation.js';
-import { validationResult } from 'express-validator';
+import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 
-// Mock express-validator
-jest.mock('express-validator', () => ({
-  validationResult: jest.fn(),
+const validationResult = jest.fn();
+
+jest.unstable_mockModule('express-validator', () => ({
+  validationResult,
   body: jest.fn(() => ({
     trim: jest.fn().mockReturnThis(),
     notEmpty: jest.fn().mockReturnThis(),
@@ -28,10 +27,13 @@ jest.mock('express-validator', () => ({
   })),
 }));
 
+const { validateRequest } = await import('../middleware/validation.js');
+
 describe('Validation Middleware', () => {
   let req, res, next;
 
   beforeEach(() => {
+    validationResult.mockReset();
     req = {};
     res = {
       status: jest.fn().mockReturnThis(),
@@ -40,85 +42,44 @@ describe('Validation Middleware', () => {
     next = jest.fn();
   });
 
-  describe('validateRequest', () => {
-    test('should call next() when there are no validation errors', () => {
-      // Mock no errors
-      validationResult.mockReturnValue({
-        isEmpty: () => true,
-        array: () => [],
-      });
+  test('should call next() when there are no validation errors', () => {
+    validationResult.mockReturnValue({ isEmpty: () => true, array: () => [] });
+    validateRequest(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
 
-      validateRequest(req, res, next);
-
-      expect(next).toHaveBeenCalled();
-      expect(res.status).not.toHaveBeenCalled();
+  test('should return 400 with errors when validation fails', () => {
+    const mockErrors = [
+      { path: 'email', msg: 'Email is required', value: '' },
+      { path: 'password', msg: 'Password must be at least 8 characters', value: '123' },
+    ];
+    validationResult.mockReturnValue({ isEmpty: () => false, array: () => mockErrors });
+    validateRequest(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'error',
+      message: 'Validation failed',
+      errors: expect.arrayContaining([
+        expect.objectContaining({ field: 'email', message: 'Email is required' }),
+        expect.objectContaining({ field: 'password' }),
+      ]),
     });
+    expect(next).not.toHaveBeenCalled();
+  });
 
-    test('should return 400 with errors when validation fails', () => {
-      const mockErrors = [
-        {
-          path: 'email',
-          msg: 'Email is required',
-          value: '',
-        },
-        {
-          path: 'password',
-          msg: 'Password must be at least 8 characters',
-          value: '123',
-        },
-      ];
-
-      validationResult.mockReturnValue({
-        isEmpty: () => false,
-        array: () => mockErrors,
-      });
-
-      validateRequest(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'error',
-        message: 'Validation failed',
-        errors: expect.arrayContaining([
-          expect.objectContaining({
-            field: 'email',
-            message: 'Email is required',
-          }),
-          expect.objectContaining({
-            field: 'password',
-          }),
-        ]),
-      });
-      expect(next).not.toHaveBeenCalled();
+  test('should format validation errors correctly', () => {
+    validationResult.mockReturnValue({
+      isEmpty: () => false,
+      array: () => [{ path: 'name', msg: 'Name must be between 2 and 100 characters', value: 'a' }],
     });
-
-    test('should format validation errors correctly', () => {
-      const mockErrors = [
-        {
-          path: 'name',
-          msg: 'Name must be between 2 and 100 characters',
-          value: 'a',
-        },
-      ];
-
-      validationResult.mockReturnValue({
-        isEmpty: () => false,
-        array: () => mockErrors,
-      });
-
-      validateRequest(req, res, next);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          errors: [
-            {
-              field: 'name',
-              message: 'Name must be between 2 and 100 characters',
-              value: 'a',
-            },
-          ],
-        })
-      );
-    });
+    validateRequest(req, res, next);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        errors: [
+          { field: 'name', message: 'Name must be between 2 and 100 characters', value: 'a' },
+        ],
+      })
+    );
   });
 });

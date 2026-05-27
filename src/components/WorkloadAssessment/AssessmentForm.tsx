@@ -75,7 +75,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           </div>
           <div>
             <h3 className="font-display font-semibold text-foreground">About your organization</h3>
-            <p className="text-sm text-muted-foreground">Estimates are fine – no validation shaming here</p>
+            <p className="text-sm text-muted-foreground">
+              Estimates are fine – no validation shaming here
+            </p>
           </div>
         </div>
 
@@ -131,7 +133,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   min="10000"
                   max="500000"
                   value={company.averageSalary}
-                  onChange={(e) => setCompany({ ...company, averageSalary: parseInt(e.target.value) || 50000 })}
+                  onChange={(e) =>
+                    setCompany({ ...company, averageSalary: parseInt(e.target.value) || 50000 })
+                  }
                   className="flex-1"
                   placeholder="e.g., 75000"
                 />
@@ -156,7 +160,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             >
               <HelpCircle className="w-4 h-4" />
               {showAdvanced ? 'Hide' : 'Show'} overhead multiplier
-              <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+              />
             </button>
             {showAdvanced && (
               <div className="mt-4 p-4 rounded-lg bg-secondary/30">
@@ -170,7 +176,12 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   max="2"
                   step="0.1"
                   value={company.overheadMultiplier}
-                  onChange={(e) => setCompany({ ...company, overheadMultiplier: parseFloat(e.target.value) || 1.3 })}
+                  onChange={(e) =>
+                    setCompany({
+                      ...company,
+                      overheadMultiplier: parseFloat(e.target.value) || 1.3,
+                    })
+                  }
                   className="w-32"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
@@ -205,7 +216,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               min="0"
               max="40"
               value={workload.meetingHoursPerWeek}
-              onChange={(e) => setWorkload({ ...workload, meetingHoursPerWeek: parseInt(e.target.value) || 0 })}
+              onChange={(e) =>
+                setWorkload({ ...workload, meetingHoursPerWeek: parseInt(e.target.value) || 0 })
+              }
               className="w-full"
               placeholder="e.g., 10"
             />
@@ -247,7 +260,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               min="0"
               max="20"
               value={workload.afterHoursPerWeek}
-              onChange={(e) => setWorkload({ ...workload, afterHoursPerWeek: parseInt(e.target.value) || 0 })}
+              onChange={(e) =>
+                setWorkload({ ...workload, afterHoursPerWeek: parseInt(e.target.value) || 0 })
+              }
               className="w-32"
               placeholder="e.g., 2"
             />
@@ -263,7 +278,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
           </div>
           <div>
             <h3 className="font-display font-semibold text-foreground">Retention risk</h3>
-            <p className="text-sm text-muted-foreground">These are estimates. SignalTrue replaces assumptions with real signals once connected.</p>
+            <p className="text-sm text-muted-foreground">
+              These are estimates. SignalTrue replaces assumptions with real signals once connected.
+            </p>
           </div>
         </div>
 
@@ -279,14 +296,14 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                 min="0"
                 max="50"
                 value={retention.attritionPercent}
-                onChange={(e) => setRetention({ ...retention, attritionPercent: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setRetention({ ...retention, attritionPercent: parseInt(e.target.value) || 0 })
+                }
                 className="w-24"
               />
               <span className="text-muted-foreground">%</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Default: 10%
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Default: 10%</p>
           </div>
 
           {/* Role Type */}
@@ -300,7 +317,13 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   type="radio"
                   name="roleType"
                   checked={retention.roleType === 'professional'}
-                  onChange={() => setRetention({ ...retention, roleType: 'professional', customReplacementCost: undefined })}
+                  onChange={() =>
+                    setRetention({
+                      ...retention,
+                      roleType: 'professional',
+                      customReplacementCost: undefined,
+                    })
+                  }
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-foreground">Professional / Technical</span>
@@ -311,7 +334,13 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   type="radio"
                   name="roleType"
                   checked={retention.roleType === 'manager'}
-                  onChange={() => setRetention({ ...retention, roleType: 'manager', customReplacementCost: undefined })}
+                  onChange={() =>
+                    setRetention({
+                      ...retention,
+                      roleType: 'manager',
+                      customReplacementCost: undefined,
+                    })
+                  }
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-foreground">Manager / Lead</span>
@@ -322,7 +351,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   type="radio"
                   name="roleType"
                   checked={retention.roleType === 'custom'}
-                  onChange={() => setRetention({ ...retention, roleType: 'custom', customReplacementCost: 100 })}
+                  onChange={() =>
+                    setRetention({ ...retention, roleType: 'custom', customReplacementCost: 100 })
+                  }
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-foreground">Custom %</span>
@@ -333,7 +364,12 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                       min="10"
                       max="400"
                       value={retention.customReplacementCost || 100}
-                      onChange={(e) => setRetention({ ...retention, customReplacementCost: parseInt(e.target.value) || 100 })}
+                      onChange={(e) =>
+                        setRetention({
+                          ...retention,
+                          customReplacementCost: parseInt(e.target.value) || 100,
+                        })
+                      }
                       className="w-20 h-8"
                     />
                     <span className="text-xs text-muted-foreground">%</span>
@@ -358,7 +394,9 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                 onChange={(e) => setMeetingWastePercent(parseInt(e.target.value))}
                 className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
               />
-              <span className="text-sm font-medium text-foreground w-12">{meetingWastePercent}%</span>
+              <span className="text-sm font-medium text-foreground w-12">
+                {meetingWastePercent}%
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Research suggests 25-40% of meeting time may not add value

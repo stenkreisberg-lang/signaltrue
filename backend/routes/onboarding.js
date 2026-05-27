@@ -25,18 +25,19 @@ function integrationsChecklist(org) {
   const msHasToken = !!org?.integrations?.microsoft?.accessToken;
   const teamsConnected = msHasToken && (msScope === 'teams' || msScope === 'both');
   const chatConnected = !!(slackConnected || googleChatConnected || teamsConnected);
-  
-  const googleCal = org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
+
+  const googleCal =
+    org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
   const msOutlook = msHasToken && (msScope === 'outlook' || msScope === 'both');
   const calendarConnected = !!(googleCal || msOutlook);
-  
+
   return {
     slackConnected,
     googleChatConnected,
     teamsConnected,
     chatConnected,
     calendarConnected,
-    integrationsComplete: chatConnected && calendarConnected
+    integrationsComplete: chatConnected && calendarConnected,
   };
 }
 
@@ -46,49 +47,45 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
     const orgId = req.user?.orgId;
     const role = req.user?.role;
     const userId = req.user?.userId;
-    
+
     let org = null;
     if (orgId) org = await Organization.findById(orgId);
-    
+
     const checklist = integrationsChecklist(org);
-    
+
     // Check if user is the first user (HR admin typically)
     const usersInOrg = await User.countDocuments({ orgId });
     const isFirstUser = usersInOrg === 1;
-    
+
     // Role-specific onboarding requirements
     const roleRequirements = {
       hr_admin: {
         canInviteITAdmin: true,
         canViewData: checklist.integrationsComplete, // Can only see data after integrations
         mustInviteITAdmin: !checklist.integrationsComplete && isFirstUser,
-        nextStep: checklist.integrationsComplete 
-          ? 'view_dashboard' 
-          : 'invite_it_admin_or_connect_integrations'
+        nextStep: checklist.integrationsComplete
+          ? 'view_dashboard'
+          : 'invite_it_admin_or_connect_integrations',
       },
       it_admin: {
         canConfigureIntegrations: true,
         canViewData: false, // IT admin focuses on setup, not data viewing
         mustCompleteIntegrations: !checklist.integrationsComplete,
-        nextStep: checklist.integrationsComplete 
-          ? 'setup_complete' 
-          : 'connect_integrations'
+        nextStep: checklist.integrationsComplete ? 'setup_complete' : 'connect_integrations',
       },
       admin: {
         canInviteUsers: true,
         canConfigureIntegrations: true,
         canViewData: true,
-        nextStep: checklist.integrationsComplete 
-          ? 'view_dashboard' 
-          : 'connect_integrations'
+        nextStep: checklist.integrationsComplete ? 'view_dashboard' : 'connect_integrations',
       },
       master_admin: {
         canDoEverything: true,
         canViewData: true,
-        nextStep: 'manage_organizations'
-      }
+        nextStep: 'manage_organizations',
+      },
     };
-    
+
     return res.json({
       role,
       orgId: orgId || null,
@@ -96,7 +93,7 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
       orgName: org?.name || null,
       isFirstUser,
       requirements: roleRequirements[role] || {},
-      ...checklist
+      ...checklist,
     });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -104,60 +101,69 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
 });
 
 // GET /api/onboarding/invitations (HR/Admin only)
-router.get('/onboarding/invitations', authenticateToken, requireRoles(['admin','hr_admin','master_admin']), async (req, res) => {
-  try {
-    const orgId = req.user?.orgId;
-    const now = new Date();
-    const invites = await Invitation.find({ orgId, acceptedAt: null, expiresAt: { $gt: now } })
-      .sort({ createdAt: -1 })
-      .select('-_id email role token createdAt expiresAt');
-    res.json(invites);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
+router.get(
+  '/onboarding/invitations',
+  authenticateToken,
+  requireRoles(['admin', 'hr_admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user?.orgId;
+      const now = new Date();
+      const invites = await Invitation.find({ orgId, acceptedAt: null, expiresAt: { $gt: now } })
+        .sort({ createdAt: -1 })
+        .select('-_id email role token createdAt expiresAt');
+      res.json(invites);
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
   }
-});
+);
 
 // POST /api/onboarding/invitations { email, role, teamId? }
-router.post('/onboarding/invitations', authenticateToken, requireRoles(['admin','hr_admin','master_admin']), async (req, res) => {
-  try {
-    const { email, role, teamId, ttlHours } = req.body || {};
-    if (!email || !role) return res.status(400).json({ message: 'email and role are required' });
-    if (!['hr_admin','it_admin','team_member'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role for invitation' });
-    }
-    if (!req.user?.orgId) return res.status(400).json({ message: 'Missing orgId' });
+router.post(
+  '/onboarding/invitations',
+  authenticateToken,
+  requireRoles(['admin', 'hr_admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { email, role, teamId, ttlHours } = req.body || {};
+      if (!email || !role) return res.status(400).json({ message: 'email and role are required' });
+      if (!['hr_admin', 'it_admin', 'team_member'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role for invitation' });
+      }
+      if (!req.user?.orgId) return res.status(400).json({ message: 'Missing orgId' });
 
-    // Get organization details for email
-    const org = await Organization.findById(req.user.orgId);
-    const inviterUser = await User.findById(req.user.userId);
-    
-    const inv = await Invitation.createWithToken({
-      email: String(email).toLowerCase(),
-      role,
-      orgId: req.user.orgId,
-      teamId: teamId || undefined,
-      invitedBy: req.user.userId,
-      ttlHours: typeof ttlHours === 'number' ? ttlHours : 24 * 7
-    });
+      // Get organization details for email
+      const org = await Organization.findById(req.user.orgId);
+      const inviterUser = await User.findById(req.user.userId);
 
-    // Send invitation email via Resend
-    const resend = getResendClient();
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
-    const inviteUrl = `${frontendUrl}/onboarding?token=${inv.token}`;
-    
-    if (resend) {
-      try {
-        const roleNames = {
-          'hr_admin': 'HR Administrator',
-          'it_admin': 'IT Administrator',
-          'team_member': 'Team Member'
-        };
-        
-        const result = await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
-          to: email,
-          subject: `You've been invited to ${org?.name || 'SignalTrue'}`,
-          html: `
+      const inv = await Invitation.createWithToken({
+        email: String(email).toLowerCase(),
+        role,
+        orgId: req.user.orgId,
+        teamId: teamId || undefined,
+        invitedBy: req.user.userId,
+        ttlHours: typeof ttlHours === 'number' ? ttlHours : 24 * 7,
+      });
+
+      // Send invitation email via Resend
+      const resend = getResendClient();
+      const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
+      const inviteUrl = `${frontendUrl}/onboarding?token=${inv.token}`;
+
+      if (resend) {
+        try {
+          const roleNames = {
+            hr_admin: 'HR Administrator',
+            it_admin: 'IT Administrator',
+            team_member: 'Team Member',
+          };
+
+          const result = await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
+            to: email,
+            subject: `You've been invited to ${org?.name || 'SignalTrue'}`,
+            html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
               <!-- Header -->
               <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 40px 20px; text-align: center;">
@@ -174,11 +180,12 @@ router.post('/onboarding/invitations', authenticateToken, requireRoles(['admin',
                 </p>
                 
                 <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 0 0 24px 0;">
-                  ${role === 'it_admin' 
-                    ? 'As an IT Administrator, you\'ll help set up integrations with your team\'s collaboration tools (Slack, Google Workspace, etc.) to enable powerful team health insights.' 
-                    : role === 'hr_admin'
-                    ? 'As an HR Administrator, you\'ll have access to team health metrics, engagement signals, and actionable insights to support your people.'
-                    : 'As a Team Member, you\'ll be able to view team metrics and collaborate with your organization on SignalTrue.'
+                  ${
+                    role === 'it_admin'
+                      ? "As an IT Administrator, you'll help set up integrations with your team's collaboration tools (Slack, Google Workspace, etc.) to enable powerful team health insights."
+                      : role === 'hr_admin'
+                        ? "As an HR Administrator, you'll have access to team health metrics, engagement signals, and actionable insights to support your people."
+                        : "As a Team Member, you'll be able to view team metrics and collaborate with your organization on SignalTrue."
                   }
                 </p>
                 
@@ -214,28 +221,29 @@ router.post('/onboarding/invitations', authenticateToken, requireRoles(['admin',
                 </p>
               </div>
             </div>
-          `
-        });
-        console.log('Invitation email sent to:', email, 'Result:', JSON.stringify(result));
-      } catch (emailError) {
-        console.error('Resend invitation email error:', emailError);
-        // Don't fail the request - invitation is still created
+          `,
+          });
+          console.log('Invitation email sent to:', email, 'Result:', JSON.stringify(result));
+        } catch (emailError) {
+          console.error('Resend invitation email error:', emailError);
+          // Don't fail the request - invitation is still created
+        }
+      } else {
+        console.log('⚠️  Resend not configured. Invitation URL:', inviteUrl);
       }
-    } else {
-      console.log('⚠️  Resend not configured. Invitation URL:', inviteUrl);
-    }
 
-    res.json({ 
-      email: inv.email, 
-      role: inv.role, 
-      token: inv.token, 
-      expiresAt: inv.expiresAt,
-      inviteUrl: inviteUrl // Include URL in response for testing
-    });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
+      res.json({
+        email: inv.email,
+        role: inv.role,
+        token: inv.token,
+        expiresAt: inv.expiresAt,
+        inviteUrl: inviteUrl, // Include URL in response for testing
+      });
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
   }
-});
+);
 
 // POST /api/onboarding/accept { token, name, password }
 router.post('/onboarding/accept', async (req, res) => {
@@ -269,7 +277,7 @@ router.post('/onboarding/accept', async (req, res) => {
         role: inv.role === 'team_member' ? 'viewer' : inv.role, // map team_member to viewer for legacy UI
         orgId: inv.orgId,
         teamId: resolvedTeamId,
-        isMasterAdmin: false
+        isMasterAdmin: false,
       });
     } else {
       // Update existing user with org/role if missing
@@ -277,7 +285,7 @@ router.post('/onboarding/accept', async (req, res) => {
       user.password = password; // will be hashed by pre-save
       if (!user.orgId) user.orgId = inv.orgId;
       if (resolvedTeamId && !user.teamId) user.teamId = resolvedTeamId;
-      user.role = inv.role === 'team_member' ? (user.role || 'viewer') : inv.role;
+      user.role = inv.role === 'team_member' ? user.role || 'viewer' : inv.role;
       user.isMasterAdmin = false;
     }
     await user.save();
@@ -285,14 +293,18 @@ router.post('/onboarding/accept', async (req, res) => {
     inv.acceptedAt = new Date();
     await inv.save();
 
-    const jwtToken = jwt.sign({
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      teamId: user.teamId,
-      orgId: user.orgId,
-      isMasterAdmin: user.isMasterAdmin
-    }, JWT_SECRET, { expiresIn: '7d' });
+    const jwtToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        teamId: user.teamId,
+        orgId: user.orgId,
+        isMasterAdmin: user.isMasterAdmin,
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     res.json({
       message: 'Invitation accepted',
@@ -304,8 +316,8 @@ router.post('/onboarding/accept', async (req, res) => {
         role: user.role,
         teamId: user.teamId,
         orgId: user.orgId,
-        isMasterAdmin: user.isMasterAdmin
-      }
+        isMasterAdmin: user.isMasterAdmin,
+      },
     });
   } catch (e) {
     res.status(500).json({ message: e.message });

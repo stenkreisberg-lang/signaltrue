@@ -8,7 +8,7 @@ const consentAuditSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   ip: { type: String },
   user_agent: { type: String },
-  details: { type: Object, default: {} }
+  details: { type: Object, default: {} },
 });
 
 export default mongoose.model('ConsentAudit', consentAuditSchema);

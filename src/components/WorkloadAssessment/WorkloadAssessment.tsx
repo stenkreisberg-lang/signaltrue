@@ -5,9 +5,8 @@ import { AssessmentInputs, AssessmentResult, AssessmentSession } from './types';
 import { calculateAssessmentResult } from './costCalculator';
 
 // API base URL
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://signaltrue-backend.onrender.com' 
-  : '';
+const API_BASE =
+  process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
 
 // Session storage key
 const SESSION_KEY = 'signaltrue_assessment_session';
@@ -17,7 +16,8 @@ interface WorkloadAssessmentProps {
 }
 
 // Generate session ID
-const generateSessionId = () => `assessment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+const generateSessionId = () =>
+  `assessment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
 // Save session to localStorage (for AI Chat context)
 const saveSession = (session: AssessmentSession) => {
@@ -116,7 +116,7 @@ export const WorkloadAssessment: React.FC<WorkloadAssessmentProps> = ({ onTrackE
   const handleReset = () => {
     setInputs(null);
     setResult(null);
-    
+
     // Scroll back to form
     setTimeout(() => {
       document.getElementById('assessment-form')?.scrollIntoView({ behavior: 'smooth' });
@@ -128,10 +128,7 @@ export const WorkloadAssessment: React.FC<WorkloadAssessmentProps> = ({ onTrackE
       {/* Form */}
       {!result && (
         <div id="assessment-form">
-          <AssessmentForm 
-            onSubmit={handleFormSubmit} 
-            onTrackEvent={onTrackEvent}
-          />
+          <AssessmentForm onSubmit={handleFormSubmit} onTrackEvent={onTrackEvent} />
         </div>
       )}
 

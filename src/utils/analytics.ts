@@ -1,9 +1,9 @@
 /**
  * Analytics Tracking Utility
- * 
+ *
  * Tracks user events for the SignalTrue website.
  * Events are sent to the backend for internal tracking.
- * 
+ *
  * Required Events:
  * - assessment_started: User opens the assessment form
  * - assessment_completed: User finishes the assessment calculation
@@ -13,11 +13,10 @@
  * - cta_clicked: User clicks a conversion CTA (demo/pilot)
  */
 
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://signaltrue-backend.onrender.com' 
-  : '';
+const API_BASE =
+  process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
 
-type EventName = 
+type EventName =
   | 'assessment_started'
   | 'assessment_completed'
   | 'email_submitted'
@@ -35,11 +34,11 @@ interface TrackEventData {
   riskScore?: number;
   teamSize?: number;
   costRange?: string;
-  
+
   // CTA events
   type?: 'demo' | 'pilot' | 'pricing';
   location?: string;
-  
+
   // Generic
   [key: string]: unknown;
 }
@@ -52,24 +51,24 @@ export function trackEvent(eventName: EventName, data?: TrackEventData): void {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Analytics] ${eventName}`, data);
   }
-  
+
   // Send to backend for internal tracking
   try {
     fetch(`${API_BASE}/api/analytics/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        event: eventName, 
-        data, 
+      body: JSON.stringify({
+        event: eventName,
+        data,
         timestamp: new Date().toISOString(),
         url: window.location.href,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
       }),
     }).catch(() => {}); // Silent fail for tracking
   } catch {
     // Silent fail for tracking
   }
-  
+
   // TODO: Connect to external analytics providers
   // Example integrations:
   // - Segment: window.analytics?.track(eventName, data);
@@ -87,7 +86,9 @@ export function trackPageView(pageName: string): void {
 /**
  * Create a tracking function bound to a specific context
  */
-export function createTracker(context: string): (event: string, data?: Record<string, unknown>) => void {
+export function createTracker(
+  context: string
+): (event: string, data?: Record<string, unknown>) => void {
   return (event: string, data?: Record<string, unknown>) => {
     trackEvent(event as EventName, { ...data, context });
   };

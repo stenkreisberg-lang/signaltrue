@@ -1,5 +1,5 @@
-import { Shield, Lock, Eye, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Shield, Lock, Eye, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /*
  * CATEGORY KING POSITIONING:
@@ -22,9 +22,9 @@ const TrustSection = () => {
               Not surveillance. By design.
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              SignalTrue analyzes behavioral metadata, not message content. 
-              No emotion inference. No individual scoring for managers. 
-              Privacy is enforced at the architecture level, not promised in marketing.
+              SignalTrue analyzes behavioral metadata, not message content. No emotion inference. No
+              individual scoring for managers. Privacy is enforced at the architecture level, not
+              promised in marketing.
             </p>
           </div>
 
@@ -63,8 +63,8 @@ const TrustSection = () => {
 
           {/* Link to full privacy page */}
           <div className="text-center">
-            <Link 
-              to="/trust" 
+            <Link
+              to="/trust"
               className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors"
             >
               See how privacy is enforced

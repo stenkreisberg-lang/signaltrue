@@ -20,10 +20,10 @@ router.get('/org', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     // Get or calculate current OAR
     const oar = await calculateOrgOAR(orgId);
-    
+
     res.json({
       success: true,
       oar: {
@@ -38,8 +38,8 @@ router.get('/org', authenticateToken, async (req, res) => {
         periodEnd: oar.periodEnd,
         previousScore: oar.previousScore,
         dataQuality: oar.dataQuality,
-        calculatedAt: oar.calculatedAt
-      }
+        calculatedAt: oar.calculatedAt,
+      },
     });
   } catch (error) {
     console.error('[OAR API] Error getting org OAR:', error);
@@ -55,16 +55,16 @@ router.get('/org/history', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
     const { limit = 12 } = req.query;
-    
+
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     const history = await getOARHistory(orgId, { limit: parseInt(limit) });
-    
+
     res.json({
       success: true,
-      history: history.map(h => ({
+      history: history.map((h) => ({
         score: h.score,
         zone: h.zone,
         periodLabel: h.periodLabel,
@@ -73,9 +73,9 @@ router.get('/org/history', authenticateToken, async (req, res) => {
           execution: h.pillars.execution.score,
           innovation: h.pillars.innovation.score,
           wellbeing: h.pillars.wellbeing.score,
-          culture: h.pillars.culture.score
-        }
-      }))
+          culture: h.pillars.culture.score,
+        },
+      })),
     });
   } catch (error) {
     console.error('[OAR API] Error getting OAR history:', error);
@@ -90,9 +90,9 @@ router.get('/org/history', authenticateToken, async (req, res) => {
 router.get('/team/:teamId', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
-    
+
     const oar = await calculateTeamOAR(teamId);
-    
+
     res.json({
       success: true,
       oar: {
@@ -107,8 +107,8 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
         periodEnd: oar.periodEnd,
         previousScore: oar.previousScore,
         dataQuality: oar.dataQuality,
-        calculatedAt: oar.calculatedAt
-      }
+        calculatedAt: oar.calculatedAt,
+      },
     });
   } catch (error) {
     console.error('[OAR API] Error getting team OAR:', error);
@@ -124,12 +124,12 @@ router.get('/team/:teamId/history', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
     const { limit = 12 } = req.query;
-    
+
     const history = await getOARHistory(req.user.orgId, { teamId, limit: parseInt(limit) });
-    
+
     res.json({
       success: true,
-      history: history.map(h => ({
+      history: history.map((h) => ({
         score: h.score,
         zone: h.zone,
         periodLabel: h.periodLabel,
@@ -138,9 +138,9 @@ router.get('/team/:teamId/history', authenticateToken, async (req, res) => {
           execution: h.pillars.execution.score,
           innovation: h.pillars.innovation.score,
           wellbeing: h.pillars.wellbeing.score,
-          culture: h.pillars.culture.score
-        }
-      }))
+          culture: h.pillars.culture.score,
+        },
+      })),
     });
   } catch (error) {
     console.error('[OAR API] Error getting team OAR history:', error);
@@ -158,7 +158,7 @@ router.get('/all-teams', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     // Get latest OAR for all teams
     const teamOARs = await OARScore.aggregate([
       { $match: { orgId: orgId, teamId: { $ne: null } } },
@@ -166,23 +166,23 @@ router.get('/all-teams', authenticateToken, async (req, res) => {
       {
         $group: {
           _id: '$teamId',
-          latestOAR: { $first: '$$ROOT' }
-        }
+          latestOAR: { $first: '$$ROOT' },
+        },
       },
       {
         $lookup: {
           from: 'teams',
           localField: '_id',
           foreignField: '_id',
-          as: 'team'
-        }
+          as: 'team',
+        },
       },
-      { $unwind: { path: '$team', preserveNullAndEmptyArrays: true } }
+      { $unwind: { path: '$team', preserveNullAndEmptyArrays: true } },
     ]);
-    
+
     res.json({
       success: true,
-      teams: teamOARs.map(t => ({
+      teams: teamOARs.map((t) => ({
         teamId: t._id,
         teamName: t.team?.name || 'Unknown Team',
         score: t.latestOAR.score,
@@ -193,10 +193,10 @@ router.get('/all-teams', authenticateToken, async (req, res) => {
           execution: t.latestOAR.pillars.execution.score,
           innovation: t.latestOAR.pillars.innovation.score,
           wellbeing: t.latestOAR.pillars.wellbeing.score,
-          culture: t.latestOAR.pillars.culture.score
+          culture: t.latestOAR.pillars.culture.score,
         },
-        periodLabel: t.latestOAR.periodLabel
-      }))
+        periodLabel: t.latestOAR.periodLabel,
+      })),
     });
   } catch (error) {
     console.error('[OAR API] Error getting all teams OAR:', error);
@@ -212,26 +212,26 @@ router.post('/recalculate', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
     const { teamId } = req.body;
-    
+
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     let oar;
     if (teamId) {
       oar = await calculateTeamOAR(teamId, { forceRecalculate: true });
     } else {
       oar = await calculateOrgOAR(orgId, { forceRecalculate: true });
     }
-    
+
     res.json({
       success: true,
       message: 'OAR recalculated successfully',
       oar: {
         score: oar.score,
         zone: oar.zone,
-        calculatedAt: oar.calculatedAt
-      }
+        calculatedAt: oar.calculatedAt,
+      },
     });
   } catch (error) {
     console.error('[OAR API] Error recalculating OAR:', error);
@@ -249,13 +249,13 @@ router.get('/widget', authenticateToken, async (req, res) => {
     if (!orgId) {
       return res.status(400).json({ message: 'No organization found for user' });
     }
-    
+
     // Get current OAR
     const oar = await calculateOrgOAR(orgId);
-    
+
     // Get history for sparkline
     const history = await getOARHistory(orgId, { limit: 8 });
-    
+
     res.json({
       success: true,
       widget: {
@@ -268,12 +268,12 @@ router.get('/widget', authenticateToken, async (req, res) => {
           { name: 'Execution', score: oar.pillars.execution.score, color: '#3B82F6' },
           { name: 'Innovation', score: oar.pillars.innovation.score, color: '#8B5CF6' },
           { name: 'Wellbeing', score: oar.pillars.wellbeing.score, color: '#10B981' },
-          { name: 'Culture', score: oar.pillars.culture.score, color: '#F59E0B' }
+          { name: 'Culture', score: oar.pillars.culture.score, color: '#F59E0B' },
         ],
-        sparkline: history.map(h => h.score),
+        sparkline: history.map((h) => h.score),
         dataQuality: oar.dataQuality,
-        lastUpdated: oar.calculatedAt
-      }
+        lastUpdated: oar.calculatedAt,
+      },
     });
   } catch (error) {
     console.error('[OAR API] Error getting OAR widget:', error);

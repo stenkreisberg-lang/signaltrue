@@ -149,7 +149,9 @@ quarterlyReportSchema.statics.getHistoryForOrg = async function (orgId, limit = 
   return this.find({ orgId })
     .sort({ periodEnd: -1 })
     .limit(limit)
-    .select('quarterLabel year quarterNumber periodStart periodEnd current.avgBDI current.organizationalTrajectory deltas.overallDirection generatedAt');
+    .select(
+      'quarterLabel year quarterNumber periodStart periodEnd current.avgBDI current.organizationalTrajectory deltas.overallDirection generatedAt'
+    );
 };
 
 quarterlyReportSchema.statics.findByLabel = async function (orgId, quarterLabel) {

@@ -20,30 +20,36 @@ endOfDay.setDate(endOfDay.getDate() + 1);
 
 const events = await WorkEvent.find({
   orgId: org._id,
-  timestamp: { $gte: window7dStart, $lt: endOfDay }
+  timestamp: { $gte: window7dStart, $lt: endOfDay },
 }).lean();
 
 console.log('Total events in 7-day window:', events.length);
 
-const meetEvents = events.filter(e =>
-  e.source === 'meet' || e.source === 'calendar' ||
-  e.source === 'google-calendar' || e.source === 'microsoft-outlook' ||
-  (e.eventType === 'meeting')
+const meetEvents = events.filter(
+  (e) =>
+    e.source === 'meet' ||
+    e.source === 'calendar' ||
+    e.source === 'google-calendar' ||
+    e.source === 'microsoft-outlook' ||
+    e.eventType === 'meeting'
 );
 console.log('Meeting events:', meetEvents.length);
 
-const events7d = meetEvents.filter(e => new Date(e.timestamp) >= window7dStart);
+const events7d = meetEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 console.log('Events in 7d window:', events7d.length);
 
-const withDuration = events7d.filter(e => (e.metadata?.durationMinutes || 0) > 0);
+const withDuration = events7d.filter((e) => (e.metadata?.durationMinutes || 0) > 0);
 console.log('With durationMinutes > 0:', withDuration.length);
 
 if (withDuration.length > 0) {
-  console.log('First 3:', withDuration.slice(0, 3).map(e => ({
-    ts: e.timestamp.toISOString(),
-    dur: e.metadata.durationMinutes,
-    src: e.source
-  })));
+  console.log(
+    'First 3:',
+    withDuration.slice(0, 3).map((e) => ({
+      ts: e.timestamp.toISOString(),
+      dur: e.metadata.durationMinutes,
+      src: e.source,
+    }))
+  );
 }
 
 const totalHours = withDuration.reduce((sum, e) => sum + e.metadata.durationMinutes, 0) / 60;

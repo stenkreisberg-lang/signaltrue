@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://signaltrue:123signaltrue@cluster0.4olk5ma.mongodb.net/signaltrue?retryWrites=true&w=majority';
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) throw new Error('MONGO_URI is required');
 
 // Configure Resend
 let resend = null;
@@ -22,7 +23,8 @@ async function generateAndSendReports() {
     const teamId = new mongoose.Types.ObjectId('693bff1d7182d336060c862b');
 
     // Get team states
-    const teamStates = await mongoose.connection.db.collection('teamstates')
+    const teamStates = await mongoose.connection.db
+      .collection('teamstates')
       .find({ teamId })
       .sort({ weekEnd: 1 })
       .toArray();
@@ -45,16 +47,18 @@ async function generateAndSendReports() {
       const state = teamStates[i];
       const prevState = i > 0 ? teamStates[i - 1] : null;
       const weekNum = i + 1;
-      const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', { 
-        year: 'numeric', month: 'long', day: 'numeric' 
+      const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       });
 
       // Calculate changes
       const bdiChange = prevState ? state.bdi - prevState.bdi : 0;
       const bdiChangeText = bdiChange > 0 ? `+${bdiChange}` : bdiChange.toString();
       const bdiTrend = bdiChange >= 0 ? '↑' : '↓';
-      const zoneColor = state.zone === 'Stable' ? '#22c55e' : 
-                        state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
+      const zoneColor =
+        state.zone === 'Stable' ? '#22c55e' : state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
 
       // Build HTML email
       const html = `
@@ -101,11 +105,15 @@ async function generateAndSendReports() {
         <div class="zone-badge" style="background: ${zoneColor}20; color: ${zoneColor};">
           ${state.zone} Zone
         </div>
-        ${prevState ? `
+        ${
+          prevState
+            ? `
         <div class="change ${bdiChange >= 0 ? 'positive' : 'negative'}">
           ${bdiTrend} ${bdiChangeText} from last week
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <h3 style="color: #1e293b; margin-bottom: 16px;">📈 Signal Breakdown</h3>
@@ -148,14 +156,18 @@ async function generateAndSendReports() {
         </div>
       </div>
 
-      ${state.insights && state.insights.length > 0 ? `
+      ${
+        state.insights && state.insights.length > 0
+          ? `
       <div class="insights">
         <h3>💡 Key Insights</h3>
         <ul>
-          ${state.insights.map(insight => `<li>${insight}</li>`).join('')}
+          ${state.insights.map((insight) => `<li>${insight}</li>`).join('')}
         </ul>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
     
     <div class="footer">
@@ -178,9 +190,9 @@ async function generateAndSendReports() {
         zone: state.zone,
         data: state,
         generatedAt: new Date(),
-        sentTo: recipientEmail
+        sentTo: recipientEmail,
       };
-      
+
       await mongoose.connection.db.collection('reports').insertOne(report);
       console.log(`✓ Week ${weekNum} report saved to database`);
 
@@ -190,7 +202,7 @@ async function generateAndSendReports() {
           from: 'SignalTrue <reports@signaltrue.ai>',
           to: recipientEmail,
           subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team?.name || 'General'} Team)`,
-          html
+          html,
         });
         console.log(`✓ Week ${weekNum} report sent to ${recipientEmail}`);
       } else {
@@ -200,7 +212,6 @@ async function generateAndSendReports() {
     }
 
     console.log('\n✅ All reports generated successfully!');
-    
   } catch (error) {
     console.error('Error:', error);
   } finally {

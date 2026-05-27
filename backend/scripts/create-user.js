@@ -59,7 +59,6 @@ const createUser = async () => {
     console.log(`Successfully created user "${name}" with email "${email}".`);
     console.log(`Organization: "${newOrg.name}"`);
     console.log(`Team: "${defaultTeam.name}"`);
-
   } catch (error) {
     console.error('An error occurred during user creation:', error.message);
   } finally {

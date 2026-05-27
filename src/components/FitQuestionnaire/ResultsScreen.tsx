@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { CheckCircle, AlertCircle, XCircle, Mail, ArrowRight, RotateCcw, Loader2 } from 'lucide-react';
+import {
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Mail,
+  ArrowRight,
+  RotateCcw,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '../ui/button';
 import { QuestionnaireResult, QuestionnaireAnswer } from './types';
 
@@ -19,7 +27,7 @@ const getTierHeadline = (tier: string) => {
     case 'good-fit':
       return "You're catching some signals early. Others are still hidden.";
     case 'not-yet-fit':
-      return "Right now, SignalTrue may be more than you need.";
+      return 'Right now, SignalTrue may be more than you need.';
     default:
       return "Here's what we found.";
   }
@@ -125,17 +133,11 @@ const ResultsScreen = ({
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/20 mb-6">
             <CheckCircle className="w-8 h-8 text-success" />
           </div>
-          <h3 className="text-2xl font-display font-bold text-foreground mb-3">
-            Check your inbox
-          </h3>
+          <h3 className="text-2xl font-display font-bold text-foreground mb-3">Check your inbox</h3>
           <p className="text-muted-foreground mb-6">
             We've sent your detailed results to <strong>{email}</strong>
           </p>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="min-w-[200px]"
-          >
+          <Button variant="outline" onClick={onClose} className="min-w-[200px]">
             Close
           </Button>
         </div>
@@ -157,7 +159,9 @@ const ResultsScreen = ({
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
@@ -228,8 +232,12 @@ const ResultsScreen = ({
   return (
     <div className="w-full max-w-2xl mx-auto animate-slide-up">
       {/* Result card with emotional headline */}
-      <div className={`rounded-2xl border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}>
-        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${styles.bgColor} mb-6`}>
+      <div
+        className={`rounded-2xl border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}
+      >
+        <div
+          className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${styles.bgColor} mb-6`}
+        >
           <Icon className={`w-8 h-8 ${styles.textColor}`} />
         </div>
 

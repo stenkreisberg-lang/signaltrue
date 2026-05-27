@@ -25,9 +25,20 @@ export default function DriftAlerts({ teamId }) {
 
   return (
     <div style={{ margin: '24px 0' }}>
-      <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 12 }}>Engagement Change Alerts</h3>
-      {events.map(ev => (
-        <div key={ev._id} style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+      <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: 12 }}>
+        Engagement Change Alerts
+      </h3>
+      {events.map((ev) => (
+        <div
+          key={ev._id}
+          style={{
+            background: '#fef3c7',
+            border: '1px solid #fde68a',
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
           <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 6 }}>
             {ev.metric} {ev.direction === 'positive' ? '↑' : '↓'} {ev.magnitude}%
           </div>
@@ -36,15 +47,20 @@ export default function DriftAlerts({ teamId }) {
           </div>
           <div style={{ fontWeight: 500, marginBottom: 6 }}>Top Drivers:</div>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {ev.drivers && ev.drivers.map((d, i) => (
-              <li key={i}>
-                {d.metric}: {d.delta > 0 ? '+' : ''}{d.delta} ({d.direction === 'up' ? 'increase' : 'decrease'})
-              </li>
-            ))}
+            {ev.drivers &&
+              ev.drivers.map((d, i) => (
+                <li key={i}>
+                  {d.metric}: {d.delta > 0 ? '+' : ''}
+                  {d.delta} ({d.direction === 'up' ? 'increase' : 'decrease'})
+                </li>
+              ))}
           </ul>
           {ev.recommendation && (
             <div style={{ marginTop: 8, color: '#6366f1', fontWeight: 500 }}>
-              <span role="img" aria-label="tip">💡</span> {ev.recommendation}
+              <span role="img" aria-label="tip">
+                💡
+              </span>{' '}
+              {ev.recommendation}
             </div>
           )}
         </div>

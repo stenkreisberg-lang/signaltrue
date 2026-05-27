@@ -10,22 +10,21 @@ import { ccSuperadmin } from './superadminNotifyService.js';
  */
 
 // Initialize Slack client
-const slackClient = process.env.SLACK_BOT_TOKEN 
-  ? new WebClient(process.env.SLACK_BOT_TOKEN)
-  : null;
+const slackClient = process.env.SLACK_BOT_TOKEN ? new WebClient(process.env.SLACK_BOT_TOKEN) : null;
 
 // Initialize email transporter
-const emailTransporter = process.env.EMAIL_HOST && process.env.EMAIL_USER
-  ? nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    })
-  : null;
+const emailTransporter =
+  process.env.EMAIL_HOST && process.env.EMAIL_USER
+    ? nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT || 587,
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      })
+    : null;
 
 /**
  * Generate AI-powered weekly summary for a team
@@ -38,7 +37,7 @@ export async function generateWeeklySummary(team) {
   }
 
   const aiClient = getAIClient();
-  
+
   const prompt = `You are a performance management expert. Generate a concise weekly summary for the team "${team.name}".
 
 Current Status:
@@ -67,8 +66,11 @@ Keep it professional, data-driven, and actionable. Use emojis sparingly for visu
     const response = await aiClient.chat.completions.create({
       model: process.env.SUMMARY_MODEL || process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are an expert in team performance and burnout prevention.' },
-        { role: 'user', content: prompt }
+        {
+          role: 'system',
+          content: 'You are an expert in team performance and burnout prevention.',
+        },
+        { role: 'user', content: prompt },
       ],
       max_tokens: 500,
       temperature: 0.7,
@@ -244,7 +246,7 @@ export async function sendEmailSummary(email, teamName, summary, team) {
       html: htmlContent,
       originalRecipient: email,
       reportType: 'weekly_summary',
-      orgName: team?.orgId?.name || teamName
+      orgName: team?.orgId?.name || teamName,
     });
 
     console.log(`✓ Email summary sent to ${email} for team: ${teamName}`);
@@ -261,7 +263,7 @@ export async function sendEmailSummary(email, teamName, summary, team) {
  */
 export async function sendWeeklySummaries(options = {}) {
   const { includeSlack = true, includeEmail = true } = options;
-  
+
   const teams = await Team.find({});
   console.log(`📧 Sending weekly summaries for ${teams.length} teams...`);
 
@@ -277,12 +279,7 @@ export async function sendWeeklySummaries(options = {}) {
 
       // Send to email (if configured in env or team has email field)
       if (includeEmail && process.env.NOTIFICATION_EMAIL) {
-        await sendEmailSummary(
-          process.env.NOTIFICATION_EMAIL,
-          team.name,
-          summary,
-          team
-        );
+        await sendEmailSummary(process.env.NOTIFICATION_EMAIL, team.name, summary, team);
       }
     } catch (error) {
       console.error(`❌ Summary send failed for ${team.name}:`, error.message);

@@ -23,15 +23,21 @@ export async function calculateDCR(orgId, teamId, startDate, endDate) {
 
     // Initialize components
     const components = {
-      meetings: { total: 0, withActionItems: 0, withFollowUpScheduled: 0, withDecisions: 0, closureRate: 0 },
+      meetings: {
+        total: 0,
+        withActionItems: 0,
+        withFollowUpScheduled: 0,
+        withDecisions: 0,
+        closureRate: 0,
+      },
       messages: { total: 0, withResponse: 0, avgResponseTime: 0, responseRate: 0 },
-      threads: { total: 0, resolved: 0, abandoned: 0, resolutionRate: 0 }
+      threads: { total: 0, resolved: 0, abandoned: 0, resolutionRate: 0 },
     };
 
     let dataSource = {
       slack: false,
       googleCalendar: false,
-      microsoftTeams: false
+      microsoftTeams: false,
     };
 
     // Calculate meeting closure rate from calendar data
@@ -80,12 +86,11 @@ export async function calculateDCR(orgId, teamId, startDate, endDate) {
       quality,
       signals,
       dataSource,
-      confidence
+      confidence,
     });
 
     await dcr.save();
     return dcr;
-
   } catch (error) {
     console.error('Error calculating DCR:', error);
     throw error;
@@ -104,12 +109,13 @@ async function calculateMeetingClosure(orgId, teamId, startDate, endDate) {
     withActionItems: 0,
     withFollowUpScheduled: 0,
     withDecisions: 0,
-    closureRate: 0
+    closureRate: 0,
   };
 
   // Calculate closure rate
   if (meetings.total > 0) {
-    const closed = meetings.withActionItems + meetings.withFollowUpScheduled + meetings.withDecisions;
+    const closed =
+      meetings.withActionItems + meetings.withFollowUpScheduled + meetings.withDecisions;
     meetings.closureRate = Math.round((closed / meetings.total) * 100);
   }
 
@@ -128,14 +134,14 @@ async function calculateMessageClosure(orgId, teamId, startDate, endDate) {
     total: 0,
     withResponse: 0,
     avgResponseTime: 0,
-    responseRate: 0
+    responseRate: 0,
   };
 
   const threads = {
     total: 0,
     resolved: 0,
     abandoned: 0,
-    resolutionRate: 0
+    resolutionRate: 0,
   };
 
   // Calculate rates
@@ -159,9 +165,7 @@ function calculateOverallScore(components) {
   const messageScore = components.messages.responseRate || 0;
   const threadScore = components.threads.resolutionRate || 0;
 
-  const overallScore = Math.round(
-    (meetingScore * 0.4) + (messageScore * 0.3) + (threadScore * 0.3)
-  );
+  const overallScore = Math.round(meetingScore * 0.4 + messageScore * 0.3 + threadScore * 0.3);
 
   return Math.min(100, Math.max(0, overallScore));
 }
@@ -177,7 +181,7 @@ function detectSignals(components) {
     signals.push({
       type: 'long-meetings-low-output',
       severity: 'high',
-      description: 'Many meetings without clear outcomes'
+      description: 'Many meetings without clear outcomes',
     });
   }
 
@@ -186,7 +190,7 @@ function detectSignals(components) {
     signals.push({
       type: 'orphaned-messages',
       severity: 'medium',
-      description: 'Messages not receiving responses'
+      description: 'Messages not receiving responses',
     });
   }
 
@@ -195,7 +199,7 @@ function detectSignals(components) {
     signals.push({
       type: 'abandoned-threads',
       severity: 'high',
-      description: 'Conversations dying without resolution'
+      description: 'Conversations dying without resolution',
     });
   }
 
@@ -211,8 +215,7 @@ async function calculateTrend(orgId, teamId, currentScore) {
     if (teamId) query.teamId = teamId;
 
     // Get last 4 weeks of DCR data
-    const historicalDCR = await DecisionClosureRate
-      .find(query)
+    const historicalDCR = await DecisionClosureRate.find(query)
       .sort({ 'period.end': -1 })
       .limit(5)
       .select('score period');
@@ -224,7 +227,7 @@ async function calculateTrend(orgId, teamId, currentScore) {
     // Calculate velocity (change per week)
     const previousScore = historicalDCR[1].score;
     const delta = currentScore - previousScore;
-    
+
     let direction = 'stable';
     if (delta > 5) direction = 'improving';
     else if (delta < -5) direction = 'declining';
@@ -233,8 +236,8 @@ async function calculateTrend(orgId, teamId, currentScore) {
     let sustained = 0;
     for (let i = 1; i < historicalDCR.length; i++) {
       if (
-        (direction === 'improving' && historicalDCR[i].score < historicalDCR[i-1].score) ||
-        (direction === 'declining' && historicalDCR[i].score > historicalDCR[i-1].score)
+        (direction === 'improving' && historicalDCR[i].score < historicalDCR[i - 1].score) ||
+        (direction === 'declining' && historicalDCR[i].score > historicalDCR[i - 1].score)
       ) {
         sustained += 7; // assuming weekly calculations
       } else {
@@ -243,7 +246,6 @@ async function calculateTrend(orgId, teamId, currentScore) {
     }
 
     return { direction, velocity: delta, sustained };
-
   } catch (error) {
     console.error('Error calculating trend:', error);
     return { direction: 'stable', velocity: 0, sustained: 0 };
@@ -262,9 +264,10 @@ async function getBaselineComparison(orgId, teamId, currentScore) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const baselineData = await DecisionClosureRate
-      .find({ ...query, 'period.end': { $gte: thirtyDaysAgo } })
-      .select('score');
+    const baselineData = await DecisionClosureRate.find({
+      ...query,
+      'period.end': { $gte: thirtyDaysAgo },
+    }).select('score');
 
     if (baselineData.length === 0) {
       return { score: null, delta: null, deltaPercent: null };
@@ -275,12 +278,9 @@ async function getBaselineComparison(orgId, teamId, currentScore) {
     );
 
     const delta = currentScore - baselineScore;
-    const deltaPercent = baselineScore > 0 
-      ? Math.round((delta / baselineScore) * 100) 
-      : 0;
+    const deltaPercent = baselineScore > 0 ? Math.round((delta / baselineScore) * 100) : 0;
 
     return { score: baselineScore, delta, deltaPercent };
-
   } catch (error) {
     console.error('Error calculating baseline:', error);
     return { score: null, delta: null, deltaPercent: null };
@@ -295,7 +295,7 @@ function calculateQualityIndicators(components) {
     avgMeetingDuration: null, // TODO: implement from calendar data
     avgThreadLength: null, // TODO: implement from Slack data
     decisionToActionTime: null, // TODO: implement from cross-platform data
-    reopenedThreads: 0 // TODO: implement from Slack data
+    reopenedThreads: 0, // TODO: implement from Slack data
   };
 }
 
@@ -313,7 +313,7 @@ function determineConfidence(dataSource, components) {
   }
 
   const completeness = dataPoints / totalPossible;
-  
+
   if (completeness >= 0.66) return 'High';
   if (completeness >= 0.33) return 'Medium';
   return 'Low';
@@ -326,9 +326,7 @@ export async function getLatestDCR(orgId, teamId = null) {
   const query = { orgId };
   if (teamId) query.teamId = teamId;
 
-  return await DecisionClosureRate
-    .findOne(query)
-    .sort({ 'period.end': -1 });
+  return await DecisionClosureRate.findOne(query).sort({ 'period.end': -1 });
 }
 
 /**
@@ -341,8 +339,7 @@ export async function getDCRHistory(orgId, teamId = null, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  return await DecisionClosureRate
-    .find({ ...query, 'period.end': { $gte: startDate } })
+  return await DecisionClosureRate.find({ ...query, 'period.end': { $gte: startDate } })
     .sort({ 'period.end': 1 })
     .select('score period trend baseline');
 }

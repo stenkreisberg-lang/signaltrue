@@ -18,7 +18,7 @@ function openaiAdapter() {
         max_tokens,
       });
       return completion;
-    }
+    },
   };
 }
 
@@ -29,22 +29,20 @@ function anthropicAdapter() {
       const message = await client.messages.create({
         model: model || 'claude-3-5-sonnet-20241022',
         max_tokens,
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        system: 'You synthesize signals into action steps.'
+        messages: [{ role: 'user', content: prompt }],
+        system: 'You synthesize signals into action steps.',
       });
-      
+
       // Normalize to OpenAI-like response shape
       return {
         choices: [{ message: { content: message.content[0].text } }],
         usage: {
           prompt_tokens: message.usage.input_tokens,
           completion_tokens: message.usage.output_tokens,
-          total_tokens: message.usage.input_tokens + message.usage.output_tokens
-        }
+          total_tokens: message.usage.input_tokens + message.usage.output_tokens,
+        },
       };
-    }
+    },
   };
 }
 
@@ -54,7 +52,10 @@ export default function getProvider() {
   if (provider === 'anthropic' || provider === 'claude') return anthropicAdapter();
   // fallback mock
   return {
-    generate: async ({ prompt }) => ({ choices: [{ message: { content: `Mock response for prompt: ${prompt}` } }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } })
+    generate: async ({ prompt }) => ({
+      choices: [{ message: { content: `Mock response for prompt: ${prompt}` } }],
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    }),
   };
 }
 
@@ -64,13 +65,13 @@ export default function getProvider() {
  */
 export function getAIClient() {
   const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
-  
+
   // Return OpenAI-like interface
   if (provider === 'openai' || !process.env.ANTHROPIC_API_KEY) {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     return client;
   }
-  
+
   // Anthropic with OpenAI-compatible wrapper
   if (provider === 'anthropic' || provider === 'claude') {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -79,9 +80,9 @@ export function getAIClient() {
         completions: {
           create: async (params) => {
             const { model, messages, max_tokens, temperature } = params;
-            const systemMsg = messages.find(m => m.role === 'system');
-            const userMessages = messages.filter(m => m.role !== 'system');
-            
+            const systemMsg = messages.find((m) => m.role === 'system');
+            const userMessages = messages.filter((m) => m.role !== 'system');
+
             const response = await client.messages.create({
               model: model || 'claude-3-5-sonnet-20241022',
               max_tokens: max_tokens || 1024,
@@ -89,7 +90,7 @@ export function getAIClient() {
               system: systemMsg?.content || 'You are a helpful assistant.',
               messages: userMessages,
             });
-            
+
             // Normalize to OpenAI format
             return {
               choices: [{ message: { content: response.content[0].text } }],
@@ -104,7 +105,7 @@ export function getAIClient() {
       },
     };
   }
-  
+
   // Fallback to OpenAI
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }

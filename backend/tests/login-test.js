@@ -5,7 +5,7 @@ async function testLogin() {
   const url = 'http://localhost:8080/api/auth/login';
   const payload = {
     email: 'test@test.com',
-    password: 'password123'
+    password: 'password123',
   };
 
   console.log(`Sending POST request to: ${url}`);
@@ -13,7 +13,7 @@ async function testLogin() {
 
   try {
     const response = await axios.post(url, payload, {
-      timeout: 15000 // Set a 15-second timeout
+      timeout: 15000, // Set a 15-second timeout
     });
     console.log('--- TEST SUCCEEDED ---');
     console.log('Status Code:', response.status);
@@ -28,7 +28,9 @@ async function testLogin() {
     } else if (error.request) {
       // The request was made but no response was received
       console.error('No response received from the server.');
-      console.error('This likely means the request timed out, confirming the issue is on the backend.');
+      console.error(
+        'This likely means the request timed out, confirming the issue is on the backend.'
+      );
     } else {
       // Something happened in setting up the request that triggered an Error
       console.error('Error setting up the request:', error.message);

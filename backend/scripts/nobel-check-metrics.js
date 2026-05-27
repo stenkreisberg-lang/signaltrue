@@ -14,8 +14,10 @@ const org = await Organization.findOne({ domain: 'nobeldigital.ee' });
 
 const latest = await IntegrationMetricsDaily.findOne({
   orgId: org._id,
-  teamId: null
-}).sort({ date: -1 }).lean();
+  teamId: null,
+})
+  .sort({ date: -1 })
+  .lean();
 
 if (latest) {
   console.log('Latest org-level metrics:', latest.date?.toISOString().split('T')[0]);

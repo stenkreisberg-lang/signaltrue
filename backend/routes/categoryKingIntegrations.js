@@ -13,15 +13,31 @@ const router = express.Router();
 // HELPER FUNCTIONS
 // ============================================================
 
-function b64(json) {
-  return Buffer.from(JSON.stringify(json)).toString('base64url');
+function signState(json) {
+  const payload = Buffer.from(JSON.stringify(json)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(payload)
+    .digest('base64url');
+  return `${payload}.${signature}`;
 }
 
-function b64parse(str) {
-  try { 
-    return JSON.parse(Buffer.from(String(str || ''), 'base64url').toString('utf8')); 
-  } catch { 
-    return {}; 
+function parseSignedState(str) {
+  try {
+    const [payload, supplied] = String(str || '').split('.');
+    const expected = crypto
+      .createHmac('sha256', process.env.JWT_SECRET)
+      .update(payload)
+      .digest('base64url');
+    if (
+      !supplied ||
+      supplied.length !== expected.length ||
+      !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))
+    )
+      return {};
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    return {};
   }
 }
 
@@ -33,9 +49,14 @@ function getAppUrl() {
 }
 
 function getBackendBaseUrl(req) {
-  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
-  const host = (req.headers['x-forwarded-host'] || req.get('host'));
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host');
   return `${proto}://${host}`;
+}
+
+function sendAuthorizationUrl(req, res, url) {
+  if (req.query.format === 'json') return res.json({ authorizationUrl: String(url) });
+  return res.redirect(String(url));
 }
 
 // ============================================================
@@ -49,28 +70,26 @@ function getBackendBaseUrl(req) {
 router.get('/jira/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.JIRA_CLIENT_ID;
-    const redirectUri = process.env.JIRA_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/jira/oauth/callback`;
-    
+    const redirectUri =
+      process.env.JIRA_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/jira/oauth/callback`;
+
     if (!clientId) {
       return res.status(503).json({ message: 'Jira OAuth not configured. Set JIRA_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     // Atlassian OAuth 2.0 authorization URL
-    const scopes = [
-      'read:jira-work',
-      'read:jira-user',
-      'offline_access'
-    ].join('%20');
-    
+    const scopes = ['read:jira-work', 'read:jira-user', 'offline_access'].join('%20');
+
     const url = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&response_type=code&prompt=consent`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Jira OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Jira OAuth' });
@@ -84,17 +103,19 @@ router.get('/jira/oauth/start', authenticateToken, async (req, res) => {
 router.get('/jira/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.JIRA_CLIENT_ID;
     const clientSecret = process.env.JIRA_CLIENT_SECRET;
-    const redirectUri = process.env.JIRA_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/jira/oauth/callback`;
-    
+    const redirectUri =
+      process.env.JIRA_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/jira/oauth/callback`;
+
     // Exchange code for tokens
     const tokenRes = await fetch('https://auth.atlassian.com/oauth/token', {
       method: 'POST',
@@ -104,25 +125,25 @@ router.get('/jira/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        redirect_uri: redirectUri
-      })
+        redirect_uri: redirectUri,
+      }),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Jira token error:', tokens);
       return res.status(400).send('Jira authorization failed');
     }
-    
+
     // Get accessible resources (Jira sites)
     const resourcesRes = await fetch('https://api.atlassian.com/oauth/token/accessible-resources', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const resources = await resourcesRes.json();
-    
+
     const site = resources[0]; // Use first site for now
-    
+
     // Save or update integration connection
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'jira' },
@@ -139,24 +160,24 @@ router.get('/jira/oauth/callback', async (req, res) => {
           'auth.cloudId': site?.id,
           'auth.siteUrl': site?.url,
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Jira OAuth: Connected for org', orgId);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'jira');
     }
-    
+
     // Trigger initial sync in background
     // TODO: Call syncJiraEvents(orgId)
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=jira`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=jira`);
   } catch (err) {
     console.error('Jira OAuth callback error:', err);
     return res.status(500).send('Jira OAuth callback error');
@@ -173,22 +194,24 @@ router.get('/jira/oauth/callback', async (req, res) => {
 router.get('/asana/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.ASANA_CLIENT_ID;
-    const redirectUri = process.env.ASANA_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/asana/oauth/callback`;
-    
+    const redirectUri =
+      process.env.ASANA_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/asana/oauth/callback`;
+
     if (!clientId) {
       return res.status(503).json({ message: 'Asana OAuth not configured. Set ASANA_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     // Asana doesn't have a native prompt parameter, but adding response_type=code forces login
     const url = `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Asana OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Asana OAuth' });
@@ -201,17 +224,19 @@ router.get('/asana/oauth/start', authenticateToken, async (req, res) => {
 router.get('/asana/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.ASANA_CLIENT_ID;
     const clientSecret = process.env.ASANA_CLIENT_SECRET;
-    const redirectUri = process.env.ASANA_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/asana/oauth/callback`;
-    
+    const redirectUri =
+      process.env.ASANA_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/asana/oauth/callback`;
+
     const tokenRes = await fetch('https://app.asana.com/-/oauth_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -220,25 +245,25 @@ router.get('/asana/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        code
-      }).toString()
+        code,
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Asana token error:', tokens);
       return res.status(400).send('Asana authorization failed');
     }
-    
+
     // Get user info to find workspaces
     const userRes = await fetch('https://app.asana.com/api/1.0/users/me', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const userData = await userRes.json();
-    
+
     const workspace = userData.data?.workspaces?.[0];
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'asana' },
       {
@@ -249,25 +274,27 @@ router.get('/asana/oauth/callback', async (req, res) => {
           connectedAt: new Date(),
           'auth.accessToken': tokens.access_token,
           'auth.refreshToken': tokens.refresh_token,
-          'auth.tokenExpiresAt': tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
+          'auth.tokenExpiresAt': tokens.expires_in
+            ? new Date(Date.now() + tokens.expires_in * 1000)
+            : null,
           'auth.workspaceId': workspace?.gid,
           'auth.workspaceName': workspace?.name,
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Asana OAuth: Connected for org', orgId);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'asana');
     }
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=asana`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=asana`);
   } catch (err) {
     console.error('Asana OAuth callback error:', err);
     return res.status(500).send('Asana OAuth callback error');
@@ -284,26 +311,30 @@ router.get('/asana/oauth/callback', async (req, res) => {
 router.get('/gmail/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GMAIL_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/gmail/oauth/callback`;
-    
+    const redirectUri =
+      process.env.GMAIL_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/gmail/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     // Request metadata-only Gmail scope
     const scopes = [
       'https://www.googleapis.com/auth/gmail.metadata',
       'openid',
       'email',
-      'profile'
+      'profile',
     ].join(' ');
-    
+
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
@@ -312,8 +343,8 @@ router.get('/gmail/oauth/start', authenticateToken, async (req, res) => {
     url.searchParams.set('scope', scopes);
     url.searchParams.set('prompt', 'consent');
     url.searchParams.set('state', state);
-    
-    return res.redirect(url.toString());
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Gmail OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Gmail OAuth' });
@@ -326,17 +357,19 @@ router.get('/gmail/oauth/start', authenticateToken, async (req, res) => {
 router.get('/gmail/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GMAIL_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/gmail/oauth/callback`;
-    
+    const redirectUri =
+      process.env.GMAIL_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/gmail/oauth/callback`;
+
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -345,29 +378,29 @@ router.get('/gmail/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
+        grant_type: 'authorization_code',
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Gmail token error:', tokens);
       return res.status(400).send('Gmail authorization failed');
     }
-    
+
     // Get user info
     let email = null;
     try {
       const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-        headers: { Authorization: `Bearer ${tokens.access_token}` }
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
       const userData = await userRes.json();
       email = userData.email;
     } catch (e) {
       console.warn('Could not fetch Gmail user info:', e.message);
     }
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'gmail' },
       {
@@ -381,21 +414,21 @@ router.get('/gmail/oauth/callback', async (req, res) => {
           'auth.tokenExpiresAt': new Date(Date.now() + tokens.expires_in * 1000),
           'auth.scopes': tokens.scope?.split(' ') || [],
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Gmail OAuth: Connected for org', orgId, 'email:', email);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'gmail');
     }
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=gmail`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=gmail`);
   } catch (err) {
     console.error('Gmail OAuth callback error:', err);
     return res.status(500).send('Gmail OAuth callback error');
@@ -413,25 +446,29 @@ router.get('/gmail/oauth/callback', async (req, res) => {
 router.get('/meet/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.MEET_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/meet/oauth/callback`;
-    
+    const redirectUri =
+      process.env.MEET_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/meet/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     const scopes = [
       'https://www.googleapis.com/auth/calendar.readonly',
       'openid',
       'email',
-      'profile'
+      'profile',
     ].join(' ');
-    
+
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
@@ -440,8 +477,8 @@ router.get('/meet/oauth/start', authenticateToken, async (req, res) => {
     url.searchParams.set('scope', scopes);
     url.searchParams.set('prompt', 'consent');
     url.searchParams.set('state', state);
-    
-    return res.redirect(url.toString());
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Meet OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Meet OAuth' });
@@ -454,17 +491,19 @@ router.get('/meet/oauth/start', authenticateToken, async (req, res) => {
 router.get('/meet/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.MEET_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/meet/oauth/callback`;
-    
+    const redirectUri =
+      process.env.MEET_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/meet/oauth/callback`;
+
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -473,17 +512,17 @@ router.get('/meet/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
+        grant_type: 'authorization_code',
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Meet token error:', tokens);
       return res.status(400).send('Meet authorization failed');
     }
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'meet' },
       {
@@ -497,15 +536,15 @@ router.get('/meet/oauth/callback', async (req, res) => {
           'auth.tokenExpiresAt': new Date(Date.now() + tokens.expires_in * 1000),
           'auth.scopes': tokens.scope?.split(' ') || [],
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Meet OAuth: Connected for org', orgId);
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=meet`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=meet`);
   } catch (err) {
     console.error('Meet OAuth callback error:', err);
     return res.status(500).send('Meet OAuth callback error');
@@ -522,21 +561,25 @@ router.get('/meet/oauth/callback', async (req, res) => {
 router.get('/notion/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.NOTION_CLIENT_ID;
-    const redirectUri = process.env.NOTION_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/notion/oauth/callback`;
-    
+    const redirectUri =
+      process.env.NOTION_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/notion/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'Notion OAuth not configured. Set NOTION_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'Notion OAuth not configured. Set NOTION_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     const url = `https://api.notion.com/v1/oauth/authorize?client_id=${clientId}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Notion OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Notion OAuth' });
@@ -549,40 +592,42 @@ router.get('/notion/oauth/start', authenticateToken, async (req, res) => {
 router.get('/notion/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.NOTION_CLIENT_ID;
     const clientSecret = process.env.NOTION_CLIENT_SECRET;
-    const redirectUri = process.env.NOTION_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/notion/oauth/callback`;
-    
+    const redirectUri =
+      process.env.NOTION_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/notion/oauth/callback`;
+
     const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
+
     const tokenRes = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${encoded}`,
-        'Notion-Version': '2022-06-28'
+        Authorization: `Basic ${encoded}`,
+        'Notion-Version': '2022-06-28',
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: redirectUri
-      })
+        redirect_uri: redirectUri,
+      }),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Notion token error:', tokens);
       return res.status(400).send('Notion authorization failed');
     }
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'notion' },
       {
@@ -594,21 +639,21 @@ router.get('/notion/oauth/callback', async (req, res) => {
           'auth.accessToken': tokens.access_token,
           'auth.notionWorkspaceId': tokens.workspace_id,
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Notion OAuth: Connected for org', orgId);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'notion');
     }
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=notion`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=notion`);
   } catch (err) {
     console.error('Notion OAuth callback error:', err);
     return res.status(500).send('Notion OAuth callback error');
@@ -625,28 +670,28 @@ router.get('/notion/oauth/callback', async (req, res) => {
 router.get('/hubspot/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.HUBSPOT_CLIENT_ID;
-    const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/hubspot/oauth/callback`;
-    
+    const redirectUri =
+      process.env.HUBSPOT_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/hubspot/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'HubSpot OAuth not configured. Set HUBSPOT_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'HubSpot OAuth not configured. Set HUBSPOT_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
-    const scopes = [
-      'crm.objects.deals.read',
-      'crm.objects.contacts.read',
-      'tickets'
-    ].join('%20');
-    
+
+    const scopes = ['crm.objects.deals.read', 'crm.objects.contacts.read', 'tickets'].join('%20');
+
     // HubSpot: Adding optional_scope forces re-consent flow
     const url = `https://app.hubspot.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&optional_scope=`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('HubSpot OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start HubSpot OAuth' });
@@ -659,17 +704,19 @@ router.get('/hubspot/oauth/start', authenticateToken, async (req, res) => {
 router.get('/hubspot/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.HUBSPOT_CLIENT_ID;
     const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
-    const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/hubspot/oauth/callback`;
-    
+    const redirectUri =
+      process.env.HUBSPOT_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/hubspot/oauth/callback`;
+
     const tokenRes = await fetch('https://api.hubapi.com/oauth/v1/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -678,21 +725,23 @@ router.get('/hubspot/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        code
-      }).toString()
+        code,
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('HubSpot token error:', tokens);
       return res.status(400).send('HubSpot authorization failed');
     }
-    
+
     // Get portal ID
-    const portalRes = await fetch('https://api.hubapi.com/oauth/v1/access-tokens/' + tokens.access_token);
+    const portalRes = await fetch(
+      'https://api.hubapi.com/oauth/v1/access-tokens/' + tokens.access_token
+    );
     const portalData = await portalRes.json();
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'hubspot' },
       {
@@ -706,21 +755,21 @@ router.get('/hubspot/oauth/callback', async (req, res) => {
           'auth.tokenExpiresAt': new Date(Date.now() + tokens.expires_in * 1000),
           'auth.hubspotPortalId': portalData.hub_id?.toString(),
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('HubSpot OAuth: Connected for org', orgId);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'hubspot');
     }
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=hubspot`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=hubspot`);
   } catch (err) {
     console.error('HubSpot OAuth callback error:', err);
     return res.status(500).send('HubSpot OAuth callback error');
@@ -737,22 +786,26 @@ router.get('/hubspot/oauth/callback', async (req, res) => {
 router.get('/pipedrive/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.PIPEDRIVE_CLIENT_ID;
-    const redirectUri = process.env.PIPEDRIVE_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/pipedrive/oauth/callback`;
-    
+    const redirectUri =
+      process.env.PIPEDRIVE_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/pipedrive/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'Pipedrive OAuth not configured. Set PIPEDRIVE_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'Pipedrive OAuth not configured. Set PIPEDRIVE_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     // Pipedrive: prompt=login forces account selection
     const url = `https://oauth.pipedrive.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&prompt=login`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Pipedrive OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Pipedrive OAuth' });
@@ -765,39 +818,41 @@ router.get('/pipedrive/oauth/start', authenticateToken, async (req, res) => {
 router.get('/pipedrive/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.PIPEDRIVE_CLIENT_ID;
     const clientSecret = process.env.PIPEDRIVE_CLIENT_SECRET;
-    const redirectUri = process.env.PIPEDRIVE_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/pipedrive/oauth/callback`;
-    
+    const redirectUri =
+      process.env.PIPEDRIVE_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/pipedrive/oauth/callback`;
+
     const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
+
     const tokenRes = await fetch('https://oauth.pipedrive.com/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${encoded}`
+        Authorization: `Basic ${encoded}`,
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         redirect_uri: redirectUri,
-        code
-      }).toString()
+        code,
+      }).toString(),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Pipedrive token error:', tokens);
       return res.status(400).send('Pipedrive authorization failed');
     }
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'pipedrive' },
       {
@@ -811,21 +866,21 @@ router.get('/pipedrive/oauth/callback', async (req, res) => {
           'auth.tokenExpiresAt': new Date(Date.now() + tokens.expires_in * 1000),
           'auth.pipedriveCompanyDomain': tokens.api_domain,
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Pipedrive OAuth: Connected for org', orgId);
-    
+
     // Notify superadmin about new integration
     const org = await Organization.findById(orgId);
     if (org) {
       notifyIntegrationConnected(org, 'pipedrive');
     }
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=pipedrive`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=pipedrive`);
   } catch (err) {
     console.error('Pipedrive OAuth callback error:', err);
     return res.status(500).send('Pipedrive OAuth callback error');
@@ -842,21 +897,25 @@ router.get('/pipedrive/oauth/callback', async (req, res) => {
 router.get('/basecamp/oauth/start', authenticateToken, async (req, res) => {
   try {
     const clientId = process.env.BASECAMP_CLIENT_ID;
-    const redirectUri = process.env.BASECAMP_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/basecamp/oauth/callback`;
-    
+    const redirectUri =
+      process.env.BASECAMP_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/basecamp/oauth/callback`;
+
     if (!clientId) {
-      return res.status(503).json({ message: 'Basecamp OAuth not configured. Set BASECAMP_CLIENT_ID.' });
+      return res
+        .status(503)
+        .json({ message: 'Basecamp OAuth not configured. Set BASECAMP_CLIENT_ID.' });
     }
-    
-    const state = b64({
+
+    const state = signState({
       orgId: req.user.orgId?.toString(),
       userId: req.user.userId?.toString(),
-      nonce: crypto.randomBytes(8).toString('hex')
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     const url = `https://launchpad.37signals.com/authorization/new?type=web_server&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
-    
-    return res.redirect(url);
+
+    return sendAuthorizationUrl(req, res, url);
   } catch (err) {
     console.error('Basecamp OAuth start error:', err);
     return res.status(500).json({ message: 'Failed to start Basecamp OAuth' });
@@ -869,17 +928,19 @@ router.get('/basecamp/oauth/start', authenticateToken, async (req, res) => {
 router.get('/basecamp/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const parsed = b64parse(state);
+    const parsed = parseSignedState(state);
     const { orgId, userId } = parsed;
-    
+
     if (!code || !orgId) {
       return res.status(400).send('Missing authorization code or organization ID');
     }
-    
+
     const clientId = process.env.BASECAMP_CLIENT_ID;
     const clientSecret = process.env.BASECAMP_CLIENT_SECRET;
-    const redirectUri = process.env.BASECAMP_REDIRECT_URI || `${getBackendBaseUrl(req)}/api/integrations/basecamp/oauth/callback`;
-    
+    const redirectUri =
+      process.env.BASECAMP_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/basecamp/oauth/callback`;
+
     const tokenRes = await fetch('https://launchpad.37signals.com/authorization/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -888,25 +949,25 @@ router.get('/basecamp/oauth/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-        code
-      })
+        code,
+      }),
     });
-    
+
     const tokens = await tokenRes.json();
-    
+
     if (tokens.error) {
       console.error('Basecamp token error:', tokens);
       return res.status(400).send('Basecamp authorization failed');
     }
-    
+
     // Get authorization info
     const authRes = await fetch('https://launchpad.37signals.com/authorization.json', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const authData = await authRes.json();
-    
-    const basecampAccount = authData.accounts?.find(a => a.product === 'bc3');
-    
+
+    const basecampAccount = authData.accounts?.find((a) => a.product === 'bc3');
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: 'basecamp' },
       {
@@ -920,15 +981,15 @@ router.get('/basecamp/oauth/callback', async (req, res) => {
           'auth.tokenExpiresAt': new Date(Date.now() + (tokens.expires_in || 1209600) * 1000),
           'auth.basecampAccountId': basecampAccount?.id?.toString(),
           'sync.enabled': true,
-          measurementScope: 'metadata only'
-        }
+          measurementScope: 'metadata only',
+        },
       },
       { upsert: true, new: true }
     );
-    
+
     console.log('Basecamp OAuth: Connected for org', orgId);
-    
-    return res.redirect(`${getAppUrl()}/settings/integrations?connected=basecamp`);
+
+    return res.redirect(`${getAppUrl()}/integrations?connected=basecamp`);
   } catch (err) {
     console.error('Basecamp OAuth callback error:', err);
     return res.status(500).send('Basecamp OAuth callback error');
@@ -946,12 +1007,21 @@ router.delete('/:type/disconnect', authenticateToken, async (req, res) => {
   try {
     const { type } = req.params;
     const { orgId } = req.user;
-    
-    const validTypes = ['jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp'];
+
+    const validTypes = [
+      'jira',
+      'asana',
+      'gmail',
+      'meet',
+      'notion',
+      'hubspot',
+      'pipedrive',
+      'basecamp',
+    ];
     if (!validTypes.includes(type)) {
       return res.status(400).json({ message: 'Invalid integration type' });
     }
-    
+
     await IntegrationConnection.findOneAndUpdate(
       { orgId, integrationType: type },
       {
@@ -960,11 +1030,11 @@ router.delete('/:type/disconnect', authenticateToken, async (req, res) => {
           statusUpdatedAt: new Date(),
           'auth.accessToken': null,
           'auth.refreshToken': null,
-          'sync.enabled': false
-        }
+          'sync.enabled': false,
+        },
       }
     );
-    
+
     res.json({ message: `${type} integration disconnected` });
   } catch (err) {
     console.error('Disconnect error:', err);

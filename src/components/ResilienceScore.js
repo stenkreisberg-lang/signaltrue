@@ -10,7 +10,7 @@ export default function ResilienceScore({ orgId, dark }) {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_BASE}/api/resilience/org/${orgId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         const json = await res.json();
         setData(json);
@@ -23,7 +23,8 @@ export default function ResilienceScore({ orgId, dark }) {
     if (orgId) fetchData();
   }, [orgId]);
 
-  if (loading) return <div style={{ color: dark ? '#9ca3af' : '#6b7280' }}>Loading resilience data...</div>;
+  if (loading)
+    return <div style={{ color: dark ? '#9ca3af' : '#6b7280' }}>Loading resilience data...</div>;
   if (!data) return null;
 
   const containerStyle = {
@@ -32,21 +33,37 @@ export default function ResilienceScore({ orgId, dark }) {
     padding: '24px',
     borderRadius: '16px',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    marginBottom: '24px'
+    marginBottom: '24px',
   };
 
-  const scoreColor = data.organizationalResilience >= 80 ? '#10b981' : data.organizationalResilience >= 60 ? '#f59e0b' : '#ef4444';
+  const scoreColor =
+    data.organizationalResilience >= 80
+      ? '#10b981'
+      : data.organizationalResilience >= 60
+        ? '#f59e0b'
+        : '#ef4444';
 
   return (
     <div style={containerStyle}>
-      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <h2
+        style={{
+          fontSize: '20px',
+          fontWeight: '700',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
         🛡️ Organizational Resilience Score
-        <span style={{ 
-          fontSize: '32px', 
-          fontWeight: '700', 
-          color: scoreColor,
-          marginLeft: 'auto'
-        }}>
+        <span
+          style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: scoreColor,
+            marginLeft: 'auto',
+          }}
+        >
           {data.organizationalResilience}
         </span>
       </h2>
@@ -56,30 +73,42 @@ export default function ResilienceScore({ orgId, dark }) {
       </div>
 
       <div style={{ marginTop: '16px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Team Resilience Breakdown</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+          Team Resilience Breakdown
+        </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {data.teams.slice(0, 5).map(team => {
-            const teamColor = team.resilienceScore >= 80 ? '#10b981' : team.resilienceScore >= 60 ? '#f59e0b' : '#ef4444';
+          {data.teams.slice(0, 5).map((team) => {
+            const teamColor =
+              team.resilienceScore >= 80
+                ? '#10b981'
+                : team.resilienceScore >= 60
+                  ? '#f59e0b'
+                  : '#ef4444';
             return (
-              <div key={team.teamId} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: dark ? '#374151' : '#f3f4f6',
-                padding: '12px 16px',
-                borderRadius: '8px'
-              }}>
+              <div
+                key={team.teamId}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: dark ? '#374151' : '#f3f4f6',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                }}
+              >
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '15px' }}>{team.teamName}</div>
                   <div style={{ fontSize: '12px', color: dark ? '#9ca3af' : '#6b7280' }}>
                     Volatility: {team.volatility}
                   </div>
                 </div>
-                <div style={{
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  color: teamColor
-                }}>
+                <div
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: teamColor,
+                  }}
+                >
                   {team.resilienceScore}
                 </div>
               </div>

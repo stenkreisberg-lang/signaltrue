@@ -30,16 +30,16 @@ interface PaywallOverlayProps {
 
 /**
  * PaywallOverlay - Wraps content that should be locked behind paywall
- * 
+ *
  * Usage:
  * <PaywallOverlay feature="ai_recommendations">
  *   <AIRecommendationsPanel />
  * </PaywallOverlay>
  */
-export const PaywallOverlay: React.FC<PaywallOverlayProps> = ({ 
-  feature, 
+export const PaywallOverlay: React.FC<PaywallOverlayProps> = ({
+  feature,
   className = '',
-  children 
+  children,
 }) => {
   const [status, setStatus] = useState<PaywallStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export const PaywallOverlay: React.FC<PaywallOverlayProps> = ({
 
         const response = await fetch(`${API_BASE_URL}/api/trial/paywall-status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -80,58 +80,48 @@ export const PaywallOverlay: React.FC<PaywallOverlayProps> = ({
   }
 
   // Check if this specific feature is locked
-  const isFeatureLocked = feature 
-    ? status.locked.some(l => l.feature === feature)
-    : true;
+  const isFeatureLocked = feature ? status.locked.some((l) => l.feature === feature) : true;
 
   if (!isFeatureLocked) {
     return <>{children}</>;
   }
 
   // Find the locked feature info
-  const lockedFeature = feature 
-    ? status.locked.find(l => l.feature === feature)
+  const lockedFeature = feature
+    ? status.locked.find((l) => l.feature === feature)
     : status.locked[0];
 
   return (
     <div className={`relative ${className}`}>
       {/* Blurred content */}
-      <div className="opacity-30 blur-sm pointer-events-none select-none">
-        {children}
-      </div>
-      
+      <div className="opacity-30 blur-sm pointer-events-none select-none">{children}</div>
+
       {/* Overlay */}
       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-background/50 to-background/90">
         <div className="text-center max-w-md p-6">
           <div className="w-12 h-12 rounded-full bg-muted/50 mx-auto mb-4 flex items-center justify-center">
             <Lock className="w-6 h-6 text-muted-foreground" />
           </div>
-          
+
           {lockedFeature && (
             <>
               <h3 className="text-lg font-display font-semibold text-foreground mb-2">
                 {lockedFeature.label}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {lockedFeature.description}
-              </p>
+              <p className="text-sm text-muted-foreground mb-4">{lockedFeature.description}</p>
             </>
           )}
-          
+
           {status.cta && (
             <>
-              <p className="text-sm font-medium text-foreground mb-4">
-                {status.cta.headline}
-              </p>
+              <p className="text-sm font-medium text-foreground mb-4">{status.cta.headline}</p>
               <Link to={status.cta.link}>
                 <Button variant="hero" size="lg">
                   {status.cta.buttonText}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <p className="text-xs text-muted-foreground mt-3">
-                {status.cta.subtext}
-              </p>
+              <p className="text-xs text-muted-foreground mt-3">{status.cta.subtext}</p>
             </>
           )}
         </div>
@@ -162,7 +152,7 @@ export const PaywallBanner: React.FC<PaywallBannerProps> = ({ className = '' }) 
 
         const response = await fetch(`${API_BASE_URL}/api/trial/paywall-status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -191,15 +181,11 @@ export const PaywallBanner: React.FC<PaywallBannerProps> = ({ className = '' }) 
         <div className="flex items-start gap-4">
           <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-foreground mb-1">
-              {status.cta.headline}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {status.cta.subtext}
-            </p>
+            <h3 className="font-semibold text-foreground mb-1">{status.cta.headline}</h3>
+            <p className="text-sm text-muted-foreground">{status.cta.subtext}</p>
           </div>
         </div>
-        
+
         <Link to={status.cta.link}>
           <Button variant="hero">
             {status.cta.buttonText}
@@ -207,14 +193,14 @@ export const PaywallBanner: React.FC<PaywallBannerProps> = ({ className = '' }) 
           </Button>
         </Link>
       </div>
-      
+
       {/* Locked features list */}
       {status.locked.length > 0 && (
         <div className="mt-4 pt-4 border-t border-warning/20">
           <p className="text-xs text-muted-foreground mb-2">Features requiring upgrade:</p>
           <div className="flex flex-wrap gap-2">
             {status.locked.map((feature) => (
-              <span 
+              <span
                 key={feature.feature}
                 className="text-xs px-2 py-1 rounded-full bg-muted/50 text-muted-foreground"
               >
@@ -246,7 +232,7 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
 
         const response = await fetch(`${API_BASE_URL}/api/trial/paywall-status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -267,10 +253,8 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
 
   return (
     <div className={`bg-card rounded-xl border border-border/50 p-6 ${className}`}>
-      <h3 className="font-display font-semibold text-foreground mb-4">
-        Your access level
-      </h3>
-      
+      <h3 className="font-display font-semibold text-foreground mb-4">Your access level</h3>
+
       {/* Accessible features */}
       <div className="mb-4">
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Available</p>
@@ -283,10 +267,12 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
           ))}
         </div>
       </div>
-      
+
       {/* Locked features */}
       <div className="mb-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Requires upgrade</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+          Requires upgrade
+        </p>
         <div className="space-y-2">
           {status.locked.slice(0, 3).map((feature) => (
             <div key={feature.feature} className="flex items-center gap-2 text-sm">
@@ -301,7 +287,7 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
           )}
         </div>
       </div>
-      
+
       {/* CTA */}
       {status.cta && (
         <Link to={status.cta.link}>

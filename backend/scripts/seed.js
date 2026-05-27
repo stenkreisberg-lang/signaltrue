@@ -54,7 +54,6 @@ export const seedMasterAdmin = async () => {
 
     await user.save();
     console.log('✅ Successfully seeded initial admin user.');
-
   } catch (error) {
     console.error('❌ Error seeding initial user:', error.message);
     // Don't block server start if seeding fails, but log it.

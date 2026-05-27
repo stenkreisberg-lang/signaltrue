@@ -31,7 +31,14 @@ router.post('/timeline', authenticateToken, async (req, res) => {
     if (!orgId) return res.status(400).json({ message: 'Missing orgId' });
     const { teamId, date, label, description, category } = req.body;
     if (!date || !label) return res.status(400).json({ message: 'Date and label required' });
-    const event = await TimelineEvent.create({ orgId, teamId: teamId || null, date: new Date(date), label, description, category });
+    const event = await TimelineEvent.create({
+      orgId,
+      teamId: teamId || null,
+      date: new Date(date),
+      label,
+      description,
+      category,
+    });
     res.json(event);
   } catch (e) {
     res.status(500).json({ message: e.message });

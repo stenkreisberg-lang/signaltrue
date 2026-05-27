@@ -18,10 +18,10 @@ export function requireTier(requiredTier) {
       const { orgId } = req.user;
 
       if (!orgId) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: 'Organization required',
           requiredTier,
-          upgrade: true
+          upgrade: true,
         });
       }
 
@@ -31,12 +31,12 @@ export function requireTier(requiredTier) {
       }
 
       const currentTier = org.subscription?.plan || 'free';
-      
+
       // Tier hierarchy: impact_proof > detection > free
       const tierLevels = {
         free: 0,
         detection: 1,
-        impact_proof: 2
+        impact_proof: 2,
       };
 
       const currentLevel = tierLevels[currentTier] || 0;
@@ -48,14 +48,14 @@ export function requireTier(requiredTier) {
           currentTier,
           requiredTier,
           upgrade: true,
-          upgradeUrl: '/pricing'
+          upgradeUrl: '/pricing',
         });
       }
 
       // Attach tier info to request for downstream use
       req.tier = {
         current: currentTier,
-        level: currentLevel
+        level: currentLevel,
       };
 
       next();
@@ -73,7 +73,7 @@ export function checkFeatureAccess(feature) {
   return async (req, res, next) => {
     try {
       const { orgId } = req.user;
-      
+
       const org = await Organization.findById(orgId);
       const currentTier = org?.subscription?.plan || 'free';
 
@@ -86,7 +86,7 @@ export function checkFeatureAccess(feature) {
         history_90_days: ['impact_proof'],
         comparisons: ['impact_proof'],
         export: ['impact_proof'],
-        first_signal: ['free', 'detection', 'impact_proof'] // Always available
+        first_signal: ['free', 'detection', 'impact_proof'], // Always available
       };
 
       const allowedTiers = featureAccess[feature] || [];
@@ -96,7 +96,7 @@ export function checkFeatureAccess(feature) {
           message: `Feature '${feature}' not available on ${currentTier} tier`,
           currentTier,
           upgrade: true,
-          upgradeUrl: '/pricing'
+          upgradeUrl: '/pricing',
         });
       }
 
@@ -119,7 +119,7 @@ export function getTierLimits(tier) {
       interventions: false,
       alerts: false,
       comparisons: false,
-      export: false
+      export: false,
     },
     detection: {
       historyDays: 30,
@@ -127,7 +127,7 @@ export function getTierLimits(tier) {
       interventions: true,
       alerts: true,
       comparisons: false,
-      export: false
+      export: false,
     },
     impact_proof: {
       historyDays: 90,
@@ -135,8 +135,8 @@ export function getTierLimits(tier) {
       interventions: true,
       alerts: true,
       comparisons: true,
-      export: true
-    }
+      export: true,
+    },
   };
 
   return limits[tier] || limits.free;
@@ -148,13 +148,13 @@ export function getTierLimits(tier) {
 export async function attachTierLimits(req, res, next) {
   try {
     const { orgId } = req.user;
-    
+
     const org = await Organization.findById(orgId);
     const currentTier = org?.subscription?.plan || 'free';
-    
+
     req.tierLimits = getTierLimits(currentTier);
     req.currentTier = currentTier;
-    
+
     next();
   } catch (error) {
     console.error('[attachTierLimits] Error:', error);

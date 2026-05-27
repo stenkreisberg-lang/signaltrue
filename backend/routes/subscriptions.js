@@ -1,6 +1,6 @@
 /**
  * Subscription Management Routes
- * 
+ *
  * Handles plan changes, upgrades, downgrades, and feature unlocking.
  */
 
@@ -19,24 +19,24 @@ const router = express.Router();
 router.get('/plans', async (req, res) => {
   try {
     const plans = await SubscriptionPlan.find({ isActive: true });
-    
+
     if (plans.length === 0) {
       // If plans don't exist in DB, return definitions
       return res.json({
         plans: Object.values(PLAN_DEFINITIONS),
-        source: 'defaults'
+        source: 'defaults',
       });
     }
 
     res.json({
       plans,
-      source: 'database'
+      source: 'database',
     });
   } catch (error) {
     console.error('Error fetching plans:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch subscription plans',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -50,8 +50,8 @@ router.get('/current', async (req, res) => {
     const organization = req.organization;
 
     if (!organization) {
-      return res.status(400).json({ 
-        error: 'Organization context required' 
+      return res.status(400).json({
+        error: 'Organization context required',
       });
     }
 
@@ -69,18 +69,18 @@ router.get('/current', async (req, res) => {
         planId: currentPlanId,
         plan,
         customFeatures: organization.customFeatures,
-        subscriptionHistory: organization.subscriptionHistory || []
+        subscriptionHistory: organization.subscriptionHistory || [],
       },
       access: {
         features: accessibleFeatures,
-        role: req.user.role
-      }
+        role: req.user.role,
+      },
     });
   } catch (error) {
     console.error('Error fetching current subscription:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch subscription details',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -100,8 +100,8 @@ router.put('/upgrade', async (req, res) => {
 
     // Check if user has permission to change subscription (admin only)
     if (req.user.role !== 'HR_ADMIN' && req.user.role !== 'CEO') {
-      return res.status(403).json({ 
-        error: 'Only HR admins and CEOs can change subscriptions' 
+      return res.status(403).json({
+        error: 'Only HR admins and CEOs can change subscriptions',
       });
     }
 
@@ -109,10 +109,10 @@ router.put('/upgrade', async (req, res) => {
 
     // Validate upgrade
     const upgradeCheck = accessControlService.canUpgrade(currentPlanId, targetPlanId);
-    
+
     if (!upgradeCheck.allowed) {
-      return res.status(400).json({ 
-        error: upgradeCheck.reason 
+      return res.status(400).json({
+        error: upgradeCheck.reason,
       });
     }
 
@@ -121,14 +121,14 @@ router.put('/upgrade', async (req, res) => {
 
     // Perform upgrade
     organization.subscriptionPlanId = targetPlanId;
-    
+
     // Add to history
     organization.subscriptionHistory = organization.subscriptionHistory || [];
     organization.subscriptionHistory.push({
       planId: targetPlanId,
       changedAt: new Date(),
       changedBy: req.user._id,
-      action: 'upgrade'
+      action: 'upgrade',
     });
 
     await organization.save();
@@ -141,7 +141,7 @@ router.put('/upgrade', async (req, res) => {
         backfillResult = {
           status: 'queued',
           months: backfillMonths,
-          message: `Backfilling ${backfillMonths} months of leadership reports`
+          message: `Backfilling ${backfillMonths} months of leadership reports`,
         };
       }
     }
@@ -152,19 +152,19 @@ router.put('/upgrade', async (req, res) => {
         from: currentPlanId,
         to: targetPlanId,
         featuresGained: changes.gained,
-        featuresLost: changes.lost
+        featuresLost: changes.lost,
       },
       backfill: backfillResult,
       organization: {
         subscriptionPlanId: organization.subscriptionPlanId,
-        customFeatures: organization.customFeatures
-      }
+        customFeatures: organization.customFeatures,
+      },
     });
   } catch (error) {
     console.error('Error upgrading subscription:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to upgrade subscription',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -184,8 +184,8 @@ router.put('/downgrade', async (req, res) => {
 
     // Check permissions
     if (req.user.role !== 'HR_ADMIN' && req.user.role !== 'CEO') {
-      return res.status(403).json({ 
-        error: 'Only HR admins and CEOs can change subscriptions' 
+      return res.status(403).json({
+        error: 'Only HR admins and CEOs can change subscriptions',
       });
     }
 
@@ -193,10 +193,10 @@ router.put('/downgrade', async (req, res) => {
 
     // Validate downgrade
     const downgradeCheck = accessControlService.canDowngrade(currentPlanId, targetPlanId);
-    
+
     if (!downgradeCheck.allowed) {
-      return res.status(400).json({ 
-        error: downgradeCheck.reason 
+      return res.status(400).json({
+        error: downgradeCheck.reason,
       });
     }
 
@@ -205,14 +205,14 @@ router.put('/downgrade', async (req, res) => {
 
     // Perform downgrade
     organization.subscriptionPlanId = targetPlanId;
-    
+
     // Add to history
     organization.subscriptionHistory = organization.subscriptionHistory || [];
     organization.subscriptionHistory.push({
       planId: targetPlanId,
       changedAt: new Date(),
       changedBy: req.user._id,
-      action: 'downgrade'
+      action: 'downgrade',
     });
 
     await organization.save();
@@ -222,7 +222,7 @@ router.put('/downgrade', async (req, res) => {
     if (changes.lost.includes('monthlyReportsLeadership') && archiveLeadershipReports) {
       archivalResult = {
         status: 'archived',
-        message: 'Leadership reports archived (read-only access for HR)'
+        message: 'Leadership reports archived (read-only access for HR)',
       };
       // TODO: Implement actual archival logic
     }
@@ -233,22 +233,20 @@ router.put('/downgrade', async (req, res) => {
         from: currentPlanId,
         to: targetPlanId,
         featuresGained: changes.gained,
-        featuresLost: changes.lost
+        featuresLost: changes.lost,
       },
       archival: archivalResult,
       organization: {
         subscriptionPlanId: organization.subscriptionPlanId,
-        customFeatures: organization.customFeatures
+        customFeatures: organization.customFeatures,
       },
-      warning: changes.lost.length > 0 
-        ? 'Some features will no longer be accessible' 
-        : null
+      warning: changes.lost.length > 0 ? 'Some features will no longer be accessible' : null,
     });
   } catch (error) {
     console.error('Error downgrading subscription:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to downgrade subscription',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -268,35 +266,35 @@ router.put('/custom-features', async (req, res) => {
 
     // Only available for custom plan
     if (organization.subscriptionPlanId !== 'custom') {
-      return res.status(403).json({ 
-        error: 'Custom features only available for Organizational Intelligence plan' 
+      return res.status(403).json({
+        error: 'Custom features only available for Organizational Intelligence plan',
       });
     }
 
     // Only CEO can modify custom features
     if (req.user.role !== 'CEO') {
-      return res.status(403).json({ 
-        error: 'Only CEO can modify custom features' 
+      return res.status(403).json({
+        error: 'Only CEO can modify custom features',
       });
     }
 
     // Update custom features
     organization.customFeatures = {
       ...organization.customFeatures,
-      ...customFeatures
+      ...customFeatures,
     };
 
     await organization.save();
 
     res.json({
       success: true,
-      customFeatures: organization.customFeatures
+      customFeatures: organization.customFeatures,
     });
   } catch (error) {
     console.error('Error updating custom features:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update custom features',
-      message: error.message 
+      message: error.message,
     });
   }
 });
@@ -310,8 +308,8 @@ router.get('/feature-comparison', async (req, res) => {
     const { currentPlan, targetPlan } = req.query;
 
     if (!currentPlan || !targetPlan) {
-      return res.status(400).json({ 
-        error: 'Both currentPlan and targetPlan query parameters required' 
+      return res.status(400).json({
+        error: 'Both currentPlan and targetPlan query parameters required',
       });
     }
 
@@ -322,13 +320,13 @@ router.get('/feature-comparison', async (req, res) => {
     res.json({
       current: currentPlanDef,
       target: targetPlanDef,
-      changes
+      changes,
     });
   } catch (error) {
     console.error('Error comparing features:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to compare features',
-      message: error.message 
+      message: error.message,
     });
   }
 });

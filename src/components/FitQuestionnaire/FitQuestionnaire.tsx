@@ -25,15 +25,12 @@ const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
             Are you seeing people strain early — or only when it's already too late?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            A short self-check for HR leaders who want earlier clarity, without surveys or extra work for teams.
+            A short self-check for HR leaders who want earlier clarity, without surveys or extra
+            work for teams.
           </p>
 
           <Link to="/self-check" onClick={handleClick}>
-            <Button
-              variant="hero"
-              size="xl"
-              className="min-w-[280px]"
-            >
+            <Button variant="hero" size="xl" className="min-w-[280px]">
               Take the 2-minute HR self-check
               <ArrowRight className="w-5 h-5" />
             </Button>

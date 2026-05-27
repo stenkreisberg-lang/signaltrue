@@ -22,7 +22,7 @@ const metricBaselineSchema = new mongoose.Schema(
     median: { type: Number, default: null },
     mad: { type: Number, default: null },
     scaledMad: { type: Number, default: null }, // MAD * 1.4826
-    sampleSize: { type: Number, default: 0 },   // number of daily observations used
+    sampleSize: { type: Number, default: 0 }, // number of daily observations used
   },
   { _id: false }
 );
@@ -51,32 +51,32 @@ const engagementBaselineSchema = new mongoose.Schema(
     // Calendar
     metrics: {
       // Calendar
-      meetingHoursPerPerson:          { type: metricBaselineSchema, default: () => ({}) },
-      attendeeHoursPerPerson:         { type: metricBaselineSchema, default: () => ({}) },
-      recurringMeetingRatio:          { type: metricBaselineSchema, default: () => ({}) },
-      avgAttendeeCount:               { type: metricBaselineSchema, default: () => ({}) },
-      backToBackMeetingCount:         { type: metricBaselineSchema, default: () => ({}) },
-      fragmentedDayRatio:             { type: metricBaselineSchema, default: () => ({}) },
-      focusHoursAvailablePerPerson:   { type: metricBaselineSchema, default: () => ({}) },
-      focusBlocks90mCount:            { type: metricBaselineSchema, default: () => ({}) },
-      manager1to1MinutesPerPerson:    { type: metricBaselineSchema, default: () => ({}) },
-      cancelled1to1Count:             { type: metricBaselineSchema, default: () => ({}) },
-      afterHoursMeetingMinutes:       { type: metricBaselineSchema, default: () => ({}) },
+      meetingHoursPerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      attendeeHoursPerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      recurringMeetingRatio: { type: metricBaselineSchema, default: () => ({}) },
+      avgAttendeeCount: { type: metricBaselineSchema, default: () => ({}) },
+      backToBackMeetingCount: { type: metricBaselineSchema, default: () => ({}) },
+      fragmentedDayRatio: { type: metricBaselineSchema, default: () => ({}) },
+      focusHoursAvailablePerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      focusBlocks90mCount: { type: metricBaselineSchema, default: () => ({}) },
+      manager1to1MinutesPerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      cancelled1to1Count: { type: metricBaselineSchema, default: () => ({}) },
+      afterHoursMeetingMinutes: { type: metricBaselineSchema, default: () => ({}) },
 
       // Messaging
-      messagesSentPerPerson:          { type: metricBaselineSchema, default: () => ({}) },
-      afterHoursMessageRatio:         { type: metricBaselineSchema, default: () => ({}) },
-      medianResponseMinutes:          { type: metricBaselineSchema, default: () => ({}) },
-      p90ResponseMinutes:             { type: metricBaselineSchema, default: () => ({}) },
-      uniqueCollaboratorsPerPerson:   { type: metricBaselineSchema, default: () => ({}) },
-      publicChannelRatio:             { type: metricBaselineSchema, default: () => ({}) },
-      dmRatio:                        { type: metricBaselineSchema, default: () => ({}) },
-      threadParticipationRate:        { type: metricBaselineSchema, default: () => ({}) },
-      reciprocityRatio:               { type: metricBaselineSchema, default: () => ({}) },
+      messagesSentPerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      afterHoursMessageRatio: { type: metricBaselineSchema, default: () => ({}) },
+      medianResponseMinutes: { type: metricBaselineSchema, default: () => ({}) },
+      p90ResponseMinutes: { type: metricBaselineSchema, default: () => ({}) },
+      uniqueCollaboratorsPerPerson: { type: metricBaselineSchema, default: () => ({}) },
+      publicChannelRatio: { type: metricBaselineSchema, default: () => ({}) },
+      dmRatio: { type: metricBaselineSchema, default: () => ({}) },
+      threadParticipationRate: { type: metricBaselineSchema, default: () => ({}) },
+      reciprocityRatio: { type: metricBaselineSchema, default: () => ({}) },
 
       // Email
-      afterHoursEmailRatio:           { type: metricBaselineSchema, default: () => ({}) },
-      medianReplyMinutes:             { type: metricBaselineSchema, default: () => ({}) },
+      afterHoursEmailRatio: { type: metricBaselineSchema, default: () => ({}) },
+      medianReplyMinutes: { type: metricBaselineSchema, default: () => ({}) },
     },
 
     // ── Baseline quality assessment ───────────────────────────────────────────

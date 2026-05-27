@@ -13,18 +13,12 @@ export default function AttritionRiskDashboard({ orgId }) {
   const [individuals, setIndividuals] = useState([]);
   const [filter, setFilter] = useState('all'); // all, critical, high, medium
 
-  useEffect(() => {
-    if (!orgId) return;
-    fetchAttritionRisks();
-  }, [orgId]);
-
   const fetchAttritionRisks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${API_URL}/api/intelligence/attrition/org/${orgId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get(`${API_URL}/api/intelligence/attrition/org/${orgId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setIndividuals(response.data.individuals || []);
       setLoading(false);
     } catch (error) {
@@ -33,7 +27,12 @@ export default function AttritionRiskDashboard({ orgId }) {
     }
   };
 
-  const filteredIndividuals = individuals.filter(ind => {
+  useEffect(() => {
+    if (!orgId) return;
+    fetchAttritionRisks();
+  }, [orgId]);
+
+  const filteredIndividuals = individuals.filter((ind) => {
     if (filter === 'all') return true;
     if (filter === 'critical') return ind.riskScore >= 80;
     if (filter === 'high') return ind.riskScore >= 60 && ind.riskScore < 80;
@@ -41,9 +40,9 @@ export default function AttritionRiskDashboard({ orgId }) {
     return true;
   });
 
-  const criticalCount = individuals.filter(i => i.riskScore >= 80).length;
-  const highCount = individuals.filter(i => i.riskScore >= 60 && i.riskScore < 80).length;
-  const mediumCount = individuals.filter(i => i.riskScore >= 40 && i.riskScore < 60).length;
+  const criticalCount = individuals.filter((i) => i.riskScore >= 80).length;
+  const highCount = individuals.filter((i) => i.riskScore >= 60 && i.riskScore < 80).length;
+  const mediumCount = individuals.filter((i) => i.riskScore >= 40 && i.riskScore < 60).length;
 
   if (loading) {
     return (
@@ -93,25 +92,35 @@ export default function AttritionRiskDashboard({ orgId }) {
       <div style={styles.filters}>
         <button
           onClick={() => setFilter('all')}
-          style={filter === 'all' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'all' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn
+          }
         >
           All ({individuals.length})
         </button>
         <button
           onClick={() => setFilter('critical')}
-          style={filter === 'critical' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'critical'
+              ? { ...styles.filterBtn, ...styles.filterActive }
+              : styles.filterBtn
+          }
         >
           Critical ({criticalCount})
         </button>
         <button
           onClick={() => setFilter('high')}
-          style={filter === 'high' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'high' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn
+          }
         >
           High ({highCount})
         </button>
         <button
           onClick={() => setFilter('medium')}
-          style={filter === 'medium' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn}
+          style={
+            filter === 'medium' ? { ...styles.filterBtn, ...styles.filterActive } : styles.filterBtn
+          }
         >
           Medium ({mediumCount})
         </button>
@@ -126,16 +135,12 @@ export default function AttritionRiskDashboard({ orgId }) {
         ) : (
           filteredIndividuals
             .sort((a, b) => b.riskScore - a.riskScore)
-            .map(individual => (
+            .map((individual) => (
               <div key={individual._id} style={styles.riskCard}>
                 <div style={styles.riskHeader}>
                   <div style={styles.riskInfo}>
-                    <div style={styles.name}>
-                      {individual.userId?.name || 'Unknown User'}
-                    </div>
-                    <div style={styles.team}>
-                      {individual.teamId?.name || 'Unknown Team'}
-                    </div>
+                    <div style={styles.name}>{individual.userId?.name || 'Unknown User'}</div>
+                    <div style={styles.team}>{individual.teamId?.name || 'Unknown Team'}</div>
                   </div>
                   <div style={styles.riskBadge}>
                     <div style={getRiskBadgeStyle(individual.riskScore)}>
@@ -172,12 +177,8 @@ export default function AttritionRiskDashboard({ orgId }) {
                 )}
 
                 <div style={styles.actions}>
-                  <button style={styles.btnPrimary}>
-                    Schedule Retention Conversation
-                  </button>
-                  <button style={styles.btnSecondary}>
-                    View Full Report
-                  </button>
+                  <button style={styles.btnPrimary}>Schedule Retention Conversation</button>
+                  <button style={styles.btnSecondary}>View Full Report</button>
                 </div>
               </div>
             ))
@@ -189,7 +190,7 @@ export default function AttritionRiskDashboard({ orgId }) {
 
 function getRiskBadgeStyle(score) {
   const base = { ...styles.badge };
-  
+
   if (score >= 80) {
     return { ...base, background: '#dc2626', color: 'white' };
   } else if (score >= 60) {

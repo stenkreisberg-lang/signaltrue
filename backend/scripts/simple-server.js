@@ -28,9 +28,12 @@ app.post('/api/auth/login', async (req, res) => {
 
     const encryptedEmail = encryptString(email.toLowerCase());
     console.log(`[SIMPLE SERVER] Finding user with encrypted email: ${encryptedEmail}`);
-    
+
     const user = await User.findOne({ email: encryptedEmail });
-    console.log('[SIMPLE SERVER] User lookup result:', user ? `User found (ID: ${user._id})` : 'User not found');
+    console.log(
+      '[SIMPLE SERVER] User lookup result:',
+      user ? `User found (ID: ${user._id})` : 'User not found'
+    );
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -45,9 +48,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
     console.log(`[SIMPLE SERVER] Login successful for user ID: ${user._id}.`);
-    
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
 
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
     console.error('[SIMPLE SERVER] Login error:', error);
     res.status(500).json({ message: error.message });
@@ -73,7 +75,6 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`[SIMPLE SERVER] 🚀 Now listening on http://localhost:${PORT}`);
     });
-
   } catch (error) {
     console.error('[SIMPLE SERVER] Startup failed:', error);
     process.exit(1);

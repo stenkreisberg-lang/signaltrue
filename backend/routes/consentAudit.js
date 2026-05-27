@@ -17,8 +17,12 @@ router.get('/download', async (req, res) => {
     doc.pipe(res);
     doc.fontSize(18).text('Consent & Access Audit Log', { align: 'center' });
     doc.moveDown();
-    logs.forEach(log => {
-      doc.fontSize(10).text(`User: ${log.user_id} | Action: ${log.action} | Endpoint: ${log.endpoint} | Time: ${log.timestamp.toISOString()} | IP: ${log.ip}`);
+    logs.forEach((log) => {
+      doc
+        .fontSize(10)
+        .text(
+          `User: ${log.user_id} | Action: ${log.action} | Endpoint: ${log.endpoint} | Time: ${log.timestamp.toISOString()} | IP: ${log.ip}`
+        );
     });
     doc.end();
   } catch (err) {

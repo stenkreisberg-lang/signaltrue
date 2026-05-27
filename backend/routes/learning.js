@@ -31,28 +31,22 @@ router.get('/stats/:teamId', authenticateToken, async (req, res) => {
  */
 router.get('/patterns', authenticateToken, async (req, res) => {
   try {
-    const { 
-      industry, 
-      function: teamFunction, 
-      riskType, 
-      outcome,
-      limit = 50 
-    } = req.query;
-    
+    const { industry, function: teamFunction, riskType, outcome, limit = 50 } = req.query;
+
     const query = {};
     if (industry) query['teamProfile.industry'] = industry;
     if (teamFunction) query['teamProfile.function'] = teamFunction;
     if (riskType) query.riskType = riskType;
     if (outcome) query.outcome = outcome;
-    
+
     const patterns = await ActionLearning.find(query)
       .sort({ recordedAt: -1 })
       .limit(parseInt(limit))
       .lean();
-    
+
     res.json({
       total: patterns.length,
-      patterns
+      patterns,
     });
   } catch (error) {
     console.error('Error fetching patterns:', error);
@@ -72,24 +66,24 @@ router.get('/summary', authenticateToken, async (req, res) => {
           _id: null,
           totalLearnings: { $sum: 1 },
           byOutcome: {
-            $push: '$outcome'
+            $push: '$outcome',
           },
           byRisk: {
-            $push: '$riskType'
+            $push: '$riskType',
           },
           byIndustry: {
-            $push: '$teamProfile.industry'
+            $push: '$teamProfile.industry',
           },
           aiGenerated: {
-            $sum: { $cond: [{ $eq: ['$action.generatedBy', 'ai'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ['$action.generatedBy', 'ai'] }, 1, 0] },
           },
           templateGenerated: {
-            $sum: { $cond: [{ $eq: ['$action.generatedBy', 'template'] }, 1, 0] }
-          }
-        }
-      }
+            $sum: { $cond: [{ $eq: ['$action.generatedBy', 'template'] }, 1, 0] },
+          },
+        },
+      },
     ]);
-    
+
     if (summary.length === 0) {
       return res.json({
         totalLearnings: 0,
@@ -97,30 +91,30 @@ router.get('/summary', authenticateToken, async (req, res) => {
         risks: {},
         industries: {},
         aiGenerated: 0,
-        templateGenerated: 0
+        templateGenerated: 0,
       });
     }
-    
+
     const data = summary[0];
-    
+
     // Count outcomes
     const outcomes = data.byOutcome.reduce((acc, outcome) => {
       acc[outcome] = (acc[outcome] || 0) + 1;
       return acc;
     }, {});
-    
+
     // Count risks
     const risks = data.byRisk.reduce((acc, risk) => {
       acc[risk] = (acc[risk] || 0) + 1;
       return acc;
     }, {});
-    
+
     // Count industries
     const industries = data.byIndustry.reduce((acc, industry) => {
       acc[industry] = (acc[industry] || 0) + 1;
       return acc;
     }, {});
-    
+
     res.json({
       totalLearnings: data.totalLearnings,
       outcomes,
@@ -128,9 +122,8 @@ router.get('/summary', authenticateToken, async (req, res) => {
       industries,
       aiGenerated: data.aiGenerated,
       templateGenerated: data.templateGenerated,
-      aiSuccessRate: data.aiGenerated > 0 
-        ? ((outcomes.positive || 0) / data.aiGenerated * 100).toFixed(1)
-        : 0
+      aiSuccessRate:
+        data.aiGenerated > 0 ? (((outcomes.positive || 0) / data.aiGenerated) * 100).toFixed(1) : 0,
     });
   } catch (error) {
     console.error('Error fetching learning summary:', error);
@@ -145,43 +138,43 @@ router.get('/summary', authenticateToken, async (req, res) => {
 router.get('/top-actions', authenticateToken, async (req, res) => {
   try {
     const { industry, function: teamFunction, riskType } = req.query;
-    
+
     const matchQuery = {
       outcome: 'positive',
-      confidence: { $in: ['medium', 'high'] }
+      confidence: { $in: ['medium', 'high'] },
     };
-    
+
     if (industry) matchQuery['teamProfile.industry'] = industry;
     if (teamFunction) matchQuery['teamProfile.function'] = teamFunction;
     if (riskType) matchQuery.riskType = riskType;
-    
+
     const topActions = await ActionLearning.aggregate([
       { $match: matchQuery },
       {
         $group: {
           _id: '$action.title',
           count: { $sum: 1 },
-          avgImpact: { 
-            $avg: { 
-              $arrayElemAt: ['$metricImpact.percentChange', 0] 
-            } 
+          avgImpact: {
+            $avg: {
+              $arrayElemAt: ['$metricImpact.percentChange', 0],
+            },
           },
           industries: { $addToSet: '$teamProfile.industry' },
-          functions: { $addToSet: '$teamProfile.function' }
-        }
+          functions: { $addToSet: '$teamProfile.function' },
+        },
       },
       { $sort: { count: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
-    
+
     res.json({
-      topActions: topActions.map(action => ({
+      topActions: topActions.map((action) => ({
         title: action._id,
         successCount: action.count,
         avgImpact: action.avgImpact ? action.avgImpact.toFixed(1) : 'N/A',
         industries: action.industries,
-        functions: action.functions
-      }))
+        functions: action.functions,
+      })),
     });
   } catch (error) {
     console.error('Error fetching top actions:', error);

@@ -16,19 +16,23 @@ router.get('/dashboard/:teamId', authenticateToken, async (req, res) => {
     // Compute key metrics
     const { bdi, zone, trend, driverWeights, seasonalityFlags, bdiHistory } = team;
     const recentHistory = bdiHistory.slice(0, 4);
-    
+
     // Analyze patterns
     const isImproving = trend > 0;
     const isStagnant = Math.abs(trend) < 3;
     const inDangerZone = zone === 'Surge' || zone === 'Watch';
-    
+
     // Build context for AI
     const context = `
 Team: ${team.name}
 Current BDI: ${bdi} (${zone})
 Trend: ${trend}% (${isImproving ? 'improving' : trend < 0 ? 'declining' : 'stable'})
-Recent History: ${recentHistory.map(h => `${h.bdi} on ${new Date(h.timestamp).toLocaleDateString()}`).join(', ')}
-Top Drivers: ${Object.entries(driverWeights || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} (${v})`).join(', ')}
+Recent History: ${recentHistory.map((h) => `${h.bdi} on ${new Date(h.timestamp).toLocaleDateString()}`).join(', ')}
+Top Drivers: ${Object.entries(driverWeights || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k, v]) => `${k} (${v})`)
+      .join(', ')}
 `;
 
     // Generate AI recommendations
@@ -52,14 +56,14 @@ Keep it under 150 words total.`;
         bdi,
         zone,
         trend,
-        status: isImproving ? 'improving' : trend < 0 ? 'declining' : 'stable'
+        status: isImproving ? 'improving' : trend < 0 ? 'declining' : 'stable',
       },
       topDrivers: Object.entries(driverWeights || {})
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name, weight]) => ({ name, weight })),
       leadershipFocuses: aiRecommendations,
-      alerts: inDangerZone ? [`Team is in ${zone} zone - requires immediate attention`] : []
+      alerts: inDangerZone ? [`Team is in ${zone} zone - requires immediate attention`] : [],
     });
   } catch (err) {
     console.error('Leader dashboard error', err);

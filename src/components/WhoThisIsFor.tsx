@@ -1,4 +1,4 @@
-import { Users, Briefcase, Building2 } from "lucide-react";
+import { Users, Briefcase, Building2 } from 'lucide-react';
 
 /*
  * CATEGORY KING POSITIONING:
@@ -9,18 +9,20 @@ import { Users, Briefcase, Building2 } from "lucide-react";
 const audiences = [
   {
     icon: Briefcase,
-    title: "Founders managing growing teams",
-    description: "Detect when scaling creates invisible coordination problems, before they slow you down.",
+    title: 'Founders managing growing teams',
+    description:
+      'Detect when scaling creates invisible coordination problems, before they slow you down.',
   },
   {
     icon: Users,
-    title: "Managers responsible for performance",
-    description: "Get early warning on team drift and clear actions you can take this week.",
+    title: 'Managers responsible for performance',
+    description: 'Get early warning on team drift and clear actions you can take this week.',
   },
   {
     icon: Building2,
-    title: "HR leaders supporting with evidence",
-    description: "Help managers with behavioral data, not opinion surveys. See patterns without exposing individuals.",
+    title: 'HR leaders supporting with evidence',
+    description:
+      'Help managers with behavioral data, not opinion surveys. See patterns without exposing individuals.',
   },
 ];
 
@@ -41,7 +43,7 @@ const WhoThisIsFor = () => {
         {/* Audience grid */}
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {audiences.map((audience, index) => (
-            <div 
+            <div
               key={index}
               className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
@@ -52,9 +54,7 @@ const WhoThisIsFor = () => {
               <h3 className="text-lg font-display font-semibold mb-2 text-foreground">
                 {audience.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {audience.description}
-              </p>
+              <p className="text-muted-foreground leading-relaxed">{audience.description}</p>
             </div>
           ))}
         </div>

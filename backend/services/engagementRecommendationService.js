@@ -30,10 +30,10 @@
 
 // ── Thresholds ─────────────────────────────────────────────────────────────────
 
-const T_HIGH    = 65;  // primary trigger threshold
-const T_MANAGER = 60;  // manager support gap trigger (lower per spec)
-const T_COLLAB  = 60;  // collaboration withdrawal trigger
-const T_URGENT  = 80;  // marks a recommendation as urgent instead of high
+const T_HIGH = 65; // primary trigger threshold
+const T_MANAGER = 60; // manager support gap trigger (lower per spec)
+const T_COLLAB = 60; // collaboration withdrawal trigger
+const T_URGENT = 80; // marks a recommendation as urgent instead of high
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -110,15 +110,19 @@ function recoveryDebtRecommendations(score) {
       category: 'recovery',
       trigger: `Recovery Debt score ${score} — recovery gap violations detected`,
     },
-    ...(score >= T_URGENT ? [{
-      actionId: 'recovery_manager_check_in',
-      title: 'Manager: Schedule a Team Wellbeing Check-In',
-      description:
-        'The recovery debt level is in the critical range. A structured team conversation about sustainable work pace is recommended before burnout signals emerge.',
-      priority: 'urgent',
-      category: 'recovery',
-      trigger: `Recovery Debt score ${score} — critical threshold exceeded`,
-    }] : []),
+    ...(score >= T_URGENT
+      ? [
+          {
+            actionId: 'recovery_manager_check_in',
+            title: 'Manager: Schedule a Team Wellbeing Check-In',
+            description:
+              'The recovery debt level is in the critical range. A structured team conversation about sustainable work pace is recommended before burnout signals emerge.',
+            priority: 'urgent',
+            category: 'recovery',
+            trigger: `Recovery Debt score ${score} — critical threshold exceeded`,
+          },
+        ]
+      : []),
   ];
 }
 
@@ -210,7 +214,7 @@ function managerSupportGapRecommendations(score) {
       actionId: 'manager_reduce_meeting_load',
       title: 'Reduce Manager Meeting Load to Protect 1:1 Capacity',
       description:
-        'The manager\'s calendar is likely full with coordination meetings, leaving insufficient time for direct reports. Audit the manager\'s meeting obligations and delegate or remove where possible.',
+        "The manager's calendar is likely full with coordination meetings, leaving insufficient time for direct reports. Audit the manager's meeting obligations and delegate or remove where possible.",
       priority: 'high',
       category: 'manager',
       trigger: `Manager Support Gap score ${score} — manager meeting load elevated`,
@@ -266,7 +270,7 @@ function collaborationWithdrawalRecommendations(score) {
 
 function compoundRules(subscores, patterns) {
   const actions = [];
-  const patternTypes = new Set(patterns.map(p => p.patternType));
+  const patternTypes = new Set(patterns.map((p) => p.patternType));
 
   // Hidden Strain compound: recovery + responsiveness without visible meeting load
   if (patternTypes.has('hidden_strain')) {
@@ -290,7 +294,8 @@ function compoundRules(subscores, patterns) {
         'Quiet Withdrawal is an early disengagement signal. A brief, anonymous pulse survey or structured stay conversation can identify whether this reflects workload, team dynamics, or external factors.',
       priority: 'high',
       category: 'collaboration',
-      trigger: 'Quiet Withdrawal pattern detected — collaborative disengagement without overt strain signals',
+      trigger:
+        'Quiet Withdrawal pattern detected — collaborative disengagement without overt strain signals',
     });
   }
 
@@ -321,10 +326,7 @@ function compoundRules(subscores, patterns) {
   }
 
   // Manager Bottleneck: high coordination friction + high manager support gap
-  if (
-    subscores.coordinationFriction >= T_HIGH &&
-    subscores.managerSupportGap >= T_HIGH
-  ) {
+  if (subscores.coordinationFriction >= T_HIGH && subscores.managerSupportGap >= T_HIGH) {
     actions.push({
       actionId: 'compound_manager_bottleneck_delegation',
       title: 'Delegate Coordination Responsibilities Away from Manager',

@@ -1,10 +1,10 @@
 import express from 'express';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
-import { 
-  syncEmployeesFromSlack, 
+import {
+  syncEmployeesFromSlack,
   syncEmployeesFromGoogle,
   syncEmployeesFromMicrosoft,
-  getSyncStatus 
+  getSyncStatus,
 } from '../services/employeeSyncService.js';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
@@ -16,13 +16,14 @@ const router = express.Router();
  * Get sync status for the organization
  * Available to: hr_admin, admin, master_admin
  */
-router.get('/status', 
-  authenticateToken, 
+router.get(
+  '/status',
+  authenticateToken,
   requireRoles(['hr_admin', 'admin', 'master_admin']),
   async (req, res) => {
     try {
       const orgId = req.user.orgId;
-      
+
       if (!orgId) {
         return res.status(400).json({ message: 'User not associated with an organization' });
       }
@@ -41,13 +42,14 @@ router.get('/status',
  * Manually trigger Slack employee sync
  * Available to: hr_admin, it_admin, admin, master_admin
  */
-router.post('/slack', 
-  authenticateToken, 
+router.post(
+  '/slack',
+  authenticateToken,
   requireRoles(['hr_admin', 'it_admin', 'admin', 'master_admin']),
   async (req, res) => {
     try {
       const orgId = req.user.orgId;
-      
+
       if (!orgId) {
         return res.status(400).json({ message: 'User not associated with an organization' });
       }
@@ -56,9 +58,9 @@ router.post('/slack',
       res.json(result);
     } catch (error) {
       console.error('Slack sync error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        message: error.message 
+        message: error.message,
       });
     }
   }
@@ -69,13 +71,14 @@ router.post('/slack',
  * Manually trigger Google Workspace employee sync
  * Available to: hr_admin, it_admin, admin, master_admin
  */
-router.post('/google', 
-  authenticateToken, 
+router.post(
+  '/google',
+  authenticateToken,
   requireRoles(['hr_admin', 'it_admin', 'admin', 'master_admin']),
   async (req, res) => {
     try {
       const orgId = req.user.orgId;
-      
+
       if (!orgId) {
         return res.status(400).json({ message: 'User not associated with an organization' });
       }
@@ -84,9 +87,9 @@ router.post('/google',
       res.json(result);
     } catch (error) {
       console.error('Google sync error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        message: error.message 
+        message: error.message,
       });
     }
   }
@@ -97,13 +100,14 @@ router.post('/google',
  * Manually trigger Microsoft 365 / Entra ID employee sync
  * Available to: hr_admin, it_admin, admin, master_admin
  */
-router.post('/microsoft', 
-  authenticateToken, 
+router.post(
+  '/microsoft',
+  authenticateToken,
   requireRoles(['hr_admin', 'it_admin', 'admin', 'master_admin']),
   async (req, res) => {
     try {
       const orgId = req.user.orgId;
-      
+
       if (!orgId) {
         return res.status(400).json({ message: 'User not associated with an organization' });
       }
@@ -112,9 +116,9 @@ router.post('/microsoft',
       res.json(result);
     } catch (error) {
       console.error('Microsoft sync error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        message: error.message 
+        message: error.message,
       });
     }
   }
@@ -126,7 +130,8 @@ router.post('/microsoft',
  * Uses org.domain to determine which users belong.
  * Available to: hr_admin, admin, master_admin
  */
-router.post('/cleanup-domain',
+router.post(
+  '/cleanup-domain',
   authenticateToken,
   requireRoles(['hr_admin', 'admin', 'master_admin']),
   async (req, res) => {
@@ -144,7 +149,7 @@ router.post('/cleanup-domain',
       const orgDomain = (org.domain || '').toLowerCase().replace(/^@/, '');
       if (!orgDomain) {
         return res.status(400).json({
-          message: 'Organization domain not set. Please set the org domain first.'
+          message: 'Organization domain not set. Please set the org domain first.',
         });
       }
 
@@ -154,7 +159,7 @@ router.post('/cleanup-domain',
         orgId,
         source: 'microsoft',
         email: { $not: new RegExp(`@${orgDomain.replace('.', '\\.')}$`, 'i') },
-        _id: { $ne: req.user._id }
+        _id: { $ne: req.user._id },
       });
 
       const count = nonDomainUsers.length;
@@ -163,16 +168,18 @@ router.post('/cleanup-domain',
       }
 
       // Delete them
-      const ids = nonDomainUsers.map(u => u._id);
+      const ids = nonDomainUsers.map((u) => u._id);
       await User.deleteMany({ _id: { $in: ids } });
 
-      console.log(`[EmployeeSync] Cleanup: removed ${count} non-@${orgDomain} users from org ${orgId}`);
+      console.log(
+        `[EmployeeSync] Cleanup: removed ${count} non-@${orgDomain} users from org ${orgId}`
+      );
 
       res.json({
         success: true,
         removed: count,
         domain: orgDomain,
-        message: `Removed ${count} employees not matching @${orgDomain}`
+        message: `Removed ${count} employees not matching @${orgDomain}`,
       });
     } catch (error) {
       console.error('Domain cleanup error:', error);
@@ -220,21 +227,23 @@ router.post('/admin/set-domain-and-cleanup', async (req, res) => {
     const nonDomainUsers = await User.find({
       orgId: org._id,
       source: 'microsoft',
-      email: { $not: domainRegex }
+      email: { $not: domainRegex },
     });
 
     const count = nonDomainUsers.length;
-    const removedEmails = nonDomainUsers.map(u => u.email);
+    const removedEmails = nonDomainUsers.map((u) => u.email);
 
     if (count > 0) {
-      const ids = nonDomainUsers.map(u => u._id);
+      const ids = nonDomainUsers.map((u) => u._id);
       await User.deleteMany({ _id: { $in: ids } });
     }
 
     // Count remaining users
     const remaining = await User.countDocuments({ orgId: org._id });
 
-    console.log(`[AdminCleanup] Removed ${count} non-@${cleanDomain} users, ${remaining} remaining`);
+    console.log(
+      `[AdminCleanup] Removed ${count} non-@${cleanDomain} users, ${remaining} remaining`
+    );
 
     res.json({
       success: true,
@@ -244,7 +253,7 @@ router.post('/admin/set-domain-and-cleanup', async (req, res) => {
       removed: count,
       removedEmails,
       remaining,
-      message: `Set domain @${cleanDomain}. Removed ${count} non-matching users. ${remaining} employees remain.`
+      message: `Set domain @${cleanDomain}. Removed ${count} non-matching users. ${remaining} employees remain.`,
     });
   } catch (error) {
     console.error('Admin cleanup error:', error);

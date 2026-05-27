@@ -1,9 +1,9 @@
 import express from 'express';
-import { 
-  generateWeeklyReportForTeam, 
-  generateWeeklyReportsForOrg, 
+import {
+  generateWeeklyReportForTeam,
+  generateWeeklyReportsForOrg,
   getLatestWeeklyReport,
-  getWeeklyReportHistory 
+  getWeeklyReportHistory,
 } from '../services/weeklyReportService.js';
 import {
   generateMonthlyReportForOrg,
@@ -23,7 +23,10 @@ import {
   getSemiAnnualReportHistory,
 } from '../services/semiAnnualReportService.js';
 import { sendWeeklyBrief } from '../services/weeklyBriefService.js';
-import { getEmailScheduleStatus, manualTriggerWeeklyEmails } from '../services/weeklyEmailScheduler.js';
+import {
+  getEmailScheduleStatus,
+  manualTriggerWeeklyEmails,
+} from '../services/weeklyEmailScheduler.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkRole } from '../middleware/checkRole.js';
 
@@ -42,24 +45,23 @@ const router = express.Router();
 router.get('/weekly/team/:teamId/latest', authenticateToken, async (req, res) => {
   try {
     const { teamId } = req.params;
-    
+
     // TODO: Add authorization check - ensure user has access to this team
-    
+
     const report = await getLatestWeeklyReport(teamId);
-    
+
     if (!report) {
-      return res.status(404).json({ 
-        message: 'No weekly report found for this team' 
+      return res.status(404).json({
+        message: 'No weekly report found for this team',
       });
     }
-    
+
     res.json(report);
-    
   } catch (error) {
     console.error('Error fetching latest weekly report:', error);
-    res.status(500).json({ 
-      message: 'Error fetching weekly report', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching weekly report',
+      error: error.message,
     });
   }
 });
@@ -73,22 +75,21 @@ router.get('/weekly/team/:teamId/history', authenticateToken, async (req, res) =
   try {
     const { teamId } = req.params;
     const limit = parseInt(req.query.limit) || 12;
-    
+
     // TODO: Add authorization check
-    
+
     const reports = await getWeeklyReportHistory(teamId, limit);
-    
+
     res.json({
       teamId,
       count: reports.length,
-      reports
+      reports,
     });
-    
   } catch (error) {
     console.error('Error fetching weekly report history:', error);
-    res.status(500).json({ 
-      message: 'Error fetching weekly report history', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching weekly report history',
+      error: error.message,
     });
   }
 });
@@ -98,62 +99,70 @@ router.get('/weekly/team/:teamId/history', authenticateToken, async (req, res) =
  * Manually trigger weekly report generation for a team
  * Access: HR/Admin only
  */
-router.post('/weekly/team/:teamId/generate', authenticateToken, checkRole(['hr_admin', 'admin', 'master_admin']), async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    
-    const report = await generateWeeklyReportForTeam(teamId);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        message: 'Could not generate weekly report - no TeamState data available' 
+router.post(
+  '/weekly/team/:teamId/generate',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+
+      const report = await generateWeeklyReportForTeam(teamId);
+
+      if (!report) {
+        return res.status(404).json({
+          message: 'Could not generate weekly report - no TeamState data available',
+        });
+      }
+
+      res.json({
+        message: 'Weekly report generated successfully',
+        report,
+      });
+    } catch (error) {
+      console.error('Error generating weekly report:', error);
+      res.status(500).json({
+        message: 'Error generating weekly report',
+        error: error.message,
       });
     }
-    
-    res.json({
-      message: 'Weekly report generated successfully',
-      report
-    });
-    
-  } catch (error) {
-    console.error('Error generating weekly report:', error);
-    res.status(500).json({ 
-      message: 'Error generating weekly report', 
-      error: error.message 
-    });
   }
-});
+);
 
 /**
  * POST /api/reports/weekly/org/:orgId/generate-all
  * Generate weekly reports for all teams in organization
  * Access: HR/Admin only
  */
-router.post('/weekly/org/:orgId/generate-all', authenticateToken, checkRole(['hr_admin', 'admin', 'master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const results = await generateWeeklyReportsForOrg(orgId);
-    
-    res.json({
-      message: 'Weekly reports generated for all teams',
-      summary: {
-        actionRequired: results.success,
-        noActionNeeded: results.noAction,
-        failed: results.failed,
-        total: results.success + results.noAction + results.failed
-      },
-      reports: results.reports
-    });
-    
-  } catch (error) {
-    console.error('Error generating weekly reports:', error);
-    res.status(500).json({ 
-      message: 'Error generating weekly reports', 
-      error: error.message 
-    });
+router.post(
+  '/weekly/org/:orgId/generate-all',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const results = await generateWeeklyReportsForOrg(orgId);
+
+      res.json({
+        message: 'Weekly reports generated for all teams',
+        summary: {
+          actionRequired: results.success,
+          noActionNeeded: results.noAction,
+          failed: results.failed,
+          total: results.success + results.noAction + results.failed,
+        },
+        reports: results.reports,
+      });
+    } catch (error) {
+      console.error('Error generating weekly reports:', error);
+      res.status(500).json({
+        message: 'Error generating weekly reports',
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 /**
  * MONTHLY REPORTS
@@ -165,218 +174,250 @@ router.post('/weekly/org/:orgId/generate-all', authenticateToken, checkRole(['hr
  * Get latest monthly report (full version)
  * Access: HR/Admin only
  */
-router.get('/monthly/org/:orgId/latest', authenticateToken, checkRole(['hr_admin', 'admin', 'master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const report = await getLatestMonthlyReport(orgId);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        message: 'No monthly report found for this organization' 
+router.get(
+  '/monthly/org/:orgId/latest',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const report = await getLatestMonthlyReport(orgId);
+
+      if (!report) {
+        return res.status(404).json({
+          message: 'No monthly report found for this organization',
+        });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching latest monthly report:', error);
+      res.status(500).json({
+        message: 'Error fetching monthly report',
+        error: error.message,
       });
     }
-    
-    res.json(report);
-    
-  } catch (error) {
-    console.error('Error fetching latest monthly report:', error);
-    res.status(500).json({ 
-      message: 'Error fetching monthly report', 
-      error: error.message 
-    });
   }
-});
+);
 
 /**
  * GET /api/reports/monthly/org/:orgId/history
  * Get monthly report history
  * Access: HR/Admin only
  */
-router.get('/monthly/org/:orgId/history', authenticateToken, checkRole(['hr_admin', 'admin', 'master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const limit = parseInt(req.query.limit) || 12;
-    
-    const reports = await getMonthlyReportHistory(orgId, limit);
-    
-    res.json({
-      orgId,
-      count: reports.length,
-      reports
-    });
-    
-  } catch (error) {
-    console.error('Error fetching monthly report history:', error);
-    res.status(500).json({ 
-      message: 'Error fetching monthly report history', 
-      error: error.message 
-    });
+router.get(
+  '/monthly/org/:orgId/history',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const limit = parseInt(req.query.limit) || 12;
+
+      const reports = await getMonthlyReportHistory(orgId, limit);
+
+      res.json({
+        orgId,
+        count: reports.length,
+        reports,
+      });
+    } catch (error) {
+      console.error('Error fetching monthly report history:', error);
+      res.status(500).json({
+        message: 'Error fetching monthly report history',
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 /**
  * GET /api/reports/monthly/org/:orgId/leadership
  * Get leadership view of monthly report (filtered)
  * Access: CEO/Leadership roles only
- * 
+ *
  * Filters out:
  * - Individual names
  * - Coaching language
  * - Tactical action lists
  */
-router.get('/monthly/org/:orgId/leadership', authenticateToken, checkRole(['ceo', 'leadership', 'master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const leadershipView = await getLeadershipView(orgId);
-    
-    if (!leadershipView) {
-      return res.status(404).json({ 
-        message: 'No monthly report found for this organization' 
+router.get(
+  '/monthly/org/:orgId/leadership',
+  authenticateToken,
+  checkRole(['ceo', 'leadership', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const leadershipView = await getLeadershipView(orgId);
+
+      if (!leadershipView) {
+        return res.status(404).json({
+          message: 'No monthly report found for this organization',
+        });
+      }
+
+      res.json({
+        reportType: 'leadership_view',
+        disclaimer: 'This view excludes individual-level details and tactical recommendations',
+        data: leadershipView,
+      });
+    } catch (error) {
+      console.error('Error fetching leadership view:', error);
+      res.status(500).json({
+        message: 'Error fetching leadership view',
+        error: error.message,
       });
     }
-    
-    res.json({
-      reportType: 'leadership_view',
-      disclaimer: 'This view excludes individual-level details and tactical recommendations',
-      data: leadershipView
-    });
-    
-  } catch (error) {
-    console.error('Error fetching leadership view:', error);
-    res.status(500).json({ 
-      message: 'Error fetching leadership view', 
-      error: error.message 
-    });
   }
-});
+);
 
 /**
  * POST /api/reports/monthly/org/:orgId/generate
  * Manually trigger monthly report generation
  * Access: HR/Admin only
  */
-router.post('/monthly/org/:orgId/generate', authenticateToken, checkRole(['hr_admin', 'admin', 'master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    
-    const report = await generateMonthlyReportForOrg(orgId);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        message: 'Could not generate monthly report - insufficient data' 
+router.post(
+  '/monthly/org/:orgId/generate',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+
+      const report = await generateMonthlyReportForOrg(orgId);
+
+      if (!report) {
+        return res.status(404).json({
+          message: 'Could not generate monthly report - insufficient data',
+        });
+      }
+
+      res.json({
+        message: 'Monthly report generated successfully',
+        summary: {
+          avgBDI: report.orgHealth.avgBDI,
+          trend: report.orgHealth.bdiTrend,
+          teamsAtRisk: report.orgHealth.teamsAtRisk,
+          persistentRisks: report.persistentRisks.length,
+          criticalAttritionRisk: report.retentionExposure.criticalIndividualsCount,
+          trajectory: report.aiSummary.organizationalTrajectory,
+        },
+        report,
+      });
+    } catch (error) {
+      console.error('Error generating monthly report:', error);
+      res.status(500).json({
+        message: 'Error generating monthly report',
+        error: error.message,
       });
     }
-    
-    res.json({
-      message: 'Monthly report generated successfully',
-      summary: {
-        avgBDI: report.orgHealth.avgBDI,
-        trend: report.orgHealth.bdiTrend,
-        teamsAtRisk: report.orgHealth.teamsAtRisk,
-        persistentRisks: report.persistentRisks.length,
-        criticalAttritionRisk: report.retentionExposure.criticalIndividualsCount,
-        trajectory: report.aiSummary.organizationalTrajectory
-      },
-      report
-    });
-    
-  } catch (error) {
-    console.error('Error generating monthly report:', error);
-    res.status(500).json({ 
-      message: 'Error generating monthly report', 
-      error: error.message 
-    });
   }
-});
+);
 
 /**
  * POST /api/reports/send-weekly-email
  * Generate and send weekly reports via email using Resend
  * Access: Master Admin only
  */
-router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin']), async (req, res) => {
-  try {
-    const { orgId } = req.user;
-    const { recipientEmail } = req.body;
-    
-    // Check Resend configuration
-    if (!process.env.RESEND_API_KEY) {
-      return res.status(500).json({ 
-        message: 'Email not configured. Set RESEND_API_KEY in environment.' 
+router.post(
+  '/send-weekly-email',
+  authenticateToken,
+  checkRole(['master_admin']),
+  async (req, res) => {
+    try {
+      const { orgId } = req.user;
+      const { recipientEmail } = req.body;
+
+      // Check Resend configuration
+      if (!process.env.RESEND_API_KEY) {
+        return res.status(500).json({
+          message: 'Email not configured. Set RESEND_API_KEY in environment.',
+        });
+      }
+
+      // Import Resend
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      // Get org and team data
+      const mongoose = await import('mongoose');
+      const Organization = mongoose.default.model('Organization');
+      const org = await Organization.findById(orgId);
+      if (!org) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+
+      const Team = mongoose.default.model('Team');
+      const teams = await Team.find({ orgId });
+
+      const TeamState = mongoose.default.model('TeamState');
+
+      const email = recipientEmail || org.settings?.reportEmail || req.user.email;
+      const results = [];
+
+      for (const team of teams) {
+        const teamStates = await TeamState.find({ teamId: team._id })
+          .sort({ weekEnd: 1 })
+          .limit(10);
+
+        if (teamStates.length === 0) continue;
+
+        for (let i = 0; i < teamStates.length; i++) {
+          const state = teamStates[i];
+          const prevState = i > 0 ? teamStates[i - 1] : null;
+          const weekNum = i + 1;
+          const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          const bdiChange = prevState ? state.bdi - prevState.bdi : 0;
+          const bdiChangeText = bdiChange > 0 ? `+${bdiChange}` : bdiChange.toString();
+          const bdiTrend = bdiChange >= 0 ? '↑' : '↓';
+          const zoneColor =
+            state.zone === 'Stable' ? '#22c55e' : state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
+
+          const html = generateReportHTML(
+            team,
+            state,
+            prevState,
+            weekNum,
+            weekEndDate,
+            bdiChange,
+            bdiChangeText,
+            bdiTrend,
+            zoneColor
+          );
+
+          // Send via Resend
+          await resend.emails.send({
+            from: 'SignalTrue <reports@signaltrue.ai>',
+            to: email,
+            subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team.name} Team)`,
+            html,
+          });
+
+          results.push({ team: team.name, week: weekNum, sent: true });
+        }
+      }
+
+      res.json({
+        message: 'Reports sent successfully',
+        recipientEmail: email,
+        reports: results,
+      });
+    } catch (error) {
+      console.error('Error sending weekly reports:', error);
+      res.status(500).json({
+        message: 'Error sending reports',
+        error: error.message,
       });
     }
-    
-    // Import Resend
-    const { Resend } = await import('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    // Get org and team data
-    const mongoose = await import('mongoose');
-    const Organization = mongoose.default.model('Organization');
-    const org = await Organization.findById(orgId);
-    if (!org) {
-      return res.status(404).json({ message: 'Organization not found' });
-    }
-    
-    const Team = mongoose.default.model('Team');
-    const teams = await Team.find({ orgId });
-    
-    const TeamState = mongoose.default.model('TeamState');
-    
-    const email = recipientEmail || org.settings?.reportEmail || req.user.email;
-    const results = [];
-    
-    for (const team of teams) {
-      const teamStates = await TeamState.find({ teamId: team._id })
-        .sort({ weekEnd: 1 })
-        .limit(10);
-      
-      if (teamStates.length === 0) continue;
-      
-      for (let i = 0; i < teamStates.length; i++) {
-        const state = teamStates[i];
-        const prevState = i > 0 ? teamStates[i - 1] : null;
-        const weekNum = i + 1;
-        const weekEndDate = new Date(state.weekEnd).toLocaleDateString('en-US', { 
-          year: 'numeric', month: 'long', day: 'numeric' 
-        });
-        
-        const bdiChange = prevState ? state.bdi - prevState.bdi : 0;
-        const bdiChangeText = bdiChange > 0 ? `+${bdiChange}` : bdiChange.toString();
-        const bdiTrend = bdiChange >= 0 ? '↑' : '↓';
-        const zoneColor = state.zone === 'Stable' ? '#22c55e' : 
-                          state.zone === 'Watch' ? '#f59e0b' : '#ef4444';
-        
-        const html = generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor);
-        
-        // Send via Resend
-        await resend.emails.send({
-          from: 'SignalTrue <reports@signaltrue.ai>',
-          to: email,
-          subject: `📊 SignalTrue Weekly Report - Week ${weekNum} (${team.name} Team)`,
-          html
-        });
-        
-        results.push({ team: team.name, week: weekNum, sent: true });
-      }
-    }
-    
-    res.json({ 
-      message: 'Reports sent successfully',
-      recipientEmail: email,
-      reports: results
-    });
-    
-  } catch (error) {
-    console.error('Error sending weekly reports:', error);
-    res.status(500).json({ 
-      message: 'Error sending reports', 
-      error: error.message 
-    });
   }
-});
+);
 
 /**
  * POST /api/reports/trigger-weekly-email
@@ -388,10 +429,14 @@ router.post('/send-weekly-email', authenticateToken, checkRole(['master_admin'])
  */
 router.post('/trigger-weekly-email', async (req, res) => {
   try {
-    const { secret, orgId } = req.body;
+    const { orgId } = req.body;
+    const secret = req.body.secret || req.headers['x-report-secret'];
 
     // Verify secret key
-    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET;
+    if (!expectedSecret) {
+      return res.status(503).json({ message: 'Report trigger is not configured' });
+    }
     if (secret !== expectedSecret) {
       return res.status(401).json({ message: 'Invalid secret key' });
     }
@@ -420,16 +465,18 @@ router.post('/trigger-weekly-email', async (req, res) => {
  */
 router.post('/trigger-monthly-email', async (req, res) => {
   try {
-    const { secret, orgId, previewOnly } = req.body;
-    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    const { orgId, previewOnly } = req.body;
+    const secret = req.body.secret || req.headers['x-report-secret'];
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET;
+    if (!expectedSecret) {
+      return res.status(503).json({ message: 'Report trigger is not configured' });
+    }
     if (secret !== expectedSecret) {
       return res.status(401).json({ message: 'Invalid secret key' });
     }
 
     const Organization = (await import('../models/organizationModel.js')).default;
-    const orgs = orgId
-      ? [await Organization.findById(orgId)]
-      : await Organization.find({});
+    const orgs = orgId ? [await Organization.findById(orgId)] : await Organization.find({});
 
     const results = [];
     for (const org of orgs) {
@@ -438,7 +485,10 @@ router.post('/trigger-monthly-email', async (req, res) => {
         const report = await generateMonthlyReportForOrg(org._id);
         if (report) {
           await sendMonthlyReportEmail(org._id, report, { previewOnly: !!previewOnly });
-          results.push({ org: org.name, status: previewOnly ? 'preview sent to superadmin only' : 'sent' });
+          results.push({
+            org: org.name,
+            status: previewOnly ? 'preview sent to superadmin only' : 'sent',
+          });
         } else {
           results.push({ org: org.name, status: 'skipped — no data' });
         }
@@ -463,7 +513,10 @@ router.post('/trigger-monthly-email', async (req, res) => {
 router.get('/email-status', async (req, res) => {
   try {
     const secret = req.query.secret || req.headers['x-report-secret'];
-    const expectedSecret = process.env.REPORT_TRIGGER_SECRET || 'signaltrue-reports-2026';
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET;
+    if (!expectedSecret) {
+      return res.status(503).json({ message: 'Report trigger is not configured' });
+    }
     if (secret !== expectedSecret) {
       return res.status(401).json({ message: 'Invalid secret key' });
     }
@@ -490,7 +543,8 @@ router.get('/email-status', async (req, res) => {
 router.get('/quarterly/latest', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    if (!orgId)
+      return res.status(400).json({ message: 'No organisation associated with this account' });
     const report = await getLatestQuarterlyReport(orgId);
     if (!report) return res.status(404).json({ message: 'No quarterly report found' });
     res.json({ report });
@@ -508,13 +562,16 @@ router.get('/quarterly/latest', authenticateToken, async (req, res) => {
 router.get('/quarterly/history', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    if (!orgId)
+      return res.status(400).json({ message: 'No organisation associated with this account' });
     const limit = parseInt(req.query.limit) || 8;
     const reports = await getQuarterlyReportHistory(orgId, Math.min(limit, 16));
     res.json({ reports });
   } catch (error) {
     console.error('[Routes] Error fetching quarterly report history:', error);
-    res.status(500).json({ message: 'Error fetching quarterly report history', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching quarterly report history', error: error.message });
   }
 });
 
@@ -524,23 +581,30 @@ router.get('/quarterly/history', authenticateToken, async (req, res) => {
  * Access: HR/Admin only
  * Body: { force: true } to regenerate an existing report
  */
-router.post('/quarterly/generate', authenticateToken, checkRole(['master_admin', 'hr_admin']), async (req, res) => {
-  try {
-    const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
-    const { force, referenceDate } = req.body;
-    const report = await generateQuarterlyReportForOrg(orgId, { force, referenceDate });
-    if (!report) {
-      return res.status(422).json({
-        message: 'Not enough monthly report data to generate a quarterly report. At least 2 months of data are required.',
-      });
+router.post(
+  '/quarterly/generate',
+  authenticateToken,
+  checkRole(['master_admin', 'hr_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      if (!orgId)
+        return res.status(400).json({ message: 'No organisation associated with this account' });
+      const { force, referenceDate } = req.body;
+      const report = await generateQuarterlyReportForOrg(orgId, { force, referenceDate });
+      if (!report) {
+        return res.status(422).json({
+          message:
+            'Not enough monthly report data to generate a quarterly report. At least 2 months of data are required.',
+        });
+      }
+      res.json({ message: 'Quarterly report generated successfully', report });
+    } catch (error) {
+      console.error('[Routes] Error generating quarterly report:', error);
+      res.status(500).json({ message: 'Error generating quarterly report', error: error.message });
     }
-    res.json({ message: 'Quarterly report generated successfully', report });
-  } catch (error) {
-    console.error('[Routes] Error generating quarterly report:', error);
-    res.status(500).json({ message: 'Error generating quarterly report', error: error.message });
   }
-});
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SEMI-ANNUAL REPORTS
@@ -556,7 +620,8 @@ router.post('/quarterly/generate', authenticateToken, checkRole(['master_admin',
 router.get('/semiannual/latest', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    if (!orgId)
+      return res.status(400).json({ message: 'No organisation associated with this account' });
     const report = await getLatestSemiAnnualReport(orgId);
     if (!report) return res.status(404).json({ message: 'No semi-annual report found' });
     res.json({ report });
@@ -574,13 +639,16 @@ router.get('/semiannual/latest', authenticateToken, async (req, res) => {
 router.get('/semiannual/history', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
+    if (!orgId)
+      return res.status(400).json({ message: 'No organisation associated with this account' });
     const limit = parseInt(req.query.limit) || 4;
     const reports = await getSemiAnnualReportHistory(orgId, Math.min(limit, 8));
     res.json({ reports });
   } catch (error) {
     console.error('[Routes] Error fetching semi-annual report history:', error);
-    res.status(500).json({ message: 'Error fetching semi-annual report history', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching semi-annual report history', error: error.message });
   }
 });
 
@@ -590,25 +658,44 @@ router.get('/semiannual/history', authenticateToken, async (req, res) => {
  * Access: HR/Admin only
  * Body: { force: true } to regenerate an existing report
  */
-router.post('/semiannual/generate', authenticateToken, checkRole(['master_admin', 'hr_admin']), async (req, res) => {
-  try {
-    const orgId = req.user.orgId;
-    if (!orgId) return res.status(400).json({ message: 'No organisation associated with this account' });
-    const { force, referenceDate } = req.body;
-    const report = await generateSemiAnnualReportForOrg(orgId, { force, referenceDate });
-    if (!report) {
-      return res.status(422).json({
-        message: 'Not enough data to generate a semi-annual report. At least 4 months of data are required.',
-      });
+router.post(
+  '/semiannual/generate',
+  authenticateToken,
+  checkRole(['master_admin', 'hr_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      if (!orgId)
+        return res.status(400).json({ message: 'No organisation associated with this account' });
+      const { force, referenceDate } = req.body;
+      const report = await generateSemiAnnualReportForOrg(orgId, { force, referenceDate });
+      if (!report) {
+        return res.status(422).json({
+          message:
+            'Not enough data to generate a semi-annual report. At least 4 months of data are required.',
+        });
+      }
+      res.json({ message: 'Semi-annual report generated successfully', report });
+    } catch (error) {
+      console.error('[Routes] Error generating semi-annual report:', error);
+      res
+        .status(500)
+        .json({ message: 'Error generating semi-annual report', error: error.message });
     }
-    res.json({ message: 'Semi-annual report generated successfully', report });
-  } catch (error) {
-    console.error('[Routes] Error generating semi-annual report:', error);
-    res.status(500).json({ message: 'Error generating semi-annual report', error: error.message });
   }
-});
+);
 
-function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiChange, bdiChangeText, bdiTrend, zoneColor) {
+function generateReportHTML(
+  team,
+  state,
+  prevState,
+  weekNum,
+  weekEndDate,
+  bdiChange,
+  bdiChangeText,
+  bdiTrend,
+  zoneColor
+) {
   return `
 <!DOCTYPE html>
 <html>
@@ -660,11 +747,15 @@ function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiCha
         <div class="metric"><div class="metric-value">${state.signals?.workload?.score || '-'}</div><div class="metric-label">Workload</div></div>
         <div class="metric"><div class="metric-value">${state.signals?.collaboration?.score || '-'}</div><div class="metric-label">Collaboration</div></div>
       </div>
-      ${state.insights?.length ? `
+      ${
+        state.insights?.length
+          ? `
       <div class="insights">
         <h3>💡 Key Insights</h3>
-        <ul>${state.insights.map(i => `<li>${i}</li>`).join('')}</ul>
-      </div>` : ''}
+        <ul>${state.insights.map((i) => `<li>${i}</li>`).join('')}</ul>
+      </div>`
+          : ''
+      }
     </div>
     <div class="footer">
       <p>Generated by SignalTrue • Behavioral Intelligence for HR</p>
@@ -676,73 +767,119 @@ function generateReportHTML(team, state, prevState, weekNum, weekEndDate, bdiCha
 }
 
 // New version with modern SignalTrue design
-function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiValue, bdiChange, bdiChangeText, bdiTrend, zoneValue, zoneColor) {
+function generateReportHTMLv2(
+  team,
+  state,
+  prevState,
+  weekNum,
+  weekEndDate,
+  bdiValue,
+  bdiChange,
+  bdiChangeText,
+  bdiTrend,
+  zoneValue,
+  zoneColor
+) {
   const commScore = state.signals?.communication?.score ?? 0;
   const engScore = state.signals?.engagement?.score ?? 0;
   const workScore = state.signals?.workload?.score ?? 0;
   const collabScore = state.signals?.collaboration?.score ?? 0;
   const insights = state.insights || [];
-  
+
   // Get metrics data
   const metrics = state.metrics || {};
   const messageCount = metrics.messageCount ?? '-';
   const meetingHours = metrics.meetingHours ?? '-';
   const afterHours = metrics.afterHoursActivity ?? '-';
   const responseTime = metrics.responseTime ?? '-';
-  
+
   // Previous week metrics for comparison
   const prevMetrics = prevState?.metrics || {};
-  const msgChange = prevMetrics.messageCount ? Math.round(((messageCount - prevMetrics.messageCount) / prevMetrics.messageCount) * 100) : null;
-  const mtgChange = prevMetrics.meetingHours ? Math.round(((meetingHours - prevMetrics.meetingHours) / prevMetrics.meetingHours) * 100) : null;
-  const ahChange = prevMetrics.afterHoursActivity ? Math.round(((afterHours - prevMetrics.afterHoursActivity) / prevMetrics.afterHoursActivity) * 100) : null;
-  const rtChange = prevMetrics.responseTime ? Math.round(((responseTime - prevMetrics.responseTime) / prevMetrics.responseTime) * 100) : null;
-  
+  const msgChange = prevMetrics.messageCount
+    ? Math.round(((messageCount - prevMetrics.messageCount) / prevMetrics.messageCount) * 100)
+    : null;
+  const mtgChange = prevMetrics.meetingHours
+    ? Math.round(((meetingHours - prevMetrics.meetingHours) / prevMetrics.meetingHours) * 100)
+    : null;
+  const ahChange = prevMetrics.afterHoursActivity
+    ? Math.round(
+        ((afterHours - prevMetrics.afterHoursActivity) / prevMetrics.afterHoursActivity) * 100
+      )
+    : null;
+  const rtChange = prevMetrics.responseTime
+    ? Math.round(((responseTime - prevMetrics.responseTime) / prevMetrics.responseTime) * 100)
+    : null;
+
   // Calculate trend signals for each
   const prevComm = prevState?.signals?.communication?.score;
   const prevEng = prevState?.signals?.engagement?.score;
   const prevWork = prevState?.signals?.workload?.score;
   const prevCollab = prevState?.signals?.collaboration?.score;
-  
+
   const commChange = prevComm ? commScore - prevComm : 0;
   const engChange = prevEng ? engScore - prevEng : 0;
   const workChange = prevWork ? workScore - prevWork : 0;
   const collabChange = prevCollab ? collabScore - prevCollab : 0;
-  
+
   // Helper function to get trend text
   const getTrendText = (change) => {
     if (change === 0 || change === null) return 'stable';
     return change > 0 ? `+${change}` : `${change}`;
   };
-  
+
   // Zone status
   const getZoneStatus = (zone) => {
-    if (zone === 'Stable') return { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', label: 'Stable' };
-    if (zone === 'Watch') return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: 'Drifting' };
+    if (zone === 'Stable')
+      return { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', label: 'Stable' };
+    if (zone === 'Watch')
+      return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: 'Drifting' };
     return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Critical' };
   };
-  
+
   const zoneStatus = getZoneStatus(zoneValue);
-  
+
   // Meeting hours status
-  const meetingStatus = typeof meetingHours === 'number' && meetingHours > 16 ? 'Critical' : 
-                        typeof meetingHours === 'number' && meetingHours > 12 ? 'Elevated' : 'Normal';
-  const meetingStatusColor = meetingStatus === 'Critical' ? '#ef4444' : meetingStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
-  
+  const meetingStatus =
+    typeof meetingHours === 'number' && meetingHours > 16
+      ? 'Critical'
+      : typeof meetingHours === 'number' && meetingHours > 12
+        ? 'Elevated'
+        : 'Normal';
+  const meetingStatusColor =
+    meetingStatus === 'Critical' ? '#ef4444' : meetingStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
+
   // After hours status
-  const ahStatus = typeof afterHours === 'number' && afterHours > 10 ? 'Critical' : 
-                   typeof afterHours === 'number' && afterHours > 5 ? 'Elevated' : 'Normal';
-  const ahStatusColor = ahStatus === 'Critical' ? '#ef4444' : ahStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
-  
+  const ahStatus =
+    typeof afterHours === 'number' && afterHours > 10
+      ? 'Critical'
+      : typeof afterHours === 'number' && afterHours > 5
+        ? 'Elevated'
+        : 'Normal';
+  const ahStatusColor =
+    ahStatus === 'Critical' ? '#ef4444' : ahStatus === 'Elevated' ? '#f59e0b' : '#22c55e';
+
   // Needle rotation for gauge (0-100 maps to -90 to +90 degrees)
   const needleRotation = (bdiValue / 100) * 180 - 90;
-  
+
   // Generate recommendations
   const recommendations = [];
-  if (ahStatus === 'Critical') recommendations.push('After-hours activity exceeding sustainable levels. Review workload distribution.');
-  if (meetingStatus === 'Critical') recommendations.push('Meeting density is critical. Consider async alternatives and meeting audits.');
-  if (bdiChange < -5) recommendations.push('Significant drift detected. Schedule team check-in to identify root causes.');
-  if (commChange < -5) recommendations.push('Communication patterns declining. Consider team sync to restore connection.');
-  
+  if (ahStatus === 'Critical')
+    recommendations.push(
+      'After-hours activity exceeding sustainable levels. Review workload distribution.'
+    );
+  if (meetingStatus === 'Critical')
+    recommendations.push(
+      'Meeting density is critical. Consider async alternatives and meeting audits.'
+    );
+  if (bdiChange < -5)
+    recommendations.push(
+      'Significant drift detected. Schedule team check-in to identify root causes.'
+    );
+  if (commChange < -5)
+    recommendations.push(
+      'Communication patterns declining. Consider team sync to restore connection.'
+    );
+
   return `
 <!DOCTYPE html>
 <html>
@@ -767,7 +904,9 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
       </p>
     </div>
     
-    ${ahStatus === 'Critical' || meetingStatus === 'Critical' || bdiChange < -5 ? `
+    ${
+      ahStatus === 'Critical' || meetingStatus === 'Critical' || bdiChange < -5
+        ? `
     <!-- Alert Banner -->
     <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
       <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center;">
@@ -780,7 +919,9 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
         </div>
       </div>
     </div>
-    ` : ''}
+    `
+        : ''
+    }
     
     <!-- BDI Gauge Card -->
     <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 32px; margin-bottom: 20px; text-align: center;">
@@ -832,12 +973,16 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
         <span style="font-size: 13px; font-weight: 600; color: ${zoneStatus.color};">${zoneStatus.label}</span>
       </div>
       
-      ${prevState ? `
+      ${
+        prevState
+          ? `
       <!-- Change indicator -->
       <div style="margin-top: 12px; font-size: 13px; color: ${bdiChange >= 0 ? '#22c55e' : '#ef4444'};">
         ${bdiChange >= 0 ? '↑' : '↓'} ${bdiChangeText} from last week
       </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
     
     <!-- Signal Metrics Card -->
@@ -939,21 +1084,29 @@ function generateReportHTMLv2(team, state, prevState, weekNum, weekEndDate, bdiV
       </div>
     </div>
     
-    ${insights.length > 0 ? `
+    ${
+      insights.length > 0
+        ? `
     <!-- Insights Card -->
     <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
       <div style="font-size: 14px; font-weight: 600; color: #fbbf24; margin-bottom: 12px;">💡 Signal Interpretation</div>
-      ${insights.map(i => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(245, 158, 11, 0.4);">${i}</div>`).join('')}
+      ${insights.map((i) => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(245, 158, 11, 0.4);">${i}</div>`).join('')}
     </div>
-    ` : ''}
+    `
+        : ''
+    }
     
-    ${recommendations.length > 0 ? `
+    ${
+      recommendations.length > 0
+        ? `
     <!-- Recommendations Card -->
     <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
       <div style="font-size: 14px; font-weight: 600; color: #60a5fa; margin-bottom: 12px;">🎯 Recommended Actions</div>
-      ${recommendations.map(r => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(59, 130, 246, 0.4);">${r}</div>`).join('')}
+      ${recommendations.map((r) => `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; padding-left: 16px; border-left: 2px solid rgba(59, 130, 246, 0.4);">${r}</div>`).join('')}
     </div>
-    ` : ''}
+    `
+        : ''
+    }
     
     <!-- Footer -->
     <div style="text-align: center; padding: 24px 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">

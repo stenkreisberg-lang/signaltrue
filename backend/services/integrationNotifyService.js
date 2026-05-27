@@ -9,7 +9,7 @@ import Organization from '../models/organizationModel.js';
 export async function notifyHRIntegrationsComplete(orgId) {
   try {
     console.log('[IntegrationNotify] Checking if integrations complete for org:', orgId);
-    
+
     const org = await Organization.findById(orgId);
     if (!org) {
       console.log('[IntegrationNotify] Org not found');
@@ -23,15 +23,19 @@ export async function notifyHRIntegrationsComplete(orgId) {
     const msHasToken = !!org?.integrations?.microsoft?.accessToken;
     const teamsConnected = msHasToken && (msScope === 'teams' || msScope === 'both');
     const chatConnected = slackConnected || googleChatConnected || teamsConnected;
-    
-    const googleCal = org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
+
+    const googleCal =
+      org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
     const msOutlook = msHasToken && (msScope === 'outlook' || msScope === 'both');
     const calendarConnected = googleCal || msOutlook;
-    
+
     const integrationsComplete = chatConnected && calendarConnected;
-    
+
     if (!integrationsComplete) {
-      console.log('[IntegrationNotify] Integrations not yet complete', { chatConnected, calendarConnected });
+      console.log('[IntegrationNotify] Integrations not yet complete', {
+        chatConnected,
+        calendarConnected,
+      });
       return;
     }
 
@@ -42,7 +46,10 @@ export async function notifyHRIntegrationsComplete(orgId) {
     }
 
     // Find HR admins in this organization
-    const hrAdmins = await User.find({ orgId, role: { $in: ['hr_admin', 'admin', 'master_admin'] } });
+    const hrAdmins = await User.find({
+      orgId,
+      role: { $in: ['hr_admin', 'admin', 'master_admin'] },
+    });
     if (hrAdmins.length === 0) {
       console.log('[IntegrationNotify] No HR admins found');
       return;
@@ -52,7 +59,7 @@ export async function notifyHRIntegrationsComplete(orgId) {
 
     // Count synced employees
     const employeeCount = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
-    
+
     // Send email via Resend
     const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
@@ -115,7 +122,7 @@ export async function notifyHRIntegrationsComplete(orgId) {
                   </p>
                 </div>
               </div>
-            `
+            `,
           });
           console.log('[IntegrationNotify] Email sent to:', hrAdmin.email);
         } catch (emailErr) {
@@ -126,11 +133,15 @@ export async function notifyHRIntegrationsComplete(orgId) {
 
     // Mark notification as sent
     await Organization.findByIdAndUpdate(orgId, {
-      $set: { 'settings.integrationsNotificationSent': true }
+      $set: { 'settings.integrationsNotificationSent': true },
     });
 
     // Start calibration
-    const chatSource = slackConnected ? 'slack' : teamsConnected ? 'microsoft_teams' : 'google_chat';
+    const chatSource = slackConnected
+      ? 'slack'
+      : teamsConnected
+        ? 'microsoft_teams'
+        : 'google_chat';
     const calendarSource = msOutlook ? 'outlook' : 'google_calendar';
     await Organization.findByIdAndUpdate(orgId, {
       $set: {
@@ -139,11 +150,8 @@ export async function notifyHRIntegrationsComplete(orgId) {
         'calibration.calibrationProgress': 0,
         'calibration.calibrationConfidence': 'Low',
         'calibration.featuresUnlocked': false,
-        'calibration.dataSourcesConnected': [
-          chatSource,
-          calendarSource
-        ]
-      }
+        'calibration.dataSourcesConnected': [chatSource, calendarSource],
+      },
     });
     console.log('[IntegrationNotify] Calibration started for org:', orgId);
 

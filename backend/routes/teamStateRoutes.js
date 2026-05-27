@@ -24,7 +24,7 @@ router.get('/team/:teamId/history', authenticateToken, async (req, res) => {
 
     // Try both ObjectId and string formats for teamId
     let teamStates = [];
-    
+
     try {
       const teamIdObj = new mongoose.Types.ObjectId(teamId);
       teamStates = await teamStatesCollection
@@ -46,12 +46,11 @@ router.get('/team/:teamId/history', authenticateToken, async (req, res) => {
       count: teamStates.length,
       states: teamStates,
     });
-
   } catch (error) {
     console.error('Error fetching team state history:', error);
-    res.status(500).json({ 
-      message: 'Error fetching team state history', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching team state history',
+      error: error.message,
     });
   }
 });
@@ -68,14 +67,15 @@ router.get('/team/:teamId/latest', authenticateToken, async (req, res) => {
     const teamStatesCollection = db.collection('teamstates');
 
     let teamState = null;
-    
+
     try {
       const teamIdObj = new mongoose.Types.ObjectId(teamId);
-      teamState = await teamStatesCollection
-        .findOne({ teamId: teamIdObj }, { sort: { weekEnd: -1 } });
+      teamState = await teamStatesCollection.findOne(
+        { teamId: teamIdObj },
+        { sort: { weekEnd: -1 } }
+      );
     } catch (e) {
-      teamState = await teamStatesCollection
-        .findOne({ teamId: teamId }, { sort: { weekEnd: -1 } });
+      teamState = await teamStatesCollection.findOne({ teamId: teamId }, { sort: { weekEnd: -1 } });
     }
 
     if (!teamState) {
@@ -83,12 +83,11 @@ router.get('/team/:teamId/latest', authenticateToken, async (req, res) => {
     }
 
     res.json(teamState);
-
   } catch (error) {
     console.error('Error fetching latest team state:', error);
-    res.status(500).json({ 
-      message: 'Error fetching team state', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching team state',
+      error: error.message,
     });
   }
 });
@@ -115,32 +114,35 @@ router.get('/org/:orgId/summary', authenticateToken, async (req, res) => {
     }
 
     // Get latest state for each team
-    const summary = await Promise.all(teams.map(async (team) => {
-      const latestState = await teamStatesCollection
-        .findOne({ teamId: team._id }, { sort: { weekEnd: -1 } });
-      
-      return {
-        teamId: team._id,
-        teamName: team.name,
-        hasData: !!latestState,
-        bdi: latestState?.bdi || null,
-        zone: latestState?.zone || null,
-        lastUpdated: latestState?.weekEnd || null,
-      };
-    }));
+    const summary = await Promise.all(
+      teams.map(async (team) => {
+        const latestState = await teamStatesCollection.findOne(
+          { teamId: team._id },
+          { sort: { weekEnd: -1 } }
+        );
+
+        return {
+          teamId: team._id,
+          teamName: team.name,
+          hasData: !!latestState,
+          bdi: latestState?.bdi || null,
+          zone: latestState?.zone || null,
+          lastUpdated: latestState?.weekEnd || null,
+        };
+      })
+    );
 
     res.json({
       orgId,
       teamCount: teams.length,
-      teamsWithData: summary.filter(t => t.hasData).length,
+      teamsWithData: summary.filter((t) => t.hasData).length,
       teams: summary,
     });
-
   } catch (error) {
     console.error('Error fetching org summary:', error);
-    res.status(500).json({ 
-      message: 'Error fetching organization summary', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching organization summary',
+      error: error.message,
     });
   }
 });

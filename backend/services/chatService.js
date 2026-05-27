@@ -13,7 +13,7 @@ if (!OPENAI_API_KEY) {
 let openai = null;
 if (OPENAI_API_KEY) {
   openai = new OpenAI({
-    apiKey: OPENAI_API_KEY
+    apiKey: OPENAI_API_KEY,
   });
 }
 
@@ -27,7 +27,7 @@ const LEAD_TRIGGERS = {
   pilot: ['pilot', 'trial', 'try', 'test', 'demo', 'poc', 'proof of concept'],
   pricing: ['price', 'pricing', 'cost', 'how much', 'quote', 'budget'],
   rollout: ['rollout', 'roll out', 'deploy', 'implementation', 'implement'],
-  usage: ['use case', 'how to use', 'start using', 'get started', 'begin']
+  usage: ['use case', 'how to use', 'start using', 'get started', 'begin'],
 };
 
 // Recommendation-seeking keywords (for trial users who shouldn't get recommendations)
@@ -45,11 +45,12 @@ const RECOMMENDATION_KEYWORDS = [
   'how do we fix',
   'what can we do',
   'how to improve',
-  'how to reduce'
+  'how to reduce',
 ];
 
 // Trial restriction response
-const TRIAL_RECOMMENDATION_RESPONSE = "SignalTrue provides prioritized recommendations and early warnings once ongoing insights are enabled. During the trial period, I can help explain your results, calculations, and patterns, but actionable recommendations become available with an active subscription.";
+const TRIAL_RECOMMENDATION_RESPONSE =
+  'SignalTrue provides prioritized recommendations and early warnings once ongoing insights are enabled. During the trial period, I can help explain your results, calculations, and patterns, but actionable recommendations become available with an active subscription.';
 
 // System prompt - COPY EXACTLY as specified
 const SYSTEM_PROMPT = `You are the SignalTrue AI assistant.
@@ -79,17 +80,19 @@ are aggregated at the team level with a minimum of 5 people to protect privacy."
 If the user asks something outside these boundaries, politely refuse.`;
 
 // Safe refusal message when no relevant info found
-const NO_INFO_RESPONSE = "I don't have enough information about that in the SignalTrue documentation.";
+const NO_INFO_RESPONSE =
+  "I don't have enough information about that in the SignalTrue documentation.";
 
 // Safe refusal for out-of-scope questions
-const OUT_OF_SCOPE_RESPONSE = "This question is outside my scope. I can only answer questions about SignalTrue's products, privacy, and pilot program.";
+const OUT_OF_SCOPE_RESPONSE =
+  "This question is outside my scope. I can only answer questions about SignalTrue's products, privacy, and pilot program.";
 
 /**
  * Check if question triggers lead capture
  */
 function checkLeadTrigger(question) {
   const lowerQuestion = question.toLowerCase();
-  
+
   for (const [triggerType, keywords] of Object.entries(LEAD_TRIGGERS)) {
     for (const keyword of keywords) {
       if (lowerQuestion.includes(keyword)) {
@@ -97,7 +100,7 @@ function checkLeadTrigger(question) {
       }
     }
   }
-  
+
   return null;
 }
 
@@ -106,7 +109,7 @@ function checkLeadTrigger(question) {
  */
 function isRecommendationSeeking(question) {
   const lowerQuestion = question.toLowerCase();
-  return RECOMMENDATION_KEYWORDS.some(keyword => lowerQuestion.includes(keyword));
+  return RECOMMENDATION_KEYWORDS.some((keyword) => lowerQuestion.includes(keyword));
 }
 
 /**
@@ -118,13 +121,13 @@ function validateResponse(response, chunks) {
   if (!response || response.trim().length === 0) {
     return { valid: false, reason: 'empty_response' };
   }
-  
+
   // If we have chunks, response is considered valid
   // (LLM is instructed to only use provided context)
   if (chunks.length > 0) {
     return { valid: true };
   }
-  
+
   // No chunks and got a response - potential hallucination
   return { valid: false, reason: 'no_source_chunks' };
 }
@@ -136,20 +139,26 @@ function validateResponse(response, chunks) {
  * @param {object|null} assessmentContext - Optional assessment context from completed assessment
  * @param {object|null} trialContext - Optional trial state context
  */
-export async function generateChatResponse(question, sessionId, assessmentContext = null, trialContext = null) {
+export async function generateChatResponse(
+  question,
+  sessionId,
+  assessmentContext = null,
+  trialContext = null
+) {
   const startTime = Date.now();
-  
+
   // Check if OpenAI is configured
   if (!openai) {
     console.error('[Chat] OpenAI not configured - OPENAI_API_KEY missing');
     return {
-      response: "The AI chat service is currently being configured. Please try again later or contact us directly.",
+      response:
+        'The AI chat service is currently being configured. Please try again later or contact us directly.',
       sources: [],
       leadTrigger: null,
-      confidenceScore: 0
+      confidenceScore: 0,
     };
   }
-  
+
   // Check if user is in trial and asking for recommendations
   const isInTrial = trialContext?.isActive && !trialContext?.isPaid;
   if (isInTrial && isRecommendationSeeking(question)) {
@@ -158,14 +167,14 @@ export async function generateChatResponse(question, sessionId, assessmentContex
       sources: [],
       leadTrigger: 'upgrade',
       confidenceScore: 1,
-      trialRestricted: true
+      trialRestricted: true,
     };
   }
-  
+
   try {
     // Step 1: Retrieve relevant chunks
     const retrieval = await retrieveRelevantChunks(question);
-    
+
     // Step 2: Check if we have relevant results
     if (!retrieval.hasRelevantResults) {
       // Log the query
@@ -175,20 +184,20 @@ export async function generateChatResponse(question, sessionId, assessmentContex
         retrievedSources: [],
         confidenceScore: retrieval.confidenceScore,
         responseType: 'refused',
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       });
-      
+
       return {
         response: NO_INFO_RESPONSE,
         sources: [],
         leadTrigger: null,
-        confidenceScore: retrieval.confidenceScore
+        confidenceScore: retrieval.confidenceScore,
       };
     }
-    
+
     // Step 3: Format context for LLM
     const context = formatChunksForContext(retrieval.chunks);
-    
+
     // Step 3b: Build assessment context if available
     let assessmentContextStr = '';
     if (assessmentContext) {
@@ -204,12 +213,12 @@ ${assessmentContext.insights ? `- Key Insights: ${assessmentContext.insights.joi
 
 IMPORTANT: If the user asks about their assessment results, use this context to explain. Do NOT recalculate numbers - use the values shown above. Explain how these estimates were calculated based on their inputs.`;
     }
-    
+
     // Step 4: Build messages
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      { 
-        role: 'user', 
+      {
+        role: 'user',
         content: `Based ONLY on the following SignalTrue documentation, answer the user's question.
 
 DOCUMENTATION:
@@ -218,75 +227,74 @@ ${assessmentContextStr}
 
 USER QUESTION: ${question}
 
-Remember: Only use information from the documentation above. If the answer is not in the documentation, say you don't have that information.${assessmentContext ? ' If asking about assessment results, use the ASSESSMENT CONTEXT values exactly - do not recalculate.' : ''}`
-      }
+Remember: Only use information from the documentation above. If the answer is not in the documentation, say you don't have that information.${assessmentContext ? ' If asking about assessment results, use the ASSESSMENT CONTEXT values exactly - do not recalculate.' : ''}`,
+      },
     ];
-    
+
     // Step 5: Generate response
     const completion = await openai.chat.completions.create({
       model: MODEL,
       messages,
       temperature: TEMPERATURE,
-      max_tokens: MAX_TOKENS
+      max_tokens: MAX_TOKENS,
     });
-    
+
     const response = completion.choices[0].message.content;
-    
+
     // Step 6: Validate response
     const validation = validateResponse(response, retrieval.chunks);
-    
+
     if (!validation.valid) {
       await logChatInteraction({
         sessionId,
         question,
-        retrievedSources: retrieval.chunks.map(c => ({
+        retrievedSources: retrieval.chunks.map((c) => ({
           source: c.source,
           section: c.section,
-          relevanceScore: c.relevanceScore
+          relevanceScore: c.relevanceScore,
         })),
         confidenceScore: retrieval.confidenceScore,
         responseType: 'refused',
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       });
-      
+
       return {
         response: NO_INFO_RESPONSE,
         sources: [],
         leadTrigger: null,
-        confidenceScore: retrieval.confidenceScore
+        confidenceScore: retrieval.confidenceScore,
       };
     }
-    
+
     // Step 7: Check for lead triggers
     const leadTrigger = checkLeadTrigger(question);
-    
+
     // Step 8: Log the interaction
     await logChatInteraction({
       sessionId,
       question,
-      retrievedSources: retrieval.chunks.map(c => ({
+      retrievedSources: retrieval.chunks.map((c) => ({
         source: c.source,
         section: c.section,
-        relevanceScore: c.relevanceScore
+        relevanceScore: c.relevanceScore,
       })),
       confidenceScore: retrieval.confidenceScore,
       responseType: leadTrigger ? 'lead_capture' : 'answered',
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     });
-    
+
     return {
       response,
-      sources: retrieval.chunks.map(c => ({
+      sources: retrieval.chunks.map((c) => ({
         source: c.source,
-        section: c.section
+        section: c.section,
       })),
       leadTrigger,
-      confidenceScore: retrieval.confidenceScore
+      confidenceScore: retrieval.confidenceScore,
     };
-    
   } catch (error) {
     console.error('Error generating chat response:', error);
-    
+
     // Log error
     await logChatInteraction({
       sessionId,
@@ -294,9 +302,9 @@ Remember: Only use information from the documentation above. If the answer is no
       retrievedSources: [],
       confidenceScore: 0,
       responseType: 'error',
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     });
-    
+
     throw error;
   }
 }
@@ -313,9 +321,9 @@ async function logChatInteraction(data) {
       confidenceScore: data.confidenceScore,
       responseType: data.responseType,
       processingTime: data.processingTime,
-      model: MODEL
+      model: MODEL,
     });
-    
+
     await log.save();
   } catch (error) {
     console.error('Error logging chat interaction:', error);
@@ -332,14 +340,14 @@ export async function captureLeadFromChat(email, question, triggerType, sessionI
       email,
       question,
       triggerType,
-      sessionId
+      sessionId,
     });
-    
+
     await lead.save();
-    
+
     // TODO: Send notification to internal inbox
     // This would integrate with your notification service
-    
+
     return { success: true, leadId: lead._id };
   } catch (error) {
     console.error('Error capturing lead:', error);
@@ -349,5 +357,5 @@ export async function captureLeadFromChat(email, question, triggerType, sessionI
 
 export default {
   generateChatResponse,
-  captureLeadFromChat
+  captureLeadFromChat,
 };

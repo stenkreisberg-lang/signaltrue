@@ -14,26 +14,26 @@ import User from '../models/user.js';
 export async function analyzeTeamEquity(teamId) {
   try {
     const team = await Team.findById(teamId).populate('members');
-    
+
     if (!team || !team.members) {
       throw new Error('Team not found or has no members');
     }
-    
+
     // Get behavioral data
     const behavioralData = await getBehavioralData(teamId);
-    
+
     // Analyze response time equity
     const responseTimeEquity = analyzeResponseTimeEquity(behavioralData);
-    
+
     // Analyze participation equity
     const participationEquity = analyzeParticipationEquity(behavioralData);
-    
+
     // Analyze workload equity
     const workloadEquity = analyzeWorkloadEquity(behavioralData);
-    
+
     // Analyze voice equity
     const voiceEquity = analyzeVoiceEquity(behavioralData);
-    
+
     // Calculate overall equity score
     const equityScore = calculateEquityScore(
       responseTimeEquity,
@@ -42,7 +42,7 @@ export async function analyzeTeamEquity(teamId) {
       voiceEquity
     );
     const equityLevel = getEquityLevel(equityScore);
-    
+
     // Generate recommendations
     const recommendations = generateRecommendations(
       responseTimeEquity,
@@ -50,10 +50,10 @@ export async function analyzeTeamEquity(teamId) {
       workloadEquity,
       voiceEquity
     );
-    
+
     // Save or update
     let equity = await EquitySignal.findOne({ teamId });
-    
+
     if (equity) {
       Object.assign(equity, {
         equityScore,
@@ -63,7 +63,7 @@ export async function analyzeTeamEquity(teamId) {
         workloadEquity,
         voiceEquity,
         recommendations,
-        lastAnalyzed: new Date()
+        lastAnalyzed: new Date(),
       });
     } else {
       equity = new EquitySignal({
@@ -75,10 +75,10 @@ export async function analyzeTeamEquity(teamId) {
         participationEquity,
         workloadEquity,
         voiceEquity,
-        recommendations
+        recommendations,
       });
     }
-    
+
     await equity.save();
     return equity;
   } catch (error) {
@@ -92,36 +92,36 @@ export async function analyzeTeamEquity(teamId) {
  */
 async function getBehavioralData(teamId) {
   // Placeholder - query Slack + Google Calendar APIs
-  
+
   return {
     responseTimesPerUser: {
-      'user1': 2.5, // hours
-      'user2': 8.2,
-      'user3': 3.1,
-      'user4': 12.5,
-      'user5': 2.8
+      user1: 2.5, // hours
+      user2: 8.2,
+      user3: 3.1,
+      user4: 12.5,
+      user5: 2.8,
     },
     meetingInvitesPerUser: {
-      'user1': 45,
-      'user2': 12,
-      'user3': 42,
-      'user4': 8,
-      'user5': 38
+      user1: 45,
+      user2: 12,
+      user3: 42,
+      user4: 8,
+      user5: 38,
     },
     meetingHoursPerUser: {
-      'user1': 18,
-      'user2': 12,
-      'user3': 15,
-      'user4': 35,
-      'user5': 16
+      user1: 18,
+      user2: 12,
+      user3: 15,
+      user4: 35,
+      user5: 16,
     },
     messageCountPerUser: {
-      'user1': 120,
-      'user2': 25,
-      'user3': 110,
-      'user4': 18,
-      'user5': 95
-    }
+      user1: 120,
+      user2: 25,
+      user3: 110,
+      user4: 18,
+      user5: 95,
+    },
   };
 }
 
@@ -133,27 +133,27 @@ function analyzeResponseTimeEquity(data) {
   const avg = times.reduce((sum, t) => sum + t, 0) / times.length;
   const variance = times.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / times.length;
   const stdDev = Math.sqrt(variance);
-  
+
   const affectedUsers = [];
-  
+
   for (const [userId, time] of Object.entries(data.responseTimesPerUser)) {
     const deviation = time - avg;
-    
+
     // If someone waits >2x standard deviations longer
     if (deviation > 2 * stdDev) {
       affectedUsers.push({
         userId,
         avgResponseTime: time,
-        deviationFromMean: deviation
+        deviationFromMean: deviation,
       });
     }
   }
-  
+
   return {
     averageResponseTime: avg,
     standardDeviation: stdDev,
     inequityDetected: affectedUsers.length > 0,
-    affectedUsers
+    affectedUsers,
   };
 }
 
@@ -165,27 +165,27 @@ function analyzeParticipationEquity(data) {
   const avg = invites.reduce((sum, i) => sum + i, 0) / invites.length;
   const variance = invites.reduce((sum, i) => sum + Math.pow(i - avg, 2), 0) / invites.length;
   const stdDev = Math.sqrt(variance);
-  
+
   const underincludedUsers = [];
-  
+
   for (const [userId, count] of Object.entries(data.meetingInvitesPerUser)) {
     const percentBelowAverage = ((avg - count) / avg) * 100;
-    
+
     // If someone gets <50% of average invites
     if (percentBelowAverage > 50) {
       underincludedUsers.push({
         userId,
         meetingInvites: count,
-        percentBelowAverage
+        percentBelowAverage,
       });
     }
   }
-  
+
   return {
     averageMeetingInvites: avg,
     standardDeviation: stdDev,
     inequityDetected: underincludedUsers.length > 0,
-    underincludedUsers
+    underincludedUsers,
   };
 }
 
@@ -197,27 +197,27 @@ function analyzeWorkloadEquity(data) {
   const avg = hours.reduce((sum, h) => sum + h, 0) / hours.length;
   const variance = hours.reduce((sum, h) => sum + Math.pow(h - avg, 2), 0) / hours.length;
   const stdDev = Math.sqrt(variance);
-  
+
   const overloadedUsers = [];
-  
+
   for (const [userId, hoursCount] of Object.entries(data.meetingHoursPerUser)) {
     const percentAboveAverage = ((hoursCount - avg) / avg) * 100;
-    
+
     // If someone has >75% more meetings than average
     if (percentAboveAverage > 75) {
       overloadedUsers.push({
         userId,
         meetingHours: hoursCount,
-        percentAboveAverage
+        percentAboveAverage,
       });
     }
   }
-  
+
   return {
     averageMeetingHours: avg,
     standardDeviation: stdDev,
     inequityDetected: overloadedUsers.length > 0,
-    overloadedUsers
+    overloadedUsers,
   };
 }
 
@@ -229,27 +229,27 @@ function analyzeVoiceEquity(data) {
   const avg = messages.reduce((sum, m) => sum + m, 0) / messages.length;
   const variance = messages.reduce((sum, m) => sum + Math.pow(m - avg, 2), 0) / messages.length;
   const stdDev = Math.sqrt(variance);
-  
+
   const silencedUsers = [];
-  
+
   for (const [userId, count] of Object.entries(data.messageCountPerUser)) {
     const percentBelowAverage = ((avg - count) / avg) * 100;
-    
+
     // If someone sends <70% fewer messages than average
     if (percentBelowAverage > 70) {
       silencedUsers.push({
         userId,
         messageCount: count,
-        percentBelowAverage
+        percentBelowAverage,
       });
     }
   }
-  
+
   return {
     averageMessageCount: avg,
     standardDeviation: stdDev,
     inequityDetected: silencedUsers.length > 0,
-    silencedUsers
+    silencedUsers,
   };
 }
 
@@ -258,27 +258,27 @@ function analyzeVoiceEquity(data) {
  */
 function calculateEquityScore(responseTime, participation, workload, voice) {
   let score = 100;
-  
+
   // Deduct for response time inequity
   if (responseTime.inequityDetected) {
     score -= responseTime.affectedUsers.length * 15;
   }
-  
+
   // Deduct for participation inequity
   if (participation.inequityDetected) {
     score -= participation.underincludedUsers.length * 20;
   }
-  
+
   // Deduct for workload inequity
   if (workload.inequityDetected) {
     score -= workload.overloadedUsers.length * 15;
   }
-  
+
   // Deduct for voice inequity
   if (voice.inequityDetected) {
     score -= voice.silencedUsers.length * 20;
   }
-  
+
   return Math.max(score, 0);
 }
 
@@ -297,23 +297,31 @@ function getEquityLevel(score) {
  */
 function generateRecommendations(responseTime, participation, workload, voice) {
   const recs = [];
-  
+
   if (responseTime.inequityDetected) {
-    recs.push(`${responseTime.affectedUsers.length} team member(s) wait significantly longer for responses - establish team response SLAs`);
+    recs.push(
+      `${responseTime.affectedUsers.length} team member(s) wait significantly longer for responses - establish team response SLAs`
+    );
   }
-  
+
   if (participation.inequityDetected) {
-    recs.push(`${participation.underincludedUsers.length} team member(s) excluded from meetings - review invitation practices`);
+    recs.push(
+      `${participation.underincludedUsers.length} team member(s) excluded from meetings - review invitation practices`
+    );
   }
-  
+
   if (workload.inequityDetected) {
-    recs.push(`${workload.overloadedUsers.length} team member(s) have excessive meeting load - redistribute or decline meetings`);
+    recs.push(
+      `${workload.overloadedUsers.length} team member(s) have excessive meeting load - redistribute or decline meetings`
+    );
   }
-  
+
   if (voice.inequityDetected) {
-    recs.push(`${voice.silencedUsers.length} team member(s) rarely participate in Slack - check for psychological safety issues`);
+    recs.push(
+      `${voice.silencedUsers.length} team member(s) rarely participate in Slack - check for psychological safety issues`
+    );
   }
-  
+
   return recs;
 }
 
@@ -324,11 +332,11 @@ export async function getOrgEquityIssues(orgId, maxScore = 65) {
   try {
     const issues = await EquitySignal.find({
       orgId,
-      equityScore: { $lte: maxScore }
+      equityScore: { $lte: maxScore },
     })
-    .populate('teamId', 'name')
-    .sort({ equityScore: 1 });
-    
+      .populate('teamId', 'name')
+      .sort({ equityScore: 1 });
+
     return issues;
   } catch (error) {
     console.error('[Equity Signals] Error fetching org issues:', error);
@@ -338,5 +346,5 @@ export async function getOrgEquityIssues(orgId, maxScore = 65) {
 
 export default {
   analyzeTeamEquity,
-  getOrgEquityIssues
+  getOrgEquityIssues,
 };

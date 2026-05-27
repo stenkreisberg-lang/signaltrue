@@ -1,12 +1,12 @@
 /**
  * After-Hours Cost Calculator Service
  * Translates invisible work into cost language executives understand
- * 
+ *
  * Inputs:
  * - Messages sent outside local working hours
  * - Duration of sustained after-hours periods
  * - Time zone mapping
- * 
+ *
  * Outputs:
  * - After-hours hours/week
  * - Equivalent FTE = after_hours_hours / 40
@@ -21,9 +21,9 @@ import Organization from '../models/organizationModel.js';
  * Default working hours configuration
  */
 const DEFAULT_WORK_HOURS = {
-  start: 9,  // 9 AM
-  end: 18,   // 6 PM
-  workDays: [1, 2, 3, 4, 5] // Monday to Friday
+  start: 9, // 9 AM
+  end: 18, // 6 PM
+  workDays: [1, 2, 3, 4, 5], // Monday to Friday
 };
 
 /**
@@ -40,29 +40,29 @@ const DEFAULT_AVG_ROLE_COST = 75000;
  */
 export function isAfterHours(timestamp, workHours = DEFAULT_WORK_HOURS, timezone = 'UTC') {
   const date = new Date(timestamp);
-  
+
   // Get local time components
   const options = { timeZone: timezone, hour: 'numeric', weekday: 'short' };
   let hour, dayOfWeek;
-  
+
   try {
-    const formatter = new Intl.DateTimeFormat('en-US', { 
+    const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       hour: 'numeric',
-      hour12: false 
+      hour12: false,
     });
     hour = parseInt(formatter.format(date));
-    
-    const dayFormatter = new Intl.DateTimeFormat('en-US', { 
+
+    const dayFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
-      weekday: 'narrow' 
+      weekday: 'narrow',
     });
     const dayStr = dayFormatter.format(date);
-    const dayMap = { 'S': 0, 'M': 1, 'T': 2, 'W': 3, 'F': 5 };
+    const dayMap = { S: 0, M: 1, T: 2, W: 3, F: 5 };
     // Handle Tuesday vs Thursday
-    const fullDayFormatter = new Intl.DateTimeFormat('en-US', { 
+    const fullDayFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
-      weekday: 'long' 
+      weekday: 'long',
     });
     const fullDay = fullDayFormatter.format(date);
     if (fullDay === 'Sunday') dayOfWeek = 0;
@@ -98,21 +98,25 @@ export function isAfterHours(timestamp, workHours = DEFAULT_WORK_HOURS, timezone
  * @param {string} timezone - Team timezone
  * @returns {Object} - After-hours metrics
  */
-export function calculateAfterHoursActivity(messages, workHours = DEFAULT_WORK_HOURS, timezone = 'UTC') {
+export function calculateAfterHoursActivity(
+  messages,
+  workHours = DEFAULT_WORK_HOURS,
+  timezone = 'UTC'
+) {
   if (!messages || messages.length === 0) {
     return {
       totalMessages: 0,
       afterHoursMessages: 0,
       afterHoursRate: 0,
       afterHoursHours: 0,
-      sustainedPeriods: []
+      sustainedPeriods: [],
     };
   }
 
   let afterHoursMessages = 0;
   const afterHoursTimestamps = [];
 
-  messages.forEach(msg => {
+  messages.forEach((msg) => {
     const ts = new Date(msg.timestamp || msg.ts);
     if (isAfterHours(ts, workHours, timezone)) {
       afterHoursMessages++;
@@ -126,10 +130,10 @@ export function calculateAfterHoursActivity(messages, workHours = DEFAULT_WORK_H
   // Estimate after-hours hours (assume 2-3 min per message on average)
   const estimatedMinutesPerMessage = 2.5;
   const afterHoursMinutes = afterHoursMessages * estimatedMinutesPerMessage;
-  
+
   // Add sustained period time
   const sustainedMinutes = sustainedPeriods.reduce((sum, p) => sum + p.durationMinutes, 0);
-  
+
   const totalAfterHoursHours = (afterHoursMinutes + sustainedMinutes) / 60;
 
   return {
@@ -137,7 +141,7 @@ export function calculateAfterHoursActivity(messages, workHours = DEFAULT_WORK_H
     afterHoursMessages,
     afterHoursRate: messages.length > 0 ? (afterHoursMessages / messages.length) * 100 : 0,
     afterHoursHours: Math.round(totalAfterHoursHours * 10) / 10,
-    sustainedPeriods
+    sustainedPeriods,
   };
 }
 
@@ -158,7 +162,7 @@ function calculateSustainedPeriods(timestamps) {
 
   for (let i = 1; i < sorted.length; i++) {
     const gap = (sorted[i] - periodEnd) / (1000 * 60); // minutes
-    
+
     if (gap <= 30) {
       // Continue current period
       periodEnd = sorted[i];
@@ -170,7 +174,7 @@ function calculateSustainedPeriods(timestamps) {
           start: periodStart,
           end: periodEnd,
           durationMinutes: Math.round((periodEnd - periodStart) / (1000 * 60)),
-          messageCount
+          messageCount,
         });
       }
       // Start new period
@@ -186,7 +190,7 @@ function calculateSustainedPeriods(timestamps) {
       start: periodStart,
       end: periodEnd,
       durationMinutes: Math.round((periodEnd - periodStart) / (1000 * 60)),
-      messageCount
+      messageCount,
     });
   }
 
@@ -202,10 +206,10 @@ function calculateSustainedPeriods(timestamps) {
 export function calculateFTEAndCost(afterHoursHoursWeek, avgRoleCost = DEFAULT_AVG_ROLE_COST) {
   const standardWorkWeek = 40;
   const equivalentFTE = afterHoursHoursWeek / standardWorkWeek;
-  
+
   // Weekly cost = annual cost / 52 weeks * FTE
   const weeklyCost = (avgRoleCost / 52) * equivalentFTE;
-  
+
   // Monthly accumulation
   const monthlyCost = weeklyCost * 4.33; // avg weeks per month
 
@@ -213,7 +217,7 @@ export function calculateFTEAndCost(afterHoursHoursWeek, avgRoleCost = DEFAULT_A
     equivalentFTE: Math.round(equivalentFTE * 100) / 100,
     weeklyCost: Math.round(weeklyCost),
     monthlyCost: Math.round(monthlyCost),
-    annualizedCost: Math.round(weeklyCost * 52)
+    annualizedCost: Math.round(weeklyCost * 52),
   };
 }
 
@@ -261,22 +265,22 @@ export async function computeAfterHoursCost(teamId, messages = [], options = {})
     teamId,
     orgId: team.orgId,
     weekStart,
-    
+
     afterHoursHours: activity.afterHoursHours,
     workingHoursTotal: 40,
-    
+
     equivalentFTE: fteMetrics.equivalentFTE,
     estimatedCost: fteMetrics.weeklyCost,
     avgRoleCost,
-    
+
     dailyBreakdown,
     monthlyAccumulated: fteMetrics.monthlyCost,
-    
+
     // Additional context
     afterHoursRate: Math.round(activity.afterHoursRate * 10) / 10,
     sustainedPeriods: activity.sustainedPeriods.length,
     totalMessages: activity.totalMessages,
-    afterHoursMessages: activity.afterHoursMessages
+    afterHoursMessages: activity.afterHoursMessages,
   };
 }
 
@@ -290,24 +294,24 @@ export async function computeAfterHoursCost(teamId, messages = [], options = {})
 function buildDailyBreakdown(messages, workHours, timezone) {
   const byDay = {};
 
-  messages.forEach(msg => {
+  messages.forEach((msg) => {
     const ts = new Date(msg.timestamp || msg.ts);
     const dateKey = ts.toISOString().split('T')[0];
-    
+
     if (!byDay[dateKey]) {
       byDay[dateKey] = { date: dateKey, messages: 0, afterHoursMessages: 0 };
     }
-    
+
     byDay[dateKey].messages++;
-    
+
     if (isAfterHours(ts, workHours, timezone)) {
       byDay[dateKey].afterHoursMessages++;
     }
   });
 
-  return Object.values(byDay).map(day => ({
+  return Object.values(byDay).map((day) => ({
     date: new Date(day.date),
-    hours: Math.round((day.afterHoursMessages * 2.5) / 60 * 10) / 10
+    hours: Math.round(((day.afterHoursMessages * 2.5) / 60) * 10) / 10,
   }));
 }
 
@@ -319,13 +323,13 @@ function buildDailyBreakdown(messages, workHours, timezone) {
 export async function storeAfterHoursCost(costData) {
   const weekStart = new Date(costData.weekStart);
   weekStart.setHours(0, 0, 0, 0);
-  
+
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
 
   const existing = await AfterHoursCost.findOne({
     teamId: costData.teamId,
-    weekStart: { $gte: weekStart, $lt: weekEnd }
+    weekStart: { $gte: weekStart, $lt: weekEnd },
   });
 
   if (existing) {
@@ -348,7 +352,7 @@ export async function getAfterHoursCostHistory(teamId, weeks = 8) {
 
   return AfterHoursCost.find({
     teamId,
-    weekStart: { $gte: startDate }
+    weekStart: { $gte: startDate },
   }).sort({ weekStart: 1 });
 }
 
@@ -368,5 +372,5 @@ export default {
   getLatestAfterHoursCost,
   calculateAfterHoursActivity,
   calculateFTEAndCost,
-  isAfterHours
+  isAfterHours,
 };

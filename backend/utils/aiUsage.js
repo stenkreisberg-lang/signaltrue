@@ -21,14 +21,19 @@ async function _write(data) {
   await fs.writeFile(USAGE_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-export async function incrementUsage({ model = 'unknown', promptTokens = 0, completionTokens = 0, totalTokens = 0 }) {
+export async function incrementUsage({
+  model = 'unknown',
+  promptTokens = 0,
+  completionTokens = 0,
+  totalTokens = 0,
+}) {
   const data = await _read();
   data.totalCalls = (data.totalCalls || 0) + 1;
   data.totalTokens = (data.totalTokens || 0) + (totalTokens || promptTokens + completionTokens);
   data.byModel = data.byModel || {};
   data.byModel[model] = data.byModel[model] || { calls: 0, tokens: 0 };
   data.byModel[model].calls += 1;
-  data.byModel[model].tokens += (totalTokens || promptTokens + completionTokens);
+  data.byModel[model].tokens += totalTokens || promptTokens + completionTokens;
   await _write(data);
   return data;
 }

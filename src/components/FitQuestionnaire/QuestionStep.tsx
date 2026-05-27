@@ -29,9 +29,7 @@ const QuestionStep = ({
           <span className="text-sm font-medium text-muted-foreground">
             Question {currentStep + 1} of {totalSteps}
           </span>
-          <span className="text-sm font-medium text-primary">
-            {Math.round(progressPercent)}%
-          </span>
+          <span className="text-sm font-medium text-primary">{Math.round(progressPercent)}%</span>
         </div>
         <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
           <div
@@ -42,10 +40,7 @@ const QuestionStep = ({
       </div>
 
       {/* Question */}
-      <div
-        key={question.id}
-        className="animate-slide-up"
-      >
+      <div key={question.id} className="animate-slide-up">
         <h3 className="text-2xl font-display font-semibold mb-8 text-foreground text-center">
           {question.text}
         </h3>
@@ -60,21 +55,25 @@ const QuestionStep = ({
                 w-full p-5 rounded-xl border-2 text-left transition-all duration-200
                 hover:scale-[1.02] active:scale-[0.98]
                 animate-slide-up
-                ${selectedValue === option.value
-                  ? 'border-primary bg-primary/10 text-foreground'
-                  : 'border-border/50 bg-card hover:border-primary/50 hover:bg-secondary/30 text-foreground'
+                ${
+                  selectedValue === option.value
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border/50 bg-card hover:border-primary/50 hover:bg-secondary/30 text-foreground'
                 }
               `}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="flex items-center gap-4">
-                <div className={`
+                <div
+                  className={`
                   w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200
-                  ${selectedValue === option.value
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground/40'
+                  ${
+                    selectedValue === option.value
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground/40'
                   }
-                `}>
+                `}
+                >
                   {selectedValue === option.value && (
                     <div className="w-2 h-2 bg-white rounded-full animate-scale-in" />
                   )}

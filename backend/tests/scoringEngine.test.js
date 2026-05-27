@@ -65,8 +65,8 @@ function computeBDIState(signals, baselines, thresholds) {
   const HIGHER_BAD = new Set(['meetingLoad', 'afterHoursActivity', 'responseTime']);
 
   for (const key of Object.keys(signals)) {
-    const current  = signals[key];
-    const base     = baselines[key] ?? 0;
+    const current = signals[key];
+    const base = baselines[key] ?? 0;
     const threshold = thresholds[key] ?? 20;
     if (base === 0) continue;
     const pct = ((current - base) / base) * 100;
@@ -89,62 +89,99 @@ function computeBDIState(signals, baselines, thresholds) {
 // ── Constants (must match scoringEngineService.js) ────────────────────────────
 
 const HIGHER_IS_BETTER = new Set([
-  'focus_time', 'participation_drift', 'cross_team_contacts', 'async_participation',
+  'focus_time',
+  'participation_drift',
+  'cross_team_contacts',
+  'async_participation',
 ]);
 
-const OVERLOAD_WEIGHTS   = { after_hours_activity: 0.35, meeting_load: 0.30, back_to_back_meetings: 0.20, focus_time: 0.15 };
-const EXECUTION_WEIGHTS  = { response_time: 0.30, participation_drift: 0.25, meeting_fragmentation: 0.25, focus_time: 0.20 };
-const RETENTION_WEIGHTS  = { after_hours_activity: 0.40, meeting_load: 0.30, response_time: 0.30 };
-const CAPACITY_WEIGHTS   = { after_hours_activity: 0.30, meeting_load: 0.25, back_to_back_meetings: 0.20, focus_time: 0.15, weekend_activity: 0.10 };
-const COORDINATION_WEIGHTS = { response_time: 0.30, meeting_fragmentation: 0.25, participation_drift: 0.20, cross_team_contacts: 0.15, async_participation: 0.10 };
-const COHESION_WEIGHTS   = { collaboration_breadth: 0.35, async_participation: 0.25, response_time: 0.20, after_hours_activity: 0.20 };
-const COMPOSITE_WEIGHTS  = { capacity: 0.40, coordination: 0.35, cohesion: 0.25 };
-const BDI_THRESHOLDS     = { meetingLoad: 20, afterHoursActivity: 30, responseTime: 25, asyncParticipation: 20, focusTime: 20, collaborationBreadth: 25 };
+const OVERLOAD_WEIGHTS = {
+  after_hours_activity: 0.35,
+  meeting_load: 0.3,
+  back_to_back_meetings: 0.2,
+  focus_time: 0.15,
+};
+const EXECUTION_WEIGHTS = {
+  response_time: 0.3,
+  participation_drift: 0.25,
+  meeting_fragmentation: 0.25,
+  focus_time: 0.2,
+};
+const RETENTION_WEIGHTS = { after_hours_activity: 0.4, meeting_load: 0.3, response_time: 0.3 };
+const CAPACITY_WEIGHTS = {
+  after_hours_activity: 0.3,
+  meeting_load: 0.25,
+  back_to_back_meetings: 0.2,
+  focus_time: 0.15,
+  weekend_activity: 0.1,
+};
+const COORDINATION_WEIGHTS = {
+  response_time: 0.3,
+  meeting_fragmentation: 0.25,
+  participation_drift: 0.2,
+  cross_team_contacts: 0.15,
+  async_participation: 0.1,
+};
+const COHESION_WEIGHTS = {
+  collaboration_breadth: 0.35,
+  async_participation: 0.25,
+  response_time: 0.2,
+  after_hours_activity: 0.2,
+};
+const COMPOSITE_WEIGHTS = { capacity: 0.4, coordination: 0.35, cohesion: 0.25 };
+const BDI_THRESHOLDS = {
+  meetingLoad: 20,
+  afterHoursActivity: 30,
+  responseTime: 25,
+  asyncParticipation: 20,
+  focusTime: 20,
+  collaborationBreadth: 25,
+};
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 // Baseline: healthy team at normal levels
 const HEALTHY_BASELINE = {
-  after_hours_activity:  0.10,
-  meeting_load:          0.50,  // 50% of 40h = 20h/week
+  after_hours_activity: 0.1,
+  meeting_load: 0.5, // 50% of 40h = 20h/week
   back_to_back_meetings: 2,
-  focus_time:            0.40,
-  response_time:         60,    // 60 min median
-  participation_drift:   12,
-  meeting_fragmentation: 0.20,
-  weekend_activity:      0.02,
-  cross_team_contacts:   5,
-  async_participation:   0.60,
+  focus_time: 0.4,
+  response_time: 60, // 60 min median
+  participation_drift: 12,
+  meeting_fragmentation: 0.2,
+  weekend_activity: 0.02,
+  cross_team_contacts: 5,
+  async_participation: 0.6,
   collaboration_breadth: 10,
 };
 
 // Metrics: team in overloaded state
 const OVERLOADED_METRICS = {
-  after_hours_activity:  0.35,  // 3.5x baseline → +250% deviation
-  meeting_load:          0.80,  // 60% above baseline
-  back_to_back_meetings: 6,     // 3x baseline
-  focus_time:            0.15,  // dropped from 0.40 → negative deviation for HiB
-  response_time:         60,
-  participation_drift:   12,
-  meeting_fragmentation: 0.20,
-  weekend_activity:      0.02,
-  cross_team_contacts:   5,
-  async_participation:   0.60,
+  after_hours_activity: 0.35, // 3.5x baseline → +250% deviation
+  meeting_load: 0.8, // 60% above baseline
+  back_to_back_meetings: 6, // 3x baseline
+  focus_time: 0.15, // dropped from 0.40 → negative deviation for HiB
+  response_time: 60,
+  participation_drift: 12,
+  meeting_fragmentation: 0.2,
+  weekend_activity: 0.02,
+  cross_team_contacts: 5,
+  async_participation: 0.6,
   collaboration_breadth: 10,
 };
 
 // Metrics: team in execution-risk state
 const EXECUTION_RISK_METRICS = {
-  after_hours_activity:  0.10,
-  meeting_load:          0.50,
+  after_hours_activity: 0.1,
+  meeting_load: 0.5,
   back_to_back_meetings: 2,
-  focus_time:            0.10,  // dropped sharply
-  response_time:         180,   // 3x baseline → slow responses
-  participation_drift:   6,     // dropped — less collaboration
-  meeting_fragmentation: 0.60,  // highly fragmented
-  weekend_activity:      0.02,
-  cross_team_contacts:   2,
-  async_participation:   0.30,
+  focus_time: 0.1, // dropped sharply
+  response_time: 180, // 3x baseline → slow responses
+  participation_drift: 6, // dropped — less collaboration
+  meeting_fragmentation: 0.6, // highly fragmented
+  weekend_activity: 0.02,
+  cross_team_contacts: 2,
+  async_participation: 0.3,
   collaboration_breadth: 10,
 };
 
@@ -170,7 +207,7 @@ describe('calculateDeviation', () => {
 
   test('inverts deviation for higher-is-better metric', () => {
     // current focus_time dropped below baseline → should be POSITIVE risk deviation
-    const d = calculateDeviation(0.15, 0.40, true);
+    const d = calculateDeviation(0.15, 0.4, true);
     expect(d).toBeGreaterThan(0);
     expect(d).toBeCloseTo(0.625); // (0.15-0.40)/0.40 = -0.625 → inverted = +0.625
   });
@@ -209,20 +246,35 @@ describe('getRiskBand', () => {
 
 describe('Overload Risk', () => {
   test('healthy team scores green (< 35)', () => {
-    const { score } = computeWeightedScore(OVERLOAD_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      OVERLOAD_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeLessThan(35);
     expect(getRiskBand(score)).toBe('green');
   });
 
   test('overloaded team scores red (≥ 65)', () => {
-    const { score } = computeWeightedScore(OVERLOAD_WEIGHTS, OVERLOADED_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      OVERLOAD_WEIGHTS,
+      OVERLOADED_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeGreaterThanOrEqual(65);
     expect(getRiskBand(score)).toBe('red');
   });
 
   test('after_hours_activity drives overload score when elevated', () => {
-    const metrics = { ...HEALTHY_METRICS, after_hours_activity: 0.30 }; // 3x baseline
-    const { contributions } = computeWeightedScore(OVERLOAD_WEIGHTS, metrics, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const metrics = { ...HEALTHY_METRICS, after_hours_activity: 0.3 }; // 3x baseline
+    const { contributions } = computeWeightedScore(
+      OVERLOAD_WEIGHTS,
+      metrics,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     const ahContrib = contributions.find((c) => c.metricKey === 'after_hours_activity');
     expect(ahContrib.contribution).toBeGreaterThan(0);
   });
@@ -237,12 +289,22 @@ describe('Overload Risk', () => {
 
 describe('Execution Risk', () => {
   test('healthy team scores green', () => {
-    const { score } = computeWeightedScore(EXECUTION_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      EXECUTION_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeLessThan(35);
   });
 
   test('execution-risk team scores yellow or red', () => {
-    const { score } = computeWeightedScore(EXECUTION_WEIGHTS, EXECUTION_RISK_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      EXECUTION_WEIGHTS,
+      EXECUTION_RISK_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeGreaterThanOrEqual(35);
   });
 
@@ -252,8 +314,18 @@ describe('Execution Risk', () => {
   });
 
   test('response_time increase raises execution score', () => {
-    const base = computeWeightedScore(EXECUTION_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER).score;
-    const elevated = computeWeightedScore(EXECUTION_WEIGHTS, { ...HEALTHY_METRICS, response_time: 240 }, HEALTHY_BASELINE, HIGHER_IS_BETTER).score;
+    const base = computeWeightedScore(
+      EXECUTION_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    ).score;
+    const elevated = computeWeightedScore(
+      EXECUTION_WEIGHTS,
+      { ...HEALTHY_METRICS, response_time: 240 },
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    ).score;
     expect(elevated).toBeGreaterThan(base);
   });
 });
@@ -292,7 +364,12 @@ describe('Retention Strain Risk weights', () => {
 
 describe('Capacity Drift Score', () => {
   test('healthy team near zero', () => {
-    const { score } = computeWeightedScore(CAPACITY_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      CAPACITY_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeLessThan(10);
   });
 
@@ -302,14 +379,24 @@ describe('Capacity Drift Score', () => {
   });
 
   test('overloaded team has elevated capacity drift', () => {
-    const { score } = computeWeightedScore(CAPACITY_WEIGHTS, OVERLOADED_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      CAPACITY_WEIGHTS,
+      OVERLOADED_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeGreaterThan(30);
   });
 });
 
 describe('Coordination Drag Score', () => {
   test('healthy team near zero', () => {
-    const { score } = computeWeightedScore(COORDINATION_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      COORDINATION_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBeLessThan(10);
   });
 
@@ -333,23 +420,43 @@ describe('Overall Drift Score', () => {
   });
 
   test('is correctly weighted combination of sub-scores', () => {
-    const capacity = 60, coordination = 40, cohesion = 20;
+    const capacity = 60,
+      coordination = 40,
+      cohesion = 20;
     const overall = Math.round(
       COMPOSITE_WEIGHTS.capacity * capacity +
-      COMPOSITE_WEIGHTS.coordination * coordination +
-      COMPOSITE_WEIGHTS.cohesion * cohesion
+        COMPOSITE_WEIGHTS.coordination * coordination +
+        COMPOSITE_WEIGHTS.cohesion * cohesion
     );
     // 0.40*60 + 0.35*40 + 0.25*20 = 24+14+5 = 43
     expect(overall).toBe(43);
   });
 
   test('healthy team overall score < 10', () => {
-    const cap  = computeWeightedScore(CAPACITY_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER).score;
-    const coord = computeWeightedScore(COORDINATION_WEIGHTS, HEALTHY_METRICS, HEALTHY_BASELINE, HIGHER_IS_BETTER).score;
+    const cap = computeWeightedScore(
+      CAPACITY_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    ).score;
+    const coord = computeWeightedScore(
+      COORDINATION_WEIGHTS,
+      HEALTHY_METRICS,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    ).score;
     // cohesion: add collaboration_breadth manually
-    const cohMetrics = { ...HEALTHY_METRICS, collaboration_breadth: HEALTHY_BASELINE.collaboration_breadth };
-    const coh  = computeWeightedScore(COHESION_WEIGHTS, cohMetrics, { ...HEALTHY_BASELINE }, HIGHER_IS_BETTER).score;
-    const overall = Math.round(0.40 * cap + 0.35 * coord + 0.25 * coh);
+    const cohMetrics = {
+      ...HEALTHY_METRICS,
+      collaboration_breadth: HEALTHY_BASELINE.collaboration_breadth,
+    };
+    const coh = computeWeightedScore(
+      COHESION_WEIGHTS,
+      cohMetrics,
+      { ...HEALTHY_BASELINE },
+      HIGHER_IS_BETTER
+    ).score;
+    const overall = Math.round(0.4 * cap + 0.35 * coord + 0.25 * coh);
     expect(overall).toBeLessThan(10);
   });
 });
@@ -358,8 +465,12 @@ describe('Overall Drift Score', () => {
 
 describe('BDI — driftScore and state', () => {
   const baselines = {
-    meetingLoad: 20, afterHoursActivity: 10, responseTime: 1,
-    asyncParticipation: 50, focusTime: 20, collaborationBreadth: 10,
+    meetingLoad: 20,
+    afterHoursActivity: 10,
+    responseTime: 1,
+    asyncParticipation: 50,
+    focusTime: 20,
+    collaborationBreadth: 10,
   };
 
   test('all at baseline → Stable, driftScore = 0', () => {
@@ -377,9 +488,9 @@ describe('BDI — driftScore and state', () => {
   test('3–4 negative signals → Developing Drift', () => {
     const signals = {
       ...baselines,
-      meetingLoad: 30,       // +50% → negative (higher-bad)
-      responseTime: 2,       // +100% → negative
-      afterHoursActivity: 20,// +100% → negative
+      meetingLoad: 30, // +50% → negative (higher-bad)
+      responseTime: 2, // +100% → negative
+      afterHoursActivity: 20, // +100% → negative
     };
     const { state } = computeBDIState(signals, baselines, BDI_THRESHOLDS);
     expect(state).toBe('Developing Drift');
@@ -387,12 +498,12 @@ describe('BDI — driftScore and state', () => {
 
   test('5–6 negative signals → Critical Drift', () => {
     const signals = {
-      meetingLoad:          40,   // +100% → negative
-      afterHoursActivity:   25,   // +150% → negative
-      responseTime:         3,    // +200% → negative
-      asyncParticipation:   20,   // -60% → negative (lower-bad)
-      focusTime:            5,    // -75% → negative (lower-bad)
-      collaborationBreadth: 3,    // -70% → negative (lower-bad)
+      meetingLoad: 40, // +100% → negative
+      afterHoursActivity: 25, // +150% → negative
+      responseTime: 3, // +200% → negative
+      asyncParticipation: 20, // -60% → negative (lower-bad)
+      focusTime: 5, // -75% → negative (lower-bad)
+      collaborationBreadth: 3, // -70% → negative (lower-bad)
     };
     const { state, driftScore } = computeBDIState(signals, baselines, BDI_THRESHOLDS);
     expect(state).toBe('Critical Drift');
@@ -447,13 +558,23 @@ describe('Privacy gate logic', () => {
 describe('Edge cases', () => {
   test('all baselines zero → all deviations are 0 → score is 0', () => {
     const zeroBaselines = Object.fromEntries(Object.keys(HEALTHY_BASELINE).map((k) => [k, 0]));
-    const { score } = computeWeightedScore(OVERLOAD_WEIGHTS, OVERLOADED_METRICS, zeroBaselines, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      OVERLOAD_WEIGHTS,
+      OVERLOADED_METRICS,
+      zeroBaselines,
+      HIGHER_IS_BETTER
+    );
     expect(score).toBe(0);
   });
 
   test('current metrics all zero with non-zero baselines → only higher-is-better metrics contribute risk', () => {
     const zeroMetrics = Object.fromEntries(Object.keys(HEALTHY_BASELINE).map((k) => [k, 0]));
-    const { score } = computeWeightedScore(OVERLOAD_WEIGHTS, zeroMetrics, HEALTHY_BASELINE, HIGHER_IS_BETTER);
+    const { score } = computeWeightedScore(
+      OVERLOAD_WEIGHTS,
+      zeroMetrics,
+      HEALTHY_BASELINE,
+      HIGHER_IS_BETTER
+    );
     // focus_time is higher-is-better with weight 0.15 — dropping to 0 contributes 0.15
     expect(score).toBe(15); // 0.15 * 1.0 * 100
   });

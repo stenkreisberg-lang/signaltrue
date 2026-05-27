@@ -34,13 +34,13 @@ import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 // ── Weights (spec Section 11) ──────────────────────────────────────────────────
 
 const SUBSCORE_WEIGHTS = {
-  recoveryDebt:            0.20,
-  focusErosion:            0.18,
-  coordinationFriction:    0.17,
-  responsivenessPressure:  0.14,
+  recoveryDebt: 0.2,
+  focusErosion: 0.18,
+  coordinationFriction: 0.17,
+  responsivenessPressure: 0.14,
   collaborationWithdrawal: 0.12,
-  managerSupportGap:       0.11,
-  workloadVolatility:      0.08,
+  managerSupportGap: 0.11,
+  workloadVolatility: 0.08,
 };
 
 // ── Public API ─────────────────────────────────────────────────────────────────
@@ -126,19 +126,19 @@ export function calculateConfidenceScore({
   subscores,
 }) {
   const baselineQuality = baseline?.baselineQuality?.qualityScore ?? 0;
-  const sampleSize      = sampleSizeScore(activePeopleCount);
-  const integrationCov  = integrationCoverageScore(integrationCoverage);
-  const dataComplete    = dataCompletenessScore(weeklyMetrics);
-  const metricConsist   = metricConsistencyScore(subscores);
-  const calNormality    = calendarNormalityScore(weeklyMetrics);
+  const sampleSize = sampleSizeScore(activePeopleCount);
+  const integrationCov = integrationCoverageScore(integrationCoverage);
+  const dataComplete = dataCompletenessScore(weeklyMetrics);
+  const metricConsist = metricConsistencyScore(subscores);
+  const calNormality = calendarNormalityScore(weeklyMetrics);
 
   const raw =
-    0.25 * baselineQuality
-    + 0.20 * sampleSize
-    + 0.20 * integrationCov
-    + 0.15 * dataComplete
-    + 0.10 * metricConsist
-    + 0.10 * calNormality;
+    0.25 * baselineQuality +
+    0.2 * sampleSize +
+    0.2 * integrationCov +
+    0.15 * dataComplete +
+    0.1 * metricConsist +
+    0.1 * calNormality;
 
   const score = Math.max(0, Math.min(100, Math.round(raw)));
   const label = score < 50 ? 'low' : score < 75 ? 'moderate' : 'high';
@@ -181,7 +181,7 @@ export function getTopDrivers(subscores, metricRisks, baseline, weeklyMetrics) {
  * 20+  people  → 100
  */
 function sampleSizeScore(activePeople) {
-  if (activePeople < 8)  return 0;
+  if (activePeople < 8) return 0;
   if (activePeople < 12) return 60;
   if (activePeople < 20) return 80;
   return 100;
@@ -201,9 +201,9 @@ function integrationCoverageScore(cov) {
   const { hasCalendar, hasMessaging, hasEmail, hasOrgStructure } = cov;
 
   if (hasCalendar && hasMessaging && hasEmail && hasOrgStructure) return 100;
-  if (hasCalendar && hasMessaging && hasEmail)                    return 90;
-  if (hasCalendar && hasMessaging)                                return 80;
-  if (hasCalendar || hasMessaging)                                return 45;
+  if (hasCalendar && hasMessaging && hasEmail) return 90;
+  if (hasCalendar && hasMessaging) return 80;
+  if (hasCalendar || hasMessaging) return 45;
   return 10;
 }
 
@@ -315,22 +315,20 @@ function generateDriverExplanation(key, score, weeklyMetrics, baseline) {
 function computeChangeVsBaseline(subscoreKey, weekly, baseline) {
   // Map subscore key → primary metric for the change calculation
   const primaryMetric = {
-    recoveryDebt:            ['afterHoursActivityRatio', 'afterHoursEmailRatio'],
-    focusErosion:            ['focusHoursAvailablePerPerson', 'focusHoursAvailablePerPerson'],
-    coordinationFriction:    ['attendeeHoursPerPerson', 'attendeeHoursPerPerson'],
-    responsivenessPressure:  ['p90ResponseMinutes', 'p90ResponseMinutes'],
+    recoveryDebt: ['afterHoursActivityRatio', 'afterHoursEmailRatio'],
+    focusErosion: ['focusHoursAvailablePerPerson', 'focusHoursAvailablePerPerson'],
+    coordinationFriction: ['attendeeHoursPerPerson', 'attendeeHoursPerPerson'],
+    responsivenessPressure: ['p90ResponseMinutes', 'p90ResponseMinutes'],
     collaborationWithdrawal: ['reciprocityRatio', 'reciprocityRatio'],
-    managerSupportGap:       ['manager1to1MinutesPerPerson', 'manager1to1MinutesPerPerson'],
-    workloadVolatility:      ['weekOverWeekMeetingLoadChange', null],
+    managerSupportGap: ['manager1to1MinutesPerPerson', 'manager1to1MinutesPerPerson'],
+    workloadVolatility: ['weekOverWeekMeetingLoadChange', null],
   };
 
   const [weeklyField, baselineField] = primaryMetric[subscoreKey] ?? [null, null];
   if (!weeklyField) return null;
 
   const current = weekly?.[weeklyField];
-  const baselineMedian = baselineField
-    ? baseline?.metrics?.[baselineField]?.median
-    : null;
+  const baselineMedian = baselineField ? baseline?.metrics?.[baselineField]?.median : null;
 
   if (current === null || current === undefined || !baselineMedian) return null;
 

@@ -18,7 +18,7 @@ router.post('/notifications/weekly', async (req, res) => {
 
     const { includeSlack = true, includeEmail = true } = req.body;
     await sendWeeklySummaries({ includeSlack, includeEmail });
-    
+
     res.json({ message: 'Weekly summaries sent successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -37,7 +37,7 @@ router.get('/notifications/preview/:id', async (req, res) => {
     }
 
     const summary = await generateWeeklySummary(team);
-    
+
     res.json({
       teamName: team.name,
       summary,

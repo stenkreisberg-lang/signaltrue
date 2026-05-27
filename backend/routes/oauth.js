@@ -1,46 +1,47 @@
-import express from "express";
-import { google } from "googleapis";
-import jwt from "jsonwebtoken";
-import User from "../models/user.js";
-import { authenticateToken } from "../middleware/auth.js";
-import { WebClient } from "@slack/web-api";
-import Organization from "../models/organizationModel.js";
-import { v4 as uuidv4 } from "uuid";
-import { notifyHRIntegrationsComplete } from "../services/integrationNotifyService.js";
-import { syncEmployeesFromSlack } from "../services/employeeSyncService.js";
-
+import express from 'express';
+import { google } from 'googleapis';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { WebClient } from '@slack/web-api';
+import Organization from '../models/organizationModel.js';
+import { v4 as uuidv4 } from 'uuid';
+import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
+import { syncEmployeesFromSlack } from '../services/employeeSyncService.js';
 
 const router = express.Router();
 
 // Helper: get redirect URL for dashboard with message
 function dashboardRedirect(success = true) {
-  const frontendUrl = process.env.FRONTEND_URL || "https://www.signaltrue.ai";
+  const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
   const msg = success
-    ? encodeURIComponent("Integration connected successfully. SignalTrue will now start analyzing data.")
-    : encodeURIComponent("Integration failed. Please try again.");
-  return `${frontendUrl}/dashboard?integrationStatus=${success ? "success" : "error"}&msg=${msg}`;
+    ? encodeURIComponent(
+        'Integration connected successfully. SignalTrue will now start analyzing data.'
+      )
+    : encodeURIComponent('Integration failed. Please try again.');
+  return `${frontendUrl}/dashboard?integrationStatus=${success ? 'success' : 'error'}&msg=${msg}`;
 }
 
 // Get backend URL for OAuth callbacks
 function getBackendUrl(req) {
   if (process.env.BACKEND_URL) return process.env.BACKEND_URL;
   // Fallback: construct from request headers (works on Render/Railway/Heroku)
-  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https');
-  const host = (req.headers['x-forwarded-host'] || req.get('host'));
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host');
   return `${proto}://${host}`;
 }
 
 // Slack OAuth entry
-router.get("/auth/slack", (req, res) => {
+router.get('/auth/slack', (req, res) => {
   const { token } = req.query;
 
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized: No token provided in query." });
+    return res.status(401).json({ message: 'Unauthorized: No token provided in query.' });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ message: "Forbidden: Invalid token." });
+      return res.status(403).json({ message: 'Forbidden: Invalid token.' });
     }
 
     const clientId = process.env.SLACK_CLIENT_ID;
@@ -54,22 +55,24 @@ router.get("/auth/slack", (req, res) => {
 });
 
 // Slack OAuth callback
-router.get("/auth/slack/callback", async (req, res) => {
+router.get('/auth/slack/callback', async (req, res) => {
   const { code, state } = req.query;
 
   if (!code || !state) {
-    console.error("Slack OAuth callback: Missing code or state");
+    console.error('Slack OAuth callback: Missing code or state');
     return res.redirect(dashboardRedirect(false));
   }
 
   try {
     const decodedState = jwt.verify(state, process.env.JWT_SECRET);
     const { orgId } = decodedState;
-    
-    console.log("Slack OAuth callback: orgId from state:", orgId);
+
+    console.log('Slack OAuth callback: orgId from state:', orgId);
 
     if (!orgId) {
-      console.error("Slack OAuth callback: No orgId in state - user may need to log out and log back in");
+      console.error(
+        'Slack OAuth callback: No orgId in state - user may need to log out and log back in'
+      );
       return res.redirect(dashboardRedirect(false));
     }
 
@@ -82,16 +85,16 @@ router.get("/auth/slack/callback", async (req, res) => {
     });
 
     if (!oauthResponse.ok) {
-      console.error("Slack OAuth callback: Slack API error:", oauthResponse.error);
+      console.error('Slack OAuth callback: Slack API error:', oauthResponse.error);
       throw new Error(oauthResponse.error);
     }
 
     const { access_token, team } = oauthResponse;
-    console.log("Slack OAuth callback: Got token for team:", team?.name);
+    console.log('Slack OAuth callback: Got token for team:', team?.name);
 
     const org = await Organization.findById(orgId);
     if (!org) {
-      console.error("Slack OAuth callback: Organization not found for orgId:", orgId);
+      console.error('Slack OAuth callback: Organization not found for orgId:', orgId);
       return res.redirect(dashboardRedirect(false));
     }
 
@@ -103,35 +106,35 @@ router.get("/auth/slack/callback", async (req, res) => {
     };
 
     await org.save();
-    console.log("Slack OAuth callback: Successfully saved Slack integration for org:", org.name);
+    console.log('Slack OAuth callback: Successfully saved Slack integration for org:', org.name);
 
     // Trigger employee sync and then check for HR notification
     syncEmployeesFromSlack(org._id)
       .then(() => {
-        console.log("Slack employee sync completed, checking HR notification");
+        console.log('Slack employee sync completed, checking HR notification');
         notifyHRIntegrationsComplete(org._id);
       })
-      .catch(err => console.error("Slack employee sync failed:", err.message));
+      .catch((err) => console.error('Slack employee sync failed:', err.message));
 
     res.redirect(dashboardRedirect(true));
   } catch (error) {
-    console.error("Slack OAuth callback error:", error.message);
-    console.error("Stack:", error.stack);
+    console.error('Slack OAuth callback error:', error.message);
+    console.error('Stack:', error.stack);
     res.redirect(dashboardRedirect(false));
   }
 });
 
 // Google OAuth entry
-router.get("/auth/google", (req, res) => {
+router.get('/auth/google', (req, res) => {
   const { token } = req.query;
 
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized: No token provided in query." });
+    return res.status(401).json({ message: 'Unauthorized: No token provided in query.' });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ message: "Forbidden: Invalid token." });
+      return res.status(403).json({ message: 'Forbidden: Invalid token.' });
     }
 
     const { userId } = user;
@@ -144,7 +147,7 @@ router.get("/auth/google", (req, res) => {
   });
 });
 
-router.get("/auth/google/callback", async (req, res) => {
+router.get('/auth/google/callback', async (req, res) => {
   const { code, state } = req.query;
 
   if (!code || !state) {
@@ -184,20 +187,20 @@ router.get("/auth/google/callback", async (req, res) => {
 
     res.redirect(dashboardRedirect(true));
   } catch (error) {
-    console.error("Google OAuth callback error:", error);
+    console.error('Google OAuth callback error:', error);
     res.redirect(dashboardRedirect(false));
   }
 });
 
 // Outlook OAuth entry
-router.get("/auth/outlook", (req, res) => {
+router.get('/auth/outlook', (req, res) => {
   const clientId = process.env.OUTLOOK_CLIENT_ID;
   const redirectUri = `${getBackendUrl(req)}/api/auth/outlook/callback`;
   const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read&prompt=select_account`;
   res.redirect(url);
 });
 
-router.get("/auth/outlook/callback", async (req, res) => {
+router.get('/auth/outlook/callback', async (req, res) => {
   // TODO: Exchange code for token, store connection
   // For now, simulate success
   // Record connection in DB here

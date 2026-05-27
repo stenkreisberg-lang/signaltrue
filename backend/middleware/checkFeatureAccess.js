@@ -1,6 +1,6 @@
 /**
  * Feature Access Middleware
- * 
+ *
  * Blocks API requests based on subscription tier and user role.
  * This middleware runs BEFORE controllers to enforce the power boundary.
  */
@@ -9,7 +9,7 @@ import accessControlService from '../services/accessControlService.js';
 
 /**
  * Middleware factory to check feature access
- * 
+ *
  * @param {String} feature - Feature key from FEATURES constant
  * @returns {Function} Express middleware
  */
@@ -20,32 +20,28 @@ export const checkFeatureAccess = (feature) => {
       const organization = req.organization;
 
       if (!user) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           error: 'Unauthorized',
-          message: 'User authentication required' 
+          message: 'User authentication required',
         });
       }
 
       if (!organization) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Forbidden',
-          message: 'Organization context required' 
+          message: 'Organization context required',
         });
       }
 
       // Check access
-      const accessCheck = await accessControlService.canAccessFeature(
-        user, 
-        organization, 
-        feature
-      );
+      const accessCheck = await accessControlService.canAccessFeature(user, organization, feature);
 
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Forbidden',
           message: accessCheck.reason,
           feature,
-          upgrade: getUpgradeSuggestion(organization.subscriptionPlanId, feature)
+          upgrade: getUpgradeSuggestion(organization.subscriptionPlanId, feature),
         });
       }
 
@@ -53,9 +49,9 @@ export const checkFeatureAccess = (feature) => {
       next();
     } catch (error) {
       console.error('Feature access check error:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to verify feature access' 
+        message: 'Failed to verify feature access',
       });
     }
   };
@@ -63,7 +59,7 @@ export const checkFeatureAccess = (feature) => {
 
 /**
  * Middleware to check report access
- * 
+ *
  * @param {String} reportType - 'weekly' | 'monthly_hr' | 'monthly_leadership'
  * @returns {Function} Express middleware
  */
@@ -74,32 +70,32 @@ export const checkReportAccess = (reportType) => {
       const organization = req.organization;
 
       if (!user || !organization) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           error: 'Unauthorized',
-          message: 'Authentication required' 
+          message: 'Authentication required',
         });
       }
 
       const accessCheck = await accessControlService.canAccessReport(
-        user, 
-        organization, 
+        user,
+        organization,
         reportType
       );
 
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Forbidden',
           message: accessCheck.reason,
-          reportType
+          reportType,
         });
       }
 
       next();
     } catch (error) {
       console.error('Report access check error:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to verify report access' 
+        message: 'Failed to verify report access',
       });
     }
   };
@@ -107,7 +103,7 @@ export const checkReportAccess = (reportType) => {
 
 /**
  * Middleware to check AI mode access
- * 
+ *
  * @param {String} aiMode - 'tactical' | 'strategic'
  * @returns {Function} Express middleware
  */
@@ -118,24 +114,20 @@ export const checkAiAccess = (aiMode) => {
       const organization = req.organization;
 
       if (!user || !organization) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           error: 'Unauthorized',
-          message: 'Authentication required' 
+          message: 'Authentication required',
         });
       }
 
-      const accessCheck = await accessControlService.canUseAiMode(
-        user, 
-        organization, 
-        aiMode
-      );
+      const accessCheck = await accessControlService.canUseAiMode(user, organization, aiMode);
 
       if (!accessCheck.allowed) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Forbidden',
           message: accessCheck.reason,
           aiMode,
-          upgrade: 'Upgrade to Leadership Intelligence plan for strategic AI recommendations'
+          upgrade: 'Upgrade to Leadership Intelligence plan for strategic AI recommendations',
         });
       }
 
@@ -144,9 +136,9 @@ export const checkAiAccess = (aiMode) => {
       next();
     } catch (error) {
       console.error('AI access check error:', error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to verify AI access' 
+        message: 'Failed to verify AI access',
       });
     }
   };
@@ -161,31 +153,28 @@ export const checkBenchmarkAccess = async (req, res, next) => {
     const organization = req.organization;
 
     if (!user || !organization) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required' 
+        message: 'Authentication required',
       });
     }
 
-    const accessCheck = await accessControlService.canAccessBenchmarks(
-      user, 
-      organization
-    );
+    const accessCheck = await accessControlService.canAccessBenchmarks(user, organization);
 
     if (!accessCheck.allowed) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Forbidden',
         message: 'Industry benchmarks require Leadership Intelligence plan or higher',
-        currentPlan: organization.subscriptionPlanId
+        currentPlan: organization.subscriptionPlanId,
       });
     }
 
     next();
   } catch (error) {
     console.error('Benchmark access check error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to verify benchmark access' 
+      message: 'Failed to verify benchmark access',
     });
   }
 };
@@ -201,7 +190,7 @@ export const attachAccessibleFeatures = async (req, res, next) => {
 
     if (user && organization) {
       const accessibleFeatures = await accessControlService.getAccessibleFeatures(
-        user, 
+        user,
         organization
       );
       req.accessibleFeatures = accessibleFeatures;
@@ -222,11 +211,12 @@ export const attachAccessibleFeatures = async (req, res, next) => {
  */
 function getUpgradeSuggestion(currentPlanId, feature) {
   const suggestions = {
-    'monthlyReportsLeadership': 'Upgrade to Leadership Intelligence (€499) to access executive reports',
-    'aiStrategic': 'Upgrade to Leadership Intelligence (€499) for strategic AI recommendations',
-    'industryBenchmarks': 'Upgrade to Leadership Intelligence (€499) to compare with industry peers',
-    'orgComparisons': 'Upgrade to Leadership Intelligence (€499) for organizational comparisons',
-    'customModels': 'Contact us for Organizational Intelligence (Custom) plan'
+    monthlyReportsLeadership:
+      'Upgrade to Leadership Intelligence (€499) to access executive reports',
+    aiStrategic: 'Upgrade to Leadership Intelligence (€499) for strategic AI recommendations',
+    industryBenchmarks: 'Upgrade to Leadership Intelligence (€499) to compare with industry peers',
+    orgComparisons: 'Upgrade to Leadership Intelligence (€499) for organizational comparisons',
+    customModels: 'Contact us for Organizational Intelligence (Custom) plan',
   };
 
   return suggestions[feature] || 'Upgrade your plan to access this feature';
@@ -237,5 +227,5 @@ export default {
   checkReportAccess,
   checkAiAccess,
   checkBenchmarkAccess,
-  attachAccessibleFeatures
+  attachAccessibleFeatures,
 };

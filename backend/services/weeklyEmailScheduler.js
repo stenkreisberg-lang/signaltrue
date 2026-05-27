@@ -1,8 +1,8 @@
 /**
  * Weekly Email Scheduler — Self-Healing, Persistent, Zero-Maintenance
- * 
+ *
  * GUARANTEES weekly emails get sent every Monday, no matter what:
- * 
+ *
  *  1. PRIMARY:  node-cron fires every Monday at 8:00 AM UTC
  *  2. WATCHDOG: Every hour, checks if this week's emails were sent.
  *               If it's Monday (or later) and they haven't → sends immediately.
@@ -11,7 +11,7 @@
  *  4. PERSIST:  Every send is logged in MongoDB (CronLog) with a unique
  *               week key (e.g., '2026-W12'), preventing duplicate sends.
  *  5. RETRY:    If an org fails, only that org is retried — others are not re-sent.
- * 
+ *
  * This design survives:
  *  - Server restarts / redeployments
  *  - Missed cron windows
@@ -55,7 +55,7 @@ function isSundayNightOrLater() {
 
 async function executeWeeklyEmails(trigger = 'cron') {
   const weekKey = getWeekKey();
-  
+
   // Check if already sent this week
   const alreadySent = await CronLog.hasRunForWeek(JOB_NAME, weekKey);
   if (alreadySent) {
@@ -105,17 +105,20 @@ async function executeWeeklyEmails(trigger = 'cron') {
       failedCount,
     });
 
-    console.log(`[WeeklyScheduler] ${status === 'success' ? '✅' : '⚠️'} Done in ${(durationMs / 1000).toFixed(1)}s — ${sentCount} sent, ${failedCount} failed`);
+    console.log(
+      `[WeeklyScheduler] ${status === 'success' ? '✅' : '⚠️'} Done in ${(durationMs / 1000).toFixed(1)}s — ${sentCount} sent, ${failedCount} failed`
+    );
 
     // If partial failure, schedule a retry for failed orgs in 30 minutes
     if (failedCount > 0) {
-      const failedOrgIds = results.filter(r => r.status === 'failed').map(r => r.orgId);
-      console.log(`[WeeklyScheduler] ⏳ Scheduling retry for ${failedCount} failed orgs in 30 minutes...`);
+      const failedOrgIds = results.filter((r) => r.status === 'failed').map((r) => r.orgId);
+      console.log(
+        `[WeeklyScheduler] ⏳ Scheduling retry for ${failedCount} failed orgs in 30 minutes...`
+      );
       setTimeout(() => retryFailedOrgs(failedOrgIds, weekKey), 30 * 60 * 1000);
     }
 
     return { skipped: false, weekKey, status, sentCount, failedCount, durationMs };
-
   } catch (error) {
     console.error(`[WeeklyScheduler] ❌ Critical failure:`, error.message);
 
@@ -166,12 +169,14 @@ async function retryFailedOrgs(orgIds, weekKey) {
     if (retrySuccess > 0) {
       await CronLog.findOneAndUpdate(
         { jobName: JOB_NAME, weekKey },
-        { 
+        {
           $inc: { sentCount: retrySuccess, failedCount: -retrySuccess },
           $set: { status: 'success' },
         }
       );
-      console.log(`[WeeklyScheduler] 🔄 Retry completed: ${retrySuccess}/${orgIds.length} recovered`);
+      console.log(
+        `[WeeklyScheduler] 🔄 Retry completed: ${retrySuccess}/${orgIds.length} recovered`
+      );
     }
   } catch (err) {
     console.error(`[WeeklyScheduler] Retry error:`, err.message);
@@ -191,7 +196,9 @@ async function executeWeeklyReportGeneration(trigger = 'cron') {
     return { skipped: true, weekKey };
   }
 
-  console.log(`[WeeklyScheduler] 📊 Generating weekly reports for ${weekKey} (trigger: ${trigger})...`);
+  console.log(
+    `[WeeklyScheduler] 📊 Generating weekly reports for ${weekKey} (trigger: ${trigger})...`
+  );
   const startTime = Date.now();
 
   try {
@@ -206,7 +213,12 @@ async function executeWeeklyReportGeneration(trigger = 'cron') {
     for (const org of orgs) {
       try {
         const r = await generateWeeklyReportsForOrg(org._id);
-        results.push({ orgName: org.name, orgId: org._id, status: 'sent', recipientCount: r.success + r.noAction });
+        results.push({
+          orgName: org.name,
+          orgId: org._id,
+          status: 'sent',
+          recipientCount: r.success + r.noAction,
+        });
         sentCount++;
         console.log(`  ✅ ${org.name}: ${r.success} action, ${r.noAction} stable`);
       } catch (err) {
@@ -232,9 +244,10 @@ async function executeWeeklyReportGeneration(trigger = 'cron') {
       failedCount,
     });
 
-    console.log(`[WeeklyScheduler] ${status === 'success' ? '✅' : '⚠️'} Reports done in ${(durationMs / 1000).toFixed(1)}s`);
+    console.log(
+      `[WeeklyScheduler] ${status === 'success' ? '✅' : '⚠️'} Reports done in ${(durationMs / 1000).toFixed(1)}s`
+    );
     return { skipped: false, weekKey, status, sentCount, failedCount };
-
   } catch (error) {
     console.error(`[WeeklyScheduler] ❌ Report generation critical failure:`, error.message);
     throw error;
@@ -300,25 +313,33 @@ export async function getEmailScheduleStatus() {
     currentWeek: weekKey,
     weeklyEmails: {
       sentThisWeek: emailThisWeek,
-      lastRun: lastEmailRun ? {
-        weekKey: lastEmailRun.weekKey,
-        executedAt: lastEmailRun.executedAt,
-        status: lastEmailRun.status,
-        trigger: lastEmailRun.trigger,
-        sentCount: lastEmailRun.sentCount,
-        failedCount: lastEmailRun.failedCount,
-      } : null,
+      lastRun: lastEmailRun
+        ? {
+            weekKey: lastEmailRun.weekKey,
+            executedAt: lastEmailRun.executedAt,
+            status: lastEmailRun.status,
+            trigger: lastEmailRun.trigger,
+            sentCount: lastEmailRun.sentCount,
+            failedCount: lastEmailRun.failedCount,
+          }
+        : null,
       nextScheduled: emailThisWeek ? nextMonday.toISOString() : 'Pending (will send on next check)',
     },
     weeklyReports: {
       generatedThisWeek: reportThisWeek,
-      lastRun: lastReportRun ? {
-        weekKey: lastReportRun.weekKey,
-        executedAt: lastReportRun.executedAt,
-        status: lastReportRun.status,
-      } : null,
+      lastRun: lastReportRun
+        ? {
+            weekKey: lastReportRun.weekKey,
+            executedAt: lastReportRun.executedAt,
+            status: lastReportRun.status,
+          }
+        : null,
     },
-    health: emailThisWeek ? '✅ On track' : isMondayOrLater() ? '⚠️ Emails pending — watchdog will send soon' : '⏳ Waiting for Monday',
+    health: emailThisWeek
+      ? '✅ On track'
+      : isMondayOrLater()
+        ? '⚠️ Emails pending — watchdog will send soon'
+        : '⏳ Waiting for Monday',
   };
 }
 
@@ -386,5 +407,7 @@ export function initWeeklyEmailScheduler() {
   }, 30000);
   console.log('[WeeklyScheduler] 🔍 Startup catch-up: Will check in 30 seconds');
 
-  console.log('[WeeklyScheduler] ✅ Scheduler initialized — emails WILL be sent every Monday, guaranteed.');
+  console.log(
+    '[WeeklyScheduler] ✅ Scheduler initialized — emails WILL be sent every Monday, guaranteed.'
+  );
 }

@@ -8,7 +8,7 @@ import {
   calculateOverloadRisk,
   calculateExecutionRisk,
   calculateRetentionStrainRisk,
-  determineTeamState
+  determineTeamState,
 } from './riskCalculationService.js';
 import { generateAction } from './actionGenerationService.js';
 import { checkExpiredExperiments } from './experimentTrackingService.js';
@@ -33,10 +33,10 @@ function getWeekStart(date = new Date()) {
  */
 async function runWeeklyDiagnosis() {
   console.log('[Weekly Diagnosis] Starting weekly diagnosis job...');
-  
+
   const weekStart = getWeekStart();
   const teams = await Team.find({ isActive: true });
-  
+
   const results = {
     processed: 0,
     errors: [],
@@ -45,10 +45,10 @@ async function runWeeklyDiagnosis() {
       strained: 0,
       overloaded: 0,
       breaking: 0,
-      actionsGenerated: 0
-    }
+      actionsGenerated: 0,
+    },
   };
-  
+
   for (const team of teams) {
     try {
       await processTeam(team._id, weekStart, results);
@@ -58,11 +58,11 @@ async function runWeeklyDiagnosis() {
       results.errors.push({
         teamId: team._id,
         teamName: team.name,
-        error: error.message
+        error: error.message,
       });
     }
   }
-  
+
   console.log('[Weekly Diagnosis] Completed:', results);
   return results;
 }
@@ -72,12 +72,12 @@ async function runWeeklyDiagnosis() {
  */
 async function processTeam(teamId, weekStart, results) {
   console.log(`[Weekly Diagnosis] Processing team ${teamId}...`);
-  
+
   // Step 1: Calculate all 3 risk types
   const overloadRisk = await calculateOverloadRisk(teamId, weekStart);
   const executionRisk = await calculateExecutionRisk(teamId, weekStart);
   const retentionStrainRisk = await calculateRetentionStrainRisk(teamId, weekStart);
-  
+
   // Step 2: Determine team state based on risk scores
   const teamState = await determineTeamState(
     teamId,
@@ -86,10 +86,10 @@ async function processTeam(teamId, weekStart, results) {
     executionRisk,
     retentionStrainRisk
   );
-  
+
   // Track state in summary
   results.summary[teamState.state]++;
-  
+
   // Step 3: Generate action if team is strained or worse
   if (['strained', 'overloaded', 'breaking'].includes(teamState.state)) {
     const action = await generateAction(teamId, weekStart);
@@ -97,8 +97,10 @@ async function processTeam(teamId, weekStart, results) {
       results.summary.actionsGenerated++;
     }
   }
-  
-  console.log(`[Weekly Diagnosis] Team ${teamId} is ${teamState.state} (confidence: ${teamState.confidence}%)`);
+
+  console.log(
+    `[Weekly Diagnosis] Team ${teamId} is ${teamState.state} (confidence: ${teamState.confidence}%)`
+  );
 }
 
 /**
@@ -106,18 +108,18 @@ async function processTeam(teamId, weekStart, results) {
  */
 async function runExperimentCompletion() {
   console.log('[Experiment Completion] Checking for expired experiments...');
-  
+
   const results = await checkExpiredExperiments();
-  
-  const completed = results.filter(r => !r.error).length;
-  const failed = results.filter(r => r.error).length;
-  
+
+  const completed = results.filter((r) => !r.error).length;
+  const failed = results.filter((r) => r.error).length;
+
   console.log(`[Experiment Completion] Completed ${completed} experiments, ${failed} errors`);
-  
+
   return {
     completed,
     failed,
-    results
+    results,
   };
 }
 
@@ -127,16 +129,16 @@ async function runExperimentCompletion() {
 async function runWeeklyCycle() {
   console.log('=== STARTING WEEKLY CYCLE ===');
 
-  const diagnosisResults    = await runWeeklyDiagnosis();
-  const experimentResults   = await runExperimentCompletion();
-  const engagementResults   = await runEngagementStrainCycle(getWeekStart());
+  const diagnosisResults = await runWeeklyDiagnosis();
+  const experimentResults = await runExperimentCompletion();
+  const engagementResults = await runEngagementStrainCycle(getWeekStart());
 
   console.log('=== WEEKLY CYCLE COMPLETE ===');
 
   return {
-    diagnosis:   diagnosisResults,
+    diagnosis: diagnosisResults,
     experiments: experimentResults,
-    engagement:  engagementResults,
+    engagement: engagementResults,
     timestamp: new Date(),
   };
 }
@@ -149,19 +151,19 @@ async function runEngagementStrainCycle(weekStart) {
   console.log('[EngagementStrain] Starting weekly engagement strain scoring...');
 
   const teams = await Team.find({ isActive: true }).select('orgId').lean();
-  const orgIds = [...new Set(teams.map(t => String(t.orgId)).filter(Boolean))];
+  const orgIds = [...new Set(teams.map((t) => String(t.orgId)).filter(Boolean))];
 
   const results = { processed: 0, suppressed: 0, errors: 0, orgs: orgIds.length };
 
   for (const orgId of orgIds) {
     try {
       const result = await runWeeklyEngagementStrainJob(orgId, weekStart);
-      results.processed  += result.processed  ?? 0;
+      results.processed += result.processed ?? 0;
       results.suppressed += result.suppressed ?? 0;
-      results.errors     += result.errors?.length ?? 0;
+      results.errors += result.errors?.length ?? 0;
 
       // Send weekly email digest after scoring — non-fatal if it fails
-      sendWeeklyEngagementReport(orgId, weekStart.toISOString().split('T')[0]).catch(err =>
+      sendWeeklyEngagementReport(orgId, weekStart.toISOString().split('T')[0]).catch((err) =>
         console.error(`[EngagementStrain] Email send failed for org ${orgId}:`, err.message)
       );
     } catch (err) {
@@ -181,7 +183,7 @@ async function diagnoseSingleTeam(teamId, weekStart = null) {
   if (!weekStart) {
     weekStart = getWeekStart();
   }
-  
+
   const results = {
     processed: 0,
     errors: [],
@@ -190,12 +192,12 @@ async function diagnoseSingleTeam(teamId, weekStart = null) {
       strained: 0,
       overloaded: 0,
       breaking: 0,
-      actionsGenerated: 0
-    }
+      actionsGenerated: 0,
+    },
   };
-  
+
   await processTeam(teamId, weekStart, results);
-  
+
   return results;
 }
 
@@ -210,26 +212,26 @@ function scheduleWeeklyJob() {
     const next = new Date(now);
     next.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
     next.setHours(1, 0, 0, 0);
-    
+
     if (next <= now) {
       next.setDate(next.getDate() + 7);
     }
-    
+
     return next;
   }
-  
+
   function scheduleNext() {
     const nextRun = getNextMonday();
     const delay = nextRun - new Date();
-    
+
     console.log(`[Scheduler] Next weekly diagnosis scheduled for ${nextRun.toISOString()}`);
-    
+
     setTimeout(async () => {
       await runWeeklyCycle();
       scheduleNext(); // Schedule next run
     }, delay);
   }
-  
+
   scheduleNext();
 }
 
@@ -240,5 +242,5 @@ export {
   runEngagementStrainCycle,
   diagnoseSingleTeam,
   scheduleWeeklyJob,
-  getWeekStart
+  getWeekStart,
 };

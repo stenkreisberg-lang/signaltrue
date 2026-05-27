@@ -11,13 +11,13 @@ export async function createSnapshot(teamId) {
     slackSignals: {
       messageCount: team.slackSignals?.messageCount || 0,
       avgResponseDelayHours: team.slackSignals?.avgResponseDelayHours || 0,
-      sentiment: team.slackSignals?.sentiment || 0
+      sentiment: team.slackSignals?.sentiment || 0,
     },
     calendarSignals: {
       meetingHoursWeek: team.calendarSignals?.meetingHoursWeek || 0,
       afterHoursMeetings: team.calendarSignals?.afterHoursMeetings || 0,
-      recoveryScore: team.calendarSignals?.recoveryScore || 0
-    }
+      recoveryScore: team.calendarSignals?.recoveryScore || 0,
+    },
   };
 
   // Add to beginning of history array (most recent first)
@@ -25,11 +25,11 @@ export async function createSnapshot(teamId) {
 
   // Keep only last 90 days of history (approx 90-180 snapshots depending on frequency)
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  team.bdiHistory = team.bdiHistory.filter(h => h.timestamp >= ninetyDaysAgo);
+  team.bdiHistory = team.bdiHistory.filter((h) => h.timestamp >= ninetyDaysAgo);
 
   // Calculate trend (7-day)
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const weekOldSnapshot = team.bdiHistory.find(h => h.timestamp <= sevenDaysAgo);
+  const weekOldSnapshot = team.bdiHistory.find((h) => h.timestamp <= sevenDaysAgo);
   if (weekOldSnapshot) {
     const change = team.bdi - weekOldSnapshot.bdi;
     team.trend = Math.round((change / weekOldSnapshot.bdi) * 100);
@@ -42,26 +42,26 @@ export async function createSnapshot(teamId) {
 // Get BDI history for a time range
 export function getHistoryRange(team, days = 30) {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  return team.bdiHistory.filter(h => h.timestamp >= cutoff).reverse(); // oldest first for charts
+  return team.bdiHistory.filter((h) => h.timestamp >= cutoff).reverse(); // oldest first for charts
 }
 
 // Calculate trend between two dates
 export function calculateTrend(team, startDate, endDate = new Date()) {
-  const start = team.bdiHistory.find(h => h.timestamp <= startDate);
-  const end = team.bdiHistory.find(h => h.timestamp <= endDate);
-  
+  const start = team.bdiHistory.find((h) => h.timestamp <= startDate);
+  const end = team.bdiHistory.find((h) => h.timestamp <= endDate);
+
   if (!start || !end) return null;
-  
+
   const change = end.bdi - start.bdi;
   const percentChange = Math.round((change / start.bdi) * 100);
-  
+
   return {
     start: start.bdi,
     end: end.bdi,
     change,
     percentChange,
     startDate: start.timestamp,
-    endDate: end.timestamp
+    endDate: end.timestamp,
   };
 }
 
@@ -75,8 +75,8 @@ export async function setBaseline(teamId, bdi = null, date = null) {
     date: date || new Date(),
     signals: {
       slack: { ...team.slackSignals },
-      calendar: { ...team.calendarSignals }
-    }
+      calendar: { ...team.calendarSignals },
+    },
   };
 
   await team.save();
@@ -91,7 +91,9 @@ export function compareToBaseline(team) {
 
   const change = team.bdi - team.baseline.bdi;
   const percentChange = Math.round((change / team.baseline.bdi) * 100);
-  const daysSinceBaseline = Math.floor((Date.now() - team.baseline.date.getTime()) / (24 * 60 * 60 * 1000));
+  const daysSinceBaseline = Math.floor(
+    (Date.now() - team.baseline.date.getTime()) / (24 * 60 * 60 * 1000)
+  );
 
   return {
     baselineBdi: team.baseline.bdi,
@@ -99,7 +101,7 @@ export function compareToBaseline(team) {
     change,
     percentChange,
     daysSinceBaseline,
-    baselineDate: team.baseline.date
+    baselineDate: team.baseline.date,
   };
 }
 
@@ -108,5 +110,5 @@ export default {
   getHistoryRange,
   calculateTrend,
   setBaseline,
-  compareToBaseline
+  compareToBaseline,
 };

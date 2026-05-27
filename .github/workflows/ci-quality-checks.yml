@@ -31,15 +31,12 @@ jobs:
       
       - name: Lint frontend
         run: npm run lint
-        continue-on-error: true
       
       - name: Check frontend formatting
         run: npm run format:check
-        continue-on-error: true
       
       - name: Run frontend tests
         run: npm test -- --coverage --watchAll=false
-        continue-on-error: true
       
       # Backend checks
       - name: Install backend dependencies
@@ -101,12 +98,10 @@ jobs:
       
       - name: Run npm audit (frontend)
         run: npm audit --audit-level=high
-        continue-on-error: true
       
       - name: Run npm audit (backend)
         working-directory: ./backend
         run: npm audit --audit-level=high
-        continue-on-error: true
       
       - name: Run Snyk security scan
         uses: snyk/actions/node@master

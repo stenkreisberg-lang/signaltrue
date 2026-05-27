@@ -23,14 +23,20 @@ router.get('/weekly/:orgId', authenticateToken, async (req, res) => {
     // Compute aggregate stats
     const avgBdi = teams.reduce((sum, t) => sum + (t.bdi || 0), 0) / teams.length;
     const zoneCount = { Recovery: 0, Stable: 0, Watch: 0, Surge: 0 };
-    teams.forEach(t => {
+    teams.forEach((t) => {
       if (t.zone) zoneCount[t.zone] = (zoneCount[t.zone] || 0) + 1;
     });
 
     // Identify notable changes (teams with high positive/negative trends)
-    const improving = teams.filter(t => t.trend > 5).sort((a, b) => b.trend - a.trend).slice(0, 3);
-    const declining = teams.filter(t => t.trend < -5).sort((a, b) => a.trend - b.trend).slice(0, 3);
-    const surgeTeams = teams.filter(t => t.zone === 'Surge');
+    const improving = teams
+      .filter((t) => t.trend > 5)
+      .sort((a, b) => b.trend - a.trend)
+      .slice(0, 3);
+    const declining = teams
+      .filter((t) => t.trend < -5)
+      .sort((a, b) => a.trend - b.trend)
+      .slice(0, 3);
+    const surgeTeams = teams.filter((t) => t.zone === 'Surge');
 
     // Build context for AI
     const context = `
@@ -40,13 +46,13 @@ Overall BDI: ${avgBdi.toFixed(1)}
 Zone Distribution: Recovery (${zoneCount.Recovery}), Stable (${zoneCount.Stable}), Watch (${zoneCount.Watch}), Surge (${zoneCount.Surge})
 
 Improving Teams:
-${improving.map(t => `- ${t.name}: BDI ${t.bdi}, Trend +${t.trend}%`).join('\n')}
+${improving.map((t) => `- ${t.name}: BDI ${t.bdi}, Trend +${t.trend}%`).join('\n')}
 
 Declining Teams:
-${declining.map(t => `- ${t.name}: BDI ${t.bdi}, Trend ${t.trend}%`).join('\n')}
+${declining.map((t) => `- ${t.name}: BDI ${t.bdi}, Trend ${t.trend}%`).join('\n')}
 
 Teams in Surge:
-${surgeTeams.map(t => `- ${t.name}: BDI ${t.bdi}`).join('\n')}
+${surgeTeams.map((t) => `- ${t.name}: BDI ${t.bdi}`).join('\n')}
 `;
 
     // Generate narrative using AI

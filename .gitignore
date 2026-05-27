@@ -32,6 +32,8 @@ node_modules
 
 # backend uploads (runtime artifacts)
 backend/uploads
+backend/server.log
+backend/test.txt
 
 # editor settings
 .vscode

@@ -65,22 +65,22 @@ export async function evaluateAlerts(current, teamId, orgId) {
 
 function checkRisingStrain(current, history) {
   const alerts = [];
-  const score  = current.engagementStrainRisk;
+  const score = current.engagementStrainRisk;
 
-  const lastWeek  = history[0];
-  const threeAgo  = history[2];
+  const lastWeek = history[0];
+  const threeAgo = history[2];
 
-  const wowDelta = lastWeek  ? score - lastWeek.engagementStrainRisk  : null;
-  const triDelta = threeAgo  ? score - threeAgo.engagementStrainRisk  : null;
+  const wowDelta = lastWeek ? score - lastWeek.engagementStrainRisk : null;
+  const triDelta = threeAgo ? score - threeAgo.engagementStrainRisk : null;
 
   if (wowDelta !== null && wowDelta >= 8) {
     alerts.push({
       alertType: 'rising_strain',
-      title:     'Engagement Strain Rising',
-      severity:  wowDelta >= 15 || score >= 70 ? 'critical' : 'warning',
-      message:   `Team engagement strain risk rose ${wowDelta} points week-over-week (now ${score}).`,
-      context:   {
-        currentScore:  score,
+      title: 'Engagement Strain Rising',
+      severity: wowDelta >= 15 || score >= 70 ? 'critical' : 'warning',
+      message: `Team engagement strain risk rose ${wowDelta} points week-over-week (now ${score}).`,
+      context: {
+        currentScore: score,
         previousScore: lastWeek.engagementStrainRisk,
         weekOverWeekDelta: wowDelta,
         riskState: current.riskState,
@@ -91,12 +91,12 @@ function checkRisingStrain(current, history) {
     // Only fire the 3-week trend alert if the WoW alert didn't already fire
     alerts.push({
       alertType: 'rising_strain',
-      title:     'Sustained Engagement Strain Increase',
-      severity:  score >= 70 ? 'critical' : 'warning',
-      message:   `Team engagement strain risk rose ${triDelta} points over 3 weeks (now ${score}).`,
-      context:   {
-        currentScore:   score,
-        threeWeeksAgo:  threeAgo.engagementStrainRisk,
+      title: 'Sustained Engagement Strain Increase',
+      severity: score >= 70 ? 'critical' : 'warning',
+      message: `Team engagement strain risk rose ${triDelta} points over 3 weeks (now ${score}).`,
+      context: {
+        currentScore: score,
+        threeWeeksAgo: threeAgo.engagementStrainRisk,
         threeWeekDelta: triDelta,
         riskState: current.riskState,
       },
@@ -116,13 +116,13 @@ function checkCriticalDriver(current) {
   if (!subscores) return alerts;
 
   const DRIVER_LABELS = {
-    recoveryDebt:            'Recovery Debt',
-    focusErosion:            'Focus Erosion',
-    coordinationFriction:    'Coordination Friction',
-    responsivenessPressure:  'Responsiveness Pressure',
+    recoveryDebt: 'Recovery Debt',
+    focusErosion: 'Focus Erosion',
+    coordinationFriction: 'Coordination Friction',
+    responsivenessPressure: 'Responsiveness Pressure',
     collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap:       'Manager Support Gap',
-    workloadVolatility:      'Workload Volatility',
+    managerSupportGap: 'Manager Support Gap',
+    workloadVolatility: 'Workload Volatility',
   };
 
   for (const [key, label] of Object.entries(DRIVER_LABELS)) {
@@ -130,10 +130,10 @@ function checkCriticalDriver(current) {
     if (score >= 70) {
       alerts.push({
         alertType: 'critical_driver',
-        title:     `Critical Driver: ${label}`,
-        severity:  score >= 85 ? 'critical' : 'warning',
-        message:   `${label} reached ${score} — in the critical risk band.`,
-        context:   {
+        title: `Critical Driver: ${label}`,
+        severity: score >= 85 ? 'critical' : 'warning',
+        message: `${label} reached ${score} — in the critical risk band.`,
+        context: {
           driver: key,
           driverLabel: label,
           driverScore: score,
@@ -159,18 +159,18 @@ function checkFastDrift(current, history) {
   const delta = Math.abs(current.engagementStrainRisk - fourWeeksAgo.engagementStrainRisk);
 
   if (delta >= 20) {
-    const direction = current.engagementStrainRisk > fourWeeksAgo.engagementStrainRisk
-      ? 'increased' : 'decreased';
+    const direction =
+      current.engagementStrainRisk > fourWeeksAgo.engagementStrainRisk ? 'increased' : 'decreased';
 
     alerts.push({
       alertType: 'fast_drift',
-      title:     `Fast Score Drift Detected`,
-      severity:  'warning',
-      message:   `Team engagement strain risk ${direction} by ${delta} points over 4 weeks — rapid drift may indicate a structural change.`,
-      context:   {
-        currentScore:    current.engagementStrainRisk,
-        fourWeeksAgo:    fourWeeksAgo.engagementStrainRisk,
-        absoluteDelta:   delta,
+      title: `Fast Score Drift Detected`,
+      severity: 'warning',
+      message: `Team engagement strain risk ${direction} by ${delta} points over 4 weeks — rapid drift may indicate a structural change.`,
+      context: {
+        currentScore: current.engagementStrainRisk,
+        fourWeeksAgo: fourWeeksAgo.engagementStrainRisk,
+        absoluteDelta: delta,
         direction,
       },
       createdAt: new Date(),
@@ -186,16 +186,16 @@ function checkFastDrift(current, history) {
 
 function checkSilentWithdrawal(current) {
   const alerts = [];
-  const cw      = current.subscores?.collaborationWithdrawal;
+  const cw = current.subscores?.collaborationWithdrawal;
   const overall = current.engagementStrainRisk;
 
   if (cw >= 65 && overall < 55) {
     alerts.push({
       alertType: 'silent_withdrawal',
-      title:     'Silent Withdrawal Detected',
-      severity:  cw >= 80 ? 'critical' : 'warning',
-      message:   `Collaboration Withdrawal (${cw}) is elevated while overall strain score appears moderate (${overall}) — disengagement may be underway without visible strain markers.`,
-      context:   {
+      title: 'Silent Withdrawal Detected',
+      severity: cw >= 80 ? 'critical' : 'warning',
+      message: `Collaboration Withdrawal (${cw}) is elevated while overall strain score appears moderate (${overall}) — disengagement may be underway without visible strain markers.`,
+      context: {
         collaborationWithdrawal: cw,
         overallRisk: overall,
         riskState: current.riskState,
@@ -213,7 +213,7 @@ function checkSilentWithdrawal(current) {
 
 function checkRecoveryCollapse(current, history) {
   const alerts = [];
-  const thisRD  = current.subscores?.recoveryDebt;
+  const thisRD = current.subscores?.recoveryDebt;
 
   if (thisRD < 80) return alerts;
 
@@ -230,11 +230,11 @@ function checkRecoveryCollapse(current, history) {
   if (consecutiveWeeks >= 2) {
     alerts.push({
       alertType: 'recovery_collapse',
-      title:     'Sustained Recovery Debt — Burnout Risk',
-      severity:  consecutiveWeeks >= 3 ? 'critical' : 'warning',
-      message:   `Recovery Debt has been in the critical range (${thisRD}) for ${consecutiveWeeks} consecutive weeks. Sustained after-hours work patterns significantly increase burnout risk.`,
-      context:   {
-        recoveryDebt:       thisRD,
+      title: 'Sustained Recovery Debt — Burnout Risk',
+      severity: consecutiveWeeks >= 3 ? 'critical' : 'warning',
+      message: `Recovery Debt has been in the critical range (${thisRD}) for ${consecutiveWeeks} consecutive weeks. Sustained after-hours work patterns significantly increase burnout risk.`,
+      context: {
+        recoveryDebt: thisRD,
         consecutiveWeeks,
         overallRisk: current.engagementStrainRisk,
       },

@@ -1,9 +1,9 @@
 /**
  * Monthly Leadership Report Service
- * 
+ *
  * Generates executive-focused monthly reports for CEO and Board members.
  * Available only in Leadership Intelligence (€499) and Custom plans.
- * 
+ *
  * CRITICAL DIFFERENCES FROM HR REPORTS:
  * - Organizational trajectory, not team metrics
  * - Structural risks, not individual performance
@@ -38,7 +38,7 @@ class MonthlyLeadershipReportService {
 
   /**
    * Generate monthly leadership report
-   * 
+   *
    * @param {Object} organization - Organization with subscription check
    * @param {Date} monthOf - Month to generate report for
    * @param {Object} options - Additional options
@@ -60,7 +60,10 @@ class MonthlyLeadershipReportService {
 
     // Optionally include industry benchmarks (if plan allows)
     let benchmarkContext = null;
-    if (organization.subscriptionPlanId === 'leadership' || organization.subscriptionPlanId === 'custom') {
+    if (
+      organization.subscriptionPlanId === 'leadership' ||
+      organization.subscriptionPlanId === 'custom'
+    ) {
       benchmarkContext = await this.getBenchmarkContext(organization, orgData);
     }
 
@@ -71,11 +74,11 @@ class MonthlyLeadershipReportService {
         id: organization._id,
         name: organization.name,
         industry: organization.industry,
-        size: organization.size
+        size: organization.size,
       },
       period: {
         month: monthOf,
-        generatedAt: new Date()
+        generatedAt: new Date(),
       },
       narrative: strategicInsights.narrative,
       structuralRisks: strategicInsights.structuralRisks,
@@ -87,8 +90,8 @@ class MonthlyLeadershipReportService {
       metadata: {
         aiMode: 'strategic',
         promptVersion: prompt.version,
-        subscriptionPlan: organization.subscriptionPlanId
-      }
+        subscriptionPlan: organization.subscriptionPlanId,
+      },
     };
 
     // Validate report doesn't leak tactical/individual data
@@ -103,7 +106,7 @@ class MonthlyLeadershipReportService {
   async gatherOrganizationalData(organization, monthOf) {
     // This would aggregate from various sources
     // Implementation depends on existing data models
-    
+
     return {
       bdiTrend: await this.calculateBDITrend(organization, monthOf),
       structuralRisks: await this.identifyStructuralRisks(organization, monthOf),
@@ -113,7 +116,7 @@ class MonthlyLeadershipReportService {
       orgSize: organization.size,
       industry: organization.industry,
       monthOf,
-      previousMonth: await this.getPreviousMonthComparison(organization, monthOf)
+      previousMonth: await this.getPreviousMonthComparison(organization, monthOf),
     };
   }
 
@@ -123,30 +126,30 @@ class MonthlyLeadershipReportService {
   async generateStrategicInsights(orgData, prompt) {
     // This would call your AI service with the strategic prompt
     // For now, return structure based on prompt template
-    
+
     // TODO: Integrate with actual AI service
     // const aiResponse = await aiService.generate(prompt.userPromptTemplate, orgData);
-    
+
     // Placeholder implementation
     return {
       narrative: {
         trajectory: 'stable',
         summary: 'Organization showing stable performance with identified growth opportunities.',
-        inflectionPoints: []
+        inflectionPoints: [],
       },
       structuralRisks: [],
       leveragePoints: [],
       executionAnalysis: {
         dragSources: [],
         capacityUtilization: 'Moderate',
-        bottlenecks: []
+        bottlenecks: [],
       },
       decisionPrompts: [],
       retentionExposure: {
         highRiskSegments: [],
         structuralDrivers: [],
-        interventionScope: 'Monitoring recommended'
-      }
+        interventionScope: 'Monitoring recommended',
+      },
     };
   }
 
@@ -156,7 +159,7 @@ class MonthlyLeadershipReportService {
   async getBenchmarkContext(organization, orgData) {
     // Would fetch from IndustryBenchmark model
     // Return percentile-based comparisons only
-    
+
     return null; // Placeholder
   }
 
@@ -165,7 +168,7 @@ class MonthlyLeadershipReportService {
    */
   validateLeadershipReport(report) {
     const reportStr = JSON.stringify(report).toLowerCase();
-    
+
     // Prohibited terms that indicate tactical/individual leakage
     const prohibited = [
       'employee name',
@@ -174,7 +177,7 @@ class MonthlyLeadershipReportService {
       '1:1',
       'one-on-one',
       'coaching',
-      'performance review'
+      'performance review',
     ];
 
     for (const term of prohibited) {
@@ -192,11 +195,11 @@ class MonthlyLeadershipReportService {
   async archiveReportOnDowngrade(organizationId, reportId) {
     // Mark report as archived but keep read-only access for HR
     // Implementation depends on report storage model
-    
+
     return {
       archived: true,
       archivedAt: new Date(),
-      reason: 'Plan downgrade'
+      reason: 'Plan downgrade',
     };
   }
 

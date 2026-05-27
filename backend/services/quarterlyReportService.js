@@ -32,8 +32,14 @@ export function getQuarterBounds(date = new Date(), quarterOffset = 0) {
   // Normalise overflow (e.g. Q0 → Q4 prior year, Q5 → Q1 next year)
   let adjustedYear = year;
   let adjustedQ = targetQuarter;
-  while (adjustedQ < 1) { adjustedQ += 4; adjustedYear -= 1; }
-  while (adjustedQ > 4) { adjustedQ -= 4; adjustedYear += 1; }
+  while (adjustedQ < 1) {
+    adjustedQ += 4;
+    adjustedYear -= 1;
+  }
+  while (adjustedQ > 4) {
+    adjustedQ -= 4;
+    adjustedYear += 1;
+  }
 
   const startMonth = (adjustedQ - 1) * 3; // 0, 3, 6, 9
   const start = new Date(Date.UTC(adjustedYear, startMonth, 1));
@@ -105,7 +111,9 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
   // Team-weeks at risk = cumulative stretched + critical across all months
   const teamWeeksAtRisk = sorted.reduce(
     (s, m) =>
-      s + (m.orgHealth?.zoneDistribution?.stretched || 0) + (m.orgHealth?.zoneDistribution?.critical || 0),
+      s +
+      (m.orgHealth?.zoneDistribution?.stretched || 0) +
+      (m.orgHealth?.zoneDistribution?.critical || 0),
     0
   );
 
@@ -143,7 +151,9 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
   });
 
   // Manager effectiveness: average + trend across months
-  const managerScores = sorted.map((m) => m.leadershipSignals?.managerEffectiveness?.avgScore).filter(Boolean);
+  const managerScores = sorted
+    .map((m) => m.leadershipSignals?.managerEffectiveness?.avgScore)
+    .filter(Boolean);
   const managerEffectivenessAvg =
     managerScores.length > 0 ? managerScores.reduce((a, b) => a + b, 0) / managerScores.length : 0;
   const managerEffectivenessTrend = calcTrend(
@@ -158,16 +168,22 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
     equityScores.length > 0 ? equityScores.reduce((a, b) => a + b, 0) / equityScores.length : 100;
 
   // Attrition: average and peak
-  const attritionValues = sorted.map((m) => m.retentionExposure?.avgAttritionRisk).filter((v) => v != null);
+  const attritionValues = sorted
+    .map((m) => m.retentionExposure?.avgAttritionRisk)
+    .filter((v) => v != null);
   const avgAttritionRisk =
-    attritionValues.length > 0 ? attritionValues.reduce((a, b) => a + b, 0) / attritionValues.length : 0;
+    attritionValues.length > 0
+      ? attritionValues.reduce((a, b) => a + b, 0) / attritionValues.length
+      : 0;
   const peakAttritionRisk = attritionValues.length > 0 ? Math.max(...attritionValues) : 0;
   const criticalIndividualsPeak = Math.max(
     ...sorted.map((m) => m.retentionExposure?.criticalIndividualsCount || 0)
   );
 
   // Execution: average drag
-  const dragValues = sorted.map((m) => m.executionSignals?.executionDragAvg).filter((v) => v != null);
+  const dragValues = sorted
+    .map((m) => m.executionSignals?.executionDragAvg)
+    .filter((v) => v != null);
   const executionDragAvg =
     dragValues.length > 0 ? dragValues.reduce((a, b) => a + b, 0) / dragValues.length : 0;
 
@@ -179,7 +195,12 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
   for (const m of sorted) {
     for (const d of m.topStructuralDrivers || []) {
       if (!driverCounts[d.metric]) {
-        driverCounts[d.metric] = { metric: d.metric, monthsPresent: 0, deviations: [], teamCounts: [] };
+        driverCounts[d.metric] = {
+          metric: d.metric,
+          monthsPresent: 0,
+          deviations: [],
+          teamCounts: [],
+        };
       }
       driverCounts[d.metric].monthsPresent++;
       driverCounts[d.metric].deviations.push(d.avgDeviation || 0);
@@ -192,7 +213,8 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
     .map((d) => ({
       metric: d.metric,
       monthsPresent: d.monthsPresent,
-      avgDeviation: Math.round((d.deviations.reduce((a, b) => a + b, 0) / d.deviations.length) * 100) / 100,
+      avgDeviation:
+        Math.round((d.deviations.reduce((a, b) => a + b, 0) / d.deviations.length) * 100) / 100,
       teamsAffected: Math.round(d.teamCounts.reduce((a, b) => a + b, 0) / d.teamCounts.length),
     }))
     .sort((a, b) => Math.abs(b.avgDeviation) - Math.abs(a.avgDeviation))
@@ -227,7 +249,13 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
 
 // ── AI narrative generation ───────────────────────────────────────────────────
 
-async function generateQuarterlyAINarrative({ current, comparison, quarterLabel, priorQuarterLabel, deltas }) {
+async function generateQuarterlyAINarrative({
+  current,
+  comparison,
+  quarterLabel,
+  priorQuarterLabel,
+  deltas,
+}) {
   try {
     const { default: OpenAI } = await import('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -323,12 +351,13 @@ function generateQuarterlyEmailHTML({ org, report }) {
   const fmtDate = (d) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const bdiColor = current.avgBDI < 35 ? '#22c55e' : current.avgBDI < 60 ? '#f59e0b' : '#ef4444';
-  const trajectoryEmoji = {
-    positive: '🟢',
-    stable: '🔵',
-    concerning: '🟡',
-    critical: '🔴',
-  }[aiSummary.organizationalTrajectory] || '🔵';
+  const trajectoryEmoji =
+    {
+      positive: '🟢',
+      stable: '🔵',
+      concerning: '🟡',
+      critical: '🔴',
+    }[aiSummary.organizationalTrajectory] || '🔵';
 
   const deltaRow = (label, delta, lowerIsBetter = true) => {
     if (delta == null) return '';
@@ -416,7 +445,10 @@ function generateQuarterlyEmailHTML({ org, report }) {
       ${aiSummary.narrative
         .split('\n\n')
         .filter(Boolean)
-        .map((p) => `<p style="color:#4b5563; font-size:14px; line-height:1.7; margin:0 0 12px;">${p}</p>`)
+        .map(
+          (p) =>
+            `<p style="color:#4b5563; font-size:14px; line-height:1.7; margin:0 0 12px;">${p}</p>`
+        )
         .join('')}
     </div>
 
@@ -427,7 +459,9 @@ function generateQuarterlyEmailHTML({ org, report }) {
       <h2 style="color:#111827; font-size:17px; font-weight:700; margin:0 0 12px;">Key Findings</h2>
       ${aiSummary.keyFindings
         .map(
-          (f) => `<div style="background:#f0f9ff; border-left:3px solid #3b82f6; border-radius:0 6px 6px 0; padding:10px 14px; margin-bottom:8px;">
+          (
+            f
+          ) => `<div style="background:#f0f9ff; border-left:3px solid #3b82f6; border-radius:0 6px 6px 0; padding:10px 14px; margin-bottom:8px;">
         <div style="font-size:13px; font-weight:600; color:#1e40af;">${f.finding}</div>
         <div style="font-size:12px; color:#6b7280; margin-top:3px;">${f.significance}</div>
       </div>`
@@ -479,9 +513,17 @@ function generateQuarterlyEmailHTML({ org, report }) {
       ${aiSummary.recommendedLeadershipActions
         .map((a) => {
           const urgencyColor =
-            a.urgency === 'immediate' ? '#ef4444' : a.urgency === 'this-quarter' ? '#f59e0b' : '#6366f1';
+            a.urgency === 'immediate'
+              ? '#ef4444'
+              : a.urgency === 'this-quarter'
+                ? '#f59e0b'
+                : '#6366f1';
           const urgencyLabel =
-            a.urgency === 'immediate' ? 'Immediate' : a.urgency === 'this-quarter' ? 'This Quarter' : 'Strategic';
+            a.urgency === 'immediate'
+              ? 'Immediate'
+              : a.urgency === 'this-quarter'
+                ? 'This Quarter'
+                : 'Strategic';
           return `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px; margin-bottom:8px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
             <span style="font-size:13px; font-weight:600; color:#111827;">${a.action}</span>
@@ -519,7 +561,8 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
   // On the first day of a new quarter, offset 0 IS the new quarter; we want the one that just ended
   // Simple heuristic: if today is within first 2 days of a quarter, generate for prior quarter
   const dayOfQuarter = Math.floor((referenceDate - currentQ.start) / (1000 * 60 * 60 * 24));
-  const reportQ = dayOfQuarter <= 1 ? getQuarterBounds(referenceDate, -1) : getQuarterBounds(referenceDate, 0);
+  const reportQ =
+    dayOfQuarter <= 1 ? getQuarterBounds(referenceDate, -1) : getQuarterBounds(referenceDate, 0);
   const priorQ = getQuarterBounds(new Date(reportQ.start.getTime() - 1), 0); // quarter before reportQ
 
   console.log(`\n🔄 [QuarterlyReport] Generating ${reportQ.label} for org ${orgId}...`);
@@ -534,7 +577,10 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
   // Load monthly reports for the target quarter
   const monthlyReports = await MonthlyReport.find({
     orgId,
-    periodEnd: { $gte: reportQ.start, $lte: new Date(reportQ.end.getTime() + 1000 * 60 * 60 * 24 * 5) }, // +5 days buffer
+    periodEnd: {
+      $gte: reportQ.start,
+      $lte: new Date(reportQ.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+    }, // +5 days buffer
   }).sort({ periodEnd: 1 });
 
   if (monthlyReports.length < 2) {
@@ -547,7 +593,10 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
   // Load prior quarter monthly reports for comparison
   const priorMonthlyReports = await MonthlyReport.find({
     orgId,
-    periodEnd: { $gte: priorQ.start, $lte: new Date(priorQ.end.getTime() + 1000 * 60 * 60 * 24 * 5) },
+    periodEnd: {
+      $gte: priorQ.start,
+      $lte: new Date(priorQ.end.getTime() + 1000 * 60 * 60 * 24 * 5),
+    },
   }).sort({ periodEnd: 1 });
 
   // Aggregate snapshots
@@ -559,8 +608,14 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
   let deltas = null;
   if (comparisonSnapshot) {
     const bdiDelta = safeDelta(currentSnapshot.avgBDI, comparisonSnapshot.avgBDI);
-    const attritionRiskDelta = safeDelta(currentSnapshot.avgAttritionRisk, comparisonSnapshot.avgAttritionRisk);
-    const executionDragDelta = safeDelta(currentSnapshot.executionDragAvg, comparisonSnapshot.executionDragAvg);
+    const attritionRiskDelta = safeDelta(
+      currentSnapshot.avgAttritionRisk,
+      comparisonSnapshot.avgAttritionRisk
+    );
+    const executionDragDelta = safeDelta(
+      currentSnapshot.executionDragAvg,
+      comparisonSnapshot.executionDragAvg
+    );
     const managerEffectivenessDelta = safeDelta(
       currentSnapshot.managerEffectivenessAvg,
       comparisonSnapshot.managerEffectivenessAvg
@@ -583,11 +638,10 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
     else if (worseningCount >= 2) overallDirection = 'deteriorating';
 
     const maxAbsDelta = Math.max(
-      ...([bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta]
-        .filter((d) => d != null)
-        .map(Math.abs))
+      ...[bdiDelta, attritionRiskDelta, teamWeeksAtRiskDelta].filter((d) => d != null).map(Math.abs)
     );
-    const overallDirectionStrength = maxAbsDelta > 10 ? 'strong' : maxAbsDelta > 4 ? 'moderate' : 'weak';
+    const overallDirectionStrength =
+      maxAbsDelta > 10 ? 'strong' : maxAbsDelta > 4 ? 'moderate' : 'weak';
 
     deltas = {
       bdiDelta,
@@ -636,7 +690,9 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
   }
 
   console.log(`✅ [QuarterlyReport] ${reportQ.label} generated for org ${orgId}`);
-  console.log(`   BDI: ${currentSnapshot.avgBDI} | Trajectory: ${aiSummary.organizationalTrajectory} | Months: ${monthlyReports.length}`);
+  console.log(
+    `   BDI: ${currentSnapshot.avgBDI} | Trajectory: ${aiSummary.organizationalTrajectory} | Months: ${monthlyReports.length}`
+  );
 
   return report;
 }
@@ -645,7 +701,9 @@ export async function generateQuarterlyReportForOrg(orgId, options = {}) {
 
 export async function generateQuarterlyReportsForAllOrgs(options = {}) {
   const orgs = await Organization.find({});
-  console.log(`\n📊 [QuarterlyReport] Generating quarterly reports for ${orgs.length} organizations...`);
+  console.log(
+    `\n📊 [QuarterlyReport] Generating quarterly reports for ${orgs.length} organizations...`
+  );
 
   let successCount = 0;
   let skippedCount = 0;
@@ -657,7 +715,12 @@ export async function generateQuarterlyReportsForAllOrgs(options = {}) {
       const report = await generateQuarterlyReportForOrg(org._id, options);
       if (report) {
         successCount++;
-        results.push({ orgId: org._id, orgName: org.name, status: 'generated', quarterLabel: report.quarterLabel });
+        results.push({
+          orgId: org._id,
+          orgName: org.name,
+          status: 'generated',
+          quarterLabel: report.quarterLabel,
+        });
 
         // Send email
         await sendQuarterlyReportEmail(org, report);
@@ -672,7 +735,9 @@ export async function generateQuarterlyReportsForAllOrgs(options = {}) {
     }
   }
 
-  console.log(`✅ [QuarterlyReport] Done: ${successCount} generated, ${skippedCount} skipped, ${failedCount} failed`);
+  console.log(
+    `✅ [QuarterlyReport] Done: ${successCount} generated, ${skippedCount} skipped, ${failedCount} failed`
+  );
   return { successCount, skippedCount, failedCount, results };
 }
 

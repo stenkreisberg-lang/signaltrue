@@ -38,16 +38,16 @@ export const SCORING_VERSION = '1.0.0';
 // Maps logical metric keys → MetricsDaily field names
 
 const METRIC_FIELD_MAP = {
-  after_hours_activity:  'afterHoursRate',
-  meeting_load:          'meetingLoadIndex',
+  after_hours_activity: 'afterHoursRate',
+  meeting_load: 'meetingLoadIndex',
   back_to_back_meetings: 'backToBackBlocks',
-  focus_time:            'focusTimeRatio',
-  response_time:         'responseMedianMins',
-  participation_drift:   'uniqueContacts',
+  focus_time: 'focusTimeRatio',
+  response_time: 'responseMedianMins',
+  participation_drift: 'uniqueContacts',
   meeting_fragmentation: 'meetingFragmentScore',
-  weekend_activity:      'weekendActivityRate',
-  cross_team_contacts:   'crossTeamContacts',
-  async_participation:   'asyncParticipationIdx',
+  weekend_activity: 'weekendActivityRate',
+  cross_team_contacts: 'crossTeamContacts',
+  async_participation: 'asyncParticipationIdx',
 };
 
 // Metrics where a higher value is BETTER (loss of focus = more risk)
@@ -61,60 +61,60 @@ const HIGHER_IS_BETTER = new Set([
 // ── Weight definitions (change only here — audit log snapshots them) ───────────
 
 const OVERLOAD_WEIGHTS = {
-  after_hours_activity:  0.35,
-  meeting_load:          0.30,
-  back_to_back_meetings: 0.20,
-  focus_time:            0.15,
+  after_hours_activity: 0.35,
+  meeting_load: 0.3,
+  back_to_back_meetings: 0.2,
+  focus_time: 0.15,
 };
 
 const EXECUTION_WEIGHTS = {
-  response_time:         0.30,
-  participation_drift:   0.25,
+  response_time: 0.3,
+  participation_drift: 0.25,
   meeting_fragmentation: 0.25,
-  focus_time:            0.20,
+  focus_time: 0.2,
 };
 
 const RETENTION_WEIGHTS = {
-  after_hours_activity:  0.40,
-  meeting_load:          0.30,
-  response_time:         0.30,
+  after_hours_activity: 0.4,
+  meeting_load: 0.3,
+  response_time: 0.3,
 };
 
 const CAPACITY_WEIGHTS = {
-  after_hours_activity:  0.30,
-  meeting_load:          0.25,
-  back_to_back_meetings: 0.20,
-  focus_time:            0.15,
-  weekend_activity:      0.10,
+  after_hours_activity: 0.3,
+  meeting_load: 0.25,
+  back_to_back_meetings: 0.2,
+  focus_time: 0.15,
+  weekend_activity: 0.1,
 };
 
 const COORDINATION_WEIGHTS = {
-  response_time:         0.30,
+  response_time: 0.3,
   meeting_fragmentation: 0.25,
-  participation_drift:   0.20,
-  cross_team_contacts:   0.15,
-  async_participation:   0.10,
+  participation_drift: 0.2,
+  cross_team_contacts: 0.15,
+  async_participation: 0.1,
 };
 
 const COHESION_WEIGHTS = {
-  collaboration_breadth: 0.35,  // handled via BDI signals
-  async_participation:   0.25,
-  response_time:         0.20,
-  after_hours_activity:  0.20,
+  collaboration_breadth: 0.35, // handled via BDI signals
+  async_participation: 0.25,
+  response_time: 0.2,
+  after_hours_activity: 0.2,
 };
 
 const COMPOSITE_WEIGHTS = {
-  capacity:     0.40,
+  capacity: 0.4,
   coordination: 0.35,
-  cohesion:     0.25,
+  cohesion: 0.25,
 };
 
 const BDI_THRESHOLDS = {
-  meetingLoad:          20,
-  afterHoursActivity:   30,
-  responseTime:         25,
-  asyncParticipation:   20,
-  focusTime:            20,
+  meetingLoad: 20,
+  afterHoursActivity: 30,
+  responseTime: 25,
+  asyncParticipation: 20,
+  focusTime: 20,
   collaborationBreadth: 25,
 };
 
@@ -137,7 +137,9 @@ async function runPrivacyGate(teamId, orgId) {
   try {
     const [team, org] = await Promise.all([
       Team.findById(teamId).select('metadata.actualSize').lean(),
-      orgId ? Organization.findById(orgId).select('minTeamSizeForAnalytics').lean() : Promise.resolve(null),
+      orgId
+        ? Organization.findById(orgId).select('minTeamSizeForAnalytics').lean()
+        : Promise.resolve(null),
     ]);
 
     const minSize = org?.minTeamSizeForAnalytics ?? DEFAULT_MIN_TEAM_SIZE;
@@ -333,7 +335,12 @@ async function computeOverloadRisk(teamId, weekStart, metrics, baselines) {
       band,
       confidence,
       explanation: buildRiskExplanation('overload', score, band),
-      inputSnapshot: { metrics: Object.fromEntries(Object.entries(metrics).filter(([k]) => OVERLOAD_WEIGHTS[k] !== undefined)), baselines },
+      inputSnapshot: {
+        metrics: Object.fromEntries(
+          Object.entries(metrics).filter(([k]) => OVERLOAD_WEIGHTS[k] !== undefined)
+        ),
+        baselines,
+      },
       contributions,
       scoringVersion: SCORING_VERSION,
     },
@@ -370,7 +377,12 @@ async function computeExecutionRisk(teamId, weekStart, metrics, baselines) {
       band,
       confidence,
       explanation: buildRiskExplanation('execution', score, band),
-      inputSnapshot: { metrics: Object.fromEntries(Object.entries(metrics).filter(([k]) => EXECUTION_WEIGHTS[k] !== undefined)), baselines },
+      inputSnapshot: {
+        metrics: Object.fromEntries(
+          Object.entries(metrics).filter(([k]) => EXECUTION_WEIGHTS[k] !== undefined)
+        ),
+        baselines,
+      },
       contributions,
       scoringVersion: SCORING_VERSION,
     },
@@ -431,7 +443,12 @@ function computeCoordinationDrag(metrics, baselines) {
   return { score, contributions };
 }
 
-function computeCohesionDrift(metrics, baselines, collaborationBreadthValue, collaborationBreadthBaseline) {
+function computeCohesionDrift(
+  metrics,
+  baselines,
+  collaborationBreadthValue,
+  collaborationBreadthBaseline
+) {
   // For cohesion we inline collaboration_breadth (from BDI signals) plus metric-based inputs
   const cohesionMetrics = { ...metrics };
   const cohesionBaselines = { ...baselines };
@@ -440,15 +457,19 @@ function computeCohesionDrift(metrics, baselines, collaborationBreadthValue, col
   cohesionMetrics['collaboration_breadth'] = collaborationBreadthValue ?? 0;
   cohesionBaselines['collaboration_breadth'] = collaborationBreadthBaseline ?? 0;
 
-  const { score, contributions } = computeWeightedScore(COHESION_WEIGHTS, cohesionMetrics, cohesionBaselines);
+  const { score, contributions } = computeWeightedScore(
+    COHESION_WEIGHTS,
+    cohesionMetrics,
+    cohesionBaselines
+  );
   return { score, contributions };
 }
 
 function computeOverallDrift(capacityScore, coordinationScore, cohesionScore) {
   return Math.round(
     COMPOSITE_WEIGHTS.capacity * capacityScore +
-    COMPOSITE_WEIGHTS.coordination * coordinationScore +
-    COMPOSITE_WEIGHTS.cohesion * cohesionScore
+      COMPOSITE_WEIGHTS.coordination * coordinationScore +
+      COMPOSITE_WEIGHTS.cohesion * cohesionScore
   );
 }
 
@@ -460,23 +481,23 @@ async function computeBDI(teamId, orgId, weekStart, metrics, baselines) {
 
   // Resolve baseline from BDI-specific fields (mapped from MetricsDaily)
   const bdiBaseline = {
-    meetingLoad:          baselines['meeting_load']         ?? team.calendarSignals?.meetingHoursWeek ?? 0,
-    afterHoursActivity:   baselines['after_hours_activity'] ?? 0,
-    responseTime:         baselines['response_time']        ?? 0,
-    asyncParticipation:   baselines['async_participation']  ?? metrics['async_participation'] ?? 0,
-    focusTime:            baselines['focus_time']           ?? 0,
-    collaborationBreadth: baselines['participation_drift']  ?? 0,
-    establishedDate:      new Date(),
-    sampleSize:           30,
+    meetingLoad: baselines['meeting_load'] ?? team.calendarSignals?.meetingHoursWeek ?? 0,
+    afterHoursActivity: baselines['after_hours_activity'] ?? 0,
+    responseTime: baselines['response_time'] ?? 0,
+    asyncParticipation: baselines['async_participation'] ?? metrics['async_participation'] ?? 0,
+    focusTime: baselines['focus_time'] ?? 0,
+    collaborationBreadth: baselines['participation_drift'] ?? 0,
+    establishedDate: new Date(),
+    sampleSize: 30,
   };
 
   const currentSignals = {
-    meetingLoad:          metrics['meeting_load']         ?? 0,
-    afterHoursActivity:   metrics['after_hours_activity'] * 100 ?? 0, // convert ratio → %
-    responseTime:         metrics['response_time']        ?? 0,
-    asyncParticipation:   metrics['async_participation']  ?? 0,
-    focusTime:            metrics['focus_time'] * 40      ?? 0, // ratio → hours (assume 40h week)
-    collaborationBreadth: metrics['participation_drift']  ?? 0,
+    meetingLoad: metrics['meeting_load'] ?? 0,
+    afterHoursActivity: metrics['after_hours_activity'] * 100 ?? 0, // convert ratio → %
+    responseTime: metrics['response_time'] ?? 0,
+    asyncParticipation: metrics['async_participation'] ?? 0,
+    focusTime: metrics['focus_time'] * 40 ?? 0, // ratio → hours (assume 40h week)
+    collaborationBreadth: metrics['participation_drift'] ?? 0,
   };
 
   const signalKeys = Object.keys(currentSignals);
@@ -498,8 +519,12 @@ async function computeBDI(teamId, orgId, weekStart, metrics, baselines) {
     let direction = 'neutral';
     if (deviating) {
       direction = isHigherBad
-        ? pct > threshold ? 'negative' : 'positive'
-        : pct < -threshold ? 'negative' : 'positive';
+        ? pct > threshold
+          ? 'negative'
+          : 'positive'
+        : pct < -threshold
+          ? 'negative'
+          : 'positive';
     }
 
     if (deviating) deviatingCount++;
@@ -518,9 +543,7 @@ async function computeBDI(teamId, orgId, weekStart, metrics, baselines) {
     }
   }
 
-  const topDrivers = driverList
-    .sort((a, b) => b.contribution - a.contribution)
-    .slice(0, 3);
+  const topDrivers = driverList.sort((a, b) => b.contribution - a.contribution).slice(0, 3);
 
   const driftScore = Math.min(Math.round((negativeCount / 6) * 100), 100);
 
@@ -586,7 +609,13 @@ async function updateDriftTimeline(teamId, newState) {
 
 // ── Team state ─────────────────────────────────────────────────────────────────
 
-async function determineTeamState(teamId, weekStart, overloadScore, executionScore, retentionScore) {
+async function determineTeamState(
+  teamId,
+  weekStart,
+  overloadScore,
+  executionScore,
+  retentionScore
+) {
   // Check for 'breaking' — execution risk ≥ 65 for 2+ consecutive weeks
   const recentHigh = await RiskWeekly.find({
     teamId,
@@ -609,16 +638,16 @@ async function determineTeamState(teamId, weekStart, overloadScore, executionSco
 function buildDeviationText(metricKey, deviation) {
   const pct = Math.round(deviation * 100);
   const labels = {
-    after_hours_activity:  'After-hours activity',
-    meeting_load:          'Meeting load',
+    after_hours_activity: 'After-hours activity',
+    meeting_load: 'Meeting load',
     back_to_back_meetings: 'Back-to-back meeting blocks',
-    focus_time:            'Focus time',
-    response_time:         'Response time',
-    participation_drift:   'Collaboration breadth',
+    focus_time: 'Focus time',
+    response_time: 'Response time',
+    participation_drift: 'Collaboration breadth',
     meeting_fragmentation: 'Calendar fragmentation',
-    weekend_activity:      'Weekend activity',
-    cross_team_contacts:   'Cross-team collaboration',
-    async_participation:   'Async participation',
+    weekend_activity: 'Weekend activity',
+    cross_team_contacts: 'Cross-team collaboration',
+    async_participation: 'Async participation',
   };
   return `${labels[metricKey] || metricKey} deviating by ${pct}% from baseline.`;
 }
@@ -630,21 +659,35 @@ function buildTrendText(metricKey, slope) {
 
 function buildRiskExplanation(type, score, band) {
   const bandText = { green: 'within normal range', yellow: 'elevated', red: 'critically high' };
-  const typeText = { overload: 'Overload risk', execution: 'Execution risk', retention_strain: 'Retention strain' };
+  const typeText = {
+    overload: 'Overload risk',
+    execution: 'Execution risk',
+    retention_strain: 'Retention strain',
+  };
   return `${typeText[type] || type} is ${bandText[band] || band} (score: ${score}/100).`;
 }
 
 function buildBDISummary(state, topDrivers) {
   if (topDrivers.length === 0) return 'No significant behavioral drift detected.';
-  const driverNames = topDrivers.map((d) => d.signal.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ');
+  const driverNames = topDrivers
+    .map((d) => d.signal.replace(/([A-Z])/g, ' $1').toLowerCase())
+    .join(', ');
   return `${state}: key drivers are ${driverNames}.`;
 }
 
 // ── Audit log write ────────────────────────────────────────────────────────────
 
 async function writeAuditLog({
-  teamId, orgId, trigger, scoreType, inputSnapshot,
-  outputSnapshot, weights, gate, durationMs, error,
+  teamId,
+  orgId,
+  trigger,
+  scoreType,
+  inputSnapshot,
+  outputSnapshot,
+  weights,
+  gate,
+  durationMs,
+  error,
 }) {
   try {
     const doc = await ScoringAuditLog.create({
@@ -691,7 +734,10 @@ export async function runFullScoring(teamId, weekStart, trigger = 'cron') {
   const gate = await runPrivacyGate(teamId, orgId);
   if (!gate.passed) {
     const auditLogId = await writeAuditLog({
-      teamId, orgId, trigger, scoreType: 'full_run',
+      teamId,
+      orgId,
+      trigger,
+      scoreType: 'full_run',
       inputSnapshot: { teamSize: gate.actualSize },
       gate,
       durationMs: Date.now() - startTime,
@@ -727,7 +773,8 @@ export async function runFullScoring(teamId, weekStart, trigger = 'cron') {
     // Cohesion needs collaboration_breadth from BDI baseline
     const collabBreadthBaseline = baselines['participation_drift'] ?? 0;
     const cohesion = computeCohesionDrift(
-      metrics, baselines,
+      metrics,
+      baselines,
       metrics['participation_drift'],
       collabBreadthBaseline
     );
@@ -739,48 +786,59 @@ export async function runFullScoring(teamId, weekStart, trigger = 'cron') {
 
     // 5. Team state
     const teamState = await determineTeamState(
-      teamId, weekStart,
-      overload.score, execution.score, retention.score
+      teamId,
+      weekStart,
+      overload.score,
+      execution.score,
+      retention.score
     );
 
     // 6. Write composite scores to Team
     await Team.findByIdAndUpdate(teamId, {
-      capacityDriftScore:    capacity.score,
+      capacityDriftScore: capacity.score,
       coordinationDragScore: coordination.score,
-      cohesionDriftScore:    cohesion.score,
-      overallDriftScore:     overallDrift,
-      driftScoreUpdatedAt:   new Date(),
-      analyticsEnabled:      true,
+      cohesionDriftScore: cohesion.score,
+      overallDriftScore: overallDrift,
+      driftScoreUpdatedAt: new Date(),
+      analyticsEnabled: true,
     });
 
     const outputSnapshot = {
       scores: {
-        bdi:              bdiResult.driftScore,
-        overload:         overload.score,
-        execution:        execution.score,
+        bdi: bdiResult.driftScore,
+        overload: overload.score,
+        execution: execution.score,
         retention_strain: retention.score,
-        capacity:         capacity.score,
-        coordination:     coordination.score,
-        cohesion:         cohesion.score,
-        overall:          overallDrift,
+        capacity: capacity.score,
+        coordination: coordination.score,
+        cohesion: cohesion.score,
+        overall: overallDrift,
       },
       bands: {
-        overload:         overload.band,
-        execution:        execution.band,
+        overload: overload.band,
+        execution: execution.band,
         retention_strain: retention.band,
       },
-      state:   teamState,
+      state: teamState,
       drivers: [...overload.drivers, ...execution.drivers, ...retention.drivers],
     };
 
     // 7. Audit log
     auditLogId = await writeAuditLog({
-      teamId, orgId, trigger, scoreType: 'full_run',
+      teamId,
+      orgId,
+      trigger,
+      scoreType: 'full_run',
       inputSnapshot: {
         weekStart,
         metricsUsed: metrics,
         baselines,
-        baselineConfidence: determineConfidence(baselines) === 'high' ? 1 : determineConfidence(baselines) === 'medium' ? 0.6 : 0.3,
+        baselineConfidence:
+          determineConfidence(baselines) === 'high'
+            ? 1
+            : determineConfidence(baselines) === 'medium'
+              ? 0.6
+              : 0.3,
         teamSize: gate.actualSize,
       },
       outputSnapshot,
@@ -801,21 +859,29 @@ export async function runFullScoring(teamId, weekStart, trigger = 'cron') {
       teamId: teamId.toString(),
       suppressed: false,
       bdi: {
-        driftScore:    bdiResult.driftScore,
-        state:         bdiResult.state,
-        topDrivers:    bdiResult.topDrivers,
-        confidence:    determineConfidence(baselines),
+        driftScore: bdiResult.driftScore,
+        state: bdiResult.state,
+        topDrivers: bdiResult.topDrivers,
+        confidence: determineConfidence(baselines),
       },
       risks: {
-        overload:         { score: overload.score,   band: overload.band,   confidence: overload.confidence },
-        execution:        { score: execution.score,  band: execution.band,  confidence: execution.confidence },
-        retention_strain: { score: retention.score,  band: retention.band,  confidence: retention.confidence },
+        overload: { score: overload.score, band: overload.band, confidence: overload.confidence },
+        execution: {
+          score: execution.score,
+          band: execution.band,
+          confidence: execution.confidence,
+        },
+        retention_strain: {
+          score: retention.score,
+          band: retention.band,
+          confidence: retention.confidence,
+        },
       },
       compositeDrift: {
-        capacity:     capacity.score,
+        capacity: capacity.score,
         coordination: coordination.score,
-        cohesion:     cohesion.score,
-        overall:      overallDrift,
+        cohesion: cohesion.score,
+        overall: overallDrift,
       },
       teamState,
       auditLogId,
@@ -823,7 +889,10 @@ export async function runFullScoring(teamId, weekStart, trigger = 'cron') {
     };
   } catch (err) {
     auditLogId = await writeAuditLog({
-      teamId, orgId, trigger, scoreType: 'full_run',
+      teamId,
+      orgId,
+      trigger,
+      scoreType: 'full_run',
       inputSnapshot: { weekStart, teamSize: gate.actualSize },
       gate,
       durationMs: Date.now() - startTime,
@@ -893,20 +962,30 @@ export async function runCompositeDrift(teamId, weekStart, trigger = 'cron') {
     fetchBaselines(teamId),
   ]);
 
-  const capacity    = computeCapacityDrift(metrics, baselines);
+  const capacity = computeCapacityDrift(metrics, baselines);
   const coordination = computeCoordinationDrag(metrics, baselines);
-  const cohesion    = computeCohesionDrift(metrics, baselines, metrics['participation_drift'], baselines['participation_drift']);
-  const overall     = computeOverallDrift(capacity.score, coordination.score, cohesion.score);
+  const cohesion = computeCohesionDrift(
+    metrics,
+    baselines,
+    metrics['participation_drift'],
+    baselines['participation_drift']
+  );
+  const overall = computeOverallDrift(capacity.score, coordination.score, cohesion.score);
 
   await Team.findByIdAndUpdate(teamId, {
-    capacityDriftScore:    capacity.score,
+    capacityDriftScore: capacity.score,
     coordinationDragScore: coordination.score,
-    cohesionDriftScore:    cohesion.score,
-    overallDriftScore:     overall,
-    driftScoreUpdatedAt:   new Date(),
+    cohesionDriftScore: cohesion.score,
+    overallDriftScore: overall,
+    driftScoreUpdatedAt: new Date(),
   });
 
-  return { capacity: capacity.score, coordination: coordination.score, cohesion: cohesion.score, overall };
+  return {
+    capacity: capacity.score,
+    coordination: coordination.score,
+    cohesion: cohesion.score,
+    overall,
+  };
 }
 
 /**

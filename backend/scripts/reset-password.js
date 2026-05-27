@@ -21,7 +21,7 @@ const resetPassword = async () => {
 
   try {
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
     });
 
     console.log('MongoDB connected...');
@@ -37,7 +37,6 @@ const resetPassword = async () => {
     await user.save();
 
     console.log(`Password for user "${email}" has been successfully reset.`);
-    
   } catch (error) {
     console.error('An error occurred:', error.message);
   } finally {

@@ -35,17 +35,13 @@ import { checkTeamSize, suppressMetricIfTooFew } from '../utils/privacyGate.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const CALENDAR_SOURCES = new Set([
-  'google-calendar', 'microsoft-outlook', 'calendar', 'meet',
-]);
-const MESSAGING_SOURCES = new Set([
-  'slack', 'microsoft-teams', 'google-chat',
-]);
+const CALENDAR_SOURCES = new Set(['google-calendar', 'microsoft-outlook', 'calendar', 'meet']);
+const MESSAGING_SOURCES = new Set(['slack', 'microsoft-teams', 'google-chat']);
 const EMAIL_SOURCES = new Set(['gmail', 'microsoft-outlook']);
 
 // Working hours defaults (can be overridden by org config)
-const DEFAULT_WORK_START_HOUR = 9;   // 09:00
-const DEFAULT_WORK_END_HOUR = 17;    // 17:00
+const DEFAULT_WORK_START_HOUR = 9; // 09:00
+const DEFAULT_WORK_END_HOUR = 17; // 17:00
 const DEFAULT_WORK_DAYS = new Set([1, 2, 3, 4, 5]); // Mon–Fri (getDay: 0=Sun)
 
 // Thresholds
@@ -53,8 +49,8 @@ const BACK_TO_BACK_GAP_MINUTES = 5;
 const FOCUS_BLOCK_MIN_MINUTES = 90;
 const FRAGMENTED_MEETING_COUNT = 5;
 const FRAGMENTED_BTB_SEQUENCES = 3;
-const RECOVERY_LATE_HOUR = 20;        // last activity after 20:00 local
-const RECOVERY_EARLY_HOUR = 8;        // first activity before 08:00 local
+const RECOVERY_LATE_HOUR = 20; // last activity after 20:00 local
+const RECOVERY_EARLY_HOUR = 8; // first activity before 08:00 local
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -88,9 +84,7 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   }).lean();
 
   // Distinct active users on this day (using actorUserId as proxy for person)
-  const activeUsers = new Set(
-    events.map((e) => String(e.actorUserId)).filter(Boolean)
-  );
+  const activeUsers = new Set(events.map((e) => String(e.actorUserId)).filter(Boolean));
   const activePeopleCount = activeUsers.size;
 
   // Privacy gate — do not write if below minimum
@@ -109,14 +103,13 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
 
   // ── Compute metric blocks ──────────────────────────────────────────────────
   const calendarMetrics = computeCalendarMetrics(
-    calendarEvents, activePeopleCount, workConfig, dateStr
+    calendarEvents,
+    activePeopleCount,
+    workConfig,
+    dateStr
   );
-  const messagingMetrics = computeMessagingMetrics(
-    messagingEvents, activePeopleCount, workConfig
-  );
-  const emailMetrics = computeEmailMetrics(
-    emailEvents, activePeopleCount, workConfig
-  );
+  const messagingMetrics = computeMessagingMetrics(messagingEvents, activePeopleCount, workConfig);
+  const emailMetrics = computeEmailMetrics(emailEvents, activePeopleCount, workConfig);
 
   // ── Upsert ────────────────────────────────────────────────────────────────
   const doc = await EngagementTeamDaily.findOneAndUpdate(
@@ -191,9 +184,7 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
 
   // ── Recurring meeting ratio ───────────────────────────────────────────────
   const recurringCount = meetings.filter((e) => e.metadata?.isRecurring).length;
-  const recurringMeetingRatio = meetings.length > 0
-    ? recurringCount / meetings.length
-    : 0;
+  const recurringMeetingRatio = meetings.length > 0 ? recurringCount / meetings.length : 0;
 
   // ── Average attendee count ────────────────────────────────────────────────
   const attendeeCounts = meetings
@@ -237,8 +228,7 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
   }
 
   // Fall back to team-level estimate if per-person data is thin
-  const fragmentedDayRatio =
-    totalPersonDays > 0 ? fragmentedPersonDays / totalPersonDays : 0;
+  const fragmentedDayRatio = totalPersonDays > 0 ? fragmentedPersonDays / totalPersonDays : 0;
 
   // Suppress focus metrics if too few people contributed calendar data
   const focusSuppressed = suppressMetricIfTooFew(peopleWithCalendarData);
@@ -256,9 +246,7 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
   );
 
   const manager1to1TotalMinutes = sum(
-    manager1to1Events
-      .filter((e) => !e.metadata?.isCancelled)
-      .map((e) => resolveDurationMinutes(e))
+    manager1to1Events.filter((e) => !e.metadata?.isCancelled).map((e) => resolveDurationMinutes(e))
   );
   const manager1to1MinutesPerPerson = manager1to1TotalMinutes / activePeopleCount;
   const cancelled1to1Count = cancelledManager1to1Events.length;
@@ -319,12 +307,8 @@ function computeMessagingMetrics(events, activePeopleCount, workConfig) {
   const messagesSentPerPerson = messagesSentTotal / activePeopleCount;
 
   // After-hours ratio
-  const afterHoursSent = sent.filter((e) =>
-    isAfterHours(e.timestamp, workConfig)
-  ).length;
-  const afterHoursMessageRatio = messagesSentTotal > 0
-    ? afterHoursSent / messagesSentTotal
-    : 0;
+  const afterHoursSent = sent.filter((e) => isAfterHours(e.timestamp, workConfig)).length;
+  const afterHoursMessageRatio = messagesSentTotal > 0 ? afterHoursSent / messagesSentTotal : 0;
 
   // Channel type ratios
   const publicCount = sent.filter((e) => e.metadata?.channelType === 'public').length;
@@ -348,17 +332,14 @@ function computeMessagingMetrics(events, activePeopleCount, workConfig) {
     for (const h of e.metadata?.mentionedUserHashes ?? []) personContacts[person].add(h);
   }
   const contactCounts = Object.values(personContacts).map((s) => s.size);
-  const uniqueCollaboratorsPerPerson =
-    contactCounts.length > 0 ? mean(contactCounts) : 0;
+  const uniqueCollaboratorsPerPerson = contactCounts.length > 0 ? mean(contactCounts) : 0;
 
   // Response latency — for DMs, @-mentions, and direct replies
   // Build a map of threadIdHash → first message timestamp per person
   // Then find replies and measure first_reply - original_message
   const latencies = computeResponseLatencies(events);
-  const medianResponseMinutes =
-    latencies.length > 0 ? median(latencies) : null;
-  const p90ResponseMinutes =
-    latencies.length > 0 ? percentile(latencies, 90) : null;
+  const medianResponseMinutes = latencies.length > 0 ? median(latencies) : null;
+  const p90ResponseMinutes = latencies.length > 0 ? percentile(latencies, 90) : null;
 
   // Reciprocity ratio
   // A→B and B→A = reciprocal edge; A→B with no response = one-way edge
@@ -399,27 +380,29 @@ function computeEmailMetrics(events, activePeopleCount, workConfig) {
   const sent = events.filter((e) => e.eventType === 'email_sent');
 
   if (sent.length === 0) {
-    return { emailsSentTotal: 0, afterHoursEmailRatio: 0, medianReplyMinutes: null, internalEmailRatio: 0 };
+    return {
+      emailsSentTotal: 0,
+      afterHoursEmailRatio: 0,
+      medianReplyMinutes: null,
+      internalEmailRatio: 0,
+    };
   }
 
   const emailsSentTotal = sent.length;
 
-  const afterHoursCount = sent.filter((e) =>
-    isAfterHours(e.timestamp, workConfig)
-  ).length;
-  const afterHoursEmailRatio = emailsSentTotal > 0
-    ? afterHoursCount / emailsSentTotal
-    : 0;
+  const afterHoursCount = sent.filter((e) => isAfterHours(e.timestamp, workConfig)).length;
+  const afterHoursEmailRatio = emailsSentTotal > 0 ? afterHoursCount / emailsSentTotal : 0;
 
   // Internal email ratio (sent to internal recipients only)
   const internalEmails = sent.filter((e) => e.metadata?.isExternal === false);
-  const internalEmailRatio = emailsSentTotal > 0
-    ? internalEmails.length / emailsSentTotal
-    : 0;
+  const internalEmailRatio = emailsSentTotal > 0 ? internalEmails.length / emailsSentTotal : 0;
 
   // Median reply latency in minutes
   const replyLatencies = sent
-    .filter((e) => typeof e.metadata?.replyLatencySeconds === 'number' && e.metadata.replyLatencySeconds > 0)
+    .filter(
+      (e) =>
+        typeof e.metadata?.replyLatencySeconds === 'number' && e.metadata.replyLatencySeconds > 0
+    )
     .map((e) => e.metadata.replyLatencySeconds / 60);
   const medianReplyMinutes = replyLatencies.length > 0 ? median(replyLatencies) : null;
 
@@ -464,9 +447,7 @@ function computeResponseLatencies(events) {
     if (messages.length < 2) continue;
     const sorted = messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     const firstSender = String(sorted[0].actorUserId);
-    const firstReply = sorted.find(
-      (m, i) => i > 0 && String(m.actorUserId) !== firstSender
-    );
+    const firstReply = sorted.find((m, i) => i > 0 && String(m.actorUserId) !== firstSender);
     if (!firstReply) continue;
     const latencyMs = new Date(firstReply.timestamp) - new Date(sorted[0].timestamp);
     const latencyMinutes = latencyMs / (1000 * 60);
@@ -578,8 +559,7 @@ function computeFocusBlocks(sortedMeetings, workConfig, dateStr) {
   for (const meeting of sortedMeetings) {
     const mStart = new Date(meeting.metadata?.startTime || meeting.timestamp).getTime();
     const mEnd = new Date(
-      meeting.metadata?.endTime ||
-        new Date(mStart + resolveDurationMinutes(meeting) * 60 * 1000)
+      meeting.metadata?.endTime || new Date(mStart + resolveDurationMinutes(meeting) * 60 * 1000)
     ).getTime();
 
     // Gap before this meeting
@@ -606,8 +586,7 @@ function computeFocusBlocks(sortedMeetings, workConfig, dateStr) {
 function countBackToBack(sortedTimeline, maxGapMinutes) {
   let count = 0;
   for (let i = 1; i < sortedTimeline.length; i++) {
-    const gap =
-      (sortedTimeline[i].startMs - sortedTimeline[i - 1].endMs) / (1000 * 60);
+    const gap = (sortedTimeline[i].startMs - sortedTimeline[i - 1].endMs) / (1000 * 60);
     if (gap >= 0 && gap <= maxGapMinutes) count++;
   }
   return count;
@@ -616,9 +595,7 @@ function countBackToBack(sortedTimeline, maxGapMinutes) {
 function buildSortedTimeline(meetings) {
   return meetings
     .map((e) => {
-      const startMs = new Date(
-        e.metadata?.startTime || e.timestamp
-      ).getTime();
+      const startMs = new Date(e.metadata?.startTime || e.timestamp).getTime();
       const durMs = resolveDurationMinutes(e) * 60 * 1000;
       return { startMs, endMs: startMs + durMs };
     })
@@ -698,9 +675,7 @@ export function median(arr) {
   if (!arr || arr.length === 0) return 0;
   const sorted = [...arr].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 export function mean(arr) {
@@ -720,8 +695,12 @@ export function percentile(arr, p) {
   return sorted[Math.max(0, idx)];
 }
 
-function round2(v) { return Math.round(v * 100) / 100; }
-function round4(v) { return Math.round(v * 10000) / 10000; }
+function round2(v) {
+  return Math.round(v * 100) / 100;
+}
+function round4(v) {
+  return Math.round(v * 10000) / 10000;
+}
 
 function toDateStr(date) {
   const d = new Date(date);

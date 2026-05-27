@@ -62,17 +62,12 @@ router.post('/calculate', authenticateToken, async (req, res) => {
     const { orgId, teamId, startDate, endDate } = req.body;
 
     if (!orgId || !startDate || !endDate) {
-      return res.status(400).json({ 
-        message: 'Organization ID, start date, and end date required' 
+      return res.status(400).json({
+        message: 'Organization ID, start date, and end date required',
       });
     }
 
-    const dcr = await calculateDCR(
-      orgId, 
-      teamId || null, 
-      new Date(startDate), 
-      new Date(endDate)
-    );
+    const dcr = await calculateDCR(orgId, teamId || null, new Date(startDate), new Date(endDate));
 
     res.status(201).json(dcr);
   } catch (error) {
@@ -97,13 +92,13 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
 
     const [latest, history] = await Promise.all([
       getLatestDCR(orgId, teamId),
-      getDCRHistory(orgId, teamId, 30)
+      getDCRHistory(orgId, teamId, 30),
     ]);
 
     res.json({
       latest,
       history,
-      trend: latest?.trend || null
+      trend: latest?.trend || null,
     });
   } catch (error) {
     console.error('Error fetching team DCR:', error);

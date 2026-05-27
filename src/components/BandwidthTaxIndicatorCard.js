@@ -15,42 +15,44 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
   }
 
   const stateConfig = {
-    'Low tax': { 
+    'Low tax': {
       color: 'green',
       bgColor: 'bg-green-900/20',
       borderColor: 'border-green-700',
       textColor: 'text-green-400',
       icon: '✓',
-      description: 'Sustainable cognitive load'
+      description: 'Sustainable cognitive load',
     },
-    'Moderate tax': { 
+    'Moderate tax': {
       color: 'yellow',
       bgColor: 'bg-yellow-900/20',
       borderColor: 'border-yellow-700',
       textColor: 'text-yellow-400',
       icon: '⚠️',
-      description: 'Increasing capacity strain'
+      description: 'Increasing capacity strain',
     },
-    'Severe tax': { 
+    'Severe tax': {
       color: 'red',
       bgColor: 'bg-red-900/20',
       borderColor: 'border-red-700',
       textColor: 'text-red-400',
       icon: '🔴',
-      description: 'Decision quality at risk'
-    }
+      description: 'Decision quality at risk',
+    },
   };
 
   const config = stateConfig[bti.state] || stateConfig['Low tax'];
 
   const severityColors = {
-    'low': 'text-yellow-400',
-    'medium': 'text-orange-400',
-    'high': 'text-red-400'
+    low: 'text-yellow-400',
+    medium: 'text-orange-400',
+    high: 'text-red-400',
   };
 
   return (
-    <div className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}>
+    <div
+      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-slate-100">Bandwidth Tax</h2>
@@ -59,43 +61,43 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
 
       {/* State Badge and Score */}
       <div className="flex items-center gap-4 mb-4">
-        <div className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg flex-1`}>
+        <div
+          className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg flex-1`}
+        >
           <div className={`font-semibold ${config.textColor} mb-1`}>{bti.state}</div>
           <div className="text-xs text-slate-400">{config.description}</div>
         </div>
-        <div className="text-3xl font-bold text-slate-100">
-          {bti.bandwidthTaxScore}/100
-        </div>
+        <div className="text-3xl font-bold text-slate-100">{bti.bandwidthTaxScore}/100</div>
       </div>
 
       {showDetails && (
         <>
           {/* Triggers Detected */}
-          {bti.triggers && bti.triggers.filter(t => t.detected).length > 0 && (
+          {bti.triggers && bti.triggers.filter((t) => t.detected).length > 0 && (
             <div className="mb-4">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Detected Triggers
               </h3>
               <div className="space-y-2">
-                {bti.triggers.filter(t => t.detected).map((trigger, i) => (
-                  <div 
-                    key={i} 
-                    className={`rounded-lg px-4 py-3 border ${
-                      trigger.severity === 'high' 
-                        ? 'bg-red-900/10 border-red-900/30' 
-                        : trigger.severity === 'medium'
-                        ? 'bg-orange-900/10 border-orange-900/30'
-                        : 'bg-yellow-900/10 border-yellow-900/30'
-                    }`}
-                  >
-                    <div className={`font-semibold mb-1 ${severityColors[trigger.severity]}`}>
-                      {trigger.name}
+                {bti.triggers
+                  .filter((t) => t.detected)
+                  .map((trigger, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-lg px-4 py-3 border ${
+                        trigger.severity === 'high'
+                          ? 'bg-red-900/10 border-red-900/30'
+                          : trigger.severity === 'medium'
+                            ? 'bg-orange-900/10 border-orange-900/30'
+                            : 'bg-yellow-900/10 border-yellow-900/30'
+                      }`}
+                    >
+                      <div className={`font-semibold mb-1 ${severityColors[trigger.severity]}`}>
+                        {trigger.name}
+                      </div>
+                      <div className="text-xs text-slate-400">{trigger.description}</div>
                     </div>
-                    <div className="text-xs text-slate-400">
-                      {trigger.description}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}
@@ -120,7 +122,9 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
                   <span className="text-lg">⏰</span>
                   After-Hours Activity
                 </span>
-                <span className={`font-semibold ${bti.afterHoursActivityPercent > 30 ? 'text-red-400' : 'text-slate-100'}`}>
+                <span
+                  className={`font-semibold ${bti.afterHoursActivityPercent > 30 ? 'text-red-400' : 'text-slate-100'}`}
+                >
                   {bti.afterHoursActivityPercent?.toFixed(0)}%
                 </span>
               </div>
@@ -129,7 +133,9 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
                   <span className="text-lg">🎯</span>
                   Avg Focus Block
                 </span>
-                <span className={`font-semibold ${bti.avgFocusBlockMinutes < 60 ? 'text-red-400' : 'text-slate-100'}`}>
+                <span
+                  className={`font-semibold ${bti.avgFocusBlockMinutes < 60 ? 'text-red-400' : 'text-slate-100'}`}
+                >
                   {bti.avgFocusBlockMinutes?.toFixed(0)} min
                 </span>
               </div>
@@ -138,7 +144,9 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
                   <span className="text-lg">🔔</span>
                   Interruptions/Day
                 </span>
-                <span className={`font-semibold ${bti.interruptionsPerDay > 15 ? 'text-red-400' : 'text-slate-100'}`}>
+                <span
+                  className={`font-semibold ${bti.interruptionsPerDay > 15 ? 'text-red-400' : 'text-slate-100'}`}
+                >
                   {bti.interruptionsPerDay?.toFixed(0)}
                 </span>
               </div>
@@ -146,7 +154,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           </div>
 
           {/* Impact Indicators */}
-          {bti.impactIndicators && Object.values(bti.impactIndicators).some(v => v) && (
+          {bti.impactIndicators && Object.values(bti.impactIndicators).some((v) => v) && (
             <div className="mb-4">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Impact Risks
@@ -182,7 +190,10 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
               </h3>
               <div className="space-y-2">
                 {bti.recommendedActions.map((action, i) => (
-                  <div key={i} className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3">
+                  <div
+                    key={i}
+                    className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3"
+                  >
                     <div className="font-semibold text-blue-400 mb-1">{action.action}</div>
                     {action.expectedEffect && (
                       <div className="text-xs text-slate-400 mb-1">{action.expectedEffect}</div>
@@ -198,8 +209,8 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
 
           {/* Interpretation */}
           <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
-            {bti.interpretation || 
-              "Bandwidth Tax reflects how much cognitive capacity is consumed by constant interruptions and urgency. High tax reduces decision quality even when output appears stable."}
+            {bti.interpretation ||
+              'Bandwidth Tax reflects how much cognitive capacity is consumed by constant interruptions and urgency. High tax reduces decision quality even when output appears stable.'}
           </div>
         </>
       )}
