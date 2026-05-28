@@ -1,24 +1,213 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1e3a5f" />
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-32VLC15W5G");</script>
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="alternate icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/logo192.png" />
-    <title>Contact — SignalTrue</title>
-    <meta name="description" content="Get in touch with SignalTrue for demos, pricing, or support." />
-  <link rel="stylesheet" href="/styles.css" />
+    <meta name="theme-color" content="#f8fafc" />
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-32VLC15W5G');
+    </script>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <title>Contact - SignalTrue</title>
+    <meta
+      name="description"
+      content="Request a SignalTrue demo or contact support. Understand team-level work-system pressure without reading employee messages."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body.contact-page {
+        background: #f8fafc;
+        color: #334155;
+      }
+
+      body.contact-page header {
+        background: rgba(255, 255, 255, 0.94);
+        border-bottom: 1px solid #e2e8f0;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+      }
+
+      body.contact-page .brand,
+      body.contact-page .navlinks a,
+      body.contact-page .btn {
+        color: #0f172a;
+      }
+
+      body.contact-page .btn-primary {
+        background: linear-gradient(135deg, #14b8a6, #2563eb);
+        border: 0;
+        color: #ffffff;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.18);
+      }
+
+      body.contact-page main {
+        background:
+          radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 34rem),
+          linear-gradient(180deg, #ffffff 0%, #f8fafc 42%, #eef4f8 100%);
+      }
+
+      body.contact-page section {
+        border-top: 0;
+      }
+
+      .contact-hero {
+        padding: 92px 0 44px;
+      }
+
+      .contact-kicker {
+        color: #0f766e;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        margin: 0 0 16px;
+        text-transform: uppercase;
+      }
+
+      .contact-title {
+        color: #0f172a;
+        font-size: clamp(2.8rem, 6vw, 5.4rem);
+        letter-spacing: -0.065em;
+        line-height: 0.95;
+        margin: 0 auto 22px;
+        max-width: 980px;
+      }
+
+      .contact-lede {
+        color: #475569;
+        font-size: clamp(1.08rem, 2vw, 1.35rem);
+        line-height: 1.7;
+        margin: 0 auto;
+        max-width: 820px;
+      }
+
+      .contact-grid {
+        align-items: stretch;
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 1.05fr 0.95fr;
+        margin-top: 44px;
+      }
+
+      .contact-panel,
+      .contact-card,
+      .contact-note {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #dbe5ef;
+        border-radius: 28px;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+      }
+
+      .contact-panel {
+        padding: 34px;
+      }
+
+      .contact-panel h2,
+      .contact-card h3 {
+        color: #0f172a;
+        letter-spacing: -0.035em;
+        margin-top: 0;
+      }
+
+      .contact-panel p,
+      .contact-card p,
+      .contact-note p,
+      .contact-list li {
+        color: #475569;
+        line-height: 1.65;
+      }
+
+      .contact-list {
+        display: grid;
+        gap: 14px;
+        list-style: none;
+        margin: 24px 0 0;
+        padding: 0;
+      }
+
+      .contact-list li {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 16px;
+      }
+
+      .contact-list strong {
+        color: #0f172a;
+      }
+
+      .contact-stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .contact-card {
+        padding: 26px;
+      }
+
+      .contact-card a {
+        color: #0f766e;
+        font-weight: 800;
+      }
+
+      .contact-card .btn {
+        display: inline-flex;
+        margin-top: 8px;
+      }
+
+      .contact-note {
+        margin: 36px auto 0;
+        max-width: 1120px;
+        padding: 24px 28px;
+      }
+
+      .contact-note strong {
+        color: #0f172a;
+      }
+
+      body.contact-page footer {
+        background: #0f172a;
+        color: #cbd5e1;
+      }
+
+      body.contact-page footer a,
+      body.contact-page footer strong {
+        color: #f8fafc;
+      }
+
+      body.contact-page footer .muted {
+        color: #cbd5e1;
+      }
+
+      @media (max-width: 860px) {
+        .contact-hero {
+          padding-top: 68px;
+        }
+
+        .contact-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .contact-panel,
+        .contact-card,
+        .contact-note {
+          border-radius: 22px;
+        }
+      }
+    </style>
   </head>
-  <body>
+  <body class="contact-page">
     <header>
       <div class="container nav">
-  <a class="brand" href="/">
+        <a class="brand" href="/">
           <span class="brand-badge"></span>
           <span>SignalTrue</span>
         </a>
@@ -38,28 +227,75 @@
     </header>
 
     <main>
-      <section class="hero">
+      <section class="contact-hero">
         <div class="container section-header">
-          <h1>Contact us</h1>
-          <p class="muted">We’ll get back to you within one business day.</p>
+          <p class="contact-kicker">Contact SignalTrue</p>
+          <h1 class="contact-title">See work-system pressure before it becomes disruption.</h1>
+          <p class="contact-lede">
+            Request a guided review of capacity, coordination, and recovery signals generated from
+            metadata only, without reading employee messages.
+          </p>
         </div>
-        <div class="container grid-2">
-          <div class="panel">
-            <h3>Sales & demos</h3>
-            <p class="muted">Need a tailored walkthrough or pricing? Email us.</p>
-            <p><a class="btn" href="mailto:hello@signaltrue.ai">hello@signaltrue.ai</a></p>
+
+        <div class="container contact-grid">
+          <div class="contact-panel">
+            <h2>What we will cover</h2>
+            <p>
+              A SignalTrue walkthrough is designed for leaders who need a clearer operating picture
+              without turning workplace analytics into surveillance.
+            </p>
+            <ul class="contact-list">
+              <li>
+                <strong>Signal model:</strong> what SignalTrue detects, what it ignores, and how
+                confidence is calculated.
+              </li>
+              <li>
+                <strong>Privacy boundary:</strong> metadata-only analysis, team-level reporting, and
+                no employee message reading.
+              </li>
+              <li>
+                <strong>Operational value:</strong> how overload, coordination drag, focus
+                fragmentation, and recovery risk become visible.
+              </li>
+              <li>
+                <strong>Pilot path:</strong> integrations, calibration time, dashboard review, and
+                recommended decision workflows.
+              </li>
+            </ul>
           </div>
-          <div class="panel">
-            <h3>Support</h3>
-            <p class="muted">Already a customer? We’re here to help.</p>
-            <p><a class="btn" href="mailto:support@signaltrue.ai">support@signaltrue.ai</a></p>
+
+          <div class="contact-stack">
+            <article class="contact-card">
+              <h3>Book a product demo</h3>
+              <p>
+                See how SignalTrue would report team-level pressure, confidence, and recommended
+                actions for your organization.
+              </p>
+              <a
+                class="btn btn-primary"
+                href="mailto:hello@signaltrue.ai?subject=SignalTrue%20demo%20request"
+                >Request demo</a
+              >
+            </article>
+            <article class="contact-card">
+              <h3>General inquiries</h3>
+              <p>For partnerships, press, procurement, or product questions.</p>
+              <a href="mailto:hello@signaltrue.ai">hello@signaltrue.ai</a>
+            </article>
+            <article class="contact-card">
+              <h3>Customer support</h3>
+              <p>Already using SignalTrue? Reach the support team directly.</p>
+              <a href="mailto:support@signaltrue.ai">support@signaltrue.ai</a>
+            </article>
           </div>
         </div>
-      </section>
-      <section>
-        <div class="container center">
-          <h2>What SignalTrue does not do</h2>
-          <p class="muted">SignalTrue does not track keystrokes, screen activity, message content, or individual behavior. All insights are derived from team-level collaboration patterns and are intended to support leadership decisions, not employee surveillance.</p>
+
+        <div class="container contact-note">
+          <p>
+            <strong>Privacy first:</strong> SignalTrue does not track keystrokes, screen activity,
+            message content, or individual productivity. Insights are aggregated to help teams fix
+            broken systems of work, not monitor people.
+          </p>
         </div>
       </section>
     </main>
@@ -68,7 +304,7 @@
       <div class="container grid">
         <div>
           <strong>SignalTrue</strong>
-          <span class="muted"> — Understand your organization's pulse.</span>
+          <span class="muted"> - Work-system early warning. Metadata only. Team-level only.</span>
         </div>
         <nav>
           <a href="/privacy">Privacy</a>
@@ -77,8 +313,12 @@
           <a href="/contact">Contact</a>
         </nav>
       </div>
-      <div class="container muted" style="margin-top:10px">© <span id="year"></span> SignalTrue. All rights reserved.</div>
-      <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+      <div class="container muted" style="margin-top: 10px">
+        © <span id="year"></span> SignalTrue. All rights reserved.
+      </div>
+      <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+      </script>
     </footer>
   </body>
-  </html>
+</html>
