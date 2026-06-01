@@ -205,15 +205,31 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
   });
 
   const visible = showAll ? sorted : sorted.slice(0, initialLimit);
+  const avgStrain = teams.length
+    ? Math.round(
+        teams.reduce((sum, team) => sum + (team.engagementStrainRisk ?? 0), 0) / teams.length
+      )
+    : 0;
+  const avgConditions = teams.length
+    ? Math.round(
+        teams.reduce((sum, team) => sum + (team.engagementConditionsScore ?? 0), 0) / teams.length
+      )
+    : 0;
+  const teamsInStrain = teams.filter((team) =>
+    ['strain', 'critical'].includes(team.riskState)
+  ).length;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-start justify-between gap-4 mb-1">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Engagement Strain Risk</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-1">
+            Engagement measurement
+          </p>
+          <h2 className="text-xl font-bold text-slate-900">Engagement Strain Risk</h2>
           <p className="text-xs text-slate-600 mt-0.5">
-            Passive work-pattern analysis, team metadata only
+            Work-condition analysis from recovery, focus, responsiveness, and collaboration metadata
           </p>
         </div>
         <button
@@ -253,6 +269,26 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
       {/* Team list */}
       {teams.length > 0 && (
         <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 mb-5">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="text-2xl font-bold text-slate-900">{avgStrain}/100</div>
+              <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
+                Avg strain risk
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="text-2xl font-bold text-slate-900">{avgConditions}/100</div>
+              <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
+                Conditions score
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="text-2xl font-bold text-slate-900">{teamsInStrain}</div>
+              <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
+                Teams in strain
+              </div>
+            </div>
+          </div>
           <div className="mt-4">
             <OrgSummaryBar teams={teams} />
           </div>
@@ -294,12 +330,19 @@ export default EngagementStrainDashboard;
 function formatDriverName(key: string): string {
   const labels: Record<string, string> = {
     recoveryDebt: 'Recovery Debt',
+    recovery_debt: 'Recovery Debt',
     focusErosion: 'Focus Erosion',
+    focus_erosion: 'Focus Erosion',
     coordinationFriction: 'Coordination Friction',
+    coordination_friction: 'Coordination Friction',
     responsivenessPressure: 'Responsiveness Pressure',
+    responsiveness_pressure: 'Responsiveness Pressure',
     collaborationWithdrawal: 'Collaboration Withdrawal',
+    collaboration_withdrawal: 'Collaboration Withdrawal',
     managerSupportGap: 'Manager Support Gap',
+    manager_support_gap: 'Manager Support Gap',
     workloadVolatility: 'Workload Volatility',
+    workload_volatility: 'Workload Volatility',
   };
   return labels[key] ?? key;
 }

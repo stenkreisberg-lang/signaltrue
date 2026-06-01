@@ -98,6 +98,18 @@ const Overview = () => {
     );
   }
 
+  const families = familyData?.families || [];
+  const maxFamilyScore = families.length ? Math.max(...families.map((family) => family.score)) : 0;
+  const primaryFamily = families.length ? [...families].sort((a, b) => b.score - a.score)[0] : null;
+  const dashboardHealth =
+    maxFamilyScore >= 70
+      ? { label: 'Critical drift', color: '#dc2626', note: 'Immediate leadership attention' }
+      : maxFamilyScore >= 50
+        ? { label: 'Elevated drift', color: '#ea580c', note: 'Action recommended this week' }
+        : maxFamilyScore >= 30
+          ? { label: 'Watch', color: '#d97706', note: 'Monitor and remove friction early' }
+          : { label: 'Stable', color: '#16a34a', note: 'No major structural drift visible' };
+
   return (
     <AppShell user={user} section="Overview">
       <div>
@@ -112,61 +124,71 @@ const Overview = () => {
         {/* Day-based Onboarding Banner */}
         <OnboardingBanner calibrationDay={calibrationStatus?.calibrationDay} />
 
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold text-slate-900">Team Signal Overview</h1>
-            {(() => {
-              const fams = familyData?.families;
-              if (!fams?.length) return null;
-              const maxScore = Math.max(...fams.map((f) => f.score));
-              const health =
-                maxScore >= 70
-                  ? {
-                      label: 'Critical drift',
-                      color: 'bg-red-500',
-                      textColor: 'text-red-100',
-                      ring: 'ring-red-500/40',
-                    }
-                  : maxScore >= 50
-                    ? {
-                        label: 'Elevated drift',
-                        color: 'bg-orange-500',
-                        textColor: 'text-orange-100',
-                        ring: 'ring-orange-400/40',
-                      }
-                    : maxScore >= 30
-                      ? {
-                          label: 'Moderate drift',
-                          color: 'bg-amber-400',
-                          textColor: 'text-amber-900',
-                          ring: 'ring-amber-400/40',
-                        }
-                      : {
-                          label: 'Low drift',
-                          color: 'bg-emerald-500',
-                          textColor: 'text-emerald-100',
-                          ring: 'ring-emerald-500/40',
-                        };
-              return (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ring-2 ${health.color} ${health.textColor} ${health.ring}`}
-                >
-                  {health.label}
-                </span>
-              );
-            })()}
-          </div>
-          <p className="text-slate-600">
-            {calibrationStatus?.isInCalibration
-              ? 'Signal monitoring has started. Initial patterns will appear within 3–5 days.'
-              : 'Signals reflect structural drift in capacity, coordination, and cohesion. Interpretation improves as baselines mature.'}
-          </p>
-          {lastUpdated && !calibrationStatus?.isInCalibration && (
-            <p className="text-[11px] text-slate-500 mt-1">
-              Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <div className="app-dashboard-hero">
+          <div className="app-dashboard-hero-main">
+            <p className="app-dashboard-eyebrow">Leadership dashboard</p>
+            <h1 className="app-dashboard-title">Work health signals at a glance</h1>
+            <p className="app-dashboard-copy">
+              {calibrationStatus?.isInCalibration
+                ? 'Signal monitoring has started. Initial patterns will appear within 3-5 days.'
+                : 'A focused view of engagement, capacity, coordination, and recommended action. Every signal is aggregated and privacy protected.'}
             </p>
-          )}
+          </div>
+
+          <div className="app-dashboard-hero-side">
+            <p className="app-dashboard-eyebrow">Current state</p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-3xl font-bold" style={{ color: dashboardHealth.color }}>
+                  {dashboardHealth.label}
+                </div>
+                <p className="mt-2 text-sm text-slate-600">{dashboardHealth.note}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-bold text-slate-900">{maxFamilyScore || '—'}</div>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Drift score
+                </div>
+              </div>
+            </div>
+            {lastUpdated && !calibrationStatus?.isInCalibration && (
+              <p className="mt-5 text-xs text-slate-500">
+                Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
         </div>
+
+        {!calibrationStatus?.isInCalibration && (
+          <div className="app-dashboard-kpis">
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">{families.length || '—'}</span>
+              <span className="app-dashboard-card-label">Signal families</span>
+              <span className="app-dashboard-card-note">Capacity, coordination, cohesion.</span>
+            </div>
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">
+                {familyData?.coverage?.visibleSignals ?? '—'}
+              </span>
+              <span className="app-dashboard-card-label">Visible signals</span>
+              <span className="app-dashboard-card-note">Low-confidence noise is hidden.</span>
+            </div>
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">{primaryFamily?.familyName || '—'}</span>
+              <span className="app-dashboard-card-label">Primary focus</span>
+              <span className="app-dashboard-card-note">
+                {primaryFamily?.actionPrompt || 'No immediate focus area.'}
+              </span>
+            </div>
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">
+                {primaryFamily?.confidence?.label || '—'}
+              </span>
+              <span className="app-dashboard-card-label">Confidence</span>
+              <span className="app-dashboard-card-note">Based on signal consistency.</span>
+            </div>
+          </div>
+        )}
 
         {/* Calibration Progress (if in calibration) */}
         {calibrationStatus?.isInCalibration && (
@@ -177,7 +199,13 @@ const Overview = () => {
 
         {/* Engagement Strain Risk — always shown once calibration is complete */}
         {!calibrationStatus?.isInCalibration && (
-          <section className="mb-8">
+          <section className="app-dashboard-section">
+            <div className="app-section-heading">
+              <div>
+                <h2>Engagement measurement</h2>
+                <p>Work-condition strain, team-level only, with action triggers.</p>
+              </div>
+            </div>
             <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
           </section>
         )}
@@ -187,10 +215,13 @@ const Overview = () => {
           <div className="space-y-8">
             {familyData?.families?.length > 0 && (
               <>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    Structural Drift Summary
-                  </h2>
+                <div className="app-dashboard-section">
+                  <div className="app-section-heading">
+                    <div>
+                      <h2>Structural drift summary</h2>
+                      <p>Where work patterns are creating the most organizational drag.</p>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {familyData.families.map((family) => (
                       <DriftFamilyCard

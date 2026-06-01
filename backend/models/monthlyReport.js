@@ -184,6 +184,42 @@ const monthlyReportSchema = new mongoose.Schema(
       },
     },
 
+    // Engagement measurement (team-level, metadata-derived, no individual tracking)
+    engagementSignals: {
+      avgStrainRisk: {
+        type: Number,
+        min: 0,
+        max: 100,
+      },
+      avgConditionsScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+      },
+      worstRiskState: {
+        type: String,
+        enum: ['healthy', 'watch', 'strain', 'critical', 'unknown'],
+      },
+      teamsMeasured: {
+        type: Number,
+        default: 0,
+      },
+      teamsInStrain: {
+        type: Number,
+        default: 0,
+      },
+      trend: {
+        type: String,
+        enum: ['rising', 'improving', 'stable', 'unknown'],
+      },
+      topDrivers: [
+        {
+          driver: String,
+          score: Number,
+        },
+      ],
+    },
+
     // Top structural drivers (aggregated across org)
     topStructuralDrivers: [
       {

@@ -13,6 +13,7 @@ import MeetingROI from '../models/meetingROI.js';
 import NetworkHealth from '../models/networkHealth.js';
 import BehavioralDriftIndex from '../models/behavioralDriftIndex.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
+import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import { Resend } from 'resend';
 import { generateMonthlyNarrative } from './aiRecommendationContext.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -205,6 +206,8 @@ export async function generateMonthlyReportForOrg(orgId) {
       estimatedTurnoverRisk: Math.round(avgAfterHoursRatio * 60),
     };
 
+    const engagementSignals = await calculateEngagementSignals(orgId, teamIds);
+
     const topStructuralDrivers = [
       avgMeetingHours > 100 && {
         metric: 'Meeting Load',
@@ -247,6 +250,7 @@ export async function generateMonthlyReportForOrg(orgId) {
       leadershipSignals,
       executionSignals,
       retentionExposure,
+      engagementSignals,
       topStructuralDrivers,
       crisisPatterns,
       aiSummary,
@@ -656,6 +660,69 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
   };
 }
 
+async function calculateEngagementSignals(orgId, teamIds) {
+  const docs = await EngagementStrainWeekly.aggregate([
+    { $match: { orgId, teamId: { $in: teamIds } } },
+    { $sort: { teamId: 1, weekStart: -1 } },
+    { $group: { _id: '$teamId', doc: { $first: '$$ROOT' } } },
+    { $replaceRoot: { newRoot: '$doc' } },
+  ]);
+
+  if (docs.length === 0) {
+    return {
+      avgStrainRisk: 0,
+      avgConditionsScore: 0,
+      worstRiskState: 'unknown',
+      teamsMeasured: 0,
+      teamsInStrain: 0,
+      trend: 'unknown',
+      topDrivers: [],
+    };
+  }
+
+  const avg = (field) => Math.round(docs.reduce((sum, doc) => sum + (doc[field] || 0), 0) / docs.length);
+  const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
+  const worstRiskState = docs.reduce(
+    (worst, doc) =>
+      stateOrder.indexOf(doc.riskState) > stateOrder.indexOf(worst) ? doc.riskState : worst,
+    'healthy'
+  );
+  const trendCounts = docs.reduce((counts, doc) => {
+    counts[doc.trend] = (counts[doc.trend] || 0) + 1;
+    return counts;
+  }, {});
+  const trend =
+    trendCounts.rising > trendCounts.improving && trendCounts.rising > trendCounts.stable
+      ? 'rising'
+      : trendCounts.improving > trendCounts.rising && trendCounts.improving > trendCounts.stable
+        ? 'improving'
+        : 'stable';
+  const driverScores = {};
+  docs.forEach((doc) => {
+    (doc.topDrivers || []).forEach((driver) => {
+      if (!driverScores[driver.driver]) driverScores[driver.driver] = [];
+      driverScores[driver.driver].push(driver.score || 0);
+    });
+  });
+  const topDrivers = Object.entries(driverScores)
+    .map(([driver, scores]) => ({
+      driver,
+      score: Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  return {
+    avgStrainRisk: avg('engagementStrainRisk'),
+    avgConditionsScore: avg('engagementConditionsScore'),
+    worstRiskState,
+    teamsMeasured: docs.length,
+    teamsInStrain: docs.filter((doc) => ['strain', 'critical'].includes(doc.riskState)).length,
+    trend,
+    topDrivers,
+  };
+}
+
 /**
  * Get top structural drivers (org-wide patterns) — from BDI topDrivers
  */
@@ -786,18 +853,22 @@ function generateMonthlyEmailHTML({ org, report }) {
   const rci = report.orgHealth?.avgRCI || 0;
   const execDrag = report.executionSignals?.executionDragAvg || 0;
   const turnoverRisk = report.retentionExposure?.estimatedTurnoverRisk || 0;
+  const engagement = report.engagementSignals || {};
+  const engagementRisk = engagement.avgStrainRisk || 0;
+  const engagementConditions = engagement.avgConditionsScore || 0;
+  const teamsMeasured = engagement.teamsMeasured || 0;
+  const teamsInStrain = engagement.teamsInStrain || 0;
   const avgHourlyRate = 75; // loaded cost assumption
   const weeklyMeetingCost = Math.round(meetHours * avgHourlyRate);
 
   // ── Helpers ──
   const statPill = (value, label, color) =>
-    `<div style="text-align:center;padding:12px 16px;background:#fff;border-radius:8px;border:1px solid #e5e7eb;min-width:90px;">
-      <div style="font-size:22px;font-weight:800;color:${color};line-height:1;">${value}</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:4px;line-height:1.3;">${label}</div>
+    `<div style="text-align:left;padding:14px 16px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;min-width:96px;">
+      <div style="font-size:21px;font-weight:750;color:${color};line-height:1;letter-spacing:-.2px;">${value}</div>
+      <div style="font-size:10px;color:#64748b;margin-top:6px;line-height:1.35;text-transform:uppercase;letter-spacing:.7px;font-weight:700;">${label}</div>
     </div>`;
 
   const riskCard = ({
-    icon,
     severityLabel,
     severityColor,
     headline,
@@ -806,25 +877,35 @@ function generateMonthlyEmailHTML({ org, report }) {
     action,
     upside,
   }) =>
-    `<div style="border:1px solid ${severityColor}40;border-left:5px solid ${severityColor};border-radius:10px;padding:22px 24px;margin-bottom:20px;background:#fff;">
+    `<div style="border:1px solid #dbe3ef;border-top:4px solid ${severityColor};border-radius:12px;padding:22px 24px;margin-bottom:18px;background:#fff;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <span style="font-size:20px;">${icon}</span>
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${severityColor};background:${severityColor}15;padding:3px 10px;border-radius:20px;">${severityLabel}</span>
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${severityColor};background:${severityColor}12;padding:5px 10px;border-radius:999px;">${severityLabel}</span>
       </div>
-      <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#111827;line-height:1.35;">${headline}</h3>
-      <p style="margin:0 0 8px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Situation:</strong> ${situation}</p>
-      <p style="margin:0 0 14px;font-size:13px;color:#374151;line-height:1.65;"><strong style="color:#111827;">Why this matters:</strong> ${businessRisk}</p>
-      <div style="background:${severityColor}08;border-top:1px solid ${severityColor}25;padding:12px 14px;border-radius:6px;margin-top:4px;margin-bottom:10px;">
+      <h3 style="margin:0 0 12px;font-size:17px;font-weight:750;color:#0f172a;line-height:1.35;">${headline}</h3>
+      <p style="margin:0 0 8px;font-size:13px;color:#334155;line-height:1.7;"><strong style="color:#0f172a;">Situation:</strong> ${situation}</p>
+      <p style="margin:0 0 14px;font-size:13px;color:#334155;line-height:1.7;"><strong style="color:#0f172a;">Business impact:</strong> ${businessRisk}</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px 14px;border-radius:8px;margin-top:4px;margin-bottom:10px;">
         <p style="margin:0;font-size:13px;color:#111827;line-height:1.65;"><strong>Action:</strong> ${action}</p>
       </div>
       ${
         upside
-          ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:6px;">
-        <p style="margin:0;font-size:13px;color:#166534;line-height:1.65;">✅ <strong>What you gain:</strong> ${upside}</p>
+          ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px;">
+        <p style="margin:0;font-size:13px;color:#166534;line-height:1.65;"><strong>Expected upside:</strong> ${upside}</p>
       </div>`
           : ''
       }
     </div>`;
+
+  const driverLabel = (driver) =>
+    ({
+      recovery_debt: 'Recovery debt',
+      focus_erosion: 'Focus erosion',
+      coordination_friction: 'Coordination friction',
+      responsiveness_pressure: 'Responsiveness pressure',
+      collaboration_withdrawal: 'Collaboration withdrawal',
+      manager_support_gap: 'Manager support gap',
+      workload_volatility: 'Workload volatility',
+    })[driver] || driver;
 
   // ── Build risk cards from available data ──
   const cards = [];
@@ -903,6 +984,55 @@ function generateMonthlyEmailHTML({ org, report }) {
     );
   }
 
+  if (teamsMeasured > 0) {
+    const engagementSev =
+      engagementRisk >= 70
+        ? { label: 'CRITICAL ENGAGEMENT STRAIN', color: '#dc2626' }
+        : engagementRisk >= 50
+          ? { label: 'ENGAGEMENT STRAIN', color: '#f59e0b' }
+          : engagementRisk >= 30
+            ? { label: 'ENGAGEMENT WATCH', color: '#2563eb' }
+            : { label: 'ENGAGEMENT HEALTHY', color: '#16a34a' };
+    const drivers =
+      engagement.topDrivers?.length > 0
+        ? ` Top drivers: ${engagement.topDrivers
+            .map((driver) => `${driverLabel(driver.driver)} (${driver.score}/100)`)
+            .join(', ')}.`
+        : '';
+    cards.push(
+      riskCard({
+        severityLabel: engagementSev.label,
+        severityColor: engagementSev.color,
+        headline: `Engagement conditions score is ${engagementConditions}/100 across ${teamsMeasured} measured team${teamsMeasured === 1 ? '' : 's'}`,
+        situation: `Average engagement strain risk is ${engagementRisk}/100. ${teamsInStrain} team${teamsInStrain === 1 ? ' is' : 's are'} in strain or critical state. Overall trend is ${engagement.trend || 'stable'}.${drivers}`,
+        businessRisk:
+          'Engagement here is not a survey score or sentiment read. It is a metadata-derived operating condition: recovery time, focus availability, coordination friction, responsiveness pressure, and collaboration withdrawal. These patterns often change before survey scores or attrition numbers move.',
+        action:
+          engagementRisk >= 50
+            ? 'Review the top engagement drivers with HR and team leads this week. Pick one structural change: restore recovery time, protect focus blocks, or reduce responsiveness pressure. Re-check movement in the next weekly brief.'
+            : 'Keep engagement conditions visible in monthly leadership review. If risk rises by 8+ points or any team moves into strain, trigger a focused manager check-in and workload review.',
+        upside:
+          'Leaders can act before disengagement becomes attrition. The goal is not to ask people to be more engaged; it is to remove the work patterns that make sustained engagement difficult.',
+      })
+    );
+  } else {
+    cards.push(
+      riskCard({
+        severityLabel: 'ENGAGEMENT NOT YET MEASURED',
+        severityColor: '#64748b',
+        headline: 'Engagement measurement is not available for this month yet',
+        situation:
+          'The monthly report did not find any weekly engagement strain records for measured teams.',
+        businessRisk:
+          'Without engagement strain data, leaders can still see workload and retention proxies, but they cannot yet see the earlier operating-condition signals that often move before survey scores or attrition.',
+        action:
+          'Confirm the weekly engagement scoring job is running and that connected integrations have enough team-level metadata. Once available, this section will show strain risk, conditions score, teams in strain, trend, and top drivers.',
+        upside:
+          'Engagement becomes visible as a structural work condition instead of a late-stage survey or resignation signal.',
+      })
+    );
+  }
+
   const cardsHtml =
     cards.length > 0
       ? cards.join('')
@@ -946,6 +1076,13 @@ function generateMonthlyEmailHTML({ org, report }) {
           turnoverRisk > 20 ? '#ef4444' : turnoverRisk > 10 ? '#f59e0b' : '#22c55e'
         )
       : null,
+    teamsMeasured > 0
+      ? statPill(
+          `${engagementConditions}/100`,
+          'Engagement',
+          engagementRisk >= 70 ? '#ef4444' : engagementRisk >= 50 ? '#f59e0b' : '#16a34a'
+        )
+      : null,
   ]
     .filter(Boolean)
     .join('<div style="width:8px;flex-shrink:0;"></div>');
@@ -969,39 +1106,39 @@ function generateMonthlyEmailHTML({ org, report }) {
       : 'No significant signals detected this period.';
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:20px;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+<body style="margin:0;padding:28px 18px;background:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<div style="max-width:680px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #d9e2ee;box-shadow:0 18px 45px rgba(15,23,42,.08);">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);color:#fff;padding:30px 30px 22px;">
-    <div style="font-size:11px;opacity:.75;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.2px;">Monthly Leadership Briefing</div>
-    <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;">${org.name}</h1>
-    <div style="font-size:13px;opacity:.8;">${periodLabel}</div>
+  <div style="background:#0f172a;color:#fff;padding:32px 34px 26px;">
+    <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;">Monthly Leadership Briefing</div>
+    <h1 style="margin:0 0 6px;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>
+    <div style="font-size:13px;color:#cbd5e1;">${periodLabel}</div>
   </div>
 
   <!-- Situation banner -->
-  <div style="background:#fef2f2;border-bottom:3px solid #ef4444;padding:18px 28px;">
-    <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#991b1b;">This Month's Situation</p>
-    <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.7;">${situationText}</p>
+  <div style="background:#ffffff;border-bottom:1px solid #e2e8f0;padding:22px 34px;">
+    <p style="margin:0 0 7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.3px;color:#64748b;">Executive readout</p>
+    <p style="margin:0;font-size:15px;color:#0f172a;line-height:1.7;">${situationText}</p>
   </div>
 
   <!-- Stats bar -->
-  <div style="padding:16px 20px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+  <div style="padding:18px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
     <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:2px;">
       ${summaryStats}
     </div>
   </div>
 
   <!-- Risk cards -->
-  <div style="padding:24px 24px 8px;">
-    <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin:0 0 16px;">What this means — and what to do</h2>
+  <div style="padding:26px 28px 8px;">
+    <h2 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#475569;margin:0 0 16px;">Priority decisions</h2>
     ${cardsHtml}
   </div>
 
   <!-- Footer -->
-  <div style="padding:16px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;margin-top:16px;">
-    <p style="color:#9ca3af;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> · Monthly Leadership Briefing · ${fmtDate(new Date())}</p>
-    <p style="color:#9ca3af;font-size:11px;margin:4px 0 0;">Org-aggregate signals only. No individual names or personal data included.</p>
+  <div style="padding:16px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;margin-top:16px;">
+    <p style="color:#64748b;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> · Monthly Leadership Briefing · ${fmtDate(new Date())}</p>
+    <p style="color:#94a3b8;font-size:11px;margin:4px 0 0;">Org-aggregate signals only. No individual names or personal data included.</p>
   </div>
 
 </div>

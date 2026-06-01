@@ -35,8 +35,8 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
 
   return (
     <div className="app-shell">
-      <header className="app-topbar">
-        <div className="app-topbar-inner">
+      <aside className="app-sidebar">
+        <div className="app-sidebar-inner">
           <Link to="/app/overview" className="app-brand">
             <span className="app-brand-mark" />
             SignalTrue
@@ -62,15 +62,17 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             )}
           </div>
         </div>
-      </header>
-      <main className={`app-main app-main-${width}`}>
-        <div className="app-privacy-bar">
-          <strong>Privacy protected.</strong> Metadata only, aggregated at team level. No message
-          content or individual performance ranking.
-          <Link to="/app/privacy">View data policy</Link>
-        </div>
-        {children}
-      </main>
+      </aside>
+      <div className="app-workspace">
+        <main className={`app-main app-main-${width}`}>
+          <div className="app-privacy-bar">
+            <strong>Privacy protected.</strong> Metadata only, aggregated at team level. No message
+            content or individual performance ranking.
+            <Link to="/app/privacy">View data policy</Link>
+          </div>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

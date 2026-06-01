@@ -223,9 +223,9 @@ function pctChangeLabel(curr, prev) {
   return d > 0 ? `↑ ${d}%` : d < 0 ? `↓ ${Math.abs(d)}%` : '→ same';
 }
 function trendIcon(curr, prev, higherIsBad = true) {
-  if (curr === prev || (curr === 0 && prev === 0)) return '➡️';
-  if (higherIsBad) return curr > prev ? '🔴' : '🟢';
-  return curr > prev ? '🟢' : '🔴';
+  if (curr === prev || (curr === 0 && prev === 0)) return 'Neutral';
+  if (higherIsBad) return curr > prev ? 'Concerning' : 'Healthy';
+  return curr > prev ? 'Healthy' : 'Concerning';
 }
 function fmtNum(n, decimals = 0) {
   if (n == null || isNaN(n)) return '—';
@@ -238,29 +238,29 @@ function avgField(arr, field) {
 
 // ─── Styles ───
 const S = {
-  card: 'background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 24px; margin-bottom:20px;',
+  card: 'background:#ffffff; border:1px solid #dbe3ef; border-radius:12px; padding:22px 24px; margin-bottom:18px;',
   cardAlert: (color) =>
-    `background:#ffffff; border-left:4px solid ${color}; border:1px solid #e5e7eb; border-left:4px solid ${color}; border-radius:12px; padding:20px 24px; margin-bottom:16px;`,
-  h2: 'color:#111827; font-size:22px; font-weight:700; margin:0 0 4px 0;',
-  h3: 'color:#6366f1; font-size:17px; font-weight:700; margin:24px 0 12px 0;',
-  h4: 'color:#374151; font-size:15px; font-weight:600; margin:16px 0 8px 0;',
-  p: 'color:#4b5563; font-size:14px; line-height:1.6; margin:0 0 8px 0;',
-  pSmall: 'color:#9ca3af; font-size:12px; line-height:1.5; margin:4px 0;',
+    `background:#ffffff; border:1px solid #dbe3ef; border-top:4px solid ${color}; border-radius:12px; padding:18px 20px; margin-bottom:14px;`,
+  h2: 'color:#0f172a; font-size:22px; font-weight:750; margin:0 0 4px 0; letter-spacing:-.2px;',
+  h3: 'color:#0f172a; font-size:15px; font-weight:800; margin:24px 0 14px 0; text-transform:uppercase; letter-spacing:.8px;',
+  h4: 'color:#334155; font-size:14px; font-weight:750; margin:18px 0 8px 0;',
+  p: 'color:#334155; font-size:14px; line-height:1.65; margin:0 0 8px 0;',
+  pSmall: 'color:#64748b; font-size:12px; line-height:1.55; margin:4px 0;',
   badge: (bg, color) =>
-    `display:inline-block; background:${bg}; color:${color}; font-size:12px; font-weight:600; padding:2px 10px; border-radius:20px; margin-right:6px;`,
+    `display:inline-block; background:${bg}; color:${color}; font-size:11px; font-weight:750; padding:4px 9px; border-radius:999px; margin-right:6px; text-transform:uppercase; letter-spacing:.35px;`,
   table: 'border-collapse:collapse; width:100%; font-family:sans-serif; font-size:13px;',
-  th: 'text-align:left; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;',
-  thR: 'text-align:right; padding:8px 10px; border-bottom:2px solid #e5e7eb; color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;',
-  td: 'padding:6px 10px; border-bottom:1px solid #f3f4f6;',
-  tdR: 'text-align:right; padding:6px 10px; border-bottom:1px solid #f3f4f6;',
-  tdBold: 'text-align:right; padding:6px 10px; border-bottom:1px solid #f3f4f6; font-weight:600;',
-  divider: 'border:0; border-top:1px solid #e5e7eb; margin:24px 0;',
+  th: 'text-align:left; padding:9px 10px; border-bottom:1px solid #cbd5e1; color:#64748b; font-size:11px; text-transform:uppercase; letter-spacing:0.7px;',
+  thR: 'text-align:right; padding:9px 10px; border-bottom:1px solid #cbd5e1; color:#64748b; font-size:11px; text-transform:uppercase; letter-spacing:0.7px;',
+  td: 'padding:8px 10px; border-bottom:1px solid #edf2f7; color:#334155;',
+  tdR: 'text-align:right; padding:8px 10px; border-bottom:1px solid #edf2f7; color:#334155;',
+  tdBold: 'text-align:right; padding:8px 10px; border-bottom:1px solid #edf2f7; font-weight:750; color:#0f172a;',
+  divider: 'border:0; border-top:1px solid #e2e8f0; margin:24px 0;',
   recBox:
-    'background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin:8px 0;',
+    'background:#f8fafc; border:1px solid #dbe3ef; border-radius:10px; padding:13px 15px; margin:8px 0;',
   warnBox:
-    'background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px 16px; margin:8px 0;',
+    'background:#fff8ed; border:1px solid #fed7aa; border-radius:10px; padding:13px 15px; margin:8px 0;',
   alertBox:
-    'background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px 16px; margin:8px 0;',
+    'background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:13px 15px; margin:8px 0;',
 };
 
 // ─── Manager Discussion Prompt Generator ───
@@ -477,6 +477,58 @@ export async function generateWeeklyBrief(orgId) {
     ...doc,
     teamName: teamNameMap[String(doc.teamId)] ?? null,
   }));
+  const engagementDriverLabel = (driver) =>
+    ({
+      recovery_debt: 'Recovery debt',
+      focus_erosion: 'Focus erosion',
+      coordination_friction: 'Coordination friction',
+      responsiveness_pressure: 'Responsiveness pressure',
+      collaboration_withdrawal: 'Collaboration withdrawal',
+      manager_support_gap: 'Manager support gap',
+      workload_volatility: 'Workload volatility',
+    })[driver] || driver;
+  const engagementSnapshot =
+    engagementStrainByTeam.length > 0
+      ? (() => {
+          const avg = (field) =>
+            Math.round(
+              engagementStrainByTeam.reduce((sum, team) => sum + (team[field] || 0), 0) /
+                engagementStrainByTeam.length
+            );
+          const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
+          const worstState = engagementStrainByTeam.reduce(
+            (worst, team) =>
+              stateOrder.indexOf(team.riskState) > stateOrder.indexOf(worst)
+                ? team.riskState
+                : worst,
+            'healthy'
+          );
+          const strainedTeams = engagementStrainByTeam.filter((team) =>
+            ['strain', 'critical'].includes(team.riskState)
+          ).length;
+          const topDrivers = {};
+          engagementStrainByTeam.forEach((team) => {
+            (team.topDrivers || []).forEach((driver) => {
+              if (!topDrivers[driver.driver]) topDrivers[driver.driver] = [];
+              topDrivers[driver.driver].push(driver.score || 0);
+            });
+          });
+          const drivers = Object.entries(topDrivers)
+            .map(([driver, scores]) => ({
+              driver,
+              score: Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length),
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 2);
+          return {
+            avgStrainRisk: avg('engagementStrainRisk'),
+            avgConditionsScore: avg('engagementConditionsScore'),
+            worstState,
+            strainedTeams,
+            drivers,
+          };
+        })()
+      : null;
 
   // ─── Derived metrics ───
   const getCount = (arr, source, eventType) =>
@@ -836,8 +888,6 @@ export async function generateWeeklyBrief(orgId) {
         : null,
   });
 
-  const verdictColor = orgStatus.color;
-  const verdictIcon = orgStatus.icon;
   const verdictText = orgStatus.status;
   const verdictConfidence = orgStatus.confidence;
   const verdictSummary = orgStatus.reason;
@@ -909,34 +959,36 @@ export async function generateWeeklyBrief(orgId) {
   let html = '';
 
   // ─── Header ───
-  html += `<div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width:640px; margin:0 auto; color:#111827;">`;
-  html += `<div style="background:linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius:16px 16px 0 0; padding:28px 28px 20px 28px; color:white;">`;
-  html += `<h1 style="margin:0; font-size:24px; font-weight:700;">📊 Weekly Intelligence Brief</h1>`;
-  html += `<p style="margin:6px 0 0 0; font-size:14px; opacity:0.9;">${org.name} — Week of ${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} to ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
+  html += `<div style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;color:#0f172a;background:#ffffff;border:1px solid #d9e2ee;border-radius:14px;overflow:hidden;box-shadow:0 18px 45px rgba(15,23,42,.08);">`;
+  html += `<div style="background:#0f172a;padding:30px 34px 24px;color:white;">`;
+  html += `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;margin-bottom:8px;">Weekly Intelligence Brief</div>`;
+  html += `<h1 style="margin:0 0 6px 0;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>`;
+  html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
   html += `</div>`;
 
   // ─── 1. Verdict Banner (status + confidence + summary) ───
-  html += `<div style="${S.card} border-top:0; border-radius:0; margin-top:0; border-left:4px solid ${verdictColor};">`;
-  html += `<div style="display:flex; align-items:center; margin-bottom:8px;">`;
-  html += `<span style="font-size:28px; margin-right:12px;">${verdictIcon}</span>`;
+  html += `<div style="padding:22px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
+  html += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:10px;">`;
   html += `<div>`;
-  html += `<h2 style="margin:0; font-size:20px; color:${verdictColor};">${verdictText}</h2>`;
-  html += `<p style="margin:2px 0 0 0; font-size:12px; color:#6b7280;">`;
+  html += `<p style="margin:0 0 6px 0;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.3px;color:#64748b;">Executive readout</p>`;
+  html += `<h2 style="margin:0;font-size:20px;color:#0f172a;font-weight:750;">${verdictText}</h2>`;
+  html += `</div>`;
+  html += `<p style="margin:2px 0 0 0;font-size:12px;color:#6b7280;text-align:right;">`;
   html += `<span style="${S.badge(confBadgeColor + '20', confBadgeColor)}">Confidence: ${verdictConfidence}</span>`;
   if (contextTags.length > 0) {
     html += ` <span style="${S.badge('#dbeafe', '#2563eb')}">Context: ${contextTags.map((t) => t.tag.replace(/_/g, ' ')).join(', ')}</span>`;
   }
   html += `</p>`;
-  html += `</div></div>`;
-  html += `<p style="${S.p} margin:0;">${verdictSummary}</p>`;
+  html += `</div>`;
+  html += `<p style="${S.p} margin:0;color:#0f172a;font-size:15px;">${verdictSummary}</p>`;
   if (orgStatus.escalationAction && orgStatus.status !== STATUS_LEVELS.STABLE) {
     html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>Escalation:</strong> ${orgStatus.escalationAction}</p>`;
   }
   html += `</div>`;
 
   // ─── 2. Key Metrics Snapshot (5 metrics) ───
-  html += `<div style="${S.card} border-radius:0; margin-top:0;">`;
-  html += `<div style="display:flex; gap:10px; flex-wrap:wrap;">`;
+  html += `<div style="padding:18px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">`;
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;">`;
 
   const snapshotMetrics = [
     {
@@ -976,25 +1028,55 @@ export async function generateWeeklyBrief(orgId) {
   ];
 
   for (const m of snapshotMetrics) {
-    html += `<div style="flex:1; min-width:100px; text-align:center; padding:8px; background:#f9fafb; border-radius:8px;">
-      <div style="font-size:20px; font-weight:700; color:#111827;">${m.value}</div>
-      <div style="font-size:10px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px;">${m.label}</div>
-      <div style="font-size:10px; color:${m.color};">${m.change}</div>
+    html += `<div style="flex:1;min-width:105px;text-align:left;padding:14px 15px;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;">
+      <div style="font-size:21px;font-weight:750;color:#0f172a;letter-spacing:-.2px;">${m.value}</div>
+      <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">${m.label}</div>
+      <div style="font-size:11px;color:${m.color};font-weight:700;margin-top:4px;">${m.change}</div>
     </div>`;
   }
   html += `</div>`;
   html += `</div>`;
 
+  // ─── 2b. Engagement Measurement Snapshot ───
+  html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
+  html += `<h3 style="${S.h3} margin:0 0 12px 0;">Engagement measurement</h3>`;
+  if (engagementSnapshot) {
+    const engagementColor =
+      engagementSnapshot.avgStrainRisk >= 70
+        ? '#dc2626'
+        : engagementSnapshot.avgStrainRisk >= 50
+          ? '#f59e0b'
+          : engagementSnapshot.avgStrainRisk >= 30
+            ? '#2563eb'
+            : '#16a34a';
+    html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:${engagementColor};">${engagementSnapshot.avgStrainRisk}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Strain risk</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.avgConditionsScore}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Conditions score</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.strainedTeams}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Teams in strain</div></div>`;
+    html += `</div>`;
+    const driverText =
+      engagementSnapshot.drivers.length > 0
+        ? ` Main drivers: ${engagementSnapshot.drivers
+            .map((driver) => `${engagementDriverLabel(driver.driver)} (${driver.score}/100)`)
+            .join(', ')}.`
+        : '';
+    html += `<p style="${S.p} margin:0;"><strong>What it means:</strong> Engagement is measured from work conditions, not surveys: recovery time, focus availability, responsiveness pressure, collaboration withdrawal, and coordination friction.${driverText}</p>`;
+    html += `<p style="${S.pSmall} margin-top:8px;"><strong>Action trigger:</strong> if strain risk rises by 8+ points, or any team reaches strain/critical, review workload structure and manager support this week.</p>`;
+  } else {
+    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> This appears after the weekly engagement scoring job has enough team-level metadata. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
+  }
+  html += `</div>`;
+
   // ─── 3. What Changed This Week (top 3 observations) ───
   html += `<div style="${S.card}">`;
-  html += `<h3 style="${S.h3} margin-top:0;">📋 What Changed</h3>`;
+  html += `<h3 style="${S.h3} margin-top:0;">What changed</h3>`;
   const topObs = observations.slice(0, 3);
   if (topObs.length > 0) {
     for (const obs of topObs) {
       const isWarning = obs.text.startsWith('⚠️');
       const confColor =
         obs.confidence === 'High' ? '#10b981' : obs.confidence === 'Medium' ? '#f59e0b' : '#9ca3af';
-      html += `<div style="padding:8px 12px; margin-bottom:8px; background:${isWarning ? '#fef2f2' : '#f9fafb'}; border-radius:8px; border-left:3px solid ${isWarning ? '#ef4444' : '#e5e7eb'};">`;
+      html += `<div style="padding:12px 14px;margin-bottom:8px;background:${isWarning ? '#fef2f2' : '#f8fafc'};border-radius:10px;border:1px solid ${isWarning ? '#fecaca' : '#e2e8f0'};">`;
       html += `<p style="${S.p} margin:0;">${obs.text}</p>`;
       html += `<p style="margin:4px 0 0 0; font-size:11px;"><span style="${S.badge(confColor + '20', confColor)}">Confidence: ${obs.confidence}</span></p>`;
       html += `</div>`;
@@ -1010,7 +1092,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 4. Why It Matters (top 2 risks) ───
   if (risks.length > 0) {
     html += `<div style="${S.card}">`;
-    html += `<h3 style="${S.h3} margin-top:0;">⚠️ Why It Matters</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Why it matters</h3>`;
     for (const risk of risks.slice(0, 2)) {
       html += `<div style="${S.warnBox}">`;
       html += `<p style="${S.p} margin:0;">${risk}</p>`;
@@ -1024,7 +1106,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // ─── 5. Recommended Actions — Role-Based ───
   html += `<div style="${S.card}">`;
-  html += `<h3 style="${S.h3} margin-top:0;">✅ Recommended Actions</h3>`;
+  html += `<h3 style="${S.h3} margin-top:0;">Recommended actions</h3>`;
 
   // If AI returned role-based recommendations, use those
   if (
@@ -1035,7 +1117,7 @@ export async function generateWeeklyBrief(orgId) {
   ) {
     const renderRoleActions = (title, icon, actions, boxStyle) => {
       if (!actions?.length) return '';
-      let s = `<h4 style="${S.h4}">${icon} ${title}</h4>`;
+      let s = `<h4 style="${S.h4}">${title}</h4>`;
       for (const a of actions.slice(0, 2)) {
         const effortColor =
           a.effort === 'Low' ? '#10b981' : a.effort === 'Medium' ? '#f59e0b' : '#ef4444';
@@ -1078,7 +1160,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // CTA button
   html += `<div style="text-align:center; margin-top:16px;">`;
-  html += `<a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/dashboard" style="display:inline-block; background:#6366f1; color:white; padding:10px 28px; border-radius:8px; font-weight:600; font-size:14px; text-decoration:none;">View Full Analysis on Dashboard →</a>`;
+  html += `<a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/dashboard" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open dashboard</a>`;
   html += `</div>`;
   html += `</div>`;
 
@@ -1094,7 +1176,7 @@ export async function generateWeeklyBrief(orgId) {
   });
   if (managerPrompts.length > 0) {
     html += `<div style="${S.card} border-left:4px solid #8b5cf6;">`;
-    html += `<h3 style="${S.h3} margin-top:0;">💬 Manager Discussion Prompts</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Manager discussion prompts</h3>`;
     html += `<p style="${S.pSmall}">Diagnostic questions for your next 1:1 or team check-in. These are based on this week's data — not prescriptive, just conversation starters.</p>`;
     for (const prompt of managerPrompts.slice(0, 5)) {
       html += `<div style="padding:8px 12px; margin-bottom:6px; background:#faf5ff; border-radius:8px;">`;
@@ -1108,7 +1190,6 @@ export async function generateWeeklyBrief(orgId) {
   if (aiAnalysis?.hypotheses?.length > 0) {
     html += `<div style="${S.card} border-left:4px solid #6366f1;">`;
     html += `<div style="display:flex; align-items:center; margin-bottom:12px;">`;
-    html += `<span style="font-size:20px; margin-right:10px;">🧠</span>`;
     html += `<h3 style="${S.h3} margin:0;">AI Interpretation</h3>`;
     html += `</div>`;
     for (const h of aiAnalysis.hypotheses.slice(0, 3)) {
@@ -1129,7 +1210,7 @@ export async function generateWeeklyBrief(orgId) {
     // Trend outlook
     if (aiAnalysis.trendOutlook) {
       html += `<div style="margin-top:12px; padding:10px 14px; background:#fffbeb; border-radius:8px; border-left:3px solid #f59e0b;">`;
-      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>👁️ Trend Outlook:</strong> ${aiAnalysis.trendOutlook.likelyNextStageRisk || ''}</p>`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Trend outlook:</strong> ${aiAnalysis.trendOutlook.likelyNextStageRisk || ''}</p>`;
       if (aiAnalysis.trendOutlook.metricToWatchNextWeek) {
         html += `<p style="${S.pSmall} margin:0;">Watch next week: <strong>${aiAnalysis.trendOutlook.metricToWatchNextWeek}</strong>`;
         if (aiAnalysis.trendOutlook.escalationTrigger)
@@ -1143,7 +1224,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // ─── 8. Week-over-Week Comparison Table (with 6-week avg) ───
   html += `<div style="${S.card}">`;
-  html += `<h3 style="${S.h3} margin-top:0;">📊 Week-over-Week Comparison</h3>`;
+  html += `<h3 style="${S.h3} margin-top:0;">Week-over-week comparison</h3>`;
   html += `<table style="${S.table}">`;
   html += `<thead><tr>`;
   html += `<th style="${S.th}">Metric</th>`;
@@ -1155,43 +1236,45 @@ export async function generateWeeklyBrief(orgId) {
 
   const addTableRow = (label, sixWk, lwVal, twVal, higherIsBad = true, fmt = 0) => {
     const icon = trendIcon(twVal, lwVal, higherIsBad);
+    const trendColor =
+      icon === 'Concerning' ? '#dc2626' : icon === 'Healthy' ? '#16a34a' : '#64748b';
     const vs6wk =
       sixWk > 0 && twVal > sixWk * 1.15 && higherIsBad
-        ? ' ⚠️'
+        ? ' *'
         : sixWk > 0 && twVal < sixWk * 0.85 && !higherIsBad
-          ? ' ⚠️'
+          ? ' *'
           : '';
     html += `<tr>`;
     html += `<td style="${S.td}">${label}</td>`;
     html += `<td style="${S.tdR}; color:#9ca3af;">${fmtNum(sixWk, fmt)}</td>`;
     html += `<td style="${S.tdR}">${fmtNum(lwVal, fmt)}</td>`;
     html += `<td style="${S.tdBold}">${fmtNum(twVal, fmt)}${vs6wk}</td>`;
-    html += `<td style="${S.tdR}">${icon} ${pctChangeLabel(twVal, lwVal)}</td>`;
+    html += `<td style="${S.tdR}; color:${trendColor}; font-weight:700;">${icon} · ${pctChangeLabel(twVal, lwVal)}</td>`;
     html += `</tr>`;
   };
 
   // Core metrics
-  addTableRow('📅 Meetings', sixWeekAvg.meetings, lwMeetings, twMeetings, true);
-  addTableRow('💬 Team Messages', sixWeekAvg.messages, lwMessages, twMessages, false);
-  addTableRow('📊 Total Events', 0, lwTotal, twTotal, false);
+  addTableRow('Meetings', sixWeekAvg.meetings, lwMeetings, twMeetings, true);
+  addTableRow('Team messages', sixWeekAvg.messages, lwMessages, twMessages, false);
+  addTableRow('Total events', 0, lwTotal, twTotal, false);
 
   // Per-source if available
   if (twOutlook > 0 || lwOutlook > 0)
-    addTableRow('&nbsp;&nbsp;↳ Outlook Meetings', 0, lwOutlook, twOutlook, true);
+    addTableRow('&nbsp;&nbsp;Outlook meetings', 0, lwOutlook, twOutlook, true);
   if (twGcal > 0 || lwGcal > 0)
-    addTableRow('&nbsp;&nbsp;↳ Google Calendar', 0, lwGcal, twGcal, true);
+    addTableRow('&nbsp;&nbsp;Google Calendar', 0, lwGcal, twGcal, true);
   if (twTeamsMsg > 0 || lwTeamsMsg > 0)
-    addTableRow('&nbsp;&nbsp;↳ Teams Messages', 0, lwTeamsMsg, twTeamsMsg, false);
+    addTableRow('&nbsp;&nbsp;Teams messages', 0, lwTeamsMsg, twTeamsMsg, false);
   if (twSlack > 0 || lwSlack > 0)
-    addTableRow('&nbsp;&nbsp;↳ Slack Messages', 0, lwSlack, twSlack, false);
+    addTableRow('&nbsp;&nbsp;Slack messages', 0, lwSlack, twSlack, false);
   if (twGchat > 0 || lwGchat > 0)
-    addTableRow('&nbsp;&nbsp;↳ Google Chat', 0, lwGchat, twGchat, false);
+    addTableRow('&nbsp;&nbsp;Google Chat', 0, lwGchat, twGchat, false);
 
   // Detailed metrics section
   if (twMetricsArr.length > 0 || lwMetricsArr.length > 0) {
     html += `<tr><td colspan="5" style="padding:10px 10px 4px; font-weight:600; color:#6366f1; border-bottom:2px solid #e5e7eb; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Workload Detail (rolling 7-day avg, per person)</td></tr>`;
     addTableRow(
-      '⏱️ Meeting Hours',
+      'Meeting hours',
       sixWeekAvg.meetingHours,
       lw.meetingHours,
       tw.meetingHours,
@@ -1199,16 +1282,16 @@ export async function generateWeeklyBrief(orgId) {
       1
     );
     addTableRow(
-      '⚡ Consecutive Meetings',
+      'Consecutive meetings',
       sixWeekAvg.backToBack,
       lw.backToBack,
       tw.backToBack,
       true,
       0
     );
-    addTableRow('💬 Messages / Day', sixWeekAvg.msgsPerDay, lw.msgsPerDay, tw.msgsPerDay, false, 1);
+    addTableRow('Messages / day', sixWeekAvg.msgsPerDay, lw.msgsPerDay, tw.msgsPerDay, false, 1);
     addTableRow(
-      '🌙 Out-of-Hours Messages',
+      'Out-of-hours messages',
       sixWeekAvg.afterHoursMsg,
       lw.afterHoursMsg,
       tw.afterHoursMsg,
@@ -1216,14 +1299,14 @@ export async function generateWeeklyBrief(orgId) {
       0
     );
     addTableRow(
-      '🌙 Out-of-Hours Work %',
+      'Out-of-hours work %',
       Math.round((sixWeekAvg.afterHoursRatio || 0) * 100),
       Math.round((lw.afterHoursRatio || 0) * 100),
       Math.round((tw.afterHoursRatio || 0) * 100),
       true
     );
     addTableRow(
-      '🎯 Uninterrupted Time (hrs)',
+      'Uninterrupted time (hrs)',
       sixWeekAvg.focusTimeAvailability,
       lw.focusTimeAvailability || 0,
       tw.focusTimeAvailability || 0,
@@ -1231,7 +1314,7 @@ export async function generateWeeklyBrief(orgId) {
       1
     );
     addTableRow(
-      '🧩 Schedule Fragmentation',
+      'Schedule fragmentation',
       sixWeekAvg.calendarFragmentation,
       lw.calendarFragmentation || 0,
       tw.calendarFragmentation || 0,
@@ -1239,21 +1322,21 @@ export async function generateWeeklyBrief(orgId) {
       0
     );
     addTableRow(
-      '🔄 Recurring Meeting Load %',
+      'Recurring meeting load %',
       Math.round((sixWeekAvg.recurringBurden || 0) * 100),
       Math.round((lw.recurringBurden || 0) * 100),
       Math.round((tw.recurringBurden || 0) * 100),
       true
     );
     if (tw.channels > 0 || lw.channels > 0)
-      addTableRow('📂 Active Channels', sixWeekAvg.channels, lw.channels, tw.channels, false, 0);
+      addTableRow('Active channels', sixWeekAvg.channels, lw.channels, tw.channels, false, 0);
   }
 
   html += `</tbody></table>`;
   html += `<p style="font-size:11px; color:#9ca3af; margin:8px 0 0 0;">`;
-  html += `📖 <strong>How to read this table:</strong> `;
+  html += `<strong>How to read this table:</strong> `;
   html += `"This Week" values are highlighted in bold. `;
-  html += `🟢 = moving in a healthy direction &nbsp;·&nbsp; 🔴 = moving in a concerning direction &nbsp;·&nbsp; ⚠️ = notably above or below your 6-week average. `;
+  html += `Green = moving in a healthy direction &nbsp;·&nbsp; Red = moving in a concerning direction &nbsp;·&nbsp; Warning = notably above or below your 6-week average. `;
   html += `"Uninterrupted Time" and "Team Messages" are better when higher. All other metrics are better when lower.`;
   html += `</p>`;
   html += `</div>`;
@@ -1261,7 +1344,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 9. Active Drift Signals (compact) ───
   if (twSignals.length > 0 || twCKSignals.length > 0) {
     html += `<div style="${S.card}">`;
-    html += `<h3 style="${S.h3} margin-top:0;">🎯 Active Drift Signals</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Active drift signals</h3>`;
 
     const familyMap = {};
     for (const sig of twSignals) {
@@ -1328,7 +1411,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 10. Team Health (BDI) ───
   if (teamBDIData.length > 0) {
     html += `<div style="${S.card}">`;
-    html += `<h3 style="${S.h3} margin-top:0;">🏥 Team Health Status</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Team health status</h3>`;
 
     for (const { teamName, bdi, prevBDI } of teamBDIData) {
       const stateColor =
@@ -1373,7 +1456,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 11. Industry Benchmark (demoted — secondary, compact) ───
   if (aiAnalysis?.industryComparison) {
     html += `<div style="${S.card} opacity:0.85;">`;
-    html += `<h3 style="${S.h3} margin-top:0; font-size:14px; color:#9ca3af;">📎 Industry Context: ${org.industry || 'General'}</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0; font-size:13px; color:#64748b;">Industry context: ${org.industry || 'General'}</h3>`;
     html += `<p style="${S.pSmall}">${aiAnalysis.industryComparison}</p>`;
     html += `</div>`;
   }
@@ -1381,7 +1464,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 11b. Engagement Level ───
   if (engagementStrainByTeam.length === 0) {
     html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
-    html += `<h3 style="${S.h3} margin-top:0; color:#6b7280;">🧠 Engagement Level</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Engagement level</h3>`;
     html += `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px;">`;
     html += `<p style="${S.p} margin:0 0 6px 0; color:#374151;"><strong>No engagement data available for this week.</strong></p>`;
     html += `<p style="${S.p} margin:0 0 6px 0; color:#6b7280;">`;
@@ -1424,7 +1507,7 @@ export async function generateWeeklyBrief(orgId) {
             ? 'Watch'
             : 'Healthy';
     const trendLbl = (trend) =>
-      trend === 'rising' ? '📈 Risk rising' : trend === 'improving' ? '📉 Improving' : '➡️ Stable';
+      trend === 'rising' ? 'Risk rising' : trend === 'improving' ? 'Improving' : 'Stable';
 
     // Worst-case state across teams
     const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
@@ -1436,7 +1519,7 @@ export async function generateWeeklyBrief(orgId) {
     const worstColor = riskStateColor(worstState);
 
     html += `<div style="${S.card} border-left:4px solid ${worstColor};">`;
-    html += `<h3 style="${S.h3} margin-top:0; color:${worstColor};">🧠 Engagement Level</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0; color:#0f172a;">Engagement level</h3>`;
 
     // Why it matters — always shown, non-optional
     html += `<div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 16px; margin-bottom:16px;">`;
@@ -1521,10 +1604,10 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── 12. Footer ───
-  html += `<div style="padding:16px 24px; background:#f9fafb; border-radius:0 0 12px 12px; border:1px solid #e5e7eb; border-top:0;">`;
+  html += `<div style="padding:17px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">`;
   // Data coverage banner
   const coverageColor = coveragePct >= 80 ? '#16a34a' : coveragePct >= 40 ? '#d97706' : '#dc2626';
-  html += `<p style="${S.pSmall}">📊 <strong>Data coverage:</strong> <span style="color:${coverageColor}; font-weight:600;">${usersWithDataThisWeek.length} of ${totalUsers} employees (${coveragePct}%)</span> have calendar data this week — all per-person figures are based on connected accounts only.</p>`;
+  html += `<p style="${S.pSmall}"><strong>Data coverage:</strong> <span style="color:${coverageColor}; font-weight:700;">${usersWithDataThisWeek.length} of ${totalUsers} employees (${coveragePct}%)</span> have calendar data this week. Per-person figures are based on connected accounts only.</p>`;
   html += `<p style="${S.pSmall}">Data sources: ${connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}</p>`;
   html += `<p style="${S.pSmall}">Report period: ${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} compared with ${lastWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(thisWeekStart.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>`;
   html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()} · Status: ${verdictText} (${verdictConfidence} confidence)</p>`;
