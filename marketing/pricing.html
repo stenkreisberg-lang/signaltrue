@@ -11,8 +11,8 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="alternate icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/logo192.png" />
-  <title>Pricing — SignalTrue</title>
-  <meta name="description" content="Simple, predictable pricing for real signals. Pay only for actual insight — not seats, not content scanning." />
+  <title>SignalTrue Pricing | Workload Scan and Team Signals</title>
+  <meta name="description" content="Compare SignalTrue workload scan, team intelligence, leadership intelligence, and enterprise plans for team-level burnout early warning." />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -40,8 +40,40 @@
     <!-- Hero -->
     <section class="hero">
       <div class="container center">
-        <h1>Pay for power, not volume</h1>
-        <p class="muted" style="max-width: 700px; margin: 0 auto;">SignalTrue pricing controls <strong>who sees what</strong>, <strong>what level of synthesis exists</strong>, and <strong>whether insights are tactical or strategic</strong>.</p>
+        <h1>Start with the level of visibility you need</h1>
+        <p class="muted" style="max-width: 760px; margin: 0 auto;">Use SignalTrue as a focused workload scan, a team-level early warning system, or a leadership view across teams. Pricing reflects the cost of late detection, not seat volume.</p>
+      </div>
+    </section>
+
+    <!-- Buyer Fit -->
+    <section>
+      <div class="container">
+        <div class="grid-2" style="align-items:start;">
+          <div class="panel">
+            <p class="eyebrow">Who this is for</p>
+            <h2>Best when leaders can feel pressure building, but cannot see the pattern clearly.</h2>
+            <p class="muted">SignalTrue is strongest when meetings, manager load, response pressure, and recovery risk are becoming visible before surveys or turnover show the damage.</p>
+          </div>
+          <div class="grid-3">
+            <div class="panel"><h3>HR and People Ops</h3><p class="muted">Find leading indicators of engagement risk before pulse surveys lag behind reality.</p></div>
+            <div class="panel"><h3>Executives</h3><p class="muted">See where execution capacity is weakening across teams and manager layers.</p></div>
+            <div class="panel"><h3>Team leaders</h3><p class="muted">Get practical actions for meetings, focus time, recovery, and decision load.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- First 30 Days -->
+    <section>
+      <div class="container section-header">
+        <h2>What you get in the first 30 days</h2>
+        <p class="section-intro">A clear path from connection to first decision, without a heavy implementation project.</p>
+      </div>
+      <div class="container grid-4">
+        <div class="panel"><strong>1. Connect</strong><p class="muted">Connect metadata sources and define privacy boundaries.</p></div>
+        <div class="panel"><strong>2. Calibrate</strong><p class="muted">Build baselines for meetings, focus, response pressure, and recovery.</p></div>
+        <div class="panel"><strong>3. Review</strong><p class="muted">Review the first team pressure report with signal explanations.</p></div>
+        <div class="panel"><strong>4. Improve</strong><p class="muted">Choose three practical changes and track whether pressure improves.</p></div>
       </div>
     </section>
 
@@ -66,7 +98,7 @@
               <li>— No industry benchmarks</li>
               <li>— No strategic synthesis</li>
             </ul>
-            <a class="btn btn-primary" href="/register?plan=team">Start Trial</a>
+            <a class="btn btn-primary" href="/contact" onclick="gtag('event','pricing_cta_clicked',{event_category:'conversion',event_label:'team_intelligence'});">Request demo</a>
           </div>
 
           <div class="plan-card popular">
@@ -87,7 +119,7 @@
               <li>✓ No individual names in reports</li>
               <li>✓ Unlimited employees</li>
             </ul>
-            <a class="btn btn-primary" href="/register?plan=leadership">Start Trial</a>
+            <a class="btn btn-primary" href="/contact" onclick="gtag('event','pricing_cta_clicked',{event_category:'conversion',event_label:'leadership_intelligence'});">Request demo</a>
           </div>
 
           <div class="plan-card">
@@ -106,7 +138,7 @@
               <li>✓ SLA guarantees</li>
               <li>✓ On-premise deployment option</li>
             </ul>
-            <a class="btn btn-primary" href="mailto:sales@signaltrue.ai?subject=Organizational Intelligence Inquiry" onclick="gtag('event','pricing_contact_sales_click',{event_category:'conversion',event_label:'pricing_hero'});">Contact Sales</a>
+            <a class="btn btn-primary" href="/contact" onclick="gtag('event','pricing_cta_clicked',{event_category:'conversion',event_label:'enterprise'});">Contact sales</a>
           </div>
         </div>
       </div>
@@ -263,13 +295,26 @@
     </section>
 
     <!-- Final CTA -->
+    <section>
+      <div class="container section-header">
+        <h2>Common buying questions</h2>
+      </div>
+      <div class="container grid-2">
+        <div class="panel"><h3>Do we need a long implementation?</h3><p class="muted">No. A workload scan can start with a short calibration period and a focused set of metadata sources.</p></div>
+        <div class="panel"><h3>Will managers see individual employee scores?</h3><p class="muted">No. SignalTrue is built for team-level system pressure, not individual productivity scoring.</p></div>
+        <div class="panel"><h3>Can we start with one team?</h3><p class="muted">Yes. Many organizations start with a high-pressure function, leadership layer, or pilot group.</p></div>
+        <div class="panel"><h3>What makes this different from surveys?</h3><p class="muted">Surveys show reported sentiment after people feel it. SignalTrue shows changing work conditions earlier.</p></div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
     <section class="cta-section">
       <div class="container center">
         <h2>Ready to see your organizational signals?</h2>
         <p class="muted" style="max-width: 600px; margin: 16px auto 24px;">Request a demo to see how SignalTrue turns coordination patterns into actionable signals.</p>
         <div class="cta-buttons" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-          <a class="btn btn-primary btn-large" href="/contact">Request demo</a>
-          <a class="btn btn-large" href="/sample-report">📋 See a sample report first</a>
+          <a class="btn btn-primary btn-large" href="/contact" onclick="gtag('event','demo_requested',{event_category:'conversion',event_label:'pricing_final'});">Request demo</a>
+          <a class="btn btn-large" href="/sample-report" onclick="gtag('event','sample_report_click',{event_category:'conversion',event_label:'pricing_final'});">See a sample report first</a>
         </div>
       </div>
     </section>

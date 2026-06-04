@@ -76,12 +76,13 @@ footer nav a:hover { color: var(--text); }
 .muted { color: var(--muted); }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .panel { background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.6)); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
 .center { text-align: center; }
 
 /* Responsive */
 @media (max-width: 960px) {
-  .hero-grid, .cards, .pricing, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .hero-grid, .cards, .pricing, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .navlinks { display: none; }
   .cta { margin-left: auto; }
 }
