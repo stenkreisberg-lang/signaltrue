@@ -86,7 +86,7 @@ async function runReport(authClient, propertyId, request) {
   return response.data;
 }
 
-export async function getGa4Overview() {
+export async function getGa4Overview(options = {}) {
   const analytics = await getAnalyticsClient();
 
   if (!analytics.configured) {
@@ -98,71 +98,76 @@ export async function getGa4Overview() {
   }
 
   const { client, propertyId } = analytics;
-  const dateRanges = [{ startDate: '30daysAgo', endDate: 'today' }];
-  const previousDateRanges = [{ startDate: '60daysAgo', endDate: '31daysAgo' }];
+  const dateRanges = [
+    {
+      startDate: options.startDate || '30daysAgo',
+      endDate: options.endDate || 'today',
+    },
+  ];
+  const previousDateRanges = [
+    {
+      startDate: options.previousStartDate || '60daysAgo',
+      endDate: options.previousEndDate || '31daysAgo',
+    },
+  ];
 
-  const [summary, previousSummary, topPages, trafficSources, daily, keyEvents] =
-    await Promise.all([
-      runReport(client, propertyId, {
-        dateRanges,
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'engagementRate' },
-          { name: 'averageSessionDuration' },
-          { name: 'keyEvents' },
-        ],
-      }),
-      runReport(client, propertyId, {
-        dateRanges: previousDateRanges,
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'engagementRate' },
-          { name: 'averageSessionDuration' },
-          { name: 'keyEvents' },
-        ],
-      }),
-      runReport(client, propertyId, {
-        dateRanges,
-        dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
-        metrics: [
-          { name: 'screenPageViews' },
-          { name: 'activeUsers' },
-          { name: 'engagementRate' },
-        ],
-        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-        limit: 10,
-      }),
-      runReport(client, propertyId, {
-        dateRanges,
-        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
-        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
-        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-        limit: 8,
-      }),
-      runReport(client, propertyId, {
-        dateRanges,
-        dimensions: [{ name: 'date' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'keyEvents' },
-        ],
-        orderBys: [{ dimension: { dimensionName: 'date' } }],
-        limit: 31,
-      }),
-      runReport(client, propertyId, {
-        dateRanges,
-        dimensions: [{ name: 'eventName' }],
-        metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
-        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
-        limit: 25,
-      }),
-    ]);
+  const [summary, previousSummary, topPages, trafficSources, daily, keyEvents] = await Promise.all([
+    runReport(client, propertyId, {
+      dateRanges,
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+        { name: 'screenPageViews' },
+        { name: 'engagementRate' },
+        { name: 'averageSessionDuration' },
+        { name: 'keyEvents' },
+      ],
+    }),
+    runReport(client, propertyId, {
+      dateRanges: previousDateRanges,
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+        { name: 'screenPageViews' },
+        { name: 'engagementRate' },
+        { name: 'averageSessionDuration' },
+        { name: 'keyEvents' },
+      ],
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+      metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'engagementRate' }],
+      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+      limit: 10,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 8,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+        { name: 'screenPageViews' },
+        { name: 'keyEvents' },
+      ],
+      orderBys: [{ dimension: { dimensionName: 'date' } }],
+      limit: 31,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'eventName' }],
+      metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
+      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      limit: 25,
+    }),
+  ]);
 
   const summaryHeaders = summary.metricHeaders || [];
   const summaryRow = summary.rows?.[0] || {};
@@ -210,7 +215,7 @@ export async function getGa4Overview() {
     connected: true,
     propertyId,
     dateRange: {
-      label: 'Last 30 days',
+      label: options.label || 'Last 30 days',
       startDate: dateRanges[0].startDate,
       endDate: dateRanges[0].endDate,
     },
@@ -224,7 +229,11 @@ export async function getGa4Overview() {
       engagementRate: formatPercent(getMetric(row, topPages.metricHeaders || [], 'engagementRate')),
     })),
     trafficSources: (trafficSources.rows || []).map((row) => ({
-      channel: getDimension(row, trafficSources.dimensionHeaders || [], 'sessionDefaultChannelGroup'),
+      channel: getDimension(
+        row,
+        trafficSources.dimensionHeaders || [],
+        'sessionDefaultChannelGroup'
+      ),
       sessions: getMetric(row, trafficSources.metricHeaders || [], 'sessions'),
       activeUsers: getMetric(row, trafficSources.metricHeaders || [], 'activeUsers'),
     })),

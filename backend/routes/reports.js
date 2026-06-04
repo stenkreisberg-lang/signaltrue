@@ -26,6 +26,7 @@ import { sendWeeklyBrief } from '../services/weeklyBriefService.js';
 import {
   getEmailScheduleStatus,
   manualTriggerWeeklyEmails,
+  manualTriggerWeeklySiteAnalyticsReport,
 } from '../services/weeklyEmailScheduler.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { checkRole } from '../middleware/checkRole.js';
@@ -454,6 +455,35 @@ router.post('/trigger-weekly-email', async (req, res) => {
   } catch (error) {
     console.error('Error sending weekly brief:', error);
     res.status(500).json({ message: 'Error sending brief', error: error.message });
+  }
+});
+
+/**
+ * POST /api/reports/trigger-site-analytics-email
+ * Manually trigger the weekly GA4 site-performance email.
+ * Sends only to the configured SignalTrue admin recipient.
+ * No auth required - uses secret key instead.
+ */
+router.post('/trigger-site-analytics-email', async (req, res) => {
+  try {
+    const secret = req.body.secret || req.headers['x-report-secret'];
+    const expectedSecret = process.env.REPORT_TRIGGER_SECRET;
+
+    if (!expectedSecret) {
+      return res.status(503).json({ message: 'Report trigger is not configured' });
+    }
+    if (secret !== expectedSecret) {
+      return res.status(401).json({ message: 'Invalid secret key' });
+    }
+
+    const result = await manualTriggerWeeklySiteAnalyticsReport();
+    res.json({ message: 'Weekly site analytics report processed', ...result });
+  } catch (error) {
+    console.error('Error sending site analytics report:', error);
+    res.status(500).json({
+      message: 'Error sending site analytics report',
+      error: error.message,
+    });
   }
 });
 

@@ -25,6 +25,7 @@ import CronLog from '../models/cronLog.js';
 
 const JOB_NAME = 'weekly-email-brief';
 const REPORT_GEN_JOB = 'weekly-report-generation';
+const SITE_ANALYTICS_JOB = 'weekly-site-analytics-report';
 
 // ═══════════════════════════════════════════════
 // HELPERS
@@ -255,6 +256,92 @@ async function executeWeeklyReportGeneration(trigger = 'cron') {
 }
 
 // ═══════════════════════════════════════════════
+// CORE: Send weekly GA4 site analytics report to SignalTrue admin
+// ═══════════════════════════════════════════════
+
+async function executeWeeklySiteAnalyticsReport(trigger = 'cron') {
+  const weekKey = getWeekKey();
+
+  const alreadySent = await CronLog.hasRunForWeek(SITE_ANALYTICS_JOB, weekKey);
+  if (alreadySent) {
+    console.log(`[WeeklyScheduler] Site analytics report already sent for ${weekKey} — skipping`);
+    return { skipped: true, weekKey };
+  }
+
+  console.log(
+    `[WeeklyScheduler] Sending weekly site analytics report for ${weekKey} (trigger: ${trigger})...`
+  );
+  const startTime = Date.now();
+
+  try {
+    const { sendWeeklySiteAnalyticsReport } = await import('./siteAnalyticsEmailService.js');
+    const result = await sendWeeklySiteAnalyticsReport(trigger);
+    const durationMs = Date.now() - startTime;
+
+    await CronLog.create({
+      jobName: SITE_ANALYTICS_JOB,
+      weekKey,
+      executedAt: new Date(),
+      durationMs,
+      status: 'success',
+      results: [
+        {
+          orgName: 'SignalTrue site',
+          status: 'sent',
+          recipientCount: 1,
+        },
+      ],
+      trigger,
+      totalOrgs: 1,
+      sentCount: 1,
+      failedCount: 0,
+    });
+
+    console.log(
+      `[WeeklyScheduler] Site analytics report sent to ${result.recipientEmail} in ${(durationMs / 1000).toFixed(1)}s`
+    );
+
+    return {
+      skipped: false,
+      weekKey,
+      status: 'success',
+      sentCount: 1,
+      failedCount: 0,
+      durationMs,
+      ...result,
+    };
+  } catch (error) {
+    console.error(`[WeeklyScheduler] Site analytics report failed:`, error.message);
+
+    try {
+      await CronLog.create({
+        jobName: SITE_ANALYTICS_JOB,
+        weekKey,
+        executedAt: new Date(),
+        durationMs: Date.now() - startTime,
+        status: 'failed',
+        results: [
+          {
+            orgName: 'SignalTrue site',
+            status: 'failed',
+            error: error.message,
+            recipientCount: 0,
+          },
+        ],
+        trigger,
+        totalOrgs: 1,
+        sentCount: 0,
+        failedCount: 1,
+      });
+    } catch (logErr) {
+      console.error(`[WeeklyScheduler] Could not log site analytics failure:`, logErr.message);
+    }
+
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════
 // STARTUP CATCH-UP
 // ═══════════════════════════════════════════════
 
@@ -295,11 +382,20 @@ async function startupCatchUp() {
 export async function getEmailScheduleStatus() {
   const weekKey = getWeekKey();
 
-  const [lastEmailRun, lastReportRun, emailThisWeek, reportThisWeek] = await Promise.all([
+  const [
+    lastEmailRun,
+    lastReportRun,
+    lastSiteAnalyticsRun,
+    emailThisWeek,
+    reportThisWeek,
+    siteAnalyticsThisWeek,
+  ] = await Promise.all([
     CronLog.getLastSuccessfulRun(JOB_NAME),
     CronLog.getLastSuccessfulRun(REPORT_GEN_JOB),
+    CronLog.getLastSuccessfulRun(SITE_ANALYTICS_JOB),
     CronLog.hasRunForWeek(JOB_NAME, weekKey),
     CronLog.hasRunForWeek(REPORT_GEN_JOB, weekKey),
+    CronLog.hasRunForWeek(SITE_ANALYTICS_JOB, weekKey),
   ]);
 
   // Determine next scheduled send
@@ -308,6 +404,12 @@ export async function getEmailScheduleStatus() {
   const daysUntilMonday = (8 - now.getUTCDay()) % 7 || 7;
   nextMonday.setUTCDate(now.getUTCDate() + (emailThisWeek ? daysUntilMonday : 0));
   nextMonday.setUTCHours(8, 0, 0, 0);
+
+  const nextSiteAnalyticsMonday = new Date(now);
+  nextSiteAnalyticsMonday.setUTCDate(
+    now.getUTCDate() + (siteAnalyticsThisWeek ? daysUntilMonday : 0)
+  );
+  nextSiteAnalyticsMonday.setUTCHours(7, 30, 0, 0);
 
   return {
     currentWeek: weekKey,
@@ -335,6 +437,23 @@ export async function getEmailScheduleStatus() {
           }
         : null,
     },
+    siteAnalyticsReport: {
+      sentThisWeek: siteAnalyticsThisWeek,
+      recipientEmail: process.env.SITE_ANALYTICS_REPORT_EMAIL || 'sten.kreisberg@gmail.com',
+      lastRun: lastSiteAnalyticsRun
+        ? {
+            weekKey: lastSiteAnalyticsRun.weekKey,
+            executedAt: lastSiteAnalyticsRun.executedAt,
+            status: lastSiteAnalyticsRun.status,
+            trigger: lastSiteAnalyticsRun.trigger,
+            sentCount: lastSiteAnalyticsRun.sentCount,
+            failedCount: lastSiteAnalyticsRun.failedCount,
+          }
+        : null,
+      nextScheduled: siteAnalyticsThisWeek
+        ? nextSiteAnalyticsMonday.toISOString()
+        : 'Pending (will send on next Monday 7:30 AM UTC)',
+    },
     health: emailThisWeek
       ? '✅ On track'
       : isMondayOrLater()
@@ -349,6 +468,10 @@ export async function getEmailScheduleStatus() {
 
 export async function manualTriggerWeeklyEmails() {
   return executeWeeklyEmails('manual-api');
+}
+
+export async function manualTriggerWeeklySiteAnalyticsReport() {
+  return executeWeeklySiteAnalyticsReport('manual-api');
 }
 
 // ═══════════════════════════════════════════════
@@ -379,6 +502,17 @@ export function initWeeklyEmailScheduler() {
     }
   });
   console.log('[WeeklyScheduler] ⏰ Report generation cron: Sunday 11:30 PM UTC');
+
+  // ── SITE ANALYTICS REPORT: Monday at 7:30 AM UTC ──
+  cron.schedule('30 7 * * 1', async () => {
+    console.log('[WeeklyScheduler] ⏰ Monday 7:30 AM site analytics cron triggered');
+    try {
+      await executeWeeklySiteAnalyticsReport('cron');
+    } catch (err) {
+      console.error('[WeeklyScheduler] Site analytics cron error:', err.message);
+    }
+  });
+  console.log('[WeeklyScheduler] ⏰ Site analytics report cron: Monday 7:30 AM UTC');
 
   // ── WATCHDOG: Every hour, check if emails were missed ──
   cron.schedule('0 * * * *', async () => {

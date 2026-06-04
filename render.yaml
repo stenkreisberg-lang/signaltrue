@@ -46,7 +46,7 @@ services:
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
-        value: "587"
+        value: '587'
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASSWORD
@@ -59,7 +59,7 @@ services:
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
-        value: "587"
+        value: '587'
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
@@ -68,12 +68,16 @@ services:
         sync: false
       # LLM explanations (uses OPENAI_API_KEY above — OPENAI_MODEL defaults to gpt-4o-mini)
       - key: OPENAI_MODEL
-        value: "gpt-4o-mini"
+        value: 'gpt-4o-mini'
       - key: API_KEY
         sync: false
       - key: ADMIN_API_KEY
         sync: false
       - key: REPORT_TRIGGER_SECRET
+        sync: false
+      - key: SITE_ANALYTICS_REPORT_EMAIL
+        value: sten.kreisberg@gmail.com
+      - key: SITE_ANALYTICS_FROM_EMAIL
         sync: false
       - key: CRON_SECRET
         sync: false
@@ -96,15 +100,23 @@ services:
 # Cron Jobs for automated tasks (kept as backup safety net)
 crons:
   - name: weekly-reports-safety-net
-    schedule: "0 9 * * 1"  # Every Monday at 9:00 AM UTC (backup — server handles this internally)
+    schedule: '0 9 * * 1' # Every Monday at 9:00 AM UTC (backup — server handles this internally)
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
         -H "Content-Type: application/json" \
         -H "x-report-secret: $REPORT_TRIGGER_SECRET"
     region: oregon
 
+  - name: weekly-site-analytics-report
+    schedule: '45 7 * * 1' # Every Monday at 7:45 AM UTC (backup — server handles this internally)
+    command: |
+      curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-site-analytics-email" \
+        -H "Content-Type: application/json" \
+        -H "x-report-secret: $REPORT_TRIGGER_SECRET"
+    region: oregon
+
   - name: daily-reminders
-    schedule: "0 10 * * *"  # Every day at 10:00 AM UTC
+    schedule: '0 10 * * *' # Every day at 10:00 AM UTC
     command: |
       curl -X POST "https://signaltrue-backend.onrender.com/api/reminders/check-followups" \
         -H "Content-Type: application/json" \
