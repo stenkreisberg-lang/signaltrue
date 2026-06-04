@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MessageSquare, Calendar, Building2, Send, CheckCircle } from 'lucide-react';
+import { trackEvent } from '../lib/analytics';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -24,8 +25,11 @@ const Contact: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate submission - replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    trackEvent('contact_form_submit', {
+      company_size: formData.companySize || undefined,
+      problem_area: formData.mainProblem || undefined,
+      source_page: window.location.pathname,
+    });
 
     setSubmitted(true);
     setLoading(false);
@@ -61,6 +65,7 @@ const Contact: React.FC = () => {
               <p className="text-muted-foreground text-sm mb-3">For general inquiries</p>
               <a
                 href="mailto:hello@signaltrue.ai"
+                onClick={() => trackEvent('contact_mailto_click', { email_type: 'general' })}
                 className="text-primary hover:underline font-medium"
               >
                 hello@signaltrue.ai
@@ -86,6 +91,7 @@ const Contact: React.FC = () => {
               <p className="text-muted-foreground text-sm mb-3">For existing customers</p>
               <a
                 href="mailto:support@signaltrue.ai"
+                onClick={() => trackEvent('contact_mailto_click', { email_type: 'support' })}
                 className="text-primary hover:underline font-medium"
               >
                 support@signaltrue.ai

@@ -136,7 +136,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, title }) 
         </button>
         <button
           className="btn-secondary"
-          onClick={() => window.open('mailto:sales@signaltrue.com', '_blank')}
+          onClick={() => window.open('mailto:sales@signaltrue.ai', '_blank')}
         >
           Contact Sales
         </button>

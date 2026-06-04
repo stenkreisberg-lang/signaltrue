@@ -274,18 +274,27 @@
               <a
                 class="btn btn-primary"
                 href="mailto:hello@signaltrue.ai?subject=SignalTrue%20demo%20request"
+                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'demo_request'});"
                 >Request demo</a
               >
             </article>
             <article class="contact-card">
               <h3>General inquiries</h3>
               <p>For partnerships, press, procurement, or product questions.</p>
-              <a href="mailto:hello@signaltrue.ai">hello@signaltrue.ai</a>
+              <a
+                href="mailto:hello@signaltrue.ai"
+                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'general'});"
+                >hello@signaltrue.ai</a
+              >
             </article>
             <article class="contact-card">
               <h3>Customer support</h3>
               <p>Already using SignalTrue? Reach the support team directly.</p>
-              <a href="mailto:support@signaltrue.ai">support@signaltrue.ai</a>
+              <a
+                href="mailto:support@signaltrue.ai"
+                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'support'});"
+                >support@signaltrue.ai</a
+              >
             </article>
           </div>
         </div>

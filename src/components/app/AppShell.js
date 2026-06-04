@@ -8,6 +8,7 @@ const links = [
   { to: '/app/actions', label: 'Actions' },
   { to: '/app/executive-summary', label: 'Executive Summary' },
   { to: '/app/signal-coverage', label: 'Data Coverage' },
+  { to: '/app/site-analytics', label: 'Site Analytics' },
 ];
 
 export function PageHeader({ eyebrow, title, description, action }) {
