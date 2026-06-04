@@ -22,6 +22,7 @@ const conversionEvents = new Set([
   'pricing_cta_clicked',
   'sample_report_click',
   'sample_report_request',
+  'sample_report_view',
   'demo_cta_click',
   'cta_clicked',
   'early_signal_preview_requested',

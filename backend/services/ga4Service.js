@@ -10,6 +10,9 @@ const CONVERSION_EVENT_NAMES = new Set([
   'early_signal_preview_requested',
   'sample_report_click',
   'sample_report_request',
+  'sample_report_view',
+  'demo_cta_click',
+  'pricing_contact_sales_click',
 ]);
 
 function parseServiceAccountJson() {
