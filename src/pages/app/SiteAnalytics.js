@@ -1,5 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { GA_MEASUREMENT_ID } from '../../lib/analytics';
@@ -21,8 +31,16 @@ const formatEventName = (name) =>
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const changeLabel = (current = 0, previous = 0) => {
+  if (!previous) return 'No previous baseline';
+  const change = ((current - previous) / previous) * 100;
+  const rounded = Math.round(change);
+  return `${rounded >= 0 ? '+' : ''}${rounded}% vs previous 30 days`;
+};
+
 export default function SiteAnalytics() {
   const [summary, setSummary] = useState(null);
+  const [ga4, setGa4] = useState(null);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
@@ -37,10 +55,15 @@ export default function SiteAnalytics() {
       }
     }
 
-    api
-      .get('/analytics/summary')
-      .then((response) => {
-        setSummary(response.data);
+    Promise.allSettled([api.get('/analytics/summary'), api.get('/analytics/ga4/overview')])
+      .then(([internalResult, ga4Result]) => {
+        if (internalResult.status === 'fulfilled') setSummary(internalResult.value.data);
+        if (ga4Result.status === 'fulfilled') setGa4(ga4Result.value.data);
+
+        if (internalResult.status === 'rejected' && ga4Result.status === 'rejected') {
+          throw internalResult.reason;
+        }
+
         setStatus('ready');
       })
       .catch((err) => {
@@ -68,35 +91,45 @@ export default function SiteAnalytics() {
     .reduce((sum, event) => sum + event.count, 0);
   const topEvents = eventRows.slice(0, 8);
   const recentEvents = summary?.recentEvents || [];
+  const ga4Summary = ga4?.summary || {};
+  const ga4Previous = ga4?.previousSummary || {};
 
   return (
     <AppShell user={user} section="Site analytics" width="wide">
       <PageHeader
         eyebrow="GA4 + internal event stream"
         title="Site analytics overview"
-        description="A live operational view of page activity, conversion events, and recent tracking signals. GA4 is loaded on the public site; internal events are stored for quick inspection here."
+        description="A live operational view of traffic, engagement, top pages, acquisition channels, and conversion signals."
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="app-dashboard-card">
-          <span className="app-dashboard-card-value">Connected</span>
+          <span className="app-dashboard-card-value">{ga4?.connected ? 'Connected' : 'Setup'}</span>
           <span className="app-dashboard-card-label">GA4 status</span>
-          <span className="app-dashboard-card-note">{GA_MEASUREMENT_ID}</span>
+          <span className="app-dashboard-card-note">
+            {GA_MEASUREMENT_ID} / property {ga4?.propertyId || '516781576'}
+          </span>
         </div>
         <div className="app-dashboard-card">
-          <span className="app-dashboard-card-value">{totalEvents}</span>
-          <span className="app-dashboard-card-label">Tracked events</span>
-          <span className="app-dashboard-card-note">Stored in internal analytics.</span>
+          <span className="app-dashboard-card-value">{ga4Summary.activeUsers ?? '—'}</span>
+          <span className="app-dashboard-card-label">Active users</span>
+          <span className="app-dashboard-card-note">
+            {changeLabel(ga4Summary.activeUsers, ga4Previous.activeUsers)}
+          </span>
         </div>
         <div className="app-dashboard-card">
-          <span className="app-dashboard-card-value">{pageViews}</span>
-          <span className="app-dashboard-card-label">App page views</span>
-          <span className="app-dashboard-card-note">SPA route changes included.</span>
+          <span className="app-dashboard-card-value">{ga4Summary.sessions ?? '—'}</span>
+          <span className="app-dashboard-card-label">Sessions</span>
+          <span className="app-dashboard-card-note">
+            {changeLabel(ga4Summary.sessions, ga4Previous.sessions)}
+          </span>
         </div>
         <div className="app-dashboard-card">
-          <span className="app-dashboard-card-value">{conversions}</span>
-          <span className="app-dashboard-card-label">Conversion events</span>
-          <span className="app-dashboard-card-note">Demo, contact, email, trial.</span>
+          <span className="app-dashboard-card-value">{ga4Summary.views ?? '—'}</span>
+          <span className="app-dashboard-card-label">Views</span>
+          <span className="app-dashboard-card-note">
+            {changeLabel(ga4Summary.views, ga4Previous.views)}
+          </span>
         </div>
       </div>
 
@@ -112,13 +145,126 @@ export default function SiteAnalytics() {
         </div>
       )}
 
+      {ga4?.connected && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">{ga4Summary.engagementRate ?? '—'}%</span>
+              <span className="app-dashboard-card-label">Engagement rate</span>
+              <span className="app-dashboard-card-note">GA4 engaged sessions / sessions.</span>
+            </div>
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">
+                {ga4Summary.averageSessionDuration ?? '—'}s
+              </span>
+              <span className="app-dashboard-card-label">Avg session duration</span>
+              <span className="app-dashboard-card-note">Last 30 days.</span>
+            </div>
+            <div className="app-dashboard-card">
+              <span className="app-dashboard-card-value">{ga4Summary.keyEvents ?? 0}</span>
+              <span className="app-dashboard-card-label">GA4 key events</span>
+              <span className="app-dashboard-card-note">Configured key events in GA4.</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 mb-8">
+            <section className="rounded-xl border border-slate-200 bg-white p-6">
+              <div className="app-section-heading">
+                <div>
+                  <h2>Traffic trend</h2>
+                  <p>Daily sessions, views, and active users from GA4.</p>
+                </div>
+              </div>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={ga4.daily || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="sessions" stroke="#2563eb" strokeWidth={2} />
+                    <Line type="monotone" dataKey="views" stroke="#0f766e" strokeWidth={2} />
+                    <Line type="monotone" dataKey="activeUsers" stroke="#d97706" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white p-6">
+              <div className="app-section-heading">
+                <div>
+                  <h2>Traffic sources</h2>
+                  <p>Sessions by default channel group.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {(ga4.trafficSources || []).map((source) => (
+                  <div
+                    key={source.channel}
+                    className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3"
+                  >
+                    <span className="text-sm font-semibold text-slate-800">{source.channel}</span>
+                    <span className="text-sm text-slate-600">{source.sessions} sessions</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+            <div className="app-section-heading">
+              <div>
+                <h2>Top pages</h2>
+                <p>Where visitors spend their attention.</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="py-2 pr-4">Page</th>
+                    <th className="py-2 pr-4">Views</th>
+                    <th className="py-2 pr-4">Users</th>
+                    <th className="py-2 pr-4">Engagement</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(ga4.topPages || []).map((page) => (
+                    <tr key={`${page.path}-${page.title}`} className="border-t border-slate-100">
+                      <td className="py-3 pr-4">
+                        <div className="font-semibold text-slate-900">
+                          {page.title || page.path}
+                        </div>
+                        <div className="text-xs text-slate-500">{page.path}</div>
+                      </td>
+                      <td className="py-3 pr-4">{page.views}</td>
+                      <td className="py-3 pr-4">{page.activeUsers}</td>
+                      <td className="py-3 pr-4">{page.engagementRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+
+      {!ga4?.connected && status === 'ready' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 mb-8">
+          GA4 reporting is not connected yet. {ga4?.reason || ga4?.message}
+        </div>
+      )}
+
       {status === 'ready' && (
         <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6">
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="app-section-heading">
               <div>
-                <h2>Top events</h2>
+                <h2>Internal events</h2>
                 <p>Most common events recorded by the internal tracker.</p>
+              </div>
+              <div className="text-right text-xs text-slate-500">
+                {totalEvents} events · {pageViews} page views · {conversions} conversions
               </div>
             </div>
             <div className="h-80">

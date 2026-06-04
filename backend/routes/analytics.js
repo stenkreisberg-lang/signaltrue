@@ -1,5 +1,6 @@
 import express from 'express';
 import Analytics from '../models/analytics.js';
+import { getGa4Overview } from '../services/ga4Service.js';
 
 import Project from '../models/project.js';
 
@@ -135,6 +136,22 @@ router.get('/summary', async (req, res) => {
     res.json({ totalProjects, favoriteCount, perWeek, events, recentEvents });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// GET - GA4 reporting overview for site performance dashboard
+router.get('/ga4/overview', async (req, res) => {
+  try {
+    const overview = await getGa4Overview();
+    res.json(overview);
+  } catch (err) {
+    const message =
+      err?.response?.data?.error?.message || err.message || 'Unable to load GA4 overview.';
+    res.status(502).json({
+      connected: false,
+      propertyId: process.env.GA4_PROPERTY_ID || null,
+      message,
+    });
   }
 });
 
