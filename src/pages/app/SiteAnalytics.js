@@ -19,9 +19,13 @@ const conversionEvents = new Set([
   'contact_form_submit',
   'contact_mailto_click',
   'pricing_contact_sales_click',
-  'sample_report_view',
+  'pricing_cta_clicked',
+  'sample_report_click',
+  'sample_report_request',
   'demo_cta_click',
   'cta_clicked',
+  'early_signal_preview_requested',
+  'form_start',
   'email_submitted',
   'trial_started',
 ]);
@@ -93,6 +97,7 @@ export default function SiteAnalytics() {
   const recentEvents = summary?.recentEvents || [];
   const ga4Summary = ga4?.summary || {};
   const ga4Previous = ga4?.previousSummary || {};
+  const measuredConversions = ga4?.conversionEventCount ?? conversions;
 
   return (
     <AppShell user={user} section="Site analytics" width="wide">
@@ -161,11 +166,41 @@ export default function SiteAnalytics() {
               <span className="app-dashboard-card-note">Last 30 days.</span>
             </div>
             <div className="app-dashboard-card">
-              <span className="app-dashboard-card-value">{ga4Summary.keyEvents ?? 0}</span>
-              <span className="app-dashboard-card-label">GA4 key events</span>
-              <span className="app-dashboard-card-note">Configured key events in GA4.</span>
+              <span className="app-dashboard-card-value">{measuredConversions}</span>
+              <span className="app-dashboard-card-label">Measured conversions</span>
+              <span className="app-dashboard-card-note">
+                Demo, pricing, form, preview, and sample-report actions.
+              </span>
             </div>
           </div>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+            <div className="app-section-heading">
+              <div>
+                <h2>Conversion actions</h2>
+                <p>
+                  GA4 event counts for high-intent actions. Mark these as key events in GA4 when
+                  admin access is available.
+                </p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {(ga4.conversionEvents || []).map((event) => (
+                <div key={event.eventName} className="rounded-lg bg-slate-50 px-4 py-3">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {formatEventName(event.eventName)}
+                  </div>
+                  <div className="text-2xl font-bold text-slate-900 mt-1">{event.eventCount}</div>
+                  <div className="text-xs text-slate-500">GA4 event count</div>
+                </div>
+              ))}
+              {(ga4.conversionEvents || []).length === 0 && (
+                <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  No conversion actions recorded in the selected GA4 window yet.
+                </div>
+              )}
+            </div>
+          </section>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 mb-8">
             <section className="rounded-xl border border-slate-200 bg-white p-6">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import {
   ArrowLeft,
@@ -535,6 +536,11 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="SignalTrue Blog | Workload Risk and Burnout Prevention"
+        description="Practical ideas on burnout early warning, manager overload, employee engagement leading indicators, and team-level work intelligence."
+        path={slug ? `/blog/${slug}` : '/blog'}
+      />
       <Navbar />
       <main className="pt-20">{slug ? <BlogPostView slug={slug} /> : <BlogList />}</main>
       <Footer />

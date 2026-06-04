@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import {
@@ -140,6 +141,11 @@ const reportSignals = [
 const Product = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <PageMeta
+        title="Burnout Early Warning Product | SignalTrue"
+        description="See how SignalTrue detects manager load, meeting overload, focus fragmentation, response pressure, recovery risk, and execution drag from metadata only."
+        path="/product"
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
@@ -162,12 +168,71 @@ const Product = () => {
                 Metadata only. Team-level only. No message content. No individual productivity
                 scores.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
-                <Button variant="hero" size="xl">
-                  Request demo
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                  <Button variant="hero" size="xl">
+                    Request demo
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link to="/product#sample-report" onClick={() => trackEvent('sample_report_click')}>
+                  <Button variant="hero-outline" size="xl">
+                    View sample report
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Audience Outcomes */}
+        <section className="py-16 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                  Why teams use it
+                </p>
+                <h2 className="text-3xl font-display font-bold text-[#0F172A]">
+                  Different leaders, one shared view of work pressure.
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-5">
+                {[
+                  {
+                    title: 'For HR',
+                    text: 'Move from lagging engagement surveys to leading indicators of burnout, recovery loss, and manager overload.',
+                    link: '/employee-engagement-leading-indicators',
+                    linkText: 'Engagement indicators',
+                  },
+                  {
+                    title: 'For executives',
+                    text: 'See execution drag before delivery misses, escalations, or resignations make the risk obvious.',
+                    link: '/burnout-early-warning-system',
+                    linkText: 'Burnout early warning',
+                  },
+                  {
+                    title: 'For managers',
+                    text: 'Get practical actions to reduce meeting pressure, protect focus time, and clarify decision ownership.',
+                    link: '/signals/manager-load',
+                    linkText: 'Manager load signal',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl bg-white border border-[#E2E8F0] p-6"
+                  >
+                    <h3 className="font-display font-bold text-[#0F172A] mb-3">{item.title}</h3>
+                    <p className="text-sm text-[#475569] mb-5">{item.text}</p>
+                    <Link
+                      to={item.link}
+                      className="text-sm font-semibold text-[#1D4ED8] hover:text-[#1E3A8A]"
+                    >
+                      {item.linkText} →
+                    </Link>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -349,9 +414,12 @@ const Product = () => {
               </div>
 
               <div className="text-center mt-8">
-                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                <Link
+                  to="/contact?intent=sample-report"
+                  onClick={() => trackEvent('sample_report_request')}
+                >
                   <Button variant="hero" size="lg">
-                    See this report in a demo
+                    Send me the sample report
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>

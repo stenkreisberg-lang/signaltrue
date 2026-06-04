@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import {
@@ -118,6 +119,11 @@ const HowItWorksPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <PageMeta
+        title="How SignalTrue Works | Metadata-Only Team Signals"
+        description="Learn how SignalTrue connects work tools, builds team baselines, detects workload risk, and recommends actions without reading message content."
+        path="/how-it-works"
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}

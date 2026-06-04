@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
@@ -69,6 +70,11 @@ const beliefs = [
 const About = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="About SignalTrue | Prevention, Not Surveillance"
+        description="SignalTrue helps leaders see system pressure early with team-level metadata signals, not surveys, message reading, or individual productivity scoring."
+        path="/about"
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}

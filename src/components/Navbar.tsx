@@ -2,6 +2,7 @@ import { Button } from '../components/ui/button';
 import { Activity, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { trackEvent } from '../lib/analytics';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -10,13 +11,6 @@ import { useState } from 'react';
  * Primary CTA: Request Early Signal Preview
  * No "Free Diagnostic" - simplified per spec
  */
-
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', eventName);
-  }
-};
 
 const navItems = [
   { label: 'Product', href: '/product' },
@@ -31,6 +25,10 @@ const Navbar = () => {
 
   const handleRequestDemo = () => {
     trackEvent('demo_requested');
+  };
+
+  const handleSampleReport = () => {
+    trackEvent('sample_report_click');
   };
 
   return (
@@ -67,9 +65,9 @@ const Navbar = () => {
                 Login
               </Button>
             </Link>
-            <Link to="/product#sample-report">
+            <Link to="/product#sample-report" onClick={handleSampleReport}>
               <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
-                See sample report
+                Sample report
               </Button>
             </Link>
             <Link to="/contact" onClick={handleRequestDemo}>
@@ -107,6 +105,17 @@ const Navbar = () => {
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" size="sm" className="w-full text-[#475569]">
                     Login
+                  </Button>
+                </Link>
+                <Link
+                  to="/product#sample-report"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSampleReport();
+                  }}
+                >
+                  <Button variant="ghost" size="sm" className="w-full text-[#475569]">
+                    Sample report
                   </Button>
                 </Link>
                 <Link

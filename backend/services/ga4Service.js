@@ -2,6 +2,15 @@ import { google } from 'googleapis';
 
 const ANALYTICS_READONLY_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
+const CONVERSION_EVENT_NAMES = new Set([
+  'demo_requested',
+  'pricing_cta_clicked',
+  'form_start',
+  'contact_form_submit',
+  'early_signal_preview_requested',
+  'sample_report_click',
+  'sample_report_request',
+]);
 
 function parseServiceAccountJson() {
   const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
@@ -147,8 +156,8 @@ export async function getGa4Overview() {
         dateRanges,
         dimensions: [{ name: 'eventName' }],
         metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
-        orderBys: [{ metric: { metricName: 'keyEvents' }, desc: true }],
-        limit: 10,
+        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+        limit: 25,
       }),
     ]);
 
@@ -179,6 +188,21 @@ export async function getGa4Overview() {
     keyEvents: getMetric(previousRow, previousHeaders, 'keyEvents'),
   };
 
+  const eventRows = (keyEvents.rows || [])
+    .map((row) => ({
+      eventName: getDimension(row, keyEvents.dimensionHeaders || [], 'eventName'),
+      keyEvents: getMetric(row, keyEvents.metricHeaders || [], 'keyEvents'),
+      eventCount: getMetric(row, keyEvents.metricHeaders || [], 'eventCount'),
+    }))
+    .filter((event) => event.keyEvents > 0 || event.eventCount > 0);
+
+  const conversionEvents = eventRows
+    .filter((event) => CONVERSION_EVENT_NAMES.has(event.eventName))
+    .map((event) => ({
+      ...event,
+      label: event.eventName.replace(/_/g, ' '),
+    }));
+
   return {
     connected: true,
     propertyId,
@@ -208,12 +232,8 @@ export async function getGa4Overview() {
       views: getMetric(row, daily.metricHeaders || [], 'screenPageViews'),
       keyEvents: getMetric(row, daily.metricHeaders || [], 'keyEvents'),
     })),
-    keyEvents: (keyEvents.rows || [])
-      .map((row) => ({
-        eventName: getDimension(row, keyEvents.dimensionHeaders || [], 'eventName'),
-        keyEvents: getMetric(row, keyEvents.metricHeaders || [], 'keyEvents'),
-        eventCount: getMetric(row, keyEvents.metricHeaders || [], 'eventCount'),
-      }))
-      .filter((event) => event.keyEvents > 0 || event.eventCount > 0),
+    keyEvents: eventRows,
+    conversionEvents,
+    conversionEventCount: conversionEvents.reduce((sum, event) => sum + event.eventCount, 0),
   };
 }

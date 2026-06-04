@@ -6,6 +6,7 @@ import PromisedLand from '../components/PromisedLand';
 import PrivacySection from '../components/PrivacySection';
 import CTASection from '../components/CTASection';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
 /*
  * Homepage flow per positioning brief:
@@ -20,6 +21,11 @@ import Footer from '../components/Footer';
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="SignalTrue | Burnout Early Warning for Healthier Teams"
+        description="SignalTrue detects manager overload, meeting pressure, focus loss, and recovery risk from team-level metadata before burnout or delivery drag becomes visible."
+        path="/"
+      />
       <Navbar />
       <main>
         <Hero />

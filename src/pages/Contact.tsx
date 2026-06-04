@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Mail, MessageSquare, Calendar, Building2, Send, CheckCircle } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
+import PageMeta from '../components/PageMeta';
 
 const Contact: React.FC = () => {
+  const location = useLocation();
+  const defaultIntent = new URLSearchParams(location.search).get('intent') || '';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     company: '',
     role: '',
     companySize: '',
+    intent: defaultIntent,
     mainProblem: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formStarted, setFormStarted] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFormStart = () => {
+    if (formStarted) return;
+    setFormStarted(true);
+    trackEvent('form_start', {
+      source_page: window.location.pathname,
+      intent: formData.intent || undefined,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,6 +41,7 @@ const Contact: React.FC = () => {
 
     trackEvent('contact_form_submit', {
       company_size: formData.companySize || undefined,
+      intent: formData.intent || undefined,
       problem_area: formData.mainProblem || undefined,
       source_page: window.location.pathname,
     });
@@ -37,6 +52,11 @@ const Contact: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Request a SignalTrue Demo | Workload Risk Review"
+        description="Request a SignalTrue demo or workload scan to see team-level pressure, manager overload, and burnout risk signals from metadata only."
+        path="/contact"
+      />
       {/* Hero Section */}
       <section className="pt-20 pb-12 bg-hero-gradient relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
@@ -138,6 +158,7 @@ const Contact: React.FC = () => {
                         'How manager overload is detected',
                         'How recommendations work',
                         'What a pilot or workload scan could look like',
+                        'A sample report or checklist if you are not ready for a demo',
                       ].map((item) => (
                         <li key={item} className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -147,7 +168,7 @@ const Contact: React.FC = () => {
                     </ul>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label
@@ -247,6 +268,29 @@ const Contact: React.FC = () => {
                         <option value="151-500">151 to 500</option>
                         <option value="501-2500">501 to 2,500</option>
                         <option value="2500+">2,500+</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="intent"
+                        className="block text-sm font-medium text-foreground mb-2"
+                      >
+                        What would help most?
+                      </label>
+                      <select
+                        id="intent"
+                        name="intent"
+                        value={formData.intent}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
+                      >
+                        <option value="">Select an option</option>
+                        <option value="demo">Book a guided demo</option>
+                        <option value="workload-scan">Discuss a workload scan</option>
+                        <option value="sample-report">Send me the sample report</option>
+                        <option value="checklist">Send me the 5-signal checklist</option>
+                        <option value="pricing">Discuss pricing</option>
                       </select>
                     </div>
 

@@ -38,7 +38,7 @@ const Hero = () => {
   };
 
   const handleHowItWorks = () => {
-    trackEvent('how_it_works_viewed');
+    trackEvent('sample_report_click');
   };
 
   return (
@@ -93,13 +93,13 @@ const Hero = () => {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Link to="/contact" onClick={handleRequestDemo}>
                 <Button variant="hero" size="xl">
-                  Request demo
+                  See early team risk signals
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/product#sample-report" onClick={handleHowItWorks}>
                 <Button variant="hero-outline" size="xl">
-                  See sample report
+                  View sample report
                 </Button>
               </Link>
             </div>

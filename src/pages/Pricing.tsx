@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { CheckCircle, ArrowRight, Shield, Loader2 } from 'lucide-react';
 
@@ -181,6 +182,11 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <PageMeta
+        title="SignalTrue Pricing | Workload Scan and Team Signals"
+        description="Compare SignalTrue workload scan, team signals, leadership signals, and enterprise plans for team-level burnout early warning."
+        path="/pricing"
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
@@ -200,6 +206,79 @@ const Pricing = () => {
               <p className="text-sm text-[#475569]">
                 All plans use metadata only. No message content. No individual productivity scores.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Buyer Fit */}
+        <section className="py-14 bg-white border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto grid lg:grid-cols-[0.85fr_1.15fr] gap-8 items-start">
+              <div>
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                  Who this is for
+                </p>
+                <h2 className="text-3xl font-display font-bold text-[#0F172A] mb-4">
+                  Best when leaders can feel pressure building, but cannot see the pattern clearly.
+                </h2>
+                <p className="text-[#475569]">
+                  SignalTrue is strongest for teams where meetings, manager load, response pressure,
+                  and recovery risk are becoming visible in work patterns before they show up in
+                  surveys or turnover.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: 'HR and People Ops',
+                    text: 'Find leading indicators of engagement risk before pulse surveys lag behind reality.',
+                  },
+                  {
+                    title: 'Executives',
+                    text: 'See where execution capacity is weakening across teams and manager layers.',
+                  },
+                  {
+                    title: 'Team leaders',
+                    text: 'Get practical actions for meetings, focus time, recovery, and decision load.',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-[#E2E8F0] p-5">
+                    <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.title}</h3>
+                    <p className="text-sm text-[#475569]">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* First Month */}
+        <section className="py-14 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                  First 30 days
+                </p>
+                <h2 className="text-3xl font-display font-bold text-[#0F172A]">
+                  What you get before deciding to scale.
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4">
+                {[
+                  'Connect metadata sources and define privacy boundaries.',
+                  'Build team baselines for meetings, focus, response pressure, and recovery.',
+                  'Review the first team pressure report with signal explanations.',
+                  'Choose three practical changes and track whether pressure improves.',
+                ].map((step, index) => (
+                  <div key={step} className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
+                    <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center text-sm font-bold mb-4">
+                      {index + 1}
+                    </div>
+                    <p className="text-sm text-[#334155]">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -327,6 +406,47 @@ const Pricing = () => {
                 No message content access. No individual scoring. Aggregated reports only. Your
                 privacy rules apply.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing FAQ */}
+        <section className="py-16 bg-white border-t border-[#E2E8F0]">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                  FAQ
+                </p>
+                <h2 className="text-3xl font-display font-bold text-[#0F172A]">
+                  Common buying questions.
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-5">
+                {[
+                  {
+                    q: 'Do we need a long implementation?',
+                    a: 'No. A workload scan can start with a short calibration period and a focused set of metadata sources.',
+                  },
+                  {
+                    q: 'Will managers see individual employee scores?',
+                    a: 'No. SignalTrue is built for team-level system pressure, not individual productivity scoring.',
+                  },
+                  {
+                    q: 'Can we start with one team?',
+                    a: 'Yes. Many organizations start with a high-pressure function, leadership layer, or pilot group.',
+                  },
+                  {
+                    q: 'What makes this different from surveys?',
+                    a: 'Surveys show reported sentiment after people feel it. SignalTrue shows changing work conditions earlier.',
+                  },
+                ].map((item) => (
+                  <div key={item.q} className="rounded-2xl border border-[#E2E8F0] p-6">
+                    <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.q}</h3>
+                    <p className="text-sm text-[#475569]">{item.a}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>

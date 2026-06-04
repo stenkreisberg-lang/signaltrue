@@ -44,6 +44,7 @@ const DriftReport = lazy(() => import('./pages/DriftReport'));
 const EhrsSummit2026 = lazy(() => import('./pages/EhrsSummit2026'));
 const EngagementStrainTeamDetail = lazy(() => import('./pages/app/EngagementStrainTeamDetail'));
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
+const SeoLanding = lazy(() => import('./pages/SeoLanding'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,6 +106,15 @@ const App = () => (
                 <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/demo" element={<Navigate to="/contact" replace />} />
+                <Route path="/sample-report" element={<SeoLanding />} />
+                <Route path="/burnout-early-warning-system" element={<SeoLanding />} />
+                <Route path="/employee-engagement-leading-indicators" element={<SeoLanding />} />
+                <Route path="/solutions" element={<SeoLanding />} />
+                <Route path="/resources" element={<SeoLanding />} />
+                <Route path="/signals/:signalSlug" element={<SeoLanding />} />
+                <Route path="/privacy" element={<Navigate to="/trust" replace />} />
+                <Route path="/terms" element={<Navigate to="/trust" replace />} />
+                <Route path="/ai-info-page" element={<Navigate to="/trust" replace />} />
                 <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />
                 <Route path="/drift-report/:sessionId" element={<DriftReport />} />
                 <Route path="/ehrs-summit-2026" element={<EhrsSummit2026 />} />

@@ -15,11 +15,14 @@ const footerLinks = {
     { label: 'Product', href: '/product' },
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Pricing', href: '/pricing' },
+    { label: 'Sample report', href: '/sample-report' },
     { label: 'Request demo', href: '/contact' },
   ],
   Company: [
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Resources', href: '/resources' },
     { label: 'Privacy', href: '/trust' },
   ],
   Trust: [
@@ -27,6 +30,12 @@ const footerLinks = {
     { label: 'Team-level insights', href: '/trust' },
     { label: 'No message content', href: '/trust' },
     { label: 'No individual scores', href: '/trust' },
+  ],
+  SEO: [
+    { label: 'Burnout early warning', href: '/burnout-early-warning-system' },
+    { label: 'Engagement indicators', href: '/employee-engagement-leading-indicators' },
+    { label: 'Manager load signal', href: '/signals/manager-load' },
+    { label: 'Meeting overload', href: '/signals/meeting-overload' },
   ],
 };
 

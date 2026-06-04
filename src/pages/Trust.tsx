@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import {
@@ -79,6 +80,11 @@ const employeeTransparency = [
 const Trust = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="SignalTrue Trust | Metadata Only, Team-Level Privacy"
+        description="See what SignalTrue uses and never uses: metadata-only team insights, no message content, no individual productivity scores."
+        path="/trust"
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
