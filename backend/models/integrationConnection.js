@@ -22,7 +22,21 @@ const integrationConnectionSchema = new mongoose.Schema(
     integrationType: {
       type: String,
       required: true,
-      enum: ['jira', 'asana', 'gmail', 'meet', 'notion', 'hubspot', 'pipedrive', 'basecamp'],
+      enum: [
+        'jira',
+        'asana',
+        'gmail',
+        'meet',
+        'notion',
+        'hubspot',
+        'pipedrive',
+        'basecamp',
+        'slack',
+        'microsoft-outlook',
+        'microsoft-teams',
+        'google-calendar',
+        'google-chat',
+      ],
       index: true,
     },
 
@@ -167,6 +181,11 @@ integrationConnectionSchema.statics.getOrgIntegrations = async function (orgId) 
     'hubspot',
     'pipedrive',
     'basecamp',
+    'slack',
+    'microsoft-outlook',
+    'microsoft-teams',
+    'google-calendar',
+    'google-chat',
   ];
   const result = {};
 

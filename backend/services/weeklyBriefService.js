@@ -12,6 +12,8 @@ import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import WeekContext from '../models/weekContext.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
+import IntegrationConnection from '../models/integrationConnection.js';
+import TeamSizeGate from '../models/teamSizeGate.js';
 import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, getStatusMeta, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -222,6 +224,15 @@ function pctChangeLabel(curr, prev) {
   const d = Math.round(((curr - prev) / prev) * 100);
   return d > 0 ? `↑ ${d}%` : d < 0 ? `↓ ${Math.abs(d)}%` : '→ same';
 }
+function pctChangeLabelSafe(curr, prev, { minBase = 1, minDelta = 0.05 } = {}) {
+  if (curr == null || prev == null) return '—';
+  const delta = curr - prev;
+  if (Math.abs(delta) < minDelta) return '→ same';
+  if (Math.abs(prev) < minBase) {
+    return Math.abs(curr) < minBase ? 'low volume' : curr > prev ? '↑ new' : '↓ to low';
+  }
+  return pctChangeLabel(curr, prev);
+}
 function trendIcon(curr, prev, higherIsBad = true) {
   if (curr === prev || (curr === 0 && prev === 0)) return 'Neutral';
   if (higherIsBad) return curr > prev ? 'Concerning' : 'Healthy';
@@ -229,11 +240,21 @@ function trendIcon(curr, prev, higherIsBad = true) {
 }
 function fmtNum(n, decimals = 0) {
   if (n == null || isNaN(n)) return '—';
+  if (n > 0 && Number(n).toFixed(decimals) === Number(0).toFixed(decimals)) {
+    return decimals > 0 ? `<${(1 / Math.pow(10, decimals)).toFixed(decimals)}` : '<1';
+  }
   return Number(n).toFixed(decimals);
 }
 function avgField(arr, field) {
   const vals = arr.map((m) => m[field]).filter((v) => v != null && !isNaN(v));
   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+}
+function isOrgMetricRecord(record) {
+  return !record.teamId;
+}
+function chooseOrgMetricRecords(records) {
+  const orgRecords = records.filter(isOrgMetricRecord);
+  return orgRecords.length > 0 ? orgRecords : records;
 }
 
 // ─── Styles ───
@@ -391,6 +412,7 @@ export async function generateWeeklyBrief(orgId) {
   const [
     twEvents,
     lwEvents,
+    sixWeekEvents,
     twMetricsArr,
     lwMetricsArr,
     sixWeekMetricsArr,
@@ -401,6 +423,8 @@ export async function generateWeeklyBrief(orgId) {
     driftEvents,
     contextTags,
     engagementStrainDocs,
+    integrationConnections,
+    recentEngagementSuppressions,
   ] = await Promise.all([
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
@@ -408,6 +432,10 @@ export async function generateWeeklyBrief(orgId) {
     ]),
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: lastWeekStart, $lt: thisWeekStart } } },
+      { $group: { _id: { source: '$source', eventType: '$eventType' }, count: { $sum: 1 } } },
+    ]),
+    WorkEvent.aggregate([
+      { $match: { orgId: org._id, timestamp: { $gte: sixWeekStart, $lt: thisWeekStart } } },
       { $group: { _id: { source: '$source', eventType: '$eventType' }, count: { $sum: 1 } } },
     ]),
     IntegrationMetricsDaily.find({
@@ -451,6 +479,8 @@ export async function generateWeeklyBrief(orgId) {
       { $group: { _id: '$teamId', doc: { $first: '$$ROOT' } } },
       { $replaceRoot: { newRoot: '$doc' } },
     ]),
+    IntegrationConnection.find({ orgId: org._id }).lean(),
+    TeamSizeGate.find({ orgId: org._id }).sort({ suppressedAt: -1 }).limit(20).lean(),
   ]);
 
   // ─── BDI data ───
@@ -541,54 +571,149 @@ export async function generateWeeklyBrief(orgId) {
   const lwMessages = getCountByType(lwEvents, 'message');
   const twTotal = twEvents.reduce((s, e) => s + e.count, 0);
   const lwTotal = lwEvents.reduce((s, e) => s + e.count, 0);
+  const sixWeekTotal = sixWeekEvents.reduce((s, e) => s + e.count, 0);
+  const sixWeekRawAvg = {
+    meetings: getCountByType(sixWeekEvents, 'meeting') / 6,
+    messages: getCountByType(sixWeekEvents, 'message') / 6,
+    total: sixWeekTotal / 6,
+    outlook: getCount(sixWeekEvents, 'microsoft-outlook', 'meeting') / 6,
+    gcal: getCount(sixWeekEvents, 'google-calendar', 'meeting') / 6,
+    teams: getCount(sixWeekEvents, 'microsoft-teams', 'message') / 6,
+    slack: getCount(sixWeekEvents, 'slack', 'message') / 6,
+    gchat: getCount(sixWeekEvents, 'google-chat', 'message') / 6,
+  };
+
+  const twOrgMetricsArr = chooseOrgMetricRecords(twMetricsArr);
+  const lwOrgMetricsArr = chooseOrgMetricRecords(lwMetricsArr);
+  const sixWeekOrgMetricsArr = chooseOrgMetricRecords(sixWeekMetricsArr);
+
+  const mappedActorCount = await WorkEvent.distinct('actorUserId', {
+    orgId: org._id,
+    actorUserId: { $ne: null },
+    timestamp: { $gte: thisWeekStart, $lte: now },
+  });
+  const mappedTeamCount = await WorkEvent.distinct('teamId', {
+    orgId: org._id,
+    teamId: { $ne: null },
+    timestamp: { $gte: thisWeekStart, $lte: now },
+  });
+  const unmappedActorEvents = await WorkEvent.countDocuments({
+    orgId: org._id,
+    $or: [{ actorUserId: null }, { actorUserId: { $exists: false } }],
+    timestamp: { $gte: thisWeekStart, $lte: now },
+  });
+  const unmappedTeamEvents = await WorkEvent.countDocuments({
+    orgId: org._id,
+    $or: [{ teamId: null }, { teamId: { $exists: false } }],
+    timestamp: { $gte: thisWeekStart, $lte: now },
+  });
+  const teamMemberCounts = await User.aggregate([
+    { $match: { orgId: org._id } },
+    { $group: { _id: '$teamId', count: { $sum: 1 } } },
+  ]);
+  const teamEventCounts = await WorkEvent.aggregate([
+    {
+      $match: {
+        orgId: org._id,
+        teamId: { $ne: null },
+        timestamp: { $gte: thisWeekStart, $lte: now },
+      },
+    },
+    { $group: { _id: '$teamId', events: { $sum: 1 }, activeUsers: { $addToSet: '$actorUserId' } } },
+  ]);
+  const memberCountByTeam = new Map(
+    teamMemberCounts.map((row) => [String(row._id || 'unassigned'), row.count])
+  );
+  const eventCountByTeam = new Map(
+    teamEventCounts.map((row) => [
+      String(row._id),
+      {
+        events: row.events,
+        activeUsers: row.activeUsers.filter(Boolean).length,
+      },
+    ])
+  );
+  const teamReadiness = teams.map((team) => {
+    const eventInfo = eventCountByTeam.get(String(team._id)) || { events: 0, activeUsers: 0 };
+    const memberCount = memberCountByTeam.get(String(team._id)) || 0;
+    let status = 'Ready for scoring';
+    let reason = 'Enough mapped activity is available.';
+    if (memberCount < 8) {
+      status = 'Suppressed';
+      reason = `Team has ${memberCount} member(s); minimum 8 required for privacy-safe engagement scoring.`;
+    } else if (eventInfo.activeUsers < 8) {
+      status = 'Not enough mapped activity';
+      reason = `${eventInfo.activeUsers} active mapped user(s) this week; minimum 8 required.`;
+    } else if (eventInfo.events === 0) {
+      status = 'No mapped events';
+      reason = 'No calendar or collaboration events are mapped to this team yet.';
+    }
+    return { team, memberCount, ...eventInfo, status, reason };
+  });
+
+  const mappingCoveragePct =
+    totalUsers > 0 ? Math.round((mappedActorCount.length / totalUsers) * 100) : 0;
+  const teamCoveragePct = teams.length > 0 ? Math.round((mappedTeamCount.length / teams.length) * 100) : 0;
+  const dataReadinessStatus =
+    mappingCoveragePct >= 80 && teamCoveragePct >= 80
+      ? 'Ready'
+      : mappingCoveragePct >= 40
+        ? 'Partial'
+        : 'Needs mapping';
+  const dataReadinessColor =
+    dataReadinessStatus === 'Ready'
+      ? '#16a34a'
+      : dataReadinessStatus === 'Partial'
+        ? '#f59e0b'
+        : '#dc2626';
 
   // Latest vs previous metrics averages — divided by connectedUserCount for per-person figures
   const tw = {
-    meetings: avgField(twMetricsArr, 'meetingCount7d') / connectedUserCount,
-    meetingHours: avgField(twMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
-    backToBack: avgField(twMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
-    messages: avgField(twMetricsArr, 'messageCount7d') / connectedUserCount,
-    msgsPerDay: avgField(twMetricsArr, 'messagesPerDay') / connectedUserCount,
-    afterHoursMsg: avgField(twMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
-    afterHoursRatio: avgField(twMetricsArr, 'afterHoursMessageRatio'), // already a ratio, no division
-    channels: avgField(twMetricsArr, 'uniqueChannels7d'),
-    afterHoursEmail: avgField(twMetricsArr, 'afterHoursSentRatio'),
+    meetings: avgField(twOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(twOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(twOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(twOrgMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(twOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(twOrgMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+    afterHoursRatio: avgField(twOrgMetricsArr, 'afterHoursMessageRatio'), // already a ratio, no division
+    channels: avgField(twOrgMetricsArr, 'uniqueChannels7d'),
+    afterHoursEmail: avgField(twOrgMetricsArr, 'afterHoursSentRatio'),
     focusTimeAvailability:
-      avgField(twMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
-    calendarFragmentation: avgField(twMetricsArr, 'calendarFragmentationScore'),
-    recurringBurden: avgField(twMetricsArr, 'recurringMeetingBurden'),
+      avgField(twOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
+    calendarFragmentation: avgField(twOrgMetricsArr, 'calendarFragmentationScore'),
+    recurringBurden: avgField(twOrgMetricsArr, 'recurringMeetingBurden'),
   };
   const lw = {
-    meetings: avgField(lwMetricsArr, 'meetingCount7d') / connectedUserCount,
-    meetingHours: avgField(lwMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
-    backToBack: avgField(lwMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
-    messages: avgField(lwMetricsArr, 'messageCount7d') / connectedUserCount,
-    msgsPerDay: avgField(lwMetricsArr, 'messagesPerDay') / connectedUserCount,
-    afterHoursMsg: avgField(lwMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
-    afterHoursRatio: avgField(lwMetricsArr, 'afterHoursMessageRatio'),
-    channels: avgField(lwMetricsArr, 'uniqueChannels7d'),
-    afterHoursEmail: avgField(lwMetricsArr, 'afterHoursSentRatio'),
+    meetings: avgField(lwOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(lwOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(lwOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(lwOrgMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(lwOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(lwOrgMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+    afterHoursRatio: avgField(lwOrgMetricsArr, 'afterHoursMessageRatio'),
+    channels: avgField(lwOrgMetricsArr, 'uniqueChannels7d'),
+    afterHoursEmail: avgField(lwOrgMetricsArr, 'afterHoursSentRatio'),
     focusTimeAvailability:
-      avgField(lwMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
-    calendarFragmentation: avgField(lwMetricsArr, 'calendarFragmentationScore'),
-    recurringBurden: avgField(lwMetricsArr, 'recurringMeetingBurden'),
+      avgField(lwOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
+    calendarFragmentation: avgField(lwOrgMetricsArr, 'calendarFragmentationScore'),
+    recurringBurden: avgField(lwOrgMetricsArr, 'recurringMeetingBurden'),
   };
 
   // ─── 6-week baseline averages (per-person) ───
   const sixWeekAvg = {
-    meetings: avgField(sixWeekMetricsArr, 'meetingCount7d') / connectedUserCount,
-    meetingHours: avgField(sixWeekMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
-    backToBack: avgField(sixWeekMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
-    messages: avgField(sixWeekMetricsArr, 'messageCount7d') / connectedUserCount,
-    msgsPerDay: avgField(sixWeekMetricsArr, 'messagesPerDay') / connectedUserCount,
-    afterHoursMsg: avgField(sixWeekMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
-    afterHoursRatio: avgField(sixWeekMetricsArr, 'afterHoursMessageRatio'),
-    afterHoursRatioPct: avgField(sixWeekMetricsArr, 'afterHoursMessageRatio') * 100,
-    channels: avgField(sixWeekMetricsArr, 'uniqueChannels7d'),
+    meetings: avgField(sixWeekOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetingHours: avgField(sixWeekOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    backToBack: avgField(sixWeekOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
+    messages: avgField(sixWeekOrgMetricsArr, 'messageCount7d') / connectedUserCount,
+    msgsPerDay: avgField(sixWeekOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
+    afterHoursMsg: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+    afterHoursRatio: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageRatio'),
+    afterHoursRatioPct: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageRatio') * 100,
+    channels: avgField(sixWeekOrgMetricsArr, 'uniqueChannels7d'),
     focusTimeAvailability:
-      avgField(sixWeekMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
-    calendarFragmentation: avgField(sixWeekMetricsArr, 'calendarFragmentationScore'),
-    recurringBurden: avgField(sixWeekMetricsArr, 'recurringMeetingBurden'),
+      avgField(sixWeekOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
+    calendarFragmentation: avgField(sixWeekOrgMetricsArr, 'calendarFragmentationScore'),
+    recurringBurden: avgField(sixWeekOrgMetricsArr, 'recurringMeetingBurden'),
   };
 
   // Per-source event counts
@@ -888,9 +1013,12 @@ export async function generateWeeklyBrief(orgId) {
         : null,
   });
 
-  const verdictText = orgStatus.status;
-  const verdictConfidence = orgStatus.confidence;
-  const verdictSummary = orgStatus.reason;
+  const verdictText = dataReadinessStatus === 'Ready' ? orgStatus.status : 'Data mapping needs attention';
+  const verdictConfidence = dataReadinessStatus === 'Ready' ? orgStatus.confidence : 'Low';
+  const verdictSummary =
+    dataReadinessStatus === 'Ready'
+      ? orgStatus.reason
+      : `SignalTrue is receiving workplace metadata, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Team health and engagement conclusions should be treated as unavailable until mapping coverage improves.`;
 
   // If no observations were generated but we have data, add a neutral one
   if (observations.length === 0 && twTotal > 0) {
@@ -1037,6 +1165,58 @@ export async function generateWeeklyBrief(orgId) {
   html += `</div>`;
   html += `</div>`;
 
+  // ─── 2a. Data readiness and mapping coverage ───
+  html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
+  html += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px;">`;
+  html += `<div>`;
+  html += `<h3 style="${S.h3} margin:0 0 8px 0;">Data readiness</h3>`;
+  html += `<p style="${S.pSmall} margin:0;">SignalTrue can only score named teams when workplace events are mapped to internal users and teams.</p>`;
+  html += `</div>`;
+  html += `<span style="${S.badge(dataReadinessColor + '20', dataReadinessColor)}">${dataReadinessStatus}</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">`;
+  const readinessCards = [
+    { label: 'Users', value: totalUsers },
+    { label: 'Teams', value: teams.length },
+    { label: 'Mapped users', value: `${mappedActorCount.length}/${totalUsers}` },
+    { label: 'Mapped teams', value: `${mappedTeamCount.length}/${teams.length}` },
+    { label: 'Unmapped events', value: unmappedActorEvents },
+  ];
+  for (const card of readinessCards) {
+    html += `<div style="flex:1;min-width:105px;padding:12px 13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">`;
+    html += `<div style="font-size:18px;font-weight:750;color:#0f172a;">${card.value}</div>`;
+    html += `<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:5px;">${card.label}</div>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+  if (dataReadinessStatus !== 'Ready') {
+    html += `<div style="${S.alertBox}">`;
+    html += `<p style="${S.p} margin:0;"><strong>Setup action required:</strong> ${mappingCoveragePct}% of users and ${teamCoveragePct}% of teams have mapped activity this week. Engagement, BDI, and named-team insights are limited until Microsoft/Google/Slack events are attributed to users and teams.</p>`;
+    if (unmappedTeamEvents > 0) {
+      html += `<p style="${S.pSmall} margin-top:6px;">${unmappedTeamEvents} event(s) have no team mapping. Check user team assignments and integration user matching.</p>`;
+    }
+    html += `</div>`;
+  }
+  if (integrationConnections.length > 0) {
+    html += `<table style="${S.table}; margin-top:10px;">`;
+    html += `<thead><tr><th style="${S.th}">Source</th><th style="${S.thR}">Status</th><th style="${S.thR}">Coverage</th><th style="${S.thR}">Last sync</th></tr></thead><tbody>`;
+    for (const conn of integrationConnections) {
+      const coverage =
+        conn.coverage?.totalUsers > 0
+          ? `${conn.coverage.mappedUsers || 0}/${conn.coverage.totalUsers}`
+          : '—';
+      const lastSync = conn.sync?.lastSyncAt
+        ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          })
+        : '—';
+      html += `<tr><td style="${S.td}">${conn.integrationType}</td><td style="${S.tdR}">${conn.status}</td><td style="${S.tdR}">${coverage}</td><td style="${S.tdR}">${lastSync}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
   // ─── 2b. Engagement Measurement Snapshot ───
   html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
   html += `<h3 style="${S.h3} margin:0 0 12px 0;">Engagement measurement</h3>`;
@@ -1063,9 +1243,48 @@ export async function generateWeeklyBrief(orgId) {
     html += `<p style="${S.p} margin:0;"><strong>What it means:</strong> Engagement is measured from work conditions, not surveys: recovery time, focus availability, responsiveness pressure, collaboration withdrawal, and coordination friction.${driverText}</p>`;
     html += `<p style="${S.pSmall} margin-top:8px;"><strong>Action trigger:</strong> if strain risk rises by 8+ points, or any team reaches strain/critical, review workload structure and manager support this week.</p>`;
   } else {
-    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> This appears after the weekly engagement scoring job has enough team-level metadata. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
+    const blockedTeams = teamReadiness.filter((team) => team.status !== 'Ready for scoring');
+    const suppressionReason = recentEngagementSuppressions[0]?.reason;
+    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> Engagement requires team-level metadata mapped to at least 8 active people per team. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
+    if (blockedTeams.length > 0 || suppressionReason) {
+      html += `<div style="${S.warnBox}">`;
+      html += `<p style="${S.p} margin:0;"><strong>Why it is blocked:</strong> ${
+        suppressionReason
+          ? suppressionReason.replace(/_/g, ' ')
+          : 'named teams do not yet have enough mapped activity'
+      }.</p>`;
+      html += `</div>`;
+    }
   }
   html += `</div>`;
+
+  if (teamReadiness.length > 0) {
+    html += `<div style="${S.card}">`;
+    html += `<h3 style="${S.h3} margin-top:0;">Named team readiness</h3>`;
+    html += `<table style="${S.table}">`;
+    html += `<thead><tr><th style="${S.th}">Team</th><th style="${S.thR}">Members</th><th style="${S.thR}">Mapped active users</th><th style="${S.thR}">Mapped events</th><th style="${S.thR}">Status</th></tr></thead><tbody>`;
+    for (const item of teamReadiness) {
+      const color =
+        item.status === 'Ready for scoring'
+          ? '#16a34a'
+          : item.status === 'Suppressed'
+            ? '#dc2626'
+            : '#f59e0b';
+      html += `<tr>`;
+      html += `<td style="${S.td}">${item.team.name}</td>`;
+      html += `<td style="${S.tdR}">${item.memberCount}</td>`;
+      html += `<td style="${S.tdR}">${item.activeUsers}</td>`;
+      html += `<td style="${S.tdR}">${item.events}</td>`;
+      html += `<td style="${S.tdR}; color:${color}; font-weight:700;">${item.status}</td>`;
+      html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    const firstBlockedTeam = teamReadiness.find((team) => team.status !== 'Ready for scoring');
+    if (firstBlockedTeam) {
+      html += `<p style="${S.pSmall} margin-top:8px;"><strong>Example blocker:</strong> ${firstBlockedTeam.team.name} — ${firstBlockedTeam.reason}</p>`;
+    }
+    html += `</div>`;
+  }
 
   // ─── 3. What Changed This Week (top 3 observations) ───
   html += `<div style="${S.card}">`;
@@ -1107,9 +1326,17 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 5. Recommended Actions — Role-Based ───
   html += `<div style="${S.card}">`;
   html += `<h3 style="${S.h3} margin-top:0;">Recommended actions</h3>`;
+  if (dataReadinessStatus !== 'Ready') {
+    html += `<h4 style="${S.h4}">For IT / Admin</h4>`;
+    html += `<div style="${S.recBox} border-left:3px solid #dc2626;">`;
+    html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Fix user and team mapping before acting on health signals.</strong></p>`;
+    html += `<p style="${S.pSmall} margin:0;">Microsoft/Teams/Calendar events are present, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Re-sync Microsoft users, confirm every user has a team, and verify event actor/team attribution.</p>`;
+    html += `</div>`;
+  }
 
   // If AI returned role-based recommendations, use those
   if (
+    dataReadinessStatus === 'Ready' &&
     aiAnalysis &&
     (aiAnalysis.hrActions?.length ||
       aiAnalysis.managerActions?.length ||
@@ -1234,8 +1461,17 @@ export async function generateWeeklyBrief(orgId) {
   html += `<th style="${S.thR}">Change</th>`;
   html += `</tr></thead><tbody>`;
 
-  const addTableRow = (label, sixWk, lwVal, twVal, higherIsBad = true, fmt = 0) => {
-    const icon = trendIcon(twVal, lwVal, higherIsBad);
+  const addTableRow = (
+    label,
+    sixWk,
+    lwVal,
+    twVal,
+    higherIsBad = true,
+    fmt = 0,
+    options = {}
+  ) => {
+    const lowVolume = options.lowVolumeThreshold && Math.max(Math.abs(twVal), Math.abs(lwVal)) < options.lowVolumeThreshold;
+    const icon = lowVolume ? 'Neutral' : trendIcon(twVal, lwVal, higherIsBad);
     const trendColor =
       icon === 'Concerning' ? '#dc2626' : icon === 'Healthy' ? '#16a34a' : '#64748b';
     const vs6wk =
@@ -1249,26 +1485,26 @@ export async function generateWeeklyBrief(orgId) {
     html += `<td style="${S.tdR}; color:#9ca3af;">${fmtNum(sixWk, fmt)}</td>`;
     html += `<td style="${S.tdR}">${fmtNum(lwVal, fmt)}</td>`;
     html += `<td style="${S.tdBold}">${fmtNum(twVal, fmt)}${vs6wk}</td>`;
-    html += `<td style="${S.tdR}; color:${trendColor}; font-weight:700;">${icon} · ${pctChangeLabel(twVal, lwVal)}</td>`;
+    html += `<td style="${S.tdR}; color:${trendColor}; font-weight:700;">${icon} · ${pctChangeLabelSafe(twVal, lwVal, options)}</td>`;
     html += `</tr>`;
   };
 
   // Core metrics
-  addTableRow('Meetings', sixWeekAvg.meetings, lwMeetings, twMeetings, true);
-  addTableRow('Team messages', sixWeekAvg.messages, lwMessages, twMessages, false);
-  addTableRow('Total events', 0, lwTotal, twTotal, false);
+  addTableRow('Meetings', sixWeekRawAvg.meetings, lwMeetings, twMeetings, true);
+  addTableRow('Team messages', sixWeekRawAvg.messages, lwMessages, twMessages, false);
+  addTableRow('Total events', sixWeekRawAvg.total, lwTotal, twTotal, false);
 
   // Per-source if available
   if (twOutlook > 0 || lwOutlook > 0)
-    addTableRow('&nbsp;&nbsp;Outlook meetings', 0, lwOutlook, twOutlook, true);
+    addTableRow('&nbsp;&nbsp;Outlook meetings', sixWeekRawAvg.outlook, lwOutlook, twOutlook, true);
   if (twGcal > 0 || lwGcal > 0)
-    addTableRow('&nbsp;&nbsp;Google Calendar', 0, lwGcal, twGcal, true);
+    addTableRow('&nbsp;&nbsp;Google Calendar', sixWeekRawAvg.gcal, lwGcal, twGcal, true);
   if (twTeamsMsg > 0 || lwTeamsMsg > 0)
-    addTableRow('&nbsp;&nbsp;Teams messages', 0, lwTeamsMsg, twTeamsMsg, false);
+    addTableRow('&nbsp;&nbsp;Teams messages', sixWeekRawAvg.teams, lwTeamsMsg, twTeamsMsg, false);
   if (twSlack > 0 || lwSlack > 0)
-    addTableRow('&nbsp;&nbsp;Slack messages', 0, lwSlack, twSlack, false);
+    addTableRow('&nbsp;&nbsp;Slack messages', sixWeekRawAvg.slack, lwSlack, twSlack, false);
   if (twGchat > 0 || lwGchat > 0)
-    addTableRow('&nbsp;&nbsp;Google Chat', 0, lwGchat, twGchat, false);
+    addTableRow('&nbsp;&nbsp;Google Chat', sixWeekRawAvg.gchat, lwGchat, twGchat, false);
 
   // Detailed metrics section
   if (twMetricsArr.length > 0 || lwMetricsArr.length > 0) {
@@ -1289,14 +1525,19 @@ export async function generateWeeklyBrief(orgId) {
       true,
       0
     );
-    addTableRow('Messages / day', sixWeekAvg.msgsPerDay, lw.msgsPerDay, tw.msgsPerDay, false, 1);
+    addTableRow('Messages / day', sixWeekAvg.msgsPerDay, lw.msgsPerDay, tw.msgsPerDay, false, 1, {
+      minBase: 0.1,
+      minDelta: 0.1,
+      lowVolumeThreshold: 0.5,
+    });
     addTableRow(
       'Out-of-hours messages',
       sixWeekAvg.afterHoursMsg,
       lw.afterHoursMsg,
       tw.afterHoursMsg,
       true,
-      0
+      1,
+      { minBase: 1, minDelta: 0.5, lowVolumeThreshold: 1 }
     );
     addTableRow(
       'Out-of-hours work %',

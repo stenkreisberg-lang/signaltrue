@@ -773,6 +773,11 @@ function buildDataCoverage(connections) {
     jiraConnected: false,
     asanaConnected: false,
     gmailConnected: false,
+    slackConnected: false,
+    microsoftOutlookConnected: false,
+    microsoftTeamsConnected: false,
+    googleCalendarConnected: false,
+    googleChatConnected: false,
     meetConnected: false,
     notionConnected: false,
     hubspotConnected: false,
@@ -786,7 +791,8 @@ function buildDataCoverage(connections) {
 
   for (const conn of connections) {
     if (conn.status === 'connected') {
-      coverage[`${conn.integrationType}Connected`] = true;
+      const key = conn.integrationType.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+      coverage[`${key}Connected`] = true;
       totalMapped += conn.coverage?.mappedUsers || 0;
       totalUsers += conn.coverage?.totalUsers || 0;
     }
@@ -806,12 +812,17 @@ function calculateConfidence(dataCoverage, eventsCount) {
   }
 
   // +25 for communication connected
-  if (dataCoverage.gmailConnected) {
+  if (
+    dataCoverage.gmailConnected ||
+    dataCoverage.slackConnected ||
+    dataCoverage.microsoftTeamsConnected ||
+    dataCoverage.googleChatConnected
+  ) {
     score += 25;
   }
 
   // +25 for calendar/meetings
-  if (dataCoverage.meetConnected) {
+  if (dataCoverage.meetConnected || dataCoverage.microsoftOutlookConnected || dataCoverage.googleCalendarConnected) {
     score += 25;
   }
 

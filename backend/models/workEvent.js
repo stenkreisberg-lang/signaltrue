@@ -180,6 +180,13 @@ const workEventSchema = new mongoose.Schema(
       externalAttendeeCount: Number, // external attendees
       organizerHash: String, // hashed organizer identity
       attendeeHashes: [String], // hashed attendee identities
+      organizer: String, // normalized organizer email for attribution/debugging
+      attendees: [String], // normalized attendee emails for attribution/debugging
+      userEmail: String, // normalized calendar owner/sender email when available
+      fromEmail: String, // normalized message sender email when available
+      microsoftUserId: String,
+      googleUserId: String,
+      slackUserId: String,
       meetingType: {
         // derived classification
         type: String,

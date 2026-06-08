@@ -8,8 +8,10 @@
 import Organization from '../models/organizationModel.js';
 import WorkEvent from '../models/workEvent.js';
 import User from '../models/user.js';
+import IntegrationConnection from '../models/integrationConnection.js';
 import { decryptString, encryptString } from '../utils/crypto.js';
 import { getMicrosoftAppToken } from './tokenService.js';
+import { enrichWorkEvents } from './workEventAttributionService.js';
 import mongoose from 'mongoose';
 
 // ============================================================
@@ -83,7 +85,8 @@ class OrgIntegrationAdapter {
       }
 
       // Transform to WorkEvents
-      const workEvents = await this.transformToWorkEvents(rawEvents, orgId);
+      const transformedEvents = await this.transformToWorkEvents(rawEvents, orgId);
+      const workEvents = await enrichWorkEvents(transformedEvents, orgId);
 
       // Bulk upsert to avoid duplicates
       const bulkOps = workEvents.map((event) => ({
@@ -106,6 +109,7 @@ class OrgIntegrationAdapter {
 
       // Update sync timestamp in org
       await this.updateSyncStatus(orgId, true, rawEvents.length);
+      await this.updateConnectionCoverage(orgId, workEvents);
 
       return {
         success: true,
@@ -124,6 +128,37 @@ class OrgIntegrationAdapter {
 
   async updateSyncStatus(orgId, success, count, error = null) {
     // Override in subclass
+  }
+
+  async updateConnectionCoverage(orgId, workEvents) {
+    const totalUsers = await User.countDocuments({ orgId });
+    const mappedUsers = new Set(
+      workEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
+    ).size;
+
+    await IntegrationConnection.findOneAndUpdate(
+      { orgId, integrationType: this.source },
+      {
+        $set: {
+          status: mappedUsers > 0 ? 'connected' : 'needs_admin',
+          statusMessage:
+            mappedUsers > 0
+              ? 'Core integration connected and syncing metadata'
+              : 'Connected, but no events are mapped to internal users yet',
+          statusUpdatedAt: new Date(),
+          connectedAt: new Date(),
+          'sync.lastSyncAt': new Date(),
+          'sync.lastSuccessfulSyncAt': new Date(),
+          'sync.lastSyncStatus': mappedUsers > 0 ? 'success' : 'partial',
+          'sync.lastSyncEventsCount': workEvents.length,
+          'coverage.totalUsers': totalUsers,
+          'coverage.mappedUsers': mappedUsers,
+          'coverage.lastCoverageUpdatedAt': new Date(),
+          measurementScope: 'metadata only',
+        },
+      },
+      { upsert: true }
+    );
   }
 
   async fetchEvents(orgId, accessToken, since, until) {
@@ -287,6 +322,48 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     });
   }
 
+  async updateConnectionCoverage(orgId, workEvents) {
+    const totalUsers = await User.countDocuments({ orgId });
+
+    const updateForType = async (integrationType, source) => {
+      const sourceEvents = workEvents.filter((event) => event.source === source);
+      if (sourceEvents.length === 0) return;
+
+      const mappedUsers = new Set(
+        sourceEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
+      ).size;
+
+      const setPayload = {
+        status: mappedUsers > 0 ? 'connected' : 'needs_admin',
+        statusMessage:
+          mappedUsers > 0
+            ? 'Microsoft metadata is syncing and mapped to internal users'
+            : 'Microsoft metadata is syncing, but events are not mapped to internal users',
+        statusUpdatedAt: new Date(),
+        connectedAt: new Date(),
+        'sync.lastSyncAt': new Date(),
+        'sync.lastSyncStatus': mappedUsers > 0 ? 'success' : 'partial',
+        'sync.lastSyncEventsCount': sourceEvents.length,
+        'coverage.totalUsers': totalUsers,
+        'coverage.mappedUsers': mappedUsers,
+        'coverage.lastCoverageUpdatedAt': new Date(),
+        measurementScope: 'metadata only',
+      };
+      if (mappedUsers > 0) setPayload['sync.lastSuccessfulSyncAt'] = new Date();
+
+      await IntegrationConnection.findOneAndUpdate(
+        { orgId, integrationType },
+        { $set: setPayload },
+        { upsert: true }
+      );
+    };
+
+    await Promise.all([
+      updateForType('microsoft-outlook', 'microsoft-outlook'),
+      updateForType('microsoft-teams', 'microsoft-teams'),
+    ]);
+  }
+
   async fetchEvents(orgId, accessToken, since, until) {
     const org = await Organization.findById(orgId).lean();
     const scope = org.integrations?.microsoft?.scope || 'outlook';
@@ -413,7 +490,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     );
 
     // Build a complete email → userId map for all org users
-    const allOrgUsers = orgId ? await User.find({ orgId }).select('_id email').lean() : [];
+    const allOrgUsers = orgId ? await User.find({ orgId }).select('_id email teamId').lean() : [];
     const emailToUserId = {};
     for (const u of allOrgUsers) {
       if (u.email) emailToUserId[u.email.toLowerCase()] = u._id;
@@ -540,7 +617,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
 
   async transformToWorkEvents(rawEvents, orgId) {
     // Build email → internal userId lookup for fallback matching
-    const orgUsers = await User.find({ orgId }).select('_id email').lean();
+    const orgUsers = await User.find({ orgId }).select('_id email teamId externalIds').lean();
     const emailToUserId = new Map(orgUsers.map((u) => [u.email?.toLowerCase(), u._id]));
 
     // Helper: parse dateTime safely regardless of whether it already has a TZ offset
@@ -563,10 +640,13 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           // Resolve userId: prefer the _internalUserId stamped during per-user fetch,
           // fall back to matching organizer email against the User table
           const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
+          const matchedUser =
+            orgUsers.find((u) => String(u._id) === String(event._internalUserId)) ||
+            (organizerEmail
+              ? orgUsers.find((u) => u.email?.toLowerCase() === organizerEmail)
+              : null);
           const userId =
-            event._internalUserId ||
-            (organizerEmail ? emailToUserId.get(organizerEmail) : null) ||
-            null;
+            matchedUser?._id || (organizerEmail ? emailToUserId.get(organizerEmail) : null) || null;
 
           // For attendee-expanded events, append the userId to make the externalId unique
           // per person so the upsert doesn't collapse all attendee copies into one record.
@@ -577,12 +657,14 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             source: 'microsoft-outlook',
             eventType: 'meeting',
             actorUserId: userId,
+            teamId: matchedUser?.teamId || null,
             externalId: `outlook-${event.id}${externalIdSuffix}`,
             timestamp: start,
             duration: durationMinutes,
             metadata: {
               subject: event.subject,
               organizer: organizerEmail,
+              userEmail: event._userEmail,
               attendeeCount: event.attendees?.length || 0,
               attendees: (event.attendees || [])
                 .map((a) => a.emailAddress?.address?.toLowerCase())
@@ -599,18 +681,21 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           };
         } else {
           // Teams message
-          const senderEmail =
-            event.from?.user?.email?.toLowerCase() ||
-            event.from?.user?.userIdentityType === 'aadUser'
-              ? null
-              : null;
-          const userId = senderEmail ? emailToUserId.get(senderEmail) : null;
+          const senderEmail = event.from?.user?.email?.toLowerCase() || null;
+          const senderMsId = event.from?.user?.id || null;
+          const matchedUser =
+            (senderEmail ? orgUsers.find((u) => u.email?.toLowerCase() === senderEmail) : null) ||
+            (senderMsId
+              ? orgUsers.find((u) => u.externalIds?.microsoftUserId === senderMsId)
+              : null);
+          const userId = matchedUser?._id || (senderEmail ? emailToUserId.get(senderEmail) : null);
 
           return {
             orgId: new mongoose.Types.ObjectId(orgId),
             source: 'microsoft-teams',
             eventType: 'message',
             actorUserId: userId,
+            teamId: matchedUser?.teamId || null,
             externalId: `teams-${event.id}`,
             timestamp: new Date(event.createdDateTime),
             metadata: {
@@ -620,6 +705,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
               channelName: event.channelName,
               from: event.from?.user?.displayName,
               fromEmail: senderEmail,
+              microsoftUserId: senderMsId,
               messageType: event.messageType,
               hasAttachments: (event.attachments?.length || 0) > 0,
             },

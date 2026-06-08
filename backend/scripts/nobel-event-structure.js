@@ -30,7 +30,8 @@ for (const e of sample) {
   console.log(
     JSON.stringify(
       {
-        userId: e.userId || 'NULL',
+        actorUserId: e.actorUserId || 'NULL',
+        teamId: e.teamId || 'NULL',
         source: e.source,
         timestamp: e.timestamp,
         metadata: {
@@ -66,12 +67,14 @@ console.log([...metaKeys].sort().join(', '));
 
 // Check how many events have each potential user identifier
 let withUserId = 0,
+  withTeamId = 0,
   withMetaEmail = 0,
   withMetaUserId = 0,
   withAttendees = 0,
   withOrganizer = 0;
 for (const e of allEvents) {
-  if (e.userId) withUserId++;
+  if (e.actorUserId) withUserId++;
+  if (e.teamId) withTeamId++;
   if (e.metadata?.email || e.metadata?.userEmail) withMetaEmail++;
   if (e.metadata?.userId || e.metadata?.calendarUserId) withMetaUserId++;
   if (e.metadata?.attendees?.length > 0) withAttendees++;
@@ -79,7 +82,8 @@ for (const e of allEvents) {
 }
 console.log('\n=== USER ATTRIBUTION COVERAGE (this week, all meeting events) ===');
 console.log(`Total meeting events:         ${allEvents.length}`);
-console.log(`With e.userId set:            ${withUserId}`);
+console.log(`With e.actorUserId set:       ${withUserId}`);
+console.log(`With e.teamId set:            ${withTeamId}`);
 console.log(`With metadata.email:          ${withMetaEmail}`);
 console.log(`With metadata.userId:         ${withMetaUserId}`);
 console.log(`With metadata.attendees:      ${withAttendees}`);

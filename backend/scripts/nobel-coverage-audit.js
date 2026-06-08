@@ -41,14 +41,16 @@ thisWeekStart.setHours(0, 0, 0, 0);
 const lastWeekStart = new Date(thisWeekStart);
 lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-// Count distinct userIds with WorkEvents this week vs last week
+// Count distinct actorUserIds with WorkEvents this week vs last week
 const twUserEvents = await WorkEvent.aggregate([
   { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
-  { $group: { _id: '$userId' } },
+  { $match: { actorUserId: { $ne: null } } },
+  { $group: { _id: '$actorUserId' } },
 ]);
 const lwUserEvents = await WorkEvent.aggregate([
   { $match: { orgId: org._id, timestamp: { $gte: lastWeekStart, $lt: thisWeekStart } } },
-  { $group: { _id: '$userId' } },
+  { $match: { actorUserId: { $ne: null } } },
+  { $group: { _id: '$actorUserId' } },
 ]);
 
 console.log(`\n[2] DISTINCT USERS WITH WORK EVENTS (calendar/meeting data)`);
@@ -64,7 +66,7 @@ const twMeetingsBySource = await WorkEvent.aggregate([
   {
     $match: { orgId: org._id, eventType: 'meeting', timestamp: { $gte: thisWeekStart, $lte: now } },
   },
-  { $group: { _id: '$source', count: { $sum: 1 }, uniqueUsers: { $addToSet: '$userId' } } },
+  { $group: { _id: '$source', count: { $sum: 1 }, uniqueUsers: { $addToSet: '$actorUserId' } } },
 ]);
 const lwMeetingsBySource = await WorkEvent.aggregate([
   {
@@ -74,7 +76,7 @@ const lwMeetingsBySource = await WorkEvent.aggregate([
       timestamp: { $gte: lastWeekStart, $lt: thisWeekStart },
     },
   },
-  { $group: { _id: '$source', count: { $sum: 1 }, uniqueUsers: { $addToSet: '$userId' } } },
+  { $group: { _id: '$source', count: { $sum: 1 }, uniqueUsers: { $addToSet: '$actorUserId' } } },
 ]);
 
 console.log(`\n[3] MEETING EVENTS BY SOURCE`);
@@ -105,7 +107,7 @@ const twMeetingHours = await WorkEvent.aggregate([
   },
   {
     $group: {
-      _id: '$userId',
+      _id: '$actorUserId',
       totalMinutes: { $sum: '$metadata.durationMinutes' },
       meetingCount: { $sum: 1 },
     },
@@ -122,7 +124,7 @@ const lwMeetingHours = await WorkEvent.aggregate([
   },
   {
     $group: {
-      _id: '$userId',
+      _id: '$actorUserId',
       totalMinutes: { $sum: '$metadata.durationMinutes' },
       meetingCount: { $sum: 1 },
     },
@@ -179,10 +181,10 @@ if (sorted.length > 20) console.log(`    ... and ${sorted.length - 20} more user
 const noUserEvents = await WorkEvent.countDocuments({
   orgId: org._id,
   eventType: 'meeting',
-  userId: null,
+  $or: [{ actorUserId: null }, { actorUserId: { $exists: false } }],
   timestamp: { $gte: thisWeekStart },
 });
-console.log(`\n[6] MEETING EVENTS WITH NO userId THIS WEEK: ${noUserEvents}`);
+console.log(`\n[6] MEETING EVENTS WITH NO actorUserId THIS WEEK: ${noUserEvents}`);
 
 // ── 7. IntegrationMetricsDaily records ──
 const twMetrics = await IntegrationMetricsDaily.find({

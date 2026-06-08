@@ -18,7 +18,7 @@ const conns = await IntegrationConnection.find({ orgId: org._id }).lean();
 console.log('IntegrationConnections for NobelDigital:', conns.length);
 for (const c of conns) {
   console.log(
-    `  provider=${c.provider}, platform=${c.platform}, type=${c.type}, hasAccessToken=${!!c.accessToken}`
+    `  type=${c.integrationType}, status=${c.status}, coverage=${c.coverage?.mappedUsers || 0}/${c.coverage?.totalUsers || 0}, lastSync=${c.sync?.lastSyncAt || '—'}`
   );
 }
 
