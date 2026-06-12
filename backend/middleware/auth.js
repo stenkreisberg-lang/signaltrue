@@ -49,6 +49,8 @@ export function requireApiKey(req, res, next) {
  */
 
 import jwt from 'jsonwebtoken';
+import Team from '../models/team.js';
+import Organization from '../models/organizationModel.js';
 
 if (!process.env.JWT_SECRET) {
   throw new Error(
@@ -122,6 +124,10 @@ export function isMasterAdmin(user) {
   return user?.role === 'master_admin' && user?.isMasterAdmin === true;
 }
 
+export function canAccessOrg(user, orgId) {
+  return isMasterAdmin(user) || String(user?.orgId || '') === String(orgId || '');
+}
+
 export function requireMasterAdmin(req, res, next) {
   if (!isMasterAdmin(req.user)) {
     return res.status(403).json({ message: 'Forbidden: Master admin access required' });
@@ -136,11 +142,65 @@ export function requireOrganizationAccess(paramName = 'orgId') {
     if (!requestedOrgId) {
       return res.status(400).json({ message: 'Organization ID required' });
     }
-    if (isMasterAdmin(req.user) || String(req.user?.orgId || '') === String(requestedOrgId)) {
+    if (canAccessOrg(req.user, requestedOrgId)) {
       return next();
     }
     return res.status(403).json({ message: 'Forbidden: Organization access denied' });
   };
+}
+
+export function requireTeamAccess(paramName = 'teamId') {
+  return async (req, res, next) => {
+    const requestedTeamId =
+      req.params?.[paramName] || req.body?.[paramName] || req.query?.[paramName];
+
+    if (!requestedTeamId) {
+      return res.status(400).json({ message: 'Team ID required' });
+    }
+
+    try {
+      const team = await Team.findById(requestedTeamId).select('orgId metadata analyticsEnabled');
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found' });
+      }
+      if (!canAccessOrg(req.user, team.orgId)) {
+        return res.status(403).json({ message: 'Forbidden: Team access denied' });
+      }
+      if (req.user?.role === 'manager' && String(req.user?.teamId || '') !== String(team._id)) {
+        return res
+          .status(403)
+          .json({ message: 'Forbidden: Manager access is limited to their team' });
+      }
+
+      req.team = team;
+      return next();
+    } catch (error) {
+      if (error?.name === 'CastError') {
+        return res.status(400).json({ message: 'Invalid team ID' });
+      }
+      return next(error);
+    }
+  };
+}
+
+export async function attachOrganizationContext(req, res, next) {
+  if (!req.user?.orgId) {
+    return res.status(403).json({ message: 'Organization context required' });
+  }
+
+  try {
+    const organization = await Organization.findById(req.user.orgId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+    req.organization = organization;
+    return next();
+  } catch (error) {
+    if (error?.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid organization ID' });
+    }
+    return next(error);
+  }
 }
 
 /**
@@ -211,4 +271,7 @@ export default {
   requireAdmin,
   requireHROrAdmin,
   requireRoles,
+  requireOrganizationAccess,
+  requireTeamAccess,
+  attachOrganizationContext,
 };

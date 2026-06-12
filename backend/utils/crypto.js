@@ -1,13 +1,17 @@
 import crypto from 'node:crypto';
 
 // AES-256-GCM encryption helpers. Returns/accepts strings.
-// If no SECRET_KEY is provided, functions act as pass-through to avoid breaking dev.
 const ALG = 'aes-256-gcm';
 const PREFIX = 'enc:gcm:';
 
 function getKey() {
-  const secret = process.env.SECRET_KEY || process.env.TOKEN_ENCRYPTION_KEY || '';
-  if (!secret) return null;
+  const secret = process.env.TOKEN_ENCRYPTION_KEY || process.env.SECRET_KEY || '';
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('TOKEN_ENCRYPTION_KEY is required in production');
+    }
+    return null;
+  }
   // Derive 32-byte key. If secret provided is hex/32 bytes, use directly; else scrypt.
   if (/^[0-9a-fA-F]{64}$/.test(secret)) {
     return Buffer.from(secret, 'hex');
@@ -17,6 +21,7 @@ function getKey() {
 
 export function encryptString(plain) {
   if (!plain) return '';
+  if (String(plain).startsWith(PREFIX)) return String(plain);
   const key = getKey();
   if (!key) return String(plain); // pass-through in dev if no key
   const iv = crypto.randomBytes(12);
@@ -34,6 +39,7 @@ export function decryptString(value) {
   const str = String(value);
   if (!str.startsWith(PREFIX)) return str; // already plaintext
   const b = Buffer.from(str.slice(PREFIX.length), 'base64');
+  if (b.length < 29) throw new Error('Invalid encrypted value');
   const iv = b.subarray(0, 12);
   const tag = b.subarray(12, 28);
   const enc = b.subarray(28);
@@ -43,4 +49,8 @@ export function decryptString(value) {
   return dec.toString('utf8');
 }
 
-export default { encryptString, decryptString };
+export function assertEncryptionConfigured() {
+  getKey();
+}
+
+export default { encryptString, decryptString, assertEncryptionConfigured };

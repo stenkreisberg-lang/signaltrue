@@ -2,8 +2,8 @@
  * Privacy Gate Middleware
  *
  * Enforces the minimum-team-size rule before any analytics endpoint returns data.
- * If a team's actualSize is below the org-configured minimum (default: 1),
- * the request is suppressed and a 204 is returned with a structured body.
+ * If a team's actualSize is below the org-configured minimum (floor: 5),
+ * the request is suppressed with a structured response.
  *
  * Usage:
  *   import { privacyGate } from '../middleware/privacyGate.js';
@@ -32,7 +32,7 @@ async function resolveMinSize(orgId) {
  * Reads teamId from req.params.teamId or req.query.teamId.
  */
 export async function privacyGate(req, res, next) {
-  const teamId = req.params.teamId || req.query.teamId;
+  const teamId = req.params.teamId || req.query.teamId || req.body?.teamId;
 
   if (!teamId) {
     // No team context — let the route handler decide
@@ -70,7 +70,7 @@ export async function privacyGate(req, res, next) {
         privacyGateFiredAt: new Date(),
       }).catch(() => {});
 
-      return res.status(204).json({
+      return res.status(200).json({
         suppressed: true,
         reason: 'insufficient_sample',
         minRequired: minSize,
@@ -84,7 +84,12 @@ export async function privacyGate(req, res, next) {
     return next();
   } catch (err) {
     console.error('[privacyGate] Error:', err.message);
-    return next(); // Fail open — let route handle it, do not block on gate error
+    return res.status(503).json({
+      suppressed: true,
+      reason: 'privacy_gate_unavailable',
+      message:
+        'Analytics are temporarily unavailable because privacy checks could not be completed.',
+    });
   }
 }
 
@@ -105,7 +110,7 @@ export async function privacyGateOrg(req, res, next) {
 
   try {
     const [teams, minSize] = await Promise.all([
-      Team.find({ orgId }).select('_id metadata.actualSize').lean(),
+      Team.find({ orgId }).select('_id name metadata.actualSize').lean(),
       resolveMinSize(orgId),
     ]);
 
@@ -116,11 +121,23 @@ export async function privacyGateOrg(req, res, next) {
       }
     }
 
+    req.suppressedTeamNames = new Set(
+      teams
+        .filter((team) => req.suppressedTeamIds.has(team._id.toString()))
+        .map((team) => team.name)
+        .filter(Boolean)
+    );
+
     req.privacyMinSize = minSize;
     return next();
   } catch (err) {
     console.error('[privacyGateOrg] Error:', err.message);
-    return next();
+    return res.status(503).json({
+      suppressed: true,
+      reason: 'privacy_gate_unavailable',
+      message:
+        'Analytics are temporarily unavailable because privacy checks could not be completed.',
+    });
   }
 }
 
@@ -159,6 +176,11 @@ export async function checkPrivacyGate(teamId) {
     return { passed: true, actualSize, minRequired: minSize };
   } catch (err) {
     console.error('[checkPrivacyGate] Error:', err.message);
-    return { passed: true, actualSize: 0, minRequired: DEFAULT_MIN_SIZE }; // Fail open
+    return {
+      passed: false,
+      reason: 'privacy_gate_unavailable',
+      actualSize: 0,
+      minRequired: DEFAULT_MIN_SIZE,
+    };
   }
 }

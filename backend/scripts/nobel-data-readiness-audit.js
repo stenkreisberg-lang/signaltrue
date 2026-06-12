@@ -159,7 +159,7 @@ async function main() {
   if (!org) throw new Error('Nobel Digital organization not found');
 
   const orgId = org._id;
-  const minimumTeamSize = Math.max(1, Number(org.settings?.minTeamSize) || 1);
+  const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
   const now = new Date();
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);

@@ -62,7 +62,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    const minimumTeamSize = Math.max(1, Number(org.settings?.minTeamSize) || 1);
+    const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
 
     // Return public explainer content
     res.json({
@@ -134,7 +134,7 @@ router.get('/policy', async (req, res) => {
         {
           title: 'Aggregation Thresholds',
           content:
-            'Each organization configures its minimum reporting team size. Small-team results can be inferable, so they should be enabled only with explicit organizational approval. Individual rankings and content are never displayed.',
+            'Each organization may raise the minimum reporting team size, but it can never be lower than five people. Individual rankings and content are never displayed.',
         },
         {
           title: 'Data Retention',

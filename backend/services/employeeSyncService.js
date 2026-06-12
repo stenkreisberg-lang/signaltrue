@@ -346,11 +346,14 @@ export async function syncEmployeesFromGoogle(orgId) {
     // You'll need to add the scope: https://www.googleapis.com/auth/admin.directory.user.readonly
     // For now, we'll implement the basic structure
 
-    const { google } = await import('googleapis');
+    const [{ google }, { decryptString }] = await Promise.all([
+      import('googleapis'),
+      import('../utils/crypto.js'),
+    ]);
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({
-      access_token: org.integrations.googleChat.accessToken,
-      refresh_token: org.integrations.googleChat.refreshToken,
+      access_token: decryptString(org.integrations.googleChat.accessToken),
+      refresh_token: decryptString(org.integrations.googleChat.refreshToken),
     });
 
     const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
@@ -775,7 +778,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       $set: { 'integrations.microsoft.lastEmployeeSync': new Date() },
     });
     await Team.updateMany({ orgId, isActive: { $exists: false } }, { $set: { isActive: true } });
-    await refreshTeamSizes(orgId, org.settings?.minTeamSize ?? 1);
+    await refreshTeamSizes(orgId, Math.max(5, org.settings?.minTeamSize ?? 5));
     const eventRemap = await remapWorkEventTeams(orgId);
 
     console.log('[EmployeeSync] Microsoft sync complete:', {

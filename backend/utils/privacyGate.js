@@ -18,8 +18,8 @@ import Organization from '../models/organizationModel.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_TEAM_SIZE = 1; // Organization-level configuration can raise this threshold.
-export const MIN_METRIC_CONTRIBUTORS = 1;
+export const MIN_TEAM_SIZE = 5;
+export const MIN_METRIC_CONTRIBUTORS = 5;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
 export async function resolveMinimumTeamSize(orgId) {
@@ -27,7 +27,7 @@ export async function resolveMinimumTeamSize(orgId) {
   try {
     const org = await Organization.findById(orgId).select('settings.minTeamSize').lean();
     const configured = Number(org?.settings?.minTeamSize);
-    return Number.isFinite(configured) && configured >= 1 ? configured : MIN_TEAM_SIZE;
+    return Number.isFinite(configured) ? Math.max(configured, MIN_TEAM_SIZE) : MIN_TEAM_SIZE;
   } catch {
     return MIN_TEAM_SIZE;
   }

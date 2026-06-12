@@ -4,6 +4,7 @@ import CrisisEvent from '../models/crisisEvent.js';
 import Action from '../models/action.js';
 import Team from '../models/team.js';
 import { generateWeeklyRecommendations } from './aiRecommendationContext.js';
+import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 /**
  * Weekly Report Service
@@ -23,6 +24,11 @@ const RED_THRESHOLD = 65;
  */
 export async function generateWeeklyReportForTeam(teamId) {
   try {
+    const team = await Team.findById(teamId).select('orgId metadata.actualSize');
+    if (!team) return null;
+    const minimumTeamSize = await resolveMinimumTeamSize(team.orgId);
+    if ((team.metadata?.actualSize ?? 0) < minimumTeamSize) return null;
+
     // Get current and previous TeamState
     const teamStates = await TeamState.find({ teamId })
       .sort({ weekEnd: -1 })
@@ -216,7 +222,10 @@ function generateNoActionReason(zone, bdiDelta) {
  */
 export async function generateWeeklyReportsForOrg(orgId) {
   try {
-    const teams = await Team.find({ organizationId: orgId });
+    const minimumTeamSize = await resolveMinimumTeamSize(orgId);
+    const teams = (await Team.find({ orgId })).filter(
+      (team) => (team.metadata?.actualSize ?? 0) >= minimumTeamSize
+    );
 
     const results = {
       success: 0,

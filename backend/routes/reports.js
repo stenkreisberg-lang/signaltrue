@@ -28,10 +28,47 @@ import {
   manualTriggerWeeklyEmails,
   manualTriggerWeeklySiteAnalyticsReport,
 } from '../services/weeklyEmailScheduler.js';
-import { authenticateToken } from '../middleware/auth.js';
+import {
+  authenticateToken,
+  requireOrganizationAccess,
+  requireTeamAccess,
+} from '../middleware/auth.js';
 import { checkRole } from '../middleware/checkRole.js';
+import { privacyGate, privacyGateOrg } from '../middleware/privacyGate.js';
 
 const router = express.Router();
+
+function sanitizeReportForPrivacy(value, req) {
+  const suppressedIds = req.suppressedTeamIds || new Set();
+  const suppressedNames = req.suppressedTeamNames || new Set();
+  const plainValue = value?.toObject ? value.toObject() : value;
+
+  if (
+    plainValue instanceof Date ||
+    Buffer.isBuffer(plainValue) ||
+    plainValue?._bsontype === 'ObjectId'
+  ) {
+    return plainValue;
+  }
+
+  if (Array.isArray(plainValue)) {
+    return plainValue
+      .filter((item) => {
+        const teamId = item?.teamId?._id || item?.teamId;
+        const teamName = item?.teamName;
+        return !suppressedIds.has(String(teamId || '')) && !suppressedNames.has(teamName);
+      })
+      .map((item) => sanitizeReportForPrivacy(item, req));
+  }
+
+  if (plainValue && typeof plainValue === 'object') {
+    return Object.fromEntries(
+      Object.entries(plainValue).map(([key, item]) => [key, sanitizeReportForPrivacy(item, req)])
+    );
+  }
+
+  return plainValue;
+}
 
 /**
  * WEEKLY REPORTS
@@ -43,57 +80,65 @@ const router = express.Router();
  * Get latest weekly report for a team
  * Access: HR/Admin, Manager (if their team)
  */
-router.get('/weekly/team/:teamId/latest', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
+router.get(
+  '/weekly/team/:teamId/latest',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    // TODO: Add authorization check - ensure user has access to this team
+      const report = await getLatestWeeklyReport(teamId);
 
-    const report = await getLatestWeeklyReport(teamId);
+      if (!report) {
+        return res.status(404).json({
+          message: 'No weekly report found for this team',
+        });
+      }
 
-    if (!report) {
-      return res.status(404).json({
-        message: 'No weekly report found for this team',
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching latest weekly report:', error);
+      res.status(500).json({
+        message: 'Error fetching weekly report',
+        error: error.message,
       });
     }
-
-    res.json(report);
-  } catch (error) {
-    console.error('Error fetching latest weekly report:', error);
-    res.status(500).json({
-      message: 'Error fetching weekly report',
-      error: error.message,
-    });
   }
-});
+);
 
 /**
  * GET /api/reports/weekly/team/:teamId/history
  * Get weekly report history for a team
  * Access: HR/Admin, Manager (if their team)
  */
-router.get('/weekly/team/:teamId/history', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const limit = parseInt(req.query.limit) || 12;
+router.get(
+  '/weekly/team/:teamId/history',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const limit = parseInt(req.query.limit) || 12;
 
-    // TODO: Add authorization check
+      const reports = await getWeeklyReportHistory(teamId, limit);
 
-    const reports = await getWeeklyReportHistory(teamId, limit);
-
-    res.json({
-      teamId,
-      count: reports.length,
-      reports,
-    });
-  } catch (error) {
-    console.error('Error fetching weekly report history:', error);
-    res.status(500).json({
-      message: 'Error fetching weekly report history',
-      error: error.message,
-    });
+      res.json({
+        teamId,
+        count: reports.length,
+        reports,
+      });
+    } catch (error) {
+      console.error('Error fetching weekly report history:', error);
+      res.status(500).json({
+        message: 'Error fetching weekly report history',
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 /**
  * POST /api/reports/weekly/team/:teamId/generate
@@ -104,6 +149,8 @@ router.post(
   '/weekly/team/:teamId/generate',
   authenticateToken,
   checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireTeamAccess(),
+  privacyGate,
   async (req, res) => {
     try {
       const { teamId } = req.params;
@@ -139,6 +186,8 @@ router.post(
   '/weekly/org/:orgId/generate-all',
   authenticateToken,
   checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
   async (req, res) => {
     try {
       const { orgId } = req.params;
@@ -153,7 +202,7 @@ router.post(
           failed: results.failed,
           total: results.success + results.noAction + results.failed,
         },
-        reports: results.reports,
+        reports: sanitizeReportForPrivacy(results.reports, req),
       });
     } catch (error) {
       console.error('Error generating weekly reports:', error);
@@ -179,6 +228,8 @@ router.get(
   '/monthly/org/:orgId/latest',
   authenticateToken,
   checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
   async (req, res) => {
     try {
       const { orgId } = req.params;
@@ -191,7 +242,7 @@ router.get(
         });
       }
 
-      res.json(report);
+      res.json(sanitizeReportForPrivacy(report, req));
     } catch (error) {
       console.error('Error fetching latest monthly report:', error);
       res.status(500).json({
@@ -211,6 +262,8 @@ router.get(
   '/monthly/org/:orgId/history',
   authenticateToken,
   checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
   async (req, res) => {
     try {
       const { orgId } = req.params;
@@ -221,7 +274,7 @@ router.get(
       res.json({
         orgId,
         count: reports.length,
-        reports,
+        reports: sanitizeReportForPrivacy(reports, req),
       });
     } catch (error) {
       console.error('Error fetching monthly report history:', error);
@@ -247,6 +300,8 @@ router.get(
   '/monthly/org/:orgId/leadership',
   authenticateToken,
   checkRole(['ceo', 'leadership', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
   async (req, res) => {
     try {
       const { orgId } = req.params;
@@ -262,7 +317,7 @@ router.get(
       res.json({
         reportType: 'leadership_view',
         disclaimer: 'This view excludes individual-level details and tactical recommendations',
-        data: leadershipView,
+        data: sanitizeReportForPrivacy(leadershipView, req),
       });
     } catch (error) {
       console.error('Error fetching leadership view:', error);
@@ -283,6 +338,8 @@ router.post(
   '/monthly/org/:orgId/generate',
   authenticateToken,
   checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
   async (req, res) => {
     try {
       const { orgId } = req.params;
@@ -305,7 +362,7 @@ router.post(
           criticalAttritionRisk: report.retentionExposure.criticalIndividualsCount,
           trajectory: report.aiSummary.organizationalTrajectory,
         },
-        report,
+        report: sanitizeReportForPrivacy(report, req),
       });
     } catch (error) {
       console.error('Error generating monthly report:', error);

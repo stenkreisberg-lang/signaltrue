@@ -1,10 +1,38 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Signal from '../models/signal.js';
 import Action from '../models/action.js';
 import Organization from '../models/organizationModel.js';
-import { authenticateToken } from '../middleware/auth.js';
+import User from '../models/user.js';
+import {
+  authenticateToken,
+  isMasterAdmin,
+  requireHROrAdmin,
+  requireOrganizationAccess,
+  requireRoles,
+  requireTeamAccess,
+} from '../middleware/auth.js';
+import { checkPrivacyGate, privacyGate, privacyGateOrg } from '../middleware/privacyGate.js';
 
 const router = express.Router();
+
+function scopedSignalQuery(req, id) {
+  const query = { _id: id };
+  if (!isMasterAdmin(req.user)) query.orgId = req.user.orgId;
+  if (req.user?.role === 'manager') query.teamId = req.user.teamId;
+  return query;
+}
+
+function visibleTeamFilter(req) {
+  const suppressedIds = [...(req.suppressedTeamIds || [])];
+  return suppressedIds.length > 0 ? { $nin: suppressedIds } : undefined;
+}
+
+async function ownerBelongsToOrg(ownerId, orgId) {
+  if (!ownerId) return true;
+  if (!mongoose.isValidObjectId(ownerId)) return false;
+  return Boolean(await User.exists({ _id: ownerId, orgId }));
+}
 
 const CONFIDENCE_RANK = {
   Low: 1,
@@ -318,78 +346,95 @@ function buildFamilyAggregates(signals) {
  * GET /api/signals/org/:orgId
  * Get all signals for an organization with filtering
  */
-router.get('/org/:orgId', authenticateToken, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { severity, status, teamId } = req.query;
+router.get(
+  '/org/:orgId',
+  authenticateToken,
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { severity, status, teamId } = req.query;
 
-    // Check if org is in calibration - if so, don't show signals
-    const org = await Organization.findById(orgId);
-    if (org?.calibration?.isInCalibration) {
-      return res.json({
-        message: 'Signals will be available after calibration is complete',
-        signals: [],
-        inCalibration: true,
+      // Check if org is in calibration - if so, don't show signals
+      const org = await Organization.findById(orgId);
+      if (org?.calibration?.isInCalibration) {
+        return res.json({
+          message: 'Signals will be available after calibration is complete',
+          signals: [],
+          inCalibration: true,
+        });
+      }
+
+      const filter = { orgId };
+      const teamVisibility = visibleTeamFilter(req);
+      if (teamVisibility) filter.teamId = teamVisibility;
+      if (severity) filter.severity = severity;
+      if (status) filter.status = status;
+      if (teamId) {
+        if (req.suppressedTeamIds.has(String(teamId))) return res.json({ signals: [] });
+        filter.teamId = teamId;
+      }
+
+      const signals = await Signal.find(filter)
+        .populate('teamId', 'name')
+        .populate('owner', 'name email')
+        .sort({ severity: -1, firstDetected: -1 }); // Critical first, then by date
+
+      const visibleSignals = signals
+        .filter((signal) => !shouldSuppressSignal(signal))
+        .map((signal) => shapeSignalForPresentation(signal));
+
+      const suppressedCount = signals.length - visibleSignals.length;
+
+      res.json({
+        signals: visibleSignals,
+        displayPolicy: {
+          reducedMetricSurface: true,
+          suppressLowConfidenceSignals: true,
+          businessLanguageEnabled: true,
+          hiddenLowConfidenceCount: suppressedCount,
+        },
       });
+    } catch (err) {
+      console.error('Error fetching signals:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    const filter = { orgId };
-    if (severity) filter.severity = severity;
-    if (status) filter.status = status;
-    if (teamId) filter.teamId = teamId;
-
-    const signals = await Signal.find(filter)
-      .populate('teamId', 'name')
-      .populate('owner', 'name email')
-      .sort({ severity: -1, firstDetected: -1 }); // Critical first, then by date
-
-    const visibleSignals = signals
-      .filter((signal) => !shouldSuppressSignal(signal))
-      .map((signal) => shapeSignalForPresentation(signal));
-
-    const suppressedCount = signals.length - visibleSignals.length;
-
-    res.json({
-      signals: visibleSignals,
-      displayPolicy: {
-        reducedMetricSurface: true,
-        suppressLowConfidenceSignals: true,
-        businessLanguageEnabled: true,
-        hiddenLowConfidenceCount: suppressedCount,
-      },
-    });
-  } catch (err) {
-    console.error('Error fetching signals:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 /**
  * GET /api/signals/team/:teamId
  * Get all signals for a specific team
  */
-router.get('/team/:teamId', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { status } = req.query;
+router.get(
+  '/team/:teamId',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { status } = req.query;
 
-    const filter = { teamId };
-    if (status) filter.status = status;
+      const filter = { teamId };
+      if (status) filter.status = status;
 
-    const signals = await Signal.find(filter)
-      .populate('owner', 'name email')
-      .sort({ severity: -1, firstDetected: -1 });
+      const signals = await Signal.find(filter)
+        .populate('owner', 'name email')
+        .sort({ severity: -1, firstDetected: -1 });
 
-    const visibleSignals = signals
-      .filter((signal) => !shouldSuppressSignal(signal))
-      .map((signal) => shapeSignalForPresentation(signal));
+      const visibleSignals = signals
+        .filter((signal) => !shouldSuppressSignal(signal))
+        .map((signal) => shapeSignalForPresentation(signal));
 
-    res.json({ signals: visibleSignals });
-  } catch (err) {
-    console.error('Error fetching team signals:', err);
-    res.status(500).json({ message: err.message });
+      res.json({ signals: visibleSignals });
+    } catch (err) {
+      console.error('Error fetching team signals:', err);
+      res.status(500).json({ message: err.message });
+    }
   }
-});
+);
 
 /**
  * GET /api/signals/:id
@@ -397,7 +442,7 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
  */
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const signal = await Signal.findById(req.params.id)
+    const signal = await Signal.findOne(scopedSignalQuery(req, req.params.id))
       .populate('teamId', 'name')
       .populate('orgId', 'name')
       .populate('owner', 'name email');
@@ -405,6 +450,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (!signal) {
       return res.status(404).json({ message: 'Signal not found' });
     }
+
+    const privacy = await checkPrivacyGate(signal.teamId?._id || signal.teamId);
+    if (!privacy.passed) return res.status(200).json({ suppressed: true, ...privacy });
 
     // Get associated actions
     const actions = await Action.find({ signalId: signal._id })
@@ -428,254 +476,323 @@ router.get('/:id', authenticateToken, async (req, res) => {
  * POST /api/signals
  * Create a new signal (typically called by signal generation service)
  */
-router.post('/', authenticateToken, async (req, res) => {
-  try {
-    const signalData = req.body;
+router.post(
+  '/',
+  authenticateToken,
+  requireHROrAdmin,
+  requireTeamAccess('teamId'),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const signalData = { ...req.body, orgId: req.team.orgId, teamId: req.team._id };
+      if (!(await ownerBelongsToOrg(signalData.owner, signalData.orgId))) {
+        return res.status(400).json({ message: 'Signal owner must belong to the organization' });
+      }
 
-    // Check if org is in calibration
-    const org = await Organization.findById(signalData.orgId);
-    if (org?.calibration?.isInCalibration) {
-      return res.status(403).json({
-        message: 'Signals cannot be created during calibration period',
-      });
+      // Check if org is in calibration
+      const org = await Organization.findById(signalData.orgId);
+      if (org?.calibration?.isInCalibration) {
+        return res.status(403).json({
+          message: 'Signals cannot be created during calibration period',
+        });
+      }
+
+      const signal = await Signal.create(signalData);
+      res.status(201).json({ signal });
+    } catch (err) {
+      console.error('Error creating signal:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    const signal = await Signal.create(signalData);
-    res.status(201).json({ signal });
-  } catch (err) {
-    console.error('Error creating signal:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 /**
  * PUT /api/signals/:id
  * Update a signal (status, owner, etc.)
  */
-router.put('/:id', authenticateToken, async (req, res) => {
-  try {
-    const { status, owner, dueDate, selectedAction, actionStartDate } = req.body;
+router.put(
+  '/:id',
+  authenticateToken,
+  requireRoles(['manager', 'hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { status, owner, dueDate, selectedAction, actionStartDate } = req.body;
 
-    const signal = await Signal.findById(req.params.id);
-    if (!signal) {
-      return res.status(404).json({ message: 'Signal not found' });
-    }
-
-    if (status) signal.status = status;
-    if (owner) signal.owner = owner;
-    if (dueDate) signal.dueDate = dueDate;
-    if (selectedAction) {
-      signal.selectedAction = selectedAction;
-      signal.actionStartDate = actionStartDate || new Date();
-    }
-
-    // Track status changes
-    if (status === 'Resolved') {
-      signal.resolvedAt = new Date();
-    } else if (status === 'Ignored') {
-      signal.ignoredAt = new Date();
-      if (req.body.ignoredReason) {
-        signal.ignoredReason = req.body.ignoredReason;
+      const signal = await Signal.findOne(scopedSignalQuery(req, req.params.id));
+      if (!signal) {
+        return res.status(404).json({ message: 'Signal not found' });
       }
+      const privacy = await checkPrivacyGate(signal.teamId);
+      if (!privacy.passed) return res.status(200).json({ suppressed: true, ...privacy });
+
+      if (status) signal.status = status;
+      if (owner) {
+        if (!(await ownerBelongsToOrg(owner, signal.orgId))) {
+          return res.status(400).json({ message: 'Signal owner must belong to the organization' });
+        }
+        signal.owner = owner;
+      }
+      if (dueDate) signal.dueDate = dueDate;
+      if (selectedAction) {
+        signal.selectedAction = selectedAction;
+        signal.actionStartDate = actionStartDate || new Date();
+      }
+
+      // Track status changes
+      if (status === 'Resolved') {
+        signal.resolvedAt = new Date();
+      } else if (status === 'Ignored') {
+        signal.ignoredAt = new Date();
+        if (req.body.ignoredReason) {
+          signal.ignoredReason = req.body.ignoredReason;
+        }
+      }
+
+      await signal.save();
+
+      res.json({ signal });
+    } catch (err) {
+      console.error('Error updating signal:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    await signal.save();
-
-    res.json({ signal });
-  } catch (err) {
-    console.error('Error updating signal:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 /**
  * POST /api/signals/:id/outcome
  * Record outcome for a resolved signal
  */
-router.post('/:id/outcome', authenticateToken, async (req, res) => {
-  try {
-    const { rating, timeToNormalization, notes } = req.body;
+router.post(
+  '/:id/outcome',
+  authenticateToken,
+  requireRoles(['manager', 'hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { rating, timeToNormalization, notes } = req.body;
 
-    const signal = await Signal.findById(req.params.id);
-    if (!signal) {
-      return res.status(404).json({ message: 'Signal not found' });
+      const signal = await Signal.findOne(scopedSignalQuery(req, req.params.id));
+      if (!signal) {
+        return res.status(404).json({ message: 'Signal not found' });
+      }
+      const privacy = await checkPrivacyGate(signal.teamId);
+      if (!privacy.passed) return res.status(200).json({ suppressed: true, ...privacy });
+
+      signal.outcome = {
+        rating,
+        timeToNormalization,
+        notes,
+        recordedAt: new Date(),
+      };
+
+      await signal.save();
+
+      res.json({ signal });
+    } catch (err) {
+      console.error('Error recording outcome:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    signal.outcome = {
-      rating,
-      timeToNormalization,
-      notes,
-      recordedAt: new Date(),
-    };
-
-    await signal.save();
-
-    res.json({ signal });
-  } catch (err) {
-    console.error('Error recording outcome:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 /**
  * GET /api/signals/org/:orgId/ignored
  * Get all ignored signals for visibility
  */
-router.get('/org/:orgId/ignored', authenticateToken, async (req, res) => {
-  try {
-    const { orgId } = req.params;
+router.get(
+  '/org/:orgId/ignored',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
 
-    const ignoredSignals = await Signal.find({
-      orgId,
-      status: 'Ignored',
-    })
-      .populate('teamId', 'name')
-      .populate('owner', 'name email')
-      .sort({ ignoredAt: -1 });
+      const ignoredFilter = {
+        orgId,
+        status: 'Ignored',
+      };
+      const teamVisibility = visibleTeamFilter(req);
+      if (teamVisibility) ignoredFilter.teamId = teamVisibility;
+      const ignoredSignals = await Signal.find(ignoredFilter)
+        .populate('teamId', 'name')
+        .populate('owner', 'name email')
+        .sort({ ignoredAt: -1 });
 
-    res.json({ ignoredSignals });
-  } catch (err) {
-    console.error('Error fetching ignored signals:', err);
-    res.status(500).json({ message: err.message });
+      res.json({ ignoredSignals });
+    } catch (err) {
+      console.error('Error fetching ignored signals:', err);
+      res.status(500).json({ message: err.message });
+    }
   }
-});
+);
 
 /**
  * GET /api/signals/org/:orgId/summary
  * Get signal summary for weekly digest
  */
-router.get('/org/:orgId/summary', authenticateToken, async (req, res) => {
-  try {
-    const { orgId } = req.params;
+router.get(
+  '/org/:orgId/summary',
+  authenticateToken,
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
 
-    // Check if in calibration
-    const org = await Organization.findById(orgId);
-    if (org?.calibration?.isInCalibration) {
-      return res.json({
-        message: 'Signal summary will be available after calibration',
-        inCalibration: true,
+      // Check if in calibration
+      const org = await Organization.findById(orgId);
+      if (org?.calibration?.isInCalibration) {
+        return res.json({
+          message: 'Signal summary will be available after calibration',
+          inCalibration: true,
+        });
+      }
+
+      // Get critical signals
+      const criticalFilter = {
+        orgId,
+        severity: 'Critical',
+        status: { $in: ['Open', 'Acknowledged'] },
+      };
+      const teamVisibility = visibleTeamFilter(req);
+      if (teamVisibility) criticalFilter.teamId = teamVisibility;
+      const criticalSignals = await Signal.find(criticalFilter)
+        .populate('teamId', 'name')
+        .limit(3)
+        .sort({ firstDetected: -1 });
+
+      // Get ignored signals
+      const ignoredCount = await Signal.countDocuments({
+        orgId,
+        status: 'Ignored',
+        ...(teamVisibility ? { teamId: teamVisibility } : {}),
       });
+
+      // Get new signals this week
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const newSignalsThisWeek = await Signal.countDocuments({
+        orgId,
+        firstDetected: { $gte: oneWeekAgo },
+        ...(teamVisibility ? { teamId: teamVisibility } : {}),
+      });
+
+      // Get top recommended actions
+      const openSignals = await Signal.find({
+        orgId,
+        status: { $in: ['Open', 'Acknowledged'] },
+        ...(teamVisibility ? { teamId: teamVisibility } : {}),
+      })
+        .sort({ severity: -1 })
+        .limit(5);
+
+      const visibleCriticalSignals = criticalSignals
+        .filter((signal) => !shouldSuppressSignal(signal))
+        .map((signal) => shapeSignalForPresentation(signal));
+
+      const recommendedActions = openSignals
+        .filter((signal) => !shouldSuppressSignal(signal))
+        .filter((s) => s.recommendedActions && s.recommendedActions.length > 0)
+        .map((s) => ({
+          signalId: s._id,
+          signalTitle: SIGNAL_TYPE_PRESENTATION[s.signalType]?.businessTitle || s.title,
+          severity: s.severity,
+          action: s.recommendedActions[0], // First recommended action
+        }));
+
+      res.json({
+        criticalSignals: visibleCriticalSignals,
+        ignoredCount,
+        newSignalsThisWeek,
+        recommendedActions: recommendedActions.slice(0, 3),
+        familySummaries: buildFamilyAggregates(openSignals),
+      });
+    } catch (err) {
+      console.error('Error fetching signal summary:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    // Get critical signals
-    const criticalSignals = await Signal.find({
-      orgId,
-      severity: 'Critical',
-      status: { $in: ['Open', 'Acknowledged'] },
-    })
-      .populate('teamId', 'name')
-      .limit(3)
-      .sort({ firstDetected: -1 });
-
-    // Get ignored signals
-    const ignoredCount = await Signal.countDocuments({
-      orgId,
-      status: 'Ignored',
-    });
-
-    // Get new signals this week
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const newSignalsThisWeek = await Signal.countDocuments({
-      orgId,
-      firstDetected: { $gte: oneWeekAgo },
-    });
-
-    // Get top recommended actions
-    const openSignals = await Signal.find({
-      orgId,
-      status: { $in: ['Open', 'Acknowledged'] },
-    })
-      .sort({ severity: -1 })
-      .limit(5);
-
-    const visibleCriticalSignals = criticalSignals
-      .filter((signal) => !shouldSuppressSignal(signal))
-      .map((signal) => shapeSignalForPresentation(signal));
-
-    const recommendedActions = openSignals
-      .filter((signal) => !shouldSuppressSignal(signal))
-      .filter((s) => s.recommendedActions && s.recommendedActions.length > 0)
-      .map((s) => ({
-        signalId: s._id,
-        signalTitle: SIGNAL_TYPE_PRESENTATION[s.signalType]?.businessTitle || s.title,
-        severity: s.severity,
-        action: s.recommendedActions[0], // First recommended action
-      }));
-
-    res.json({
-      criticalSignals: visibleCriticalSignals,
-      ignoredCount,
-      newSignalsThisWeek,
-      recommendedActions: recommendedActions.slice(0, 3),
-      familySummaries: buildFamilyAggregates(openSignals),
-    });
-  } catch (err) {
-    console.error('Error fetching signal summary:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 /**
  * GET /api/signals/org/:orgId/families
  * Return backend-driven structural drift family aggregates with historical trend data.
  */
-router.get('/org/:orgId/families', authenticateToken, async (req, res) => {
-  try {
-    const { orgId } = req.params;
+router.get(
+  '/org/:orgId/families',
+  authenticateToken,
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
 
-    const signals = await Signal.find({ orgId })
-      .populate('teamId', 'name')
-      .populate('owner', 'name email')
-      .sort({ firstDetected: -1, createdAt: -1 });
+      const teamVisibility = visibleTeamFilter(req);
+      const signals = await Signal.find({
+        orgId,
+        ...(teamVisibility ? { teamId: teamVisibility } : {}),
+      })
+        .populate('teamId', 'name')
+        .populate('owner', 'name email')
+        .sort({ firstDetected: -1, createdAt: -1 });
 
-    const families = buildFamilyAggregates(signals);
+      const families = buildFamilyAggregates(signals);
 
-    res.json({
-      families,
-      generatedAt: new Date().toISOString(),
-      coverage: {
-        visibleSignals: signals.filter((signal) => !shouldSuppressSignal(signal)).length,
-        hiddenLowConfidenceSignals: signals.filter((signal) => shouldSuppressSignal(signal)).length,
-        measurementScope: 'metadata-only',
-      },
-    });
-  } catch (err) {
-    console.error('Error fetching signal family aggregates:', err);
-    res.status(500).json({ message: err.message });
+      res.json({
+        families,
+        generatedAt: new Date().toISOString(),
+        coverage: {
+          visibleSignals: signals.filter((signal) => !shouldSuppressSignal(signal)).length,
+          hiddenLowConfidenceSignals: signals.filter((signal) => shouldSuppressSignal(signal))
+            .length,
+          measurementScope: 'metadata-only',
+        },
+      });
+    } catch (err) {
+      console.error('Error fetching signal family aggregates:', err);
+      res.status(500).json({ message: err.message });
+    }
   }
-});
+);
 
 /**
  * GET /api/signals/team/:teamId/families
  * Return team-scoped structural drift family aggregates with historical trend data.
  */
-router.get('/team/:teamId/families', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
+router.get(
+  '/team/:teamId/families',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    const signals = await Signal.find({ teamId })
-      .populate('teamId', 'name')
-      .populate('owner', 'name email')
-      .sort({ firstDetected: -1, createdAt: -1 });
+      const signals = await Signal.find({ teamId })
+        .populate('teamId', 'name')
+        .populate('owner', 'name email')
+        .sort({ firstDetected: -1, createdAt: -1 });
 
-    const families = buildFamilyAggregates(signals);
+      const families = buildFamilyAggregates(signals);
 
-    res.json({
-      families,
-      generatedAt: new Date().toISOString(),
-      coverage: {
-        visibleSignals: signals.filter((signal) => !shouldSuppressSignal(signal)).length,
-        hiddenLowConfidenceSignals: signals.filter((signal) => shouldSuppressSignal(signal)).length,
-        measurementScope: 'metadata-only',
-        scope: 'team',
-      },
-    });
-  } catch (err) {
-    console.error('Error fetching team signal family aggregates:', err);
-    res.status(500).json({ message: err.message });
+      res.json({
+        families,
+        generatedAt: new Date().toISOString(),
+        coverage: {
+          visibleSignals: signals.filter((signal) => !shouldSuppressSignal(signal)).length,
+          hiddenLowConfidenceSignals: signals.filter((signal) => shouldSuppressSignal(signal))
+            .length,
+          measurementScope: 'metadata-only',
+          scope: 'team',
+        },
+      });
+    } catch (err) {
+      console.error('Error fetching team signal family aggregates:', err);
+      res.status(500).json({ message: err.message });
+    }
   }
-});
+);
 
 /**
  * POST /api/signals/org/:orgId/weekly-digest
@@ -688,88 +805,98 @@ router.get('/team/:teamId/families', authenticateToken, async (req, res) => {
  * Response shape (email-ready JSON):
  *   { orgName, generatedAt, healthState, families[], topRisks[], recommendedActions[], digestHtml }
  */
-router.post('/org/:orgId/weekly-digest', authenticateToken, async (req, res) => {
-  try {
-    const { orgId } = req.params;
-    const { recipientEmail, sendEmail } = req.body;
+router.post(
+  '/org/:orgId/weekly-digest',
+  authenticateToken,
+  requireHROrAdmin,
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const { orgId } = req.params;
+      const { recipientEmail, sendEmail } = req.body;
 
-    // --- Org context ---
-    const org = await Organization.findById(orgId);
-    if (!org) return res.status(404).json({ message: 'Organization not found' });
+      // --- Org context ---
+      const org = await Organization.findById(orgId);
+      if (!org) return res.status(404).json({ message: 'Organization not found' });
 
-    if (org?.calibration?.isInCalibration) {
-      return res.json({
-        message: 'Digest will be available after calibration',
-        inCalibration: true,
-      });
-    }
+      if (org?.calibration?.isInCalibration) {
+        return res.json({
+          message: 'Digest will be available after calibration',
+          inCalibration: true,
+        });
+      }
 
-    // --- Signals & families ---
-    const signals = await Signal.find({ orgId })
-      .populate('teamId', 'name')
-      .populate('owner', 'name email')
-      .sort({ firstDetected: -1, createdAt: -1 });
+      // --- Signals & families ---
+      const teamVisibility = visibleTeamFilter(req);
+      const signals = await Signal.find({
+        orgId,
+        ...(teamVisibility ? { teamId: teamVisibility } : {}),
+      })
+        .populate('teamId', 'name')
+        .populate('owner', 'name email')
+        .sort({ firstDetected: -1, createdAt: -1 });
 
-    const families = buildFamilyAggregates(signals);
+      const families = buildFamilyAggregates(signals);
 
-    // --- Derive health state from highest family score ---
-    const maxScore = Math.max(...families.map((f) => f.score), 0);
-    const healthState =
-      maxScore >= 70
-        ? 'Critical'
-        : maxScore >= 50
-          ? 'Elevated'
-          : maxScore >= 30
-            ? 'Watch'
-            : 'Stable';
+      // --- Derive health state from highest family score ---
+      const maxScore = Math.max(...families.map((f) => f.score), 0);
+      const healthState =
+        maxScore >= 70
+          ? 'Critical'
+          : maxScore >= 50
+            ? 'Elevated'
+            : maxScore >= 30
+              ? 'Watch'
+              : 'Stable';
 
-    // --- Top risks: critical / elevated open signals (max 3) ---
-    const topRisks = signals
-      .filter(
-        (s) =>
-          !shouldSuppressSignal(s) &&
-          ['Critical', 'Elevated'].includes(s.severity) &&
-          ['Open', 'Acknowledged'].includes(s.status)
-      )
-      .slice(0, 3)
-      .map((s) => shapeSignalForPresentation(s));
+      // --- Top risks: critical / elevated open signals (max 3) ---
+      const topRisks = signals
+        .filter(
+          (s) =>
+            !shouldSuppressSignal(s) &&
+            ['Critical', 'Elevated'].includes(s.severity) &&
+            ['Open', 'Acknowledged'].includes(s.status)
+        )
+        .slice(0, 3)
+        .map((s) => shapeSignalForPresentation(s));
 
-    // --- Recommended actions (max 3) ---
-    const recommendedActions = signals
-      .filter((s) => !shouldSuppressSignal(s) && s.recommendedActions?.length)
-      .sort((a, b) => getConfidenceRank(b.confidence) - getConfidenceRank(a.confidence))
-      .slice(0, 3)
-      .map((s) => ({
-        signalTitle: SIGNAL_TYPE_PRESENTATION[s.signalType]?.businessTitle || s.title,
-        action: s.recommendedActions[0],
-        family: SIGNAL_TYPE_PRESENTATION[s.signalType]?.family || 'General',
-      }));
+      // --- Recommended actions (max 3) ---
+      const recommendedActions = signals
+        .filter((s) => !shouldSuppressSignal(s) && s.recommendedActions?.length)
+        .sort((a, b) => getConfidenceRank(b.confidence) - getConfidenceRank(a.confidence))
+        .slice(0, 3)
+        .map((s) => ({
+          signalTitle: SIGNAL_TYPE_PRESENTATION[s.signalType]?.businessTitle || s.title,
+          action: s.recommendedActions[0],
+          family: SIGNAL_TYPE_PRESENTATION[s.signalType]?.family || 'General',
+        }));
 
-    // --- Build digest HTML ---
-    const familyRows = families
-      .map((f) => {
-        const trend = f.trend || [];
-        const first = trend[0]?.score ?? 0;
-        const last = trend[trend.length - 1]?.score ?? f.score;
-        const delta = last - first;
-        const deltaLabel = delta > 0 ? `+${delta} pts` : delta < 0 ? `${delta} pts` : 'no change';
-        const sev =
-          f.score >= 70
-            ? 'Critical'
-            : f.score >= 50
-              ? 'Elevated'
-              : f.score >= 30
-                ? 'Moderate'
-                : 'Low';
-        const sevColor =
-          f.score >= 70
-            ? '#ef4444'
-            : f.score >= 50
-              ? '#fb923c'
-              : f.score >= 30
-                ? '#fbbf24'
-                : '#34d399';
-        return `
+      // --- Build digest HTML ---
+      const familyRows = families
+        .map((f) => {
+          const trend = f.trend || [];
+          const first = trend[0]?.score ?? 0;
+          const last = trend[trend.length - 1]?.score ?? f.score;
+          const delta = last - first;
+          const deltaLabel = delta > 0 ? `+${delta} pts` : delta < 0 ? `${delta} pts` : 'no change';
+          const sev =
+            f.score >= 70
+              ? 'Critical'
+              : f.score >= 50
+                ? 'Elevated'
+                : f.score >= 30
+                  ? 'Moderate'
+                  : 'Low';
+          const sevColor =
+            f.score >= 70
+              ? '#ef4444'
+              : f.score >= 50
+                ? '#fb923c'
+                : f.score >= 30
+                  ? '#fbbf24'
+                  : '#34d399';
+          return `
         <tr>
           <td style="padding:12px 16px;font-weight:600">${f.familyName}</td>
           <td style="padding:12px 16px;text-align:center">
@@ -778,30 +905,30 @@ router.post('/org/:orgId/weekly-digest', authenticateToken, async (req, res) => 
           <td style="padding:12px 16px;text-align:center;color:${delta > 0 ? '#ef4444' : delta < 0 ? '#22c55e' : '#94a3b8'};font-weight:600">${deltaLabel}</td>
           <td style="padding:12px 16px;text-align:center;font-size:12px;color:#64748b">${sev}</td>
         </tr>`;
-      })
-      .join('');
+        })
+        .join('');
 
-    const riskRows = topRisks
-      .map(
-        (r) => `
+      const riskRows = topRisks
+        .map(
+          (r) => `
       <tr>
         <td style="padding:8px 16px;font-weight:500">${r.title}</td>
         <td style="padding:8px 16px;color:#64748b;font-size:13px">${r.familyLabel || ''}</td>
       </tr>`
-      )
-      .join('');
+        )
+        .join('');
 
-    const actionRows = recommendedActions
-      .map(
-        (a) => `
+      const actionRows = recommendedActions
+        .map(
+          (a) => `
       <tr>
         <td style="padding:8px 16px;font-weight:500">${a.action}</td>
         <td style="padding:8px 16px;color:#64748b;font-size:13px">${a.family}</td>
       </tr>`
-      )
-      .join('');
+        )
+        .join('');
 
-    const digestHtml = `
+      const digestHtml = `
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
@@ -863,61 +990,62 @@ router.post('/org/:orgId/weekly-digest', authenticateToken, async (req, res) => 
   </div>
 </body></html>`;
 
-    // --- Optionally send via Resend ---
-    let emailResult = null;
-    if (sendEmail) {
-      if (!process.env.RESEND_API_KEY) {
-        return res
-          .status(500)
-          .json({ message: 'Email not configured. Set RESEND_API_KEY in environment.' });
+      // --- Optionally send via Resend ---
+      let emailResult = null;
+      if (sendEmail) {
+        if (!process.env.RESEND_API_KEY) {
+          return res
+            .status(500)
+            .json({ message: 'Email not configured. Set RESEND_API_KEY in environment.' });
+        }
+        const { Resend } = await import('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const to = recipientEmail || req.user?.email;
+        if (!to) return res.status(400).json({ message: 'No recipient email provided' });
+
+        emailResult = await resend.emails.send({
+          from: 'SignalTrue <digest@signaltrue.ai>',
+          to,
+          subject: `📊 SignalTrue Weekly Digest — ${org.name} — ${healthState}`,
+          html: digestHtml,
+        });
       }
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const to = recipientEmail || req.user?.email;
-      if (!to) return res.status(400).json({ message: 'No recipient email provided' });
 
-      emailResult = await resend.emails.send({
-        from: 'SignalTrue <digest@signaltrue.ai>',
-        to,
-        subject: `📊 SignalTrue Weekly Digest — ${org.name} — ${healthState}`,
-        html: digestHtml,
+      res.json({
+        orgName: org.name,
+        generatedAt: new Date().toISOString(),
+        healthState,
+        families: families.map((f) => {
+          const trend = f.trend || [];
+          const first = trend[0]?.score ?? 0;
+          const last = trend[trend.length - 1]?.score ?? f.score;
+          const delta = last - first;
+          return {
+            familyName: f.familyName,
+            score: f.score,
+            delta,
+            severity:
+              f.score >= 70
+                ? 'Critical'
+                : f.score >= 50
+                  ? 'Elevated'
+                  : f.score >= 30
+                    ? 'Moderate'
+                    : 'Low',
+            actionPrompt: f.actionPrompt,
+          };
+        }),
+        topRisks,
+        recommendedActions,
+        digestHtml,
+        emailSent: !!emailResult,
+        emailResult: emailResult || undefined,
       });
+    } catch (err) {
+      console.error('Error building weekly digest:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    res.json({
-      orgName: org.name,
-      generatedAt: new Date().toISOString(),
-      healthState,
-      families: families.map((f) => {
-        const trend = f.trend || [];
-        const first = trend[0]?.score ?? 0;
-        const last = trend[trend.length - 1]?.score ?? f.score;
-        const delta = last - first;
-        return {
-          familyName: f.familyName,
-          score: f.score,
-          delta,
-          severity:
-            f.score >= 70
-              ? 'Critical'
-              : f.score >= 50
-                ? 'Elevated'
-                : f.score >= 30
-                  ? 'Moderate'
-                  : 'Low',
-          actionPrompt: f.actionPrompt,
-        };
-      }),
-      topRisks,
-      recommendedActions,
-      digestHtml,
-      emailSent: !!emailResult,
-      emailResult: emailResult || undefined,
-    });
-  } catch (err) {
-    console.error('Error building weekly digest:', err);
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 export default router;

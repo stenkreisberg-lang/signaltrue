@@ -385,7 +385,7 @@ function generateManagerPrompts({
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
-  const minimumTeamSize = Math.max(1, Number(org.settings?.minTeamSize) || 1);
+  const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
   const teams = await Team.find({ orgId });
   const now = new Date();
 

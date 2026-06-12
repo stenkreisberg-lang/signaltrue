@@ -186,7 +186,7 @@ export const rateLimitSensitiveEndpoints = (req, res, next) => {
   // This is a placeholder - in production, use express-rate-limit or similar
   // For now, just add headers to indicate rate limit policy
   res.setHeader('X-RateLimit-Policy', 'team-level-only');
-  res.setHeader('X-Privacy-Level', `aggregated-team-minimum-${req.minimumTeamSize || 1}`);
+  res.setHeader('X-Privacy-Level', `aggregated-team-minimum-${req.minimumTeamSize || 5}`);
   next();
 };
 

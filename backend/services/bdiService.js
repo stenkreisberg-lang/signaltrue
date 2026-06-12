@@ -275,8 +275,10 @@ export async function getBDIHistory(teamId, limit = 30) {
 /**
  * Get BDI summary for an organization
  */
-export async function getOrgBDISummary(orgId) {
-  const teams = await Team.find({ orgId });
+export async function getOrgBDISummary(orgId, excludedTeamIds = new Set()) {
+  const teams = (await Team.find({ orgId })).filter(
+    (team) => !excludedTeamIds.has(team._id.toString())
+  );
   const teamIds = teams.map((t) => t._id);
 
   // Get latest BDI for each team
@@ -289,7 +291,8 @@ export async function getOrgBDISummary(orgId) {
     earlyDrift: bdis.filter((b) => b?.state === 'Early Drift').length,
     developingDrift: bdis.filter((b) => b?.state === 'Developing Drift').length,
     criticalDrift: bdis.filter((b) => b?.state === 'Critical Drift').length,
-    avgDriftScore: bdis.reduce((sum, b) => sum + (b?.driftScore || 0), 0) / bdis.length,
+    avgDriftScore:
+      bdis.length > 0 ? bdis.reduce((sum, b) => sum + (b?.driftScore || 0), 0) / bdis.length : 0,
   };
 
   return summary;

@@ -14,6 +14,7 @@
  */
 
 import express from 'express';
+import crypto from 'node:crypto';
 import {
   runFullScoring,
   runBDI,
@@ -29,19 +30,21 @@ const router = express.Router();
 
 function requireServiceToken(req, res, next) {
   const token = req.headers['x-service-token'];
-  if (!process.env.INTERNAL_SERVICE_TOKEN) {
-    // If no token is configured, only allow in non-production environments
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(503).json({
-        error: true,
-        message: 'Internal scoring routes are disabled: INTERNAL_SERVICE_TOKEN not configured.',
-        code: 'SERVICE_NOT_CONFIGURED',
-      });
-    }
-    return next();
+  const expectedToken = process.env.INTERNAL_SERVICE_TOKEN;
+  if (!expectedToken) {
+    return res.status(503).json({
+      error: true,
+      message: 'Internal scoring routes are disabled: INTERNAL_SERVICE_TOKEN not configured.',
+      code: 'SERVICE_NOT_CONFIGURED',
+    });
   }
 
-  if (token !== process.env.INTERNAL_SERVICE_TOKEN) {
+  const provided = Buffer.from(String(token || ''), 'utf8');
+  const expected = Buffer.from(expectedToken, 'utf8');
+  const tokenMatches =
+    provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+
+  if (!tokenMatches) {
     return res
       .status(401)
       .json({ error: true, message: 'Invalid service token', code: 'UNAUTHORIZED' });

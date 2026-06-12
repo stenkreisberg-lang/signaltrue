@@ -98,6 +98,22 @@ export const adminLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+export const analyticsWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Analytics rate limit exceeded', retryAfter: '1 minute' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const internalServiceLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Internal service rate limit exceeded', retryAfter: '1 minute' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ============================================
 // INPUT SANITIZATION
 // ============================================
@@ -308,8 +324,8 @@ export function detectSuspiciousActivity(req, res, next) {
         timestamp: new Date().toISOString(),
       });
 
-      // In production, consider blocking the request:
-      // return res.status(403).json({ message: 'Forbidden' });
+      // Monitoring only. Endpoint validation and sanitization perform enforcement;
+      // these broad signatures intentionally do not block legitimate prose.
     }
   }
 
@@ -392,6 +408,8 @@ export default {
   passwordResetLimiter,
   intelligenceLimiter,
   adminLimiter,
+  analyticsWriteLimiter,
+  internalServiceLimiter,
 
   // Sanitization
   sanitizeMongoInput,

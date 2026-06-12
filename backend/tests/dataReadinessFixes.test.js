@@ -20,12 +20,13 @@ afterEach(() => {
 });
 
 describe('small-team configuration', () => {
-  test('allows one-person and two-person teams by default', () => {
-    expect(MIN_TEAM_SIZE).toBe(1);
-    expect(MIN_METRIC_CONTRIBUTORS).toBe(1);
-    expect(checkTeamSize(1)).toBe(true);
-    expect(checkTeamSize(2)).toBe(true);
-    expect(suppressMetricIfTooFew(1)).toBe(false);
+  test('enforces the five-person privacy floor by default', () => {
+    expect(MIN_TEAM_SIZE).toBe(5);
+    expect(MIN_METRIC_CONTRIBUTORS).toBe(5);
+    expect(checkTeamSize(1)).toBe(false);
+    expect(checkTeamSize(4)).toBe(false);
+    expect(checkTeamSize(5)).toBe(true);
+    expect(suppressMetricIfTooFew(4)).toBe(true);
   });
 
   test('new teams are active by default', () => {
@@ -97,15 +98,15 @@ describe('weekly reporting period', () => {
 });
 
 describe('confidence scoring', () => {
-  test('uses the accepted organization minimum for a one-person team', () => {
+  test('uses the accepted organization minimum for an eligible team', () => {
     const input = {
       baseline: { baselineQuality: { qualityScore: 80 } },
       weeklyMetrics: { activitySpikeDays: 0 },
-      activePeopleCount: 1,
+      activePeopleCount: 5,
       integrationCoverage: { hasCalendar: true },
       subscores: { recoveryDebt: 30, focusErosion: 35 },
     };
-    const accepted = calculateConfidenceScore({ ...input, minimumTeamSize: 1 });
+    const accepted = calculateConfidenceScore({ ...input, minimumTeamSize: 5 });
     const belowPolicy = calculateConfidenceScore({ ...input, minimumTeamSize: 8 });
     expect(accepted.score).toBeGreaterThan(belowPolicy.score);
   });

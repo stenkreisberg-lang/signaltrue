@@ -1,7 +1,7 @@
 /**
  * Idempotent Nobel Digital data-readiness repair.
  *
- * Applies the accepted one-person threshold, synchronizes Microsoft directory
+ * Applies the five-person privacy threshold, synchronizes Microsoft directory
  * departments, remaps historical events, and rebuilds the derived analytics
  * collections. Output is aggregate-only.
  */
@@ -65,7 +65,7 @@ async function main() {
     weeklyScores: await EngagementStrainWeekly.countDocuments({ orgId }),
   };
 
-  await Organization.findByIdAndUpdate(orgId, { $set: { 'settings.minTeamSize': 1 } });
+  await Organization.findByIdAndUpdate(orgId, { $set: { 'settings.minTeamSize': 5 } });
   await Team.updateMany({ orgId }, { $set: { isActive: true, analyticsEnabled: true } });
 
   const until = new Date();
@@ -180,16 +180,16 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        organizationConfiguredMinimum: 1,
+        organizationConfiguredMinimum: 5,
         backfillDays: BACKFILL_DAYS,
         before,
         directory: {
           success: directoryResult.success,
           created: directoryResult.stats?.created || 0,
           updated: directoryResult.stats?.updated || 0,
-          skipped: directoryResult.stats?.skipped || 0,
+          skippedUsers: directoryResult.stats?.skipped || 0,
           errors: directoryResult.stats?.errors?.length || 0,
-          skipped: directoryResult.skipped || false,
+          processSkipped: directoryResult.skipped || false,
         },
         microsoft: {
           success: microsoftResult.success,

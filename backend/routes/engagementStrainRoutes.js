@@ -33,7 +33,12 @@
 import express from 'express';
 import mongoose from 'mongoose';
 
-import { authenticateToken, requireOrganizationAccess, isMasterAdmin } from '../middleware/auth.js';
+import {
+  authenticateToken,
+  requireOrganizationAccess,
+  requireTeamAccess,
+  isMasterAdmin,
+} from '../middleware/auth.js';
 import { privacyGate, privacyGateOrg } from '../middleware/privacyGate.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import Team from '../models/team.js';
@@ -111,7 +116,7 @@ router.get('/summary/:orgId', requireOrganizationAccess(), privacyGateOrg, async
 
 // ── GET /team/:teamId ──────────────────────────────────────────────────────────
 
-router.get('/team/:teamId', privacyGate, async (req, res) => {
+router.get('/team/:teamId', requireTeamAccess(), privacyGate, async (req, res) => {
   try {
     const { teamId } = req.params;
 
@@ -140,7 +145,7 @@ router.get('/team/:teamId', privacyGate, async (req, res) => {
 
 // ── GET /team/:teamId/drivers ──────────────────────────────────────────────────
 
-router.get('/team/:teamId/drivers', privacyGate, async (req, res) => {
+router.get('/team/:teamId/drivers', requireTeamAccess(), privacyGate, async (req, res) => {
   try {
     const { teamId } = req.params;
     const withExplain = req.query.explain === 'true';
@@ -192,7 +197,7 @@ router.get('/team/:teamId/drivers', privacyGate, async (req, res) => {
 
 // ── GET /team/:teamId/history ──────────────────────────────────────────────────
 
-router.get('/team/:teamId/history', privacyGate, async (req, res) => {
+router.get('/team/:teamId/history', requireTeamAccess(), privacyGate, async (req, res) => {
   try {
     const { teamId } = req.params;
     const weeks = Math.min(parseInt(req.query.weeks ?? '12', 10), 26);

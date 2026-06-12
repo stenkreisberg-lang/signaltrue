@@ -10,108 +10,135 @@ import RiskDriver from '../models/riskDriver.js';
 import TeamAction from '../models/teamAction.js';
 import Experiment from '../models/experiment.js';
 import Impact from '../models/impact.js';
-import { authenticateToken } from '../middleware/auth.js';
+import Team from '../models/team.js';
+import {
+  authenticateToken,
+  isMasterAdmin,
+  requireHROrAdmin,
+  requireTeamAccess,
+} from '../middleware/auth.js';
+import { checkPrivacyGate, privacyGate } from '../middleware/privacyGate.js';
 import { diagnoseSingleTeam } from '../services/weeklySchedulerService.js';
 
 const router = express.Router();
+
+async function canAccessTeam(req, teamId) {
+  const query = { _id: teamId };
+  if (!isMasterAdmin(req.user)) query.orgId = req.user.orgId;
+  const team = await Team.findOne(query).select('_id');
+  if (!team) return false;
+  return req.user?.role !== 'manager' || String(req.user.teamId || '') === String(teamId);
+}
 
 /**
  * GET /api/insights/team/:teamId
  * Get complete insights for a team (current week)
  */
-router.get('/team/:teamId', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
+router.get(
+  '/team/:teamId',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    // Get most recent week's data
-    const latestState = await TeamState.findOne({ teamId }).sort({ weekStart: -1 }).lean();
+      // Get most recent week's data
+      const latestState = await TeamState.findOne({ teamId }).sort({ weekStart: -1 }).lean();
 
-    if (!latestState) {
-      return res.json({
-        teamState: null,
-        risks: [],
-        action: null,
-        experiment: null,
-      });
-    }
+      if (!latestState) {
+        return res.json({
+          teamState: null,
+          risks: [],
+          action: null,
+          experiment: null,
+        });
+      }
 
-    const { weekStart } = latestState;
+      const { weekStart } = latestState;
 
-    // Get risks for this week
-    const risks = await RiskWeekly.find({ teamId, weekStart }).lean();
+      // Get risks for this week
+      const risks = await RiskWeekly.find({ teamId, weekStart }).lean();
 
-    // Get risk drivers
-    const riskDriversData = await Promise.all(
-      risks.map(async (risk) => {
-        const drivers = await RiskDriver.find({
-          teamId,
-          weekStart,
-          riskType: risk.riskType,
-        }).lean();
+      // Get risk drivers
+      const riskDriversData = await Promise.all(
+        risks.map(async (risk) => {
+          const drivers = await RiskDriver.find({
+            teamId,
+            weekStart,
+            riskType: risk.riskType,
+          }).lean();
 
-        return {
-          ...risk,
-          drivers,
-        };
+          return {
+            ...risk,
+            drivers,
+          };
+        })
+      );
+
+      // Get current action (suggested or active)
+      const action = await TeamAction.findOne({
+        teamId,
+        status: { $in: ['suggested', 'active'] },
       })
-    );
+        .sort({ createdAt: -1 })
+        .lean();
 
-    // Get current action (suggested or active)
-    const action = await TeamAction.findOne({
-      teamId,
-      status: { $in: ['suggested', 'active'] },
-    })
-      .sort({ createdAt: -1 })
-      .lean();
+      // Get active experiment if any
+      const experiment = await Experiment.findOne({
+        teamId,
+        status: 'running',
+      })
+        .populate('actionId')
+        .lean();
 
-    // Get active experiment if any
-    const experiment = await Experiment.findOne({
-      teamId,
-      status: 'running',
-    })
-      .populate('actionId')
-      .lean();
-
-    res.json({
-      teamState: latestState,
-      risks: riskDriversData,
-      action,
-      experiment,
-    });
-  } catch (error) {
-    console.error('Error fetching team insights:', error);
-    res.status(500).json({ message: 'Error fetching insights' });
+      res.json({
+        teamState: latestState,
+        risks: riskDriversData,
+        action,
+        experiment,
+      });
+    } catch (error) {
+      console.error('Error fetching team insights:', error);
+      res.status(500).json({ message: 'Error fetching insights' });
+    }
   }
-});
+);
 
 /**
  * GET /api/insights/team/:teamId/history
  * Get historical state and risk data
  */
-router.get('/team/:teamId/history', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { weeks = 12 } = req.query;
+router.get(
+  '/team/:teamId/history',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { weeks = 12 } = req.query;
 
-    const states = await TeamState.find({ teamId })
-      .sort({ weekStart: -1 })
-      .limit(parseInt(weeks))
-      .lean();
+      const states = await TeamState.find({ teamId })
+        .sort({ weekStart: -1 })
+        .limit(parseInt(weeks))
+        .lean();
 
-    const risks = await RiskWeekly.find({ teamId })
-      .sort({ weekStart: -1 })
-      .limit(parseInt(weeks) * 3) // 3 risk types per week
-      .lean();
+      const risks = await RiskWeekly.find({ teamId })
+        .sort({ weekStart: -1 })
+        .limit(parseInt(weeks) * 3) // 3 risk types per week
+        .lean();
 
-    res.json({
-      states,
-      risks,
-    });
-  } catch (error) {
-    console.error('Error fetching team history:', error);
-    res.status(500).json({ message: 'Error fetching history' });
+      res.json({
+        states,
+        risks,
+      });
+    } catch (error) {
+      console.error('Error fetching team history:', error);
+      res.status(500).json({ message: 'Error fetching history' });
+    }
   }
-});
+);
 
 /**
  * POST /api/insights/action/:actionId/activate
@@ -127,6 +154,11 @@ router.post('/action/:actionId/activate', authenticateToken, async (req, res) =>
     if (!action || action.status !== 'suggested') {
       return res.status(400).json({ message: 'Action not found or not in suggested state' });
     }
+    if (!(await canAccessTeam(req, action.teamId))) {
+      return res.status(404).json({ message: 'Action not found or not in suggested state' });
+    }
+    const privacy = await checkPrivacyGate(action.teamId);
+    if (!privacy.passed) return res.status(200).json({ suppressed: true, ...privacy });
 
     // Check if team already has active action
     const hasActive = await TeamAction.hasActiveAction(action.teamId);
@@ -175,6 +207,11 @@ router.post('/action/:actionId/dismiss', authenticateToken, async (req, res) => 
     if (!action) {
       return res.status(404).json({ message: 'Action not found' });
     }
+    if (!(await canAccessTeam(req, action.teamId))) {
+      return res.status(404).json({ message: 'Action not found' });
+    }
+    const privacy = await checkPrivacyGate(action.teamId);
+    if (!privacy.passed) return res.status(200).json({ suppressed: true, ...privacy });
 
     action.status = 'dismissed';
     action.dismissedBy = userId;
@@ -193,32 +230,38 @@ router.post('/action/:actionId/dismiss', authenticateToken, async (req, res) => 
  * GET /api/insights/experiments/:teamId
  * Get experiment history for a team
  */
-router.get('/experiments/:teamId', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
+router.get(
+  '/experiments/:teamId',
+  authenticateToken,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    const experiments = await Experiment.find({ teamId })
-      .populate('actionId')
-      .sort({ startDate: -1 })
-      .lean();
+      const experiments = await Experiment.find({ teamId })
+        .populate('actionId')
+        .sort({ startDate: -1 })
+        .lean();
 
-    // Get impacts for completed experiments
-    const experimentsWithImpact = await Promise.all(
-      experiments.map(async (exp) => {
-        if (exp.status === 'completed') {
-          const impact = await Impact.findOne({ experimentId: exp._id }).lean();
-          return { ...exp, impact };
-        }
-        return exp;
-      })
-    );
+      // Get impacts for completed experiments
+      const experimentsWithImpact = await Promise.all(
+        experiments.map(async (exp) => {
+          if (exp.status === 'completed') {
+            const impact = await Impact.findOne({ experimentId: exp._id }).lean();
+            return { ...exp, impact };
+          }
+          return exp;
+        })
+      );
 
-    res.json({ experiments: experimentsWithImpact });
-  } catch (error) {
-    console.error('Error fetching experiments:', error);
-    res.status(500).json({ message: 'Error fetching experiments' });
+      res.json({ experiments: experimentsWithImpact });
+    } catch (error) {
+      console.error('Error fetching experiments:', error);
+      res.status(500).json({ message: 'Error fetching experiments' });
+    }
   }
-});
+);
 
 /**
  * Helper functions
@@ -259,20 +302,27 @@ function getSuccessMetrics(riskType) {
  * POST /api/insights/team/:teamId/diagnose
  * Manually trigger diagnosis for a team (for testing)
  */
-router.post('/team/:teamId/diagnose', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
+router.post(
+  '/team/:teamId/diagnose',
+  authenticateToken,
+  requireHROrAdmin,
+  requireTeamAccess(),
+  privacyGate,
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
 
-    const results = await diagnoseSingleTeam(teamId);
+      const results = await diagnoseSingleTeam(teamId);
 
-    res.json({
-      message: 'Diagnosis completed',
-      results,
-    });
-  } catch (error) {
-    console.error('Error running manual diagnosis:', error);
-    res.status(500).json({ message: 'Error running diagnosis' });
+      res.json({
+        message: 'Diagnosis completed',
+        results,
+      });
+    } catch (error) {
+      console.error('Error running manual diagnosis:', error);
+      res.status(500).json({ message: 'Error running diagnosis' });
+    }
   }
-});
+);
 
 export default router;

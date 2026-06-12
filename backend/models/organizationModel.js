@@ -1,5 +1,6 @@
 // Trigger redeploy to clear Render cache
 import mongoose from 'mongoose';
+import { encryptString } from '../utils/crypto.js';
 
 const organizationSchema = new mongoose.Schema(
   {
@@ -58,8 +59,8 @@ const organizationSchema = new mongoose.Schema(
       },
       google: {
         scope: String, // 'calendar' or 'gmail'
-        refreshToken: String, // encrypted
-        accessToken: String, // encrypted
+        refreshToken: { type: String, set: encryptString },
+        accessToken: { type: String, set: encryptString },
         expiry: Date,
         email: String,
         user: mongoose.Schema.Types.Mixed, // Google user info
@@ -77,8 +78,8 @@ const organizationSchema = new mongoose.Schema(
         immediateInsights: mongoose.Schema.Types.Mixed,
       },
       googleChat: {
-        refreshToken: String, // encrypted
-        accessToken: String, // encrypted
+        refreshToken: { type: String, set: encryptString },
+        accessToken: { type: String, set: encryptString },
         expiry: Date,
         email: String,
         user: mongoose.Schema.Types.Mixed, // Google user info
@@ -95,8 +96,8 @@ const organizationSchema = new mongoose.Schema(
       },
       microsoft: {
         scope: String, // 'outlook', 'teams', or 'both'
-        refreshToken: String, // encrypted
-        accessToken: String, // encrypted
+        refreshToken: { type: String, set: encryptString },
+        accessToken: { type: String, set: encryptString },
         expiry: Date,
         email: String,
         user: mongoose.Schema.Types.Mixed,
@@ -120,8 +121,8 @@ const organizationSchema = new mongoose.Schema(
     },
     settings: {
       onboardingComplete: { type: Boolean, default: false },
-      // Configurable minimum team size. One-member teams are supported when accepted by the org.
-      minTeamSize: { type: Number, default: 1, min: 1 },
+      // Organizations may raise the reporting threshold, but never lower the privacy floor.
+      minTeamSize: { type: Number, default: 5, min: 5 },
       // Default alert sensitivity
       alertSensitivity: {
         type: String,

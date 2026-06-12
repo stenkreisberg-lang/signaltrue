@@ -1,4 +1,5 @@
 // Force redeploy
+import 'dotenv/config';
 import cron from 'node-cron';
 import cors from 'cors';
 import compression from 'compression';
@@ -8,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
 import dotenv from 'dotenv';
+import { assertEncryptionConfigured } from './utils/crypto.js';
 // mongodb-memory-server is now loaded dynamically only when USE_IN_MEMORY_DB=1
 
 // --- ESM-friendly __dirname and __filename ---
@@ -30,6 +32,9 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // --- Environment Variable Validation ---
 const REQUIRED_ENV_VARS = ['JWT_SECRET'];
+if (process.env.NODE_ENV === 'production') {
+  REQUIRED_ENV_VARS.push('TOKEN_ENCRYPTION_KEY', 'INTERNAL_SERVICE_TOKEN');
+}
 if (process.env.USE_IN_MEMORY_DB !== '1') {
   REQUIRED_ENV_VARS.push('MONGO_URI');
 }
@@ -42,6 +47,7 @@ if (missingRequired.length > 0) {
   );
   process.exit(1);
 }
+assertEncryptionConfigured();
 
 const OPTIONAL_ENV_VARS = [
   'SMTP_HOST',
@@ -146,7 +152,6 @@ import bellNotificationRoutes from './routes/bellNotificationRoutes.js';
 import journeyRoutes from './routes/journeyRoutes.js';
 
 // --- Middleware Imports ---
-import { privacyGate, privacyGateOrg } from './middleware/privacyGate.js';
 import { authenticateToken } from './middleware/auth.js';
 import auditConsent from './middleware/consentAudit.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -156,6 +161,7 @@ import {
   intelligenceLimiter,
   adminLimiter,
   apiLimiter,
+  internalServiceLimiter,
 } from './middleware/security.js';
 
 // --- Service Imports ---
@@ -212,10 +218,19 @@ async function main() {
     }
 
     // --- Express Middleware ---
-    const whitelist = ['https://signaltrue.ai', 'https://www.signaltrue.ai'];
+    const whitelist = new Set(
+      [
+        'https://signaltrue.ai',
+        'https://www.signaltrue.ai',
+        process.env.FRONTEND_URL,
+        ...(process.env.CORS_ALLOWED_ORIGINS || '').split(','),
+      ]
+        .map((value) => value?.trim())
+        .filter(Boolean)
+    );
     const corsOptions = {
       origin: function (origin, callback) {
-        if (process.env.NODE_ENV !== 'production' || !origin || whitelist.indexOf(origin) !== -1) {
+        if (process.env.NODE_ENV !== 'production' || !origin || whitelist.has(origin)) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
@@ -314,12 +329,7 @@ async function main() {
     app.use('/api/interventions', interventionsRoutes);
     app.use('/api/privacy', privacyRoutes);
     app.use('/api/comparisons', comparisonsRoutes);
-    app.use('/api/bdi', privacyGate, bdiRoutes);
-    app.use('/api/indices', privacyGate, bdiRoutes);
-    app.use('/api/capacity', privacyGate, bdiRoutes);
-    app.use('/api/timeline', privacyGate, bdiRoutes);
-    app.use('/api/playbooks', privacyGate, bdiRoutes);
-    app.use('/api/dashboard', privacyGate, bdiRoutes);
+    app.use('/api', bdiRoutes);
     app.use('/api/narrative', narrativeRoutes);
     app.use('/api/focus', focusRoutes);
     app.use('/api/forecast', forecastRoutes);
@@ -336,7 +346,7 @@ async function main() {
     app.use('/api', onboardingRoutes);
     app.use('/api/drift-events', driftEventsRoutes);
     app.use('/api/consent-audit', authenticateToken, auditConsent, consentAuditRoutes);
-    app.use('/api/insights', privacyGate, insightsRoutes);
+    app.use('/api/insights', insightsRoutes);
     app.use('/api/loop-closing', loopClosingRoutes);
     app.use('/api/learning', learningRoutes);
     app.use('/api/intelligence', behavioralIntelligenceRoutes);
@@ -391,7 +401,7 @@ async function main() {
     app.use('/api/privacy', privacyDSARRoutes);
 
     // --- Internal Scoring Routes (service-token protected) ---
-    app.use('/internal/scoring', internalScoringRoutes);
+    app.use('/internal/scoring', internalServiceLimiter, internalScoringRoutes);
 
     // --- New Feature Routes (OAR, ROI, Goals, Notifications, Journey) ---
     app.use('/api/oar', oarRoutes);
@@ -402,16 +412,6 @@ async function main() {
 
     // --- Engagement Strain Risk Routes ---
     app.use('/api/engagement-strain', engagementStrainRoutes);
-
-    // --- Analytics Tracking (public, no auth required) ---
-    app.post('/api/analytics/track', (req, res) => {
-      const { event, data, timestamp } = req.body;
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Analytics Track] ${event}`, data);
-      }
-      // TODO: Forward to analytics provider (Segment, Mixpanel, etc.)
-      res.json({ success: true });
-    });
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);

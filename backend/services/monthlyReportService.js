@@ -17,6 +17,7 @@ import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import { Resend } from 'resend';
 import { generateMonthlyNarrative } from './aiRecommendationContext.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
+import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 /**
  * Monthly Report Service
@@ -42,7 +43,10 @@ export async function generateMonthlyReportForOrg(orgId) {
     const periodStart = new Date(periodEnd);
     periodStart.setDate(periodStart.getDate() - 30);
 
-    const teams = await Team.find({ orgId });
+    const minimumTeamSize = await resolveMinimumTeamSize(orgId);
+    const teams = (await Team.find({ orgId })).filter(
+      (team) => (team.metadata?.actualSize ?? 0) >= minimumTeamSize
+    );
     if (teams.length === 0) {
       console.log('No teams found for org');
       return null;
@@ -680,7 +684,8 @@ async function calculateEngagementSignals(orgId, teamIds) {
     };
   }
 
-  const avg = (field) => Math.round(docs.reduce((sum, doc) => sum + (doc[field] || 0), 0) / docs.length);
+  const avg = (field) =>
+    Math.round(docs.reduce((sum, doc) => sum + (doc[field] || 0), 0) / docs.length);
   const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
   const worstRiskState = docs.reduce(
     (worst, doc) =>

@@ -30,7 +30,7 @@ export async function fetchGraphCollection(
       try {
         response = await fetch(nextUrl, {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(15_000),
+          signal: globalThis.AbortSignal.timeout(15_000),
         });
       } catch (error) {
         if (attempt === maxRetries) throw error;

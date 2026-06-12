@@ -3,8 +3,26 @@ import Analytics from '../models/analytics.js';
 import { getGa4Overview } from '../services/ga4Service.js';
 
 import Project from '../models/project.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { analyticsWriteLimiter } from '../middleware/security.js';
 
 const router = express.Router();
+const MAX_ANALYTICS_PAYLOAD_BYTES = 8 * 1024;
+const EVENT_NAME_PATTERN = /^[A-Za-z0-9_.:-]{1,64}$/;
+
+function validateAnalyticsEvent(eventName, payload) {
+  if (!EVENT_NAME_PATTERN.test(eventName)) return 'Invalid analytics event name';
+  if (
+    payload !== undefined &&
+    (payload === null || typeof payload !== 'object' || Array.isArray(payload))
+  ) {
+    return 'Analytics payload must be an object';
+  }
+  if (Buffer.byteLength(JSON.stringify(payload || {}), 'utf8') > MAX_ANALYTICS_PAYLOAD_BYTES) {
+    return 'Analytics payload is too large';
+  }
+  return null;
+}
 
 // Defined events for SignalTrue Trial, Conversion & CEO Escalation Flow
 const DEFINED_EVENTS = [
@@ -23,12 +41,14 @@ const DEFINED_EVENTS = [
 ];
 
 // POST - Record an analytics event
-router.post('/', async (req, res) => {
+router.post('/', analyticsWriteLimiter, async (req, res) => {
   try {
     const { eventName, payload, projectId } = req.body;
     if (!eventName || typeof eventName !== 'string') {
       return res.status(400).json({ message: "'eventName' is required" });
     }
+    const validationError = validateAnalyticsEvent(eventName, payload);
+    if (validationError) return res.status(400).json({ message: validationError });
 
     const doc = new Analytics({ eventName, payload: payload || {}, projectId });
     await doc.save();
@@ -39,12 +59,14 @@ router.post('/', async (req, res) => {
 });
 
 // POST /track - Simplified tracking endpoint for frontend
-router.post('/track', async (req, res) => {
+router.post('/track', analyticsWriteLimiter, async (req, res) => {
   try {
     const { event, data, timestamp } = req.body;
     if (!event || typeof event !== 'string') {
       return res.status(400).json({ message: "'event' is required" });
     }
+    const validationError = validateAnalyticsEvent(event, data);
+    if (validationError) return res.status(400).json({ message: validationError });
 
     const doc = new Analytics({
       eventName: event,
@@ -64,12 +86,12 @@ router.post('/track', async (req, res) => {
 });
 
 // GET - Get defined events list
-router.get('/events', async (req, res) => {
+router.get('/events', authenticateToken, requireAdmin, async (req, res) => {
   res.json({ events: DEFINED_EVENTS });
 });
 
 // GET - Get event counts for conversion funnel
-router.get('/funnel', async (req, res) => {
+router.get('/funnel', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const funnelEvents = [
       'assessment_started',
@@ -98,7 +120,7 @@ router.get('/funnel', async (req, res) => {
 });
 
 // GET - summary stats for analytics dashboard
-router.get('/summary', async (req, res) => {
+router.get('/summary', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const totalProjects = await Project.countDocuments();
     const favoriteCount = await Project.countDocuments({ favorite: true });
@@ -140,7 +162,7 @@ router.get('/summary', async (req, res) => {
 });
 
 // GET - GA4 reporting overview for site performance dashboard
-router.get('/ga4/overview', async (req, res) => {
+router.get('/ga4/overview', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const overview = await getGa4Overview();
     res.json(overview);
