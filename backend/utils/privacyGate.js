@@ -3,8 +3,8 @@
  *
  * Enforces all team-level privacy rules from the spec (Section 5):
  *
- *   Rule 1 — Team size minimum: do not compute/show if < 8 active people.
- *   Rule 2 — Per-metric suppression: if a metric is based on < 5 active people,
+ *   Rule 1 — Team size minimum: use the organization's configured threshold.
+ *   Rule 2 — Per-metric suppression: use the contributor threshold,
  *             suppress that specific metric.
  *   Rule 3 — Concentrated pattern detection: if one person drives > 40% of a
  *             metric value, surface "concentrated pattern detected" without
@@ -14,11 +14,24 @@
  * anonymous value arrays.
  */
 
+import Organization from '../models/organizationModel.js';
+
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_TEAM_SIZE = 8; // Minimum active people for team reporting
-export const MIN_METRIC_CONTRIBUTORS = 5; // Minimum people contributing to a metric
+export const MIN_TEAM_SIZE = 1; // Organization-level configuration can raise this threshold.
+export const MIN_METRIC_CONTRIBUTORS = 1;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
+
+export async function resolveMinimumTeamSize(orgId) {
+  if (!orgId) return MIN_TEAM_SIZE;
+  try {
+    const org = await Organization.findById(orgId).select('settings.minTeamSize').lean();
+    const configured = Number(org?.settings?.minTeamSize);
+    return Number.isFinite(configured) && configured >= 1 ? configured : MIN_TEAM_SIZE;
+  } catch {
+    return MIN_TEAM_SIZE;
+  }
+}
 
 // ── Team Size Gate ─────────────────────────────────────────────────────────────
 
@@ -100,11 +113,11 @@ export function detectConcentratedPattern(perPersonValues, threshold = CONCENTRA
  * @param {number} teamSize
  * @returns {{ rollUp: boolean, reason: string|null }}
  */
-export function shouldRollUpToDepartment(teamSize) {
-  if (!checkTeamSize(teamSize)) {
+export function shouldRollUpToDepartment(teamSize, min = MIN_TEAM_SIZE) {
+  if (!checkTeamSize(teamSize, min)) {
     return {
       rollUp: true,
-      reason: `Team size (${teamSize}) is below the minimum of ${MIN_TEAM_SIZE}. Rolled up to parent department.`,
+      reason: `Team size (${teamSize}) is below the minimum of ${min}. Rolled up to parent department.`,
     };
   }
   return { rollUp: false, reason: null };

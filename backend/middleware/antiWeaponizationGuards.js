@@ -2,18 +2,20 @@
  * Anti-Weaponization Guardrails Middleware
  *
  * Enforces the following rules:
- * 1. 5-person minimum for team aggregation
+ * 1. Organization-configured minimum for team aggregation
  * 2. No individual-level queries (team-level only)
  * 3. Audit trail for all data access
  * 4. Admin controls for sensitive operations
  */
 
 import Team from '../models/team.js';
+import User from '../models/user.js';
 import DataAccessLog from '../models/dataAccessLog.js';
+import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 /**
- * Enforce 5-person minimum for team aggregation
- * Rejects requests for teams with fewer than 5 members
+ * Enforce the organization's team-size threshold for aggregation.
+ * The legacy export name is retained for route compatibility.
  */
 export const enforce5PersonMinimum = async (req, res, next) => {
   try {
@@ -22,7 +24,7 @@ export const enforce5PersonMinimum = async (req, res, next) => {
     if (!teamId) {
       return res.status(400).json({
         message: 'Team ID required for aggregated metrics',
-        guard: '5_PERSON_MINIMUM',
+        guard: 'TEAM_SIZE_MINIMUM',
       });
     }
 
@@ -31,19 +33,22 @@ export const enforce5PersonMinimum = async (req, res, next) => {
     if (!team) {
       return res.status(404).json({
         message: 'Team not found',
-        guard: '5_PERSON_MINIMUM',
+        guard: 'TEAM_SIZE_MINIMUM',
       });
     }
 
-    const memberCount = team.members?.length || 0;
+    const minimumRequired = await resolveMinimumTeamSize(team.orgId);
+    const memberCount =
+      typeof team.metadata?.actualSize === 'number'
+        ? team.metadata.actualSize
+        : await User.countDocuments({ orgId: team.orgId, teamId: team._id });
 
-    if (memberCount < 5) {
+    if (memberCount < minimumRequired) {
       return res.status(403).json({
-        message:
-          'Team must have at least 5 members for aggregated insights. This protects individual privacy.',
+        message: `Team must have at least ${minimumRequired} member(s) for aggregated insights under this organization's policy.`,
         currentMembers: memberCount,
-        minimumRequired: 5,
-        guard: '5_PERSON_MINIMUM',
+        minimumRequired,
+        guard: 'TEAM_SIZE_MINIMUM',
         teamId: team._id,
         teamName: team.name,
       });
@@ -51,12 +56,13 @@ export const enforce5PersonMinimum = async (req, res, next) => {
 
     // Attach team info to request for later use
     req.validatedTeam = team;
+    req.minimumTeamSize = minimumRequired;
     next();
   } catch (error) {
-    console.error('5-person minimum check failed:', error);
+    console.error('Team-size minimum check failed:', error);
     res.status(500).json({
       message: 'Error validating team size',
-      guard: '5_PERSON_MINIMUM',
+      guard: 'TEAM_SIZE_MINIMUM',
     });
   }
 };
@@ -180,7 +186,7 @@ export const rateLimitSensitiveEndpoints = (req, res, next) => {
   // This is a placeholder - in production, use express-rate-limit or similar
   // For now, just add headers to indicate rate limit policy
   res.setHeader('X-RateLimit-Policy', 'team-level-only');
-  res.setHeader('X-Privacy-Level', 'aggregated-5-person-minimum');
+  res.setHeader('X-Privacy-Level', `aggregated-team-minimum-${req.minimumTeamSize || 1}`);
   next();
 };
 

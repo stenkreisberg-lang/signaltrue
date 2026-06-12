@@ -31,8 +31,9 @@ const teamSizeGateSchema = new mongoose.Schema(
     },
     minRequired: {
       type: Number,
-      default: 8, // Spec Section 5: minimum group size for team reporting
+      default: 1,
     },
+    reason: { type: String },
     suppressedAt: {
       type: Date,
       default: Date.now,

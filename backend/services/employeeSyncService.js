@@ -2,6 +2,147 @@ import { WebClient } from '@slack/web-api';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
+import WorkEvent from '../models/workEvent.js';
+
+export function normalizeDepartmentName(value) {
+  if (typeof value !== 'string') return null;
+  const normalized = value
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  return normalized || null;
+}
+
+async function mergeDuplicateDirectoryTeams(orgId, teams) {
+  const canonicalByName = new Map();
+  const duplicatePairs = [];
+
+  for (const team of teams.filter((entry) => entry.metadata?.autoCreatedFromDirectory)) {
+    const normalized = normalizeDepartmentName(
+      team.metadata?.sourceDepartment || team.name
+    )?.toLowerCase();
+    if (!normalized) continue;
+    const canonical = canonicalByName.get(normalized);
+    if (canonical) duplicatePairs.push({ canonical, duplicate: team });
+    else canonicalByName.set(normalized, team);
+  }
+
+  for (const { canonical, duplicate } of duplicatePairs) {
+    await Promise.all([
+      User.updateMany({ orgId, teamId: duplicate._id }, { $set: { teamId: canonical._id } }),
+      WorkEvent.updateMany({ orgId, teamId: duplicate._id }, { $set: { teamId: canonical._id } }),
+    ]);
+    await Team.deleteOne({ _id: duplicate._id, orgId });
+    console.log('[EmployeeSync] Merged duplicate normalized directory team');
+  }
+
+  return duplicatePairs.length > 0 ? Team.find({ orgId }) : teams;
+}
+
+async function buildDepartmentTeamMap(orgId, microsoftUsers, unassignedTeam) {
+  let teams = await Team.find({ orgId });
+  teams = await mergeDuplicateDirectoryTeams(orgId, teams);
+  const byName = new Map(
+    teams.map((team) => [normalizeDepartmentName(team.name)?.toLowerCase(), team])
+  );
+  const byDepartment = new Map(
+    teams
+      .filter((team) => team.metadata?.sourceDepartment)
+      .map((team) => [normalizeDepartmentName(team.metadata.sourceDepartment)?.toLowerCase(), team])
+  );
+
+  const departments = [
+    ...new Set(
+      microsoftUsers.map((user) => normalizeDepartmentName(user.department)).filter(Boolean)
+    ),
+  ];
+
+  for (const department of departments) {
+    const key = department.toLowerCase();
+    let team = byDepartment.get(key) || byName.get(key);
+    if (!team) {
+      team = await Team.create({
+        name: department,
+        orgId,
+        isActive: true,
+        metadata: {
+          function: 'Other',
+          sourceDepartment: department,
+          autoCreatedFromDirectory: true,
+        },
+      });
+      teams.push(team);
+      byName.set(key, team);
+      console.log(`[EmployeeSync] Created team from Microsoft department: ${department}`);
+    }
+    byDepartment.set(key, team);
+  }
+
+  return {
+    teams,
+    departmentTeams: byDepartment,
+    unassignedTeam,
+  };
+}
+
+function resolveDirectoryTeam(msUser, mapping) {
+  const department = normalizeDepartmentName(msUser.department);
+  return department
+    ? mapping.departmentTeams.get(department.toLowerCase()) || mapping.unassignedTeam
+    : mapping.unassignedTeam;
+}
+
+async function refreshTeamSizes(orgId, minimumTeamSize) {
+  const counts = await User.aggregate([
+    { $match: { orgId } },
+    { $group: { _id: '$teamId', count: { $sum: 1 } } },
+  ]);
+  const countByTeam = new Map(counts.map((entry) => [String(entry._id), entry.count]));
+  const teams = await Team.find({ orgId }).select('_id').lean();
+
+  await Promise.all(
+    teams.map((team) => {
+      const actualSize = countByTeam.get(String(team._id)) || 0;
+      return Team.findByIdAndUpdate(team._id, {
+        $set: {
+          isActive: true,
+          'metadata.actualSize': actualSize,
+          analyticsEnabled: actualSize >= minimumTeamSize,
+        },
+      });
+    })
+  );
+}
+
+/**
+ * Keep historical event attribution aligned with current directory teams.
+ */
+export async function remapWorkEventTeams(orgId) {
+  const users = await User.find({ orgId, teamId: { $ne: null } })
+    .select('_id teamId')
+    .lean();
+  const usersByTeam = new Map();
+
+  for (const user of users) {
+    const teamId = String(user.teamId);
+    if (!usersByTeam.has(teamId)) usersByTeam.set(teamId, []);
+    usersByTeam.get(teamId).push(user._id);
+  }
+
+  let matched = 0;
+  let modified = 0;
+  for (const [teamId, userIds] of usersByTeam) {
+    const result = await WorkEvent.updateMany(
+      { orgId, actorUserId: { $in: userIds }, teamId: { $ne: teamId } },
+      { $set: { teamId } }
+    );
+    matched += result.matchedCount || 0;
+    modified += result.modifiedCount || 0;
+  }
+
+  return { matched, modified };
+}
 
 /**
  * Employee Sync Service
@@ -518,10 +659,14 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       `[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`
     );
 
+    const teamMapping = await buildDepartmentTeamMap(orgId, domainFilteredUsers, unassignedTeam);
+    const teamById = new Map(teamMapping.teams.map((team) => [String(team._id), team]));
+
     for (const msUser of domainFilteredUsers) {
       try {
         const email = (msUser.mail || msUser.userPrincipalName).toLowerCase();
         const name = msUser.displayName || email.split('@')[0];
+        const desiredTeam = resolveDirectoryTeam(msUser, teamMapping);
 
         // Skip service accounts / shared mailboxes (heuristic)
         if (
@@ -535,6 +680,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
 
         // Check if user already exists
         let user = await User.findOne({
+          orgId,
           $or: [{ email }, { 'externalIds.microsoftUserId': msUser.id }],
         });
 
@@ -563,6 +709,17 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
             updated = true;
           }
 
+          const currentTeam = user.teamId ? teamById.get(String(user.teamId)) : null;
+          const isUnassigned = String(user.teamId || '') === String(unassignedTeam._id);
+          const canFollowDirectory =
+            !user.teamId ||
+            isUnassigned ||
+            currentTeam?.metadata?.autoCreatedFromDirectory === true;
+          if (canFollowDirectory && String(user.teamId || '') !== String(desiredTeam._id)) {
+            user.teamId = desiredTeam._id;
+            updated = true;
+          }
+
           // Ensure user is in this org
           if (!user.orgId || user.orgId.toString() !== orgId.toString()) {
             user.orgId = orgId;
@@ -585,7 +742,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
             source: 'microsoft',
             role: 'team_member',
             orgId,
-            teamId: unassignedTeam._id,
+            teamId: desiredTeam._id,
             externalIds: {
               microsoftUserId: msUser.id,
             },
@@ -617,6 +774,9 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
     await Organization.findByIdAndUpdate(orgId, {
       $set: { 'integrations.microsoft.lastEmployeeSync': new Date() },
     });
+    await Team.updateMany({ orgId, isActive: { $exists: false } }, { $set: { isActive: true } });
+    await refreshTeamSizes(orgId, org.settings?.minTeamSize ?? 1);
+    const eventRemap = await remapWorkEventTeams(orgId);
 
     console.log('[EmployeeSync] Microsoft sync complete:', {
       created: syncStats.created,
@@ -628,6 +788,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
     return {
       success: true,
       stats: syncStats,
+      eventRemap,
     };
   } catch (error) {
     console.error('[EmployeeSync] Microsoft sync failed:', error);

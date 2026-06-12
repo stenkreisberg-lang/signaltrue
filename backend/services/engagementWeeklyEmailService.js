@@ -12,13 +12,14 @@
  * PRIVACY:
  *   - All content is team-aggregate only.
  *   - No individual names, IDs, or scores appear in the email.
- *   - Minimum 8 people enforced upstream — suppressed teams never appear.
+ *   - The organization-configured minimum is enforced upstream.
  */
 
 import nodemailer from 'nodemailer';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
+import { MIN_METRIC_CONTRIBUTORS, resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 // ── Transport ──────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,8 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
       (b.engagementStrainRisk ?? 0) - (a.engagementStrainRisk ?? 0)
   );
 
-  const html = buildEmailHtml(orgId, weekStart, sorted, teamMap);
+  const minimumTeamSize = await resolveMinimumTeamSize(orgId);
+  const html = buildEmailHtml(orgId, weekStart, sorted, teamMap, minimumTeamSize);
   const subject = buildSubject(sorted, weekStart);
 
   // Find all admin-level users for this org
@@ -150,7 +152,7 @@ function buildSubject(sorted, weekStart) {
 
 // ── HTML Template ──────────────────────────────────────────────────────────────
 
-function buildEmailHtml(orgId, weekStart, records, teamMap) {
+function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
   const date = formatDateFull(weekStart);
 
   const critical = records.filter((r) => r.riskState === 'critical').length;
@@ -273,7 +275,7 @@ function buildEmailHtml(orgId, weekStart, records, teamMap) {
               No individual is identified, scored, or monitored.
             </p>
             <p style="margin:0;font-size:11px;color:#334155;">
-              Minimum team size: 8 · Per-metric minimum contributors: 5 · SignalTrue Engagement Strain v2.0
+              Minimum team size: ${minimumTeamSize} · Per-metric minimum contributors: ${MIN_METRIC_CONTRIBUTORS} · SignalTrue Engagement Strain v2.0
             </p>
           </td>
         </tr>

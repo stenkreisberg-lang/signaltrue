@@ -274,7 +274,8 @@ const S = {
   thR: 'text-align:right; padding:9px 10px; border-bottom:1px solid #cbd5e1; color:#64748b; font-size:11px; text-transform:uppercase; letter-spacing:0.7px;',
   td: 'padding:8px 10px; border-bottom:1px solid #edf2f7; color:#334155;',
   tdR: 'text-align:right; padding:8px 10px; border-bottom:1px solid #edf2f7; color:#334155;',
-  tdBold: 'text-align:right; padding:8px 10px; border-bottom:1px solid #edf2f7; font-weight:750; color:#0f172a;',
+  tdBold:
+    'text-align:right; padding:8px 10px; border-bottom:1px solid #edf2f7; font-weight:750; color:#0f172a;',
   divider: 'border:0; border-top:1px solid #e2e8f0; margin:24px 0;',
   recBox:
     'background:#f8fafc; border:1px solid #dbe3ef; border-radius:10px; padding:13px 15px; margin:8px 0;',
@@ -383,6 +384,8 @@ function generateManagerPrompts({
 
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
+  if (!org) throw new Error('Organization not found');
+  const minimumTeamSize = Math.max(1, Number(org.settings?.minTeamSize) || 1);
   const teams = await Team.find({ orgId });
   const now = new Date();
 
@@ -638,12 +641,12 @@ export async function generateWeeklyBrief(orgId) {
     const memberCount = memberCountByTeam.get(String(team._id)) || 0;
     let status = 'Ready for scoring';
     let reason = 'Enough mapped activity is available.';
-    if (memberCount < 8) {
+    if (memberCount < minimumTeamSize) {
       status = 'Suppressed';
-      reason = `Team has ${memberCount} member(s); minimum 8 required for privacy-safe engagement scoring.`;
-    } else if (eventInfo.activeUsers < 8) {
+      reason = `Team has ${memberCount} member(s); the organization requires ${minimumTeamSize} for engagement scoring.`;
+    } else if (eventInfo.activeUsers < minimumTeamSize) {
       status = 'Not enough mapped activity';
-      reason = `${eventInfo.activeUsers} active mapped user(s) this week; minimum 8 required.`;
+      reason = `${eventInfo.activeUsers} active mapped user(s) this week; ${minimumTeamSize} required.`;
     } else if (eventInfo.events === 0) {
       status = 'No mapped events';
       reason = 'No calendar or collaboration events are mapped to this team yet.';
@@ -653,7 +656,8 @@ export async function generateWeeklyBrief(orgId) {
 
   const mappingCoveragePct =
     totalUsers > 0 ? Math.round((mappedActorCount.length / totalUsers) * 100) : 0;
-  const teamCoveragePct = teams.length > 0 ? Math.round((mappedTeamCount.length / teams.length) * 100) : 0;
+  const teamCoveragePct =
+    teams.length > 0 ? Math.round((mappedTeamCount.length / teams.length) * 100) : 0;
   const dataReadinessStatus =
     mappingCoveragePct >= 80 && teamCoveragePct >= 80
       ? 'Ready'
@@ -702,7 +706,8 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 6-week baseline averages (per-person) ───
   const sixWeekAvg = {
     meetings: avgField(sixWeekOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
-    meetingHours: avgField(sixWeekOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
+    meetingHours:
+      avgField(sixWeekOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
     backToBack: avgField(sixWeekOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
     messages: avgField(sixWeekOrgMetricsArr, 'messageCount7d') / connectedUserCount,
     msgsPerDay: avgField(sixWeekOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
@@ -1013,7 +1018,8 @@ export async function generateWeeklyBrief(orgId) {
         : null,
   });
 
-  const verdictText = dataReadinessStatus === 'Ready' ? orgStatus.status : 'Data mapping needs attention';
+  const verdictText =
+    dataReadinessStatus === 'Ready' ? orgStatus.status : 'Data mapping needs attention';
   const verdictConfidence = dataReadinessStatus === 'Ready' ? orgStatus.confidence : 'Low';
   const verdictSummary =
     dataReadinessStatus === 'Ready'
@@ -1245,7 +1251,7 @@ export async function generateWeeklyBrief(orgId) {
   } else {
     const blockedTeams = teamReadiness.filter((team) => team.status !== 'Ready for scoring');
     const suppressionReason = recentEngagementSuppressions[0]?.reason;
-    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> Engagement requires team-level metadata mapped to at least 8 active people per team. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
+    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> Engagement requires team-level metadata mapped to at least ${minimumTeamSize} active ${minimumTeamSize === 1 ? 'person' : 'people'} per team. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
     if (blockedTeams.length > 0 || suppressionReason) {
       html += `<div style="${S.warnBox}">`;
       html += `<p style="${S.p} margin:0;"><strong>Why it is blocked:</strong> ${
@@ -1461,16 +1467,10 @@ export async function generateWeeklyBrief(orgId) {
   html += `<th style="${S.thR}">Change</th>`;
   html += `</tr></thead><tbody>`;
 
-  const addTableRow = (
-    label,
-    sixWk,
-    lwVal,
-    twVal,
-    higherIsBad = true,
-    fmt = 0,
-    options = {}
-  ) => {
-    const lowVolume = options.lowVolumeThreshold && Math.max(Math.abs(twVal), Math.abs(lwVal)) < options.lowVolumeThreshold;
+  const addTableRow = (label, sixWk, lwVal, twVal, higherIsBad = true, fmt = 0, options = {}) => {
+    const lowVolume =
+      options.lowVolumeThreshold &&
+      Math.max(Math.abs(twVal), Math.abs(lwVal)) < options.lowVolumeThreshold;
     const icon = lowVolume ? 'Neutral' : trendIcon(twVal, lwVal, higherIsBad);
     const trendColor =
       icon === 'Concerning' ? '#dc2626' : icon === 'Healthy' ? '#16a34a' : '#64748b';

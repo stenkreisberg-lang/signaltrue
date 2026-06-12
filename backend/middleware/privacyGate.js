@@ -2,7 +2,7 @@
  * Privacy Gate Middleware
  *
  * Enforces the minimum-team-size rule before any analytics endpoint returns data.
- * If a team's actualSize is below the org-configured minimum (default: 5),
+ * If a team's actualSize is below the org-configured minimum (default: 1),
  * the request is suppressed and a 204 is returned with a structured body.
  *
  * Usage:
@@ -14,23 +14,17 @@
  */
 
 import Team from '../models/team.js';
-import Organization from '../models/organizationModel.js';
 import TeamSizeGate from '../models/teamSizeGate.js';
+import { MIN_TEAM_SIZE, resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
-const DEFAULT_MIN_SIZE = 5;
+const DEFAULT_MIN_SIZE = MIN_TEAM_SIZE;
 
 /**
  * Resolve the effective minimum team size for an org.
  * Falls back to DEFAULT_MIN_SIZE if org config is absent.
  */
 async function resolveMinSize(orgId) {
-  if (!orgId) return DEFAULT_MIN_SIZE;
-  try {
-    const org = await Organization.findById(orgId).select('minTeamSizeForAnalytics').lean();
-    return org?.minTeamSizeForAnalytics ?? DEFAULT_MIN_SIZE;
-  } catch {
-    return DEFAULT_MIN_SIZE;
-  }
+  return resolveMinimumTeamSize(orgId);
 }
 
 /**
@@ -67,6 +61,7 @@ export async function privacyGate(req, res, next) {
         endpoint: `${req.method} ${req.originalUrl}`,
         reportedSize: actualSize,
         minRequired: minSize,
+        reason: 'insufficient_sample',
       }).catch(() => {});
 
       // Ensure analyticsEnabled flag is accurate
@@ -155,6 +150,7 @@ export async function checkPrivacyGate(teamId) {
         endpoint: 'service_layer',
         reportedSize: actualSize,
         minRequired: minSize,
+        reason: 'insufficient_sample',
       }).catch(() => {});
 
       return { passed: false, reason: 'insufficient_sample', actualSize, minRequired: minSize };

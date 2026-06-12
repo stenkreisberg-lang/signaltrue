@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
  *
  * This is separate from MetricsDaily (which feeds the legacy BDI/drift system).
  * All values are team aggregates — never individual.
- * Teams below the minimum group size (8) are suppressed before this is written.
+ * Teams below the organization-configured minimum group size are suppressed before this is written.
  */
 const engagementTeamDailySchema = new mongoose.Schema(
   {

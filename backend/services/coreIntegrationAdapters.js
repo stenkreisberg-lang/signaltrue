@@ -13,6 +13,68 @@ import { decryptString, encryptString } from '../utils/crypto.js';
 import { getMicrosoftAppToken } from './tokenService.js';
 import { enrichWorkEvents } from './workEventAttributionService.js';
 import mongoose from 'mongoose';
+import crypto from 'node:crypto';
+
+export async function fetchGraphCollection(
+  initialUrl,
+  accessToken,
+  { maxPages = 100, maxRetries = 1 } = {}
+) {
+  const items = [];
+  let nextUrl = initialUrl;
+  let pages = 0;
+
+  while (nextUrl && pages < maxPages) {
+    let response;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        response = await fetch(nextUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch (error) {
+        if (attempt === maxRetries) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+        continue;
+      }
+
+      const transient = response.status === 429 || response.status >= 500;
+      if (!transient || attempt === maxRetries) break;
+      const retryAfter = Number(response.headers?.get?.('retry-after'));
+      const delayMs = Number.isFinite(retryAfter) ? retryAfter * 1000 : 500 * 2 ** attempt;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    if (!response.ok) {
+      const body = await response.text();
+      const error = new Error(`Microsoft Graph ${response.status}: ${body.slice(0, 300)}`);
+      error.status = response.status;
+      throw error;
+    }
+    const data = await response.json();
+    items.push(...(data.value || []));
+    nextUrl = data['@odata.nextLink'] || null;
+    pages++;
+  }
+
+  if (nextUrl) {
+    console.warn(`[Microsoft] Pagination stopped after ${maxPages} pages for ${initialUrl}`);
+  }
+  return items;
+}
+
+function hashMetadata(orgId, value) {
+  if (!value) return null;
+  return crypto.createHash('sha256').update(`${orgId}:${value}`).digest('hex');
+}
+
+function getMessageLengthBucket(content) {
+  const length = String(content || '')
+    .replace(/<[^>]*>/g, '')
+    .trim().length;
+  if (length < 50) return 'short';
+  if (length <= 300) return 'medium';
+  return 'long';
+}
 
 // ============================================================
 // BASE CLASS FOR ORG-LEVEL INTEGRATIONS
@@ -329,9 +391,15 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       const sourceEvents = workEvents.filter((event) => event.source === source);
       if (sourceEvents.length === 0) return;
 
-      const mappedUsers = new Set(
-        sourceEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
-      ).size;
+      const coverageStart = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000);
+      const mappedUsers = (
+        await WorkEvent.distinct('actorUserId', {
+          orgId,
+          source,
+          timestamp: { $gte: coverageStart },
+          actorUserId: { $ne: null },
+        })
+      ).length;
 
       const setPayload = {
         status: mappedUsers > 0 ? 'connected' : 'needs_admin',
@@ -375,7 +443,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           console.warn('[Microsoft] Outlook fetch failed:', err.message);
           return [];
         }),
-        this.fetchTeamsMessages(accessToken, since, until).catch((err) => {
+        this.fetchTeamsMessages(accessToken, since, until, orgId).catch((err) => {
           console.warn('[Microsoft] Teams fetch failed:', err.message);
           return [];
         }),
@@ -384,14 +452,14 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     } else if (scope === 'outlook') {
       return await this.fetchOutlookEvents(accessToken, since, until, orgId);
     } else {
-      return await this.fetchTeamsMessages(accessToken, since, until);
+      return await this.fetchTeamsMessages(accessToken, since, until, orgId);
     }
   }
 
   async fetchOutlookEvents(delegatedToken, since, until, orgId = null) {
     const allEvents = [];
     const select =
-      '$select=id,subject,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,location,recurrence&$top=100';
+      '$select=id,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,recurrence,seriesMasterId,isCancelled,type&$top=100';
 
     // ── STRATEGY 1: App-only token (Calendars.Read application permission) ──
     // This is the correct approach: the app authenticates with its own identity
@@ -425,12 +493,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                 if (!msId) continue;
                 try {
                   const url = `https://graph.microsoft.com/v1.0/users/${msId}/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
-                  const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${appToken}` },
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    const events = (data.value || []).map((e) => ({
+                  try {
+                    const calendarEvents = await fetchGraphCollection(url, appToken);
+                    const events = calendarEvents.map((e) => ({
                       ...e,
                       eventSource: 'outlook',
                       _internalUserId: user._id,
@@ -438,9 +503,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                     }));
                     allEvents.push(...events);
                     successCount++;
-                  } else {
-                    const errText = await res.text();
-                    if (res.status === 403) {
+                  } catch (calendarError) {
+                    if (calendarError.status === 403) {
                       // App permission not yet granted — bail out of the loop early
                       console.warn(
                         `[Microsoft][AppOnly] 403 for ${user.email} — Calendars.Read application permission may not be granted yet`
@@ -454,7 +518,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                       }
                     } else {
                       console.warn(
-                        `[Microsoft][AppOnly] calendarview failed for ${user.email}: ${res.status} ${errText.slice(0, 150)}`
+                        `[Microsoft][AppOnly] calendarview failed for ${user.email}: ${calendarError.message}`
                       );
                       failCount++;
                     }
@@ -500,13 +564,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     );
 
     const meUrl = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
-    const meRes = await fetch(meUrl, { headers: { Authorization: `Bearer ${delegatedToken}` } });
-    if (!meRes.ok) {
-      const error = await meRes.text();
-      throw new Error(`Outlook /me/calendarview fetch failed: ${error}`);
-    }
-    const meData = await meRes.json();
-    const meEvents = meData.value || [];
+    const meEvents = await fetchGraphCollection(meUrl, delegatedToken);
     console.log(
       `[Microsoft][AttendeeExpansion] Got ${meEvents.length} events from /me, expanding attendees`
     );
@@ -549,68 +607,227 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     return allEvents;
   }
 
-  async fetchTeamsMessages(accessToken, since, until) {
-    // Get joined teams
-    const teamsRes = await fetch('https://graph.microsoft.com/v1.0/me/joinedTeams', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const teamsData = await teamsRes.json();
-    const teams = teamsData.value || [];
+  async fetchTeamsMessages(delegatedToken, since, until, orgId = null) {
+    if (orgId) {
+      try {
+        const org = await Organization.findById(orgId)
+          .select('integrations.microsoft.tenantId')
+          .lean();
+        const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
+        const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
+        if (appToken) {
+          const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until);
+          console.log(
+            `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel/chat messages`
+          );
+          return tenantMessages;
+        }
+      } catch (error) {
+        console.warn(
+          '[Microsoft][AppOnly] Tenant-wide Teams access unavailable; using delegated fallback:',
+          error.message
+        );
+      }
+    }
 
+    return this.fetchDelegatedTeamsMessages(delegatedToken, since, until);
+  }
+
+  async fetchTenantWideTeamsMessages(appToken, since, until) {
+    const teams = await fetchGraphCollection(
+      'https://graph.microsoft.com/v1.0/teams?$top=100',
+      appToken
+    );
+    const allMessages = [];
+    let successfulTeamReads = 0;
+    const filter = encodeURIComponent(
+      `lastModifiedDateTime gt ${since.toISOString()} and lastModifiedDateTime lt ${until.toISOString()}`
+    );
+
+    for (const team of teams) {
+      let channelById = new Map();
+      try {
+        const channels = await fetchGraphCollection(
+          `https://graph.microsoft.com/v1.0/teams/${team.id}/allChannels`,
+          appToken
+        );
+        channelById = new Map(channels.map((channel) => [channel.id, channel]));
+      } catch (error) {
+        console.warn(`[Microsoft][AppOnly] Channel metadata failed for ${team.id}:`, error.message);
+      }
+
+      try {
+        const messages = await fetchGraphCollection(
+          `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/getAllMessages?$top=50&$filter=${filter}`,
+          appToken
+        );
+        successfulTeamReads++;
+        for (const message of messages) {
+          if (message.messageType !== 'message') continue;
+          const created = new Date(message.createdDateTime);
+          if (created < since || created > until) continue;
+          const channelId = message.channelIdentity?.channelId || null;
+          const channel = channelById.get(channelId);
+          allMessages.push({
+            ...message,
+            teamId: message.channelIdentity?.teamId || team.id,
+            teamName: team.displayName,
+            channelId,
+            channelName: channel?.displayName,
+            channelType: channel?.membershipType === 'standard' ? 'public' : 'private',
+            eventSource: 'teams',
+          });
+        }
+      } catch (error) {
+        console.warn(
+          `[Microsoft][AppOnly] Team message export failed for ${team.id}:`,
+          error.message
+        );
+      }
+    }
+
+    if (teams.length > 0 && successfulTeamReads === 0) {
+      throw new Error('Tenant teams are visible, but ChannelMessage.Read.All is unavailable');
+    }
+
+    // Chat.Read.All is optional. When granted, include 1:1, group, and meeting chats.
+    try {
+      const chatMessages = await fetchGraphCollection(
+        `https://graph.microsoft.com/v1.0/chats/getAllMessages?$top=50&$filter=${filter}`,
+        appToken
+      );
+      const chatTypeById = new Map();
+      for (const chatId of new Set(chatMessages.map((message) => message.chatId).filter(Boolean))) {
+        try {
+          const response = await fetch(`https://graph.microsoft.com/v1.0/chats/${chatId}`, {
+            headers: { Authorization: `Bearer ${appToken}` },
+          });
+          if (response.ok) {
+            const chat = await response.json();
+            chatTypeById.set(chatId, chat.chatType);
+          }
+        } catch {}
+      }
+      for (const message of chatMessages) {
+        if (message.messageType !== 'message') continue;
+        const created = new Date(message.createdDateTime);
+        if (created < since || created > until) continue;
+        allMessages.push({
+          ...message,
+          chatId: message.chatId,
+          channelType: chatTypeById.get(message.chatId) === 'oneOnOne' ? 'dm' : 'group_dm',
+          eventSource: 'teams-chat',
+        });
+      }
+    } catch (error) {
+      console.info('[Microsoft][AppOnly] Chat metadata not available:', error.message);
+    }
+
+    return allMessages;
+  }
+
+  async fetchDelegatedTeamsMessages(accessToken, since, until) {
+    const teams = await fetchGraphCollection(
+      'https://graph.microsoft.com/v1.0/me/joinedTeams',
+      accessToken
+    );
     const allMessages = [];
 
-    // Scan ALL teams and ALL channels — no artificial limits
     for (const team of teams) {
+      let channels = [];
       try {
-        const channelsRes = await fetch(
+        channels = await fetchGraphCollection(
           `https://graph.microsoft.com/v1.0/teams/${team.id}/channels`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
+          accessToken
         );
-        const channelsData = await channelsRes.json();
-        const channels = channelsData.value || [];
+      } catch (error) {
+        console.warn(`Failed to fetch Teams channels for ${team.displayName}:`, error.message);
+        continue;
+      }
 
-        for (const channel of channels) {
-          try {
-            // Use the /messages/delta endpoint or $filter to get only messages within our sync window.
-            // The channel messages API doesn't support $filter directly, so we fetch recent
-            // messages and filter client-side by the since/until window.
-            const msgsRes = await fetch(
-              `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages?$top=50`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
-            const msgsData = await msgsRes.json();
+      for (const channel of channels) {
+        try {
+          const roots = await fetchGraphCollection(
+            `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages?$top=50`,
+            accessToken,
+            { maxPages: 20 }
+          );
+          const messages = [...roots];
+          const relevantRoots = roots.filter((root) => {
+            const activityTime = new Date(root.lastModifiedDateTime || root.createdDateTime);
+            return !isNaN(activityTime) && activityTime >= since;
+          });
+          for (const root of relevantRoots) {
+            try {
+              const replies = await fetchGraphCollection(
+                `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages/${root.id}/replies?$top=50`,
+                accessToken
+              );
+              messages.push(...replies);
+            } catch (error) {
+              console.warn(
+                `[Microsoft] Failed to fetch replies for ${team.displayName}/${channel.displayName}:`,
+                error.message
+              );
+            }
+          }
 
-            // Filter messages to the requested time window
-            const filtered = (msgsData.value || []).filter((m) => {
-              const created = new Date(m.createdDateTime);
-              return created >= since && created <= until;
-            });
-
-            const messages = filtered.map((m) => ({
-              ...m,
+          for (const message of messages) {
+            if (message.messageType !== 'message') continue;
+            const created = new Date(message.createdDateTime);
+            if (created < since || created > until) continue;
+            allMessages.push({
+              ...message,
               teamId: team.id,
               teamName: team.displayName,
               channelId: channel.id,
               channelName: channel.displayName,
+              channelType: channel.membershipType === 'standard' ? 'public' : 'private',
               eventSource: 'teams',
-            }));
-            allMessages.push(...messages);
-          } catch (chErr) {
-            console.warn(
-              `[Microsoft] Failed to fetch messages for ${team.displayName}/${channel.displayName}:`,
-              chErr.message
-            );
+            });
           }
+        } catch (error) {
+          console.warn(
+            `[Microsoft] Failed to fetch messages for ${team.displayName}/${channel.displayName}:`,
+            error.message
+          );
         }
-      } catch (err) {
-        console.warn(`Failed to fetch Teams channels for ${team.displayName}:`, err.message);
       }
     }
 
+    try {
+      const chats = await fetchGraphCollection(
+        'https://graph.microsoft.com/v1.0/me/chats?$top=50',
+        accessToken
+      );
+      for (const chat of chats) {
+        try {
+          const messages = await fetchGraphCollection(
+            `https://graph.microsoft.com/v1.0/chats/${chat.id}/messages?$top=50`,
+            accessToken,
+            { maxPages: 20 }
+          );
+          for (const message of messages) {
+            if (message.messageType !== 'message') continue;
+            const created = new Date(message.createdDateTime);
+            if (created < since || created > until) continue;
+            allMessages.push({
+              ...message,
+              chatId: chat.id,
+              channelType: chat.chatType === 'oneOnOne' ? 'dm' : 'group_dm',
+              eventSource: 'teams-chat',
+            });
+          }
+        } catch (error) {
+          console.info(`[Microsoft] Chat ${chat.id} is not readable:`, error.message);
+        }
+      }
+    } catch (error) {
+      console.info('[Microsoft] Delegated chat metadata not available:', error.message);
+    }
+
     console.log(
-      `[Microsoft] Teams: fetched ${allMessages.length} messages within sync window from ${teams.length} teams (all channels scanned)`
+      `[Microsoft] Teams delegated fallback: fetched ${allMessages.length} messages from ${teams.length} joined teams plus accessible chats`
     );
     return allMessages;
   }
@@ -618,7 +835,14 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   async transformToWorkEvents(rawEvents, orgId) {
     // Build email → internal userId lookup for fallback matching
     const orgUsers = await User.find({ orgId }).select('_id email teamId externalIds').lean();
-    const emailToUserId = new Map(orgUsers.map((u) => [u.email?.toLowerCase(), u._id]));
+    const userByEmail = new Map(
+      orgUsers.filter((u) => u.email).map((u) => [u.email.toLowerCase(), u])
+    );
+    const userByMicrosoftId = new Map(
+      orgUsers
+        .filter((u) => u.externalIds?.microsoftUserId)
+        .map((u) => [String(u.externalIds.microsoftUserId), u])
+    );
 
     // Helper: parse dateTime safely regardless of whether it already has a TZ offset
     function parseDateTime(dt) {
@@ -642,11 +866,30 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
           const matchedUser =
             orgUsers.find((u) => String(u._id) === String(event._internalUserId)) ||
-            (organizerEmail
-              ? orgUsers.find((u) => u.email?.toLowerCase() === organizerEmail)
-              : null);
-          const userId =
-            matchedUser?._id || (organizerEmail ? emailToUserId.get(organizerEmail) : null) || null;
+            (organizerEmail ? userByEmail.get(organizerEmail) : null);
+          const userId = matchedUser?._id || null;
+          const attendeeEmails = (event.attendees || [])
+            .map((attendee) => attendee.emailAddress?.address?.toLowerCase())
+            .filter(Boolean);
+          const participantEmails = [
+            ...new Set([...attendeeEmails, organizerEmail].filter(Boolean)),
+          ];
+          const internalParticipants = participantEmails
+            .map((email) => userByEmail.get(email))
+            .filter(Boolean);
+          const participantTeamIds = new Set(
+            internalParticipants.map((user) => String(user.teamId || '')).filter(Boolean)
+          );
+          const attendeeCount = participantEmails.length;
+          const isOneOnOne = attendeeCount === 2;
+          const hasExternalParticipants = internalParticipants.length < attendeeCount;
+          const meetingType = isOneOnOne
+            ? 'one_on_one'
+            : hasExternalParticipants
+              ? 'external'
+              : participantTeamIds.size > 1
+                ? 'cross_team'
+                : 'team';
 
           // For attendee-expanded events, append the userId to make the externalId unique
           // per person so the upsert doesn't collapse all attendee copies into one record.
@@ -662,17 +905,22 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             timestamp: start,
             duration: durationMinutes,
             metadata: {
-              subject: event.subject,
-              organizer: organizerEmail,
-              userEmail: event._userEmail,
-              attendeeCount: event.attendees?.length || 0,
-              attendees: (event.attendees || [])
-                .map((a) => a.emailAddress?.address?.toLowerCase())
-                .filter(Boolean),
+              attendeeCount,
+              internalAttendeeCount: userId ? 1 : internalParticipants.length,
+              externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
+              attendeeHashes: userId ? [hashMetadata(orgId, userId)] : [],
+              organizerHash: hashMetadata(orgId, organizerEmail),
               isOnlineMeeting: event.isOnlineMeeting,
               isAllDay: event.isAllDay,
-              showAs: event.showAs,
-              location: event.location?.displayName,
+              isRecurring: Boolean(
+                event.recurrence ||
+                event.seriesMasterId ||
+                event.type === 'occurrence' ||
+                event.type === 'exception'
+              ),
+              isCancelled: event.isCancelled === true,
+              is1to1: isOneOnOne,
+              meetingType,
               durationMinutes,
               startTime: start.toISOString(),
               endTime: end ? end.toISOString() : null,
@@ -684,11 +932,18 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           const senderEmail = event.from?.user?.email?.toLowerCase() || null;
           const senderMsId = event.from?.user?.id || null;
           const matchedUser =
-            (senderEmail ? orgUsers.find((u) => u.email?.toLowerCase() === senderEmail) : null) ||
-            (senderMsId
-              ? orgUsers.find((u) => u.externalIds?.microsoftUserId === senderMsId)
-              : null);
-          const userId = matchedUser?._id || (senderEmail ? emailToUserId.get(senderEmail) : null);
+            (senderEmail ? userByEmail.get(senderEmail) : null) ||
+            (senderMsId ? userByMicrosoftId.get(String(senderMsId)) : null);
+          const userId = matchedUser?._id || null;
+          const conversationId =
+            event.chatId || event.channelId || event.channelIdentity?.channelId;
+          const mentionedIds = (event.mentions || [])
+            .map((mention) => mention.mentioned?.user?.id)
+            .filter(Boolean);
+          const externalId =
+            event.eventSource === 'teams-chat'
+              ? `teams-chat-${event.chatId}-${event.id}`
+              : `teams-${event.id}`;
 
           return {
             orgId: new mongoose.Types.ObjectId(orgId),
@@ -696,18 +951,23 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             eventType: 'message',
             actorUserId: userId,
             teamId: matchedUser?.teamId || null,
-            externalId: `teams-${event.id}`,
+            externalId,
             timestamp: new Date(event.createdDateTime),
             metadata: {
-              teamId: event.teamId,
-              teamName: event.teamName,
-              channelId: event.channelId,
-              channelName: event.channelName,
-              from: event.from?.user?.displayName,
-              fromEmail: senderEmail,
+              externalTeamId: event.teamId || event.channelIdentity?.teamId,
+              externalChannelId: event.channelId || event.channelIdentity?.channelId,
+              externalMessageId: event.id,
               microsoftUserId: senderMsId,
+              channelType: event.channelType || 'public',
+              channelHash: hashMetadata(orgId, conversationId),
+              threadIdHash: hashMetadata(orgId, event.replyToId || event.id),
+              replyToIdHash: hashMetadata(orgId, event.replyToId),
+              isReply: Boolean(event.replyToId),
+              mentionedUserHashes: mentionedIds.map((id) => hashMetadata(orgId, id)),
+              reactionCount: event.reactions?.length || 0,
+              messageLengthBucket: getMessageLengthBucket(event.body?.content),
               messageType: event.messageType,
-              hasAttachments: (event.attachments?.length || 0) > 0,
+              hasAttachment: (event.attachments?.length || 0) > 0,
             },
             raw: { id: event.id },
           };

@@ -4,7 +4,7 @@ import Organization from '../models/organizationModel.js';
 import User from '../models/user.js'; // Import User model
 import IntegrationConnection from '../models/integrationConnection.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { encryptString, decryptString } from '../utils/crypto.js';
+import { encryptString } from '../utils/crypto.js';
 import {
   syncEmployeesFromSlack,
   syncEmployeesFromGoogle,
@@ -321,12 +321,16 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         ? {
             email: organization.integrations.microsoft?.email,
             user: organization.integrations.microsoft?.user,
+            applicationConsentGrantedAt:
+              organization.integrations.microsoft?.applicationConsentGrantedAt,
           }
         : null,
       outlook: connected.outlook
         ? {
             email: organization.integrations.microsoft?.email,
             user: organization.integrations.microsoft?.user,
+            applicationConsentGrantedAt:
+              organization.integrations.microsoft?.applicationConsentGrantedAt,
           }
         : null,
       jira: connected.jira
@@ -382,6 +386,10 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       outlook: available.outlook
         ? `/integrations/microsoft/oauth/start?scope=outlook&orgSlug=${orgSlug}&orgId=${orgIdStr}`
         : null,
+      microsoftAdminConsent:
+        available.outlook && organization.integrations.microsoft?.tenantId
+          ? '/integrations/microsoft/admin-consent/start'
+          : null,
       jira: available.jira
         ? `/integrations/jira/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
         : null,
@@ -934,12 +942,14 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
 // GET /api/integrations/microsoft/oauth/start?scope=outlook|teams|both&orgSlug=acme&orgId=xxx
 router.get('/integrations/microsoft/oauth/start', authenticateToken, async (req, res) => {
   const clientId = process.env.MS_APP_CLIENT_ID;
-  const tenant = process.env.MS_APP_TENANT || 'common';
   const redirectUri = process.env.MS_APP_REDIRECT_URI;
   if (!clientId || !redirectUri) {
     return res.status(503).json({
       message: 'Microsoft OAuth not configured. Set MS_APP_CLIENT_ID and MS_APP_REDIRECT_URI.',
     });
+  }
+  if (!req.user.orgId) {
+    return res.status(400).json({ message: 'An organization is required to connect Microsoft.' });
   }
   const scopeParam = String(req.query.scope || 'outlook');
   const scopesCore = [
@@ -954,6 +964,7 @@ router.get('/integrations/microsoft/oauth/start', authenticateToken, async (req,
     'https://graph.microsoft.com/Team.ReadBasic.All',
     'https://graph.microsoft.com/ChannelMessage.Read.All',
     'https://graph.microsoft.com/Channel.ReadBasic.All',
+    'https://graph.microsoft.com/Chat.Read',
   ];
   const outlookScopes = [
     'https://graph.microsoft.com/Calendars.Read',
@@ -978,10 +989,41 @@ router.get('/integrations/microsoft/oauth/start', authenticateToken, async (req,
   url.searchParams.set('response_mode', 'query');
   url.searchParams.set('scope', scopes.join(' '));
   url.searchParams.set('state', state);
-  // prompt=consent forces the org-wide admin consent screen so application-level
-  // permissions (Calendars.Read for all mailboxes) are granted in this single step —
-  // no separate Azure portal visit required for any client.
+  // This consent covers delegated access. Tenant-wide application permissions use
+  // the separate admin-consent endpoint below after they are configured on the app.
   url.searchParams.set('prompt', 'consent');
+  return res.redirect(String(url));
+});
+
+// Grants tenant admin consent for application permissions already configured on
+// the SignalTrue Entra application (Calendars.Read, Team.ReadBasic.All,
+// Channel.ReadBasic.All, ChannelMessage.Read.All and optionally Chat.Read.All).
+router.get('/integrations/microsoft/admin-consent/start', authenticateToken, async (req, res) => {
+  const clientId = process.env.MS_APP_CLIENT_ID;
+  const clientSecret = process.env.MS_APP_CLIENT_SECRET;
+  const redirectUri = process.env.MS_APP_REDIRECT_URI;
+  if (!clientId || !clientSecret || !redirectUri) {
+    return res.status(503).json({ message: 'Microsoft application consent is not configured.' });
+  }
+
+  const org = await Organization.findById(req.user.orgId)
+    .select('integrations.microsoft.tenantId')
+    .lean();
+  const tenantId = org?.integrations?.microsoft?.tenantId;
+  if (!tenantId) {
+    return res.status(409).json({ message: 'Connect Microsoft delegated access first.' });
+  }
+
+  const state = signState({
+    orgId: String(req.user.orgId),
+    userId: String(req.user.userId),
+    scope: 'application',
+    nonce: crypto.randomBytes(8).toString('hex'),
+  });
+  const url = new URL(`https://login.microsoftonline.com/${tenantId}/adminconsent`);
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('state', state);
   return res.redirect(String(url));
 });
 
@@ -997,9 +1039,41 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     }
     const { code, state } = req.query;
     const parsed = parseSignedState(state);
-    const orgSlug = String(parsed.orgSlug || 'default');
+    const orgSlug = parsed.orgSlug ? String(parsed.orgSlug) : null;
     const orgId = parsed.orgId || null;
     const scopeParam = String(parsed.scope || 'outlook');
+
+    if (scopeParam === 'application') {
+      if (req.query.error) {
+        console.error(
+          'Microsoft admin consent failed:',
+          req.query.error_description || req.query.error
+        );
+        return res.redirect(`${getAppUrl()}/dashboard?error=microsoft-application-consent`);
+      }
+      if (String(req.query.admin_consent).toLowerCase() !== 'true' || !parsed.orgId) {
+        return res.status(400).send('Microsoft application consent was not granted.');
+      }
+
+      await Organization.findByIdAndUpdate(parsed.orgId, {
+        $set: {
+          'integrations.microsoft.applicationConsentGrantedAt': new Date(),
+          'integrations.microsoft.applicationConsentTenantId':
+            req.query.tenant || req.query.tenantId || undefined,
+        },
+      });
+
+      triggerImmediateSync(parsed.orgId, {
+        since: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      }).catch((error) => {
+        console.error('Microsoft post-admin-consent sync failed:', error.message);
+      });
+      return res.redirect(`${getAppUrl()}/dashboard?connected=microsoft-application`);
+    }
+
+    if (!orgId && !orgSlug) {
+      return res.status(400).send('Invalid or expired Microsoft authorization state.');
+    }
 
     const tokenRes = await fetch(`https://login.microsoftonline.com/common/oauth2/v2.0/token`, {
       method: 'POST',
@@ -1054,58 +1128,53 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
               ? 'outlook'
               : scopeParam;
 
+      const microsoftFields = {
+        'integrations.microsoft.scope': effectiveScope,
+        'integrations.microsoft.accessToken': encryptString(tokens.access_token),
+        'integrations.microsoft.expiry': tokens.expires_in
+          ? new Date(Date.now() + tokens.expires_in * 1000)
+          : null,
+      };
+      if (tokens.refresh_token) {
+        microsoftFields['integrations.microsoft.refreshToken'] = encryptString(
+          tokens.refresh_token
+        );
+      }
+      if (msUser) {
+        microsoftFields['integrations.microsoft.email'] =
+          msUser.userPrincipalName || msUser.mail || null;
+        microsoftFields['integrations.microsoft.user'] = {
+          upn: msUser.userPrincipalName || msUser.mail,
+          displayName: msUser.displayName,
+        };
+      }
+      if (tenantId) microsoftFields['integrations.microsoft.tenantId'] = tenantId;
+
       // Prefer lookup by orgId if available, fall back to slug
       let updatedOrg;
       if (orgId) {
         updatedOrg = await Organization.findByIdAndUpdate(
           orgId,
           {
-            $set: {
-              [`integrations.microsoft`]: {
-                scope: effectiveScope,
-                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-                email: msUser?.userPrincipalName || msUser?.mail || null,
-                user: msUser
-                  ? {
-                      upn: msUser.userPrincipalName || msUser.mail,
-                      displayName: msUser.displayName,
-                    }
-                  : undefined,
-                tenantId: tenantId,
-              },
-            },
+            $set: microsoftFields,
           },
           { new: true }
         );
       }
 
       // Fallback to slug lookup if orgId not found or not provided
-      if (!updatedOrg) {
+      if (!updatedOrg && orgSlug) {
         updatedOrg = await Organization.findOneAndUpdate(
           { slug: orgSlug },
           {
             $setOnInsert: { name: orgSlug, industry: 'General' },
-            $set: {
-              [`integrations.microsoft`]: {
-                scope: effectiveScope,
-                refreshToken: tokens.refresh_token ? encryptString(tokens.refresh_token) : null,
-                accessToken: tokens.access_token ? encryptString(tokens.access_token) : null,
-                expiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-                email: msUser?.userPrincipalName || msUser?.mail || null,
-                user: msUser
-                  ? {
-                      upn: msUser.userPrincipalName || msUser.mail,
-                      displayName: msUser.displayName,
-                    }
-                  : undefined,
-                tenantId: tenantId,
-              },
-            },
+            $set: microsoftFields,
           },
           { upsert: true, new: true }
         );
+      }
+      if (!updatedOrg) {
+        return res.status(404).send('Organization not found for Microsoft authorization.');
       }
 
       // Check if all integrations are complete and notify HR admins
@@ -1124,26 +1193,27 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         notifyHRIntegrationsComplete(updatedOrg._id);
         // Notify superadmin about new integration
         notifyIntegrationConnected(updatedOrg, 'microsoft', scopeParam);
-        // Trigger immediate core sync for Microsoft (Outlook/Teams)
-        triggerImmediateSync(updatedOrg._id)
-          .then((results) => {
-            console.log('Microsoft immediate sync results:', results);
-          })
-          .catch((err) => {
-            console.error('Microsoft immediate sync error:', err.message);
-          });
-        // Trigger employee sync in background (uses Graph /users with User.Read.All)
-        syncEmployeesFromMicrosoft(updatedOrg._id, tokens.access_token)
-          .then((result) => {
+        // Map the directory first so newly discovered people and departments are
+        // available when calendar and Teams events are attributed.
+        void (async () => {
+          try {
+            const result = await syncEmployeesFromMicrosoft(updatedOrg._id, tokens.access_token);
             if (result.success) {
               console.log('Microsoft employee sync completed:', result.stats);
             } else {
               console.log('Microsoft employee sync skipped:', result.message);
             }
-          })
-          .catch((err) => {
+          } catch (err) {
             console.error('Microsoft employee sync failed:', err.message);
-          });
+          }
+
+          try {
+            const results = await triggerImmediateSync(updatedOrg._id);
+            console.log('Microsoft immediate sync results:', results);
+          } catch (err) {
+            console.error('Microsoft immediate sync error:', err.message);
+          }
+        })();
       }
     } catch (e) {
       console.error('Microsoft OAuth persist error:', e.message);

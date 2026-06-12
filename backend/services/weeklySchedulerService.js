@@ -28,14 +28,29 @@ function getWeekStart(date = new Date()) {
 }
 
 /**
+ * Get the Monday for the most recently completed week.
+ */
+function getPreviousWeekStart(date = new Date()) {
+  const currentWeekStart = getWeekStart(date);
+  currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+  return currentWeekStart;
+}
+
+function getNextWeeklyRun(date = new Date()) {
+  const next = getWeekStart(date);
+  next.setHours(5, 30, 0, 0);
+  if (next <= date) next.setDate(next.getDate() + 7);
+  return next;
+}
+
+/**
  * Main weekly job - runs every Monday
  * Processes all teams: calculate risks, determine state, generate actions
  */
-async function runWeeklyDiagnosis() {
+async function runWeeklyDiagnosis(weekStart = getPreviousWeekStart()) {
   console.log('[Weekly Diagnosis] Starting weekly diagnosis job...');
 
-  const weekStart = getWeekStart();
-  const teams = await Team.find({ isActive: true });
+  const teams = await Team.find({ isActive: { $ne: false } });
 
   const results = {
     processed: 0,
@@ -126,12 +141,12 @@ async function runExperimentCompletion() {
 /**
  * Run full weekly cycle: legacy diagnosis + engagement strain scoring + experiment completion
  */
-async function runWeeklyCycle() {
+async function runWeeklyCycle(weekStart = getPreviousWeekStart()) {
   console.log('=== STARTING WEEKLY CYCLE ===');
 
-  const diagnosisResults = await runWeeklyDiagnosis();
+  const diagnosisResults = await runWeeklyDiagnosis(weekStart);
   const experimentResults = await runExperimentCompletion();
-  const engagementResults = await runEngagementStrainCycle(getWeekStart());
+  const engagementResults = await runEngagementStrainCycle(weekStart);
 
   console.log('=== WEEKLY CYCLE COMPLETE ===');
 
@@ -150,7 +165,9 @@ async function runWeeklyCycle() {
 async function runEngagementStrainCycle(weekStart) {
   console.log('[EngagementStrain] Starting weekly engagement strain scoring...');
 
-  const teams = await Team.find({ isActive: true }).select('orgId').lean();
+  const teams = await Team.find({ isActive: { $ne: false } })
+    .select('orgId')
+    .lean();
   const orgIds = [...new Set(teams.map((t) => String(t.orgId)).filter(Boolean))];
 
   const results = { processed: 0, suppressed: 0, errors: 0, orgs: orgIds.length };
@@ -203,25 +220,11 @@ async function diagnoseSingleTeam(teamId, weekStart = null) {
 
 /**
  * Schedule the weekly job (call this on server startup)
- * Runs every Monday at 1 AM
+ * Runs every Monday at 5:30 AM, after daily ingestion and aggregation.
  */
 function scheduleWeeklyJob() {
-  // Calculate milliseconds until next Monday 1 AM
-  function getNextMonday() {
-    const now = new Date();
-    const next = new Date(now);
-    next.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
-    next.setHours(1, 0, 0, 0);
-
-    if (next <= now) {
-      next.setDate(next.getDate() + 7);
-    }
-
-    return next;
-  }
-
   function scheduleNext() {
-    const nextRun = getNextMonday();
+    const nextRun = getNextWeeklyRun();
     const delay = nextRun - new Date();
 
     console.log(`[Scheduler] Next weekly diagnosis scheduled for ${nextRun.toISOString()}`);
@@ -243,4 +246,6 @@ export {
   diagnoseSingleTeam,
   scheduleWeeklyJob,
   getWeekStart,
+  getPreviousWeekStart,
+  getNextWeeklyRun,
 };

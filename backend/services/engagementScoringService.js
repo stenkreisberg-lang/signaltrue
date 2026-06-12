@@ -114,6 +114,7 @@ export async function getPreviousWeekScore(teamId, weekStart) {
  * @param {Object}  opts.baseline          — EngagementBaseline lean doc
  * @param {Object}  opts.weeklyMetrics     — WeeklyMetrics object
  * @param {number}  opts.activePeopleCount
+ * @param {number}  opts.minimumTeamSize
  * @param {Object}  opts.integrationCoverage — { hasCalendar, hasMessaging, hasEmail, hasOrgStructure }
  * @param {Object}  opts.subscores         — for metric consistency check
  * @returns {{ score: number, label: 'low'|'moderate'|'high' }}
@@ -122,11 +123,12 @@ export function calculateConfidenceScore({
   baseline,
   weeklyMetrics,
   activePeopleCount,
+  minimumTeamSize = 1,
   integrationCoverage,
   subscores,
 }) {
   const baselineQuality = baseline?.baselineQuality?.qualityScore ?? 0;
-  const sampleSize = sampleSizeScore(activePeopleCount);
+  const sampleSize = sampleSizeScore(activePeopleCount, minimumTeamSize);
   const integrationCov = integrationCoverageScore(integrationCoverage);
   const dataComplete = dataCompletenessScore(weeklyMetrics);
   const metricConsist = metricConsistencyScore(subscores);
@@ -175,15 +177,13 @@ export function getTopDrivers(subscores, metricRisks, baseline, weeklyMetrics) {
 /**
  * Sample size score (spec Section 12).
  *
- * < 8  people  → 0
- * 8–11 people  → 60
- * 12–19 people → 80
- * 20+  people  → 100
+ * Below the organization minimum → 0. Above that, confidence increases
+ * as the sample reaches 1.5x and 2.5x the accepted minimum.
  */
-function sampleSizeScore(activePeople) {
-  if (activePeople < 8) return 0;
-  if (activePeople < 12) return 60;
-  if (activePeople < 20) return 80;
+function sampleSizeScore(activePeople, minimumTeamSize) {
+  if (activePeople < minimumTeamSize) return 0;
+  if (activePeople < minimumTeamSize * 1.5) return 60;
+  if (activePeople < minimumTeamSize * 2.5) return 80;
   return 100;
 }
 

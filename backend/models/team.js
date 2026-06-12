@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const teamSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    isActive: { type: Boolean, default: true, index: true },
     orgId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
@@ -47,6 +48,8 @@ const teamSchema = new mongoose.Schema(
         enum: ['1-5', '6-10', '11-20', '21-50', '50+'],
       },
       actualSize: { type: Number },
+      sourceDepartment: { type: String },
+      autoCreatedFromDirectory: { type: Boolean, default: false },
     },
 
     // Baseline for comparison
@@ -143,7 +146,7 @@ const teamSchema = new mongoose.Schema(
     },
 
     // ── Privacy gate flags ────────────────────────────────────────────────────
-    analyticsEnabled: { type: Boolean, default: true }, // false when actualSize < minTeamSizeForAnalytics
+    analyticsEnabled: { type: Boolean, default: true }, // false when actualSize is below the org minimum
     privacyGateFiredAt: { type: Date },
   },
   { timestamps: true }

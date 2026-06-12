@@ -300,14 +300,14 @@ describe('BDI History & Retrieval', () => {
 });
 
 describe('Anti-Weaponization Guardrails', () => {
-  it('should enforce 5-person minimum in Team model', async () => {
+  it('should retain actual team size for the configurable guard', async () => {
     const smallTeam = await Team.create({
       name: 'Test Small Team',
       orgId: new mongoose.Types.ObjectId(),
       metadata: { actualSize: 3 },
     });
 
-    expect(smallTeam.metadata.actualSize).toBeLessThan(5);
+    expect(smallTeam.metadata.actualSize).toBe(3);
     // Note: Actual enforcement happens in middleware, tested via API
   });
 

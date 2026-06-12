@@ -32,6 +32,14 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      - key: MS_APP_CLIENT_ID
+        sync: false
+      - key: MS_APP_CLIENT_SECRET
+        sync: false
+      - key: MS_APP_REDIRECT_URI
+        sync: false
+      - key: MS_APP_TENANT
+        sync: false
       # Optional integrations (set values in Render Dashboard after deploy)
       - key: OPENAI_API_KEY
         sync: false

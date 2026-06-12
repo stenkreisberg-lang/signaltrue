@@ -22,7 +22,7 @@ const router = express.Router();
 /**
  * GET /api/bdi/team/:teamId/latest
  * Get latest Behavioral Drift Index for a team
- * PROTECTED: Requires 5+ team members, team-level only, audit logged
+ * PROTECTED: Applies the organization team-size policy, team-level only, audit logged
  */
 router.get(
   '/team/:teamId/latest',
@@ -48,7 +48,7 @@ router.get(
 /**
  * GET /api/bdi/team/:teamId/history
  * Get BDI history for a team
- * PROTECTED: Requires 5+ team members, team-level only, audit logged
+ * PROTECTED: Applies the organization team-size policy, team-level only, audit logged
  */
 router.get(
   '/team/:teamId/history',

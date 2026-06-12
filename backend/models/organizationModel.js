@@ -103,6 +103,8 @@ const organizationSchema = new mongoose.Schema(
         eventsCount: Number,
         teamsCount: Number,
         tenantId: String,
+        applicationConsentGrantedAt: Date,
+        applicationConsentTenantId: String,
         lastPulledAt: Date,
         lastEmployeeSync: Date, // Track when employees were last synced
         sync: {
@@ -118,8 +120,8 @@ const organizationSchema = new mongoose.Schema(
     },
     settings: {
       onboardingComplete: { type: Boolean, default: false },
-      // Privacy-safe minimum team size for aggregation (spec default: 5)
-      minTeamSize: { type: Number, default: 5, min: 3 },
+      // Configurable minimum team size. One-member teams are supported when accepted by the org.
+      minTeamSize: { type: Number, default: 1, min: 1 },
       // Default alert sensitivity
       alertSensitivity: {
         type: String,

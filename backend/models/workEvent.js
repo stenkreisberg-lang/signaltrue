@@ -165,6 +165,8 @@ const workEventSchema = new mongoose.Schema(
       isExternalParticipant: Boolean,
       isAdHoc: Boolean,
       durationMinutes: Number,
+      isOnlineMeeting: Boolean,
+      isAllDay: Boolean,
 
       // --- Engagement Strain: calendar enrichment fields ---
       // Populated at ingestion time by calendar adapters
@@ -224,6 +226,10 @@ const workEventSchema = new mongoose.Schema(
         enum: ['public', 'private', 'dm', 'group_dm'],
       },
       channelHash: String, // hashed channel/conversation id
+      externalTeamId: String,
+      externalChannelId: String,
+      externalMessageId: String,
+      replyToIdHash: String,
       isReply: Boolean, // is a reply to another message
       recipientHashes: [String], // hashed recipient identities (DMs/group DMs)
       mentionedUserHashes: [String], // hashed @-mentioned user identities

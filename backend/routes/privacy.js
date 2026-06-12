@@ -62,6 +62,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
+    const minimumTeamSize = Math.max(1, Number(org.settings?.minTeamSize) || 1);
 
     // Return public explainer content
     res.json({
@@ -82,7 +83,10 @@ router.get('/explainer/:orgSlug', async (req, res) => {
           'Keystroke logging or surveillance',
         ],
         howWeProtect: [
-          'All data aggregated to team level (minimum 5 people per team)',
+          `All data reported at team level (organization minimum: ${minimumTeamSize})`,
+          minimumTeamSize < 3
+            ? 'Small-team reporting is enabled by the organization and may allow team results to be inferred'
+            : 'Team-size thresholds reduce the risk of individual inference',
           'GDPR compliant data handling and storage',
           'OAuth-only access (read-only permissions)',
           'End-to-end encryption for all data in transit and at rest',
@@ -115,7 +119,7 @@ router.get('/policy', async (req, res) => {
         {
           title: 'What We Track',
           content:
-            'We analyze aggregated team activity patterns including meeting frequency, message volume, response timing, and work hour patterns. All data is team-level only (minimum 5 people).',
+            "We analyze aggregated team activity patterns including meeting frequency, message volume, response timing, and work hour patterns. Reporting uses each organization's configured team-size threshold.",
         },
         {
           title: 'What We Never Track',
@@ -130,7 +134,7 @@ router.get('/policy', async (req, res) => {
         {
           title: 'Aggregation Thresholds',
           content:
-            'All metrics require minimum 5 people per team. Individual-level data is never stored or displayed. Patterns shown are team averages only.',
+            'Each organization configures its minimum reporting team size. Small-team results can be inferable, so they should be enabled only with explicit organizational approval. Individual rankings and content are never displayed.',
         },
         {
           title: 'Data Retention',

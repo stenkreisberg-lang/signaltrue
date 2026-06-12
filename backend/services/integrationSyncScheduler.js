@@ -11,6 +11,7 @@ import { syncCoreIntegrations } from './coreIntegrationAdapters.js';
 import { computeDailyMetrics, computeWeeklyRollups } from './integrationMetricsService.js';
 import { detectSignals } from './signalGenerationService.js';
 import { bridgeAllOrgSignals } from './signalBridgeService.js';
+import { computeDayForOrg } from './engagementDailyAggregationService.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
@@ -43,6 +44,12 @@ export function scheduleIntegrationJobs() {
   cron.schedule('0 4 * * *', async () => {
     console.log('⏰ Computing daily integration metrics...');
     await runDailyMetricsComputation();
+  });
+
+  // Build team-level engagement snapshots after daily integration metrics.
+  cron.schedule('15 4 * * *', async () => {
+    console.log('⏰ Computing daily engagement snapshots...');
+    await runDailyEngagementComputation();
   });
 
   // Generate signals at 4:30am
@@ -145,6 +152,27 @@ async function runDailyMetricsComputation() {
       );
     } catch (error) {
       console.error(`[Metrics Error] Org ${orgId}:`, error.message);
+    }
+  }
+}
+
+/**
+ * Compute daily team-level engagement snapshots for all orgs.
+ */
+async function runDailyEngagementComputation() {
+  const orgs = await getActiveOrgs();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+
+  for (const orgId of orgs) {
+    try {
+      const snapshots = await computeDayForOrg(orgId, yesterday);
+      console.log(
+        `[Engagement] Org ${orgId}: ${snapshots.length} team snapshots computed for ${yesterday.toISOString().split('T')[0]}`
+      );
+    } catch (error) {
+      console.error(`[Engagement Error] Org ${orgId}:`, error.message);
     }
   }
 }
@@ -265,6 +293,7 @@ export async function triggerImmediateSync(orgId, options = {}) {
         const current = new Date(since);
         while (current < until) {
           await computeDailyMetrics(orgId, current);
+          await computeDayForOrg(orgId, current);
           current.setDate(current.getDate() + 1);
         }
 
@@ -332,6 +361,7 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
   const current = new Date(since);
   while (current < until) {
     await computeDailyMetrics(orgId, current);
+    await computeDayForOrg(orgId, current);
     current.setDate(current.getDate() + 1);
   }
 

@@ -534,22 +534,17 @@ describe('BDI — driftScore and state', () => {
 // ── Privacy gate (pure logic only) ───────────────────────────────────────────
 
 describe('Privacy gate logic', () => {
-  test('team with actualSize < 5 should be suppressed', () => {
-    const actualSize = 3;
-    const minSize = 5;
-    expect(actualSize < minSize).toBe(true);
-  });
-
-  test('team with actualSize >= 5 should pass', () => {
-    const actualSize = 8;
-    const minSize = 5;
-    expect(actualSize < minSize).toBe(false);
-  });
-
-  test('team with actualSize = 0 should be suppressed', () => {
+  test('team with actualSize below the configured minimum should be suppressed', () => {
     const actualSize = 0;
-    const minSize = 5;
+    const minSize = 1;
     expect(actualSize < minSize).toBe(true);
+  });
+
+  test('one-person and two-person teams pass when the configured minimum is one', () => {
+    const actualSize = 1;
+    const minSize = 1;
+    expect(actualSize < minSize).toBe(false);
+    expect(2 < minSize).toBe(false);
   });
 });
 

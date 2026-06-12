@@ -11,7 +11,7 @@
  *
  * Baseline quality scoring (0–100):
  *   - Active days coverage (out of 20 required minimum in 42 days): 50 pts
- *   - Active people count (>= 8 required): 30 pts
+ *   - Active people count relative to the organization minimum: 30 pts
  *   - Integration completeness (calendar + messaging): 20 pts
  *
  * The baseline is recomputed weekly (every Monday, configured in scheduler).
@@ -20,10 +20,10 @@
 import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import EngagementBaseline from '../models/engagementBaseline.js';
 import Team from '../models/team.js';
+import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 const BASELINE_WINDOW_DAYS = 42;
 const MIN_ACTIVE_WORKDAYS = 20;
-const MIN_ACTIVE_PEOPLE = 8;
 const EPSILON = 0.001; // prevent division by zero in robust-z
 
 // ── Public API ─────────────────────────────────────────────────────────────────
@@ -41,16 +41,18 @@ export async function computeAndSaveBaseline(orgId, teamId, asOfDate = new Date(
   const endDate = toDateStr(addDays(asOfDate, -1)); // yesterday
   const startDate = toDateStr(addDays(asOfDate, -BASELINE_WINDOW_DAYS));
 
-  // Fetch all EngagementTeamDaily records in the baseline window
-  const dailyDocs = await EngagementTeamDaily.find({
-    teamId,
-    date: { $gte: startDate, $lte: endDate },
-  })
-    .sort({ date: 1 })
-    .lean();
+  const [dailyDocs, minimumTeamSize] = await Promise.all([
+    EngagementTeamDaily.find({
+      teamId,
+      date: { $gte: startDate, $lte: endDate },
+    })
+      .sort({ date: 1 })
+      .lean(),
+    resolveMinimumTeamSize(orgId),
+  ]);
 
-  // Active workdays = days with activePeopleCount >= MIN_ACTIVE_PEOPLE
-  const activeDocs = dailyDocs.filter((d) => d.activePeopleCount >= MIN_ACTIVE_PEOPLE);
+  // Active workdays use the organization's accepted reporting threshold.
+  const activeDocs = dailyDocs.filter((d) => d.activePeopleCount >= minimumTeamSize);
   const activeDays = activeDocs.length;
 
   // Not enough data — save an invalid baseline marker and return
@@ -89,7 +91,12 @@ export async function computeAndSaveBaseline(orgId, teamId, asOfDate = new Date(
   const activePeopleValues = activeDocs.map((d) => d.activePeopleCount);
   const activePeopleMedian = median(activePeopleValues);
 
-  const qualityScore = computeQualityScore(activeDays, activePeopleMedian, activeDocs);
+  const qualityScore = computeQualityScore(
+    activeDays,
+    activePeopleMedian,
+    activeDocs,
+    minimumTeamSize
+  );
 
   // ── Upsert ────────────────────────────────────────────────────────────────
   const doc = await EngagementBaseline.findOneAndUpdate(
@@ -253,19 +260,19 @@ function buildMetricBaseline(values) {
 /**
  * 0–100 quality score based on:
  *   50 pts — active days coverage (scaled to minimum of 20)
- *   30 pts — active people count (scaled, min 8 = 60pts, 12 = 80pts, 20+ = 100pts)
+ *   30 pts — active people count relative to the accepted organization minimum
  *   20 pts — integration completeness
  */
-function computeQualityScore(activeDays, activePeopleMedian, activeDocs) {
+function computeQualityScore(activeDays, activePeopleMedian, activeDocs, minimumTeamSize) {
   // Days coverage: 50 pts at full, scaled linearly from 20 to 42 days
   const daysCoverage = Math.min(1, activeDays / BASELINE_WINDOW_DAYS);
   const daysScore = Math.round(50 * daysCoverage);
 
   // People score
   let peopleScore = 0;
-  if (activePeopleMedian >= 20) peopleScore = 30;
-  else if (activePeopleMedian >= 12) peopleScore = 24;
-  else if (activePeopleMedian >= 8) peopleScore = 18;
+  if (activePeopleMedian >= minimumTeamSize * 2.5) peopleScore = 30;
+  else if (activePeopleMedian >= minimumTeamSize * 1.5) peopleScore = 24;
+  else if (activePeopleMedian >= minimumTeamSize) peopleScore = 18;
 
   // Integration coverage: check what was present in the majority of days
   const calendarDays = activeDocs.filter((d) => d.integrationCoverage?.hasCalendar).length;

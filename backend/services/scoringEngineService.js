@@ -26,8 +26,8 @@ import MetricsDaily from '../models/metricsDaily.js';
 import Baseline from '../models/baseline.js';
 import Team from '../models/team.js';
 import ScoringAuditLog from '../models/scoringAuditLog.js';
-import Organization from '../models/organizationModel.js';
 import TeamSizeGate from '../models/teamSizeGate.js';
+import { MIN_TEAM_SIZE, resolveMinimumTeamSize } from '../utils/privacyGate.js';
 import DriftTimeline from '../models/driftTimeline.js';
 
 // ── Version ────────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ const BDI_THRESHOLDS = {
   collaborationBreadth: 25,
 };
 
-const DEFAULT_MIN_TEAM_SIZE = 5;
+const DEFAULT_MIN_TEAM_SIZE = MIN_TEAM_SIZE;
 
 // ── Custom error class ─────────────────────────────────────────────────────────
 
@@ -135,14 +135,11 @@ export class ScoringError extends Error {
 
 async function runPrivacyGate(teamId, orgId) {
   try {
-    const [team, org] = await Promise.all([
+    const [team, minSize] = await Promise.all([
       Team.findById(teamId).select('metadata.actualSize').lean(),
-      orgId
-        ? Organization.findById(orgId).select('minTeamSizeForAnalytics').lean()
-        : Promise.resolve(null),
+      resolveMinimumTeamSize(orgId),
     ]);
 
-    const minSize = org?.minTeamSizeForAnalytics ?? DEFAULT_MIN_TEAM_SIZE;
     const actualSize = team?.metadata?.actualSize ?? 0;
 
     if (actualSize < minSize) {
@@ -153,6 +150,7 @@ async function runPrivacyGate(teamId, orgId) {
         endpoint: 'scoringEngine',
         reportedSize: actualSize,
         minRequired: minSize,
+        reason: 'insufficient_sample',
       }).catch(() => {});
 
       Team.findByIdAndUpdate(teamId, {

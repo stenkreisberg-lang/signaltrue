@@ -16,7 +16,7 @@ export async function runCrisisDetection() {
   console.log('[Crisis Detection] Starting real-time anomaly scan...');
 
   try {
-    const teams = await Team.find({ isActive: true });
+    const teams = await Team.find({ isActive: { $ne: false } });
     const crises = [];
 
     for (const team of teams) {

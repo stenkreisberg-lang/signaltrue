@@ -5,7 +5,7 @@
  * Implements the pseudo-process from spec Section 14.
  *
  * Pipeline per team:
- *   1. Privacy gate — skip if activePeopleCount < 8
+ *   1. Privacy gate — apply the organization's minimum active-person threshold
  *   2. Aggregate weekly metrics from EngagementTeamDaily
  *   3. Get or create EngagementBaseline
  *   4. Compute per-metric risks → 7 subscores
@@ -38,7 +38,7 @@ import {
   calculateConfidenceScore,
   getTopDrivers,
 } from './engagementScoringService.js';
-import { checkTeamSize } from '../utils/privacyGate.js';
+import { checkTeamSize, resolveMinimumTeamSize } from '../utils/privacyGate.js';
 import { detectPatterns } from './engagementPatternService.js';
 import { generateRecommendations } from './engagementRecommendationService.js';
 
@@ -60,6 +60,7 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
   console.info(`[EngagementWeeklyJob] Starting for org ${orgId}, week ${weekStartStr}`);
 
   const teams = await Team.find({ orgId }).lean();
+  const minimumTeamSize = await resolveMinimumTeamSize(orgId);
 
   let processed = 0;
   let suppressed = 0;
@@ -67,7 +68,7 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
 
   for (const team of teams) {
     try {
-      const result = await runForTeam(orgId, team._id, weekStartStr);
+      const result = await runForTeam(orgId, team._id, weekStartStr, minimumTeamSize);
       if (result === 'suppressed') {
         suppressed++;
       } else {
@@ -89,23 +90,24 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
 
 // ── Per-Team Pipeline ──────────────────────────────────────────────────────────
 
-async function runForTeam(orgId, teamId, weekStartStr) {
+async function runForTeam(orgId, teamId, weekStartStr, minimumTeamSize) {
   // ── Step 1: Aggregate weekly metrics ──────────────────────────────────────
   const weekly = await aggregateWeeklyMetrics(teamId, weekStartStr);
 
   if (!weekly) {
-    await logSuppression(teamId, orgId, weekStartStr, 'no_weekly_data', 0);
+    await suppressWeek(teamId, orgId, weekStartStr, 'no_weekly_data', 0, minimumTeamSize);
     return 'suppressed';
   }
 
   // ── Step 2: Privacy gate ───────────────────────────────────────────────────
-  if (!checkTeamSize(weekly.activePeopleCount)) {
-    await logSuppression(
+  if (!checkTeamSize(weekly.activePeopleCount, minimumTeamSize)) {
+    await suppressWeek(
       teamId,
       orgId,
       weekStartStr,
       'below_minimum_team_size',
-      weekly.activePeopleCount
+      weekly.activePeopleCount,
+      minimumTeamSize
     );
     return 'suppressed';
   }
@@ -114,6 +116,17 @@ async function runForTeam(orgId, teamId, weekStartStr) {
   // computeAndSaveBaseline returns the current baseline (upserts if stale)
   const asOfDate = new Date(weekStartStr + 'T00:00:00Z');
   const baseline = await computeAndSaveBaseline(orgId, teamId, asOfDate);
+  if (!baseline?.isValid) {
+    await suppressWeek(
+      teamId,
+      orgId,
+      weekStartStr,
+      'insufficient_baseline',
+      weekly.activePeopleCount,
+      minimumTeamSize
+    );
+    return 'suppressed';
+  }
 
   // ── Step 4: Compute subscores ──────────────────────────────────────────────
   const { subscores, metricRisks } = calculateSubscores(weekly, baseline);
@@ -127,6 +140,7 @@ async function runForTeam(orgId, teamId, weekStartStr) {
     baseline,
     weeklyMetrics: weekly,
     activePeopleCount: weekly.activePeopleCount,
+    minimumTeamSize,
     integrationCoverage: weekly.integrationCoverage,
     subscores,
   });
@@ -189,14 +203,20 @@ async function runForTeam(orgId, teamId, weekStartStr) {
 
 // ── Suppression Logging ────────────────────────────────────────────────────────
 
-async function logSuppression(teamId, orgId, weekStart, reason, reportedSize) {
+async function suppressWeek(teamId, orgId, weekStart, reason, reportedSize, minRequired) {
+  await EngagementStrainWeekly.deleteOne({ teamId, weekStart });
+  await logSuppression(teamId, orgId, weekStart, reason, reportedSize, minRequired);
+}
+
+async function logSuppression(teamId, orgId, weekStart, reason, reportedSize, minRequired = 1) {
   try {
     await TeamSizeGate.create({
       teamId,
       orgId,
       endpoint: `engagementWeeklyJob:${weekStart}`,
       reportedSize,
-      minRequired: 8,
+      minRequired,
+      reason,
       suppressedAt: new Date(),
     });
   } catch {

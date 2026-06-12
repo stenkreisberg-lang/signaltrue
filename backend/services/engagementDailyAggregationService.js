@@ -31,7 +31,11 @@ import WorkEvent from '../models/workEvent.js';
 import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import Team from '../models/team.js';
 import IntegrationConnection from '../models/integrationConnection.js';
-import { checkTeamSize, suppressMetricIfTooFew } from '../utils/privacyGate.js';
+import {
+  checkTeamSize,
+  resolveMinimumTeamSize,
+  suppressMetricIfTooFew,
+} from '../utils/privacyGate.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -68,9 +72,10 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   // Load team config (timezone, working hours) and integration coverage
-  const [team, connections] = await Promise.all([
+  const [team, connections, minimumTeamSize] = await Promise.all([
     Team.findById(teamId).lean(),
     IntegrationConnection.find({ orgId, status: 'connected' }).lean(),
+    resolveMinimumTeamSize(orgId),
   ]);
 
   const workConfig = buildWorkConfig(team);
@@ -88,10 +93,10 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   const activePeopleCount = activeUsers.size;
 
   // Privacy gate — do not write if below minimum
-  if (!checkTeamSize(activePeopleCount)) {
+  if (!checkTeamSize(activePeopleCount, minimumTeamSize)) {
     console.info(
       `[EngagementAggregation] Suppressed team ${teamId} on ${dateStr}: ` +
-        `only ${activePeopleCount} active people (min 8 required)`
+        `only ${activePeopleCount} active people (min ${minimumTeamSize} required)`
     );
     return null;
   }
