@@ -14,6 +14,8 @@ import { generateAction } from './actionGenerationService.js';
 import { checkExpiredExperiments } from './experimentTrackingService.js';
 import { runWeeklyEngagementStrainJob } from './engagementWeeklyJobService.js';
 import { sendWeeklyEngagementReport } from './engagementWeeklyEmailService.js';
+import { buildCommunicationGraph } from './communicationGraphService.js';
+import { runManagerOverloadForOrg } from './managerOverloadService.js';
 
 /**
  * Get the start of the current week (Monday)
@@ -147,6 +149,7 @@ async function runWeeklyCycle(weekStart = getPreviousWeekStart()) {
   const diagnosisResults = await runWeeklyDiagnosis(weekStart);
   const experimentResults = await runExperimentCompletion();
   const engagementResults = await runEngagementStrainCycle(weekStart);
+  const managerOverloadResults = await runManagerOverloadCycle(weekStart);
 
   console.log('=== WEEKLY CYCLE COMPLETE ===');
 
@@ -154,8 +157,42 @@ async function runWeeklyCycle(weekStart = getPreviousWeekStart()) {
     diagnosis: diagnosisResults,
     experiments: experimentResults,
     engagement: engagementResults,
+    managerOverload: managerOverloadResults,
     timestamp: new Date(),
   };
+}
+
+/**
+ * Run the manager-overload / span pipeline for all orgs.
+ * Builds the ONA communication graph once per org and feeds it into the
+ * per-manager SOI computation. See docs/PIVOT_REPORT_SPEC.md §3–§5.
+ */
+async function runManagerOverloadCycle(weekStart) {
+  console.log('[ManagerOverload] Starting weekly manager-overload scoring...');
+  const weekStartStr = weekStart.toISOString().split('T')[0];
+
+  const teams = await Team.find({ isActive: { $ne: false } })
+    .select('orgId')
+    .lean();
+  const orgIds = [...new Set(teams.map((t) => String(t.orgId)).filter(Boolean))];
+
+  const results = { processed: 0, suppressed: 0, errors: 0, orgs: orgIds.length };
+
+  for (const orgId of orgIds) {
+    try {
+      const graph = await buildCommunicationGraph(orgId, weekStartStr);
+      const result = await runManagerOverloadForOrg(orgId, weekStartStr, { graph });
+      results.processed += result.processed ?? 0;
+      results.suppressed += result.suppressed ?? 0;
+      results.errors += result.errors?.length ?? 0;
+    } catch (err) {
+      console.error(`[ManagerOverload] Error processing org ${orgId}:`, err.message);
+      results.errors++;
+    }
+  }
+
+  console.log('[ManagerOverload] Cycle complete:', results);
+  return results;
 }
 
 /**

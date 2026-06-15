@@ -38,7 +38,11 @@ import {
   calculateConfidenceScore,
   getTopDrivers,
 } from './engagementScoringService.js';
-import { checkTeamSize, resolveMinimumTeamSize } from '../utils/privacyGate.js';
+import {
+  checkTeamSize,
+  resolveMinimumTeamSize,
+  MIN_ENGAGEMENT_TEAM_SIZE,
+} from '../utils/privacyGate.js';
 import { detectPatterns } from './engagementPatternService.js';
 import { generateRecommendations } from './engagementRecommendationService.js';
 
@@ -60,7 +64,10 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
   console.info(`[EngagementWeeklyJob] Starting for org ${orgId}, week ${weekStartStr}`);
 
   const teams = await Team.find({ orgId }).lean();
-  const minimumTeamSize = await resolveMinimumTeamSize(orgId);
+  const minimumTeamSize = Math.max(
+    await resolveMinimumTeamSize(orgId),
+    MIN_ENGAGEMENT_TEAM_SIZE
+  );
 
   let processed = 0;
   let suppressed = 0;

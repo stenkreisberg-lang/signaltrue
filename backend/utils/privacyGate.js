@@ -22,6 +22,16 @@ export const MIN_TEAM_SIZE = 5;
 export const MIN_METRIC_CONTRIBUTORS = 5;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
+// Engagement Strain / Manager-overload pipeline uses a stricter team floor (8)
+// to match the marketed privacy minimum. Per-metric contributor floor stays at 5.
+// See docs/PIVOT_REPORT_SPEC.md §9.
+export const MIN_ENGAGEMENT_TEAM_SIZE = 8;
+
+// Minimum base value before a week-over-week percentage change is meaningful.
+// Below this, a change is noise (e.g. messages 12 -> 2) and must be suppressed
+// rather than presented as a signal. See docs/PIVOT_REPORT_SPEC.md §4 Section D.
+export const MIN_CHANGE_BASE = 5;
+
 export async function resolveMinimumTeamSize(orgId) {
   if (!orgId) return MIN_TEAM_SIZE;
   try {
@@ -102,6 +112,31 @@ export function detectConcentratedPattern(perPersonValues, threshold = CONCENTRA
   }
 
   return { concentrated: false, message: null };
+}
+
+// ── Week-over-week change suppression ────────────────────────────────────────────
+
+/**
+ * Decide whether a week-over-week percentage change is reportable.
+ *
+ * A change computed on a tiny base is statistical noise, not a signal — e.g.
+ * messages 12 -> 2 is "-83%" but means nothing. Returns a structured result so
+ * callers can render "—" / "insufficient base" instead of an alarming delta.
+ *
+ * @param {number} from  — prior-period value (the denominator)
+ * @param {number} to    — current-period value
+ * @param {number} [minBase] — minimum prior value to trust the change
+ * @returns {{ reportable: boolean, pct: number|null, reason: string|null }}
+ */
+export function evaluateChange(from, to, minBase = MIN_CHANGE_BASE) {
+  if (typeof from !== 'number' || typeof to !== 'number') {
+    return { reportable: false, pct: null, reason: 'no_data' };
+  }
+  if (from < minBase) {
+    return { reportable: false, pct: null, reason: 'insufficient_base' };
+  }
+  const pct = ((to - from) / from) * 100;
+  return { reportable: true, pct: Math.round(pct), reason: null };
 }
 
 // ── Rollup Helper ──────────────────────────────────────────────────────────────

@@ -35,6 +35,7 @@ import {
   checkTeamSize,
   resolveMinimumTeamSize,
   suppressMetricIfTooFew,
+  MIN_ENGAGEMENT_TEAM_SIZE,
 } from '../utils/privacyGate.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   const [team, connections, minimumTeamSize] = await Promise.all([
     Team.findById(teamId).lean(),
     IntegrationConnection.find({ orgId, status: 'connected' }).lean(),
-    resolveMinimumTeamSize(orgId),
+    resolveMinimumTeamSize(orgId).then((m) => Math.max(m, MIN_ENGAGEMENT_TEAM_SIZE)),
   ]);
 
   const workConfig = buildWorkConfig(team);
