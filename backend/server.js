@@ -133,6 +133,7 @@ import teamStateRoutes from './routes/teamStateRoutes.js';
 import reminderCronRoutes from './routes/reminderCron.js';
 import leadsRoutes from './routes/leads.js';
 import engagementStrainRoutes from './routes/engagementStrainRoutes.js';
+import managerOverloadRoutes from './routes/managerOverloadRoutes.js';
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from './routes/categoryKingIntegrations.js';
@@ -412,6 +413,7 @@ async function main() {
 
     // --- Engagement Strain Risk Routes ---
     app.use('/api/engagement-strain', engagementStrainRoutes);
+    app.use('/api/manager-overload', managerOverloadRoutes);
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);

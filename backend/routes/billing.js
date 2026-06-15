@@ -33,6 +33,10 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
     const priceMap = {
       visibility: process.env.STRIPE_PRICE_VISIBILITY, // €299/month
       interpretation: process.env.STRIPE_PRICE_INTERPRETATION, // €499/month
+      // Per-manager-monitored plan — the value unit the buyer funds.
+      // Requires a per-unit Stripe price; quantity = active managers.
+      // See docs/PIVOT_REPORT_SPEC.md §8.
+      per_manager: process.env.STRIPE_PRICE_PER_MANAGER,
       // Legacy names for backwards compatibility
       starter: process.env.STRIPE_PRICE_VISIBILITY,
       pro: process.env.STRIPE_PRICE_INTERPRETATION,
@@ -41,8 +45,20 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
     const priceId = priceMap[plan];
     if (!priceId) {
       return res.status(400).json({
-        message: `Unknown plan '${plan}'. Available: visibility (€299), interpretation (€499)`,
+        message: `Unknown plan '${plan}'. Available: visibility (€299), interpretation (€499), per_manager (per active manager)`,
       });
+    }
+
+    // Per-manager plans bill by the number of monitored managers (OrgUnit).
+    let quantity = 1;
+    if (plan === 'per_manager') {
+      const { default: OrgUnit } = await import('../models/orgUnit.js');
+      const managerCount = await OrgUnit.countDocuments({
+        orgId: req.user.orgId,
+        isManager: true,
+        effectiveTo: null,
+      });
+      quantity = Math.max(1, managerCount);
     }
 
     // Get user's org info
@@ -73,7 +89,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
       mode: 'subscription',
       allow_promotion_codes: true,
       payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity }],
       metadata: {
         plan: String(plan),
         orgSlug: org?.slug || '',
