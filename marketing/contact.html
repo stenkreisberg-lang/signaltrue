@@ -163,6 +163,90 @@
         margin-top: 8px;
       }
 
+      .demo-form {
+        display: grid;
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .demo-form-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .demo-form label {
+        color: #0f172a;
+        display: grid;
+        font-size: 0.86rem;
+        font-weight: 750;
+        gap: 7px;
+      }
+
+      .demo-form input,
+      .demo-form select,
+      .demo-form textarea {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        color: #0f172a;
+        font: inherit;
+        padding: 12px 13px;
+        width: 100%;
+      }
+
+      .demo-form input:focus,
+      .demo-form select:focus,
+      .demo-form textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        outline: none;
+      }
+
+      .demo-form textarea {
+        min-height: 104px;
+        resize: vertical;
+      }
+
+      .demo-form .btn {
+        align-items: center;
+        cursor: pointer;
+        justify-content: center;
+        min-height: 48px;
+        width: 100%;
+      }
+
+      .demo-form .btn:disabled {
+        cursor: wait;
+        opacity: 0.65;
+      }
+
+      .form-status {
+        border-radius: 12px;
+        display: none;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+        padding: 12px 14px;
+      }
+
+      .form-status.is-error {
+        background: #fef2f2;
+        color: #991b1b;
+        display: block;
+      }
+
+      .form-status.is-success {
+        background: #ecfdf5;
+        color: #065f46;
+        display: block;
+      }
+
+      .form-privacy {
+        font-size: 0.78rem;
+        margin: 0;
+      }
+
       .contact-note {
         margin: 36px auto 0;
         max-width: 1120px;
@@ -201,6 +285,10 @@
         .contact-note {
           border-radius: 22px;
         }
+
+        .demo-form-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -221,7 +309,7 @@
         </nav>
         <div class="cta">
           <a class="btn" href="/login">Login</a>
-          <a class="btn btn-primary" href="/contact" onclick="gtag('event','demo_requested',{event_category:'conversion',event_label:'header'});">Request demo</a>
+          <a class="btn btn-primary" href="/contact" onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'header'});">Request demo</a>
         </div>
       </div>
     </header>
@@ -271,12 +359,51 @@
                 See how SignalTrue would report team-level pressure, confidence, and recommended
                 actions for your organization.
               </p>
-              <a
-                class="btn btn-primary"
-                href="mailto:hello@signaltrue.ai?subject=SignalTrue%20demo%20request"
-                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'demo_request'});"
-                >Request demo</a
-              >
+              <form class="demo-form" id="demo-request-form">
+                <div class="demo-form-grid">
+                  <label>
+                    Name
+                    <input name="name" type="text" autocomplete="name" required />
+                  </label>
+                  <label>
+                    Work email
+                    <input name="email" type="email" autocomplete="email" required />
+                  </label>
+                </div>
+                <div class="demo-form-grid">
+                  <label>
+                    Company
+                    <input name="organization" type="text" autocomplete="organization" />
+                  </label>
+                  <label>
+                    Role
+                    <input name="title" type="text" autocomplete="organization-title" />
+                  </label>
+                </div>
+                <label>
+                  What would help most?
+                  <select name="intent">
+                    <option value="demo">Book a guided demo</option>
+                    <option value="workload-scan">Discuss a workload scan</option>
+                    <option value="sample-report">Send me the sample report</option>
+                    <option value="pricing">Discuss pricing</option>
+                  </select>
+                </label>
+                <label>
+                  What would you like to understand?
+                  <textarea
+                    name="challenge"
+                    placeholder="For example: manager overload, meeting pressure, focus fragmentation, or burnout risk"
+                  ></textarea>
+                </label>
+                <button class="btn btn-primary" id="demo-submit" type="submit">
+                  Send demo request
+                </button>
+                <p class="form-status" id="demo-form-status" role="status" aria-live="polite"></p>
+                <p class="form-privacy">
+                  We will use these details only to respond to your SignalTrue request.
+                </p>
+              </form>
             </article>
             <article class="contact-card">
               <h3>Get the sample report</h3>
@@ -297,7 +424,7 @@
               <a
                 class="btn"
                 href="mailto:hello@signaltrue.ai?subject=SignalTrue%20workload%20scan"
-                onclick="gtag('event','demo_requested',{event_category:'conversion',event_label:'contact_workload_scan'});"
+                onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'contact_workload_scan'});"
                 >Discuss workload scan</a
               >
             </article>
@@ -350,6 +477,76 @@
       </div>
       <script>
         document.getElementById('year').textContent = new Date().getFullYear();
+
+        const demoForm = document.getElementById('demo-request-form');
+        const demoSubmit = document.getElementById('demo-submit');
+        const demoStatus = document.getElementById('demo-form-status');
+        const apiBase =
+          window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8080'
+            : 'https://signaltrue-backend.onrender.com';
+        let formStarted = false;
+
+        demoForm.addEventListener('focusin', function () {
+          if (formStarted) return;
+          formStarted = true;
+          gtag('event', 'form_start', {
+            event_category: 'engagement',
+            event_label: 'website_demo_request',
+          });
+        });
+
+        demoForm.addEventListener('submit', async function (event) {
+          event.preventDefault();
+          demoSubmit.disabled = true;
+          demoSubmit.textContent = 'Sending...';
+          demoStatus.className = 'form-status';
+          demoStatus.textContent = '';
+
+          const formData = new FormData(demoForm);
+          const intent = String(formData.get('intent') || 'demo');
+          const challenge = String(formData.get('challenge') || '').trim();
+
+          try {
+            const response = await fetch(apiBase + '/api/leads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: String(formData.get('name') || '').trim(),
+                email: String(formData.get('email') || '').trim(),
+                organization: String(formData.get('organization') || '').trim(),
+                title: String(formData.get('title') || '').trim(),
+                challenge: ['Intent: ' + intent, challenge].filter(Boolean).join('\n'),
+                source: 'Website demo request',
+                tag: intent,
+                timestamp: new Date().toISOString(),
+              }),
+            });
+
+            const result = await response.json().catch(function () {
+              return {};
+            });
+
+            if (!response.ok || !result.success || !result.internalNotificationSent) {
+              throw new Error(result.message || 'The request could not be sent.');
+            }
+
+            gtag('event', 'demo_request_submitted', {
+              event_category: 'conversion',
+              event_label: intent,
+            });
+            demoForm.reset();
+            demoStatus.className = 'form-status is-success';
+            demoStatus.textContent = 'Thanks. Your request was sent successfully.';
+            demoSubmit.textContent = 'Request sent';
+          } catch (error) {
+            demoStatus.className = 'form-status is-error';
+            demoStatus.textContent =
+              'We could not send your request. Please try again or email hello@signaltrue.ai.';
+            demoSubmit.disabled = false;
+            demoSubmit.textContent = 'Send demo request';
+          }
+        });
       </script>
     </footer>
   </body>

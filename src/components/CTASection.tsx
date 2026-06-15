@@ -29,7 +29,7 @@ const trackEvent = (eventName: string) => {
 
 const CTASection = () => {
   const handleRequestDemo = () => {
-    trackEvent('demo_requested');
+    trackEvent('demo_cta_click');
   };
 
   return (

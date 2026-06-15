@@ -15,18 +15,10 @@ import api from '../../utils/api';
 import { GA_MEASUREMENT_ID } from '../../lib/analytics';
 
 const conversionEvents = new Set([
-  'demo_requested',
+  'demo_request_submitted',
   'contact_form_submit',
-  'contact_mailto_click',
-  'pricing_contact_sales_click',
-  'pricing_cta_clicked',
-  'sample_report_click',
   'sample_report_request',
-  'sample_report_view',
-  'demo_cta_click',
-  'cta_clicked',
   'early_signal_preview_requested',
-  'form_start',
   'email_submitted',
   'trial_started',
 ]);
@@ -170,7 +162,7 @@ export default function SiteAnalytics() {
               <span className="app-dashboard-card-value">{measuredConversions}</span>
               <span className="app-dashboard-card-label">Measured conversions</span>
               <span className="app-dashboard-card-note">
-                Demo, pricing, form, preview, and sample-report actions.
+                Completed demo, preview, sample-report, email, and trial submissions.
               </span>
             </div>
           </div>

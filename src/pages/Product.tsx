@@ -169,7 +169,7 @@ const Product = () => {
                 scores.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                   <Button variant="hero" size="xl">
                     Request demo
                     <ArrowRight className="w-5 h-5" />
@@ -524,7 +524,7 @@ const Product = () => {
                 Request a demo and we will show how SignalTrue turns work patterns into a weekly
                 leadership report.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                 <Button variant="hero" size="xl">
                   Request demo
                   <ArrowRight className="w-5 h-5" />

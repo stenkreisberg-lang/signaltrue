@@ -24,7 +24,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleRequestDemo = () => {
-    trackEvent('demo_requested');
+    trackEvent('demo_cta_click');
   };
 
   const handleSampleReport = () => {

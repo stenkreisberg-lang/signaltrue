@@ -462,7 +462,7 @@ const Pricing = () => {
                 Start with a workload scan. See where pressure is building, then decide whether
                 SignalTrue should stay on continuously.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                 <Button variant="hero" size="xl">
                   Request demo
                   <ArrowRight className="w-5 h-5" />

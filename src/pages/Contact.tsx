@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Mail, MessageSquare, Calendar, Building2, Send, CheckCircle } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 import PageMeta from '../components/PageMeta';
+import api from '../utils/api';
 
 const Contact: React.FC = () => {
   const location = useLocation();
@@ -19,10 +20,12 @@ const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formStarted, setFormStarted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
+    setSubmitError('');
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -38,16 +41,44 @@ const Contact: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitError('');
 
-    trackEvent('contact_form_submit', {
-      company_size: formData.companySize || undefined,
-      intent: formData.intent || undefined,
-      problem_area: formData.mainProblem || undefined,
-      source_page: window.location.pathname,
-    });
+    try {
+      const challenge = [
+        formData.companySize && `Company size: ${formData.companySize}`,
+        formData.intent && `Intent: ${formData.intent}`,
+        formData.mainProblem && `Main problem: ${formData.mainProblem}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
 
-    setSubmitted(true);
-    setLoading(false);
+      await api.post('/leads', {
+        name: formData.name,
+        email: formData.email,
+        organization: formData.company,
+        title: formData.role,
+        challenge,
+        source: 'Website demo request',
+        tag: formData.intent || 'demo',
+        timestamp: new Date().toISOString(),
+      });
+
+      trackEvent('demo_request_submitted', {
+        company_size: formData.companySize || undefined,
+        intent: formData.intent || undefined,
+        problem_area: formData.mainProblem || undefined,
+        source_page: window.location.pathname,
+      });
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Contact form submission failed:', error);
+      setSubmitError(
+        'We could not send your request. Please try again or email hello@signaltrue.ai.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -337,6 +368,12 @@ const Contact: React.FC = () => {
                         </>
                       )}
                     </button>
+
+                    {submitError && (
+                      <p className="text-sm text-red-600 text-center" role="alert">
+                        {submitError}
+                      </p>
+                    )}
 
                     <p className="text-xs text-muted-foreground text-center">
                       We will only use your information to contact you about SignalTrue.

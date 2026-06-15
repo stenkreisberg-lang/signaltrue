@@ -191,7 +191,7 @@ export default function SeoLanding() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/contact"
-                  onClick={() => trackEvent('demo_requested', { source_page: location.pathname })}
+                  onClick={() => trackEvent('demo_cta_click', { source_page: location.pathname })}
                 >
                   <Button variant="hero" size="xl">
                     Request demo

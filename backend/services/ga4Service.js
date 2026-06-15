@@ -3,16 +3,10 @@ import { google } from 'googleapis';
 const ANALYTICS_READONLY_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
 const CONVERSION_EVENT_NAMES = new Set([
-  'demo_requested',
-  'pricing_cta_clicked',
-  'form_start',
+  'demo_request_submitted',
   'contact_form_submit',
   'early_signal_preview_requested',
-  'sample_report_click',
   'sample_report_request',
-  'sample_report_view',
-  'demo_cta_click',
-  'pricing_contact_sales_click',
 ]);
 
 function parseServiceAccountJson() {

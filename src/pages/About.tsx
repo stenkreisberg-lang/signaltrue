@@ -200,7 +200,7 @@ const About = () => {
                     See how it works
                   </Button>
                 </Link>
-                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                   <Button variant="hero" size="xl">
                     Request demo
                     <ArrowRight className="w-5 h-5" />

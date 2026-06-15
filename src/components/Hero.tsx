@@ -34,7 +34,7 @@ const trackEvent = (eventName: string) => {
 
 const Hero = () => {
   const handleRequestDemo = () => {
-    trackEvent('demo_requested');
+    trackEvent('demo_cta_click');
   };
 
   const handleHowItWorks = () => {

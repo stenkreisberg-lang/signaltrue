@@ -142,7 +142,7 @@ const HowItWorksPage = () => {
                 focus time, response pressure, recovery patterns, and manager load. No message
                 content. No individual scoring. No surveillance.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                 <Button variant="hero" size="xl">
                   Request demo
                   <ArrowRight className="w-5 h-5" />
@@ -295,7 +295,7 @@ const HowItWorksPage = () => {
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                   <Button variant="hero-outline" size="lg">
                     Request a full demo
                   </Button>
@@ -315,7 +315,7 @@ const HowItWorksPage = () => {
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 See how work patterns become early warning signals.
               </h2>
-              <Link to="/contact" onClick={() => trackEvent('demo_requested')}>
+              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
                 <Button variant="hero" size="xl">
                   Request demo
                   <ArrowRight className="w-5 h-5" />
