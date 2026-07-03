@@ -1,9 +1,181 @@
 {
+  "trailingSlash": false,
   "redirects": [
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "signaltrue.ai" }],
       "destination": "https://www.signaltrue.ai/:path*",
+      "permanent": true
+    },
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/index", "destination": "/", "permanent": true },
+    { "source": "/index-new.html", "destination": "/", "permanent": true },
+    { "source": "/index-new", "destination": "/", "permanent": true },
+    { "source": "/home.html", "destination": "/", "permanent": true },
+    { "source": "/home", "destination": "/", "permanent": true },
+    { "source": "/home-old.html", "destination": "/", "permanent": true },
+    { "source": "/home-old", "destination": "/", "permanent": true },
+    { "source": "/about.html", "destination": "/about", "permanent": true },
+    { "source": "/about-new.html", "destination": "/about", "permanent": true },
+    { "source": "/about-new", "destination": "/about", "permanent": true },
+    { "source": "/about-old.html", "destination": "/about", "permanent": true },
+    { "source": "/about-old", "destination": "/about", "permanent": true },
+    { "source": "/contact.html", "destination": "/contact", "permanent": true },
+    { "source": "/how-it-works.html", "destination": "/how-it-works", "permanent": true },
+    { "source": "/product.html", "destination": "/product", "permanent": true },
+    { "source": "/product-new.html", "destination": "/product", "permanent": true },
+    { "source": "/product-new", "destination": "/product", "permanent": true },
+    { "source": "/product-old.html", "destination": "/product", "permanent": true },
+    { "source": "/product-old", "destination": "/product", "permanent": true },
+    { "source": "/pricing.html", "destination": "/pricing", "permanent": true },
+    { "source": "/pricing-new.html", "destination": "/pricing", "permanent": true },
+    { "source": "/pricing-new", "destination": "/pricing", "permanent": true },
+    { "source": "/pricing-old.html", "destination": "/pricing", "permanent": true },
+    { "source": "/pricing-old", "destination": "/pricing", "permanent": true },
+    { "source": "/privacy.html", "destination": "/privacy", "permanent": true },
+    { "source": "/sample-report.html", "destination": "/sample-report", "permanent": true },
+    { "source": "/marketing/index.html", "destination": "/", "permanent": true },
+    { "source": "/marketing/index", "destination": "/", "permanent": true },
+    { "source": "/marketing/index-old.html", "destination": "/", "permanent": true },
+    { "source": "/marketing/index-old", "destination": "/", "permanent": true },
+    { "source": "/marketing/index-backup.html", "destination": "/", "permanent": true },
+    { "source": "/marketing/index-backup", "destination": "/", "permanent": true },
+    { "source": "/marketing/partials.html", "destination": "/", "permanent": true },
+    { "source": "/marketing/partials", "destination": "/", "permanent": true },
+    { "source": "/marketing/about-old.html", "destination": "/about", "permanent": true },
+    { "source": "/marketing/about-old", "destination": "/about", "permanent": true },
+    { "source": "/marketing/product-old.html", "destination": "/product", "permanent": true },
+    { "source": "/marketing/product-old", "destination": "/product", "permanent": true },
+    { "source": "/marketing/product-backup.html", "destination": "/product", "permanent": true },
+    { "source": "/marketing/product-backup", "destination": "/product", "permanent": true },
+    { "source": "/marketing/pricing-old.html", "destination": "/pricing", "permanent": true },
+    { "source": "/marketing/pricing-old", "destination": "/pricing", "permanent": true },
+    { "source": "/marketing/product.html", "destination": "/product", "permanent": true },
+    { "source": "/marketing/product", "destination": "/product", "permanent": true },
+    { "source": "/marketing/pricing.html", "destination": "/pricing", "permanent": true },
+    { "source": "/marketing/pricing", "destination": "/pricing", "permanent": true },
+    { "source": "/marketing/how-it-works.html", "destination": "/how-it-works", "permanent": true },
+    { "source": "/marketing/how-it-works", "destination": "/how-it-works", "permanent": true },
+    { "source": "/marketing/about.html", "destination": "/about", "permanent": true },
+    { "source": "/marketing/about", "destination": "/about", "permanent": true },
+    { "source": "/marketing/contact.html", "destination": "/contact", "permanent": true },
+    { "source": "/marketing/contact", "destination": "/contact", "permanent": true },
+    { "source": "/marketing/privacy.html", "destination": "/privacy", "permanent": true },
+    { "source": "/marketing/privacy", "destination": "/privacy", "permanent": true },
+    { "source": "/marketing/terms.html", "destination": "/terms", "permanent": true },
+    { "source": "/marketing/terms", "destination": "/terms", "permanent": true },
+    { "source": "/marketing/solutions.html", "destination": "/solutions", "permanent": true },
+    { "source": "/marketing/solutions", "destination": "/solutions", "permanent": true },
+    { "source": "/marketing/resources.html", "destination": "/resources", "permanent": true },
+    { "source": "/marketing/resources", "destination": "/resources", "permanent": true },
+    { "source": "/marketing/ai-info-page.html", "destination": "/ai-info-page", "permanent": true },
+    { "source": "/marketing/ai-info-page", "destination": "/ai-info-page", "permanent": true },
+    {
+      "source": "/marketing/drift-diagnostic.html",
+      "destination": "/drift-diagnostic",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/drift-diagnostic",
+      "destination": "/drift-diagnostic",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/sample-report.html",
+      "destination": "/sample-report",
+      "permanent": true
+    },
+    { "source": "/marketing/sample-report", "destination": "/sample-report", "permanent": true },
+    { "source": "/marketing/app-privacy.html", "destination": "/app/privacy", "permanent": true },
+    { "source": "/marketing/app-privacy", "destination": "/app/privacy", "permanent": true },
+    {
+      "source": "/marketing/burnout-early-warning-system.html",
+      "destination": "/burnout-early-warning-system",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/burnout-early-warning-system",
+      "destination": "/burnout-early-warning-system",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/employee-engagement-leading-indicators.html",
+      "destination": "/employee-engagement-leading-indicators",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/employee-engagement-leading-indicators",
+      "destination": "/employee-engagement-leading-indicators",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/meeting-overload.html",
+      "destination": "/signals/meeting-overload",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/meeting-overload",
+      "destination": "/signals/meeting-overload",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/recovery-time-collapse.html",
+      "destination": "/signals/recovery-time-collapse",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/recovery-time-collapse",
+      "destination": "/signals/recovery-time-collapse",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/focus-fragmentation.html",
+      "destination": "/signals/focus-fragmentation",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/focus-fragmentation",
+      "destination": "/signals/focus-fragmentation",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/after-hours-drift.html",
+      "destination": "/signals/after-hours-drift",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/after-hours-drift",
+      "destination": "/signals/after-hours-drift",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/responsiveness-pressure.html",
+      "destination": "/signals/responsiveness-pressure",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/responsiveness-pressure",
+      "destination": "/signals/responsiveness-pressure",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/coordination-overhead.html",
+      "destination": "/signals/coordination-overhead",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/coordination-overhead",
+      "destination": "/signals/coordination-overhead",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/manager-load.html",
+      "destination": "/signals/manager-load",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/signals/manager-load",
+      "destination": "/signals/manager-load",
       "permanent": true
     }
   ],
@@ -22,14 +194,38 @@
     { "source": "/drift-diagnostic", "destination": "/marketing/drift-diagnostic.html" },
     { "source": "/sample-report", "destination": "/marketing/sample-report.html" },
     { "source": "/app/privacy", "destination": "/marketing/app-privacy.html" },
-    { "source": "/burnout-early-warning-system", "destination": "/marketing/burnout-early-warning-system.html" },
-    { "source": "/employee-engagement-leading-indicators", "destination": "/marketing/employee-engagement-leading-indicators.html" },
-    { "source": "/signals/meeting-overload", "destination": "/marketing/signals/meeting-overload.html" },
-    { "source": "/signals/recovery-time-collapse", "destination": "/marketing/signals/recovery-time-collapse.html" },
-    { "source": "/signals/focus-fragmentation", "destination": "/marketing/signals/focus-fragmentation.html" },
-    { "source": "/signals/after-hours-drift", "destination": "/marketing/signals/after-hours-drift.html" },
-    { "source": "/signals/responsiveness-pressure", "destination": "/marketing/signals/responsiveness-pressure.html" },
-    { "source": "/signals/coordination-overhead", "destination": "/marketing/signals/coordination-overhead.html" },
+    {
+      "source": "/burnout-early-warning-system",
+      "destination": "/marketing/burnout-early-warning-system.html"
+    },
+    {
+      "source": "/employee-engagement-leading-indicators",
+      "destination": "/marketing/employee-engagement-leading-indicators.html"
+    },
+    {
+      "source": "/signals/meeting-overload",
+      "destination": "/marketing/signals/meeting-overload.html"
+    },
+    {
+      "source": "/signals/recovery-time-collapse",
+      "destination": "/marketing/signals/recovery-time-collapse.html"
+    },
+    {
+      "source": "/signals/focus-fragmentation",
+      "destination": "/marketing/signals/focus-fragmentation.html"
+    },
+    {
+      "source": "/signals/after-hours-drift",
+      "destination": "/marketing/signals/after-hours-drift.html"
+    },
+    {
+      "source": "/signals/responsiveness-pressure",
+      "destination": "/marketing/signals/responsiveness-pressure.html"
+    },
+    {
+      "source": "/signals/coordination-overhead",
+      "destination": "/marketing/signals/coordination-overhead.html"
+    },
     { "source": "/signals/manager-load", "destination": "/marketing/signals/manager-load.html" },
     { "source": "/styles.css", "destination": "/marketing/styles.css" },
     { "source": "/robots.txt", "destination": "/marketing/robots.txt" },
@@ -39,9 +235,7 @@
   "headers": [
     {
       "source": "/marketing/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }]
     }
   ]
 }
