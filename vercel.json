@@ -34,6 +34,7 @@
     { "source": "/pricing-old", "destination": "/pricing", "permanent": true },
     { "source": "/privacy.html", "destination": "/privacy", "permanent": true },
     { "source": "/sample-report.html", "destination": "/sample-report", "permanent": true },
+    { "source": "/blog/test-post", "destination": "/blog", "permanent": true },
     { "source": "/marketing/index.html", "destination": "/", "permanent": true },
     { "source": "/marketing/index", "destination": "/", "permanent": true },
     { "source": "/marketing/index-old.html", "destination": "/", "permanent": true },
@@ -233,6 +234,25 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/trust",
+      "headers": [
+        { "key": "Link", "value": "<https://www.signaltrue.ai/trust>; rel=\"canonical\"" }
+      ]
+    },
+    {
+      "source": "/blog",
+      "headers": [{ "key": "Link", "value": "<https://www.signaltrue.ai/blog>; rel=\"canonical\"" }]
+    },
+    {
+      "source": "/blog/:slug",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://www.signaltrue.ai/blog/:slug>; rel=\"canonical\""
+        }
+      ]
+    },
     {
       "source": "/marketing/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }]
