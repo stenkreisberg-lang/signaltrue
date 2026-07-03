@@ -235,6 +235,10 @@
   ],
   "headers": [
     {
+      "source": "/",
+      "headers": [{ "key": "Link", "value": "<https://www.signaltrue.ai/>; rel=\"canonical\"" }]
+    },
+    {
       "source": "/trust",
       "headers": [
         { "key": "Link", "value": "<https://www.signaltrue.ai/trust>; rel=\"canonical\"" }
