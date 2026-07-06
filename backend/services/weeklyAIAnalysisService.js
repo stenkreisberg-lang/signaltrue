@@ -96,6 +96,10 @@ function buildPrompt(data) {
     tw,
     lw,
     sixWeekAvg,
+    sixWeekRawAvg,
+    weeklyHistory,
+    dataAnomalies,
+    suspectMetrics,
     twMeetings,
     lwMeetings,
     twMessages,
@@ -111,6 +115,24 @@ function buildPrompt(data) {
     contextTags,
     teamStatus,
   } = data;
+
+  // Raw-count 6wk averages MUST come from the same dataset as the WoW table.
+  // Falling back to per-person figures here caused contradictory numbers in
+  // past reports (e.g. "6wk avg: 8" vs "121" for the same metric).
+  const rawAvg = sixWeekRawAvg || {};
+  const historyLines =
+    (weeklyHistory || []).length > 0
+      ? weeklyHistory
+          .map(
+            (w) =>
+              `- ${w.weeksAgo} week(s) ago: meeting hours ${w.meetingHours}h/person, after-hours ${w.afterHoursRatioPct}%, focus time ${w.focusTimeAvailability}h/person`
+          )
+          .join('\n')
+      : '- No weekly history available yet (baselines still calibrating)';
+  const anomalyLines =
+    (dataAnomalies || []).length > 0
+      ? dataAnomalies.map((a) => `- ${a}`).join('\n')
+      : null;
 
   const bench = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['Other'];
 
@@ -156,15 +178,26 @@ ORGANIZATION CONTEXT:
 - Connected integrations: ${connectedSources.join(', ') || 'None'}
 - Context tags this week: ${contextTagsStr}
 
-THIS WEEK vs LAST WEEK vs 6-WEEK AVERAGE:
-- Meetings: ${twMeetings} (last week: ${lwMeetings}, 6wk avg: ${sixWeekAvg?.meetings?.toFixed(0) || '—'})
-- Messages: ${twMessages} (last week: ${lwMessages}, 6wk avg: ${sixWeekAvg?.messages?.toFixed(0) || '—'})
+${
+  anomalyLines
+    ? `DATA QUALITY ALERTS (CRITICAL — these metrics are BROKEN, not real behavior changes):
+${anomalyLines}
+Do NOT interpret the affected metrics (${(suspectMetrics || []).join(', ') || 'see above'}) as behavioral findings. If a hypothesis would rely on them, state the data problem instead.
+
+`
+    : ''
+}THIS WEEK vs LAST WEEK vs 6-WEEK AVERAGE:
+- Meetings: ${twMeetings} (last week: ${lwMeetings}, 6wk avg: ${rawAvg.meetings != null ? rawAvg.meetings.toFixed(0) : '—'})
+- Messages: ${twMessages} (last week: ${lwMessages}, 6wk avg: ${rawAvg.messages != null ? rawAvg.messages.toFixed(0) : '—'})
 - Meeting hours: ${tw.meetingHours?.toFixed(1) || 0}h (last week: ${lw.meetingHours?.toFixed(1) || 0}h, 6wk avg: ${sixWeekAvg?.meetingHours?.toFixed(1) || '—'}h)
 - Back-to-back blocks: ${tw.backToBack?.toFixed(0) || 0} (last week: ${lw.backToBack?.toFixed(0) || 0}, 6wk avg: ${sixWeekAvg?.backToBack?.toFixed(0) || '—'})
 - After-hours ratio: ${((tw.afterHoursRatio || 0) * 100).toFixed(0)}% (last week: ${((lw.afterHoursRatio || 0) * 100).toFixed(0)}%, 6wk avg: ${sixWeekAvg?.afterHoursRatioPct?.toFixed(0) || '—'}%)
 - Focus time availability: ${tw.focusTimeAvailability?.toFixed(1) || '—'}h (last week: ${lw.focusTimeAvailability?.toFixed(1) || '—'}h)
 - Calendar fragmentation: ${tw.calendarFragmentation?.toFixed(0) || '—'}/100 (last week: ${lw.calendarFragmentation?.toFixed(0) || '—'}/100)
 - Recurring meeting burden: ${((tw.recurringBurden || 0) * 100).toFixed(0)}% (last week: ${((lw.recurringBurden || 0) * 100).toFixed(0)}%)
+
+WEEKLY HISTORY (per-person, oldest first — use this for trend/persistence claims like "3rd week in a row"; never invent longer trends than shown):
+${historyLines}
 
 INDUSTRY BENCHMARK (${industry}, secondary reference only):
 - Typical meeting hours/week: ${bench.meetingHoursPerWeek}h | After-hours: ${bench.afterHoursPct}%

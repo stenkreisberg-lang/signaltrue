@@ -14,6 +14,8 @@ import WeekContext from '../models/weekContext.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import TeamSizeGate from '../models/teamSizeGate.js';
+import Intervention from '../models/intervention.js';
+import BriefPrediction from '../models/briefPrediction.js';
 import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, getStatusMeta, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -257,6 +259,98 @@ function chooseOrgMetricRecords(records) {
   return orgRecords.length > 0 ? orgRecords : records;
 }
 
+// Catch-all buckets ("Unassigned", "General", "Other") are not real teams and
+// must never be scored or presented as team-level insight.
+const CATCH_ALL_TEAM_RE = /^(unassigned|general|other|default|no[ -]?team)$/i;
+export function isCatchAllTeam(name) {
+  return CATCH_ALL_TEAM_RE.test(String(name || '').trim());
+}
+
+const STALE_SYNC_DAYS = 7;
+
+/**
+ * Data sanity layer: detect broken ingestion BEFORE any narrative is generated.
+ * A metric that collapses to zero while its 6-week average is materially non-zero
+ * is almost always a pipeline failure, not a behavior change — declare it, never
+ * interpret it as "healthy improvement".
+ */
+export function detectDataAnomalies({ tw, sixWeekAvg, twMessages, sixWeekRawAvg, integrationConnections, now }) {
+  const anomalies = [];
+  const suspectMetrics = new Set();
+
+  // Stale connectors: status says connected but nothing synced for > STALE_SYNC_DAYS
+  const staleConnectors = (integrationConnections || []).filter((conn) => {
+    if (conn.status !== 'connected') return false;
+    const last = conn.sync?.lastSyncAt ? new Date(conn.sync.lastSyncAt) : null;
+    return !last || (now - last) / (1000 * 60 * 60 * 24) > STALE_SYNC_DAYS;
+  });
+  for (const conn of staleConnectors) {
+    const last = conn.sync?.lastSyncAt
+      ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : 'never';
+    anomalies.push({
+      kind: 'stale_connector',
+      metric: null,
+      text: `${conn.integrationType} shows status "connected" but last synced ${last === 'never' ? 'never' : `on ${last}`}. Data from this source is missing or stale — metrics that depend on it are unreliable this week.`,
+    });
+  }
+
+  // Message flow collapse: messaging source connected but volume near zero vs history
+  if (sixWeekRawAvg.messages >= 5 && twMessages <= Math.max(1, sixWeekRawAvg.messages * 0.1)) {
+    anomalies.push({
+      kind: 'message_collapse',
+      metric: 'messages',
+      text: `Message volume collapsed to ${twMessages} this week vs a 6-week average of ${Math.round(sixWeekRawAvg.messages)}. This pattern indicates a broken or stale messaging sync, not a real behavior change.`,
+    });
+    suspectMetrics.add('messages');
+    suspectMetrics.add('afterHours');
+  }
+
+  // After-hours collapse to exactly zero while history is materially non-zero
+  if ((tw.afterHoursRatio || 0) === 0 && (sixWeekAvg.afterHoursRatio || 0) > 0.1) {
+    anomalies.push({
+      kind: 'after_hours_collapse',
+      metric: 'afterHours',
+      text: `Out-of-hours activity reads 0% this week against a 6-week average of ${Math.round(sixWeekAvg.afterHoursRatio * 100)}%. A drop to exactly zero is almost certainly a data capture issue — do not read this as a healthy improvement.`,
+    });
+    suspectMetrics.add('afterHours');
+  }
+
+  // Focus time never measured: zero across current week AND history means the
+  // metric is not being computed — report as unmeasured, not as a finding.
+  if ((tw.focusTimeAvailability || 0) === 0 && (sixWeekAvg.focusTimeAvailability || 0) === 0) {
+    suspectMetrics.add('focusTime');
+  }
+
+  return { anomalies, suspectMetrics, staleConnectors };
+}
+
+/** Extract a gradable metric value for prediction grading. */
+function predictionMetricValue(metric, ctx) {
+  switch (metric) {
+    case 'meetings':
+      return ctx.twMeetings;
+    case 'messages':
+      return ctx.twMessages;
+    case 'meetingHours':
+      return ctx.tw.meetingHours;
+    case 'afterHoursRatioPct':
+      return Math.round((ctx.tw.afterHoursRatio || 0) * 100);
+    case 'focusTimeAvailability':
+      return ctx.tw.focusTimeAvailability;
+    default:
+      return null;
+  }
+}
+
+const PREDICTION_METRIC_LABELS = {
+  meetings: 'meeting count',
+  messages: 'team messages',
+  meetingHours: 'meeting hours per person',
+  afterHoursRatioPct: 'out-of-hours work %',
+  focusTimeAvailability: 'uninterrupted time (hrs)',
+};
+
 // ─── Styles ───
 const S = {
   card: 'background:#ffffff; border:1px solid #dbe3ef; border-radius:12px; padding:22px 24px; margin-bottom:18px;',
@@ -486,6 +580,37 @@ export async function generateWeeklyBrief(orgId) {
     TeamSizeGate.find({ orgId: org._id }).sort({ suppressedAt: -1 }).limit(20).lean(),
   ]);
 
+  // ─── Second-stage parallel fetch: impact loop, predictions, tenure, coverage trend ───
+  const [
+    recentInterventions,
+    priorPredictions,
+    firstMetricRecord,
+    lastWeekMappedActors,
+  ] = await Promise.all([
+    // Actions the org logged (decision log / impact loop) — last 60 days
+    Intervention.find({
+      orgId: org._id,
+      startDate: { $gte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000) },
+    })
+      .populate('teamId', 'name')
+      .sort({ startDate: -1 })
+      .limit(10)
+      .lean(),
+    // Predictions made in earlier briefs (most recent first) — for grading + track record
+    BriefPrediction.find({ orgId: org._id }).sort({ weekStart: -1 }).limit(9).lean(),
+    // Oldest metric record → how many weeks of baseline history exist
+    IntegrationMetricsDaily.findOne({ orgId: org._id }).sort({ date: 1 }).select('date').lean(),
+    // Mapping coverage last week — to detect coverage regression
+    WorkEvent.distinct('actorUserId', {
+      orgId: org._id,
+      actorUserId: { $ne: null },
+      timestamp: { $gte: lastWeekStart, $lt: thisWeekStart },
+    }),
+  ]);
+  const weeksOfHistory = firstMetricRecord?.date
+    ? Math.max(0, Math.floor((now - new Date(firstMetricRecord.date)) / (7 * 24 * 60 * 60 * 1000)))
+    : 0;
+
   // ─── BDI data ───
   const teamBDIData = [];
   for (const team of teams) {
@@ -505,11 +630,15 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── Engagement Strain — attach team names ───
+  // Catch-all buckets ("Unassigned", "General") are never scored: a strain score
+  // for a non-team is noise and undermines trust in the real team scores.
   const teamNameMap = Object.fromEntries(teams.map((t) => [String(t._id), t.name]));
-  const engagementStrainByTeam = engagementStrainDocs.map((doc) => ({
-    ...doc,
-    teamName: teamNameMap[String(doc.teamId)] ?? null,
-  }));
+  const engagementStrainByTeam = engagementStrainDocs
+    .map((doc) => ({
+      ...doc,
+      teamName: teamNameMap[String(doc.teamId)] ?? null,
+    }))
+    .filter((doc) => !isCatchAllTeam(doc.teamName));
   const engagementDriverLabel = (driver) =>
     ({
       recovery_debt: 'Recovery debt',
@@ -641,6 +770,11 @@ export async function generateWeeklyBrief(orgId) {
     const memberCount = memberCountByTeam.get(String(team._id)) || 0;
     let status = 'Ready for scoring';
     let reason = 'Enough mapped activity is available.';
+    if (isCatchAllTeam(team.name)) {
+      status = 'Excluded (catch-all)';
+      reason = `"${team.name}" is a catch-all bucket, not a real team — assign these people to named teams to include them in scoring.`;
+      return { team, memberCount, ...eventInfo, status, reason };
+    }
     if (memberCount < minimumTeamSize) {
       status = 'Suppressed';
       reason = `Team has ${memberCount} member(s); the organization requires ${minimumTeamSize} for engagement scoring.`;
@@ -741,10 +875,194 @@ export async function generateWeeklyBrief(orgId) {
   if (integrations.google?.accessToken) connectedSources.push('Google Calendar');
   if (integrations.googleChat?.accessToken) connectedSources.push('Google Chat');
 
+  // ═══ DATA SANITY LAYER — runs BEFORE any narrative is generated ═══
+  const { anomalies: dataAnomalies, suspectMetrics, staleConnectors } = detectDataAnomalies({
+    tw,
+    sixWeekAvg,
+    twMessages,
+    sixWeekRawAvg,
+    integrationConnections,
+    now,
+  });
+
+  // Coverage regression: the one thing that got worse should never go unflagged
+  const coverageRegressed =
+    lastWeekMappedActors.length > 0 &&
+    mappedActorCount.length < lastWeekMappedActors.length * 0.8;
+
+  // ─── Grade last week's prediction (self-grading track record) ───
+  const gradingCtx = { tw, twMeetings, twMessages };
+  let gradedPrediction = null;
+  const ungraded = priorPredictions.find(
+    (p) => !p.outcome?.evaluated && new Date(p.weekStart) < thisWeekStart
+  );
+  if (ungraded) {
+    const actual = predictionMetricValue(ungraded.metric, gradingCtx);
+    if (actual != null && !isNaN(actual)) {
+      const held =
+        ungraded.comparator === 'gte' ? actual >= ungraded.threshold : actual <= ungraded.threshold;
+      try {
+        await BriefPrediction.updateOne(
+          { _id: ungraded._id },
+          {
+            $set: {
+              'outcome.evaluated': true,
+              'outcome.evaluatedAt': now,
+              'outcome.actualValue': Math.round(actual * 10) / 10,
+              'outcome.held': held,
+            },
+          }
+        );
+        gradedPrediction = {
+          ...ungraded,
+          outcome: { evaluated: true, actualValue: Math.round(actual * 10) / 10, held },
+        };
+      } catch (err) {
+        console.error('[WeeklyBrief] Failed to grade prediction:', err.message);
+      }
+    }
+  }
+  const evaluatedPredictions = [
+    ...(gradedPrediction ? [gradedPrediction] : []),
+    ...priorPredictions.filter((p) => p.outcome?.evaluated),
+  ].slice(0, 8);
+  const predictionsHeld = evaluatedPredictions.filter((p) => p.outcome.held).length;
+
+  // ─── Cost estimate (€) — directional, only from trustworthy metrics ───
+  const hourlyCost = Number(org.settings?.avgHourlyCost) || 45; // € per hour, configurable
+  const HEALTHY_MEETING_HOURS_WEEK = 15; // ~3h/day
+  let costEstimate = null;
+  if (
+    coveragePct >= 40 &&
+    tw.meetingHours > HEALTHY_MEETING_HOURS_WEEK &&
+    !suspectMetrics.has('meetings')
+  ) {
+    const excessHoursPerPerson = tw.meetingHours - HEALTHY_MEETING_HOURS_WEEK;
+    const peopleWithData = usersWithDataThisWeek.length;
+    const weeklyCost = Math.round(excessHoursPerPerson * peopleWithData * hourlyCost);
+    costEstimate = {
+      weeklyCost,
+      excessHoursPerPerson: Math.round(excessHoursPerPerson * 10) / 10,
+      peopleWithData,
+      hourlyCost,
+    };
+  }
+
+  // ═══ HARD READINESS GATE ═══
+  // When mapping coverage is too low to trust team-level conclusions, the report
+  // SHRINKS instead of padding: a setup-focused brief with zero scores, zero AI
+  // narrative, zero benchmarks. Shipping untrustworthy numbers with a "low
+  // confidence" label teaches clients to ignore the product.
+  const reportMode = dataReadinessStatus === 'Needs mapping' ? 'setup' : 'full';
+
+  if (reportMode === 'setup') {
+    let html = '';
+    html += `<div style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;color:#0f172a;background:#ffffff;border:1px solid #d9e2ee;border-radius:14px;overflow:hidden;box-shadow:0 18px 45px rgba(15,23,42,.08);">`;
+    html += `<div style="background:#0f172a;padding:30px 34px 24px;color:white;">`;
+    html += `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;margin-bottom:8px;">Weekly Brief — Setup Required</div>`;
+    html += `<h1 style="margin:0 0 6px 0;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>`;
+    html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
+    html += `</div>`;
+
+    // Verdict: honest, short, no scores
+    html += `<div style="padding:22px 34px;border-bottom:1px solid #e2e8f0;">`;
+    html += `<h2 style="margin:0 0 8px 0;font-size:20px;font-weight:750;">Data setup is incomplete — health scores are paused</h2>`;
+    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${mappedTeamCount.length} of ${teams.length} teams</strong> have mapped activity this week. Team health, engagement, and benchmark conclusions are suppressed until coverage improves — publishing them now would mean reporting numbers we don't trust.</p>`;
+    if (coverageRegressed) {
+      html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage went down:</strong> ${lastWeekMappedActors.length} mapped users last week → ${mappedActorCount.length} this week. Something changed in your integrations or user mapping — this is the most important thing to investigate.</p></div>`;
+    }
+    html += `</div>`;
+
+    // What broke (anomalies + stale connectors)
+    if (dataAnomalies.length > 0) {
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">What's broken</h3>`;
+      for (const a of dataAnomalies) {
+        html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;">${a.text}</p></div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Connector status with staleness
+    if (integrationConnections.length > 0) {
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">Connector status</h3>`;
+      html += `<table style="${S.table}">`;
+      html += `<thead><tr><th style="${S.th}">Source</th><th style="${S.thR}">Status</th><th style="${S.thR}">Coverage</th><th style="${S.thR}">Last sync</th></tr></thead><tbody>`;
+      for (const conn of integrationConnections) {
+        const isStale = staleConnectors.some((s) => String(s._id) === String(conn._id));
+        const coverage =
+          conn.coverage?.totalUsers > 0
+            ? `${conn.coverage.mappedUsers || 0}/${conn.coverage.totalUsers}`
+            : '—';
+        const lastSync = conn.sync?.lastSyncAt
+          ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : '—';
+        const statusLabel = isStale ? 'stale' : conn.status;
+        const statusColor = isStale ? '#dc2626' : conn.status === 'connected' ? '#16a34a' : '#f59e0b';
+        html += `<tr><td style="${S.td}">${conn.integrationType}</td><td style="${S.tdR};color:${statusColor};font-weight:700;">${statusLabel}</td><td style="${S.tdR}">${coverage}</td><td style="${S.tdR}">${lastSync}</td></tr>`;
+      }
+      html += `</tbody></table>`;
+      html += `</div>`;
+    }
+
+    // Fix steps — the single deliverable of a setup-mode brief
+    html += `<div style="${S.card}">`;
+    html += `<h3 style="${S.h3} margin-top:0;">How to fix it (3 steps)</h3>`;
+    const steps = [];
+    if (staleConnectors.length > 0) {
+      steps.push(
+        `<strong>Re-authenticate stale connectors:</strong> ${staleConnectors.map((c) => c.integrationType).join(', ')} — reconnect in Settings → Integrations, then confirm a fresh sync timestamp.`
+      );
+    }
+    steps.push(
+      `<strong>Map users:</strong> ${totalUsers - mappedActorCount.length} user(s) have no mapped activity. In Settings → Employees, re-run the employee sync and match integration accounts to SignalTrue users.`
+    );
+    steps.push(
+      `<strong>Assign teams:</strong> ${teams.length - mappedTeamCount.length} team(s) have no mapped events${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Move people out of catch-all buckets (e.g. "Unassigned") into their real teams — scoring resumes automatically once a team has ${minimumTeamSize}+ mapped members.`
+    );
+    steps.slice(0, 3).forEach((step, i) => {
+      html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}.</strong> ${step}</p></div>`;
+    });
+    html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when at least 40% of users have mapped activity. At 80%+ you'll get high-confidence team-level insight.</p>`;
+    html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/settings/integrations" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Fix data setup</a></div>`;
+    html += `</div>`;
+
+    // Named team readiness — the mapping to-do list
+    if (teamReadiness.length > 0) {
+      html += `<div style="${S.card}">`;
+      html += `<h3 style="${S.h3} margin-top:0;">Team readiness</h3>`;
+      html += `<table style="${S.table}"><thead><tr><th style="${S.th}">Team</th><th style="${S.thR}">Members</th><th style="${S.thR}">Mapped active</th><th style="${S.thR}">Status</th></tr></thead><tbody>`;
+      for (const item of teamReadiness) {
+        const color =
+          item.status === 'Ready for scoring'
+            ? '#16a34a'
+            : item.status === 'Excluded (catch-all)'
+              ? '#9ca3af'
+              : '#f59e0b';
+        html += `<tr><td style="${S.td}">${item.team.name}</td><td style="${S.tdR}">${item.memberCount}</td><td style="${S.tdR}">${item.activeUsers}</td><td style="${S.tdR};color:${color};font-weight:700;">${item.status}</td></tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+
+    // Footer
+    html += `<div style="padding:17px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">`;
+    html += `<p style="${S.pSmall}">Mapping coverage: <strong>${mappingCoveragePct}%</strong> of users${lastWeekMappedActors.length > 0 ? ` (last week: ${totalUsers > 0 ? Math.round((lastWeekMappedActors.length / totalUsers) * 100) : 0}%)` : ''} · ${weeksOfHistory} week(s) of data history collected — baselines keep building while you fix mapping.</p>`;
+    html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses health scores rather than reporting numbers built on ${mappingCoveragePct}% coverage.</p>`;
+    html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()}</p>`;
+    html += `</div></div>`;
+    return html;
+  }
+
   // ─── Analyze observations (what changed) + risks + recommendations ───
   const observations = [];
   const risks = [];
   const recommendations = [];
+
+  // Data anomalies come FIRST — a broken pipeline is declared, never interpreted
+  for (const anomaly of dataAnomalies) {
+    observations.push({ text: `⚠️ Data quality: ${anomaly.text}`, confidence: 'High' });
+  }
 
   // Helper: confidence based on cross-metric reinforcement and persistence
   function obsConfidence(conditions) {
@@ -989,6 +1307,30 @@ export async function generateWeeklyBrief(orgId) {
     ['Early Drift', 'Developing Drift', 'Critical Drift'].includes(t.bdi.driftState)
   );
 
+  // ─── Real weekly history (single source: sixWeekOrgMetricsArr, same data as WoW table) ───
+  const weekBuckets = new Map();
+  for (const rec of sixWeekOrgMetricsArr) {
+    const d = new Date(rec.date);
+    const weekIdx = Math.floor((thisWeekStart - d) / (7 * 24 * 60 * 60 * 1000));
+    if (weekIdx < 0 || weekIdx > 5) continue;
+    if (!weekBuckets.has(weekIdx)) weekBuckets.set(weekIdx, []);
+    weekBuckets.get(weekIdx).push(rec);
+  }
+  // Newest-first (escalation service expects this ordering)
+  const weeklyHistoryNewestFirst = [...weekBuckets.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([weekIdx, recs]) => ({
+      weeksAgo: weekIdx + 1,
+      meetingHours:
+        Math.round((avgField(recs, 'meetingDurationTotalHours7d') / connectedUserCount) * 10) / 10,
+      backToBack: avgField(recs, 'backToBackMeetingBlocks') / connectedUserCount,
+      afterHoursRatio: avgField(recs, 'afterHoursMessageRatio'),
+      afterHoursRatioPct: Math.round(avgField(recs, 'afterHoursMessageRatio') * 100),
+      focusTimeAvailability:
+        Math.round((avgField(recs, 'focusTimeAvailabilityHours') / connectedUserCount) * 10) / 10,
+      calendarFragmentation: avgField(recs, 'calendarFragmentationScore'),
+    }));
+
   // Build org-level escalation status
   const orgStatus = calculateTeamStatus({
     currentMetrics: {
@@ -1009,7 +1351,7 @@ export async function generateWeeklyBrief(orgId) {
       recurringBurden: lw.recurringBurden,
       asyncVolume: lw.messages,
     },
-    weeklyHistory: [], // could be populated from sixWeekMetricsArr in future
+    weeklyHistory: [{ ...tw }, ...weeklyHistoryNewestFirst], // current week first, then history
     baseline: {},
     contextTags,
     bdiData:
@@ -1038,6 +1380,11 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── AI Analysis Layer ───
+  // Single source of truth: the AI receives EXACTLY the numbers shown in the
+  // week-over-week table (raw counts + per-person figures) plus real weekly
+  // history — never a separately computed dataset.
+  const weeklyHistory = [...weeklyHistoryNewestFirst].reverse(); // oldest first for the prompt
+
   const employeeCount = totalUsers; // already fetched above for coverage
   const aiAnalysis = await generateWeeklyAIAnalysis({
     orgName: org.name,
@@ -1049,7 +1396,11 @@ export async function generateWeeklyBrief(orgId) {
     coveragePct, // % of org with data — AI can flag low coverage
     tw,
     lw,
-    sixWeekAvg, // these are already per-person figures
+    sixWeekAvg, // per-person figures (matches "Workload detail" table rows)
+    sixWeekRawAvg, // raw event counts (matches "Meetings"/"Messages" table rows)
+    weeklyHistory, // real 6-week trend, oldest first
+    dataAnomalies: dataAnomalies.map((a) => a.text),
+    suspectMetrics: [...suspectMetrics],
     twMeetings,
     lwMeetings,
     twMessages,
@@ -1065,6 +1416,70 @@ export async function generateWeeklyBrief(orgId) {
     contextTags,
     teamStatus: orgStatus.status,
   });
+
+  // ─── New falsifiable prediction for next week (rule-based, machine-gradable) ───
+  // One concrete numeric call per week. Graded automatically in the next brief.
+  let newPrediction = null;
+  const alreadyPredictedThisWeek = priorPredictions.some(
+    (p) => Math.abs(new Date(p.weekStart) - thisWeekStart) < 24 * 60 * 60 * 1000
+  );
+  if (!alreadyPredictedThisWeek) {
+    const mhPerDay = tw.meetingHours / 5;
+    const afterHoursPct = Math.round((tw.afterHoursRatio || 0) * 100);
+    let candidate = null;
+    if (tw.meetingHours > HEALTHY_MEETING_HOURS_WEEK && tw.meetingHours >= lw.meetingHours * 0.95) {
+      // Sustained heavy meeting load → predict it persists unless someone intervenes
+      const threshold = Math.round(tw.meetingHours * 0.9 * 10) / 10;
+      candidate = {
+        metric: 'meetingHours',
+        comparator: 'gte',
+        threshold,
+        baselineValue: Math.round(tw.meetingHours * 10) / 10,
+        statement: `If nothing changes, meeting hours will stay above ${threshold}h per person next week (currently ${fmtNum(tw.meetingHours, 1)}h, ~${fmtNum(mhPerDay, 1)}h/day).`,
+      };
+    } else if (!suspectMetrics.has('afterHours') && afterHoursPct >= 20) {
+      candidate = {
+        metric: 'afterHoursRatioPct',
+        comparator: 'gte',
+        threshold: 15,
+        baselineValue: afterHoursPct,
+        statement: `Out-of-hours work (${afterHoursPct}%) will remain above 15% next week unless workload structure changes.`,
+      };
+    } else if (twMeetings > 0 && lwMeetings > 0 && twMeetings < lwMeetings * 0.85) {
+      // Downward trend → predict it holds (falsifiable stability call)
+      const threshold = Math.round(lwMeetings * 1.0);
+      candidate = {
+        metric: 'meetings',
+        comparator: 'lte',
+        threshold,
+        baselineValue: twMeetings,
+        statement: `The drop in meeting volume will hold: next week's meeting count stays at or below ${threshold} (this week: ${twMeetings}).`,
+      };
+    } else if (twMeetings > 0) {
+      // Stability call — still falsifiable
+      const threshold = Math.round(twMeetings * 1.25);
+      candidate = {
+        metric: 'meetings',
+        comparator: 'lte',
+        threshold,
+        baselineValue: twMeetings,
+        statement: `No meeting-load spike expected: next week's meeting count stays below ${threshold} (this week: ${twMeetings}).`,
+      };
+    }
+    if (candidate) {
+      try {
+        const saved = await BriefPrediction.create({
+          orgId: org._id,
+          weekStart: thisWeekStart,
+          ...candidate,
+        });
+        newPrediction = saved.toObject();
+      } catch (err) {
+        console.error('[WeeklyBrief] Failed to save prediction:', err.message);
+        newPrediction = candidate; // still render it even if persistence failed
+      }
+    }
+  }
 
   // ════════════════════════════════════════════════════════════
   // BUILD THE HTML — Optimized for 60-second scan
@@ -1118,6 +1533,8 @@ export async function generateWeeklyBrief(orgId) {
   if (orgStatus.escalationAction && orgStatus.status !== STATUS_LEVELS.STABLE) {
     html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>Escalation:</strong> ${orgStatus.escalationAction}</p>`;
   }
+  // Baseline tenure — comparisons against your own history get sharper every week
+  html += `<p style="${S.pSmall} margin:8px 0 0 0;">Baselines built on <strong>${weeksOfHistory} week${weeksOfHistory === 1 ? '' : 's'}</strong> of your organization's history${weeksOfHistory < 6 ? ' — still calibrating; trend conclusions strengthen after 6 weeks' : ''}.</p>`;
   html += `</div>`;
 
   // ─── 2. Key Metrics Snapshot (5 metrics) ───
@@ -1137,21 +1554,35 @@ export async function generateWeeklyBrief(orgId) {
       change: pctChangeLabel(tw.meetingHours, lw.meetingHours),
       color: tw.meetingHours > lw.meetingHours ? '#ef4444' : '#10b981',
     },
-    {
-      label: 'Out-of-Hours Work',
-      value: `${Math.round((tw.afterHoursRatio || 0) * 100)}%`,
-      change: pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio),
-      color: tw.afterHoursRatio > lw.afterHoursRatio ? '#ef4444' : '#10b981',
-    },
-    {
-      label: 'Uninterrupted Time',
-      value: tw.focusTimeAvailability ? `${fmtNum(tw.focusTimeAvailability, 1)}h` : '—',
-      change:
-        tw.focusTimeAvailability && lw.focusTimeAvailability
-          ? pctChangeLabel(tw.focusTimeAvailability, lw.focusTimeAvailability)
-          : '—',
-      color: tw.focusTimeAvailability < lw.focusTimeAvailability ? '#ef4444' : '#10b981',
-    },
+    suspectMetrics.has('afterHours')
+      ? {
+          label: 'Out-of-Hours Work',
+          value: '—',
+          change: 'data gap',
+          color: '#f59e0b',
+        }
+      : {
+          label: 'Out-of-Hours Work',
+          value: `${Math.round((tw.afterHoursRatio || 0) * 100)}%`,
+          change: pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio),
+          color: tw.afterHoursRatio > lw.afterHoursRatio ? '#ef4444' : '#10b981',
+        },
+    suspectMetrics.has('focusTime')
+      ? {
+          label: 'Uninterrupted Time',
+          value: '—',
+          change: 'not measured',
+          color: '#9ca3af',
+        }
+      : {
+          label: 'Uninterrupted Time',
+          value: tw.focusTimeAvailability ? `${fmtNum(tw.focusTimeAvailability, 1)}h` : '—',
+          change:
+            tw.focusTimeAvailability && lw.focusTimeAvailability
+              ? pctChangeLabel(tw.focusTimeAvailability, lw.focusTimeAvailability)
+              : '—',
+          color: tw.focusTimeAvailability < lw.focusTimeAvailability ? '#ef4444' : '#10b981',
+        },
     {
       label: 'Active Alerts',
       value: `${twSignals.length + twCKSignals.length}`,
@@ -1171,57 +1602,8 @@ export async function generateWeeklyBrief(orgId) {
   html += `</div>`;
   html += `</div>`;
 
-  // ─── 2a. Data readiness and mapping coverage ───
-  html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
-  html += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px;">`;
-  html += `<div>`;
-  html += `<h3 style="${S.h3} margin:0 0 8px 0;">Data readiness</h3>`;
-  html += `<p style="${S.pSmall} margin:0;">SignalTrue can only score named teams when workplace events are mapped to internal users and teams.</p>`;
-  html += `</div>`;
-  html += `<span style="${S.badge(dataReadinessColor + '20', dataReadinessColor)}">${dataReadinessStatus}</span>`;
-  html += `</div>`;
-  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">`;
-  const readinessCards = [
-    { label: 'Users', value: totalUsers },
-    { label: 'Teams', value: teams.length },
-    { label: 'Mapped users', value: `${mappedActorCount.length}/${totalUsers}` },
-    { label: 'Mapped teams', value: `${mappedTeamCount.length}/${teams.length}` },
-    { label: 'Unmapped events', value: unmappedActorEvents },
-  ];
-  for (const card of readinessCards) {
-    html += `<div style="flex:1;min-width:105px;padding:12px 13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">`;
-    html += `<div style="font-size:18px;font-weight:750;color:#0f172a;">${card.value}</div>`;
-    html += `<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:5px;">${card.label}</div>`;
-    html += `</div>`;
-  }
-  html += `</div>`;
-  if (dataReadinessStatus !== 'Ready') {
-    html += `<div style="${S.alertBox}">`;
-    html += `<p style="${S.p} margin:0;"><strong>Setup action required:</strong> ${mappingCoveragePct}% of users and ${teamCoveragePct}% of teams have mapped activity this week. Engagement, BDI, and named-team insights are limited until Microsoft/Google/Slack events are attributed to users and teams.</p>`;
-    if (unmappedTeamEvents > 0) {
-      html += `<p style="${S.pSmall} margin-top:6px;">${unmappedTeamEvents} event(s) have no team mapping. Check user team assignments and integration user matching.</p>`;
-    }
-    html += `</div>`;
-  }
-  if (integrationConnections.length > 0) {
-    html += `<table style="${S.table}; margin-top:10px;">`;
-    html += `<thead><tr><th style="${S.th}">Source</th><th style="${S.thR}">Status</th><th style="${S.thR}">Coverage</th><th style="${S.thR}">Last sync</th></tr></thead><tbody>`;
-    for (const conn of integrationConnections) {
-      const coverage =
-        conn.coverage?.totalUsers > 0
-          ? `${conn.coverage.mappedUsers || 0}/${conn.coverage.totalUsers}`
-          : '—';
-      const lastSync = conn.sync?.lastSyncAt
-        ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })
-        : '—';
-      html += `<tr><td style="${S.td}">${conn.integrationType}</td><td style="${S.tdR}">${conn.status}</td><td style="${S.tdR}">${coverage}</td><td style="${S.tdR}">${lastSync}</td></tr>`;
-    }
-    html += `</tbody></table>`;
-  }
-  html += `</div>`;
+  // (Data readiness + team readiness moved to the appendix — the HR reader gets
+  //  insight first; setup detail lives at the bottom for the admin.)
 
   // ─── 2b. Engagement Measurement Snapshot ───
   html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
@@ -1264,34 +1646,6 @@ export async function generateWeeklyBrief(orgId) {
   }
   html += `</div>`;
 
-  if (teamReadiness.length > 0) {
-    html += `<div style="${S.card}">`;
-    html += `<h3 style="${S.h3} margin-top:0;">Named team readiness</h3>`;
-    html += `<table style="${S.table}">`;
-    html += `<thead><tr><th style="${S.th}">Team</th><th style="${S.thR}">Members</th><th style="${S.thR}">Mapped active users</th><th style="${S.thR}">Mapped events</th><th style="${S.thR}">Status</th></tr></thead><tbody>`;
-    for (const item of teamReadiness) {
-      const color =
-        item.status === 'Ready for scoring'
-          ? '#16a34a'
-          : item.status === 'Suppressed'
-            ? '#dc2626'
-            : '#f59e0b';
-      html += `<tr>`;
-      html += `<td style="${S.td}">${item.team.name}</td>`;
-      html += `<td style="${S.tdR}">${item.memberCount}</td>`;
-      html += `<td style="${S.tdR}">${item.activeUsers}</td>`;
-      html += `<td style="${S.tdR}">${item.events}</td>`;
-      html += `<td style="${S.tdR}; color:${color}; font-weight:700;">${item.status}</td>`;
-      html += `</tr>`;
-    }
-    html += `</tbody></table>`;
-    const firstBlockedTeam = teamReadiness.find((team) => team.status !== 'Ready for scoring');
-    if (firstBlockedTeam) {
-      html += `<p style="${S.pSmall} margin-top:8px;"><strong>Example blocker:</strong> ${firstBlockedTeam.team.name} — ${firstBlockedTeam.reason}</p>`;
-    }
-    html += `</div>`;
-  }
-
   // ─── 3. What Changed This Week (top 3 observations) ───
   html += `<div style="${S.card}">`;
   html += `<h3 style="${S.h3} margin-top:0;">What changed</h3>`;
@@ -1314,13 +1668,19 @@ export async function generateWeeklyBrief(orgId) {
   }
   html += `</div>`;
 
-  // ─── 4. Why It Matters (top 2 risks) ───
-  if (risks.length > 0) {
+  // ─── 4. Why It Matters (top 2 risks + € impact) ───
+  if (risks.length > 0 || costEstimate) {
     html += `<div style="${S.card}">`;
     html += `<h3 style="${S.h3} margin-top:0;">Why it matters</h3>`;
     for (const risk of risks.slice(0, 2)) {
       html += `<div style="${S.warnBox}">`;
       html += `<p style="${S.p} margin:0;">${risk}</p>`;
+      html += `</div>`;
+    }
+    if (costEstimate) {
+      html += `<div style="${S.warnBox} border-left:3px solid #f59e0b;">`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Estimated cost of excess coordination this week: ~€${costEstimate.weeklyCost.toLocaleString('en-US')}</strong></p>`;
+      html += `<p style="${S.pSmall} margin:0;">Basis: ${costEstimate.excessHoursPerPerson}h/person above the ${HEALTHY_MEETING_HOURS_WEEK}h/week healthy meeting threshold × ${costEstimate.peopleWithData} people with data × €${costEstimate.hourlyCost}/h. Directional estimate — adjust the hourly rate in Settings → Organization.</p>`;
       html += `</div>`;
     }
     if (risks.length > 2) {
@@ -1366,7 +1726,7 @@ export async function generateWeeklyBrief(orgId) {
 
     html += renderRoleActions('For HR', '👤', aiAnalysis.hrActions, S.recBox);
     html += renderRoleActions(
-      'For Managers',
+      'For HR to share with team leads',
       '👥',
       aiAnalysis.managerActions,
       `${S.recBox} border-left:3px solid #6366f1;`
@@ -1397,6 +1757,66 @@ export async function generateWeeklyBrief(orgId) {
   html += `</div>`;
   html += `</div>`;
 
+  // ─── 5b. Action follow-through (decision log + measured impact) ───
+  // The closed loop: what you decided → what changed. This is the section that
+  // turns suggestions into a track record.
+  const measuredInterventions = recentInterventions.filter(
+    (iv) => iv.outcomeDelta?.computedAt != null
+  );
+  const activeInterventions = recentInterventions.filter((iv) =>
+    ['planned', 'active', 'pending-recheck'].includes(iv.status)
+  );
+  if (measuredInterventions.length > 0 || activeInterventions.length > 0) {
+    html += `<div style="${S.card} border-left:4px solid #10b981;">`;
+    html += `<h3 style="${S.h3} margin-top:0;">Your actions — what changed</h3>`;
+    for (const iv of measuredInterventions.slice(0, 3)) {
+      const d = iv.outcomeDelta;
+      const good = d.improved;
+      const arrow = d.percentChange > 0 ? '+' : '';
+      html += `<div style="${S.recBox} border-left:3px solid ${good ? '#10b981' : '#f59e0b'};">`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${iv.title || iv.actionTaken || iv.interventionType || 'Action'}</strong>${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''}</p>`;
+      html += `<p style="${S.pSmall} margin:0;">Started ${new Date(iv.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · Measured after 14 days: <strong style="color:${good ? '#16a34a' : '#d97706'};">${arrow}${d.percentChange}%</strong> ${good ? '— improvement confirmed' : '— no improvement yet; consider adjusting or extending'}</p>`;
+      if (iv.outcomeSummary) html += `<p style="${S.pSmall} margin:4px 0 0 0;">${iv.outcomeSummary}</p>`;
+      html += `</div>`;
+    }
+    for (const iv of activeInterventions.slice(0, 2)) {
+      const daysIn = Math.round((now - new Date(iv.startDate)) / (24 * 60 * 60 * 1000));
+      html += `<div style="${S.recBox}">`;
+      html += `<p style="${S.p} margin:0;"><strong>In progress:</strong> ${iv.title || iv.actionTaken || iv.interventionType}${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''} — day ${daysIn} of 14. Effect measurement ${daysIn >= 14 ? 'is due — check the dashboard' : `runs automatically on day 14`}.</p>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+  } else {
+    // Nudge: the loop only works if decisions get logged
+    html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
+    html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Close the loop</h3>`;
+    html += `<p style="${S.p} margin:0;">When you act on a recommendation, log it as an action on the dashboard. SignalTrue then measures the before/after effect over 14 days and reports it here — so every future brief shows what worked, not just what's wrong.</p>`;
+    html += `</div>`;
+  }
+
+  // ─── 5c. Prediction — graded last week + new call for next week ───
+  if (gradedPrediction || evaluatedPredictions.length > 0 || newPrediction) {
+    html += `<div style="${S.card} border-left:4px solid #0ea5e9;">`;
+    html += `<h3 style="${S.h3} margin-top:0;">Prediction check</h3>`;
+    if (gradedPrediction) {
+      const o = gradedPrediction.outcome;
+      html += `<div style="${o.held ? S.recBox : S.warnBox}">`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Last week we predicted:</strong> ${gradedPrediction.statement}</p>`;
+      html += `<p style="${S.pSmall} margin:0;">Actual ${PREDICTION_METRIC_LABELS[gradedPrediction.metric] || gradedPrediction.metric}: <strong>${o.actualValue}</strong> — prediction <strong style="color:${o.held ? '#16a34a' : '#d97706'};">${o.held ? 'held' : 'did not hold'}</strong>.</p>`;
+      html += `</div>`;
+    }
+    if (evaluatedPredictions.length > 0) {
+      html += `<p style="${S.pSmall} margin:6px 0;">Track record: <strong>${predictionsHeld} of ${evaluatedPredictions.length}</strong> predictions held over the last ${evaluatedPredictions.length} graded week(s).</p>`;
+    }
+    if (newPrediction) {
+      html += `<div style="padding:10px 14px;background:#f0f9ff;border-radius:8px;border-left:3px solid #0ea5e9;">`;
+      html += `<p style="${S.p} margin:0;"><strong>This week's call:</strong> ${newPrediction.statement}</p>`;
+      html += `<p style="${S.pSmall} margin:4px 0 0 0;">We'll grade this in next week's brief — hold us to it.</p>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
   // ─── 6. Manager Discussion Prompts ───
   const managerPrompts = generateManagerPrompts({
     tw,
@@ -1409,8 +1829,8 @@ export async function generateWeeklyBrief(orgId) {
   });
   if (managerPrompts.length > 0) {
     html += `<div style="${S.card} border-left:4px solid #8b5cf6;">`;
-    html += `<h3 style="${S.h3} margin-top:0;">Manager discussion prompts</h3>`;
-    html += `<p style="${S.pSmall}">Diagnostic questions for your next 1:1 or team check-in. These are based on this week's data — not prescriptive, just conversation starters.</p>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Questions worth raising with team leads</h3>`;
+    html += `<p style="${S.pSmall}">Diagnostic questions HR can bring to team leads or leadership check-ins. Based on this week's data — not prescriptive, just conversation starters.</p>`;
     for (const prompt of managerPrompts.slice(0, 5)) {
       html += `<div style="padding:8px 12px; margin-bottom:6px; background:#faf5ff; border-radius:8px;">`;
       html += `<p style="${S.p} margin:0;"><strong>Q:</strong> ${prompt}</p>`;
@@ -1784,7 +2204,9 @@ export async function generateWeeklyBrief(orgId) {
     html += `<strong>Trend:</strong> direction vs last week`;
     html += `</p>`;
 
-    // Per-team blocks
+    // Per-team blocks — "what this means" is rendered ONCE per risk state below,
+    // not cloned under every team (identical boilerplate reads as templated noise).
+    const renderedStates = new Set();
     for (const t of engagementStrainByTeam) {
       const tc = riskStateColor(t.riskState);
       html += `<div style="${S.cardAlert(tc)} margin-bottom:12px;">`;
@@ -1812,30 +2234,33 @@ export async function generateWeeklyBrief(orgId) {
         }
       }
 
-      // What it means for this risk state
-      let stateMsg = '';
-      if (t.riskState === 'critical') {
-        stateMsg =
-          'Critical engagement strain: structural conditions for sustained work have significantly degraded. Expect rising attrition risk and declining output quality within 2–4 weeks without intervention.';
-      } else if (t.riskState === 'strain') {
-        stateMsg =
-          "Strain-level conditions: the team is working against friction most people won't explicitly name. Recovery time is likely shrinking or responsiveness pressure is high. Act before it compounds.";
-      } else if (t.riskState === 'watch' && t.trend === 'rising') {
-        stateMsg =
-          'Watch-level risk with a rising trend — conditions are not critical, but the direction is wrong. This is the optimal intervention window.';
-      } else if (t.riskState === 'watch') {
-        stateMsg =
-          'Watch-level: nothing is broken, but there are early structural signals worth monitoring.';
-      } else if (t.trend === 'improving') {
-        stateMsg =
-          'Healthy and improving. Keep the patterns that are working — particularly recovery time and focus availability.';
-      } else {
-        stateMsg = 'Healthy and stable. No structural engagement risks detected this week.';
+      // What it means for this risk state — rendered once per distinct state
+      const stateKey = `${t.riskState}:${t.riskState === 'watch' ? t.trend : ''}`;
+      if (!renderedStates.has(stateKey)) {
+        renderedStates.add(stateKey);
+        let stateMsg = '';
+        if (t.riskState === 'critical') {
+          stateMsg =
+            'Critical engagement strain: structural conditions for sustained work have significantly degraded. Expect rising attrition risk and declining output quality within 2–4 weeks without intervention.';
+        } else if (t.riskState === 'strain') {
+          stateMsg =
+            "Strain-level conditions: the team is working against friction most people won't explicitly name. Recovery time is likely shrinking or responsiveness pressure is high. Act before it compounds.";
+        } else if (t.riskState === 'watch' && t.trend === 'rising') {
+          stateMsg =
+            'Watch-level risk with a rising trend — conditions are not critical, but the direction is wrong. This is the optimal intervention window.';
+        } else if (t.riskState === 'watch') {
+          stateMsg =
+            'Watch-level: nothing is broken, but there are early structural signals worth monitoring.';
+        } else if (t.trend === 'improving') {
+          stateMsg =
+            'Healthy and improving. Keep the patterns that are working — particularly recovery time and focus availability.';
+        } else {
+          stateMsg = 'Healthy and stable. No structural engagement risks detected this week.';
+        }
+        html += `<div style="margin-top:8px; padding:8px 10px; background:${tc}10; border-left:3px solid ${tc}; border-radius:4px;">`;
+        html += `<p style="${S.p} margin:0;"><strong>What this means:</strong> ${stateMsg}</p>`;
+        html += `</div>`;
       }
-
-      html += `<div style="margin-top:8px; padding:8px 10px; background:${tc}10; border-left:3px solid ${tc}; border-radius:4px;">`;
-      html += `<p style="${S.p} margin:0;"><strong>What this means:</strong> ${stateMsg}</p>`;
-      html += `</div>`;
 
       html += `</div>`;
     }
@@ -1843,6 +2268,64 @@ export async function generateWeeklyBrief(orgId) {
     html += `<p style="${S.pSmall}">Engagement data is computed weekly. View full driver breakdown and trend history on your SignalTrue dashboard.</p>`;
     html += `</div>`;
   }
+
+  // ─── 11c. Appendix — data readiness (admin detail, demoted to the bottom) ───
+  html += `<div style="${S.card} opacity:0.92;">`;
+  html += `<h3 style="${S.h3} margin-top:0; font-size:13px; color:#64748b;">Appendix — Data readiness</h3>`;
+  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">`;
+  html += `<span style="${S.badge(dataReadinessColor + '20', dataReadinessColor)}">${dataReadinessStatus}</span>`;
+  html += `<span style="${S.pSmall}">Mapped users: <strong>${mappedActorCount.length}/${totalUsers}</strong> · Mapped teams: <strong>${mappedTeamCount.length}/${teams.length}</strong> · Unmapped events: <strong>${unmappedActorEvents}</strong></span>`;
+  html += `</div>`;
+  if (coverageRegressed) {
+    html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage regression:</strong> mapped users dropped from ${lastWeekMappedActors.length} last week to ${mappedActorCount.length} this week. Check integrations and user mapping — declining coverage quietly degrades every score in this report.</p></div>`;
+  }
+  if (dataReadinessStatus !== 'Ready') {
+    html += `<p style="${S.pSmall}">${mappingCoveragePct}% of users and ${teamCoveragePct}% of teams have mapped activity. Named-team insights below full strength until Microsoft/Google/Slack events are attributed to users and teams.${unmappedTeamEvents > 0 ? ` ${unmappedTeamEvents} event(s) have no team mapping.` : ''}</p>`;
+  }
+  if (integrationConnections.length > 0) {
+    html += `<table style="${S.table}; margin-top:8px;">`;
+    html += `<thead><tr><th style="${S.th}">Source</th><th style="${S.thR}">Status</th><th style="${S.thR}">Coverage</th><th style="${S.thR}">Last sync</th></tr></thead><tbody>`;
+    for (const conn of integrationConnections) {
+      const isStale = staleConnectors.some((s) => String(s._id) === String(conn._id));
+      const coverage =
+        conn.coverage?.totalUsers > 0
+          ? `${conn.coverage.mappedUsers || 0}/${conn.coverage.totalUsers}`
+          : '—';
+      const lastSync = conn.sync?.lastSyncAt
+        ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          })
+        : '—';
+      const statusLabel = isStale ? 'stale' : conn.status;
+      const statusColor = isStale ? '#dc2626' : conn.status === 'connected' ? '#16a34a' : '#f59e0b';
+      html += `<tr><td style="${S.td}">${conn.integrationType}</td><td style="${S.tdR};color:${statusColor};font-weight:700;">${statusLabel}</td><td style="${S.tdR}">${coverage}</td><td style="${S.tdR}">${lastSync}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+  if (teamReadiness.length > 0) {
+    html += `<table style="${S.table}; margin-top:12px;">`;
+    html += `<thead><tr><th style="${S.th}">Team</th><th style="${S.thR}">Members</th><th style="${S.thR}">Mapped active</th><th style="${S.thR}">Mapped events</th><th style="${S.thR}">Status</th></tr></thead><tbody>`;
+    for (const item of teamReadiness) {
+      const color =
+        item.status === 'Ready for scoring'
+          ? '#16a34a'
+          : item.status === 'Suppressed'
+            ? '#dc2626'
+            : item.status === 'Excluded (catch-all)'
+              ? '#9ca3af'
+              : '#f59e0b';
+      html += `<tr><td style="${S.td}">${item.team.name}</td><td style="${S.tdR}">${item.memberCount}</td><td style="${S.tdR}">${item.activeUsers}</td><td style="${S.tdR}">${item.events}</td><td style="${S.tdR}; color:${color}; font-weight:700;">${item.status}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
+  // ─── 11d. Annotation loop — teach SignalTrue about unusual weeks ───
+  html += `<div style="${S.card} border-left:4px solid #2563eb;">`;
+  html += `<p style="${S.p} margin:0;"><strong>Was this week unusual?</strong> A launch, offsite, vacation period, or client crunch changes how these numbers should be read. Tag the week on the dashboard and future briefs will interpret your data with that context.</p>`;
+  html += `<p style="${S.pSmall} margin:6px 0 0 0;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/dashboard" style="color:#2563eb;font-weight:700;text-decoration:none;">Tag this week →</a></p>`;
+  html += `</div>`;
 
   // ─── 12. Footer ───
   html += `<div style="padding:17px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">`;

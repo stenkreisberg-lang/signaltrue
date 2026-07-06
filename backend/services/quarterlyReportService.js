@@ -87,6 +87,11 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
   const sorted = [...monthlyReports].sort((a, b) => a.periodEnd - b.periodEnd);
   const n = sorted.length;
 
+  // Null-metric gating: a metric that was never measured must be reported as
+  // "not measured", never as 0 — otherwise the AI recommends actions (e.g.
+  // "manager training, immediate") based on a number that doesn't exist.
+  const bdiMeasured = sorted.some((m) => m.orgHealth?.avgBDI != null);
+
   // BDI: average across months
   const avgBDI = sorted.reduce((s, m) => s + (m.orgHealth?.avgBDI || 0), 0) / n;
 
@@ -229,18 +234,23 @@ function aggregateMonthsIntoSnapshot(monthlyReports) {
 
   return {
     avgBDI: Math.round(avgBDI * 10) / 10,
+    bdiMeasured,
     bdiTrend,
     trendStrength,
     zoneDistribution,
     teamWeeksAtRisk,
     persistentRisks,
     managerEffectivenessAvg: Math.round(managerEffectivenessAvg),
+    managerEffectivenessMeasured: managerScores.length > 0,
     managerEffectivenessTrend,
     equityScoreAvg: Math.round(equityScoreAvg),
+    equityMeasured: equityScores.length > 0,
     avgAttritionRisk: Math.round(avgAttritionRisk * 10) / 10,
     peakAttritionRisk: Math.round(peakAttritionRisk * 10) / 10,
+    attritionMeasured: attritionValues.length > 0,
     criticalIndividualsPeak,
     executionDragAvg: Math.round(executionDragAvg * 10) / 10,
+    executionDragMeasured: dragValues.length > 0,
     totalCrises,
     topDrivers,
     organizationalTrajectory: worstTrajectory,
@@ -277,17 +287,19 @@ async function generateQuarterlyAINarrative({
 
     const prompt = `You are a senior organizational health analyst writing a quarterly summary for an HR leadership audience. Be direct, factual, and focused on business impact. No filler phrases.
 
+CRITICAL RULE: Metrics marked "NOT MEASURED" were never collected this quarter. Do NOT treat them as zero, do NOT draw findings from them, and do NOT recommend actions based on them. If relevant, you may note that measurement coverage should be expanded — nothing more.
+
 Quarterly Report: ${quarterLabel}
 ---
 Current quarter data:
-- Average BDI: ${current.avgBDI}/100 (higher = more behavioral drift/risk)
-- BDI trend during quarter: ${current.bdiTrend} (${current.trendStrength})
+- Average BDI: ${current.bdiMeasured ? `${current.avgBDI}/100 (higher = more behavioral drift/risk)` : 'NOT MEASURED this quarter'}
+- BDI trend during quarter: ${current.bdiMeasured ? `${current.bdiTrend} (${current.trendStrength})` : 'NOT MEASURED'}
 - Team-weeks in Watch/Critical zones: ${current.teamWeeksAtRisk}
 - Persistent risks across quarter: ${persistentText}
-- Manager effectiveness avg: ${current.managerEffectivenessAvg}/100
-- Avg attrition risk: ${current.avgAttritionRisk}, peak: ${current.peakAttritionRisk}
+- Manager effectiveness avg: ${current.managerEffectivenessMeasured ? `${current.managerEffectivenessAvg}/100` : 'NOT MEASURED this quarter'}
+- Avg attrition risk: ${current.attritionMeasured ? `${current.avgAttritionRisk}, peak: ${current.peakAttritionRisk}` : 'NOT MEASURED this quarter'}
 - Critical individuals at peak: ${current.criticalIndividualsPeak}
-- Execution drag avg: ${current.executionDragAvg}/100
+- Execution drag avg: ${current.executionDragMeasured ? `${current.executionDragAvg}/100` : 'NOT MEASURED this quarter'}
 - Total crisis events: ${current.totalCrises}
 - Top structural drivers: ${current.topDrivers.map((d) => d.metric).join(', ') || 'none identified'}
 - Overall trajectory: ${current.organizationalTrajectory}
@@ -400,8 +412,8 @@ function generateQuarterlyEmailHTML({ org, report }) {
     <table style="border-collapse:collapse; width:100%; margin-bottom:24px;">
       <tr>
         <td style="padding:16px; background:#f8fafc; border-radius:8px; text-align:center; border:1px solid #e5e7eb; width:25%;">
-          <div style="font-size:28px; font-weight:700; color:${bdiColor};">${current.avgBDI}</div>
-          <div style="font-size:11px; color:#6b7280; margin-top:2px;">Avg BDI</div>
+          <div style="font-size:28px; font-weight:700; color:${current.bdiMeasured ? bdiColor : '#9ca3af'};">${current.bdiMeasured ? current.avgBDI : '—'}</div>
+          <div style="font-size:11px; color:#6b7280; margin-top:2px;">Avg BDI${current.bdiMeasured ? '' : ' (not measured)'}</div>
         </td>
         <td style="padding:4px;"></td>
         <td style="padding:16px; background:#f8fafc; border-radius:8px; text-align:center; border:1px solid #e5e7eb; width:25%;">
