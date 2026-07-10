@@ -85,6 +85,30 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
   const { chatConnected, calendarConnected, integrationsComplete } = status;
   const progress = (chatConnected ? 50 : 0) + (calendarConnected ? 50 : 0);
 
+  // Microsoft delegated connect only covers the signed-in account. Tenant-wide
+  // coverage requires a separate admin-consent grant by a Microsoft 365 Global
+  // Administrator — surface that step until it has been completed.
+  const msConnected = !!(integrations?.connections?.teams || integrations?.connections?.outlook);
+  const msConsentGranted = !!(
+    integrations?.details?.teams?.applicationConsentGrantedAt ||
+    integrations?.details?.outlook?.applicationConsentGrantedAt
+  );
+  const needsMsConsent =
+    msConnected && !msConsentGranted && !!integrations?.oauth?.microsoftAdminConsent;
+
+  const msConsentBlock = needsMsConsent ? (
+    <div style={styles.consentBox}>
+      <p style={styles.helpText}>
+        <strong>Company-wide coverage:</strong> your Microsoft connection currently covers only the
+        account you signed in with. A Microsoft 365 Global Administrator needs to grant
+        organization-wide consent so SignalTrue can analyze all teams — not just yours.
+      </p>
+      <button style={styles.consentButton} onClick={() => openOAuth('microsoftAdminConsent')}>
+        Grant Company-Wide Access
+      </button>
+    </div>
+  ) : null;
+
   return (
     <div style={styles.container}>
       <nav style={styles.nav}>
@@ -239,6 +263,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                 </div>
               </div>
 
+              {msConsentBlock}
+
               <div style={styles.helpBox}>
                 <p style={styles.helpText}>
                   <strong>🔒 Privacy First:</strong> All integrations use read-only permissions.
@@ -280,6 +306,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                   <span>First analysis running in background</span>
                 </div>
               </div>
+
+              {msConsentBlock}
 
               <div style={styles.divider} />
 
@@ -471,6 +499,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     padding: '1rem',
     marginTop: '2rem',
+  },
+  consentBox: {
+    background: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginTop: '2rem',
+  },
+  consentButton: {
+    marginTop: '0.75rem',
+    padding: '0.625rem 1.25rem',
+    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
   },
   helpText: {
     fontSize: '0.875rem',

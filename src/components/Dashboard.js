@@ -631,6 +631,40 @@ function Dashboard() {
             )}
           </div>
 
+          {/* Microsoft company-wide access (tenant admin consent) */}
+          {(integrations?.connected?.outlook || integrations?.connected?.teams) && (
+            <div style={styles.card}>
+              <div style={styles.cardIcon}>🏢</div>
+              <h3 style={styles.cardTitle}>
+                Company-Wide Microsoft Access{' '}
+                {(integrations?.details?.outlook?.applicationConsentGrantedAt ||
+                  integrations?.details?.teams?.applicationConsentGrantedAt) && (
+                  <span style={styles.badgeConnected}>Granted</span>
+                )}
+              </h3>
+              {integrations?.details?.outlook?.applicationConsentGrantedAt ||
+              integrations?.details?.teams?.applicationConsentGrantedAt ? (
+                <p style={styles.cardText}>
+                  SignalTrue analyzes calendars and Teams activity across your whole organization.
+                </p>
+              ) : (
+                <>
+                  <p style={styles.cardText}>
+                    Your Microsoft connection currently covers only your own account. A Microsoft
+                    365 Global Administrator must grant organization-wide consent so SignalTrue can
+                    analyze every team.
+                  </p>
+                  <button
+                    style={styles.cardButton}
+                    onClick={() => openOrGuide('microsoftAdminConsent')}
+                  >
+                    Grant Company-Wide Access
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           <div style={styles.card}>
             <div style={styles.cardIcon}>📊</div>
             <h3 style={styles.cardTitle}>View Analytics</h3>
