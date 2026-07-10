@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js'; // Import User model
 import IntegrationConnection from '../models/integrationConnection.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, authenticateTokenFromHeaderOrQuery } from '../middleware/auth.js';
 import { encryptString } from '../utils/crypto.js';
 import {
   syncEmployeesFromSlack,
@@ -469,29 +469,35 @@ function getGoogleRedirectUri(req) {
 
 // --- Slack OAuth ---
 // GET /api/integrations/slack/oauth/start?orgId=xxx or ?orgSlug=acme
-router.get('/integrations/slack/oauth/start', authenticateToken, async (req, res) => {
-  const clientId = process.env.SLACK_CLIENT_ID;
-  const redirectUri = process.env.SLACK_REDIRECT_URI;
-  if (!clientId || !redirectUri) {
-    return res
-      .status(503)
-      .json({ message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.' });
+router.get(
+  '/integrations/slack/oauth/start',
+  authenticateTokenFromHeaderOrQuery,
+  async (req, res) => {
+    const clientId = process.env.SLACK_CLIENT_ID;
+    const redirectUri = process.env.SLACK_REDIRECT_URI;
+    if (!clientId || !redirectUri) {
+      return res
+        .status(503)
+        .json({
+          message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.',
+        });
+    }
+    const state = signState({
+      orgId: req.user.orgId?.toString() || null,
+      userId: req.user.userId?.toString() || null,
+      nonce: crypto.randomBytes(8).toString('hex'),
+    });
+    const url = new URL('https://slack.com/oauth/v2/authorize');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('scope', 'channels:history,channels:read,chat:write');
+    url.searchParams.set('user_scope', '');
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('state', state);
+    // Force workspace selection - don't auto-pick last used workspace
+    url.searchParams.set('team', '');
+    return res.redirect(String(url));
   }
-  const state = signState({
-    orgId: req.user.orgId?.toString() || null,
-    userId: req.user.userId?.toString() || null,
-    nonce: crypto.randomBytes(8).toString('hex'),
-  });
-  const url = new URL('https://slack.com/oauth/v2/authorize');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('scope', 'channels:history,channels:read,chat:write');
-  url.searchParams.set('user_scope', '');
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('state', state);
-  // Force workspace selection - don't auto-pick last used workspace
-  url.searchParams.set('team', '');
-  return res.redirect(String(url));
-});
+);
 
 // GET /api/integrations/slack/oauth/callback?code=...&state=...
 router.get('/integrations/slack/oauth/callback', async (req, res) => {
@@ -610,37 +616,41 @@ router.get('/integrations/slack/oauth/callback', async (req, res) => {
 
 // --- Google OAuth (Gmail/Calendar) ---
 // GET /api/integrations/google/oauth/start?scope=gmail|calendar&orgId=xxx
-router.get('/integrations/google/oauth/start', authenticateToken, async (req, res) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = getGoogleRedirectUri(req);
-  if (!clientId || !redirectUri) {
-    return res.status(503).json({
-      message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI.',
+router.get(
+  '/integrations/google/oauth/start',
+  authenticateTokenFromHeaderOrQuery,
+  async (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = getGoogleRedirectUri(req);
+    if (!clientId || !redirectUri) {
+      return res.status(503).json({
+        message: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI.',
+      });
+    }
+    const scopeParam = String(req.query.scope || 'calendar');
+    const scopesCore = ['openid', 'email', 'profile'];
+    const scopes =
+      scopeParam === 'gmail'
+        ? ['https://www.googleapis.com/auth/gmail.readonly', ...scopesCore]
+        : ['https://www.googleapis.com/auth/calendar.readonly', ...scopesCore];
+    const state = signState({
+      orgId: req.user.orgId?.toString() || null,
+      userId: req.user.userId?.toString() || null,
+      scope: scopeParam,
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('access_type', 'offline');
+    url.searchParams.set('include_granted_scopes', 'true');
+    url.searchParams.set('scope', scopes.join(' '));
+    url.searchParams.set('prompt', 'consent');
+    url.searchParams.set('state', state);
+    return res.redirect(String(url));
   }
-  const scopeParam = String(req.query.scope || 'calendar');
-  const scopesCore = ['openid', 'email', 'profile'];
-  const scopes =
-    scopeParam === 'gmail'
-      ? ['https://www.googleapis.com/auth/gmail.readonly', ...scopesCore]
-      : ['https://www.googleapis.com/auth/calendar.readonly', ...scopesCore];
-  const state = signState({
-    orgId: req.user.orgId?.toString() || null,
-    userId: req.user.userId?.toString() || null,
-    scope: scopeParam,
-    nonce: crypto.randomBytes(8).toString('hex'),
-  });
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('access_type', 'offline');
-  url.searchParams.set('include_granted_scopes', 'true');
-  url.searchParams.set('scope', scopes.join(' '));
-  url.searchParams.set('prompt', 'consent');
-  url.searchParams.set('state', state);
-  return res.redirect(String(url));
-});
+);
 
 router.get('/integrations/google/oauth/callback', async (req, res) => {
   try {
@@ -767,45 +777,49 @@ router.get('/integrations/google/oauth/callback', async (req, res) => {
 
 // --- Google Chat OAuth ---
 // GET /api/integrations/google-chat/oauth/start?orgId=xxx or ?orgSlug=acme
-router.get('/integrations/google-chat/oauth/start', authenticateToken, async (req, res) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri =
-    process.env.GOOGLE_CHAT_REDIRECT_URI ||
-    `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
-  if (!clientId || !redirectUri) {
-    return res.status(503).json({
-      message:
-        'Google Chat OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CHAT_REDIRECT_URI.',
+router.get(
+  '/integrations/google-chat/oauth/start',
+  authenticateTokenFromHeaderOrQuery,
+  async (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri =
+      process.env.GOOGLE_CHAT_REDIRECT_URI ||
+      `${getBackendBaseUrl(req)}/api/integrations/google-chat/oauth/callback`;
+    if (!clientId || !redirectUri) {
+      return res.status(503).json({
+        message:
+          'Google Chat OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CHAT_REDIRECT_URI.',
+      });
+    }
+
+    // Google Chat API scopes
+    const scopes = [
+      'https://www.googleapis.com/auth/chat.messages.readonly', // Read messages
+      'https://www.googleapis.com/auth/chat.spaces.readonly', // Read spaces/rooms
+      'openid',
+      'email',
+      'profile',
+    ];
+
+    const state = signState({
+      orgId: req.user.orgId?.toString() || null,
+      userId: req.user.userId?.toString() || null,
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
+
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('access_type', 'offline');
+    url.searchParams.set('include_granted_scopes', 'true');
+    url.searchParams.set('scope', scopes.join(' '));
+    url.searchParams.set('prompt', 'consent');
+    url.searchParams.set('state', state);
+
+    return res.redirect(String(url));
   }
-
-  // Google Chat API scopes
-  const scopes = [
-    'https://www.googleapis.com/auth/chat.messages.readonly', // Read messages
-    'https://www.googleapis.com/auth/chat.spaces.readonly', // Read spaces/rooms
-    'openid',
-    'email',
-    'profile',
-  ];
-
-  const state = signState({
-    orgId: req.user.orgId?.toString() || null,
-    userId: req.user.userId?.toString() || null,
-    nonce: crypto.randomBytes(8).toString('hex'),
-  });
-
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('access_type', 'offline');
-  url.searchParams.set('include_granted_scopes', 'true');
-  url.searchParams.set('scope', scopes.join(' '));
-  url.searchParams.set('prompt', 'consent');
-  url.searchParams.set('state', state);
-
-  return res.redirect(String(url));
-});
+);
 
 // GET /api/integrations/google-chat/oauth/callback
 router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
@@ -940,92 +954,100 @@ router.get('/integrations/google-chat/oauth/callback', async (req, res) => {
 
 // --- Microsoft OAuth (Outlook/Teams) ---
 // GET /api/integrations/microsoft/oauth/start?scope=outlook|teams|both&orgSlug=acme&orgId=xxx
-router.get('/integrations/microsoft/oauth/start', authenticateToken, async (req, res) => {
-  const clientId = process.env.MS_APP_CLIENT_ID;
-  const redirectUri = process.env.MS_APP_REDIRECT_URI;
-  if (!clientId || !redirectUri) {
-    return res.status(503).json({
-      message: 'Microsoft OAuth not configured. Set MS_APP_CLIENT_ID and MS_APP_REDIRECT_URI.',
+router.get(
+  '/integrations/microsoft/oauth/start',
+  authenticateTokenFromHeaderOrQuery,
+  async (req, res) => {
+    const clientId = process.env.MS_APP_CLIENT_ID;
+    const redirectUri = process.env.MS_APP_REDIRECT_URI;
+    if (!clientId || !redirectUri) {
+      return res.status(503).json({
+        message: 'Microsoft OAuth not configured. Set MS_APP_CLIENT_ID and MS_APP_REDIRECT_URI.',
+      });
+    }
+    if (!req.user.orgId) {
+      return res.status(400).json({ message: 'An organization is required to connect Microsoft.' });
+    }
+    const scopeParam = String(req.query.scope || 'outlook');
+    const scopesCore = [
+      'openid',
+      'email',
+      'profile',
+      'offline_access',
+      'https://graph.microsoft.com/User.Read',
+    ];
+    // Always request both Outlook + Teams scopes so one token covers everything
+    const teamsScopes = [
+      'https://graph.microsoft.com/Team.ReadBasic.All',
+      'https://graph.microsoft.com/ChannelMessage.Read.All',
+      'https://graph.microsoft.com/Channel.ReadBasic.All',
+      'https://graph.microsoft.com/Chat.Read',
+    ];
+    const outlookScopes = [
+      'https://graph.microsoft.com/Calendars.Read',
+      'https://graph.microsoft.com/Mail.Read',
+    ];
+    // Employee directory scope — allows listing org users so HR can see employees
+    const directoryScopes = ['https://graph.microsoft.com/User.Read.All'];
+    const scopes = [...scopesCore, ...outlookScopes, ...teamsScopes, ...directoryScopes];
+    const state = signState({
+      orgId: req.user.orgId?.toString() || null,
+      userId: req.user.userId?.toString() || null,
+      scope: scopeParam,
+      nonce: crypto.randomBytes(8).toString('hex'),
     });
+    // Use 'common' so any tenant's admin can connect — Microsoft will resolve the real tenant
+    // from the signed-in account during the flow.
+    const oauthTenant = 'common';
+    const url = new URL(`https://login.microsoftonline.com/${oauthTenant}/oauth2/v2.0/authorize`);
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('response_mode', 'query');
+    url.searchParams.set('scope', scopes.join(' '));
+    url.searchParams.set('state', state);
+    // This consent covers delegated access. Tenant-wide application permissions use
+    // the separate admin-consent endpoint below after they are configured on the app.
+    url.searchParams.set('prompt', 'consent');
+    return res.redirect(String(url));
   }
-  if (!req.user.orgId) {
-    return res.status(400).json({ message: 'An organization is required to connect Microsoft.' });
-  }
-  const scopeParam = String(req.query.scope || 'outlook');
-  const scopesCore = [
-    'openid',
-    'email',
-    'profile',
-    'offline_access',
-    'https://graph.microsoft.com/User.Read',
-  ];
-  // Always request both Outlook + Teams scopes so one token covers everything
-  const teamsScopes = [
-    'https://graph.microsoft.com/Team.ReadBasic.All',
-    'https://graph.microsoft.com/ChannelMessage.Read.All',
-    'https://graph.microsoft.com/Channel.ReadBasic.All',
-    'https://graph.microsoft.com/Chat.Read',
-  ];
-  const outlookScopes = [
-    'https://graph.microsoft.com/Calendars.Read',
-    'https://graph.microsoft.com/Mail.Read',
-  ];
-  // Employee directory scope — allows listing org users so HR can see employees
-  const directoryScopes = ['https://graph.microsoft.com/User.Read.All'];
-  const scopes = [...scopesCore, ...outlookScopes, ...teamsScopes, ...directoryScopes];
-  const state = signState({
-    orgId: req.user.orgId?.toString() || null,
-    userId: req.user.userId?.toString() || null,
-    scope: scopeParam,
-    nonce: crypto.randomBytes(8).toString('hex'),
-  });
-  // Use 'common' so any tenant's admin can connect — Microsoft will resolve the real tenant
-  // from the signed-in account during the flow.
-  const oauthTenant = 'common';
-  const url = new URL(`https://login.microsoftonline.com/${oauthTenant}/oauth2/v2.0/authorize`);
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_mode', 'query');
-  url.searchParams.set('scope', scopes.join(' '));
-  url.searchParams.set('state', state);
-  // This consent covers delegated access. Tenant-wide application permissions use
-  // the separate admin-consent endpoint below after they are configured on the app.
-  url.searchParams.set('prompt', 'consent');
-  return res.redirect(String(url));
-});
+);
 
 // Grants tenant admin consent for application permissions already configured on
 // the SignalTrue Entra application (Calendars.Read, Team.ReadBasic.All,
 // Channel.ReadBasic.All, ChannelMessage.Read.All and optionally Chat.Read.All).
-router.get('/integrations/microsoft/admin-consent/start', authenticateToken, async (req, res) => {
-  const clientId = process.env.MS_APP_CLIENT_ID;
-  const clientSecret = process.env.MS_APP_CLIENT_SECRET;
-  const redirectUri = process.env.MS_APP_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri) {
-    return res.status(503).json({ message: 'Microsoft application consent is not configured.' });
-  }
+router.get(
+  '/integrations/microsoft/admin-consent/start',
+  authenticateTokenFromHeaderOrQuery,
+  async (req, res) => {
+    const clientId = process.env.MS_APP_CLIENT_ID;
+    const clientSecret = process.env.MS_APP_CLIENT_SECRET;
+    const redirectUri = process.env.MS_APP_REDIRECT_URI;
+    if (!clientId || !clientSecret || !redirectUri) {
+      return res.status(503).json({ message: 'Microsoft application consent is not configured.' });
+    }
 
-  const org = await Organization.findById(req.user.orgId)
-    .select('integrations.microsoft.tenantId')
-    .lean();
-  const tenantId = org?.integrations?.microsoft?.tenantId;
-  if (!tenantId) {
-    return res.status(409).json({ message: 'Connect Microsoft delegated access first.' });
-  }
+    const org = await Organization.findById(req.user.orgId)
+      .select('integrations.microsoft.tenantId')
+      .lean();
+    const tenantId = org?.integrations?.microsoft?.tenantId;
+    if (!tenantId) {
+      return res.status(409).json({ message: 'Connect Microsoft delegated access first.' });
+    }
 
-  const state = signState({
-    orgId: String(req.user.orgId),
-    userId: String(req.user.userId),
-    scope: 'application',
-    nonce: crypto.randomBytes(8).toString('hex'),
-  });
-  const url = new URL(`https://login.microsoftonline.com/${tenantId}/adminconsent`);
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('state', state);
-  return res.redirect(String(url));
-});
+    const state = signState({
+      orgId: String(req.user.orgId),
+      userId: String(req.user.userId),
+      scope: 'application',
+      nonce: crypto.randomBytes(8).toString('hex'),
+    });
+    const url = new URL(`https://login.microsoftonline.com/${tenantId}/adminconsent`);
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('state', state);
+    return res.redirect(String(url));
+  }
+);
 
 router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
   try {

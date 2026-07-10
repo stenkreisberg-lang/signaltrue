@@ -81,6 +81,31 @@ export function authenticateToken(req, res, next) {
   }
 }
 
+// Authenticate from the Authorization header OR a ?token= query param.
+// OAuth start routes are reached by full-page browser navigation, which cannot
+// set headers — the frontend appends the JWT as ?token= instead.
+export function authenticateTokenFromHeaderOrQuery(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+
+  if (!token) {
+    return res.status(401).json({
+      message: 'Unauthorized: No token provided',
+      hint: 'Include Authorization: Bearer <token> header or ?token= query parameter',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      message: 'Unauthorized: Invalid token',
+      error: error.message,
+    });
+  }
+}
+
 // Require admin role
 export function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin' && req.user.role !== 'master_admin') {
