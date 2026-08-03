@@ -15,6 +15,9 @@ on:
       - 'craco.config.js'
       - 'vercel.json'
 
+env:
+  PUPPETEER_SKIP_DOWNLOAD: 'true'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

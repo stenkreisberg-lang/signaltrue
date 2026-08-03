@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  PUPPETEER_SKIP_DOWNLOAD: 'true'
+
 jobs:
   lint-and-test:
     name: Lint & Test
