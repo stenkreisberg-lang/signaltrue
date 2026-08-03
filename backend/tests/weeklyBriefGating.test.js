@@ -53,7 +53,7 @@ async function seedOrg() {
         name: `User ${i}`,
         orgId: org._id,
         teamId: i < 8 ? teamA._id : catchAll._id,
-        role: 'employee',
+        role: 'team_member',
         accountStatus: 'pending',
       })
     );
@@ -192,7 +192,10 @@ describe('full report mode', () => {
 
     expect(html).toContain('Excluded (catch-all)');
     // Engagement section shows the real team but not the catch-all bucket
-    const engagementSection = html.slice(html.indexOf('Engagement level'));
+    const engagementSection = html.slice(
+      html.indexOf('Engagement level'),
+      html.indexOf('Appendix — Data readiness')
+    );
     expect(engagementSection).toContain('Engineering');
     expect(engagementSection).not.toContain('Unassigned');
   });
