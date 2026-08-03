@@ -5,15 +5,6 @@ import TeamStateBadge from '../../components/insights/TeamStateBadge';
 import RiskCard from '../../components/insights/RiskCard';
 import ActionCard from '../../components/insights/ActionCard';
 import ExperimentCard from '../../components/insights/ExperimentCard';
-import {
-  NetworkHealthWidget,
-  SuccessionRiskWidget,
-  EquitySignalsWidget,
-  ProjectRiskWidget,
-  MeetingROIWidget,
-  OutlookSignalsWidget,
-  AttritionRiskSummary,
-} from '../../components/intelligence/IntelligenceWidgets';
 import DriftFamilyCard from '../../components/drift/DriftFamilyCard';
 import DriftConfidencePanel from '../../components/drift/DriftConfidencePanel';
 import useDriftFamilies from '../../hooks/useDriftFamilies';
@@ -26,27 +17,27 @@ function getHealthState(families) {
   const maxScore = Math.max(...families.map((f) => f.score));
   if (maxScore >= 70)
     return {
-      label: 'Critical drift detected',
+      label: 'Strong modeled deviation',
       color: 'bg-red-500',
       textColor: 'text-red-100',
       ring: 'ring-red-500/40',
     };
   if (maxScore >= 50)
     return {
-      label: 'Elevated drift',
+      label: 'Elevated modeled deviation',
       color: 'bg-orange-500',
       textColor: 'text-orange-100',
       ring: 'ring-orange-400/40',
     };
   if (maxScore >= 30)
     return {
-      label: 'Moderate drift',
+      label: 'Moderate modeled deviation',
       color: 'bg-amber-400',
       textColor: 'text-amber-900',
       ring: 'ring-amber-400/40',
     };
   return {
-    label: 'Low drift',
+    label: 'Within internal review band',
     color: 'bg-emerald-500',
     textColor: 'text-emerald-100',
     ring: 'ring-emerald-500/40',
@@ -64,14 +55,14 @@ const buildPrioritySummary = (families, scopeLabel, gapLine) => {
   return {
     familyName: topFamily.familyName,
     score: topFamily.score,
-    summary: `${scopeLabel} is currently showing the most drag in ${topFamily.familyName.toLowerCase()}.`,
+    summary: `${scopeLabel} has the highest internal model value in ${topFamily.familyName.toLowerCase()}.`,
     detail: topSignalTitle || topFamily.description,
     recommendation: topFamily.actionPrompt,
     comparison: runnerUp
-      ? `${runnerUp.familyName} is the next likely pressure point (${runnerUp.score}).`
+      ? `${runnerUp.familyName} has the next-highest modeled deviation (${runnerUp.score}).`
       : null,
     gapLine: gapLine || null,
-    shareText: `${scopeLabel}: ${topFamily.shareMessage || topFamily.description} Current score: ${topFamily.score}. Recommended focus: ${topFamily.actionPrompt}`,
+    shareText: `${scopeLabel}: ${topFamily.shareMessage || topFamily.description} Current internal model value: ${topFamily.score}. Suggested review: ${topFamily.actionPrompt}`,
   };
 };
 
@@ -82,7 +73,6 @@ function Insights() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [insights, setInsights] = useState(null);
-  const [intelligenceData, setIntelligenceData] = useState(null);
   const [familyScope, setFamilyScope] = useState('team');
   const [lastUpdated, setLastUpdated] = useState(null);
   const orgId = localStorage.getItem('orgId');
@@ -106,7 +96,6 @@ function Insights() {
       return;
     }
     fetchInsights();
-    fetchIntelligenceData();
   }, [teamId]);
 
   const fetchInsights = async () => {
@@ -134,65 +123,6 @@ function Insights() {
       setError(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchIntelligenceData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      // Fetch all intelligence metrics for this team (parallel requests)
-      const [attrition, projects, network, succession, equity, meetingROI, outlook] =
-        await Promise.all([
-          axios
-            .get(`${API_URL}/api/intelligence/attrition/team/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/projects/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/network/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/succession/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/equity/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/meeting-roi/team/${teamId}/recent?days=7`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-          axios
-            .get(`${API_URL}/api/intelligence/outlook/team/${teamId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .catch(() => ({ data: null })),
-        ]);
-
-      setIntelligenceData({
-        attritionRisk: attrition.data,
-        projects: projects.data,
-        networkHealth: network.data,
-        successionRisk: succession.data,
-        equitySignals: equity.data,
-        meetingROI: meetingROI.data,
-        outlookSignals: outlook.data,
-      });
-    } catch (err) {
-      console.error('Error fetching intelligence data:', err);
-      // Non-critical - don't show error to user
     }
   };
 
@@ -302,7 +232,7 @@ function Insights() {
             })()}
           </div>
           <p className="text-gray-600">
-            Evidence-based diagnosis and recommended actions for your team
+            Rule-based model review, underlying evidence, and suggested experiments
           </p>
           {lastUpdated && (
             <p className="text-[11px] text-gray-400 mt-1">
@@ -396,13 +326,14 @@ function Insights() {
             </div>
 
             <DriftConfidencePanel
-              headline={`Showing ${coverage?.visibleSignals || 0} visible signals across the organization. ${coverage?.hiddenLowConfidenceSignals || 0} low-confidence signals remain hidden.`}
+              title="Rule-based evidence and coverage"
+              headline={`Showing ${coverage?.visibleSignals || 0} visible signals across the organization. ${coverage?.hiddenLowConfidenceSignals || 0} low-readiness signals remain hidden.`}
               items={families.map((family) => ({
                 label: family.familyName,
-                value: `${family.confidence?.label || 'Medium'} confidence`,
+                value: `${family.confidence?.label || 'Medium'} evidence grade`,
                 note:
                   family.confidence?.reasons?.[0] ||
-                  'Confidence is based on visible structural drift patterns.',
+                  'The grade is a SignalTrue coverage and consistency rule, not statistical confidence.',
               }))}
             />
           </section>
@@ -419,8 +350,8 @@ function Insights() {
                 useful and safe to interpret.
               </p>
               <p className="text-sm text-gray-500">
-                As more activity is captured and confidence matures, you’ll see whether current
-                patterns point more toward overload, coordination drag, or weakening cohesion.
+                As more activity is captured and data readiness improves, you’ll see which internal
+                model family moved most. The model does not establish overload, cohesion, or cause.
               </p>
             </div>
           </section>
@@ -466,52 +397,31 @@ function Insights() {
 
         {/* Risk Signals Section */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Risk Signals</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Review Signals (internal models)
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {risks && risks.length > 0 ? (
               risks.map((risk) => <RiskCard key={risk.riskType} risk={risk} />)
             ) : (
               <div className="col-span-3 bg-white rounded-lg shadow-sm p-8 text-center">
-                <p className="text-gray-600">No risk data available</p>
+                <p className="text-gray-600">No review-signal data available</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Intelligence Signals Section */}
-        {intelligenceData && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Behavioral Intelligence</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {intelligenceData.attritionRisk && (
-                <AttritionRiskSummary data={intelligenceData.attritionRisk} />
-              )}
-              {intelligenceData.networkHealth && (
-                <NetworkHealthWidget data={intelligenceData.networkHealth} />
-              )}
-              {intelligenceData.successionRisk && (
-                <SuccessionRiskWidget data={intelligenceData.successionRisk} />
-              )}
-              {intelligenceData.equitySignals && (
-                <EquitySignalsWidget data={intelligenceData.equitySignals} />
-              )}
-              {intelligenceData.projects && <ProjectRiskWidget data={intelligenceData.projects} />}
-              {intelligenceData.meetingROI && (
-                <MeetingROIWidget data={{ meetings: intelligenceData.meetingROI }} />
-              )}
-              {intelligenceData.outlookSignals && (
-                <OutlookSignalsWidget data={intelligenceData.outlookSignals} />
-              )}
-            </div>
-          </section>
-        )}
-
         {/* Supporting Metrics Link */}
         <section>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-900">
-              <strong>Note:</strong> These insights are based on your team's metrics. View detailed
-              metrics and trends on the{' '}
+              <strong>How to read this:</strong> Counts and durations are observed metadata. Scores
+              and review bands are descriptive SignalTrue models, not probabilities, diagnoses, or
+              individual performance measures. Review the{' '}
+              <a href="/app/methodology" className="underline hover:text-blue-700">
+                measurement methodology
+              </a>{' '}
+              and detailed metrics on the{' '}
               <a href={`/app/team/${teamId}`} className="underline hover:text-blue-700">
                 Team Dashboard
               </a>

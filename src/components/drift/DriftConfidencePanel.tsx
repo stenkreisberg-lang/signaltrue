@@ -13,7 +13,7 @@ interface DriftConfidencePanelProps {
 }
 
 export default function DriftConfidencePanel({
-  title = 'Confidence & coverage',
+  title = 'Rule-based evidence & coverage',
   headline,
   items,
 }: DriftConfidencePanelProps) {

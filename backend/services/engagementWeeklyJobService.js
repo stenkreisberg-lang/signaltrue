@@ -46,7 +46,7 @@ import {
 import { detectPatterns } from './engagementPatternService.js';
 import { generateRecommendations } from './engagementRecommendationService.js';
 
-export const SCORING_VERSION = '2.0.0';
+export const SCORING_VERSION = '2.1.0';
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -64,10 +64,7 @@ export async function runWeeklyEngagementStrainJob(orgId, weekStart) {
   console.info(`[EngagementWeeklyJob] Starting for org ${orgId}, week ${weekStartStr}`);
 
   const teams = await Team.find({ orgId }).lean();
-  const minimumTeamSize = Math.max(
-    await resolveMinimumTeamSize(orgId),
-    MIN_ENGAGEMENT_TEAM_SIZE
-  );
+  const minimumTeamSize = Math.max(await resolveMinimumTeamSize(orgId), MIN_ENGAGEMENT_TEAM_SIZE);
 
   let processed = 0;
   let suppressed = 0;
@@ -140,6 +137,17 @@ async function runForTeam(orgId, teamId, weekStartStr, minimumTeamSize) {
 
   // ── Step 5: Overall score ──────────────────────────────────────────────────
   const engagementStrainRisk = calculateOverallScore(subscores);
+  if (!Number.isFinite(engagementStrainRisk)) {
+    await suppressWeek(
+      teamId,
+      orgId,
+      weekStartStr,
+      'insufficient_scored_metrics',
+      weekly.activePeopleCount,
+      minimumTeamSize
+    );
+    return 'suppressed';
+  }
   const engagementConditionsScore = 100 - engagementStrainRisk;
 
   // ── Step 6: Confidence ────────────────────────────────────────────────────

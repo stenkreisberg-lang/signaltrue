@@ -1,5 +1,5 @@
 /**
- * Engagement Strain Routes
+ * Work-Pattern Deviation Routes
  *
  * 5 API endpoints for the Engagement Strain Risk system.
  *
@@ -48,6 +48,14 @@ import { generateExplanation } from '../services/engagementExplanationService.js
 import { evaluateAlerts } from '../services/engagementAlertService.js';
 
 const router = express.Router();
+const MODEL_VERSION = '2.1.0';
+const MODEL_STATUS = {
+  version: MODEL_VERSION,
+  measurementClass: 'internal descriptive model',
+  validationStatus: 'not externally validated',
+  limitations:
+    'Not an engagement survey, probability, diagnosis, attrition prediction, causal finding, or performance score.',
+};
 
 // All engagement strain routes require authentication
 router.use(authenticateToken);
@@ -72,7 +80,7 @@ router.get('/summary/:orgId', requireOrganizationAccess(), privacyGateOrg, async
 
     // For each team, get their latest weekly record
     const latestDocs = await EngagementStrainWeekly.aggregate([
-      { $match: { teamId: { $in: teamIds } } },
+      { $match: { teamId: { $in: teamIds }, scoringVersion: MODEL_VERSION } },
       { $sort: { teamId: 1, weekStart: -1 } },
       {
         $group: {
@@ -86,7 +94,6 @@ router.get('/summary/:orgId', requireOrganizationAccess(), privacyGateOrg, async
           teamId: '$_id',
           weekStart: '$doc.weekStart',
           engagementStrainRisk: '$doc.engagementStrainRisk',
-          engagementConditionsScore: '$doc.engagementConditionsScore',
           riskState: '$doc.riskState',
           trend: '$doc.trend',
           confidenceScore: '$doc.confidenceScore',
@@ -107,7 +114,7 @@ router.get('/summary/:orgId', requireOrganizationAccess(), privacyGateOrg, async
         teamName: teamMap[String(d.teamId)] ?? null,
       }));
 
-    res.json({ orgId, teams: result });
+    res.json({ orgId, teams: result, modelStatus: MODEL_STATUS });
   } catch (err) {
     console.error('[EngagementStrain] GET /summary error:', err);
     res.status(500).json({ message: err.message });
@@ -124,7 +131,9 @@ router.get('/team/:teamId', requireTeamAccess(), privacyGate, async (req, res) =
       return res.status(400).json({ message: 'Invalid teamId' });
     }
 
-    const doc = await EngagementStrainWeekly.findOne({ teamId }).sort({ weekStart: -1 }).lean();
+    const doc = await EngagementStrainWeekly.findOne({ teamId, scoringVersion: MODEL_VERSION })
+      .sort({ weekStart: -1 })
+      .lean();
 
     if (!doc) {
       return res.status(404).json({ message: 'No engagement strain data found for this team' });
@@ -136,7 +145,9 @@ router.get('/team/:teamId', requireTeamAccess(), privacyGate, async (req, res) =
     // Fetch alerts for this record (evaluated on-demand, not persisted)
     const alerts = await evaluateAlerts(doc, teamId, doc.orgId);
 
-    res.json({ ...doc, alerts });
+    const publicDoc = { ...doc };
+    delete publicDoc.engagementConditionsScore;
+    res.json({ ...publicDoc, alerts, modelStatus: MODEL_STATUS });
   } catch (err) {
     console.error('[EngagementStrain] GET /team/:teamId error:', err);
     res.status(500).json({ message: err.message });
@@ -154,7 +165,9 @@ router.get('/team/:teamId/drivers', requireTeamAccess(), privacyGate, async (req
       return res.status(400).json({ message: 'Invalid teamId' });
     }
 
-    const doc = await EngagementStrainWeekly.findOne({ teamId }).sort({ weekStart: -1 }).lean();
+    const doc = await EngagementStrainWeekly.findOne({ teamId, scoringVersion: MODEL_VERSION })
+      .sort({ weekStart: -1 })
+      .lean();
 
     if (!doc) {
       return res.status(404).json({ message: 'No engagement strain data found for this team' });
@@ -206,12 +219,11 @@ router.get('/team/:teamId/history', requireTeamAccess(), privacyGate, async (req
       return res.status(400).json({ message: 'Invalid teamId' });
     }
 
-    const filter = { teamId };
+    const filter = { teamId, scoringVersion: MODEL_VERSION };
     if (!isMasterAdmin(req.user)) filter.orgId = req.user.orgId;
     const docs = await EngagementStrainWeekly.find(filter, {
       weekStart: 1,
       engagementStrainRisk: 1,
-      engagementConditionsScore: 1,
       riskState: 1,
       trend: 1,
       confidenceScore: 1,
@@ -226,7 +238,7 @@ router.get('/team/:teamId/history', requireTeamAccess(), privacyGate, async (req
     // Return oldest-first for charting
     docs.reverse();
 
-    res.json({ teamId, weeks: docs });
+    res.json({ teamId, weeks: docs, modelStatus: MODEL_STATUS });
   } catch (err) {
     console.error('[EngagementStrain] GET /team/:teamId/history error:', err);
     res.status(500).json({ message: err.message });

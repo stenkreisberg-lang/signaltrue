@@ -21,7 +21,7 @@ interface DriftFamilyCardProps {
 function scoreSeverity(score: number) {
   if (score >= 70)
     return {
-      label: 'Critical',
+      label: 'Strong deviation',
       ring: 'border-red-200',
       text: 'text-red-700',
       bg: 'bg-white',
@@ -30,7 +30,7 @@ function scoreSeverity(score: number) {
     };
   if (score >= 50)
     return {
-      label: 'Elevated',
+      label: 'Elevated deviation',
       ring: 'border-orange-200',
       text: 'text-orange-700',
       bg: 'bg-white',
@@ -39,7 +39,7 @@ function scoreSeverity(score: number) {
     };
   if (score >= 30)
     return {
-      label: 'Moderate',
+      label: 'Moderate deviation',
       ring: 'border-amber-200',
       text: 'text-amber-700',
       bg: 'bg-white',
@@ -47,7 +47,7 @@ function scoreSeverity(score: number) {
       hex: '#fbbf24',
     };
   return {
-    label: 'Low',
+    label: 'Within band',
     ring: 'border-emerald-200',
     text: 'text-emerald-700',
     bg: 'bg-white',
@@ -196,7 +196,9 @@ export default function DriftFamilyCard({
             </div>
           )}
           {confidenceLabel && (
-            <div className="text-[11px] text-muted-foreground">{confidenceLabel} confidence</div>
+            <div className="text-[11px] text-muted-foreground">
+              {confidenceLabel} rule-based evidence grade
+            </div>
           )}
           <button
             onClick={handleViewSignals}

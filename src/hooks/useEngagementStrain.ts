@@ -13,19 +13,19 @@ const API_BASE = '/engagement-strain';
 // ── Types ───────────────────────────────────────────────────────────────────────
 
 export interface Subscores {
-  recoveryDebt: number;
-  focusErosion: number;
-  coordinationFriction: number;
-  responsivenessPressure: number;
-  collaborationWithdrawal: number;
-  managerSupportGap: number;
-  workloadVolatility: number;
+  recoveryDebt: number | null;
+  focusErosion: number | null;
+  coordinationFriction: number | null;
+  responsivenessPressure: number | null;
+  collaborationWithdrawal: number | null;
+  managerSupportGap: number | null;
+  workloadVolatility: number | null;
 }
 
 export interface TopDriver {
   driver: string;
   score: number;
-  changeVsBaseline: number;
+  changeVsBaseline: string | null;
   explanation: string;
 }
 
@@ -60,7 +60,6 @@ export interface TeamStrainSummary {
   teamName: string | null;
   weekStart: string;
   engagementStrainRisk: number;
-  engagementConditionsScore: number;
   riskState: 'healthy' | 'watch' | 'strain' | 'critical';
   trend: 'rising' | 'stable' | 'improving';
   confidenceScore: number;
@@ -79,7 +78,6 @@ export interface TeamStrainDetail extends TeamStrainSummary {
 export interface HistoryWeek {
   weekStart: string;
   engagementStrainRisk: number;
-  engagementConditionsScore: number;
   riskState: 'healthy' | 'watch' | 'strain' | 'critical';
   trend: 'rising' | 'stable' | 'improving';
   confidenceScore: number;

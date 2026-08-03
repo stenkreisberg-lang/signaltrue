@@ -46,7 +46,7 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
   const visibleNodes = useMemo(() => nodes.slice(0, 16), [nodes]);
   const positions = useMemo(() => buildPositions(visibleNodes), [visibleNodes]);
   const visibleIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
-  const maxUnits = Math.max(1, ...actualEdges.map((edge) => edge.interactionUnits));
+  const maxActivity = Math.max(1, ...actualEdges.map((edge) => edge.interactionCount));
 
   if (!visibleNodes.length) {
     return <p className="app-muted">No privacy-eligible teams are available for the map.</p>;
@@ -85,7 +85,7 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
             .map((edge) => {
               const from = positions.get(edge.teamAId);
               const to = positions.get(edge.teamBId);
-              const width = 2 + (edge.interactionUnits / maxUnits) * 8;
+              const width = 2 + (edge.interactionCount / maxActivity) * 8;
               return (
                 <line
                   key={edge.id}
@@ -99,7 +99,8 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
                   opacity="0.72"
                 >
                   <title>
-                    {edge.teamAName} to {edge.teamBName}: {edge.interactionUnits} interaction units
+                    {edge.teamAName} to {edge.teamBName}: {edge.meetingCount} shared meetings,{' '}
+                    {edge.messageCount + edge.otherInteractionCount} directed interactions
                   </title>
                 </line>
               );
@@ -228,9 +229,9 @@ export default function WorkNetwork() {
   return (
     <AppShell user={user} section="Work Network">
       <PageHeader
-        eyebrow="Actual organization map"
-        title="How work really moves between teams"
-        description="Compare formal reporting links with observed team-to-team coordination. Metadata only, team-level, and action-oriented."
+        eyebrow="Observed coordination map"
+        title="How coordination moves between teams"
+        description="Compare formal reporting links with team-to-team coordination observed in connected metadata. This is a descriptive map, not proof of dependency or cause."
         action={
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             Period
@@ -265,9 +266,9 @@ export default function WorkNetwork() {
             {[
               ['Measured teams', network.summary.measuredTeams],
               ['Observed links', network.summary.observedConnections],
-              ['Hidden links', network.summary.hiddenDependencies],
+              ['Unmapped links', network.summary.hiddenDependencies],
               ['Concentrated', network.summary.concentratedInterfaces],
-              ['Confidence', network.confidence.label],
+              ['Data readiness', readiness.label],
             ].map(([label, value]) => (
               <div key={label} className="app-dashboard-card">
                 <span className="app-dashboard-card-value">{value}</span>
@@ -285,12 +286,12 @@ export default function WorkNetwork() {
                 <h2 className="text-2xl font-bold text-slate-900">Company work network</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-600">
                   Dashed lines are formal cross-team reporting links. Teal lines are observed links
-                  that align with formal structure. Amber lines are real operating dependencies not
-                  explained by the reporting map.
+                  that align with formal structure. Amber lines are observed metadata links not
+                  explained by the current reporting map; they require contextual review.
                 </p>
               </div>
               <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
-                {network.period.days}-day window · {network.confidence.score}/100 confidence
+                {network.period.days}-day window · {readiness.score}/100 data readiness
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
@@ -300,11 +301,11 @@ export default function WorkNetwork() {
               </span>
               <span>
                 <span className="mr-2 inline-block h-1 w-8 rounded bg-teal-700" />
-                Aligned actual
+                Aligned observed
               </span>
               <span>
                 <span className="mr-2 inline-block h-1 w-8 rounded bg-amber-600" />
-                Hidden actual
+                Unmapped observed
               </span>
             </div>
             <div className="mt-4">
@@ -352,7 +353,7 @@ export default function WorkNetwork() {
                             {edge.teamAName} ↔ {edge.teamBName}
                           </td>
                           <td className="px-3 py-4">
-                            {edge.formalConnection ? 'Formally linked' : 'Hidden dependency'}
+                            {edge.formalConnection ? 'Formally linked' : 'Unmapped observed link'}
                           </td>
                           <td className="px-3 py-4">
                             {edge.meetingCount} · {edge.meetingHours}h
@@ -375,16 +376,17 @@ export default function WorkNetwork() {
             <section>
               <div className="mb-4">
                 <p className="app-eyebrow">Decision queue</p>
-                <h2 className="text-2xl font-bold text-slate-900">Bottlenecks worth acting on</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Patterns worth reviewing</h2>
                 <p className="mt-2 text-sm text-slate-600">
                   Relative to this company’s own network, with one reversible action and a 14-day
-                  measure. These are structural patterns, not employee performance findings.
+                  measure. Percentiles and review bands are transparent internal product rules, not
+                  causal findings or scientifically validated risk thresholds.
                 </p>
               </div>
               {network.insights.length === 0 ? (
                 <div className="app-panel">
                   <h3 className="text-lg font-semibold text-slate-900">
-                    No material bottleneck detected
+                    No pattern crossed an internal review rule
                   </h3>
                   <p className="mt-2 text-sm text-slate-600">
                     Measured interfaces do not currently meet the evidence rules for action.
@@ -399,7 +401,7 @@ export default function WorkNetwork() {
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs font-bold ${badgeClass(insight.severity)}`}
                         >
-                          {insight.severity}
+                          {insight.severity} review priority
                         </span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-slate-700">{insight.summary}</p>
@@ -510,6 +512,17 @@ export default function WorkNetwork() {
               </div>
             </section>
           )}
+
+          <section className="app-panel border-l-4 border-l-slate-400">
+            <p className="app-eyebrow">Measurement status</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              {network.methodology.validationStatus}{' '}
+              <Link to="/app/methodology" className="font-semibold text-teal-800 underline">
+                Read methods and limits
+              </Link>
+              .
+            </p>
+          </section>
 
           <section className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
             <strong className="text-slate-900">Privacy and interpretation:</strong>{' '}

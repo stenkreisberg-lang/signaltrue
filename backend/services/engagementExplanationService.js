@@ -1,7 +1,7 @@
 /**
  * Engagement Explanation Service
  *
- * Generates plain-language explanations for Engagement Strain Risk scores
+ * Generates plain-language explanations for work-pattern deviation indices
  * using an LLM (OpenAI by default, model configurable via env).
  *
  * ─── SPEC SECTION 18 CONSTRAINTS ─────────────────────────────────────────────
@@ -91,7 +91,7 @@ async function callLLM(client, input) {
 // ── System Prompt ──────────────────────────────────────────────────────────────
 
 function buildSystemPrompt() {
-  return `You are an expert workplace analytics interpreter for SignalTrue, an engagement intelligence platform.
+  return `You interpret SignalTrue's team-level work-pattern deviation model.
 
 Your role is to translate structured team work-pattern metrics into clear, factual, manager-friendly explanations.
 
@@ -105,6 +105,8 @@ STRICT CONSTRAINTS — you must never violate these:
 7. Be factual, measured, and constructive. Avoid alarming language beyond what the data warrants.
 8. Keep the explanation concise — 3 to 5 sentences maximum.
 9. Where confidence is low or moderate, acknowledge the data quality limitation briefly.
+10. State that the 0-100 value is an internal descriptive index, not a probability or validated engagement, burnout, attrition, health, or performance measure.
+11. Describe associations only. Do not say one metadata pattern caused another outcome.
 
 Your output is one paragraph. No bullet points. No headers. Plain prose only.`;
 }
@@ -132,24 +134,24 @@ function buildUserPrompt(input) {
 
   const patternSummary = (patterns ?? []).map((p) => p.title).join(', ') || 'none detected';
 
-  return `Generate a plain-language explanation for the following team engagement strain result.
+  return `Generate a plain-language explanation for the following team work-pattern deviation result.
 
 Team: ${teamName ?? 'the team'}
 Week starting: ${weekStart}
-Overall Engagement Strain Risk: ${engagementStrainRisk}/100 (${riskState})
+Overall deviation index (internal model): ${engagementStrainRisk}/100 (${riskState})
 Trend vs last week: ${trend}
-Data confidence: ${confidenceLabel} (${confidenceScore}/100)
+Data readiness: ${confidenceLabel} (${confidenceScore}/100)
 
 Subscore breakdown:
-- Recovery Debt: ${subscores?.recoveryDebt ?? 'N/A'}
-- Focus Erosion: ${subscores?.focusErosion ?? 'N/A'}
-- Coordination Friction: ${subscores?.coordinationFriction ?? 'N/A'}
+- Outside-schedule activity: ${subscores?.recoveryDebt ?? 'N/A'}
+- Focus availability: ${subscores?.focusErosion ?? 'N/A'}
+- Coordination metadata: ${subscores?.coordinationFriction ?? 'N/A'}
 - Responsiveness Pressure: ${subscores?.responsivenessPressure ?? 'N/A'}
-- Collaboration Withdrawal: ${subscores?.collaborationWithdrawal ?? 'N/A'}
-- Manager Support Gap: ${subscores?.managerSupportGap ?? 'N/A'}
+- Collaboration metadata: ${subscores?.collaborationWithdrawal ?? 'N/A'}
+- Recorded 1:1 time: ${subscores?.managerSupportGap ?? 'N/A'}
 - Workload Volatility: ${subscores?.workloadVolatility ?? 'N/A'}
 
-Top risk drivers: ${topDriverSummary || 'none identified'}
+Top modeled drivers: ${topDriverSummary || 'none identified'}
 Detected patterns: ${patternSummary}
 
 Remember: speak only to team-level patterns. Do not identify individuals. Do not infer emotions. Do not reference message content. 3–5 sentences only.`;
@@ -166,11 +168,11 @@ function buildFallbackExplanation(input) {
   // Opening sentence based on risk state
   const opening =
     {
-      healthy: `This team's engagement strain risk score of ${score} places it in the healthy range this week.`,
-      watch: `This team's engagement strain risk score of ${score} is in the watch range, warranting light monitoring.`,
-      strain: `This team's engagement strain risk score of ${score} indicates elevated strain this week.`,
-      critical: `This team's engagement strain risk score of ${score} is in the critical range and requires prompt attention.`,
-    }[state] ?? `Engagement strain risk this week is ${score}.`;
+      healthy: `This team's work-pattern deviation index of ${score} is within its available baseline this week.`,
+      watch: `This team's work-pattern deviation index of ${score} met the moderate internal review band.`,
+      strain: `This team's work-pattern deviation index of ${score} met the elevated internal review band.`,
+      critical: `This team's work-pattern deviation index of ${score} met the strong internal review band.`,
+    }[state] ?? `The work-pattern deviation index this week is ${score}.`;
 
   // Trend sentence
   const trendMap = {
@@ -200,23 +202,31 @@ function buildFallbackExplanation(input) {
   // Confidence caveat
   const confidenceSentence =
     confidenceLabel === 'low'
-      ? 'Data confidence is low this week; interpret this score with caution until more signal data is available.'
+      ? 'Data readiness is low this week; interpret the model cautiously until coverage improves.'
       : confidenceLabel === 'moderate'
-        ? 'Data confidence is moderate — results are directionally reliable but may shift as more data accumulates.'
+        ? 'Data readiness is moderate, so the model may shift as more data accumulates.'
         : '';
 
-  return [opening, trendSentence, driverSentence, confidenceSentence].filter(Boolean).join(' ');
+  return [
+    opening,
+    trendSentence,
+    driverSentence,
+    confidenceSentence,
+    'This is a descriptive prioritization index, not a probability, diagnosis, or validated employee-outcome measure.',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function formatDriverName(key) {
   const labels = {
-    recoveryDebt: 'Recovery Debt',
-    focusErosion: 'Focus Erosion',
-    coordinationFriction: 'Coordination Friction',
-    responsivenessPressure: 'Responsiveness Pressure',
-    collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap: 'Manager Support Gap',
-    workloadVolatility: 'Workload Volatility',
+    recoveryDebt: 'Outside-schedule activity',
+    focusErosion: 'Focus availability',
+    coordinationFriction: 'Coordination metadata',
+    responsivenessPressure: 'Response patterns',
+    collaborationWithdrawal: 'Collaboration metadata',
+    managerSupportGap: 'Recorded 1:1 time',
+    workloadVolatility: 'Week-to-week activity',
   };
   return labels[key] ?? key;
 }

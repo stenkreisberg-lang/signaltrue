@@ -6,7 +6,6 @@ const links = [
   { to: '/app/signals', label: 'Signals' },
   { to: '/app/active-monitoring', label: 'Monitoring' },
   { to: '/app/actions', label: 'Actions' },
-  { to: '/app/executive-summary', label: 'Executive Summary' },
   { to: '/app/signal-coverage', label: 'Data Coverage' },
   {
     to: '/app/work-network',
@@ -15,6 +14,7 @@ const links = [
   },
   { to: '/app/employees', label: 'Team Setup', adminOnly: true },
   { to: '/app/site-analytics', label: 'Site Analytics' },
+  { to: '/app/methodology', label: 'Methodology' },
 ];
 
 export function PageHeader({ eyebrow, title, description, action }) {
@@ -82,6 +82,14 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             <strong>Privacy protected.</strong> Metadata only, aggregated at team level. No message
             content or individual performance ranking.
             <Link to="/app/privacy">View data policy</Link>
+          </div>
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+            <strong>Measurement note.</strong> Counts and durations are observed; ratios are
+            derived. SignalTrue 0-100 indices and review bands are internal descriptive models, not
+            validated probabilities, diagnoses, causal findings, or performance scores.{' '}
+            <Link className="font-bold underline" to="/app/methodology">
+              Methods and limits
+            </Link>
           </div>
           {children}
         </main>

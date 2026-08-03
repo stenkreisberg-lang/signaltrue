@@ -1,7 +1,7 @@
 /**
- * Engagement Strain Team Detail Page
+ * Work-Pattern Deviation Team Detail Page
  *
- * Full team-level view of the Engagement Strain Risk system.
+ * Full team-level view of the internal work-pattern deviation model.
  * Displays:
  *   - Overall score gauge with risk state + trend
  *   - 7 subscore breakdown bars
@@ -48,25 +48,25 @@ import {
 
 const RISK_STATE = {
   healthy: {
-    label: 'Healthy',
+    label: 'Within baseline',
     color: 'text-emerald-400',
     border: 'border-emerald-700',
     bg: 'bg-emerald-900/30',
   },
   watch: {
-    label: 'Watch',
+    label: 'Moderate deviation',
     color: 'text-amber-400',
     border: 'border-amber-700',
     bg: 'bg-amber-900/30',
   },
   strain: {
-    label: 'Strain',
+    label: 'Elevated deviation',
     color: 'text-orange-400',
     border: 'border-orange-700',
     bg: 'bg-orange-900/30',
   },
   critical: {
-    label: 'Critical',
+    label: 'Strong deviation',
     color: 'text-red-400',
     border: 'border-red-700',
     bg: 'bg-red-900/30',
@@ -76,37 +76,37 @@ const RISK_STATE = {
 const SUBSCORE_META: { key: keyof Subscores; label: string; description: string }[] = [
   {
     key: 'recoveryDebt',
-    label: 'Recovery Debt',
-    description: 'After-hours & weekend activity, recovery gap violations',
+    label: 'Outside-schedule activity',
+    description: 'Messaging and email activity outside the configured work schedule',
   },
   {
     key: 'focusErosion',
-    label: 'Focus Erosion',
-    description: 'Focus hours available, fragmented days, back-to-back meetings',
+    label: 'Focus availability',
+    description: 'Available focus time, fragmented days, and meeting hours',
   },
   {
     key: 'coordinationFriction',
-    label: 'Coordination Friction',
+    label: 'Coordination metadata',
     description: 'Attendee-hours, recurring meeting load, meeting size',
   },
   {
     key: 'responsivenessPressure',
-    label: 'Responsiveness Pressure',
+    label: 'Response patterns',
     description: 'Response latency, after-hours messaging, message volume',
   },
   {
     key: 'collaborationWithdrawal',
-    label: 'Collaboration Withdrawal',
+    label: 'Collaboration metadata',
     description: 'Unique collaborators, reciprocity ratio, public channel activity',
   },
   {
     key: 'managerSupportGap',
-    label: 'Manager Support Gap',
-    description: 'Manager 1:1 time, 1:1 cancellations, manager response latency',
+    label: 'Recorded 1:1 time',
+    description: 'Recorded manager 1:1 time compared with the team baseline',
   },
   {
     key: 'workloadVolatility',
-    label: 'Workload Volatility',
+    label: 'Week-to-week activity',
     description: 'Week-over-week load changes, activity spikes, new recurring meetings',
   },
 ];
@@ -134,13 +134,13 @@ function scoreBarColor(score: number) {
 
 function formatDriverName(key: string): string {
   const labels: Record<string, string> = {
-    recoveryDebt: 'Recovery Debt',
-    focusErosion: 'Focus Erosion',
-    coordinationFriction: 'Coordination Friction',
-    responsivenessPressure: 'Responsiveness Pressure',
-    collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap: 'Manager Support Gap',
-    workloadVolatility: 'Workload Volatility',
+    recoveryDebt: 'Outside-schedule activity',
+    focusErosion: 'Focus availability',
+    coordinationFriction: 'Coordination metadata',
+    responsivenessPressure: 'Response patterns',
+    collaborationWithdrawal: 'Collaboration metadata',
+    managerSupportGap: 'Recorded 1:1 time',
+    workloadVolatility: 'Week-to-week activity',
   };
   return labels[key] ?? key;
 }
@@ -177,7 +177,7 @@ const ScoreGauge: React.FC<{
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
-            Engagement Strain Risk
+            Work-pattern deviation index
           </p>
           <div className="flex items-end gap-3">
             <span className={`text-5xl font-bold tabular-nums ${cfg.color}`}>{score}</span>
@@ -225,22 +225,22 @@ const ScoreGauge: React.FC<{
         </div>
       </div>
 
-      {/* Conditions score (inverse) */}
+      {/* Data readiness */}
       <div className="mt-4 pt-4 border-t border-slate-700/50">
         <div className="flex justify-between text-xs text-slate-400 mb-1">
-          <span>Engagement Conditions Score</span>
-          <span className="text-emerald-400 font-medium">{100 - score}/100</span>
-        </div>
-        <div className="flex justify-between text-xs text-slate-500">
-          <span>Confidence: {confidenceLabel}</span>
+          <span>Data readiness: {confidenceLabel}</span>
           <span>{confidenceScore}/100</span>
         </div>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Internal descriptive model, not a probability, diagnosis, engagement survey, attrition
+          prediction, or performance score.
+        </p>
       </div>
     </div>
   );
 };
 
-const SubscoreBar: React.FC<{ label: string; score: number; description: string }> = ({
+const SubscoreBar: React.FC<{ label: string; score: number | null; description: string }> = ({
   label,
   score,
   description,
@@ -248,16 +248,14 @@ const SubscoreBar: React.FC<{ label: string; score: number; description: string 
   <div className="group">
     <div className="flex items-center justify-between mb-1">
       <span className="text-sm text-slate-300">{label}</span>
-      <span
-        className={`text-sm font-semibold tabular-nums ${score >= 70 ? 'text-red-400' : score >= 50 ? 'text-orange-400' : score >= 30 ? 'text-amber-400' : 'text-emerald-400'}`}
-      >
-        {score}
+      <span className="text-sm font-semibold tabular-nums text-slate-400">
+        {score == null ? 'Unavailable' : score}
       </span>
     </div>
     <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
       <div
-        className={`h-full rounded-full transition-all ${scoreBarColor(score)}`}
-        style={{ width: `${score}%` }}
+        className={`h-full rounded-full transition-all ${score == null ? 'bg-slate-600' : scoreBarColor(score)}`}
+        style={{ width: `${score ?? 0}%` }}
       />
     </div>
     <p className="text-xs text-slate-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -461,8 +459,10 @@ const OrgStrainListing: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold">Engagement Strain Risk</h1>
-            <p className="text-sm text-slate-400 mt-1">All teams · passive work-pattern analysis</p>
+            <h1 className="text-xl font-semibold">Work-pattern deviation</h1>
+            <p className="text-sm text-slate-400 mt-1">
+              All teams · internal descriptive model, not a validated risk probability
+            </p>
           </div>
           <button
             onClick={refetch}
@@ -488,7 +488,7 @@ const OrgStrainListing: React.FC = () => {
 
         {!loading && !error && !teams.length && (
           <div className="py-16 text-center text-sm text-slate-500">
-            No engagement strain data yet. Run the weekly scoring job to generate reports.
+            No work-pattern model data yet. Run the weekly scoring job to generate reports.
           </div>
         )}
 
@@ -557,7 +557,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <RefreshCw className="w-6 h-6 animate-spin text-slate-500" />
-        <span className="ml-3 text-slate-400">Loading engagement strain data...</span>
+        <span className="ml-3 text-slate-400">Loading work-pattern data...</span>
       </div>
     );
   }
@@ -671,7 +671,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
                 <SubscoreBar
                   key={key}
                   label={label}
-                  score={detail.subscores[key] ?? 0}
+                  score={detail.subscores[key]}
                   description={description}
                 />
               ))}
@@ -687,7 +687,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
           <div className="bg-slate-800 rounded-lg border border-slate-700 p-5">
             <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              Top Risk Drivers
+              Top modeled drivers
             </h2>
             <div className="space-y-3">
               {detail.topDrivers.map((d, i) => (
@@ -703,12 +703,9 @@ const EngagementStrainTeamDetail: React.FC = () => {
                       >
                         {d.score}
                       </span>
-                      {d.changeVsBaseline != null && (
-                        <span
-                          className={`text-xs ${d.changeVsBaseline > 0 ? 'text-red-400' : 'text-emerald-400'}`}
-                        >
-                          {d.changeVsBaseline > 0 ? '+' : ''}
-                          {d.changeVsBaseline.toFixed(1)} vs baseline
+                      {d.changeVsBaseline && (
+                        <span className="text-xs text-slate-400">
+                          {d.changeVsBaseline} vs baseline
                         </span>
                       )}
                     </div>

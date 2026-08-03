@@ -15,7 +15,6 @@ interface TeamEngagementData {
   teamName: string | null;
   weekStart: string;
   engagementStrainRisk: number;
-  engagementConditionsScore: number;
   riskState: 'healthy' | 'watch' | 'strain' | 'critical';
   trend: 'rising' | 'improving' | 'stable';
   confidenceScore: number;
@@ -37,13 +36,13 @@ interface EngagementStrainWidgetProps {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const DRIVER_LABELS: Record<string, string> = {
-  recovery_debt: 'Recovery Debt',
-  focus_erosion: 'Focus Erosion',
-  coordination_friction: 'Coordination Friction',
-  responsiveness_pressure: 'Responsiveness Pressure',
-  collaboration_withdrawal: 'Collaboration Withdrawal',
-  manager_support_gap: 'Manager Support Gap',
-  workload_volatility: 'Workload Volatility',
+  recovery_debt: 'Outside-schedule activity',
+  focus_erosion: 'Focus availability',
+  coordination_friction: 'Coordination metadata',
+  responsiveness_pressure: 'Response patterns',
+  collaboration_withdrawal: 'Collaboration metadata',
+  manager_support_gap: 'Recorded 1:1 time',
+  workload_volatility: 'Week-to-week activity',
 };
 
 function riskColor(state: string): string {
@@ -62,13 +61,13 @@ function riskColor(state: string): string {
 function riskLabel(state: string): string {
   switch (state) {
     case 'critical':
-      return 'Critical';
+      return 'Strong deviation';
     case 'strain':
-      return 'Strain';
+      return 'Elevated deviation';
     case 'watch':
-      return 'Watch';
+      return 'Moderate deviation';
     default:
-      return 'Healthy';
+      return 'Within baseline';
   }
 }
 
@@ -86,7 +85,7 @@ function trendIcon(trend: string): string {
 function trendLabel(trend: string): string {
   switch (trend) {
     case 'rising':
-      return 'Risk rising';
+      return 'Deviation rising';
     case 'improving':
       return 'Improving';
     default:
@@ -103,16 +102,6 @@ function trendColor(trend: string): string {
     default:
       return '#6b7280';
   }
-}
-
-// Score arc helpers
-function scoreArcPath(score: number, radius: number): string {
-  const pct = Math.min(Math.max(score, 0), 100) / 100;
-  const angle = pct * 270 - 135; // -135° to +135°
-  const rad = (angle * Math.PI) / 180;
-  const x = 60 + radius * Math.cos(rad);
-  const y = 60 + radius * Math.sin(rad);
-  return `${x.toFixed(1)},${y.toFixed(1)}`;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -137,9 +126,12 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
         // If a specific team is requested, filter down
         setData(teamId ? teams.filter((t) => t.teamId === teamId) : teams);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const apiError = err as { response?: { status?: number }; message?: string };
         setError(
-          err?.response?.status === 404 ? null : err.message || 'Failed to load engagement data'
+          apiError.response?.status === 404
+            ? null
+            : apiError.message || 'Failed to load engagement data'
         );
       } finally {
         setLoading(false);
@@ -155,9 +147,9 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <span style={styles.headerIcon}>🧠</span>
-          <h3 style={styles.headerTitle}>Engagement Level</h3>
+          <h3 style={styles.headerTitle}>Work-pattern deviation</h3>
         </div>
-        <p style={styles.muted}>Analysing engagement conditions…</p>
+        <p style={styles.muted}>Analysing team work-pattern changes…</p>
       </div>
     );
   }
@@ -167,7 +159,7 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <span style={styles.headerIcon}>🧠</span>
-          <h3 style={styles.headerTitle}>Engagement Level</h3>
+          <h3 style={styles.headerTitle}>Work-pattern deviation</h3>
         </div>
         <p style={{ color: '#ef4444', fontSize: 13 }}>⚠️ {error}</p>
       </div>
@@ -179,7 +171,7 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <span style={styles.headerIcon}>🧠</span>
-          <h3 style={styles.headerTitle}>Engagement Level</h3>
+          <h3 style={styles.headerTitle}>Work-pattern deviation</h3>
           <button
             style={styles.infoBtn}
             onClick={() => setShowExplainer((v) => !v)}
@@ -190,8 +182,8 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
         </div>
         {showExplainer && <ExplainerBox />}
         <p style={styles.muted}>
-          No engagement data yet for this week. Data appears after the weekly scoring job runs
-          (Monday).
+          No work-pattern model data yet for this week. Data appears after the weekly scoring job
+          runs (Monday).
         </p>
       </div>
     );
@@ -205,14 +197,14 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
     return order.indexOf(t.riskState) > order.indexOf(acc) ? t.riskState : acc;
   }, 'healthy');
   const avgRisk = Math.round(data.reduce((s, t) => s + t.engagementStrainRisk, 0) / data.length);
-  const avgConditions = 100 - avgRisk;
+  const avgReadiness = Math.round(data.reduce((s, t) => s + t.confidenceScore, 0) / data.length);
 
   return (
     <div style={styles.wrapper}>
       {/* ── Header ── */}
       <div style={styles.header}>
         <span style={styles.headerIcon}>🧠</span>
-        <h3 style={styles.headerTitle}>Engagement Level</h3>
+        <h3 style={styles.headerTitle}>Work-pattern deviation</h3>
         <span
           style={{
             ...styles.stateBadge,
@@ -239,18 +231,18 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
         <div style={styles.summaryItem}>
           <span style={{ ...styles.bigNum, color: riskColor(worstState) }}>{avgRisk}</span>
           <span style={styles.summaryLabel}>
-            Strain Risk
+            Deviation index
             <br />
-            <span style={styles.muted}>(0 = none, 100 = critical)</span>
+            <span style={styles.muted}>(internal model, 0–100)</span>
           </span>
         </div>
         <div style={styles.summaryDivider} />
         <div style={styles.summaryItem}>
-          <span style={{ ...styles.bigNum, color: '#10b981' }}>{avgConditions}</span>
+          <span style={{ ...styles.bigNum, color: '#0f766e' }}>{avgReadiness}</span>
           <span style={styles.summaryLabel}>
-            Conditions Score
+            Data readiness
             <br />
-            <span style={styles.muted}>(higher = healthier)</span>
+            <span style={styles.muted}>(coverage and stability)</span>
           </span>
         </div>
         <div style={styles.summaryDivider} />
@@ -265,17 +257,14 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
         <div
           style={{
             ...styles.barFill,
-            width: `${avgConditions}%`,
-            background:
-              riskColor(worstState) === '#10b981'
-                ? '#10b981'
-                : `linear-gradient(90deg, #10b981 0%, ${riskColor(worstState)} 100%)`,
+            width: `${avgRisk}%`,
+            background: riskColor(worstState),
           }}
         />
       </div>
       <div style={styles.barLabels}>
-        <span style={styles.muted}>At-risk</span>
-        <span style={styles.muted}>Healthy conditions</span>
+        <span style={styles.muted}>Within baseline</span>
+        <span style={styles.muted}>More deviation</span>
       </div>
 
       {/* ── Per-team rows ── */}
@@ -322,8 +311,8 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
           {expanded === team.teamId && (
             <div style={styles.teamDetail}>
               <p style={styles.detailMeta}>
-                Week of {team.weekStart} · {team.activePeopleCount} active members · Confidence:{' '}
-                {team.confidenceLabel ?? '—'}
+                Week of {team.weekStart} · {team.activePeopleCount} active members · Data readiness:{' '}
+                {team.confidenceScore}/100 ({team.confidenceLabel ?? '—'})
               </p>
 
               {team.topDrivers?.length > 0 && (
@@ -362,7 +351,8 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
       ))}
 
       <p style={{ ...styles.muted, marginTop: 12 }}>
-        Engagement level is updated weekly. Scores are team-level — no individual data is exposed.
+        Internal descriptive model, updated weekly. It is not an engagement survey, probability,
+        diagnosis, attrition prediction, or performance score. No individual data is exposed.
       </p>
     </div>
   );
@@ -372,28 +362,27 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
 
 const ExplainerBox: React.FC = () => (
   <div style={explainerStyles.box}>
-    <p style={explainerStyles.title}>Why engagement level matters</p>
+    <p style={explainerStyles.title}>How to read this model</p>
     <p style={explainerStyles.body}>
-      Engagement isn't measured through surveys here — it's derived from{' '}
-      <strong>behavioral metadata</strong>: how recovery time, focus availability, responsiveness
-      pressure, and collaboration patterns shift week to week.
+      This index summarizes how team-level metadata about recovery time, focus availability,
+      responsiveness, and collaboration differs from the team's available baseline.
     </p>
     <p style={explainerStyles.body}>
-      This matters because engagement problems surface in{' '}
-      <strong>system behavior 4–8 weeks before</strong> people report them in surveys, or before
-      they show up in attrition and performance data.
+      It can prioritize a conversation, but it does not measure engagement, explain why a pattern
+      changed, or predict an employee outcome.
     </p>
     <ul style={explainerStyles.list}>
       <li>
-        <strong>Strain Risk (0–100):</strong> How much structural pressure is working against
-        engagement conditions right now. Above 50 = intervention needed.
+        <strong>Deviation index (0–100):</strong> A SignalTrue internal model. Higher values mean
+        more measured indicators moved away from the team's baseline.
       </li>
       <li>
-        <strong>Conditions Score:</strong> Inverse of strain risk — the higher, the healthier the
-        environment for sustained engagement.
+        <strong>Review bands:</strong> Internal prioritization rules, not scientific thresholds or
+        probabilities.
       </li>
       <li>
-        <strong>Trend:</strong> Whether strain is rising, stable, or improving vs. last week.
+        <strong>Data readiness:</strong> Whether coverage and baseline history are sufficient to
+        interpret the model.
       </li>
     </ul>
     <p style={{ ...explainerStyles.body, marginBottom: 0 }}>
@@ -414,27 +403,27 @@ const WhyItMatters: React.FC<WhyItMattersProps> = ({ riskState, trend }) => {
 
   if (riskState === 'critical') {
     message =
-      'Critical engagement strain means the structural conditions for sustained, motivated work have significantly degraded. Without intervention, expect rising attrition risk and declining output quality within 2–4 weeks.';
+      'Several modeled indicators are far from this team’s available baseline. Review the underlying counts and local context before choosing one reversible change.';
     color = '#ef4444';
   } else if (riskState === 'strain') {
     message =
-      "Strain-level engagement conditions mean the team is working against friction that most people won't explicitly name. Recovery time is likely shrinking, responsiveness pressure is high, or collaboration is thinning. Act now before it compounds.";
+      'The model found an elevated deviation in recovery, focus, responsiveness, or collaboration metadata. Confirm which direct metric changed and ask the team lead what explains it.';
     color = '#f97316';
   } else if (riskState === 'watch' && trend === 'rising') {
     message =
-      'Watch-level risk with a rising trend is an early warning sign. Conditions are not yet critical, but the direction is wrong. This is the best time to intervene — before strain is visible to people.';
+      'A moderate deviation increased from last week. Treat this as a review prompt and verify the measured driver and business context.';
     color = '#f59e0b';
   } else if (riskState === 'watch') {
     message =
-      "Conditions are in a watch state. Nothing is broken, but there are early structural signals worth monitoring. No action required yet, but track next week's trend.";
+      'A moderate deviation met an internal review band. Monitor the direct metric and avoid assigning a cause from metadata alone.';
     color = '#f59e0b';
   } else if (trend === 'improving') {
     message =
-      'Engagement conditions are healthy and improving. Keep the patterns that are working — particularly recovery time and focus availability.';
+      'Measured work patterns moved closer to this team’s baseline. Check whether a recent operating change plausibly contributed.';
     color = '#10b981';
   } else {
     message =
-      'Engagement conditions are healthy and stable. No structural risks detected this week.';
+      'The modeled indicators remain within the team’s available baseline. This does not prove employee health or engagement.';
     color = '#10b981';
   }
 
@@ -449,7 +438,7 @@ const WhyItMatters: React.FC<WhyItMattersProps> = ({ riskState, trend }) => {
       }}
     >
       <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
-        <strong style={{ color }}>Why this matters:</strong> {message}
+        <strong style={{ color }}>Review guidance:</strong> {message}
       </p>
     </div>
   );

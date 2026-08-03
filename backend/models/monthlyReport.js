@@ -218,6 +218,15 @@ const monthlyReportSchema = new mongoose.Schema(
         min: 0,
         max: 100,
       },
+      validationStatus: {
+        type: String,
+        enum: ['unavailable'],
+        default: 'unavailable',
+      },
+      disabledReason: {
+        type: String,
+        default: 'Workplace metadata is not a validated basis for individual attrition prediction.',
+      },
     },
 
     // Engagement measurement (team-level, metadata-derived, no individual tracking)
@@ -387,6 +396,10 @@ monthlyReportSchema.methods.getLeadershipView = function () {
       criticalIndividualsCount: this.retentionExposure.criticalIndividualsCount,
       trend: this.retentionExposure.trend,
       estimatedTurnoverRisk: this.retentionExposure.estimatedTurnoverRisk,
+      validationStatus: this.retentionExposure.validationStatus || 'unavailable',
+      disabledReason:
+        this.retentionExposure.disabledReason ||
+        'Workplace metadata is not a validated basis for individual attrition prediction.',
       // Remove individual names
     },
     topStructuralDrivers: this.topStructuralDrivers,
@@ -406,7 +419,6 @@ monthlyReportSchema.methods.getOverallSeverity = function () {
   const criticalFactors = [
     this.orgHealth.avgBDI > 65,
     this.orgHealth.zoneDistribution.critical > 2,
-    this.retentionExposure.criticalIndividualsCount > 3,
     this.leadershipSignals.managerEffectiveness.managersCriticalCount > 2,
     this.persistentRisks.filter((r) => r.classification === 'structural').length > 2,
   ];

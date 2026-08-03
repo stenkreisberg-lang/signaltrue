@@ -23,15 +23,14 @@ const Insights = lazy(() => import('./pages/app/Insights'));
 const Signals = lazy(() => import('./pages/app/Signals'));
 const ActiveMonitoring = lazy(() => import('./pages/app/ActiveMonitoring'));
 const Actions = lazy(() => import('./pages/app/Actions'));
-const ExecutiveSummary = lazy(() => import('./pages/app/ExecutiveSummary'));
 const Privacy = lazy(() => import('./pages/app/Privacy'));
 const SignalCoverage = lazy(() => import('./pages/app/SignalCoverage'));
 const Employees = lazy(() => import('./pages/app/Employees'));
 const WorkNetwork = lazy(() => import('./pages/app/WorkNetwork'));
+const Methodology = lazy(() => import('./pages/app/Methodology'));
 const SiteAnalytics = lazy(() => import('./pages/app/SiteAnalytics'));
 const SelfCheck = lazy(() => import('./pages/SelfCheck'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const MonthlyReport = lazy(() => import('./pages/MonthlyReport'));
 const CeoSummary = lazy(() => import('./pages/CeoSummary'));
 const SuperadminDashboard = lazy(() => import('./pages/SuperadminDashboard'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -89,13 +88,20 @@ const App = () => (
                 <Route path="/app/active-monitoring" element={<ActiveMonitoring />} />
                 <Route path="/app/risk-feed" element={<ActiveMonitoring />} />
                 <Route path="/app/actions" element={<Actions />} />
-                <Route path="/app/executive-summary" element={<ExecutiveSummary />} />
+                <Route
+                  path="/app/executive-summary"
+                  element={<Navigate to="/app/overview" replace />}
+                />
                 <Route path="/app/privacy" element={<Privacy />} />
                 <Route path="/app/signal-coverage" element={<SignalCoverage />} />
                 <Route path="/app/employees" element={<Employees />} />
                 <Route path="/app/work-network" element={<WorkNetwork />} />
+                <Route path="/app/methodology" element={<Methodology />} />
                 <Route path="/app/site-analytics" element={<SiteAnalytics />} />
-                <Route path="/app/monthly-report" element={<MonthlyReport />} />
+                <Route
+                  path="/app/monthly-report"
+                  element={<Navigate to="/app/overview" replace />}
+                />
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />
                 <Route path="/superadmin" element={<SuperadminDashboard />} />
                 <Route path="/team-analytics" element={<TeamAnalyticsPage />} />

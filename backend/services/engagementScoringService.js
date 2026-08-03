@@ -1,14 +1,15 @@
 /**
- * Engagement Scoring Service
+ * Work-Pattern Deviation Scoring Service
  *
  * Implements:
- *   - Overall Engagement Strain Risk formula (spec Section 11)
+ *   - Overall internal deviation index formula (spec Section 11)
  *   - getRiskState()  (spec Section 11)
  *   - getTrend()      (spec Section 11)
  *   - Confidence Score formula (spec Section 12)
  *   - Top driver detection
  *
- * The overall score is a weighted sum of the 7 subscores:
+ * The overall score is an internally weighted sum of the 7 subscores. Its exact
+ * weights and bands are product review rules, not externally validated thresholds.
  *
  *   Engagement Strain Risk =
  *     0.20 * Recovery Debt
@@ -46,17 +47,23 @@ const SUBSCORE_WEIGHTS = {
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 /**
- * Calculate the overall Engagement Strain Risk from the 7 subscores.
+ * Calculate the overall internal deviation index from the available subscores.
  *
  * @param {Object} subscores — output of engagementSubscoreService.calculateSubscores()
- * @returns {number}         — 0–100 integer
+ * @returns {number|null}    — 0–100 integer, or null when no component is available
  */
 export function calculateOverallScore(subscores) {
   let raw = 0;
+  let availableWeight = 0;
+  let availableComponents = 0;
   for (const [key, weight] of Object.entries(SUBSCORE_WEIGHTS)) {
-    raw += weight * (subscores[key] ?? 40); // default 40 (watch) if missing
+    if (!Number.isFinite(subscores[key])) continue;
+    raw += weight * subscores[key];
+    availableWeight += weight;
+    availableComponents += 1;
   }
-  return Math.max(0, Math.min(100, Math.round(raw)));
+  if (availableComponents < 3) return null;
+  return Math.max(0, Math.min(100, Math.round(raw / availableWeight)));
 }
 
 /**
@@ -84,6 +91,7 @@ export function getRiskState(score) {
  * @returns {'rising'|'improving'|'stable'}
  */
 export function getTrend(current, previous) {
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) return 'stable';
   const diff = current - previous;
   if (diff >= 8) return 'rising';
   if (diff <= -8) return 'improving';
@@ -92,7 +100,7 @@ export function getTrend(current, previous) {
 
 /**
  * Fetch the previous week's overall score for a team.
- * Returns 50 (neutral) if no prior record exists.
+ * Returns null if no prior record exists.
  *
  * @param {string|ObjectId} teamId
  * @param {string} weekStart  — YYYY-MM-DD (current week's Monday)
@@ -104,7 +112,7 @@ export async function getPreviousWeekScore(teamId, weekStart) {
     { teamId, weekStart: prevWeekStart },
     { engagementStrainRisk: 1 }
   ).lean();
-  return prev?.engagementStrainRisk ?? 50;
+  return prev?.engagementStrainRisk ?? null;
 }
 
 /**
@@ -160,6 +168,7 @@ export function calculateConfidenceScore({
  */
 export function getTopDrivers(subscores, metricRisks, baseline, weeklyMetrics) {
   const drivers = Object.entries(subscores)
+    .filter(([, score]) => Number.isFinite(score))
     .map(([key, score]) => ({
       driver: camelToSnake(key),
       score,
@@ -232,7 +241,7 @@ function dataCompletenessScore(w) {
   ];
 
   const present = expectedFields.filter(
-    (f) => w[f] !== null && w[f] !== undefined && w[f] !== 0
+    (f) => w[f] !== null && w[f] !== undefined && Number.isFinite(w[f])
   ).length;
 
   return Math.round((present / expectedFields.length) * 100);
@@ -275,31 +284,30 @@ const DRIVER_EXPLANATION_TEMPLATES = {
     const ah = w?.afterHoursActivityRatio;
     const baseline = bm?.metrics?.afterHoursEmailRatio?.median;
     const pct = deltaPercent(ah, baseline);
-    return `After-hours activity is${pct ? ` ${pct} versus team baseline.` : ' elevated.'} Recovery windows are shrinking.`;
+    return `After-hours activity is${pct ? ` ${pct} versus team baseline.` : ' above its baseline.'} Review schedule coverage and week context before interpreting the change.`;
   },
   focusErosion: (score, w, bm) => {
     const fh = w?.focusHoursAvailablePerPerson;
     const baseline = bm?.metrics?.focusHoursAvailablePerPerson?.median;
     const pct = deltaPercent(fh, baseline);
-    return `Available focus blocks${pct ? ` decreased ${pct} versus baseline.` : ' are below normal.'} Fragmented calendars are reducing protected work time.`;
+    return `Available focus blocks${pct ? ` changed ${pct} versus baseline.` : ' differ from baseline.'} Calendar fragmentation is also included in this model component.`;
   },
   coordinationFriction: (score, w, bm) => {
     const ah = w?.attendeeHoursPerPerson;
     const baseline = bm?.metrics?.attendeeHoursPerPerson?.median;
     const pct = deltaPercent(ah, baseline);
-    return `Attendee hours are${pct ? ` ${pct} above baseline.` : ' elevated.'} More capacity is flowing into coordination rather than execution.`;
+    return `Attendee hours are${pct ? ` ${pct} versus baseline.` : ' above their baseline.'} This describes coordination time and does not measure output.`;
   },
   responsivenessPressure: (score, w) =>
-    `Message volume and after-hours response patterns suggest rising response pressure. ` +
-    `P90 response time: ${w?.p90ResponseMinutes ? Math.round(w.p90ResponseMinutes) + ' min' : 'elevated'}.`,
-  collaborationWithdrawal: (score, w) =>
-    `Collaboration breadth and reciprocity ratios have narrowed compared with baseline, ` +
-    `suggesting possible isolation or withdrawal patterns.`,
-  managerSupportGap: (score, w) =>
-    `Manager 1:1 rhythm shows disruption. ` +
-    `${w?.cancelled1to1Count > 0 ? `${w.cancelled1to1Count} 1:1s were cancelled this week.` : '1:1 minutes per person are below baseline.'}`,
-  workloadVolatility: (score, w) =>
-    `Week-over-week changes in meeting load and message volume indicate an unstable workload pattern.`,
+    `This component combines message-volume deviation, activity outside schedule, and response-time metadata. ` +
+    `P90 response time: ${w?.p90ResponseMinutes ? Math.round(w.p90ResponseMinutes) + ' min' : 'unavailable'}.`,
+  collaborationWithdrawal: (_score, _w) =>
+    `Collaboration breadth and reciprocity differ from the team's baseline. ` +
+    `The metadata does not establish cohesion, isolation, or intent.`,
+  managerSupportGap: (_score, _w) =>
+    `This component compares recorded manager 1:1 time with the team's baseline. It does not measure support quality.`,
+  workloadVolatility: (_score, _w) =>
+    `Week-over-week meeting and message activity differ from the preceding period.`,
 };
 
 function generateDriverExplanation(key, score, weeklyMetrics, baseline) {

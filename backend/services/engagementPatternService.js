@@ -35,7 +35,7 @@ const WATCH = 45;
  * Detect all active patterns for this team-week.
  *
  * @param {Object} subscores    — { recoveryDebt, focusErosion, ... }
- * @param {Object} metricRisks  — { afterHoursActivityRatio: { score, z }, ... }
+ * @param {Object} metricRisks  — { afterHoursMessageRatio: { score, z }, ... }
  * @param {Object} weekly       — WeeklyMetrics aggregate object
  * @returns {Array}             — array of pattern objects (may be empty)
  */
@@ -68,40 +68,39 @@ export function detectPatterns(subscores, metricRisks, weekly) {
 // Team is working hard and always-on, yet meetings look normal — strain is invisible
 // to managers because it doesn't show up in meeting overload signals.
 
-function detectHiddenStrain(subscores, metricRisks, weekly) {
+function detectHiddenStrain(subscores, metricRisks, _weekly) {
   const { recoveryDebt, responsivenessPressure, coordinationFriction } = subscores;
-
-  const afterHoursElevated =
-    metricRisks.afterHoursActivityRatio.score >= HIGH ||
-    metricRisks.afterHoursMessageRatio.score >= HIGH;
+  if (![recoveryDebt, responsivenessPressure, coordinationFriction].every(Number.isFinite)) {
+    return null;
+  }
 
   const meetingLoadNormal = coordinationFriction < WATCH;
 
   if (recoveryDebt >= HIGH && responsivenessPressure >= MEDIUM && meetingLoadNormal) {
     const evidence = [];
 
-    if (metricRisks.afterHoursActivityRatio.score >= HIGH)
-      evidence.push(
-        `After-hours activity ratio is elevated (risk score: ${metricRisks.afterHoursActivityRatio.score})`
-      );
     if (metricRisks.afterHoursMessageRatio.score >= HIGH)
       evidence.push(
-        `After-hours messaging ratio is elevated (risk score: ${metricRisks.afterHoursMessageRatio.score})`
+        `After-hours messaging ratio is above baseline (model score: ${metricRisks.afterHoursMessageRatio.score})`
+      );
+    if (metricRisks.afterHoursEmailRatio.score >= HIGH)
+      evidence.push(
+        `After-hours email ratio is above baseline (model score: ${metricRisks.afterHoursEmailRatio.score})`
       );
     if (metricRisks.p90ResponseMinutes.score >= MEDIUM)
       evidence.push(
-        `P90 response time is elevated, indicating async pressure (risk score: ${metricRisks.p90ResponseMinutes.score})`
+        `P90 response time is above baseline (model score: ${metricRisks.p90ResponseMinutes.score})`
       );
     if (coordinationFriction < WATCH)
-      evidence.push(`Meeting load appears normal — strain is not visible in calendar data`);
+      evidence.push(`Meeting-load indicators remain within the internal review band`);
 
     return {
       patternType: 'hidden_strain',
-      title: 'Hidden Strain',
+      title: 'After-hours and response deviation',
       severity: recoveryDebt >= 80 ? 'high' : 'medium',
       evidence,
       interpretation:
-        'The team is showing recovery and responsiveness strain that is invisible in meeting data — work pressure is arriving through async channels rather than calendar overload.',
+        'After-hours and response metadata moved above baseline while meeting-load indicators did not. The data shows co-occurrence, not the cause or employee impact.',
     };
   }
 
@@ -114,8 +113,11 @@ function detectHiddenStrain(subscores, metricRisks, weekly) {
 // Team members are pulling back from cross-team interaction and public channels
 // without showing overt distress signals. Classic early disengagement signature.
 
-function detectQuietWithdrawal(subscores, metricRisks, weekly) {
+function detectQuietWithdrawal(subscores, metricRisks, _weekly) {
   const { collaborationWithdrawal, recoveryDebt, responsivenessPressure } = subscores;
+  if (![collaborationWithdrawal, recoveryDebt, responsivenessPressure].every(Number.isFinite)) {
+    return null;
+  }
 
   const overallStrain = (recoveryDebt + responsivenessPressure) / 2;
   const quietSignal = collaborationWithdrawal >= HIGH && overallStrain < MEDIUM + 10;
@@ -125,19 +127,19 @@ function detectQuietWithdrawal(subscores, metricRisks, weekly) {
 
     if (metricRisks.uniqueCollaboratorsPerPerson.score >= MEDIUM)
       evidence.push(
-        `Unique collaborator count per person is declining (risk score: ${metricRisks.uniqueCollaboratorsPerPerson.score})`
+        `Unique collaborator count per person moved outside baseline (model score: ${metricRisks.uniqueCollaboratorsPerPerson.score})`
       );
     if (metricRisks.publicChannelRatio.score >= MEDIUM)
       evidence.push(
-        `Public channel participation ratio is dropping (risk score: ${metricRisks.publicChannelRatio.score})`
+        `Public channel participation ratio moved below baseline (model score: ${metricRisks.publicChannelRatio.score})`
       );
     if (metricRisks.reciprocityRatio.score >= MEDIUM)
       evidence.push(
-        `Reciprocity ratio (two-way interactions) is falling (risk score: ${metricRisks.reciprocityRatio.score})`
+        `Reciprocity ratio moved below baseline (model score: ${metricRisks.reciprocityRatio.score})`
       );
     if (metricRisks.threadParticipationRate.score >= MEDIUM)
       evidence.push(
-        `Thread participation rate is declining (risk score: ${metricRisks.threadParticipationRate.score})`
+        `Thread participation rate moved below baseline (model score: ${metricRisks.threadParticipationRate.score})`
       );
 
     const severity =
@@ -145,11 +147,11 @@ function detectQuietWithdrawal(subscores, metricRisks, weekly) {
 
     return {
       patternType: 'quiet_withdrawal',
-      title: 'Quiet Withdrawal',
+      title: 'Collaboration metadata decline',
       severity,
       evidence,
       interpretation:
-        'The team is reducing voluntary collaboration — fewer cross-team interactions, less public channel activity, and declining reciprocity — without obvious strain triggers. This is an early disengagement signal.',
+        'Several collaboration metadata measures moved below baseline. The pattern does not establish disengagement, intent, or cause; validate channel coverage and team context.',
     };
   }
 
@@ -162,38 +164,26 @@ function detectQuietWithdrawal(subscores, metricRisks, weekly) {
 // Manager is meeting-heavy (high load) but 1:1 quality/frequency is low.
 // Classic sign: manager time consumed by coordination instead of people development.
 
-function detectManagerBottleneck(subscores, metricRisks, weekly) {
+function detectManagerBottleneck(subscores, metricRisks, _weekly) {
   const { managerSupportGap, coordinationFriction } = subscores;
+  if (![managerSupportGap, coordinationFriction].every(Number.isFinite)) return null;
 
   if (managerSupportGap >= HIGH && coordinationFriction >= MEDIUM) {
     const evidence = [];
 
     if (metricRisks.manager1to1MinutesPerPerson.score >= MEDIUM)
       evidence.push(
-        `Manager 1:1 time per person is below team baseline (risk score: ${metricRisks.manager1to1MinutesPerPerson.score})`
+        `Manager 1:1 time per person is below team baseline (model score: ${metricRisks.manager1to1MinutesPerPerson.score})`
       );
-    if (metricRisks.cancelled1to1Count.score >= MEDIUM)
-      evidence.push(
-        `1:1 cancellation rate is elevated (risk score: ${metricRisks.cancelled1to1Count.score})`
-      );
-    if (metricRisks.managerMeetingLoad.score >= MEDIUM)
-      evidence.push(
-        `Manager meeting load is high — calendar time available for 1:1s is compressed (risk score: ${metricRisks.managerMeetingLoad.score})`
-      );
-    if (metricRisks.managerResponseLatency.score >= MEDIUM)
-      evidence.push(
-        `Manager async response latency is elevated (risk score: ${metricRisks.managerResponseLatency.score})`
-      );
-
     const severity = managerSupportGap >= 80 && coordinationFriction >= HIGH ? 'high' : 'medium';
 
     return {
       patternType: 'manager_bottleneck',
-      title: 'Manager Bottleneck',
+      title: 'Recorded 1:1 and coordination deviation',
       severity,
       evidence,
       interpretation:
-        'The manager appears to be a coordination bottleneck — heavy meeting load is crowding out 1:1 time and reducing async responsiveness. Team support quality is declining as a side-effect of coordination demands.',
+        'Recorded 1:1 time moved below baseline while team coordination measures moved above it. The metadata does not measure support quality or establish cause.',
     };
   }
 
@@ -206,42 +196,43 @@ function detectManagerBottleneck(subscores, metricRisks, weekly) {
 // and meeting load is eating focus time. The team spends more time in meetings
 // than doing the actual work those meetings are coordinating.
 
-function detectCoordinationTax(subscores, metricRisks, weekly) {
+function detectCoordinationTax(subscores, metricRisks, _weekly) {
   const { coordinationFriction, focusErosion } = subscores;
+  if (![coordinationFriction, focusErosion].every(Number.isFinite)) return null;
 
   if (coordinationFriction >= HIGH && focusErosion >= MEDIUM) {
     const evidence = [];
 
     if (metricRisks.attendeeHoursPerPerson.score >= HIGH)
       evidence.push(
-        `Attendee-hours per person is significantly above baseline (risk score: ${metricRisks.attendeeHoursPerPerson.score})`
+        `Attendee-hours per person is above baseline (model score: ${metricRisks.attendeeHoursPerPerson.score})`
       );
     if (metricRisks.avgAttendeeCount.score >= MEDIUM)
       evidence.push(
-        `Average meeting attendee count is elevated (risk score: ${metricRisks.avgAttendeeCount.score})`
+        `Average meeting attendee count is above baseline (model score: ${metricRisks.avgAttendeeCount.score})`
       );
     if (metricRisks.recurringMeetingRatio.score >= MEDIUM)
       evidence.push(
-        `Recurring meeting ratio is high — meeting debt is accumulating (risk score: ${metricRisks.recurringMeetingRatio.score})`
+        `Recurring meeting ratio is above baseline (model score: ${metricRisks.recurringMeetingRatio.score})`
       );
     if (metricRisks.focusHoursAvailablePerPerson.score >= MEDIUM)
       evidence.push(
-        `Available focus hours per person are shrinking due to meeting density (risk score: ${metricRisks.focusHoursAvailablePerPerson.score})`
+        `Available focus hours per person are below baseline alongside higher meeting density (model score: ${metricRisks.focusHoursAvailablePerPerson.score})`
       );
     if (metricRisks.fragmentedDayRatio.score >= MEDIUM)
       evidence.push(
-        `Fragmented day ratio is high — meetings are breaking up contiguous work time (risk score: ${metricRisks.fragmentedDayRatio.score})`
+        `Fragmented-day ratio is above baseline (model score: ${metricRisks.fragmentedDayRatio.score})`
       );
 
     const severity = coordinationFriction >= 80 ? 'high' : 'medium';
 
     return {
       patternType: 'coordination_tax',
-      title: 'Coordination Tax',
+      title: 'Coordination-load deviation',
       severity,
       evidence,
       interpretation:
-        "Meeting overhead is consuming a disproportionate share of the team's working time. High attendee counts and recurring meeting bloat are taxing focus and reducing the hours available for deep work.",
+        'Meeting and attendee measures are above baseline while measured focus availability is lower. Review the direct calendar values and local context before inferring cause.',
     };
   }
 
@@ -254,27 +245,28 @@ function detectCoordinationTax(subscores, metricRisks, weekly) {
 // People are both over-pressured to respond AND pulling back from collaboration.
 // Indicates communication system is breaking down — high volume + low reciprocity.
 
-function detectAsyncBreakdown(subscores, metricRisks, weekly) {
+function detectAsyncBreakdown(subscores, metricRisks, _weekly) {
   const { responsivenessPressure, collaborationWithdrawal } = subscores;
+  if (![responsivenessPressure, collaborationWithdrawal].every(Number.isFinite)) return null;
 
   if (responsivenessPressure >= HIGH && collaborationWithdrawal >= MEDIUM) {
     const evidence = [];
 
     if (metricRisks.p90ResponseMinutes.score >= HIGH)
       evidence.push(
-        `P90 response latency is significantly elevated (risk score: ${metricRisks.p90ResponseMinutes.score})`
+        `P90 response latency is above baseline (model score: ${metricRisks.p90ResponseMinutes.score})`
       );
-    if (metricRisks.afterHoursResponseRatio.score >= HIGH)
+    if (metricRisks.afterHoursMessageRatio.score >= HIGH)
       evidence.push(
-        `After-hours response ratio is elevated — team is responding outside work hours (risk score: ${metricRisks.afterHoursResponseRatio.score})`
+        `After-hours messaging ratio is above baseline (model score: ${metricRisks.afterHoursMessageRatio.score})`
       );
     if (metricRisks.reciprocityRatio.score >= MEDIUM)
       evidence.push(
-        `Reciprocity ratio is falling — conversations are becoming one-directional (risk score: ${metricRisks.reciprocityRatio.score})`
+        `Reciprocity ratio moved below baseline (model score: ${metricRisks.reciprocityRatio.score})`
       );
     if (metricRisks.messagesSentPerPerson.score >= MEDIUM)
       evidence.push(
-        `Message volume per person is outside baseline range (risk score: ${metricRisks.messagesSentPerPerson.score})`
+        `Message volume per person is outside baseline range (model score: ${metricRisks.messagesSentPerPerson.score})`
       );
 
     const severity =
@@ -282,11 +274,11 @@ function detectAsyncBreakdown(subscores, metricRisks, weekly) {
 
     return {
       patternType: 'async_breakdown',
-      title: 'Async Breakdown',
+      title: 'Messaging response imbalance',
       severity,
       evidence,
       interpretation:
-        "Async communication is under strain — high response pressure is combining with reduced collaborative reciprocity, signalling that the team's messaging system is generating more demand than it's resolving.",
+        'Response and after-hours metadata moved above baseline while reciprocity moved lower. This describes the measured combination and does not establish communication quality or cause.',
     };
   }
 
@@ -299,8 +291,13 @@ function detectAsyncBreakdown(subscores, metricRisks, weekly) {
 // thread participation are low. The team looks "busy" in raw signal counts
 // but genuine collaborative exchange is absent. Activity without engagement.
 
-function detectEngagementTheatre(subscores, metricRisks, weekly) {
+function detectEngagementTheatre(subscores, metricRisks, _weekly) {
   const { coordinationFriction, responsivenessPressure, collaborationWithdrawal } = subscores;
+  if (
+    ![coordinationFriction, responsivenessPressure, collaborationWithdrawal].every(Number.isFinite)
+  ) {
+    return null;
+  }
 
   const highActivity = coordinationFriction >= MEDIUM && responsivenessPressure >= MEDIUM;
   const lowReciprocity = metricRisks.reciprocityRatio.score >= HIGH;
@@ -311,34 +308,34 @@ function detectEngagementTheatre(subscores, metricRisks, weekly) {
 
     if (metricRisks.meetingHoursPerPerson.score >= MEDIUM)
       evidence.push(
-        `Meeting hours per person are elevated (risk score: ${metricRisks.meetingHoursPerPerson.score})`
+        `Meeting hours per person are above baseline (model score: ${metricRisks.meetingHoursPerPerson.score})`
       );
     if (metricRisks.messagesSentPerPerson.score >= MEDIUM)
       evidence.push(
-        `Message volume per person is elevated (risk score: ${metricRisks.messagesSentPerPerson.score})`
+        `Message volume per person is above baseline (model score: ${metricRisks.messagesSentPerPerson.score})`
       );
     if (lowReciprocity)
       evidence.push(
-        `Reciprocity ratio is low — communication is not generating two-way exchange (risk score: ${metricRisks.reciprocityRatio.score})`
+        `Reciprocity ratio is below baseline (model score: ${metricRisks.reciprocityRatio.score})`
       );
     if (lowThreading)
       evidence.push(
-        `Thread participation rate is low — conversations are not prompting engagement (risk score: ${metricRisks.threadParticipationRate.score})`
+        `Thread participation rate is below baseline (model score: ${metricRisks.threadParticipationRate.score})`
       );
     if (metricRisks.publicChannelRatio.score >= MEDIUM)
       evidence.push(
-        `Public channel ratio is declining despite high message volume (risk score: ${metricRisks.publicChannelRatio.score})`
+        `Public channel ratio is below baseline alongside high message volume (model score: ${metricRisks.publicChannelRatio.score})`
       );
 
     const severity = lowReciprocity && lowThreading ? 'high' : 'medium';
 
     return {
       patternType: 'engagement_theatre',
-      title: 'Engagement Theatre',
+      title: 'High activity with low reciprocity',
       severity,
       evidence,
       interpretation:
-        'The team is generating high activity signals — meetings and messages — but genuine engagement indicators (reciprocity, thread participation) are low. Busyness is substituting for real collaborative exchange.',
+        'Meeting and message activity are above baseline while reciprocity or thread participation is lower. Metadata alone cannot determine engagement or communication quality.',
     };
   }
 

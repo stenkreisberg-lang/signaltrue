@@ -11,12 +11,6 @@ import {
   requireOrganizationAccess,
 } from '../middleware/auth.js';
 import {
-  calculateAttritionRisk,
-  calculateTeamAttritionRisk,
-  getHighRiskIndividuals,
-  getTeamRiskSummary,
-} from '../services/attritionRiskService.js';
-import {
   calculateManagerEffectiveness,
   getOrgManagerEffectiveness,
   getManagersNeedingCoaching,
@@ -49,107 +43,15 @@ import {
 
 const router = express.Router();
 
-// ============================================
-// ATTRITION RISK ENDPOINTS
-// ============================================
-
-/**
- * GET /api/intelligence/attrition/team/:teamId
- * Get team attrition risk summary (for managers)
- */
-router.get('/attrition/team/:teamId', authenticateToken, async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const summary = await getTeamRiskSummary(teamId);
-
-    res.json(summary);
-  } catch (error) {
-    console.error('[Intelligence API] Error fetching team attrition summary:', error);
-    res.status(500).json({ message: error.message });
-  }
+// These legacy models made individual or causal claims that have not been externally validated.
+// Keep the API unavailable until each model has a published model card and outcome validation.
+router.use(authenticateToken);
+router.use((_req, res) => {
+  res.status(410).json({
+    message:
+      'Legacy behavioral intelligence is paused pending independent validation. Use team-level observed metrics and descriptive work-pattern models instead.',
+  });
 });
-
-/**
- * GET /api/intelligence/attrition/org/:orgId
- * Get all high-risk individuals (HR only - privacy-sensitive)
- */
-router.get(
-  '/attrition/org/:orgId',
-  authenticateToken,
-  requireHROrAdmin,
-  requireOrganizationAccess(),
-  async (req, res) => {
-    try {
-      const { orgId } = req.params;
-      const { minRiskScore } = req.query;
-
-      const highRisk = await getHighRiskIndividuals(
-        orgId,
-        minRiskScore ? parseInt(minRiskScore) : 60
-      );
-
-      res.json({
-        count: highRisk.length,
-        individuals: highRisk,
-      });
-    } catch (error) {
-      console.error('[Intelligence API] Error fetching high-risk individuals:', error);
-      res.status(500).json({ message: error.message });
-    }
-  }
-);
-
-/**
- * POST /api/intelligence/attrition/:userId/calculate
- * Trigger attrition risk calculation for a user
- */
-router.post(
-  '/attrition/:userId/calculate',
-  authenticateToken,
-  requireHROrAdmin,
-  async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const { teamId } = req.body;
-
-      if (!teamId) {
-        return res.status(400).json({ message: 'teamId required in body' });
-      }
-
-      const risk = await calculateAttritionRisk(userId, teamId);
-
-      res.json(risk);
-    } catch (error) {
-      console.error('[Intelligence API] Error calculating attrition risk:', error);
-      res.status(500).json({ message: error.message });
-    }
-  }
-);
-
-/**
- * POST /api/intelligence/attrition/team/:teamId/calculate
- * Trigger attrition risk calculation for entire team
- */
-router.post(
-  '/attrition/team/:teamId/calculate',
-  authenticateToken,
-  requireHROrAdmin,
-  async (req, res) => {
-    try {
-      const { teamId } = req.params;
-
-      const risks = await calculateTeamAttritionRisk(teamId);
-
-      res.json({
-        count: risks.length,
-        risks,
-      });
-    } catch (error) {
-      console.error('[Intelligence API] Error calculating team attrition risk:', error);
-      res.status(500).json({ message: error.message });
-    }
-  }
-);
 
 // ============================================
 // MANAGER EFFECTIVENESS ENDPOINTS

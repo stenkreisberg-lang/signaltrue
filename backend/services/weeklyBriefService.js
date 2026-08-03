@@ -22,18 +22,21 @@ import { ccSuperadmin } from './superadminNotifyService.js';
 const SIGNAL_TYPE_PRESENTATION = {
   'meeting-load-spike': {
     family: 'Capacity Drift',
-    businessTitle: 'Meeting load is crowding out productive work',
-    whatItMeans: 'Teams are spending more time coordinating than executing.',
+    businessTitle: 'Meeting load moved above baseline',
+    whatItMeans:
+      'Measured coordination time increased; the metadata does not show its value or cause.',
   },
   'after-hours-creep': {
     family: 'Capacity Drift',
-    businessTitle: 'Work is spilling further outside working hours',
-    whatItMeans: 'Capacity pressure may be building before people explicitly report overload.',
+    businessTitle: 'More activity occurred outside configured working hours',
+    whatItMeans:
+      'Confirm time zones, deadlines, leave, and working agreements before interpreting it.',
   },
   'focus-erosion': {
     family: 'Capacity Drift',
-    businessTitle: 'Focused work time is getting fragmented',
-    whatItMeans: 'Execution quality can drop when attention is repeatedly split.',
+    businessTitle: 'Measured uninterrupted time declined',
+    whatItMeans:
+      'Calendar gaps became shorter or more distributed; output quality is not measured.',
   },
   'recovery-deficit': {
     family: 'Capacity Drift',
@@ -48,25 +51,26 @@ const SIGNAL_TYPE_PRESENTATION = {
   },
   'network-bottleneck': {
     family: 'Coordination Drift',
-    businessTitle: 'Cross-team coordination depends on too few people',
-    whatItMeans: 'This can slow decisions and create fragile points of failure.',
+    businessTitle: 'Cross-team coordination is concentrated',
+    whatItMeans:
+      'A smaller contributor set carries more of the measured interface; validate role intent.',
   },
   'handoff-bottleneck': {
     family: 'Coordination Drift',
-    businessTitle: 'Handoffs are creating coordination drag',
-    whatItMeans: 'Execution friction often rises when ownership and handoffs are unclear.',
+    businessTitle: 'Measured handoff activity increased',
+    whatItMeans: 'Review whether the increase reflects planned delivery work or unclear ownership.',
   },
   'response-delay-increase': {
     family: 'Coordination Drift',
-    businessTitle: 'Responsiveness is slowing down',
+    businessTitle: 'Measured response time increased',
     whatItMeans:
-      'This can be an early sign of overload, unclear ownership, or collaboration friction.',
+      'The metadata does not establish overload, ownership quality, or communication quality.',
   },
   'message-volume-drop': {
     family: 'Cohesion Drift',
-    businessTitle: 'Team connection signals are thinning out',
+    businessTitle: 'Measured communication volume declined',
     whatItMeans:
-      'This does not prove disengagement, but it can signal weaker team cohesion conditions.',
+      'This does not measure cohesion or disengagement; confirm whether workload, channel use, leave, or data coverage changed.',
   },
   'rework-churn': {
     family: 'Coordination Drift',
@@ -76,31 +80,30 @@ const SIGNAL_TYPE_PRESENTATION = {
   },
   'sentiment-decline': {
     family: 'Cohesion Drift',
-    businessTitle: 'Team cohesion conditions may be weakening',
-    whatItMeans:
-      'This should be treated as a directional structural signal, not a direct reading of emotion.',
+    businessTitle: 'A cohesion proxy moved below baseline',
+    whatItMeans: 'This is an internal proxy, not sentiment or a direct reading of emotion.',
   },
   'meeting-exclusion': {
     family: 'Culture Drift',
-    businessTitle: 'Some team members are being left out of meetings',
+    businessTitle: 'Meeting participation is uneven',
     whatItMeans:
       'Measured meeting participation is uneven; confirm how decisions and context are shared.',
   },
   'peripheral-member': {
     family: 'Culture Drift',
-    businessTitle: 'A team member is becoming structurally peripheral',
+    businessTitle: 'Measured network participation is uneven',
     whatItMeans:
       'Measured network participation is lower for part of the team; confirm whether that matches role expectations.',
   },
   'hybrid-response-gap': {
     family: 'Culture Drift',
-    businessTitle: 'Remote or hybrid members wait longer for responses',
+    businessTitle: 'Measured response time differs by work arrangement',
     whatItMeans:
-      'When remote members consistently wait longer, it signals an invisible inclusion gap.',
+      'Validate role, time-zone, and channel differences before interpreting the pattern as inclusion.',
   },
   'fading-voice': {
     family: 'Culture Drift',
-    businessTitle: 'A team member has declining participation over time',
+    businessTitle: 'Measured participation declined over time',
     whatItMeans: 'Participation changed relative to baseline; validate the context before acting.',
   },
 };
@@ -118,7 +121,7 @@ const CK_SIGNAL_LABELS = {
     rec: 'Audit the last 3 items that were reopened. Look for unclear requirements or rushed handoffs.',
   },
   overcommitment_risk: {
-    label: 'Overcommitment Risk',
+    label: 'Commitment Load Deviation',
     family: 'Capacity',
     rec: 'Reduce WIP limits and defer new commitments until current work is shipped.',
   },
@@ -128,17 +131,17 @@ const CK_SIGNAL_LABELS = {
     rec: 'Cap active tasks per person at 3. Move everything else to a "next up" column.',
   },
   boundary_erosion: {
-    label: 'Boundary Erosion',
+    label: 'After-Hours Pattern',
     family: 'Capacity',
     rec: 'Enforce no-meeting blocks and limit after-hours notifications. Model healthy boundaries from leadership.',
   },
   panic_coordination: {
-    label: 'Panic Coordination',
+    label: 'Coordination Spike',
     family: 'Coordination',
     rec: 'Identify what triggered the coordination spike. Establish a calmer escalation path for next time.',
   },
   meeting_fatigue: {
-    label: 'Meeting Fatigue',
+    label: 'Meeting Load Deviation',
     family: 'Capacity',
     rec: 'Cancel the lowest-value recurring meeting this week. Shorten default meeting durations to 25/50 min.',
   },
@@ -158,7 +161,7 @@ const CK_SIGNAL_LABELS = {
     rec: 'Schedule 1 hour of documentation cleanup. Archive stale pages and update key docs.',
   },
   cognitive_overload: {
-    label: 'Cognitive Overload',
+    label: 'Context-Switching Load',
     family: 'Capacity',
     rec: 'Reduce context-switching by batching similar work. Protect 2-hour deep-work blocks.',
   },
@@ -178,9 +181,9 @@ const CK_SIGNAL_LABELS = {
     rec: 'Clarify handoff protocols. Assign clear "last responsible person" for each workflow stage.',
   },
   recovery_collapse: {
-    label: 'Recovery Collapse',
+    label: 'Sustained Recovery Deviation',
     family: 'Capacity',
-    rec: 'This is urgent. Protect recovery windows immediately — block mornings, reduce meeting days, enforce boundaries.',
+    rec: 'Review the direct after-hours and calendar metrics, confirm context, and test one recovery-window adjustment.',
   },
   work_aging_pressure: {
     label: 'Work Aging Pressure',
@@ -188,19 +191,19 @@ const CK_SIGNAL_LABELS = {
     rec: 'Old work is piling up. Triage and close stale items. Focus energy on finishing, not starting.',
   },
   systemic_overload: {
-    label: 'Systemic Overload',
+    label: 'Multiple Load Deviations',
     family: 'Capacity',
-    rec: 'Multiple overload indicators firing. Leadership should visibly reduce scope and protect the team this week.',
+    rec: 'Multiple internal review rules fired. Leadership should verify the direct metrics before changing scope.',
   },
   passive_disengagement: {
-    label: 'Passive Disengagement',
+    label: 'Participation Decline',
     family: 'Cohesion',
-    rec: 'Check in directly with quieter team members. Create low-pressure opportunities to contribute.',
+    rec: 'Validate whether participation moved to another channel or changed by role before choosing a team-level response.',
   },
   async_breakdown: {
-    label: 'Async Breakdown',
+    label: 'Async Pattern Deviation',
     family: 'Coordination',
-    rec: 'Async collaboration is failing. Agree on response-time norms and consolidate async channels.',
+    rec: 'Review response and reciprocity metadata, then test explicit response-time norms if the team confirms friction.',
   },
 };
 
@@ -237,8 +240,8 @@ function pctChangeLabelSafe(curr, prev, { minBase = 1, minDelta = 0.05 } = {}) {
 }
 function trendIcon(curr, prev, higherIsBad = true) {
   if (curr === prev || (curr === 0 && prev === 0)) return 'Neutral';
-  if (higherIsBad) return curr > prev ? 'Concerning' : 'Healthy';
-  return curr > prev ? 'Healthy' : 'Concerning';
+  if (higherIsBad) return curr > prev ? 'Review' : 'Intended';
+  return curr > prev ? 'Intended' : 'Review';
 }
 function fmtNum(n, decimals = 0) {
   if (n == null || isNaN(n)) return '—';
@@ -421,14 +424,7 @@ const S = {
 };
 
 // ─── Manager Discussion Prompt Generator ───
-function generateManagerPrompts({
-  tw,
-  lw,
-  sixWeekAvg,
-  orgStatus,
-  teamBDIData,
-  twSignals,
-}) {
+function generateManagerPrompts({ tw, lw, sixWeekAvg, orgStatus, teamBDIData, twSignals }) {
   const prompts = [];
 
   // Meeting load prompts
@@ -454,10 +450,7 @@ function generateManagerPrompts({
 
   // After-hours prompts
   const afterHoursPct = Math.round((tw.afterHoursRatio || 0) * 100);
-  if (
-    sixWeekAvg.afterHoursRatio > 0 &&
-    tw.afterHoursRatio > sixWeekAvg.afterHoursRatio + 0.05
-  ) {
+  if (sixWeekAvg.afterHoursRatio > 0 && tw.afterHoursRatio > sixWeekAvg.afterHoursRatio + 0.05) {
     prompts.push(
       `${afterHoursPct}% of messages were sent outside the configured schedule, above the ${Math.round(sixWeekAvg.afterHoursRatio * 100)}% six-week baseline. Did deadlines, time zones, or working agreements change?`
     );
@@ -619,6 +612,7 @@ export async function generateWeeklyBrief(orgId) {
       {
         $match: {
           orgId: org._id,
+          scoringVersion: '2.1.0',
           weekStart: { $gte: thisWeekStart.toISOString().slice(0, 10) },
           activePeopleCount: { $gte: minimumTeamSize },
         },
@@ -697,13 +691,13 @@ export async function generateWeeklyBrief(orgId) {
     });
   const engagementDriverLabel = (driver) =>
     ({
-      recovery_debt: 'Recovery debt',
-      focus_erosion: 'Focus erosion',
-      coordination_friction: 'Coordination friction',
-      responsiveness_pressure: 'Responsiveness pressure',
-      collaboration_withdrawal: 'Collaboration withdrawal',
-      manager_support_gap: 'Manager support gap',
-      workload_volatility: 'Workload volatility',
+      recovery_debt: 'Outside-schedule activity',
+      focus_erosion: 'Focus availability',
+      coordination_friction: 'Coordination metadata',
+      responsiveness_pressure: 'Response patterns',
+      collaboration_withdrawal: 'Collaboration metadata',
+      manager_support_gap: 'Recorded 1:1 time',
+      workload_volatility: 'Week-to-week activity',
     })[driver] || driver;
   const engagementSnapshot =
     engagementStrainByTeam.length > 0
@@ -740,7 +734,7 @@ export async function generateWeeklyBrief(orgId) {
             .slice(0, 2);
           return {
             avgStrainRisk: avg('engagementStrainRisk'),
-            avgConditionsScore: avg('engagementConditionsScore'),
+            avgDataReadiness: avg('confidenceScore'),
             worstState,
             strainedTeams,
             drivers,
@@ -1060,8 +1054,8 @@ export async function generateWeeklyBrief(orgId) {
 
     // Verdict: honest, short, no scores
     html += `<div style="padding:22px 34px;border-bottom:1px solid #e2e8f0;">`;
-    html += `<h2 style="margin:0 0 8px 0;font-size:20px;font-weight:750;">Data setup is incomplete — health scores are paused</h2>`;
-    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams</strong> have enough mapped activity this week. Team health and engagement conclusions are paused until both reach 80% coverage.</p>`;
+    html += `<h2 style="margin:0 0 8px 0;font-size:20px;font-weight:750;">Data setup is incomplete — modeled scores are paused</h2>`;
+    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams</strong> have enough mapped activity this week. Modeled work-pattern conclusions are paused until both reach 80% coverage.</p>`;
     if (coverageRegressed) {
       html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage went down:</strong> ${lastWeekMappedActors.length} mapped users last week → ${mappedActorCount.length} this week. Something changed in your integrations or user mapping — this is the most important thing to investigate.</p></div>`;
     }
@@ -1149,7 +1143,7 @@ export async function generateWeeklyBrief(orgId) {
     // Footer
     html += `<div style="padding:17px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">`;
     html += `<p style="${S.pSmall}">Mapping coverage: <strong>${mappingCoveragePct}%</strong> of users${lastWeekMappedActors.length > 0 ? ` (last week: ${totalUsers > 0 ? Math.round((lastWeekMappedActors.length / totalUsers) * 100) : 0}%)` : ''} · ${weeksOfHistory} week(s) of data history collected — baselines keep building while you fix mapping.</p>`;
-    html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses health scores rather than reporting numbers built on ${mappingCoveragePct}% coverage.</p>`;
+    html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses modeled scores rather than reporting numbers built on ${mappingCoveragePct}% coverage.</p>`;
     html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()}</p>`;
     html += `</div></div>`;
     return html;
@@ -1269,11 +1263,11 @@ export async function generateWeeklyBrief(orgId) {
         tw.channels < lw.channels,
       ]);
       observations.push({
-        text: `Team messaging dropped ${Math.abs(Math.round(msgDelta))}% (${lwMessages} → ${twMessages}). Declining message volume can be an early cohesion signal — especially if meetings also didn't increase.`,
+        text: `Team messaging dropped ${Math.abs(Math.round(msgDelta))}% (${lwMessages} → ${twMessages}). The metadata does not show whether this reflects workload, channel choice, leave, team connection, or a coverage change.`,
         confidence: conf,
       });
       risks.push(
-        'A sustained drop in communication volume (without a matching decline in workload) can indicate weakening team connection.'
+        'Communication volume fell without a matching measured workload decline. Validate channel coverage and ask what changed before interpreting the pattern.'
       );
       recommendations.push(
         'Check in with team leads to understand the drop. If teams are siloing, consider reinstating a brief async standup or weekly sync.'
@@ -1366,7 +1360,7 @@ export async function generateWeeklyBrief(orgId) {
         return pres?.businessTitle || s.title;
       });
       observations.push({
-        text: `⚠️ ${criticalSignals.length} critical drift signal(s) detected: ${signalNames.join('; ')}.`,
+        text: `${criticalSignals.length} strong internal review signal(s) detected: ${signalNames.join('; ')}.`,
         confidence: 'High',
       });
 
@@ -1386,7 +1380,7 @@ export async function generateWeeklyBrief(orgId) {
         return pres?.businessTitle || s.title;
       });
       observations.push({
-        text: `${riskSignals.length} risk-level signal(s) detected: ${signalNames.join('; ')}.`,
+        text: `${riskSignals.length} elevated internal review signal(s) detected: ${signalNames.join('; ')}.`,
         confidence: 'Medium',
       });
     }
@@ -1476,7 +1470,7 @@ export async function generateWeeklyBrief(orgId) {
   const verdictSummary =
     dataReadinessStatus === 'Ready'
       ? orgStatus.reason
-      : `SignalTrue is receiving workplace metadata, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Team health and engagement conclusions should be treated as unavailable until mapping coverage improves.`;
+      : `SignalTrue is receiving workplace metadata, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Modeled work-pattern conclusions are unavailable until mapping coverage improves.`;
 
   // If no observations were generated but we have data, add a neutral one
   if (observations.length === 0 && twTotal > 0) {
@@ -1637,7 +1631,7 @@ export async function generateWeeklyBrief(orgId) {
   html += `<h2 style="margin:0;font-size:20px;color:#0f172a;font-weight:750;">${verdictText}</h2>`;
   html += `</div>`;
   html += `<p style="margin:2px 0 0 0;font-size:12px;color:#6b7280;text-align:right;">`;
-  html += `<span style="${S.badge(confBadgeColor + '20', confBadgeColor)}">Confidence: ${verdictConfidence}</span>`;
+  html += `<span style="${S.badge(confBadgeColor + '20', confBadgeColor)}">Evidence grade: ${verdictConfidence}</span>`;
   if (contextTags.length > 0) {
     html += ` <span style="${S.badge('#dbeafe', '#2563eb')}">Context: ${contextTags.map((t) => t.tag.replace(/_/g, ' ')).join(', ')}</span>`;
   }
@@ -1701,7 +1695,11 @@ export async function generateWeeklyBrief(orgId) {
       label: 'Active Alerts',
       value: `${twSignals.length + twCKSignals.length}`,
       change:
-        critCount > 0 ? `${critCount} urgent` : riskCount > 0 ? `${riskCount} watch` : 'All clear',
+        critCount > 0
+          ? `${critCount} strong review`
+          : riskCount > 0
+            ? `${riskCount} elevated review`
+            : 'No review rule fired',
       color: critCount > 0 ? '#ef4444' : '#6b7280',
     },
   ];
@@ -1719,9 +1717,9 @@ export async function generateWeeklyBrief(orgId) {
   // (Data readiness + team readiness moved to the appendix — the HR reader gets
   //  insight first; setup detail lives at the bottom for the admin.)
 
-  // ─── 2b. Engagement Measurement Snapshot ───
+  // ─── 2b. Work-pattern model snapshot ───
   html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
-  html += `<h3 style="${S.h3} margin:0 0 12px 0;">Engagement measurement</h3>`;
+  html += `<h3 style="${S.h3} margin:0 0 12px 0;">Work-pattern deviation model</h3>`;
   if (engagementSnapshot) {
     const engagementColor =
       engagementSnapshot.avgStrainRisk >= 70
@@ -1732,22 +1730,23 @@ export async function generateWeeklyBrief(orgId) {
             ? '#2563eb'
             : '#16a34a';
     html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:${engagementColor};">${engagementSnapshot.avgStrainRisk}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Strain risk</div></div>`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.avgConditionsScore}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Conditions score</div></div>`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.strainedTeams}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Teams in strain</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:${engagementColor};">${engagementSnapshot.avgStrainRisk}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Deviation index (model)</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.avgDataReadiness}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Data readiness</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.strainedTeams}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Teams above review band</div></div>`;
     html += `</div>`;
     const driverText =
       engagementSnapshot.drivers.length > 0
-        ? ` Main drivers: ${engagementSnapshot.drivers
+        ? ` Main modeled drivers: ${engagementSnapshot.drivers
             .map((driver) => `${engagementDriverLabel(driver.driver)} (${driver.score}/100)`)
             .join(', ')}.`
         : '';
-    html += `<p style="${S.p} margin:0;"><strong>What it means:</strong> Engagement is measured from work conditions, not surveys: recovery time, focus availability, responsiveness pressure, collaboration withdrawal, and coordination friction.${driverText}</p>`;
-    html += `<p style="${S.pSmall} margin-top:8px;"><strong>Action trigger:</strong> if strain risk rises by 8+ points, or any team reaches strain/critical, review workload structure and manager support this week.</p>`;
+    html += `<p style="${S.p} margin:0;"><strong>What it means:</strong> This internal index summarizes changes in recovery time, focus availability, responsiveness, collaboration, and coordination metadata.${driverText}</p>`;
+    html += `<p style="${S.pSmall} margin-top:8px;"><strong>Review rule:</strong> an 8+ point increase or an elevated/strong band prompts a review of the underlying metrics and team context. This is a product rule, not a validated scientific threshold.</p>`;
+    html += `<p style="${S.pSmall} margin-top:8px;">This model does not measure engagement and is not a probability, diagnosis, attrition predictor, or performance score.</p>`;
   } else {
     const blockedTeams = teamReadiness.filter((team) => team.status !== 'Ready for scoring');
     const suppressionReason = recentEngagementSuppressions[0]?.reason;
-    html += `<p style="${S.p} margin:0;"><strong>No engagement measurement yet.</strong> Engagement requires team-level metadata mapped to at least ${minimumTeamSize} active ${minimumTeamSize === 1 ? 'person' : 'people'} per team. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
+    html += `<p style="${S.p} margin:0;"><strong>No work-pattern model yet.</strong> The model requires team-level metadata mapped to at least ${minimumTeamSize} active ${minimumTeamSize === 1 ? 'person' : 'people'} per team. It uses calendar and collaboration patterns only; no individual names, message content, or sentiment analysis.</p>`;
     if (blockedTeams.length > 0 || suppressionReason) {
       html += `<div style="${S.warnBox}">`;
       html += `<p style="${S.p} margin:0;"><strong>Why it is blocked:</strong> ${
@@ -1771,7 +1770,7 @@ export async function generateWeeklyBrief(orgId) {
         obs.confidence === 'High' ? '#10b981' : obs.confidence === 'Medium' ? '#f59e0b' : '#9ca3af';
       html += `<div style="padding:12px 14px;margin-bottom:8px;background:${isWarning ? '#fef2f2' : '#f8fafc'};border-radius:10px;border:1px solid ${isWarning ? '#fecaca' : '#e2e8f0'};">`;
       html += `<p style="${S.p} margin:0;">${obs.text}</p>`;
-      html += `<p style="margin:4px 0 0 0; font-size:11px;"><span style="${S.badge(confColor + '20', confColor)}">Confidence: ${obs.confidence}</span></p>`;
+      html += `<p style="margin:4px 0 0 0; font-size:11px;"><span style="${S.badge(confColor + '20', confColor)}">Evidence grade: ${obs.confidence}</span></p>`;
       html += `</div>`;
     }
     if (observations.length > 3) {
@@ -1798,7 +1797,7 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
     }
     if (risks.length > 2) {
-      html += `<p style="${S.pSmall}">+ ${risks.length - 2} more risk factors — see full analysis on dashboard.</p>`;
+      html += `<p style="${S.pSmall}">+ ${risks.length - 2} more review patterns — see full analysis on dashboard.</p>`;
     }
     html += `</div>`;
   }
@@ -1902,24 +1901,25 @@ export async function generateWeeklyBrief(orgId) {
     html += `</div>`;
   }
 
-  // ─── 5c. Prediction — graded last week + new call for next week ───
+  // ─── 5c. Experimental forecast rule — graded last week + new call for next week ───
   if (gradedPrediction || evaluatedPredictions.length > 0 || newPrediction) {
     html += `<div style="${S.card} border-left:4px solid #0ea5e9;">`;
-    html += `<h3 style="${S.h3} margin-top:0;">Prediction check</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">Forecast rule check</h3>`;
+    html += `<p style="${S.pSmall}">Experimental directional rule, not a probability or validated outcome prediction.</p>`;
     if (gradedPrediction) {
       const o = gradedPrediction.outcome;
       html += `<div style="${o.held ? S.recBox : S.warnBox}">`;
-      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Last week we predicted:</strong> ${gradedPrediction.statement}</p>`;
-      html += `<p style="${S.pSmall} margin:0;">Actual ${PREDICTION_METRIC_LABELS[gradedPrediction.metric] || gradedPrediction.metric}: <strong>${o.actualValue}</strong> — prediction <strong style="color:${o.held ? '#16a34a' : '#d97706'};">${o.held ? 'held' : 'did not hold'}</strong>.</p>`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Last week's rule said:</strong> ${gradedPrediction.statement}</p>`;
+      html += `<p style="${S.pSmall} margin:0;">Actual ${PREDICTION_METRIC_LABELS[gradedPrediction.metric] || gradedPrediction.metric}: <strong>${o.actualValue}</strong> — rule <strong style="color:${o.held ? '#16a34a' : '#d97706'};">${o.held ? 'matched' : 'did not match'}</strong>.</p>`;
       html += `</div>`;
     }
     if (evaluatedPredictions.length > 0) {
-      html += `<p style="${S.pSmall} margin:6px 0;">Track record: <strong>${predictionsHeld} of ${evaluatedPredictions.length}</strong> predictions held over the last ${evaluatedPredictions.length} graded week(s).</p>`;
+      html += `<p style="${S.pSmall} margin:6px 0;">Rule track record: <strong>${predictionsHeld} of ${evaluatedPredictions.length}</strong> directional calls matched over the last ${evaluatedPredictions.length} graded week(s).</p>`;
     }
     if (newPrediction) {
       html += `<div style="padding:10px 14px;background:#f0f9ff;border-radius:8px;border-left:3px solid #0ea5e9;">`;
       html += `<p style="${S.p} margin:0;"><strong>This week's call:</strong> ${newPrediction.statement}</p>`;
-      html += `<p style="${S.pSmall} margin:4px 0 0 0;">We'll grade this in next week's brief — hold us to it.</p>`;
+      html += `<p style="${S.pSmall} margin:4px 0 0 0;">The next brief will compare this rule with the observed value.</p>`;
       html += `</div>`;
     }
     html += `</div>`;
@@ -1956,7 +1956,7 @@ export async function generateWeeklyBrief(orgId) {
       const hConf =
         h.confidence === 'High' ? '#10b981' : h.confidence === 'Medium' ? '#f59e0b' : '#9ca3af';
       html += `<div style="padding:12px 14px; margin-bottom:10px; background:#f0f0ff; border-radius:8px;">`;
-      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${h.patternObserved}</strong> <span style="${S.badge(hConf + '20', hConf)}">${h.confidence}</span></p>`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${h.patternObserved}</strong> <span style="${S.badge(hConf + '20', hConf)}">Evidence grade: ${h.confidence}</span></p>`;
       if (h.evidence?.length > 0) {
         html += `<p style="${S.pSmall} margin:0 0 4px 0;">Evidence: ${h.evidence.join(' · ')}</p>`;
       }
@@ -1987,8 +1987,7 @@ export async function generateWeeklyBrief(orgId) {
       options.lowVolumeThreshold &&
       Math.max(Math.abs(twVal), Math.abs(lwVal)) < options.lowVolumeThreshold;
     const icon = lowVolume ? 'Neutral' : trendIcon(twVal, lwVal, higherIsBad);
-    const trendColor =
-      icon === 'Concerning' ? '#dc2626' : icon === 'Healthy' ? '#16a34a' : '#64748b';
+    const trendColor = icon === 'Review' ? '#dc2626' : icon === 'Intended' ? '#16a34a' : '#64748b';
     const vs6wk =
       sixWk > 0 && twVal > sixWk * 1.15 && higherIsBad
         ? ' *'
@@ -2098,7 +2097,7 @@ export async function generateWeeklyBrief(orgId) {
   html += `<p style="font-size:11px; color:#9ca3af; margin:8px 0 0 0;">`;
   html += `<strong>How to read this table:</strong> `;
   html += `"This Week" values are highlighted in bold. `;
-  html += `Green = moving in a healthy direction &nbsp;·&nbsp; Red = moving in a concerning direction &nbsp;·&nbsp; Warning = notably above or below your 6-week average. `;
+  html += `Green = moving in the intended direction &nbsp;·&nbsp; Red = moving away from the intended direction &nbsp;·&nbsp; Warning = notably above or below your 6-week average. `;
   html += `"Uninterrupted Time" and "Team Messages" are better when higher. All other metrics are better when lower.`;
   html += `</p>`;
   html += `</div>`;
@@ -2195,7 +2194,7 @@ export async function generateWeeklyBrief(orgId) {
 
       html += `<div style="${S.cardAlert(stateColor)}">`;
       html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${teamName}</strong> <span style="${S.badge(stateColor + '20', stateColor)}">${bdi.driftState}</span></p>`;
-      html += `<p style="${S.p}">Drift Score: <strong>${prevScore} → ${bdi.driftScore}/100 ${scoreTrend}</strong> | Confidence: ${bdi.confidence}</p>`;
+      html += `<p style="${S.p}">Drift model: <strong>${prevScore} → ${bdi.driftScore}/100 ${scoreTrend}</strong> | Data readiness: ${bdi.confidence}</p>`;
 
       if (bdi.drivers?.length > 0) {
         html += `<p style="${S.p}"><strong>Key drivers:</strong> ${bdi.drivers
@@ -2220,9 +2219,9 @@ export async function generateWeeklyBrief(orgId) {
     html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
     html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Engagement level</h3>`;
     html += `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px;">`;
-    html += `<p style="${S.p} margin:0 0 6px 0; color:#374151;"><strong>No engagement data available for this week.</strong></p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0; color:#374151;"><strong>No work-pattern model available for this week.</strong></p>`;
     html += `<p style="${S.p} margin:0 0 6px 0; color:#6b7280;">`;
-    html += `Engagement scores are computed weekly from behavioral metadata (calendar patterns, messaging habits, focus time). `;
+    html += `Work-pattern indices are computed weekly from team-level metadata (calendar patterns, messaging activity, and focus availability). `;
     html += `This section will populate once the first full weekly cycle completes for your teams.`;
     html += `</p>`;
     html += `<p style="${S.pSmall} margin:0; color:#9ca3af;">`;
@@ -2235,13 +2234,13 @@ export async function generateWeeklyBrief(orgId) {
 
   if (engagementStrainByTeam.length > 0) {
     const DRIVER_LABELS = {
-      recovery_debt: 'Recovery Debt',
-      focus_erosion: 'Focus Erosion',
-      coordination_friction: 'Coordination Friction',
-      responsiveness_pressure: 'Responsiveness Pressure',
-      collaboration_withdrawal: 'Collaboration Withdrawal',
-      manager_support_gap: 'Manager Support Gap',
-      workload_volatility: 'Workload Volatility',
+      recovery_debt: 'Outside-schedule activity',
+      focus_erosion: 'Focus availability',
+      coordination_friction: 'Coordination metadata',
+      responsiveness_pressure: 'Response patterns',
+      collaboration_withdrawal: 'Collaboration metadata',
+      manager_support_gap: 'Recorded 1:1 time',
+      workload_volatility: 'Week-to-week activity',
     };
 
     const riskStateColor = (state) =>
@@ -2254,14 +2253,14 @@ export async function generateWeeklyBrief(orgId) {
             : '#10b981';
     const riskStateLabel = (state) =>
       state === 'critical'
-        ? 'Critical'
+        ? 'Strong deviation'
         : state === 'strain'
-          ? 'Strain'
+          ? 'Elevated deviation'
           : state === 'watch'
-            ? 'Watch'
-            : 'Healthy';
+            ? 'Moderate deviation'
+            : 'Within baseline';
     const trendLbl = (trend) =>
-      trend === 'rising' ? 'Risk rising' : trend === 'improving' ? 'Improving' : 'Stable';
+      trend === 'rising' ? 'Deviation rising' : trend === 'improving' ? 'Improving' : 'Stable';
 
     // Worst-case state across teams
     const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
@@ -2277,15 +2276,15 @@ export async function generateWeeklyBrief(orgId) {
 
     // Scope and privacy note.
     html += `<div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 16px; margin-bottom:16px;">`;
-    html += `<p style="${S.p} margin:0 0 6px 0;">These are <strong>operating-condition indicators</strong> derived from changes in recovery time, focus availability, responsiveness pressure, and collaboration patterns. They are not survey, sentiment, performance, burnout, or attrition scores.</p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0;">These are <strong>internal work-pattern indicators</strong> derived from outside-schedule activity, focus availability, response timing, and collaboration metadata. They are not survey, sentiment, performance, burnout, or attrition scores.</p>`;
     html += `<p style="${S.pSmall} margin:0;">No surveillance. No sentiment analysis. No individual names. Metadata-derived team-level patterns only.</p>`;
     html += `</div>`;
 
     // Score key
     html += `<p style="${S.pSmall} margin-bottom:12px;">`;
-    html += `<strong>Strain Risk:</strong> 0 = no strain, 100 = critical &nbsp;·&nbsp; `;
-    html += `<strong>Conditions Score:</strong> inverse (higher = healthier) &nbsp;·&nbsp; `;
-    html += `<strong>Trend:</strong> direction vs last week`;
+    html += `<strong>Deviation index:</strong> internal 0–100 model &nbsp;·&nbsp; `;
+    html += `<strong>Data readiness:</strong> coverage and baseline stability &nbsp;·&nbsp; `;
+    html += `<strong>Review bands:</strong> internal product rules, not scientific thresholds`;
     html += `</p>`;
 
     // Per-team blocks — "what this means" is rendered ONCE per risk state below,
@@ -2300,8 +2299,8 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
 
       html += `<div style="display:flex; gap:16px; margin-bottom:8px;">`;
-      html += `<div style="text-align:center;"><strong style="font-size:20px; color:${tc};">${t.engagementStrainRisk}</strong><br><span style="${S.pSmall}">Strain Risk</span></div>`;
-      html += `<div style="text-align:center;"><strong style="font-size:20px; color:#10b981;">${t.engagementConditionsScore}</strong><br><span style="${S.pSmall}">Conditions</span></div>`;
+      html += `<div style="text-align:center;"><strong style="font-size:20px; color:${tc};">${t.engagementStrainRisk}</strong><br><span style="${S.pSmall}">Deviation index</span></div>`;
+      html += `<div style="text-align:center;"><strong style="font-size:20px; color:#0f766e;">${t.confidenceScore}</strong><br><span style="${S.pSmall}">Data readiness</span></div>`;
       html += `<div style="text-align:center;"><strong style="font-size:20px;">${t.activePeopleCount}</strong><br><span style="${S.pSmall}">Members</span></div>`;
       html += `</div>`;
 
@@ -2325,21 +2324,22 @@ export async function generateWeeklyBrief(orgId) {
         let stateMsg = '';
         if (t.riskState === 'critical') {
           stateMsg =
-            'Critical operating strain: several work-pattern indicators are materially outside this team’s baseline. Validate context with the team lead and reduce the strongest measured pressure.';
+            'Strong modeled deviation: several work-pattern indicators are materially outside this team’s baseline. Validate the direct metrics and context before choosing an action.';
         } else if (t.riskState === 'strain') {
           stateMsg =
-            'Strain-level conditions: recovery time, focus availability, or responsiveness pressure has moved in a concerning direction. Review the strongest driver before choosing an action.';
+            'Elevated modeled deviation: recovery, focus, or responsiveness metadata moved away from baseline. Review the strongest direct metric before choosing an action.';
         } else if (t.riskState === 'watch' && t.trend === 'rising') {
           stateMsg =
-            'Watch-level risk with a rising trend — conditions are not critical, but the direction is wrong. This is the optimal intervention window.';
+            'A moderate deviation is rising. Verify the underlying direct metric and ask what changed before choosing an action.';
         } else if (t.riskState === 'watch') {
           stateMsg =
-            'Watch-level: nothing is broken, but there are early structural signals worth monitoring.';
+            'A moderate deviation met an internal review band. Monitor the direct metric without assigning a cause from metadata alone.';
         } else if (t.trend === 'improving') {
           stateMsg =
-            'Healthy and improving. Keep the patterns that are working — particularly recovery time and focus availability.';
+            'Measured patterns moved closer to the team baseline. Check whether a recent operating change plausibly contributed.';
         } else {
-          stateMsg = 'Healthy and stable. No structural engagement risks detected this week.';
+          stateMsg =
+            'Modeled indicators remain within the available team baseline. This does not establish employee health or engagement.';
         }
         html += `<div style="margin-top:8px; padding:8px 10px; background:${tc}10; border-left:3px solid ${tc}; border-radius:4px;">`;
         html += `<p style="${S.p} margin:0;"><strong>What this means:</strong> ${stateMsg}</p>`;
@@ -2349,7 +2349,7 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
     }
 
-    html += `<p style="${S.pSmall}">Engagement data is computed weekly. View full driver breakdown and trend history on your SignalTrue dashboard.</p>`;
+    html += `<p style="${S.pSmall}">The work-pattern model is computed weekly. It is descriptive and has not been externally validated as an engagement, burnout, attrition, or performance measure.</p>`;
     html += `</div>`;
   }
 
@@ -2418,7 +2418,8 @@ export async function generateWeeklyBrief(orgId) {
   html += `<p style="${S.pSmall}"><strong>Data coverage:</strong> <span style="color:${coverageColor}; font-weight:700;">${usersWithDataThisWeek.length} of ${totalUsers} employees (${coveragePct}%)</span> have calendar data this week. Per-person figures are based on connected accounts only.</p>`;
   html += `<p style="${S.pSmall}">Data sources: ${connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}</p>`;
   html += `<p style="${S.pSmall}">Report period: ${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} compared with ${lastWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(thisWeekStart.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>`;
-  html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()} · Status: ${verdictText} (${verdictConfidence} confidence)</p>`;
+  html += `<p style="${S.pSmall}"><strong>Measurement note:</strong> Counts and durations are observed metadata. Derived ratios and internal 0–100 models are descriptive, not probabilities, diagnoses, or causal findings. Evidence grades are rule-based, not statistical confidence intervals. <a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/methodology" style="color:#2563eb;">Methods and limits</a>.</p>`;
+  html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()} · Status: ${verdictText} (${verdictConfidence} rule-based evidence grade)</p>`;
   html += `</div>`;
 
   html += `</div>`;

@@ -117,7 +117,7 @@ describe('hard readiness gate (setup mode)', () => {
     const html = await generateWeeklyBrief(org._id);
 
     expect(html).toContain('Setup Required');
-    expect(html).toContain('health scores are paused');
+    expect(html).toContain('modeled scores are paused');
     expect(html).not.toContain('Week-over-week comparison');
   });
 });
@@ -158,6 +158,7 @@ describe('full report mode', () => {
       riskState: 'strain',
       trend: 'stable',
       confidenceScore: 70,
+      scoringVersion: '2.1.0',
     });
     await EngagementStrainWeekly.insertMany([mkStrain(teamA._id), mkStrain(catchAll._id)]);
 
@@ -178,7 +179,7 @@ describe('full report mode', () => {
     expect(html).toContain('Week-over-week comparison');
     expect(html).toContain('Appendix — Data readiness'); // admin detail demoted
     expect(html).toContain('Baselines built on'); // tenure line
-    expect(html).toContain('Prediction check');
+    expect(html).toContain('Forecast rule check');
     expect(html).toContain("This week's call");
     expect(html).toContain('Estimated coordination cost above your baseline');
     expect(html).toContain('Was this week unusual?'); // annotation loop
@@ -228,8 +229,8 @@ describe('full report mode', () => {
 
     const html = await generateWeeklyBrief(org._id);
 
-    expect(html).toContain('Last week we predicted');
-    expect(html).toContain('Track record');
+    expect(html).toContain("Last week's rule said");
+    expect(html).toContain('Rule track record');
     const graded = await BriefPrediction.findOne({ orgId: org._id, 'outcome.evaluated': true });
     expect(graded).not.toBeNull();
     expect(graded.outcome.held).toBe(true); // 24 meetings ≤ 500

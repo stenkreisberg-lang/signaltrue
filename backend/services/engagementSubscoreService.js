@@ -56,185 +56,119 @@ export function calculateSubscores(weekly, baseline) {
  * Each entry is also annotated with its direction and raw z-score for transparency.
  */
 function buildMetricRisks(w, bm) {
-  const risk = (field, key) => riskHigherWorse(w[field], bm[key]);
-  const riskInv = (field, key) => riskLowerWorse(w[field], bm[key]);
-  const riskTwo = (field, key) => riskTwoSided(w[field], bm[key]);
+  const hasCalendar = w.integrationCoverage?.hasCalendar === true;
+  const hasMessaging = w.integrationCoverage?.hasMessaging === true;
+  const hasEmail = w.integrationCoverage?.hasEmail === true;
+  const risk = (field, key, sourceAvailable = true) =>
+    sourceAvailable ? riskHigherWorse(w[field], bm[key]) : unavailable('source_unavailable');
+  const riskInv = (field, key, sourceAvailable = true) =>
+    sourceAvailable ? riskLowerWorse(w[field], bm[key]) : unavailable('source_unavailable');
+  const riskTwo = (field, key, sourceAvailable = true) =>
+    sourceAvailable ? riskTwoSided(w[field], bm[key]) : unavailable('source_unavailable');
 
   return {
     // ── Calendar ──────────────────────────────────────────────────────────────
-    afterHoursActivityRatio: risk('afterHoursActivityRatio', 'afterHoursEmailRatio'),
-    afterHoursMessageRatio: risk('afterHoursMessageRatio', 'afterHoursMessageRatio'),
-    afterHoursMeetingMinutes: risk('afterHoursMeetingMinutes', 'afterHoursMeetingMinutes'),
-    afterHoursMeetingRatio: risk('afterHoursMeetingRatio', 'afterHoursMeetingMinutes'),
-    afterHoursEmailRatio: risk('afterHoursEmailRatio', 'afterHoursEmailRatio'),
-
-    // Recovery gap violations — no direct baseline field, uses afterHoursActivityRatio as proxy
-    recoveryGapViolationRate: risk('afterHoursActivityRatio', 'afterHoursEmailRatio'),
+    afterHoursMessageRatio: risk('afterHoursMessageRatio', 'afterHoursMessageRatio', hasMessaging),
+    afterHoursEmailRatio: risk('afterHoursEmailRatio', 'afterHoursEmailRatio', hasEmail),
 
     // Focus
     focusHoursAvailablePerPerson: riskInv(
       'focusHoursAvailablePerPerson',
-      'focusHoursAvailablePerPerson'
+      'focusHoursAvailablePerPerson',
+      hasCalendar
     ),
-    focusBlocks90mCountPerPerson: riskInv('focusBlocks90mCountPerPerson', 'focusBlocks90mCount'),
-    fragmentedDayRatio: risk('fragmentedDayRatio', 'fragmentedDayRatio'),
-    backToBackMeetingCount: risk('backToBackMeetingCount', 'backToBackMeetingCount'),
-    meetingHoursPerPerson: risk('meetingHoursPerPerson', 'meetingHoursPerPerson'),
+    fragmentedDayRatio: risk('fragmentedDayRatio', 'fragmentedDayRatio', hasCalendar),
+    meetingHoursPerPerson: risk('meetingHoursPerPerson', 'meetingHoursPerPerson', hasCalendar),
 
     // Coordination
-    attendeeHoursPerPerson: risk('attendeeHoursPerPerson', 'attendeeHoursPerPerson'),
-    avgAttendeeCount: risk('avgAttendeeCount', 'avgAttendeeCount'),
-    recurringMeetingRatio: risk('recurringMeetingRatio', 'recurringMeetingRatio'),
+    attendeeHoursPerPerson: risk('attendeeHoursPerPerson', 'attendeeHoursPerPerson', hasCalendar),
+    avgAttendeeCount: risk('avgAttendeeCount', 'avgAttendeeCount', hasCalendar),
+    recurringMeetingRatio: risk('recurringMeetingRatio', 'recurringMeetingRatio', hasCalendar),
 
     // Responsiveness
-    messagesSentPerPerson: riskTwo('messagesSentPerPerson', 'messagesSentPerPerson'),
-    afterHoursResponseRatio: risk('afterHoursMessageRatio', 'afterHoursMessageRatio'),
-    p90ResponseMinutes: risk('p90ResponseMinutes', 'p90ResponseMinutes'),
+    messagesSentPerPerson: riskTwo('messagesSentPerPerson', 'messagesSentPerPerson', hasMessaging),
+    p90ResponseMinutes: risk('p90ResponseMinutes', 'p90ResponseMinutes', hasMessaging),
 
     // Collaboration
     uniqueCollaboratorsPerPerson: riskTwo(
       'uniqueCollaboratorsPerPerson',
-      'uniqueCollaboratorsPerPerson'
+      'uniqueCollaboratorsPerPerson',
+      hasMessaging
     ),
-    publicChannelRatio: riskInv('publicChannelRatio', 'publicChannelRatio'),
-    reciprocityRatio: riskInv('reciprocityRatio', 'reciprocityRatio'),
-    threadParticipationRate: riskInv('threadParticipationRate', 'threadParticipationRate'),
+    publicChannelRatio: riskInv('publicChannelRatio', 'publicChannelRatio', hasMessaging),
+    reciprocityRatio: riskInv('reciprocityRatio', 'reciprocityRatio', hasMessaging),
+    threadParticipationRate: riskInv(
+      'threadParticipationRate',
+      'threadParticipationRate',
+      hasMessaging
+    ),
 
     // Manager support
     manager1to1MinutesPerPerson: riskInv(
       'manager1to1MinutesPerPerson',
-      'manager1to1MinutesPerPerson'
+      'manager1to1MinutesPerPerson',
+      hasCalendar
     ),
-    cancelled1to1Count: risk('cancelled1to1Count', 'cancelled1to1Count'),
-    managerResponseLatency: risk('medianResponseMinutes', 'medianResponseMinutes'),
-    managerMeetingLoad: risk('meetingHoursPerPerson', 'meetingHoursPerPerson'),
-    managerAfterHoursActivity: risk('afterHoursActivityRatio', 'afterHoursEmailRatio'),
 
     // Workload volatility
-    weekOverWeekMeetingLoadChange: riskTwo('weekOverWeekMeetingLoadChange', null),
-    weekOverWeekMessageVolumeChange: riskTwo('weekOverWeekMessageVolumeChange', null),
-    weekOverWeekAfterHoursChange: risk('weekOverWeekAfterHoursChange', null),
-    newRecurringMeetingsCount: risk('newRecurringMeetingsCount', null),
-    activitySpikeDays: risk('activitySpikeDays', null),
+    weekOverWeekMeetingLoadChange: riskTwo('weekOverWeekMeetingLoadChange', null, hasCalendar),
+    weekOverWeekMessageVolumeChange: riskTwo('weekOverWeekMessageVolumeChange', null, hasMessaging),
+    weekOverWeekAfterHoursChange: risk('weekOverWeekAfterHoursChange', null, hasCalendar),
+    newRecurringMeetingsCount: risk('newRecurringMeetingsCount', null, hasCalendar),
+    activitySpikeDays: risk('activitySpikeDays', null, hasCalendar || hasMessaging),
   };
 }
 
 // ── Subscore Formula Implementations ──────────────────────────────────────────
 
-/**
- * 10.1 Recovery Debt
- *
- * 0.30 * risk(after_hours_activity_ratio)
- * 0.20 * risk(after_hours_message_ratio)
- * 0.15 * risk(after_hours_meeting_minutes)
- * 0.15 * risk(weekend_activity_ratio)   — proxied by afterHoursActivityRatio
- * 0.15 * risk(recovery_gap_violation_rate)
- * 0.05 * risk(late_response_ratio)      — proxied by afterHoursResponseRatio
- */
+/** Outside-schedule messaging and email deviation. */
 function calcRecoveryDebt(mr) {
-  return clampScore(
-    0.3 * mr.afterHoursActivityRatio.score +
-      0.2 * mr.afterHoursMessageRatio.score +
-      0.15 * mr.afterHoursMeetingMinutes.score +
-      0.15 * mr.afterHoursActivityRatio.score + // weekend proxy
-      0.15 * mr.recoveryGapViolationRate.score +
-      0.05 * mr.afterHoursResponseRatio.score
-  );
+  return weightedScore([
+    [mr.afterHoursMessageRatio, 0.5],
+    [mr.afterHoursEmailRatio, 0.5],
+  ]);
 }
 
-/**
- * 10.2 Focus Erosion
- *
- * 0.30 * risk_inverse(focus_hours_available_per_person)
- * 0.20 * risk_inverse(focus_blocks_90m_count_per_person)
- * 0.20 * risk(fragmented_day_ratio)
- * 0.15 * risk(back_to_back_meetings_per_person)
- * 0.15 * risk(meeting_hours_per_person)
- */
+/** Focus-availability deviation using metrics measured on the same scale as baseline. */
 function calcFocusErosion(mr) {
-  return clampScore(
-    0.3 * mr.focusHoursAvailablePerPerson.score +
-      0.2 * mr.focusBlocks90mCountPerPerson.score +
-      0.2 * mr.fragmentedDayRatio.score +
-      0.15 * mr.backToBackMeetingCount.score +
-      0.15 * mr.meetingHoursPerPerson.score
-  );
+  return weightedScore([
+    [mr.focusHoursAvailablePerPerson, 0.4],
+    [mr.fragmentedDayRatio, 0.3],
+    [mr.meetingHoursPerPerson, 0.3],
+  ]);
 }
 
-/**
- * 10.3 Coordination Friction
- *
- * 0.30 * risk(attendee_hours_per_person)
- * 0.20 * risk(avg_attendee_count)
- * 0.20 * risk(recurring_meeting_ratio)
- * 0.20 * risk(cross_team_meeting_ratio)  — proxied by avgAttendeeCount
- * 0.10 * risk(meeting_load_variance)     — proxied by backToBackMeetingCount
- */
+/** Coordination-metadata deviation using attendee load, meeting size, and recurrence. */
 function calcCoordinationFriction(mr) {
-  return clampScore(
-    0.3 * mr.attendeeHoursPerPerson.score +
-      0.2 * mr.avgAttendeeCount.score +
-      0.2 * mr.recurringMeetingRatio.score +
-      0.2 * mr.avgAttendeeCount.score + // cross-team proxy
-      0.1 * mr.backToBackMeetingCount.score
-  );
+  return weightedScore([
+    [mr.attendeeHoursPerPerson, 0.4],
+    [mr.avgAttendeeCount, 0.3],
+    [mr.recurringMeetingRatio, 0.3],
+  ]);
 }
 
-/**
- * 10.4 Responsiveness Pressure
- *
- * 0.25 * risk(inbound_messages_per_person)   — proxied by messagesSentPerPerson (two-sided)
- * 0.25 * risk(after_hours_response_ratio)
- * 0.20 * risk(p90_response_minutes)
- * 0.15 * risk(response_latency_volatility)   — proxied by p90ResponseMinutes
- * 0.15 * risk(same_day_message_bursts)       — proxied by activitySpikeDays
- */
+/** Messaging-volume, outside-schedule, and response-time deviation. */
 function calcResponsivenessPressure(mr) {
-  return clampScore(
-    0.25 * mr.messagesSentPerPerson.score +
-      0.25 * mr.afterHoursResponseRatio.score +
-      0.2 * mr.p90ResponseMinutes.score +
-      0.15 * mr.p90ResponseMinutes.score + // latency volatility proxy
-      0.15 * mr.activitySpikeDays.score
-  );
+  return weightedScore([
+    [mr.messagesSentPerPerson, 0.35],
+    [mr.afterHoursMessageRatio, 0.35],
+    [mr.p90ResponseMinutes, 0.3],
+  ]);
 }
 
-/**
- * 10.5 Collaboration Withdrawal
- *
- * 0.25 * two_sided_risk(unique_collaborators_per_person)
- * 0.20 * risk_inverse(public_channel_ratio)
- * 0.20 * risk_inverse(reciprocity_ratio)
- * 0.20 * risk_inverse(cross_team_interaction_ratio)  — proxied by uniqueCollaboratorsPerPerson
- * 0.15 * risk_inverse(optional_participation_rate)   — proxied by threadParticipationRate
- */
+/** Collaboration-metadata deviation; this does not measure engagement or intent. */
 function calcCollaborationWithdrawal(mr) {
-  return clampScore(
-    0.25 * mr.uniqueCollaboratorsPerPerson.score +
-      0.2 * mr.publicChannelRatio.score +
-      0.2 * mr.reciprocityRatio.score +
-      0.2 * mr.uniqueCollaboratorsPerPerson.score + // cross-team proxy
-      0.15 * mr.threadParticipationRate.score
-  );
+  return weightedScore([
+    [mr.uniqueCollaboratorsPerPerson, 0.3],
+    [mr.publicChannelRatio, 0.25],
+    [mr.reciprocityRatio, 0.25],
+    [mr.threadParticipationRate, 0.2],
+  ]);
 }
 
-/**
- * 10.6 Manager Support Gap
- *
- * 0.30 * risk_inverse(manager_1to1_minutes_per_person)
- * 0.20 * risk(cancelled_1to1_rate)
- * 0.20 * risk(manager_response_latency)
- * 0.15 * risk(manager_meeting_load)
- * 0.15 * risk(manager_after_hours_activity)
- */
+/** Recorded manager 1:1 time deviation; this does not measure support quality. */
 function calcManagerSupportGap(mr) {
-  return clampScore(
-    0.3 * mr.manager1to1MinutesPerPerson.score +
-      0.2 * mr.cancelled1to1Count.score +
-      0.2 * mr.managerResponseLatency.score +
-      0.15 * mr.managerMeetingLoad.score +
-      0.15 * mr.managerAfterHoursActivity.score
-  );
+  return weightedScore([[mr.manager1to1MinutesPerPerson, 1]]);
 }
 
 /**
@@ -247,13 +181,13 @@ function calcManagerSupportGap(mr) {
  * 0.15 * risk(activity_spike_days)
  */
 function calcWorkloadVolatility(mr) {
-  return clampScore(
-    0.25 * mr.weekOverWeekMeetingLoadChange.score +
-      0.2 * mr.weekOverWeekMessageVolumeChange.score +
-      0.2 * mr.weekOverWeekAfterHoursChange.score +
-      0.2 * mr.newRecurringMeetingsCount.score +
-      0.15 * mr.activitySpikeDays.score
-  );
+  return weightedScore([
+    [mr.weekOverWeekMeetingLoadChange, 0.25],
+    [mr.weekOverWeekMessageVolumeChange, 0.2],
+    [mr.weekOverWeekAfterHoursChange, 0.2],
+    [mr.newRecurringMeetingsCount, 0.2],
+    [mr.activitySpikeDays, 0.15],
+  ]);
 }
 
 // ── Direction-Aware z→Risk Helpers ────────────────────────────────────────────
@@ -263,8 +197,9 @@ function calcWorkloadVolatility(mr) {
  * risk_z = robust_z
  */
 function riskHigherWorse(value, baselineMetric) {
-  if (value === null || value === undefined) return neutral();
-  const z = baselineMetric ? robustZ(value, baselineMetric) : zFromRawFraction(value);
+  if (!Number.isFinite(value)) return unavailable('missing_value');
+  if (!Number.isFinite(baselineMetric?.median)) return unavailable('missing_baseline');
+  const z = robustZ(value, baselineMetric);
   return { score: zToRiskScore(z), z };
 }
 
@@ -273,8 +208,9 @@ function riskHigherWorse(value, baselineMetric) {
  * risk_z = -robust_z
  */
 function riskLowerWorse(value, baselineMetric) {
-  if (value === null || value === undefined) return neutral();
-  const z = baselineMetric ? robustZ(value, baselineMetric) : zFromRawFraction(value);
+  if (!Number.isFinite(value)) return unavailable('missing_value');
+  if (!Number.isFinite(baselineMetric?.median)) return unavailable('missing_baseline');
+  const z = robustZ(value, baselineMetric);
   return { score: zToRiskScore(-z), z };
 }
 
@@ -283,26 +219,22 @@ function riskLowerWorse(value, baselineMetric) {
  * risk_z = abs(robust_z)
  */
 function riskTwoSided(value, baselineMetric) {
-  if (value === null || value === undefined) return neutral();
-  const z = baselineMetric ? robustZ(value, baselineMetric) : zFromRawFraction(value);
+  if (!Number.isFinite(value)) return unavailable('missing_value');
+  if (!Number.isFinite(baselineMetric?.median)) return unavailable('missing_baseline');
+  const z = robustZ(value, baselineMetric);
   return { score: zToRiskScore(Math.abs(z)), z };
 }
 
-/**
- * When there is no baseline yet, use the raw value as a weak heuristic.
- * Maps a 0–1 ratio or small count to a mild z-score.
- * This ensures new teams don't immediately spike to 100.
- */
-function zFromRawFraction(value) {
-  if (typeof value !== 'number') return 0;
-  // Treat the value as a fraction of a "concerning" threshold (0.3 for ratios, 5 for counts)
-  const threshold = value <= 1 ? 0.3 : 5;
-  return (value - threshold / 2) / (threshold / 2);
+function unavailable(reason) {
+  return { score: null, z: null, unavailableReason: reason };
 }
 
-function neutral() {
-  // No data — score at the "watch" floor, not healthy and not alarming
-  return { score: 40, z: 0 };
+function weightedScore(entries) {
+  const available = entries.filter(([metric]) => Number.isFinite(metric?.score));
+  const totalWeight = available.reduce((sum, [, weight]) => sum + weight, 0);
+  if (totalWeight === 0) return null;
+  const raw = available.reduce((sum, [metric, weight]) => sum + metric.score * weight, 0);
+  return clampScore(raw / totalWeight);
 }
 
 function clampScore(raw) {

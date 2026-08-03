@@ -198,7 +198,7 @@ describe('monthly report trust', () => {
             affectedTeams: [{ teamName: 'Engineering' }],
           },
         ],
-        engagementSignals: { teamsInStrain: 1, avgConditionsScore: 42 },
+        engagementSignals: { teamsInStrain: 1, avgStrainRisk: 42 },
         actionOutcomes: {
           active: 0,
           items: [
@@ -216,6 +216,10 @@ describe('monthly report trust', () => {
     expect(html).toContain("Did last month's actions work?");
     expect(html).toContain('Meeting reset');
     expect(html).toContain('Owner:');
+    expect(html).toContain('internal descriptive models');
+    expect(html).toContain('Methods and limits');
+    expect(html).not.toContain('Conditions Score');
+    expect(html).not.toContain('Turnover Risk');
     expect(html).not.toContain('attrition within 6 months');
     expect(html).not.toContain('Replacing a single senior employee');
   });

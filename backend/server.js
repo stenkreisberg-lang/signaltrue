@@ -172,9 +172,6 @@ import { refreshAllTeamsFromSlack } from './services/slackService.js';
 import { refreshAllTeamsCalendars } from './services/calendarService.js';
 import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
-import { runCrisisDetection } from './services/crisisDetectionService.js';
-import { calculateTeamAttritionRisk } from './services/attritionRiskService.js';
-import { calculateManagerEffectiveness } from './services/managerEffectivenessService.js';
 import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
 import { pullAllConnectedOrgs } from './services/integrationPullService.js';
 import { purgeAllOrgs } from './services/retentionPurgeService.js';
@@ -486,129 +483,6 @@ async function main() {
       // Start Category-King integration sync scheduler
       scheduleIntegrationJobs();
 
-      // Crisis detection - every 15 minutes (real-time anomaly detection)
-      cron.schedule('*/15 * * * *', async () => {
-        console.log('⏰ Running crisis detection...');
-        try {
-          await runCrisisDetection();
-        } catch (err) {
-          console.error('❌ Crisis detection failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Crisis detection every 15 minutes');
-
-      // Attrition risk calculation - daily at 3 AM
-      cron.schedule('0 3 * * *', async () => {
-        console.log('⏰ Running attrition risk calculation...');
-        try {
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await calculateTeamAttritionRisk(team._id);
-          }
-          console.log('✅ Attrition risk calculation completed');
-        } catch (err) {
-          console.error('❌ Attrition risk calculation failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Attrition risk daily at 3 AM');
-
-      // Manager effectiveness - monthly on 1st at 4 AM
-      cron.schedule('0 4 1 * *', async () => {
-        console.log('⏰ Running manager effectiveness calculation...');
-        try {
-          const teams = await Team.find({});
-          for (const team of teams) {
-            if (team.managerId) {
-              await calculateManagerEffectiveness(team.managerId, team._id);
-            }
-          }
-          console.log('✅ Manager effectiveness calculation completed');
-        } catch (err) {
-          console.error('❌ Manager effectiveness calculation failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Manager effectiveness monthly on 1st at 4 AM');
-
-      // Project risk analysis - daily at 2 AM
-      cron.schedule('0 2 * * *', async () => {
-        console.log('⏰ Running project risk analysis...');
-        try {
-          const { analyzeTeamProjects } = await import('./services/projectRiskService.js');
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await analyzeTeamProjects(team._id);
-          }
-          console.log('✅ Project risk analysis completed');
-        } catch (err) {
-          console.error('❌ Project risk analysis failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Project risk daily at 2 AM');
-
-      // Network health analysis - weekly on Sundays at 5 AM
-      cron.schedule('0 5 * * 0', async () => {
-        console.log('⏰ Running network health analysis...');
-        try {
-          const { analyzeNetworkHealth } = await import('./services/networkHealthService.js');
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await analyzeNetworkHealth(team._id);
-          }
-          console.log('✅ Network health analysis completed');
-        } catch (err) {
-          console.error('❌ Network health analysis failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Network health weekly on Sundays at 5 AM');
-
-      // Succession risk analysis - monthly on 15th at 3 AM
-      cron.schedule('0 3 15 * *', async () => {
-        console.log('⏰ Running succession risk analysis...');
-        try {
-          const { analyzeTeamSuccessionRisk } = await import('./services/successionRiskService.js');
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await analyzeTeamSuccessionRisk(team._id);
-          }
-          console.log('✅ Succession risk analysis completed');
-        } catch (err) {
-          console.error('❌ Succession risk analysis failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Succession risk monthly on 15th at 3 AM');
-
-      // Equity signals analysis - weekly on Mondays at 6 AM
-      cron.schedule('0 6 * * 1', async () => {
-        console.log('⏰ Running equity signals analysis...');
-        try {
-          const { analyzeTeamEquity } = await import('./services/equitySignalsService.js');
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await analyzeTeamEquity(team._id);
-          }
-          console.log('✅ Equity signals analysis completed');
-        } catch (err) {
-          console.error('❌ Equity signals analysis failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Equity signals weekly on Mondays at 6 AM');
-
-      // Outlook signals analysis - daily at 4 AM
-      cron.schedule('0 4 * * *', async () => {
-        console.log('⏰ Running Outlook signals analysis...');
-        try {
-          const { analyzeTeamOutlookSignals } = await import('./services/outlookSignalsService.js');
-          const teams = await Team.find({});
-          for (const team of teams) {
-            await analyzeTeamOutlookSignals(team._id);
-          }
-          console.log('✅ Outlook signals analysis completed');
-        } catch (err) {
-          console.error('❌ Outlook signals analysis failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Outlook signals daily at 4 AM');
-
       // ── WEEKLY REPORTS + EMAILS: Self-healing scheduler ──
       // Replaces the old fragile cron jobs with a persistent, watchdog-backed system.
       // See backend/services/weeklyEmailScheduler.js for full documentation.
@@ -643,40 +517,6 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: Monthly reports + email 1st of month at 4:00 AM');
-
-      // ── QUARTERLY REPORTS: 1st of Jan, Apr, Jul, Oct at 5:00 AM UTC ──
-      // Runs after monthly at 4 AM so the just-generated monthly is available.
-      cron.schedule('0 5 1 1,4,7,10 *', async () => {
-        console.log('⏰ Generating quarterly reports for all organizations...');
-        try {
-          const { generateQuarterlyReportsForAllOrgs } =
-            await import('./services/quarterlyReportService.js');
-          const result = await generateQuarterlyReportsForAllOrgs();
-          console.log(
-            `✅ Quarterly reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`
-          );
-        } catch (err) {
-          console.error('❌ Quarterly reports generation failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Quarterly reports Jan/Apr/Jul/Oct 1st at 5:00 AM');
-
-      // ── SEMI-ANNUAL REPORTS: 1st of Jan and Jul at 6:00 AM UTC ──
-      // Runs after quarterly at 5 AM so the just-generated quarterly is available.
-      cron.schedule('0 6 1 1,7 *', async () => {
-        console.log('⏰ Generating semi-annual reports for all organizations...');
-        try {
-          const { generateSemiAnnualReportsForAllOrgs } =
-            await import('./services/semiAnnualReportService.js');
-          const result = await generateSemiAnnualReportsForAllOrgs();
-          console.log(
-            `✅ Semi-annual reports completed: ${result.successCount} generated, ${result.skippedCount} skipped, ${result.failedCount} failed`
-          );
-        } catch (err) {
-          console.error('❌ Semi-annual reports generation failed:', err.message);
-        }
-      });
-      console.log('⏰ Cron job scheduled: Semi-annual reports Jan/Jul 1st at 6:00 AM');
 
       // Card expiry reminder - daily at 9 AM
       cron.schedule('0 9 * * *', async () => {

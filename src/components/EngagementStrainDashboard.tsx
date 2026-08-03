@@ -1,8 +1,8 @@
 /**
- * Engagement Strain Dashboard
+ * Work-Pattern Deviation Dashboard
  *
  * Executive org-level summary tile.
- * Displays every team's latest Engagement Strain Risk score in a scannable grid.
+ * Displays every team's latest internal deviation index in a scannable grid.
  *
  * Used on the Overview / Executive Summary page as an additive tile
  * alongside existing BDI, Capacity, and CLI cards.
@@ -27,25 +27,25 @@ import { useEngagementStrainSummary, TeamStrainSummary } from '../hooks/useEngag
 
 const RISK_STATE_CONFIG = {
   healthy: {
-    label: 'Healthy',
+    label: 'Within baseline',
     color: 'text-emerald-700',
     bg: 'bg-emerald-50 border-emerald-200',
     dot: 'bg-emerald-400',
   },
   watch: {
-    label: 'Watch',
+    label: 'Moderate deviation',
     color: 'text-amber-700',
     bg: 'bg-amber-50 border-amber-200',
     dot: 'bg-amber-400',
   },
   strain: {
-    label: 'Strain',
+    label: 'Elevated deviation',
     color: 'text-orange-700',
     bg: 'bg-orange-50 border-orange-200',
     dot: 'bg-orange-400',
   },
   critical: {
-    label: 'Critical',
+    label: 'Strong deviation',
     color: 'text-red-700',
     bg: 'bg-red-50 border-red-200',
     dot: 'bg-red-400',
@@ -151,25 +151,25 @@ const OrgSummaryBar: React.FC<{ teams: TeamStrainSummary[] }> = ({ teams }) => {
       {critical > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-          {critical} critical
+          {critical} strong
         </span>
       )}
       {strain > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />
-          {strain} strain
+          {strain} elevated
         </span>
       )}
       {watch > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-          {watch} watch
+          {watch} moderate
         </span>
       )}
       {healthy > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-          {healthy} healthy
+          {healthy} within baseline
         </span>
       )}
       <span className="ml-auto text-slate-500">{teams.length} teams total</span>
@@ -210,10 +210,8 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
         teams.reduce((sum, team) => sum + (team.engagementStrainRisk ?? 0), 0) / teams.length
       )
     : 0;
-  const avgConditions = teams.length
-    ? Math.round(
-        teams.reduce((sum, team) => sum + (team.engagementConditionsScore ?? 0), 0) / teams.length
-      )
+  const avgReadiness = teams.length
+    ? Math.round(teams.reduce((sum, team) => sum + (team.confidenceScore ?? 0), 0) / teams.length)
     : 0;
   const teamsInStrain = teams.filter((team) =>
     ['strain', 'critical'].includes(team.riskState)
@@ -225,11 +223,12 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
       <div className="flex items-start justify-between gap-4 mb-1">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-1">
-            Engagement measurement
+            Descriptive work-pattern model
           </p>
-          <h2 className="text-xl font-bold text-slate-900">Engagement Strain Risk</h2>
+          <h2 className="text-xl font-bold text-slate-900">Work-pattern deviation</h2>
           <p className="text-xs text-slate-600 mt-0.5">
-            Work-condition analysis from recovery, focus, responsiveness, and collaboration metadata
+            Internal index from recovery, focus, responsiveness, and collaboration metadata. Not an
+            engagement measure or probability.
           </p>
         </div>
         <button
@@ -260,7 +259,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
       {/* Empty state */}
       {!loading && !error && !teams.length && (
         <div className="mt-6 py-8 text-center text-sm text-slate-500">
-          No engagement strain data yet.
+          No work-pattern model data yet.
           <br />
           <span className="text-xs">Run the weekly scoring job to generate the first report.</span>
         </div>
@@ -273,19 +272,19 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="text-2xl font-bold text-slate-900">{avgStrain}/100</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
-                Avg strain risk
+                Avg deviation index
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-2xl font-bold text-slate-900">{avgConditions}/100</div>
+              <div className="text-2xl font-bold text-slate-900">{avgReadiness}/100</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
-                Conditions score
+                Data readiness
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="text-2xl font-bold text-slate-900">{teamsInStrain}</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
-                Teams in strain
+                Teams above review band
               </div>
             </div>
           </div>
@@ -315,7 +314,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
             onClick={() => navigate('/app/engagement-strain')}
             className="mt-3 w-full text-xs text-teal-700 hover:text-teal-800 py-2 border border-teal-200 hover:border-teal-300 rounded transition-colors"
           >
-            View full engagement strain dashboard
+            View work-pattern detail
           </button>
         </>
       )}
@@ -329,20 +328,20 @@ export default EngagementStrainDashboard;
 
 function formatDriverName(key: string): string {
   const labels: Record<string, string> = {
-    recoveryDebt: 'Recovery Debt',
-    recovery_debt: 'Recovery Debt',
-    focusErosion: 'Focus Erosion',
-    focus_erosion: 'Focus Erosion',
-    coordinationFriction: 'Coordination Friction',
-    coordination_friction: 'Coordination Friction',
-    responsivenessPressure: 'Responsiveness Pressure',
-    responsiveness_pressure: 'Responsiveness Pressure',
-    collaborationWithdrawal: 'Collaboration Withdrawal',
-    collaboration_withdrawal: 'Collaboration Withdrawal',
-    managerSupportGap: 'Manager Support Gap',
-    manager_support_gap: 'Manager Support Gap',
-    workloadVolatility: 'Workload Volatility',
-    workload_volatility: 'Workload Volatility',
+    recoveryDebt: 'Outside-schedule activity',
+    recovery_debt: 'Outside-schedule activity',
+    focusErosion: 'Focus availability',
+    focus_erosion: 'Focus availability',
+    coordinationFriction: 'Coordination metadata',
+    coordination_friction: 'Coordination metadata',
+    responsivenessPressure: 'Response patterns',
+    responsiveness_pressure: 'Response patterns',
+    collaborationWithdrawal: 'Collaboration metadata',
+    collaboration_withdrawal: 'Collaboration metadata',
+    managerSupportGap: 'Recorded 1:1 time',
+    manager_support_gap: 'Recorded 1:1 time',
+    workloadVolatility: 'Week-to-week activity',
+    workload_volatility: 'Week-to-week activity',
   };
   return labels[key] ?? key;
 }

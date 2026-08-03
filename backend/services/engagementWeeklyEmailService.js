@@ -1,7 +1,7 @@
 /**
  * Engagement Weekly Email Service
  *
- * Generates and sends the weekly Engagement Strain Risk report email
+ * Generates and sends the weekly work-pattern deviation report email
  * to team managers and org admins.
  *
  * Transport: nodemailer via SMTP (uses existing SMTP_HOST / SMTP_USER / SMTP_PASS env vars).
@@ -58,12 +58,11 @@ export async function sendWeeklyEngagementReport(orgId, weekStart) {
   const teamIds = teams.map((t) => t._id);
 
   const records = await EngagementStrainWeekly.find(
-    { teamId: { $in: teamIds }, weekStart },
+    { teamId: { $in: teamIds }, weekStart, scoringVersion: '2.1.0' },
     {
       teamId: 1,
       weekStart: 1,
       engagementStrainRisk: 1,
-      engagementConditionsScore: 1,
       riskState: 1,
       trend: 1,
       confidenceLabel: 1,
@@ -142,12 +141,12 @@ function buildSubject(sorted, weekStart) {
   const date = formatDateShort(weekStart);
 
   if (critical > 0) {
-    return `⚠️ SignalTrue Engagement Report — ${critical} team${critical > 1 ? 's' : ''} in critical range (${date})`;
+    return `SignalTrue Work-Pattern Review — ${critical} team${critical > 1 ? 's' : ''} above the strong review band (${date})`;
   }
   if (strain > 0) {
-    return `SignalTrue Engagement Report — ${strain} team${strain > 1 ? 's' : ''} showing strain (${date})`;
+    return `SignalTrue Work-Pattern Review — ${strain} team${strain > 1 ? 's' : ''} above the elevated review band (${date})`;
   }
-  return `SignalTrue Engagement Report — ${date}`;
+  return `SignalTrue Work-Pattern Review — ${date}`;
 }
 
 // ── HTML Template ──────────────────────────────────────────────────────────────
@@ -180,7 +179,7 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Engagement Strain Report</title>
+  <title>Work-Pattern Deviation Review</title>
 </head>
 <body style="margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e2e8f0;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:32px 16px;">
@@ -192,7 +191,7 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
           <td style="padding-bottom:24px;">
             <p style="margin:0;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">SignalTrue</p>
             <h1 style="margin:8px 0 4px;font-size:22px;font-weight:700;color:#f1f5f9;">
-              Weekly Engagement Strain Report
+              Weekly Work-Pattern Deviation Review
             </h1>
             <p style="margin:0;font-size:14px;color:#94a3b8;">Week of ${date}</p>
           </td>
@@ -202,14 +201,14 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
         <tr>
           <td style="background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;">
             <p style="margin:0 0 12px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;">
-              ${records.length} team${records.length !== 1 ? 's' : ''} scored this week
+              ${records.length} team${records.length !== 1 ? 's' : ''} modeled this week
             </p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                ${critical > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#ef4444;">${critical} Critical</span></td>` : ''}
-                ${strain > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#f97316;">${strain} Strain</span></td>` : ''}
-                ${watch > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#f59e0b;">${watch} Watch</span></td>` : ''}
-                ${healthy > 0 ? `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#22c55e;">${healthy} Healthy</span></td>` : ''}
+                ${critical > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#ef4444;">${critical} Strong deviation</span></td>` : ''}
+                ${strain > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;font-weight:600;color:#f97316;">${strain} Elevated</span></td>` : ''}
+                ${watch > 0 ? `<td style="padding-right:16px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#f59e0b;">${watch} Moderate</span></td>` : ''}
+                ${healthy > 0 ? `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:middle;"></span><span style="font-size:14px;color:#22c55e;">${healthy} Within baseline</span></td>` : ''}
               </tr>
             </table>
           </td>
@@ -224,7 +223,7 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
         <tr>
           <td style="background:#450a0a;border:1px solid #7f1d1d;border-radius:12px;padding:20px;margin-bottom:24px;">
             <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.06em;">
-              ⚠️ Urgent Actions Required
+              Priority review prompts
             </p>
             ${urgentActions
               .map(
@@ -260,7 +259,7 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
           <td style="text-align:center;">
             <a href="${appUrl}/app/engagement-strain"
                style="display:inline-block;padding:12px 28px;background:#6366f1;color:#fff;font-size:14px;font-weight:600;border-radius:8px;text-decoration:none;">
-              View Full Dashboard →
+              View work-pattern detail
             </a>
           </td>
         </tr>
@@ -271,11 +270,12 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
         <tr>
           <td style="border-top:1px solid #1e293b;padding-top:20px;text-align:center;">
             <p style="margin:0 0 6px;font-size:11px;color:#475569;">
-              All insights are derived from team-aggregate metadata only.
-              No individual is identified, scored, or monitored.
+              Counts and durations are observed team metadata. The 0-100 deviation index and its
+              review bands are internal descriptive models, not probabilities, diagnoses,
+              validated predictions, or employee performance measures. No individual is scored.
             </p>
             <p style="margin:0;font-size:11px;color:#334155;">
-              Minimum team size: ${minimumTeamSize} · Per-metric minimum contributors: ${MIN_METRIC_CONTRIBUTORS} · SignalTrue Engagement Strain v2.0
+              Minimum team size: ${minimumTeamSize} · Per-metric minimum contributors: ${MIN_METRIC_CONTRIBUTORS} · <a href="${appUrl}/app/methodology" style="color:#64748b;">Methods and limits</a>
             </p>
           </td>
         </tr>
@@ -303,11 +303,11 @@ function buildTeamRow(record, teamMap) {
 
   const stateLabel =
     {
-      critical: 'Critical',
-      strain: 'Strain',
-      watch: 'Watch',
-      healthy: 'Healthy',
-    }[riskState] ?? 'Watch';
+      critical: 'Strong deviation',
+      strain: 'Elevated deviation',
+      watch: 'Moderate deviation',
+      healthy: 'Within baseline',
+    }[riskState] ?? 'Moderate deviation';
 
   const trendSymbol = trend === 'rising' ? '↑' : trend === 'improving' ? '↓' : '→';
   const trendColor = trend === 'rising' ? '#ef4444' : trend === 'improving' ? '#22c55e' : '#94a3b8';
@@ -343,7 +343,7 @@ function buildTeamRow(record, teamMap) {
             ? `
         <tr>
           <td colspan="2" style="padding-top:6px;">
-            <span style="font-size:11px;color:#64748b;">Top driver: ${topDriver}</span>
+            <span style="font-size:11px;color:#64748b;">Top modeled driver: ${topDriver}</span>
           </td>
         </tr>`
             : ''
@@ -377,13 +377,13 @@ function formatDateFull(iso) {
 
 function formatDriverName(key) {
   const labels = {
-    recoveryDebt: 'Recovery Debt',
-    focusErosion: 'Focus Erosion',
-    coordinationFriction: 'Coordination Friction',
-    responsivenessPressure: 'Responsiveness Pressure',
-    collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap: 'Manager Support Gap',
-    workloadVolatility: 'Workload Volatility',
+    recoveryDebt: 'Outside-schedule activity',
+    focusErosion: 'Focus availability',
+    coordinationFriction: 'Coordination metadata',
+    responsivenessPressure: 'Response patterns',
+    collaborationWithdrawal: 'Collaboration metadata',
+    managerSupportGap: 'Recorded 1:1 time',
+    workloadVolatility: 'Week-to-week activity',
   };
   return labels[key] ?? key;
 }

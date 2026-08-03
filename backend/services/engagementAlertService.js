@@ -37,7 +37,7 @@ import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
  * @param {string} orgId
  * @returns {Array}         — alert objects (may be empty). Caller persists if needed.
  */
-export async function evaluateAlerts(current, teamId, orgId) {
+export async function evaluateAlerts(current, teamId, _orgId) {
   // Fetch up to 4 prior weeks for trend context
   const history = await EngagementStrainWeekly.find(
     { teamId, weekStart: { $lt: current.weekStart } },
@@ -76,9 +76,9 @@ function checkRisingStrain(current, history) {
   if (wowDelta !== null && wowDelta >= 8) {
     alerts.push({
       alertType: 'rising_strain',
-      title: 'Engagement Strain Rising',
+      title: 'Work-pattern deviation increased',
       severity: wowDelta >= 15 || score >= 70 ? 'critical' : 'warning',
-      message: `Team engagement strain risk rose ${wowDelta} points week-over-week (now ${score}).`,
+      message: `The internal deviation index rose ${wowDelta} points week-over-week (now ${score}). Review the underlying direct metrics and context.`,
       context: {
         currentScore: score,
         previousScore: lastWeek.engagementStrainRisk,
@@ -91,9 +91,9 @@ function checkRisingStrain(current, history) {
     // Only fire the 3-week trend alert if the WoW alert didn't already fire
     alerts.push({
       alertType: 'rising_strain',
-      title: 'Sustained Engagement Strain Increase',
+      title: 'Sustained work-pattern deviation increase',
       severity: score >= 70 ? 'critical' : 'warning',
-      message: `Team engagement strain risk rose ${triDelta} points over 3 weeks (now ${score}).`,
+      message: `The internal deviation index rose ${triDelta} points over 3 weeks (now ${score}). This is a review rule, not a validated risk threshold.`,
       context: {
         currentScore: score,
         threeWeeksAgo: threeAgo.engagementStrainRisk,
@@ -116,13 +116,13 @@ function checkCriticalDriver(current) {
   if (!subscores) return alerts;
 
   const DRIVER_LABELS = {
-    recoveryDebt: 'Recovery Debt',
-    focusErosion: 'Focus Erosion',
-    coordinationFriction: 'Coordination Friction',
-    responsivenessPressure: 'Responsiveness Pressure',
-    collaborationWithdrawal: 'Collaboration Withdrawal',
-    managerSupportGap: 'Manager Support Gap',
-    workloadVolatility: 'Workload Volatility',
+    recoveryDebt: 'Outside-schedule activity',
+    focusErosion: 'Focus availability',
+    coordinationFriction: 'Coordination metadata',
+    responsivenessPressure: 'Response patterns',
+    collaborationWithdrawal: 'Collaboration metadata',
+    managerSupportGap: 'Recorded 1:1 time',
+    workloadVolatility: 'Week-to-week activity',
   };
 
   for (const [key, label] of Object.entries(DRIVER_LABELS)) {
@@ -130,9 +130,9 @@ function checkCriticalDriver(current) {
     if (score >= 70) {
       alerts.push({
         alertType: 'critical_driver',
-        title: `Critical Driver: ${label}`,
+        title: `Modeled driver above strong review band: ${label}`,
         severity: score >= 85 ? 'critical' : 'warning',
-        message: `${label} reached ${score} — in the critical risk band.`,
+        message: `${label} reached ${score}, crossing a SignalTrue internal review band. Verify its direct component metrics before acting.`,
         context: {
           driver: key,
           driverLabel: label,
@@ -164,9 +164,9 @@ function checkFastDrift(current, history) {
 
     alerts.push({
       alertType: 'fast_drift',
-      title: `Fast Score Drift Detected`,
+      title: `Large model-score change detected`,
       severity: 'warning',
-      message: `Team engagement strain risk ${direction} by ${delta} points over 4 weeks — rapid drift may indicate a structural change.`,
+      message: `The internal deviation index ${direction} by ${delta} points over 4 weeks. Check data coverage and business context before interpreting the change.`,
       context: {
         currentScore: current.engagementStrainRisk,
         fourWeeksAgo: fourWeeksAgo.engagementStrainRisk,
@@ -192,9 +192,9 @@ function checkSilentWithdrawal(current) {
   if (cw >= 65 && overall < 55) {
     alerts.push({
       alertType: 'silent_withdrawal',
-      title: 'Silent Withdrawal Detected',
+      title: 'Collaboration metadata decline met a review rule',
       severity: cw >= 80 ? 'critical' : 'warning',
-      message: `Collaboration Withdrawal (${cw}) is elevated while overall strain score appears moderate (${overall}) — disengagement may be underway without visible strain markers.`,
+      message: `The collaboration model dimension (${cw}) is above its review band while the overall deviation index is ${overall}. Metadata does not establish disengagement or intent.`,
       context: {
         collaborationWithdrawal: cw,
         overallRisk: overall,
@@ -209,7 +209,7 @@ function checkSilentWithdrawal(current) {
 
 // ── Alert 5: Recovery Collapse ─────────────────────────────────────────────────
 // Fires when Recovery Debt >= 80 for 2 or more consecutive weeks.
-// Sustained high recovery debt is a strong precursor to burnout.
+// Sustained model deviation triggers a team-level context review, not an outcome prediction.
 
 function checkRecoveryCollapse(current, history) {
   const alerts = [];
@@ -230,9 +230,9 @@ function checkRecoveryCollapse(current, history) {
   if (consecutiveWeeks >= 2) {
     alerts.push({
       alertType: 'recovery_collapse',
-      title: 'Sustained Recovery Debt — Burnout Risk',
+      title: 'Sustained recovery-pattern deviation',
       severity: consecutiveWeeks >= 3 ? 'critical' : 'warning',
-      message: `Recovery Debt has been in the critical range (${thisRD}) for ${consecutiveWeeks} consecutive weeks. Sustained after-hours work patterns significantly increase burnout risk.`,
+      message: `The recovery-pattern model has remained above its strong internal review band (${thisRD}) for ${consecutiveWeeks} consecutive weeks. Review the direct after-hours and calendar metrics; this is not a burnout diagnosis or prediction.`,
       context: {
         recoveryDebt: thisRD,
         consecutiveWeeks,

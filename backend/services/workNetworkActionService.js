@@ -1,7 +1,14 @@
 import Intervention from '../models/intervention.js';
 import { getWorkNetworkMap, readWorkNetworkMetric } from './workNetworkService.js';
 
-const LOWER_IS_BETTER = new Set(['interactionUnits', 'bridgeConcentration', 'crossTeamUnits']);
+const LOWER_IS_BETTER = new Set([
+  'interactionUnits',
+  'interactionCount',
+  'meetingHours',
+  'bridgeConcentration',
+  'crossTeamUnits',
+  'crossTeamMeetingHours',
+]);
 
 export function calculateWorkNetworkOutcome(metricName, before, after) {
   const baseline = Number(before);

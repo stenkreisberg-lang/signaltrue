@@ -81,7 +81,13 @@ describe('Work Network analysis', () => {
     );
     expect(result.insights.some((item) => item.type === 'hidden_dependency')).toBe(true);
     expect(result.insights.some((item) => item.type === 'connector_concentration')).toBe(true);
+    expect(result.insights.find((item) => item.type === 'hidden_dependency').metric.name).toBe(
+      'meetingHours'
+    );
+    expect(readWorkNetworkMetric(result, 'meetingHours', ['eng', 'sales'])).toBe(2.5);
     expect(readWorkNetworkMetric(result, 'bridgeConcentration', ['eng', 'sales'])).toBe(100);
+    expect(result.methodology.validationStatus).toContain('not externally validated');
+    expect(result.confidence).toBeUndefined();
     expect(result.privacy.contentUsed).toBe(false);
     expect(JSON.stringify(result)).not.toMatch(/e1|s1|p1/);
   });
@@ -96,6 +102,7 @@ describe('Work Network analysis', () => {
     });
 
     expect(result.readiness.ready).toBe(false);
+    expect(result.readiness.score).toBe(75);
     expect(result.readiness.mappingCoverage).toBe(0.75);
     expect(result.actualEdges).toEqual([]);
     expect(result.insights).toEqual([]);

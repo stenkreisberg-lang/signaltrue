@@ -334,12 +334,11 @@ function actionFor(type, teamAName, teamBName = null) {
 
 function buildInsights(edges, nodes, teamById) {
   if (!edges.length || !nodes.length) return [];
-  const edgeUnits = edges.map((edge) => edge.interactionUnits);
-  const strongEdge = percentile(edgeUnits, 75);
-  const nodeCrossUnits = nodes.map((node) => node.crossTeamUnits);
-  const highCrossLoad = percentile(nodeCrossUnits, 75);
+  const edgeActivity = edges.map((edge) => edge.interactionCount);
+  const strongEdge = percentile(edgeActivity, 75);
+  const crossTeamMeetingHours = nodes.map((node) => node.crossTeamMeetingHours);
+  const highCrossLoad = percentile(crossTeamMeetingHours, 75);
   const outsideShares = nodes.map((node) => node.outsideTeamShare);
-  const lowOutsideShare = percentile(outsideShares, 25);
   const medianOutsideShare = percentile(outsideShares, 50);
   const insights = [];
 
@@ -353,20 +352,23 @@ function buildInsights(edges, nodes, teamById) {
 
     if (
       !edge.formalConnection &&
-      edge.interactionUnits >= strongEdge &&
+      edge.interactionCount >= strongEdge &&
       edge.interactionCount >= 3
     ) {
       insights.push({
         id: `hidden_dependency:${pairKey(edge.teamAId, edge.teamBId)}`,
         type: 'hidden_dependency',
         severity: 'high',
-        title: `Hidden operating dependency: ${teamAName} ↔ ${teamBName}`,
+        title: `Unmapped operating link: ${teamAName} ↔ ${teamBName}`,
         summary:
           'This is one of the stronger observed coordination paths, but no cross-team reporting link explains it.',
         evidence: [...evidenceBase, 'No formal cross-team reporting link in the current directory'],
         teamIds: [edge.teamAId, edge.teamBId],
         primaryTeamId: edge.teamAId,
-        metric: { name: 'interactionUnits', value: edge.interactionUnits },
+        metric: {
+          name: edge.meetingHours > 0 ? 'meetingHours' : 'interactionCount',
+          value: edge.meetingHours > 0 ? edge.meetingHours : edge.interactionCount,
+        },
         action: actionFor('hidden_dependency', teamAName, teamBName),
       });
     }
@@ -418,7 +420,7 @@ function buildInsights(edges, nodes, teamById) {
     .filter(
       (node) =>
         node.partnerCount >= 3 &&
-        node.crossTeamUnits >= highCrossLoad &&
+        node.crossTeamMeetingHours >= highCrossLoad &&
         node.outsideTeamShare >= medianOutsideShare
     )
     .sort((a, b) => b.crossTeamUnits - a.crossTeamUnits)[0];
@@ -437,35 +439,8 @@ function buildInsights(edges, nodes, teamById) {
       ],
       teamIds: [overloaded.id],
       primaryTeamId: overloaded.id,
-      metric: { name: 'crossTeamUnits', value: overloaded.crossTeamUnits },
+      metric: { name: 'crossTeamMeetingHours', value: overloaded.crossTeamMeetingHours },
       action: actionFor('interface_overload', overloaded.name),
-    });
-  }
-
-  const isolated = nodes
-    .filter(
-      (node) =>
-        node.totalInteractionUnits >= 10 &&
-        node.outsideTeamShare <= lowOutsideShare &&
-        node.outsideTeamShare < 0.1
-    )
-    .sort((a, b) => a.outsideTeamShare - b.outsideTeamShare)[0];
-  if (isolated) {
-    insights.push({
-      id: `unusual_isolation:${isolated.id}`,
-      type: 'unusual_isolation',
-      severity: 'medium',
-      title: `${isolated.name} has unusually little outside-team coordination`,
-      summary:
-        'The pattern may be intentional. It is worth checking only if this team depends on handoffs or shared decisions with other functions.',
-      evidence: [
-        `${Math.round(isolated.outsideTeamShare * 100)}% of measured interaction is outside the team`,
-        `${isolated.partnerCount} active partner teams`,
-      ],
-      teamIds: [isolated.id],
-      primaryTeamId: isolated.id,
-      metric: { name: 'outsideTeamShare', value: round(isolated.outsideTeamShare * 100) },
-      action: actionFor('unusual_isolation', isolated.name),
     });
   }
 
@@ -521,13 +496,8 @@ export function analyzeWorkNetwork({
     eligibleTeams.size >= 2 &&
     current.interactionEventCount >= MIN_EVENTS;
 
-  const confidenceScore = Math.round(
-    40 * mappingCoverage +
-      30 * eventMappingCoverage +
-      20 * Math.min(1, current.interactionEventCount / 50) +
-      10 * Math.min(1, current.sources.size / 2)
-  );
-  const confidenceLabel = confidenceScore >= 80 ? 'High' : confidenceScore >= 60 ? 'Medium' : 'Low';
+  const confidenceScore = Math.round(Math.min(mappingCoverage, eventMappingCoverage) * 100);
+  const confidenceLabel = ready ? 'Ready' : confidenceScore >= 60 ? 'Partial' : 'Needs setup';
   const readinessReasons = [];
   if (mappingCoverage < READY_COVERAGE)
     readinessReasons.push('Fewer than 80% of active users map to named teams.');
@@ -649,6 +619,8 @@ export function analyzeWorkNetwork({
     },
     readiness: {
       ready,
+      score: confidenceScore,
+      label: confidenceLabel,
       mappingCoverage: round(mappingCoverage, 3),
       eventMappingCoverage: round(eventMappingCoverage, 3),
       activeUsers: activeUserCount,
@@ -658,15 +630,6 @@ export function analyzeWorkNetwork({
       interactionEvents: current.interactionEventCount,
       sources: [...current.sources].sort(),
       reasons: readinessReasons,
-    },
-    confidence: {
-      score: confidenceScore,
-      label: confidenceLabel,
-      reasons: [
-        `${Math.round(mappingCoverage * 100)}% user-to-team mapping`,
-        `${Math.round(eventMappingCoverage * 100)}% event-to-user mapping`,
-        `${current.interactionEventCount} interaction events across ${current.sources.size} source(s)`,
-      ],
     },
     summary: {
       measuredTeams: nodes.length,
@@ -680,6 +643,22 @@ export function analyzeWorkNetwork({
     formalEdges,
     actualEdges,
     insights,
+    methodology: {
+      measurementType: 'descriptive organizational network analysis',
+      validationStatus:
+        'Team links and concentration use established graph concepts. SignalTrue privacy gates, combined ranking units, percentiles, and review bands are internal product rules and are not externally validated risk thresholds.',
+      observedMetrics: [
+        'meeting count',
+        'meeting hours',
+        'directed interaction count',
+        'active partner teams',
+      ],
+      internalRules: [
+        'five-contributor privacy minimum',
+        '80% mapping readiness',
+        'within-company percentile review rules',
+      ],
+    },
     privacy: {
       identityLevel: 'team only',
       minimumContributors: MIN_METRIC_CONTRIBUTORS,
@@ -702,6 +681,9 @@ export function readWorkNetworkMetric(network, metricName, teamIds = []) {
     if (!edge) return null;
     const edgeMetrics = {
       interactionUnits: edge.interactionUnits,
+      interactionCount: edge.interactionCount,
+      meetingHours: edge.meetingHours,
+      directedInteractionCount: edge.directedInteractionCount,
       bridgeConcentration: edge.bridgeConcentration * 100,
       directionBalance: edge.directionBalance * 100,
     };
@@ -711,6 +693,8 @@ export function readWorkNetworkMetric(network, metricName, teamIds = []) {
     if (!node) return null;
     const nodeMetrics = {
       crossTeamUnits: node.crossTeamUnits,
+      crossTeamMeetingHours: node.crossTeamMeetingHours,
+      partnerCount: node.partnerCount,
       outsideTeamShare: node.outsideTeamShare * 100,
     };
     value = nodeMetrics[metricName];

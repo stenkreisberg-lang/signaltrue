@@ -359,7 +359,7 @@ router.post(
           trend: report.orgHealth.bdiTrend,
           teamsAtRisk: report.orgHealth.teamsAtRisk,
           persistentRisks: report.persistentRisks.length,
-          criticalAttritionRisk: report.retentionExposure.criticalIndividualsCount,
+          attritionMeasurement: 'unavailable',
           trajectory: report.aiSummary.organizationalTrajectory,
         },
         report: sanitizeReportForPrivacy(report, req),
@@ -621,6 +621,13 @@ router.get('/email-status', async (req, res) => {
 // Strategic 13-week review. Aggregated from 3 MonthlyReports.
 // Recipients: master_admin, hr_admin, executive
 // ═══════════════════════════════════════════════════════════════════════════════
+
+router.use(['/quarterly', '/semiannual'], authenticateToken, (_req, res) => {
+  res.status(410).json({
+    message:
+      'Legacy quarterly and semi-annual scorecards are paused pending validation. Weekly and monthly descriptive briefs remain available.',
+  });
+});
 
 /**
  * GET /api/reports/quarterly/latest

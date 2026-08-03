@@ -94,35 +94,13 @@ function recoveryDebtRecommendations(score) {
   return [
     {
       actionId: 'recovery_enforce_boundaries',
-      title: 'Enforce After-Hours Communication Boundaries',
+      title: 'Review Outside-Schedule Activity',
       description:
-        'Establish a team norm that non-urgent messages sent after hours do not require same-day responses, reducing the implied pressure to stay always-on.',
+        'Check the direct messaging and email ratios, connector coverage, time zones, deadlines, and on-call context. If the team confirms an unwanted pattern, test a norm that non-urgent messages do not require an outside-schedule response.',
       priority,
       category: 'recovery',
-      trigger: `Recovery Debt score ${score} — after-hours activity is above team baseline`,
+      trigger: `Outside-schedule activity model ${score} — internal review band crossed`,
     },
-    {
-      actionId: 'recovery_audit_weekend_activity',
-      title: 'Audit Weekend and Off-Day Activity Patterns',
-      description:
-        'Review whether recurring tasks, on-call rotations, or deadline patterns are systematically driving work into recovery windows.',
-      priority: 'high',
-      category: 'recovery',
-      trigger: `Recovery Debt score ${score} — recovery gap violations detected`,
-    },
-    ...(score >= T_URGENT
-      ? [
-          {
-            actionId: 'recovery_manager_check_in',
-            title: 'Manager: Schedule a Team Wellbeing Check-In',
-            description:
-              'The recovery debt level is in the critical range. A structured team conversation about sustainable work pace is recommended before burnout signals emerge.',
-            priority: 'urgent',
-            category: 'recovery',
-            trigger: `Recovery Debt score ${score} — critical threshold exceeded`,
-          },
-        ]
-      : []),
   ];
 }
 
@@ -133,30 +111,21 @@ function focusErosionRecommendations(score) {
   return [
     {
       actionId: 'focus_protect_deep_work_blocks',
-      title: 'Protect Dedicated Deep-Work Time Blocks',
+      title: 'Test One Protected Focus Window',
       description:
-        'Introduce a team agreement to block 2–4 hours of contiguous focus time per person per day, with no meetings scheduled during that window.',
+        'Inspect focus availability, fragmentation, and meeting hours. If the team confirms a problem, test one protected focus window and compare the same direct metrics after two weeks.',
       priority,
       category: 'focus',
-      trigger: `Focus Erosion score ${score} — focus hours below team baseline`,
+      trigger: `Focus-availability model ${score} — internal review band crossed`,
     },
     {
       actionId: 'focus_meeting_audit',
       title: 'Conduct a Meeting Necessity Audit',
       description:
-        'Review recurring meetings for necessity and attendance. Remove or shorten meetings that fragment focus blocks without proportionate collaboration value.',
+        'Review one recurring meeting for purpose, attendance, and duration. Change it only after checking the direct calendar values and team context.',
       priority: 'high',
       category: 'focus',
-      trigger: `Focus Erosion score ${score} — fragmented day ratio and back-to-back meeting count elevated`,
-    },
-    {
-      actionId: 'focus_async_first_norm',
-      title: 'Introduce Async-First Communication Norms',
-      description:
-        'Encourage replacing ad-hoc synchronous meetings with structured async updates for status sharing, freeing calendar space for deep work.',
-      priority: 'medium',
-      category: 'focus',
-      trigger: `Focus Erosion score ${score} — meeting hours displacing individual work time`,
+      trigger: `Focus-availability model ${score} — review the underlying calendar metrics`,
     },
   ];
 }
@@ -168,30 +137,21 @@ function coordinationFrictionRecommendations(score) {
   return [
     {
       actionId: 'coord_reduce_meeting_size',
-      title: 'Reduce Average Meeting Attendee Count',
+      title: 'Review the Largest Coordination Driver',
       description:
-        'Review standing meetings and ensure only essential contributors attend. Large meeting size is increasing coordination overhead without proportionate decision value.',
+        'Identify whether attendee-hours, meeting size, or recurrence moved most. Review one meeting with its owner and measure the same direct value after any change.',
       priority,
       category: 'coordination',
-      trigger: `Coordination Friction score ${score} — attendee-hours per person elevated`,
+      trigger: `Coordination-metadata model ${score} — internal review band crossed`,
     },
     {
       actionId: 'coord_prune_recurring_meetings',
       title: 'Prune the Recurring Meeting Calendar',
       description:
-        'Conduct a recurring-meeting review to cancel or consolidate meetings that no longer serve a clear purpose. Recurring meeting debt compounds quickly.',
+        'If recurrence is the direct driver, ask the meeting owner whether one series can be shortened, combined, or ended, then compare participant-hours.',
       priority: 'high',
       category: 'coordination',
-      trigger: `Coordination Friction score ${score} — recurring meeting ratio above baseline`,
-    },
-    {
-      actionId: 'coord_define_dri',
-      title: 'Clarify Decision Ownership (DRI Model)',
-      description:
-        'High coordination friction often signals unclear decision ownership. Assign a Directly Responsible Individual (DRI) to recurring cross-team decisions to reduce the need for large alignment meetings.',
-      priority: 'medium',
-      category: 'coordination',
-      trigger: `Coordination Friction score ${score} — cross-team meeting load elevated`,
+      trigger: `Coordination-metadata model ${score} — inspect recurrence before acting`,
     },
   ];
 }
@@ -203,30 +163,12 @@ function managerSupportGapRecommendations(score) {
   return [
     {
       actionId: 'manager_restore_1to1_cadence',
-      title: 'Restore Regular 1:1 Cadence',
+      title: 'Validate Recorded 1:1 Cadence',
       description:
-        'Manager 1:1 time per person has dropped below the team baseline. Re-establish a consistent weekly 1:1 schedule and treat cancellations as exceptional rather than routine.',
+        'First confirm that the calendar integration identifies 1:1 meetings correctly. Then ask the team lead whether the measured change was intentional and restore the agreed cadence only if needed.',
       priority,
       category: 'manager',
-      trigger: `Manager Support Gap score ${score} — 1:1 minutes per person below baseline`,
-    },
-    {
-      actionId: 'manager_reduce_meeting_load',
-      title: 'Reduce Manager Meeting Load to Protect 1:1 Capacity',
-      description:
-        "The manager's calendar is likely full with coordination meetings, leaving insufficient time for direct reports. Audit the manager's meeting obligations and delegate or remove where possible.",
-      priority: 'high',
-      category: 'manager',
-      trigger: `Manager Support Gap score ${score} — manager meeting load elevated`,
-    },
-    {
-      actionId: 'manager_async_response_availability',
-      title: 'Improve Manager Async Availability',
-      description:
-        'Manager response latency is elevated. Even when synchronous time is limited, timely async responses maintain team trust and unblock work.',
-      priority: 'medium',
-      category: 'manager',
-      trigger: `Manager Support Gap score ${score} — manager response latency elevated`,
+      trigger: `Recorded 1:1-time model ${score} — internal review band crossed`,
     },
   ];
 }
@@ -238,30 +180,12 @@ function collaborationWithdrawalRecommendations(score) {
   return [
     {
       actionId: 'collab_diagnose_isolation',
-      title: 'Investigate Causes of Declining Collaboration',
+      title: 'Review Collaboration-Metadata Coverage and Context',
       description:
-        'Unique collaborator counts and cross-team interaction are falling. This may reflect workload pressure, process friction, or early disengagement. A structured team conversation can surface root causes.',
+        'Check that relevant channels and accounts are connected, then ask whether the measured change reflects planned work. Use a team conversation or voluntary survey for context the metadata cannot provide.',
       priority,
       category: 'collaboration',
-      trigger: `Collaboration Withdrawal score ${score} — unique collaborators per person declining`,
-    },
-    {
-      actionId: 'collab_reinforce_public_channels',
-      title: 'Reinforce Use of Public Channels for Team Communication',
-      description:
-        'Encourage work-relevant conversations to happen in shared, searchable channels rather than direct messages. This restores visibility and reduces isolation.',
-      priority: 'medium',
-      category: 'collaboration',
-      trigger: `Collaboration Withdrawal score ${score} — public channel ratio declining`,
-    },
-    {
-      actionId: 'collab_cross_team_rituals',
-      title: 'Introduce or Reinstate Cross-Team Interaction Rituals',
-      description:
-        'Low cross-team interaction can be addressed with lightweight, optional rituals (e.g. cross-team showcases, async updates to adjacent teams) to rebuild connection without adding meeting overhead.',
-      priority: 'medium',
-      category: 'collaboration',
-      trigger: `Collaboration Withdrawal score ${score} — cross-team interaction ratio low`,
+      trigger: `Collaboration-metadata model ${score} — internal review band crossed`,
     },
   ];
 }
@@ -276,12 +200,12 @@ function compoundRules(subscores, patterns) {
   if (patternTypes.has('hidden_strain')) {
     actions.push({
       actionId: 'compound_hidden_strain_surface',
-      title: 'Surface Hidden Async Strain to Leadership',
+      title: 'Review the after-hours and response-pattern deviation',
       description:
-        'Work pressure is arriving through async channels and is invisible in meeting data. This pattern is frequently missed in standard workload reviews. Escalate for leadership visibility.',
+        'Outside-schedule and response metadata moved while meeting-load indicators did not. Validate connector coverage and ask what changed before choosing an action.',
       priority: 'high',
       category: 'recovery',
-      trigger: 'Hidden Strain pattern detected — async pressure not visible in calendar signals',
+      trigger: 'Internal co-occurrence rule matched for messaging and calendar metadata',
     });
   }
 
@@ -291,11 +215,10 @@ function compoundRules(subscores, patterns) {
       actionId: 'compound_quiet_withdrawal_engagement',
       title: 'Run a Pulse Survey or Stay Conversation',
       description:
-        'Quiet Withdrawal is an early disengagement signal. A brief, anonymous pulse survey or structured stay conversation can identify whether this reflects workload, team dynamics, or external factors.',
+        'Collaboration metadata moved below baseline without explaining the cause. A brief, anonymous pulse survey or structured team conversation can add the context that metadata cannot provide.',
       priority: 'high',
       category: 'collaboration',
-      trigger:
-        'Quiet Withdrawal pattern detected — collaborative disengagement without overt strain signals',
+      trigger: 'Collaboration metadata decline met an internal review rule',
     });
   }
 
@@ -303,38 +226,38 @@ function compoundRules(subscores, patterns) {
   if (patternTypes.has('engagement_theatre')) {
     actions.push({
       actionId: 'compound_engagement_theatre_quality',
-      title: 'Shift Focus from Communication Volume to Communication Quality',
+      title: 'Review high activity with low reciprocity',
       description:
-        'High message and meeting volume is not generating reciprocal engagement. Introduce conversation quality norms — structured agendas, explicit asks, and thread-reply expectations — to make communication more bilateral.',
+        'High message and meeting volume coincides with lower measured reciprocity. Validate whether the metadata captures the relevant channels, then test structured agendas, explicit asks, or clearer thread ownership.',
       priority: 'medium',
       category: 'collaboration',
-      trigger: 'Engagement Theatre pattern detected — high activity with low reciprocity',
+      trigger: 'Internal co-occurrence rule matched for activity and reciprocity metadata',
     });
   }
 
   // Recovery Debt + Focus Erosion both critical
   if (subscores.recoveryDebt >= T_URGENT && subscores.focusErosion >= T_URGENT) {
     actions.push({
-      actionId: 'compound_burnout_risk_escalation',
-      title: 'Escalate: Compound Burnout Risk Indicators Present',
+      actionId: 'compound_recovery_focus_review',
+      title: 'Review combined recovery and focus deviations',
       description:
-        'Both Recovery Debt and Focus Erosion are in the critical range simultaneously. This combination represents a high risk of team burnout. Immediate workload review and leadership escalation is recommended.',
+        'Both recovery and focus model dimensions crossed the strong internal review band. Review the direct calendar and after-hours metrics with leadership; the model does not establish burnout or its cause.',
       priority: 'urgent',
       category: 'recovery',
-      trigger: `Recovery Debt ${subscores.recoveryDebt} + Focus Erosion ${subscores.focusErosion} — both critical`,
+      trigger: `Recovery pattern ${subscores.recoveryDebt} + focus pattern ${subscores.focusErosion} — both above the strong internal review band`,
     });
   }
 
-  // Manager Bottleneck: high coordination friction + high manager support gap
+  // Recorded 1:1 time and coordination metadata both cross internal review bands.
   if (subscores.coordinationFriction >= T_HIGH && subscores.managerSupportGap >= T_HIGH) {
     actions.push({
       actionId: 'compound_manager_bottleneck_delegation',
-      title: 'Delegate Coordination Responsibilities Away from Manager',
+      title: 'Review Coordination and Recorded 1:1 Time Together',
       description:
-        'The manager is simultaneously carrying high coordination load and showing insufficient support capacity for the team. Redistributing coordination ownership (tech leads, process owners) can free manager capacity for people leadership.',
+        'The two model components moved together. Verify meeting ownership and 1:1 identification, ask the team lead for context, and test one change tied to a direct calendar metric.',
       priority: 'high',
       category: 'manager',
-      trigger: `Coordination Friction ${subscores.coordinationFriction} + Manager Support Gap ${subscores.managerSupportGap} — manager bottleneck compound`,
+      trigger: `Coordination metadata ${subscores.coordinationFriction} + recorded 1:1 time ${subscores.managerSupportGap} — internal co-occurrence rule`,
     });
   }
 
