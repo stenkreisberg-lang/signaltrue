@@ -1,7 +1,7 @@
 import express from 'express';
 import Intervention from '../models/intervention.js';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
-import { getWorkNetworkMap } from '../services/workNetworkService.js';
+import { getWorkNetworkMap, readWorkNetworkMetric } from '../services/workNetworkService.js';
 
 const router = express.Router();
 const leadershipOnly = requireRoles([
@@ -21,30 +21,45 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ message: 'Days must be between 14 and 90.' });
     }
     const network = await getWorkNetworkMap(req.user.orgId, { days });
-    const trackedActions = network.insights.length
-      ? await Intervention.find({
-          orgId: req.user.orgId,
-          status: { $in: ['planned', 'active', 'pending-recheck'] },
-          'expectedEffectJson.workNetworkInsightId': {
-            $in: network.insights.map((insight) => insight.id),
-          },
-        })
-          .select('_id status recheckDate expectedEffectJson.workNetworkInsightId')
-          .lean()
-      : [];
-    const trackedByInsight = new Map(
-      trackedActions.map((action) => [
-        action.expectedEffectJson.workNetworkInsightId,
-        {
+    const trackedActions = await Intervention.find({
+      orgId: req.user.orgId,
+      actionType: /^work_network_/,
+      status: { $nin: ['cancelled', 'ignored', 'abandoned'] },
+    })
+      .select(
+        '_id title status actionTaken expectedEffect recheckDate outcomeDelta outcomeSummary expectedEffectJson createdAt'
+      )
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+    const trackedByInsight = new Map();
+    for (const action of trackedActions) {
+      const insightId = action.expectedEffectJson?.workNetworkInsightId;
+      if (!trackedByInsight.has(insightId)) {
+        trackedByInsight.set(insightId, {
           interventionId: action._id,
           status: action.status,
           recheckDate: action.recheckDate,
-        },
-      ])
-    );
+        });
+      }
+    }
     network.insights = network.insights.map((insight) => ({
       ...insight,
       tracking: trackedByInsight.get(insight.id) || null,
+    }));
+    network.trackedActions = trackedActions.map((action) => ({
+      id: action._id,
+      title: action.title,
+      status: action.status,
+      action: action.actionTaken,
+      expectedEffect: action.expectedEffect,
+      owner: action.expectedEffectJson?.owner,
+      metricName: action.expectedEffectJson?.metric?.name,
+      recheckStatus: action.expectedEffectJson?.recheckStatus || null,
+      recheckDate: action.recheckDate,
+      outcome: action.outcomeDelta || null,
+      outcomeSummary: action.outcomeSummary || null,
+      createdAt: action.createdAt,
     }));
     res.set('Cache-Control', 'private, no-store');
     return res.json(network);
@@ -88,6 +103,27 @@ router.post('/actions', async (req, res) => {
       });
     }
 
+    const measurementWindowDays = 14;
+    const measurementNetwork =
+      days === measurementWindowDays
+        ? network
+        : await getWorkNetworkMap(req.user.orgId, { days: measurementWindowDays });
+    if (!measurementNetwork.readiness.ready) {
+      return res.status(409).json({
+        message: 'At least 14 days of ready data are required to establish an action baseline.',
+      });
+    }
+    const baselineValue = readWorkNetworkMetric(
+      measurementNetwork,
+      insight.metric?.name,
+      insight.teamIds
+    );
+    if (baselineValue == null) {
+      return res.status(409).json({
+        message: 'This action does not meet the 14-day contributor threshold for measurement.',
+      });
+    }
+
     const signalType =
       insight.type === 'interface_overload'
         ? 'coordination-risk'
@@ -108,16 +144,17 @@ router.post('/actions', async (req, res) => {
         workNetworkInsightId: insight.id,
         owner: insight.action.owner,
         measure: insight.action.measure,
-        metric: insight.metric,
+        metric: { ...insight.metric, value: baselineValue },
         evidence: insight.evidence,
         teamIds: insight.teamIds,
-        measurementWindowDays: days,
+        sourceWindowDays: days,
+        measurementWindowDays,
       },
       monitoredSignals: ['coordination_strain'],
       effort: 'Low',
       timeframe: '2 weeks',
       status: 'active',
-      outcomeDelta: { metricBefore: insight.metric?.value },
+      outcomeDelta: { metricBefore: baselineValue },
       createdBy: req.user.userId,
     });
 

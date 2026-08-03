@@ -1,4 +1,5 @@
 import { analyzeWorkNetwork, readWorkNetworkMetric } from '../services/workNetworkService.js';
+import { calculateWorkNetworkOutcome } from '../services/workNetworkActionService.js';
 
 const currentStart = new Date('2026-07-01T00:00:00.000Z');
 const currentEnd = new Date('2026-07-29T00:00:00.000Z');
@@ -115,5 +116,16 @@ describe('Work Network analysis', () => {
     expect(result.readiness.ready).toBe(true);
     expect(result.actualEdges).toEqual([]);
     expect(result.summary.suppressedConnections).toBe(1);
+  });
+
+  test('grades rechecks in the correct direction for each network metric', () => {
+    expect(calculateWorkNetworkOutcome('bridgeConcentration', 70, 45)).toMatchObject({
+      percentChange: -35.7,
+      improved: true,
+    });
+    expect(calculateWorkNetworkOutcome('directionBalance', 20, 50)).toMatchObject({
+      percentChange: 150,
+      improved: true,
+    });
   });
 });

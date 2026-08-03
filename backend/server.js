@@ -464,6 +464,22 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: Integration data pull every 15 minutes (6am-10pm)');
 
+      // Work Network action outcomes - daily after the first integration sync
+      cron.schedule('20 6 * * *', async () => {
+        console.log('⏰ Rechecking due Work Network actions...');
+        try {
+          const { recheckDueWorkNetworkInterventions } =
+            await import('./services/workNetworkActionService.js');
+          const result = await recheckDueWorkNetworkInterventions();
+          console.log(
+            `✅ Work Network rechecks: ${result.computed} measured, ${result.suppressed} privacy-suppressed, ${result.waiting} waiting, ${result.failed} failed`
+          );
+        } catch (err) {
+          console.error('❌ Work Network recheck failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Work Network rechecks daily at 6:20 AM');
+
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
 

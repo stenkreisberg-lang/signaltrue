@@ -447,6 +447,70 @@ export default function WorkNetwork() {
             </section>
           )}
 
+          {network.trackedActions?.length > 0 && (
+            <section className="app-panel">
+              <div>
+                <p className="app-eyebrow">Measured actions</p>
+                <h2 className="text-2xl font-bold text-slate-900">What changed after action</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Due actions are rechecked daily against the same privacy-gated metric used at the
+                  start.
+                </p>
+              </div>
+              <div className="mt-5 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-3">Action</th>
+                      <th className="px-3 py-3">Status</th>
+                      <th className="px-3 py-3">Review</th>
+                      <th className="px-3 py-3">Measured result</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {network.trackedActions.map((action) => {
+                      const outcome = action.outcome;
+                      const hasResult = Number.isFinite(outcome?.metricAfter);
+                      return (
+                        <tr key={action.id} className="border-b border-slate-100 text-slate-700">
+                          <td className="px-3 py-4">
+                            <p className="font-semibold text-slate-900">{action.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">Owner: {action.owner}</p>
+                          </td>
+                          <td className="px-3 py-4 capitalize">
+                            {action.recheckStatus === 'privacy_suppressed'
+                              ? 'Inconclusive (privacy threshold)'
+                              : action.status.replaceAll('-', ' ')}
+                          </td>
+                          <td className="px-3 py-4">
+                            {new Date(action.recheckDate).toLocaleDateString()}
+                          </td>
+                          <td className="px-3 py-4">
+                            {hasResult ? (
+                              <span
+                                className={
+                                  outcome.improved
+                                    ? 'font-semibold text-teal-700'
+                                    : 'text-slate-700'
+                                }
+                              >
+                                {outcome.metricBefore} to {outcome.metricAfter} (
+                                {outcome.percentChange > 0 ? '+' : ''}
+                                {outcome.percentChange ?? 'n/a'}%)
+                              </span>
+                            ) : (
+                              <span className="text-slate-500">Awaiting the 14-day recheck</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
           <section className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
             <strong className="text-slate-900">Privacy and interpretation:</strong>{' '}
             {network.privacy.note} Team-pair metrics require at least{' '}
