@@ -13,7 +13,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci
@@ -21,7 +21,22 @@ jobs:
       - name: Build
         run: npm run build --if-present
 
+      - name: Check Vercel credentials
+        id: vercel_credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [[ -n "$VERCEL_TOKEN" && -n "$VERCEL_ORG_ID" && -n "$VERCEL_PROJECT_ID" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Vercel action credentials are absent; relying on the native Git deployment."
+          fi
+
       - name: Deploy to Vercel
+        if: ${{ steps.vercel_credentials.outputs.available == 'true' }}
         # Requires the following repo secrets to be set:
         # VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
         uses: amondnet/vercel-action@v20
@@ -30,3 +45,25 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+
+      - name: Verify deployed frontend
+        env:
+          MANIFEST_URL: https://www.signaltrue.ai/asset-manifest.json
+        run: |
+          expected_asset="$(jq -r '.files["main.js"]' build/asset-manifest.json)"
+
+          for attempt in {1..36}; do
+            response="$(curl --fail --silent --show-error "$MANIFEST_URL" || true)"
+            deployed_asset="$(jq -r '.files["main.js"] // empty' <<<"$response" 2>/dev/null || true)"
+
+            if [[ "$deployed_asset" == "$expected_asset" ]]; then
+              echo "Vercel is serving $expected_asset"
+              exit 0
+            fi
+
+            echo "Waiting for Vercel deployment ($attempt/36)"
+            sleep 10
+          done
+
+          echo "Vercel did not serve $expected_asset within six minutes"
+          exit 1
