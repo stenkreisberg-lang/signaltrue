@@ -9,6 +9,7 @@ import SignalV2 from '../models/signalV2.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { requireTier } from '../middleware/checkTier.js';
+import { getWorkNetworkMap, readWorkNetworkMetric } from '../services/workNetworkService.js';
 
 const router = express.Router();
 
@@ -195,9 +196,60 @@ router.post('/:id/auto-compute', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const intervention = await Intervention.findById(id).populate('signalId');
+    const intervention = await Intervention.findOne({
+      _id: id,
+      orgId: req.user.orgId,
+    }).populate('signalId');
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
+    }
+
+    if (String(intervention.actionType || '').startsWith('work_network_')) {
+      const measurement = intervention.expectedEffectJson || {};
+      const network = await getWorkNetworkMap(intervention.orgId, {
+        days: measurement.measurementWindowDays || 28,
+      });
+      if (!network.readiness.ready) {
+        return res.status(409).json({
+          message: 'Work Network coverage is not ready for a reliable recheck.',
+        });
+      }
+      const currentValue = readWorkNetworkMetric(
+        network,
+        measurement.metric?.name,
+        measurement.teamIds
+      );
+      if (currentValue == null) {
+        return res.status(404).json({
+          message: 'The original Work Network metric is currently below the privacy threshold.',
+        });
+      }
+
+      const before = Number(intervention.outcomeDelta?.metricBefore);
+      const lowerIsBetter = new Set([
+        'interactionUnits',
+        'bridgeConcentration',
+        'crossTeamUnits',
+      ]).has(measurement.metric?.name);
+      const percentChange =
+        before === 0 ? null : Math.round(((currentValue - before) / before) * 1000) / 10;
+      const improved = lowerIsBetter ? currentValue < before : currentValue > before;
+      intervention.outcomeDelta = {
+        metricBefore: before,
+        metricAfter: currentValue,
+        percentChange,
+        improved,
+        autoComputed: true,
+        computedAt: new Date(),
+      };
+      intervention.status = 'pending-recheck';
+      await intervention.save();
+
+      return res.json({
+        message: 'Work Network outcome computed automatically',
+        intervention,
+        outcome: intervention.outcomeDelta,
+      });
     }
 
     // Fetch current metric value from recent metrics

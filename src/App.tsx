@@ -27,6 +27,7 @@ const ExecutiveSummary = lazy(() => import('./pages/app/ExecutiveSummary'));
 const Privacy = lazy(() => import('./pages/app/Privacy'));
 const SignalCoverage = lazy(() => import('./pages/app/SignalCoverage'));
 const Employees = lazy(() => import('./pages/app/Employees'));
+const WorkNetwork = lazy(() => import('./pages/app/WorkNetwork'));
 const SiteAnalytics = lazy(() => import('./pages/app/SiteAnalytics'));
 const SelfCheck = lazy(() => import('./pages/SelfCheck'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -92,6 +93,7 @@ const App = () => (
                 <Route path="/app/privacy" element={<Privacy />} />
                 <Route path="/app/signal-coverage" element={<SignalCoverage />} />
                 <Route path="/app/employees" element={<Employees />} />
+                <Route path="/app/work-network" element={<WorkNetwork />} />
                 <Route path="/app/site-analytics" element={<SiteAnalytics />} />
                 <Route path="/app/monthly-report" element={<MonthlyReport />} />
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />

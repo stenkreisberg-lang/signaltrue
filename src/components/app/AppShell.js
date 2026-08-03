@@ -8,6 +8,11 @@ const links = [
   { to: '/app/actions', label: 'Actions' },
   { to: '/app/executive-summary', label: 'Executive Summary' },
   { to: '/app/signal-coverage', label: 'Data Coverage' },
+  {
+    to: '/app/work-network',
+    label: 'Work Network',
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
+  },
   { to: '/app/employees', label: 'Team Setup', adminOnly: true },
   { to: '/app/site-analytics', label: 'Site Analytics' },
 ];
@@ -47,7 +52,8 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             {links
               .filter(
                 (link) =>
-                  !link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)
+                  (!link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
+                  (!link.roles || link.roles.includes(user?.role))
               )
               .map((link) => (
                 <NavLink

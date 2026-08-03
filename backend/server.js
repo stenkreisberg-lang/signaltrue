@@ -91,6 +91,7 @@ import invitesRoutes from './routes/invites.js';
 import playbookRoutes from './routes/playbook.js';
 import oneOnOneRoutes from './routes/oneOnOne.js';
 import weeklyBriefRoutes from './routes/weeklyBrief.js';
+import workNetworkRoutes from './routes/workNetwork.js';
 import weekContextRoutes from './routes/weekContextRoutes.js';
 import authRoutes from './routes/auth.js';
 import teamMembersRoutes from './routes/teamMembers.js';
@@ -417,6 +418,7 @@ async function main() {
     // --- Engagement Strain Risk Routes ---
     app.use('/api/engagement-strain', engagementStrainRoutes);
     app.use('/api/manager-overload', managerOverloadRoutes);
+    app.use('/api/work-network', workNetworkRoutes);
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);
