@@ -34,9 +34,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await Promise.all(
-    Object.values(mongoose.connection.collections).map((c) => c.deleteMany({}))
-  );
+  await Promise.all(Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})));
 });
 
 const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);

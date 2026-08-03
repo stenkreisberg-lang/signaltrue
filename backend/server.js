@@ -292,6 +292,7 @@ async function main() {
           status: dbState === 1 ? 'healthy' : 'degraded',
           timestamp: new Date().toISOString(),
           uptime: process.uptime(),
+          version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || null,
           database: dbStatus,
           memory: {
             used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
