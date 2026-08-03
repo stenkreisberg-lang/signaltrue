@@ -72,6 +72,7 @@ async function seedMeetingEvents(org, teamA, users, count) {
         actorUserId: users[i]._id,
         teamId: teamA._id,
         timestamp: daysAgo(day),
+        externalId: `test-outlook-${org._id}-${i}-${day}`,
       });
     }
   }
