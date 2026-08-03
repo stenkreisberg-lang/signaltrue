@@ -3,6 +3,9 @@ name: Deploy to Render (backend)
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
 
 jobs:
   deploy:
