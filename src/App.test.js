@@ -40,7 +40,7 @@ jest.mock('./contexts/SubscriptionContext', () => ({
   SubscriptionProvider: ({ children }) => children,
 }));
 
-test('renders the SignalTrue homepage', () => {
+test('renders the SignalTrue homepage', async () => {
   window.matchMedia = jest.fn().mockImplementation(() => ({
     matches: false,
     addListener: jest.fn(),
@@ -49,5 +49,5 @@ test('renders the SignalTrue homepage', () => {
     removeEventListener: jest.fn(),
   }));
   render(<App />);
-  expect(screen.getAllByText(/SignalTrue/i).length).toBeGreaterThan(0);
+  expect((await screen.findAllByText(/SignalTrue/i)).length).toBeGreaterThan(0);
 });

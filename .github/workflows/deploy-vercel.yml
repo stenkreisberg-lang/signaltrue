@@ -3,6 +3,16 @@ name: Deploy to Vercel
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'marketing/**'
+      - 'tools/generate-sitemap.mjs'
+      - 'tools/write-build-version.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'craco.config.js'
+      - 'vercel.json'
 
 jobs:
   deploy:
@@ -14,9 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build
         run: npm run build --if-present
@@ -48,22 +59,22 @@ jobs:
 
       - name: Verify deployed frontend
         env:
-          MANIFEST_URL: https://www.signaltrue.ai/asset-manifest.json
+          VERSION_URL: https://www.signaltrue.ai/build-version.json
         run: |
-          expected_asset="$(jq -r '.files["main.js"]' build/asset-manifest.json)"
+          for attempt in {1..40}; do
+            response="$(curl --fail --silent --show-error \
+              --header 'Cache-Control: no-cache' \
+              "$VERSION_URL?sha=$GITHUB_SHA&attempt=$attempt" || true)"
+            deployed_commit="$(jq -r '.commit // empty' <<<"$response" 2>/dev/null || true)"
 
-          for attempt in {1..36}; do
-            response="$(curl --fail --silent --show-error "$MANIFEST_URL" || true)"
-            deployed_asset="$(jq -r '.files["main.js"] // empty' <<<"$response" 2>/dev/null || true)"
-
-            if [[ "$deployed_asset" == "$expected_asset" ]]; then
-              echo "Vercel is serving $expected_asset"
+            if [[ "$deployed_commit" == "$GITHUB_SHA" ]]; then
+              echo "Vercel is serving commit $GITHUB_SHA"
               exit 0
             fi
 
-            echo "Waiting for Vercel deployment ($attempt/36)"
-            sleep 10
+            echo "Waiting for Vercel deployment ($attempt/40; currently ${deployed_commit:-unavailable})"
+            sleep 15
           done
 
-          echo "Vercel did not serve $expected_asset within six minutes"
+          echo "Vercel did not serve commit $GITHUB_SHA within ten minutes"
           exit 1
