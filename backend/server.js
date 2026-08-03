@@ -136,6 +136,7 @@ import reminderCronRoutes from './routes/reminderCron.js';
 import leadsRoutes from './routes/leads.js';
 import engagementStrainRoutes from './routes/engagementStrainRoutes.js';
 import managerOverloadRoutes from './routes/managerOverloadRoutes.js';
+import validationProgramRoutes from './routes/validationProgram.js';
 
 // --- Category-King Integration Routes ---
 import categoryKingIntegrationsRoutes from './routes/categoryKingIntegrations.js';
@@ -416,6 +417,7 @@ async function main() {
     app.use('/api/engagement-strain', engagementStrainRoutes);
     app.use('/api/manager-overload', managerOverloadRoutes);
     app.use('/api/work-network', workNetworkRoutes);
+    app.use('/api/validation-program', validationProgramRoutes);
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
@@ -76,6 +77,12 @@ export default function Methodology() {
           help prioritize a human review and must not be read as probabilities, diagnoses, causal
           findings, or individual performance scores.
         </p>
+        <Link
+          to="/app/validation"
+          className="mt-4 inline-flex rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-bold text-amber-950 hover:border-amber-500"
+        >
+          View validation studies and evidence
+        </Link>
       </section>
 
       <section className="mt-6 grid gap-4 md:grid-cols-2">

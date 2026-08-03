@@ -46,6 +46,17 @@ manager quality, or project failure.
 - Missing or weakly mapped data lowers readiness and can suppress conclusions.
 - AI may organize evidence and propose questions, but it cannot turn a correlation into a fact.
 
+## Validation program
+
+SignalTrue maintains eight progressive validation tracks covering connector accuracy, reliability,
+construct validity, network-map validity, longitudinal performance, intervention effectiveness,
+external validation, and independent review. Study progress and client-specific evidence counts
+are shown in the application's Validation Center.
+
+The complete evidence contract, status definitions, study outputs, and completion gates are in
+`VALIDATION_PROGRAM.md`. A study cannot be marked complete without verified aggregate evidence and
+a public summary. Citations alone do not satisfy this requirement.
+
 ## Research foundations
 
 - Demerouti et al. (2001), *The job demands-resources model of burnout*, Journal of Applied

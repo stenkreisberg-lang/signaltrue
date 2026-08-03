@@ -14,6 +14,7 @@ const links = [
   },
   { to: '/app/employees', label: 'Team Setup', adminOnly: true },
   { to: '/app/site-analytics', label: 'Site Analytics' },
+  { to: '/app/validation', label: 'Validation' },
   { to: '/app/methodology', label: 'Methodology' },
 ];
 

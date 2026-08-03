@@ -28,6 +28,7 @@ const SignalCoverage = lazy(() => import('./pages/app/SignalCoverage'));
 const Employees = lazy(() => import('./pages/app/Employees'));
 const WorkNetwork = lazy(() => import('./pages/app/WorkNetwork'));
 const Methodology = lazy(() => import('./pages/app/Methodology'));
+const ValidationCenter = lazy(() => import('./pages/app/ValidationCenter'));
 const SiteAnalytics = lazy(() => import('./pages/app/SiteAnalytics'));
 const SelfCheck = lazy(() => import('./pages/SelfCheck'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -97,6 +98,7 @@ const App = () => (
                 <Route path="/app/employees" element={<Employees />} />
                 <Route path="/app/work-network" element={<WorkNetwork />} />
                 <Route path="/app/methodology" element={<Methodology />} />
+                <Route path="/app/validation" element={<ValidationCenter />} />
                 <Route path="/app/site-analytics" element={<SiteAnalytics />} />
                 <Route
                   path="/app/monthly-report"
