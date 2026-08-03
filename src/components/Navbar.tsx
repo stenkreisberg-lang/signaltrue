@@ -23,12 +23,20 @@ const navItems = [
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleRequestDemo = () => {
-    trackEvent('demo_cta_click');
+  const handleRequestDemo = (cta: string) => {
+    trackEvent('demo_cta_click', {
+      event_category: 'lead_funnel',
+      event_label: cta,
+      cta,
+    });
   };
 
-  const handleSampleReport = () => {
-    trackEvent('sample_report_click');
+  const handleSampleReport = (cta: string) => {
+    trackEvent('sample_report_click', {
+      event_category: 'lead_funnel',
+      event_label: cta,
+      cta,
+    });
   };
 
   return (
@@ -65,14 +73,17 @@ const Navbar = () => {
                 Login
               </Button>
             </Link>
-            <Link to="/product#sample-report" onClick={handleSampleReport}>
+            <Link to="/sample-report" onClick={() => handleSampleReport('navbar_desktop')}>
               <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
                 Sample report
               </Button>
             </Link>
-            <Link to="/contact" onClick={handleRequestDemo}>
+            <Link
+              to="/contact?intent=demo&cta=navbar_desktop"
+              onClick={() => handleRequestDemo('navbar_desktop')}
+            >
               <Button variant="cta" size="sm">
-                Request demo
+                Book a 20-minute review
               </Button>
             </Link>
           </div>
@@ -108,10 +119,10 @@ const Navbar = () => {
                   </Button>
                 </Link>
                 <Link
-                  to="/product#sample-report"
+                  to="/sample-report"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleSampleReport();
+                    handleSampleReport('navbar_mobile');
                   }}
                 >
                   <Button variant="ghost" size="sm" className="w-full text-[#475569]">
@@ -119,15 +130,14 @@ const Navbar = () => {
                   </Button>
                 </Link>
                 <Link
-                  to="/contact"
+                  to="/contact?intent=demo&cta=navbar_mobile"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleRequestDemo();
+                    handleRequestDemo('navbar_mobile');
                   }}
                 >
                   <Button variant="cta" size="sm" className="w-full">
-                    {' '}
-                    Request demo
+                    Book a 20-minute review
                   </Button>
                 </Link>
               </div>

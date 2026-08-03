@@ -2,6 +2,7 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
+import { trackEvent } from '../lib/analytics';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -14,31 +15,21 @@ import DriftAlertCard from './DriftAlertCard';
  * Promised Land: Leaders see early truth, act structurally, preserve execution capacity
  */
 
-// Analytics tracking for conviction depth
-const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', eventName);
-  }
-  // Also track internally
-  try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-    fetch(`${apiUrl}/api/analytics/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => {});
-  } catch {
-    /* analytics tracking is optional */
-  }
-};
-
 const Hero = () => {
   const handleRequestDemo = () => {
-    trackEvent('demo_cta_click');
+    trackEvent('demo_cta_click', {
+      event_category: 'lead_funnel',
+      event_label: 'homepage_hero',
+      cta: 'homepage_hero',
+    });
   };
 
   const handleHowItWorks = () => {
-    trackEvent('sample_report_click');
+    trackEvent('sample_report_click', {
+      event_category: 'lead_funnel',
+      event_label: 'homepage_hero',
+      cta: 'homepage_hero',
+    });
   };
 
   return (
@@ -91,13 +82,13 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/contact" onClick={handleRequestDemo}>
+              <Link to="/contact?intent=demo&cta=homepage_hero" onClick={handleRequestDemo}>
                 <Button variant="hero" size="xl">
-                  See early team risk signals
+                  Book a 20-minute workload risk review
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/product#sample-report" onClick={handleHowItWorks}>
+              <Link to="/sample-report" onClick={handleHowItWorks}>
                 <Button variant="hero-outline" size="xl">
                   View sample report
                 </Button>

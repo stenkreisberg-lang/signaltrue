@@ -1,6 +1,7 @@
 import { Button } from '../components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { trackEvent } from '../lib/analytics';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -10,26 +11,13 @@ import { Link } from 'react-router-dom';
  * Button: Request Early Signal Preview
  */
 
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', eventName);
-  }
-  try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-    fetch(`${apiUrl}/api/analytics/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => {});
-  } catch {
-    /* analytics tracking is optional */
-  }
-};
-
 const CTASection = () => {
   const handleRequestDemo = () => {
-    trackEvent('demo_cta_click');
+    trackEvent('demo_cta_click', {
+      event_category: 'lead_funnel',
+      event_label: 'homepage_final',
+      cta: 'homepage_final',
+    });
   };
 
   return (
@@ -40,14 +28,14 @@ const CTASection = () => {
             See where manager overload is building.
           </h2>
           <p className="text-lg text-[#CBD5E1] mb-10 max-w-xl mx-auto">
-            Request a demo and see how SignalTrue turns meetings, focus time, response pressure,
-            after-hours work, and manager load into a weekly early warning report.
+            Bring one workload concern. In 20 minutes, see how SignalTrue turns meetings, focus
+            time, response pressure, after-hours work, and manager load into an early warning view.
           </p>
 
           {/* Single CTA per spec */}
-          <Link to="/contact" onClick={handleRequestDemo}>
+          <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
             <Button variant="hero" size="xl">
-              Request demo
+              Book a 20-minute review
               <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>
