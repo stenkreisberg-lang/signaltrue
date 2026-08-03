@@ -4,8 +4,7 @@
  * Restructured output format:
  *   1. Hypotheses        – ranked interpretations with confidence + alternative explanations
  *   2. Role-Based Recommendations – split by HR / Manager / Leadership
- *   3. Trend Outlook     – what happens if pattern continues
- *   4. Industry Comparison – secondary context (demoted from v1)
+ *   3. Trend Outlook     – a falsifiable metric to watch
  *
  * Privacy: The prompt receives ONLY aggregate metadata, never individual names,
  * message content, or anything identifiable.
@@ -15,76 +14,6 @@
 
 import getProvider from '../utils/aiProvider.js';
 
-// ─── Industry benchmarks (secondary reference only) ───
-const INDUSTRY_BENCHMARKS = {
-  Technology: {
-    meetingHoursPerWeek: 12,
-    afterHoursPct: 18,
-    b2bThreshold: 6,
-    description: 'Tech companies typically run meeting-heavy but tolerate more async.',
-  },
-  SaaS: {
-    meetingHoursPerWeek: 14,
-    afterHoursPct: 20,
-    b2bThreshold: 7,
-    description: 'SaaS teams skew toward higher meeting density due to cross-functional syncs.',
-  },
-  'Digital Agency': {
-    meetingHoursPerWeek: 10,
-    afterHoursPct: 22,
-    b2bThreshold: 5,
-    description: 'Agencies often have deadline-driven bursts with high after-hours.',
-  },
-  Consulting: {
-    meetingHoursPerWeek: 16,
-    afterHoursPct: 25,
-    b2bThreshold: 8,
-    description: 'Consulting is inherently meeting-heavy.',
-  },
-  'Financial Services': {
-    meetingHoursPerWeek: 14,
-    afterHoursPct: 15,
-    b2bThreshold: 6,
-    description: 'Financial firms have regulatory rhythm.',
-  },
-  Healthcare: {
-    meetingHoursPerWeek: 8,
-    afterHoursPct: 12,
-    b2bThreshold: 4,
-    description: 'Healthcare teams have shift-based boundaries.',
-  },
-  Manufacturing: {
-    meetingHoursPerWeek: 7,
-    afterHoursPct: 10,
-    b2bThreshold: 3,
-    description: 'Manufacturing has clear shift boundaries.',
-  },
-  Education: {
-    meetingHoursPerWeek: 9,
-    afterHoursPct: 20,
-    b2bThreshold: 5,
-    description: 'Education has term-driven cycles.',
-  },
-  Retail: {
-    meetingHoursPerWeek: 6,
-    afterHoursPct: 15,
-    b2bThreshold: 3,
-    description: 'Retail HQ teams have moderate meeting loads.',
-  },
-  Nonprofit: {
-    meetingHoursPerWeek: 10,
-    afterHoursPct: 22,
-    b2bThreshold: 5,
-    description: 'Nonprofits often have lean teams doing broad work.',
-  },
-  Other: {
-    meetingHoursPerWeek: 11,
-    afterHoursPct: 17,
-    b2bThreshold: 5,
-    description: 'Cross-industry average.',
-  },
-};
-
 // ─── Build the prompt ───
 function buildPrompt(data) {
   const {
@@ -92,7 +21,6 @@ function buildPrompt(data) {
     industry,
     orgSize,
     teamCount,
-    employeeCount,
     tw,
     lw,
     sixWeekAvg,
@@ -105,12 +33,8 @@ function buildPrompt(data) {
     twMessages,
     lwMessages,
     twSignals,
-    lwSignals,
     twCKSignals,
-    lwCKSignals,
     teamBDIData,
-    observations,
-    risks,
     connectedSources,
     contextTags,
     teamStatus,
@@ -130,11 +54,7 @@ function buildPrompt(data) {
           .join('\n')
       : '- No weekly history available yet (baselines still calibrating)';
   const anomalyLines =
-    (dataAnomalies || []).length > 0
-      ? dataAnomalies.map((a) => `- ${a}`).join('\n')
-      : null;
-
-  const bench = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['Other'];
+    (dataAnomalies || []).length > 0 ? dataAnomalies.map((a) => `- ${a}`).join('\n') : null;
 
   const signalSummary = [
     ...twSignals.map(
@@ -166,7 +86,7 @@ CRITICAL RULES:
 6. ALWAYS include at least one alternative explanation for each hypothesis.
 7. Use plain business language. No therapy language. No generic AI commentary.
 8. If data is limited or shows no concerns, say so plainly — do not manufacture problems.
-9. Industry benchmarks are SECONDARY to the team's own baseline patterns.
+9. Compare only with the organization's own measured baseline. Do not introduce external benchmarks.
 10. Recommendations must specify the OWNER role (HR, Manager, or Leadership).
 
 ORGANIZATION CONTEXT:
@@ -198,9 +118,6 @@ Do NOT interpret the affected metrics (${(suspectMetrics || []).join(', ') || 's
 
 WEEKLY HISTORY (per-person, oldest first — use this for trend/persistence claims like "3rd week in a row"; never invent longer trends than shown):
 ${historyLines}
-
-INDUSTRY BENCHMARK (${industry}, secondary reference only):
-- Typical meeting hours/week: ${bench.meetingHoursPerWeek}h | After-hours: ${bench.afterHoursPct}%
 
 ACTIVE SIGNALS: ${signalSummary.length > 0 ? signalSummary.map((s) => `- ${s}`).join('\n') : '- None detected'}
 TEAM HEALTH (BDI): ${bdiSummary.length > 0 ? bdiSummary.map((b) => `- ${b}`).join('\n') : '- No BDI data'}
@@ -245,8 +162,7 @@ Respond in EXACTLY this JSON format:
     "likelyNextStageRisk": "What happens if this pattern continues.",
     "metricToWatchNextWeek": "Which metric to monitor.",
     "escalationTrigger": "What threshold would trigger escalation."
-  },
-  "industryComparison": "1-2 sentences comparing to ${industry} benchmarks. Keep brief and secondary."
+  }
 }`;
 }
 
@@ -296,5 +212,3 @@ export async function generateWeeklyAIAnalysis(data) {
     return null;
   }
 }
-
-export { INDUSTRY_BENCHMARKS };

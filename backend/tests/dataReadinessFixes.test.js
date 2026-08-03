@@ -6,7 +6,10 @@ import {
   suppressMetricIfTooFew,
 } from '../utils/privacyGate.js';
 import { normalizeDepartmentName } from '../services/employeeSyncService.js';
-import { fetchGraphCollection } from '../services/coreIntegrationAdapters.js';
+import {
+  fetchGraphCollection,
+  GoogleCalendarAdapter,
+} from '../services/coreIntegrationAdapters.js';
 import {
   getNextWeeklyRun,
   getPreviousWeekStart,
@@ -14,6 +17,7 @@ import {
 } from '../services/weeklySchedulerService.js';
 import { calculateConfidenceScore } from '../services/engagementScoringService.js';
 import Team from '../models/team.js';
+import User from '../models/user.js';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -66,6 +70,53 @@ describe('Microsoft Graph pagination', () => {
       headers: { Authorization: 'Bearer token' },
       signal: expect.any(Object),
     });
+  });
+});
+
+describe('Google Calendar attribution', () => {
+  test('expands a meeting to mapped internal attendees without storing their emails', async () => {
+    jest.spyOn(User, 'find').mockReturnValue({
+      select: () => ({
+        lean: async () => [
+          {
+            _id: '507f1f77bcf86cd799439011',
+            email: 'ada@example.com',
+            teamId: '507f1f77bcf86cd799439021',
+          },
+          {
+            _id: '507f1f77bcf86cd799439012',
+            email: 'grace@example.com',
+            teamId: '507f1f77bcf86cd799439021',
+          },
+        ],
+      }),
+    });
+    const adapter = new GoogleCalendarAdapter();
+    const events = await adapter.transformToWorkEvents(
+      [
+        {
+          id: 'meeting-1',
+          start: { dateTime: '2026-08-03T09:00:00Z' },
+          end: { dateTime: '2026-08-03T10:00:00Z' },
+          organizer: { email: 'ada@example.com' },
+          attendees: [
+            { email: 'ada@example.com' },
+            { email: 'grace@example.com' },
+            { email: 'client@outside.example' },
+          ],
+        },
+      ],
+      '507f1f77bcf86cd799439001'
+    );
+
+    expect(events).toHaveLength(2);
+    expect(events.map((event) => String(event.actorUserId))).toEqual([
+      '507f1f77bcf86cd799439011',
+      '507f1f77bcf86cd799439012',
+    ]);
+    expect(events[0].metadata.organizer).toBeUndefined();
+    expect(events[0].metadata.organizerHash).toHaveLength(64);
+    expect(events[0].metadata.externalAttendeeCount).toBe(1);
   });
 });
 

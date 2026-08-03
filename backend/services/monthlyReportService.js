@@ -14,8 +14,9 @@ import NetworkHealth from '../models/networkHealth.js';
 import BehavioralDriftIndex from '../models/behavioralDriftIndex.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
+import WorkEvent from '../models/workEvent.js';
+import Intervention from '../models/intervention.js';
 import { Resend } from 'resend';
-import { generateMonthlyNarrative } from './aiRecommendationContext.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
 import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
@@ -31,6 +32,64 @@ import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 const PERSISTENT_RISK_WEEKS = 3; // Risk must be elevated for ≥3 weeks to be "persistent"
 const STRUCTURAL_THRESHOLD = 0.7; // 70% of period = structural, not episodic
+const CATCH_ALL_TEAM_RE = /^(unassigned|general|other|unknown|default|everyone|all)$/i;
+
+export function selectWeeklySnapshots(records, limit = 5) {
+  const orgRecords = records.filter((record) => !record.teamId);
+  const preferred = orgRecords.length > 0 ? orgRecords : records;
+  const latestByWeekAndTeam = new Map();
+  [...preferred]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .forEach((record) => {
+      const date = new Date(record.date);
+      const day = date.getUTCDay() || 7;
+      const monday = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+      );
+      monday.setUTCDate(monday.getUTCDate() - day + 1);
+      const week = monday.toISOString().slice(0, 10);
+      const key = `${week}:${record.teamId || 'org'}`;
+      if (!latestByWeekAndTeam.has(key)) latestByWeekAndTeam.set(key, { week, record });
+    });
+
+  const byWeek = new Map();
+  for (const { week, record } of latestByWeekAndTeam.values()) {
+    if (!byWeek.has(week)) byWeek.set(week, []);
+    byWeek.get(week).push(record);
+  }
+  const totalFields = [
+    'meetingDurationTotalHours7d',
+    'meetingParticipantHours7d',
+    'meetingCount7d',
+    'meetingInstanceCount7d',
+    'backToBackMeetingBlocks',
+    'messageCount7d',
+    'afterHoursMessageCount',
+  ];
+  const averageFields = [
+    'afterHoursMessageRatio',
+    'afterHoursSentRatio',
+    'calendarFragmentationScore',
+    'rci',
+  ];
+  const snapshots = [...byWeek.entries()].map(([week, weekRecords]) => {
+    if (weekRecords.length === 1) return weekRecords[0];
+    const aggregate = { date: new Date(`${week}T12:00:00.000Z`) };
+    totalFields.forEach((field) => {
+      aggregate[field] = weekRecords.reduce((sum, record) => sum + (record[field] || 0), 0);
+    });
+    averageFields.forEach((field) => {
+      const values = weekRecords
+        .map((record) => record[field])
+        .filter((value) => Number.isFinite(value));
+      aggregate[field] =
+        values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    });
+    return aggregate;
+  });
+
+  return snapshots.sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-limit);
+}
 
 /**
  * Generate monthly report for an organization
@@ -44,13 +103,41 @@ export async function generateMonthlyReportForOrg(orgId) {
     periodStart.setDate(periodStart.getDate() - 30);
 
     const minimumTeamSize = await resolveMinimumTeamSize(orgId);
-    const teams = (await Team.find({ orgId })).filter(
-      (team) => (team.metadata?.actualSize ?? 0) >= minimumTeamSize
+    const allTeams = await Team.find({ orgId, isActive: { $ne: false } });
+    const memberCounts = await User.aggregate([
+      { $match: { orgId, accountStatus: { $ne: 'inactive' } } },
+      { $group: { _id: '$teamId', count: { $sum: 1 } } },
+    ]);
+    const memberCountByTeam = new Map(
+      memberCounts.map((row) => [String(row._id || 'unassigned'), row.count])
     );
-    if (teams.length === 0) {
-      console.log('No teams found for org');
-      return null;
-    }
+    const teams = allTeams.filter(
+      (team) =>
+        !CATCH_ALL_TEAM_RE.test(team.name) &&
+        team.analyticsEnabled !== false &&
+        (memberCountByTeam.get(String(team._id)) || 0) >= minimumTeamSize
+    );
+    const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
+    const mappedUsers = await WorkEvent.distinct('actorUserId', {
+      orgId,
+      actorUserId: { $ne: null },
+      timestamp: { $gte: periodStart, $lte: periodEnd },
+    });
+    const activeByTeam = await WorkEvent.aggregate([
+      {
+        $match: {
+          orgId,
+          teamId: { $in: teams.map((team) => team._id) },
+          actorUserId: { $ne: null },
+          timestamp: { $gte: periodStart, $lte: periodEnd },
+        },
+      },
+      { $group: { _id: '$teamId', users: { $addToSet: '$actorUserId' } } },
+    ]);
+    const readyTeams = activeByTeam.filter((row) => row.users.length >= minimumTeamSize).length;
+    const userCoveragePct =
+      totalUsers > 0 ? Math.round((mappedUsers.length / totalUsers) * 100) : 0;
+    const teamCoveragePct = teams.length > 0 ? Math.round((readyTeams / teams.length) * 100) : 0;
 
     // ── Source everything from IntegrationMetricsDaily (org-level rows) ──
     const imdRecords = await IntegrationMetricsDaily.find({
@@ -75,180 +162,146 @@ export async function generateMonthlyReportForOrg(orgId) {
         : [];
 
     const allRecords = imdRecords.length > 0 ? imdRecords : teamRecords;
-
-    if (allRecords.length === 0) {
-      console.log(`No IntegrationMetricsDaily data for org ${orgId}`);
-      return null;
-    }
-
-    const avg = (field) => allRecords.reduce((s, r) => s + (r[field] || 0), 0) / allRecords.length;
-    const max = (field) => Math.max(...allRecords.map((r) => r[field] || 0));
+    const weeklySnapshots = selectWeeklySnapshots(allRecords);
+    const avg = (field) =>
+      weeklySnapshots.length > 0
+        ? weeklySnapshots.reduce((sum, record) => sum + (record[field] || 0), 0) /
+          weeklySnapshots.length
+        : 0;
 
     // ── Sort into two halves to detect trend ──
-    const sorted = [...allRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...weeklySnapshots].sort((a, b) => new Date(a.date) - new Date(b.date));
     const mid = Math.floor(sorted.length / 2);
     const firstHalf = sorted.slice(0, mid);
     const secondHalf = sorted.slice(mid);
     const avgHalf = (recs, field) =>
       recs.reduce((s, r) => s + (r[field] || 0), 0) / (recs.length || 1);
 
-    // ── Meeting load ──
-    // These are 7-day rolling totals written to each daily record.
-    // Many historical records have 0 (field added later), so averaging
-    // across 30 rows would dilute to near-zero. Instead, use the most
-    // recent record that has a non-zero value for each field.
-    const latestNonZero = (field) => {
-      const rec = allRecords.find((r) => (r[field] || 0) > 0);
-      return rec ? rec[field] || 0 : 0;
-    };
-    const avgMeetingHours = latestNonZero('meetingDurationTotalHours7d');
-    const avgMeetingCount = latestNonZero('meetingCount7d');
-    const avgBackToBack = latestNonZero('backToBackMeetingBlocks');
-    const avgAfterHoursRatio =
-      latestNonZero('afterHoursSentRatio') || latestNonZero('afterHoursMessageRatio');
-    const avgFragScore = avg('calendarFragmentationScore');
+    // Every record is a rolling 7-day value, so one latest record per calendar
+    // week is used. Averaging daily rolling rows would count the same days many times.
+    const avgMeetingHours = avg('meetingParticipantHours7d') || avg('meetingDurationTotalHours7d');
+    const avgMeetingCount = avg('meetingInstanceCount7d') || avg('meetingCount7d');
+    const avgBackToBack = avg('backToBackMeetingBlocks');
+    const avgAfterHoursRatio = avg('afterHoursMessageRatio') || avg('afterHoursSentRatio');
     const avgRCI = avg('rci');
 
-    // ── Trend: is meeting load going up or down? ──
-    const meetTrendDelta =
-      avgHalf(secondHalf, 'meetingDurationTotalHours7d') -
+    const firstMeetingHours =
+      avgHalf(firstHalf, 'meetingParticipantHours7d') ||
       avgHalf(firstHalf, 'meetingDurationTotalHours7d');
-    const bdiTrend =
-      meetTrendDelta > 10 ? 'deteriorating' : meetTrendDelta < -10 ? 'improving' : 'stable';
-    const trendStrength =
-      Math.abs(meetTrendDelta) > 30
-        ? 'strong'
-        : Math.abs(meetTrendDelta) > 10
-          ? 'moderate'
-          : 'weak';
+    const secondMeetingHours =
+      avgHalf(secondHalf, 'meetingParticipantHours7d') ||
+      avgHalf(secondHalf, 'meetingDurationTotalHours7d');
+    const meetTrendPct =
+      firstMeetingHours > 0
+        ? ((secondMeetingHours - firstMeetingHours) / firstMeetingHours) * 100
+        : 0;
+    const measuredTrend =
+      meetTrendPct > 10 ? 'deteriorating' : meetTrendPct < -10 ? 'improving' : 'stable';
+    const measuredTrendStrength =
+      Math.abs(meetTrendPct) >= 25 ? 'strong' : Math.abs(meetTrendPct) >= 10 ? 'moderate' : 'weak';
 
-    // ── BDI proxy: use RCI (0-100, higher = worse) as drift indicator ──
-    // Invert so 0 = max drift, 100 = healthy (matches display expectation)
-    const avgBDI = Math.max(0, 100 - avgRCI);
-
-    // ── Persistent risks from meeting overload signals ──
-    const persistentRisks = [];
-    if (avgBackToBack > 15) {
-      persistentRisks.push({
-        riskType: 'overload',
-        weeksAboveThreshold: 4,
-        avgScore: Math.min(100, Math.round(avgBackToBack * 3)),
-        affectedTeams: teams.map((t) => ({
-          teamName: t.name,
-          score: Math.round(avgBackToBack * 3),
-        })),
-        classification: 'structural',
-        label: 'Consecutive Meeting Blocks',
-        detail: `Avg ${avgBackToBack.toFixed(0)} back-to-back meeting blocks per week`,
-      });
-    }
-    if (avgAfterHoursRatio > 0.15) {
-      persistentRisks.push({
-        riskType: 'retention',
-        weeksAboveThreshold: 4,
-        avgScore: Math.round(avgAfterHoursRatio * 100),
-        affectedTeams: teams.map((t) => ({
-          teamName: t.name,
-          score: Math.round(avgAfterHoursRatio * 100),
-        })),
-        classification: avgAfterHoursRatio > 0.25 ? 'structural' : 'episodic',
-        label: 'Out-of-Hours Work',
-        detail: `${Math.round(avgAfterHoursRatio * 100)}% of communication happens outside working hours`,
-      });
-    }
-
-    // ── Org health ──
-    const zoneDistribution = {
-      stable: avgBDI >= 70 ? teams.length : 0,
-      stretched: avgBDI >= 40 && avgBDI < 70 ? teams.length : 0,
-      critical: avgBDI < 40 ? teams.length : 0,
-      recovery: 0,
-    };
-    const orgHealth = {
-      avgBDI: Math.round(avgBDI),
-      bdiTrend,
-      trendStrength,
-      zoneDistribution,
-      teamsAtRisk: zoneDistribution.stretched + zoneDistribution.critical,
-      avgMeetingHoursWeekly: Math.round(avgMeetingHours),
-      avgMeetingCount: Math.round(avgMeetingCount),
-      avgBackToBackBlocks: Math.round(avgBackToBack),
-      avgAfterHoursPct: Math.round(avgAfterHoursRatio * 100),
-      avgRCI: Math.round(avgRCI),
-    };
-
-    // ── Execution signals ──
-    const executionDragAvg = Math.round(avgRCI * 0.7); // RCI drives execution drag
-    const executionSignals = {
-      executionDragAvg,
-      highRiskProjectsCount: 0,
-      meetingROILowPercent:
-        avgMeetingHours > 200 ? Math.round(((avgMeetingHours - 200) / avgMeetingHours) * 100) : 0,
-      decisionVelocity:
-        executionDragAvg < 35 ? 'fast' : executionDragAvg < 65 ? 'moderate' : 'slow',
-      networkSiloScore: 0,
-    };
-
-    // ── Leadership / retention — from available proxies ──
-    const leadershipSignals = {
-      managerEffectiveness: {
-        avgScore: 0,
-        managersCriticalCount: 0,
-        managersNeedCoachingCount: 0,
-        trend: 'stable',
-      },
-      equityScoreAvg: 100,
-      equityIssuesCount: 0,
-      successionCriticalCount: 0,
-      avgBusFactor: 3,
-    };
-    const retentionExposure = {
-      avgAttritionRisk: avgAfterHoursRatio > 0.25 ? 45 : 20,
-      criticalIndividualsCount: 0,
-      highRiskIndividualsCount: 0,
-      trend: avgAfterHoursRatio > 0.25 ? 'worsening' : 'stable',
-      estimatedTurnoverRisk: Math.round(avgAfterHoursRatio * 60),
-    };
-
-    const engagementSignals = await calculateEngagementSignals(orgId, teamIds);
-
-    const topStructuralDrivers = [
-      avgMeetingHours > 100 && {
-        metric: 'Meeting Load',
-        avgDeviation: avgMeetingHours,
-        teamsAffected: teams.length,
-        severity: avgMeetingHours > 300 ? 'critical' : 'high',
-      },
-      avgBackToBack > 10 && {
-        metric: 'Consecutive Meetings',
-        avgDeviation: avgBackToBack,
-        teamsAffected: teams.length,
-        severity: avgBackToBack > 20 ? 'critical' : 'high',
-      },
-      avgAfterHoursRatio > 0.1 && {
-        metric: 'Out-of-Hours Work',
-        avgDeviation: avgAfterHoursRatio * 100,
-        teamsAffected: teams.length,
-        severity: avgAfterHoursRatio > 0.25 ? 'critical' : 'medium',
-      },
-    ].filter(Boolean);
-
-    const crisisPatterns = { totalCrises: 0, crisisByType: [], teamsWithRecurringCrises: 0 };
-
-    const aiSummary = await generateMonthlyNarrative({
-      orgHealth,
+    const [
+      measuredOrgHealth,
       persistentRisks,
       leadershipSignals,
       executionSignals,
       retentionExposure,
       topStructuralDrivers,
       crisisPatterns,
-    }).catch(() => null);
+    ] = await Promise.all([
+      calculateOrgHealth(teams, orgId, periodStart, periodEnd),
+      identifyPersistentRisks(teams, periodStart, periodEnd),
+      calculateLeadershipSignals(teams, periodStart, periodEnd),
+      calculateExecutionSignals(teams, periodStart, periodEnd),
+      calculateRetentionExposure(teams, periodStart, periodEnd),
+      getTopStructuralDrivers(teams, periodStart, periodEnd),
+      analyzeCrisisPatterns(teams, periodStart, periodEnd),
+    ]);
+
+    const orgHealth = {
+      avgBDI: Math.round(measuredOrgHealth.avgBDI || 0),
+      bdiTrend: measuredOrgHealth.avgBDI > 0 ? measuredOrgHealth.bdiTrend : measuredTrend,
+      trendStrength:
+        measuredOrgHealth.avgBDI > 0 ? measuredOrgHealth.trendStrength : measuredTrendStrength,
+      zoneDistribution: measuredOrgHealth.zoneDistribution,
+      teamsAtRisk: measuredOrgHealth.teamsAtRisk,
+      avgMeetingHoursWeekly: Math.round(avgMeetingHours),
+      avgMeetingCount: Math.round(avgMeetingCount),
+      avgBackToBackBlocks: Math.round(avgBackToBack),
+      avgAfterHoursPct: Math.round(avgAfterHoursRatio * 100),
+      avgRCI: Math.round(avgRCI),
+    };
+    const engagementSignals = await calculateEngagementSignals(
+      orgId,
+      teamIds,
+      periodStart,
+      periodEnd,
+      minimumTeamSize
+    );
+    const reportMode =
+      userCoveragePct >= 80 &&
+      teamCoveragePct >= 80 &&
+      weeklySnapshots.length >= 3 &&
+      teams.length > 0
+        ? 'decision'
+        : 'setup';
+    const readinessStatus =
+      userCoveragePct >= 80 && teamCoveragePct >= 80
+        ? 'ready'
+        : userCoveragePct >= 40
+          ? 'partial'
+          : 'needs_mapping';
+
+    const interventions = await Intervention.find({
+      orgId,
+      $or: [
+        { startDate: { $gte: periodStart, $lte: periodEnd } },
+        { endDate: { $gte: periodStart, $lte: periodEnd } },
+        { reviewDate: { $gte: periodStart, $lte: periodEnd } },
+        { recheckDate: { $gte: periodStart, $lte: periodEnd } },
+        { 'outcomeDelta.computedAt': { $gte: periodStart, $lte: periodEnd } },
+        { status: { $in: ['planned', 'active', 'pending-recheck'] } },
+      ],
+    })
+      .populate('teamId', 'name')
+      .sort({ updatedAt: -1 })
+      .lean();
+    const measuredInterventions = interventions.filter(
+      (item) => item.outcomeDelta?.computedAt != null
+    );
+    const actionOutcomes = {
+      measured: measuredInterventions.length,
+      improved: measuredInterventions.filter((item) => item.outcomeDelta?.improved).length,
+      active: interventions.filter((item) =>
+        ['planned', 'active', 'pending-recheck'].includes(item.status)
+      ).length,
+      items: interventions.slice(0, 5).map((item) => ({
+        title: item.title || item.actionTaken || item.interventionType || 'Action',
+        teamName: item.teamId?.name || '',
+        status: item.status,
+        percentChange: item.outcomeDelta?.percentChange,
+        improved: item.outcomeDelta?.improved,
+        reviewDate: item.reviewDate || item.recheckDate,
+      })),
+    };
 
     const monthlyReport = new MonthlyReport({
       orgId,
       periodStart,
       periodEnd,
+      reportMode,
+      dataReadiness: {
+        status: readinessStatus,
+        mappedUsers: mappedUsers.length,
+        totalUsers,
+        userCoveragePct,
+        readyTeams,
+        eligibleTeams: teams.length,
+        teamCoveragePct,
+        weeklySnapshots: weeklySnapshots.length,
+        minimumTeamSize,
+      },
+      actionOutcomes,
       orgHealth,
       persistentRisks,
       leadershipSignals,
@@ -257,16 +310,15 @@ export async function generateMonthlyReportForOrg(orgId) {
       engagementSignals,
       topStructuralDrivers,
       crisisPatterns,
-      aiSummary,
     });
 
     await monthlyReport.save();
 
-    console.log(`✅ Monthly report generated for org ${orgId}`);
-    console.log(`   📊 BDI proxy: ${orgHealth.avgBDI}/100 (${bdiTrend})`);
-    console.log(`   ⏱  Avg meeting hours/week: ${orgHealth.avgMeetingHoursWeekly}h`);
-    console.log(`   �  Avg back-to-back blocks: ${orgHealth.avgBackToBackBlocks}`);
-    console.log(`   🌙  After-hours: ${orgHealth.avgAfterHoursPct}%`);
+    console.log(`Monthly report generated for org ${orgId}`);
+    console.log(`   BDI: ${orgHealth.avgBDI}/100 (${orgHealth.bdiTrend})`);
+    console.log(`   Avg participant-hours/week: ${orgHealth.avgMeetingHoursWeekly}h`);
+    console.log(`   Avg back-to-back blocks: ${orgHealth.avgBackToBackBlocks}`);
+    console.log(`   Outside work schedule: ${orgHealth.avgAfterHoursPct}%`);
 
     return monthlyReport;
   } catch (error) {
@@ -397,8 +449,8 @@ async function identifyPersistentRisks(teams, periodStart, periodEnd) {
       if (riskScore >= 35) {
         if (!teamRiskWeeks[teamId]) {
           teamRiskWeeks[teamId] = {
-            teamId: state.teamId._id || state.teamId,
-            teamName: state.teamId.name || 'Unknown',
+            teamId: state.teamId?._id || state.teamId,
+            teamName: state.teamId?.name || 'Unknown',
             weeks: 0,
             scores: [],
           };
@@ -413,7 +465,11 @@ async function identifyPersistentRisks(teams, periodStart, periodEnd) {
     );
 
     if (affectedTeams.length > 0) {
-      const totalWeeks = 4;
+      const totalWeeks = Math.max(
+        1,
+        new Set(teamStates.map((state) => new Date(state.weekStart).toISOString().slice(0, 10)))
+          .size
+      );
       const avgWeeksElevated =
         affectedTeams.reduce((sum, t) => sum + t.weeks, 0) / affectedTeams.length;
       const classification =
@@ -664,9 +720,19 @@ async function calculateRetentionExposure(teams, periodStart, periodEnd) {
   };
 }
 
-async function calculateEngagementSignals(orgId, teamIds) {
+async function calculateEngagementSignals(orgId, teamIds, periodStart, periodEnd, minimumTeamSize) {
   const docs = await EngagementStrainWeekly.aggregate([
-    { $match: { orgId, teamId: { $in: teamIds } } },
+    {
+      $match: {
+        orgId,
+        teamId: { $in: teamIds },
+        weekStart: {
+          $gte: periodStart.toISOString().slice(0, 10),
+          $lte: periodEnd.toISOString().slice(0, 10),
+        },
+        activePeopleCount: { $gte: minimumTeamSize },
+      },
+    },
     { $sort: { teamId: 1, weekStart: -1 } },
     { $group: { _id: '$teamId', doc: { $first: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$doc' } },
@@ -845,315 +911,174 @@ export async function getLeadershipView(orgId) {
 
 // ── HTML Email Generator ───────────────────────────────────────────────────────
 
-function generateMonthlyEmailHTML({ org, report }) {
-  const fmtDate = (d) =>
-    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const periodLabel = `${fmtDate(report.periodStart)} – ${fmtDate(report.periodEnd)}`;
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
-  // ── Core metrics ──
-  const meetHours = report.orgHealth?.avgMeetingHoursWeekly || 0;
-  const meetCount = report.orgHealth?.avgMeetingCount || 0;
-  const b2b = report.orgHealth?.avgBackToBackBlocks || 0;
-  const afterHours = report.orgHealth?.avgAfterHoursPct || 0;
-  const rci = report.orgHealth?.avgRCI || 0;
-  const execDrag = report.executionSignals?.executionDragAvg || 0;
-  const turnoverRisk = report.retentionExposure?.estimatedTurnoverRisk || 0;
-  const engagement = report.engagementSignals || {};
-  const engagementRisk = engagement.avgStrainRisk || 0;
-  const engagementConditions = engagement.avgConditionsScore || 0;
-  const teamsMeasured = engagement.teamsMeasured || 0;
-  const teamsInStrain = engagement.teamsInStrain || 0;
-  const avgHourlyRate = 75; // loaded cost assumption
-  const weeklyMeetingCost = Math.round(meetHours * avgHourlyRate);
-
-  // ── Helpers ──
-  const statPill = (value, label, color) =>
-    `<div style="text-align:left;padding:14px 16px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;min-width:96px;">
-      <div style="font-size:21px;font-weight:750;color:${color};line-height:1;letter-spacing:-.2px;">${value}</div>
-      <div style="font-size:10px;color:#64748b;margin-top:6px;line-height:1.35;text-transform:uppercase;letter-spacing:.7px;font-weight:700;">${label}</div>
-    </div>`;
-
-  const riskCard = ({
-    severityLabel,
-    severityColor,
-    headline,
-    situation,
-    businessRisk,
-    action,
-    upside,
-  }) =>
-    `<div style="border:1px solid #dbe3ef;border-top:4px solid ${severityColor};border-radius:12px;padding:22px 24px;margin-bottom:18px;background:#fff;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${severityColor};background:${severityColor}12;padding:5px 10px;border-radius:999px;">${severityLabel}</span>
-      </div>
-      <h3 style="margin:0 0 12px;font-size:17px;font-weight:750;color:#0f172a;line-height:1.35;">${headline}</h3>
-      <p style="margin:0 0 8px;font-size:13px;color:#334155;line-height:1.7;"><strong style="color:#0f172a;">Situation:</strong> ${situation}</p>
-      <p style="margin:0 0 14px;font-size:13px;color:#334155;line-height:1.7;"><strong style="color:#0f172a;">Business impact:</strong> ${businessRisk}</p>
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px 14px;border-radius:8px;margin-top:4px;margin-bottom:10px;">
-        <p style="margin:0;font-size:13px;color:#111827;line-height:1.65;"><strong>Action:</strong> ${action}</p>
-      </div>
-      ${
-        upside
-          ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px;">
-        <p style="margin:0;font-size:13px;color:#166534;line-height:1.65;"><strong>Expected upside:</strong> ${upside}</p>
-      </div>`
-          : ''
-      }
-    </div>`;
-
-  const driverLabel = (driver) =>
-    ({
-      recovery_debt: 'Recovery debt',
-      focus_erosion: 'Focus erosion',
-      coordination_friction: 'Coordination friction',
-      responsiveness_pressure: 'Responsiveness pressure',
-      collaboration_withdrawal: 'Collaboration withdrawal',
-      manager_support_gap: 'Manager support gap',
-      workload_volatility: 'Workload volatility',
-    })[driver] || driver;
-
-  // ── Build risk cards from available data ──
-  const cards = [];
-
-  if (meetHours > 0) {
-    const execSev =
-      meetHours > 300
-        ? { label: 'CRITICAL EXECUTION RISK', color: '#ef4444', icon: '🔴' }
-        : meetHours > 150
-          ? { label: 'HIGH EXECUTION RISK', color: '#f59e0b', icon: '🟠' }
-          : { label: 'ELEVATED MEETING LOAD', color: '#6366f1', icon: '🟡' };
-    cards.push(
-      riskCard({
-        icon: execSev.icon,
-        severityLabel: execSev.label,
-        severityColor: execSev.color,
-        headline: `${org.name} is spending ${meetHours} hours per week in meetings`,
-        situation: `Over the past month, the organisation averaged ${meetHours} meeting hours per week across ${meetCount} meetings. That is equivalent to roughly $${weeklyMeetingCost.toLocaleString()} per week in staff time — before accounting for preparation or follow-up.`,
-        businessRisk: `When this much time is locked in meetings, execution suffers directly. Strategic decisions get deferred, project delivery slows, and individual contributors lose the deep-focus time needed to produce output. At ${meetHours}h/week, this is not a productivity issue — it is a structural capacity problem.`,
-        action: `This week: pull a list of all recurring meetings with 6+ attendees. Cancel or reduce cadence for any that lacks a documented output. Target a 20% reduction in meeting hours within 30 days. Assign one person to own this audit.`,
-        upside: `A 20% cut in meeting time frees up ${Math.round(meetHours * 0.2)}h of execution capacity per week — worth ~$${Math.round(meetHours * 0.2 * avgHourlyRate).toLocaleString()} in recovered productive time. Teams get uninterrupted blocks to ship work, leaders can focus on decisions instead of status updates, and output quality improves visibly within weeks.`,
-      })
-    );
-  }
-
-  if (b2b > 10) {
-    const b2bSev =
-      b2b > 20
-        ? { label: 'CRITICAL CAPACITY RISK', color: '#ef4444', icon: '🔴' }
-        : { label: 'HIGH CAPACITY RISK', color: '#f59e0b', icon: '🟠' };
-    cards.push(
-      riskCard({
-        icon: b2bSev.icon,
-        severityLabel: b2bSev.label,
-        severityColor: b2bSev.color,
-        headline: `${b2b} back-to-back meeting blocks per week — your people have no time to think`,
-        situation: `Each week, ${org.name} averages ${b2b} consecutive meeting blocks. Healthy organisations operate below 10. This pattern has been sustained for 4+ weeks.`,
-        businessRisk: `Back-to-back meetings eliminate the cognitive recovery time required for strategic thinking, risk assessment, and decision quality. Leaders and managers are stuck in reaction mode — they are attending meetings, not driving outcomes. This directly degrades execution speed and decision quality across the organisation.`,
-        action: `Starting Monday: mandate a 15-minute buffer between all calendar meetings across the leadership team. Block two mornings per week as meeting-free. These are not optional — enforce it through calendar policy.`,
-        upside: `Adding gaps between meetings restores the thinking time your leaders need to make better decisions. Research shows that even 10-minute breaks between meetings recover up to 30% of cognitive performance. When leaders can actually prepare and reflect, meeting quality goes up — and you end up needing fewer meetings overall.`,
-      })
-    );
-  }
-
-  if (afterHours > 15) {
-    const ahSev =
-      afterHours > 25
-        ? { label: 'CRITICAL RETENTION RISK', color: '#dc2626', icon: '🔴' }
-        : { label: 'HIGH RETENTION RISK', color: '#f59e0b', icon: '🟠' };
-    cards.push(
-      riskCard({
-        icon: ahSev.icon,
-        severityLabel: ahSev.label,
-        severityColor: ahSev.color,
-        headline: `${afterHours}% of all communication is happening outside working hours`,
-        situation: `More than one in four messages sent at ${org.name} is sent outside standard working hours. This is not occasional — it is a sustained structural pattern for at least 4 consecutive weeks.`,
-        businessRisk: `Sustained after-hours work pressure is the single strongest predictor of voluntary attrition within 6 months. Employees who consistently work after hours report higher burnout, lower engagement, and are significantly more likely to resign. Based on this pattern, estimated turnover risk is ${turnoverRisk}%. Replacing a single senior employee typically costs 50–200% of their annual salary.`,
-        action: `Declare a communication blackout policy after 7pm, effective immediately. Audit workload distribution — after-hours patterns almost always signal unequal burden. Identify the 3–5 roles generating most after-hours messages and investigate root cause this week.`,
-        upside: `Restoring boundaries dramatically increases employee engagement, reduces sick leave, and cuts attrition. Reducing turnover risk from ${turnoverRisk}% to under 10% can save the equivalent of several full salaries per year. Employees who work sustainable hours are more focused, make fewer errors, and stay longer — compounding value over time.`,
-      })
-    );
-  }
-
-  if (rci >= 70) {
-    cards.push(
-      riskCard({
-        icon: '🔴',
-        severityLabel: 'CRITICAL — RECOVERY COLLAPSE',
-        severityColor: '#7c3aed',
-        headline: `Recovery Collapse Index is at ${rci}/100 — teams have no capacity buffer left`,
-        situation: `The Recovery Collapse Index (RCI) measures how much compounded pressure — consecutive meetings, after-hours load, and inadequate recovery gaps — is bearing on your workforce. A score of ${rci}/100 is the maximum level.`,
-        businessRisk: `At RCI ${rci}, there is no slack in the system. Any additional demand — a product launch, a client escalation, a team departure — will cause visible breakdown: missed deadlines, quality failures, or sudden resignations. This score indicates the organisation is operating in a chronic stress state, not a temporary peak.`,
-        action: `Treat this as a structural emergency, not a morale issue. Do not add new initiatives until meeting load and after-hours patterns are addressed. Schedule a leadership session this month specifically to redesign how work is structured — not how hard people work.`,
-        upside: `Bringing RCI below 50 means the organisation has real capacity headroom — teams can absorb new priorities without breaking, quality stops declining under pressure, and leadership can finally operate proactively rather than reactively. This is the foundation for sustainable growth.`,
-      })
-    );
-  }
-
-  if (teamsMeasured > 0) {
-    const engagementSev =
-      engagementRisk >= 70
-        ? { label: 'CRITICAL ENGAGEMENT STRAIN', color: '#dc2626' }
-        : engagementRisk >= 50
-          ? { label: 'ENGAGEMENT STRAIN', color: '#f59e0b' }
-          : engagementRisk >= 30
-            ? { label: 'ENGAGEMENT WATCH', color: '#2563eb' }
-            : { label: 'ENGAGEMENT HEALTHY', color: '#16a34a' };
-    const drivers =
-      engagement.topDrivers?.length > 0
-        ? ` Top drivers: ${engagement.topDrivers
-            .map((driver) => `${driverLabel(driver.driver)} (${driver.score}/100)`)
-            .join(', ')}.`
-        : '';
-    cards.push(
-      riskCard({
-        severityLabel: engagementSev.label,
-        severityColor: engagementSev.color,
-        headline: `Engagement conditions score is ${engagementConditions}/100 across ${teamsMeasured} measured team${teamsMeasured === 1 ? '' : 's'}`,
-        situation: `Average engagement strain risk is ${engagementRisk}/100. ${teamsInStrain} team${teamsInStrain === 1 ? ' is' : 's are'} in strain or critical state. Overall trend is ${engagement.trend || 'stable'}.${drivers}`,
-        businessRisk:
-          'Engagement here is not a survey score or sentiment read. It is a metadata-derived operating condition: recovery time, focus availability, coordination friction, responsiveness pressure, and collaboration withdrawal. These patterns often change before survey scores or attrition numbers move.',
-        action:
-          engagementRisk >= 50
-            ? 'Review the top engagement drivers with HR and team leads this week. Pick one structural change: restore recovery time, protect focus blocks, or reduce responsiveness pressure. Re-check movement in the next weekly brief.'
-            : 'Keep engagement conditions visible in monthly leadership review. If risk rises by 8+ points or any team moves into strain, trigger a focused manager check-in and workload review.',
-        upside:
-          'Leaders can act before disengagement becomes attrition. The goal is not to ask people to be more engaged; it is to remove the work patterns that make sustained engagement difficult.',
-      })
-    );
-  } else {
-    cards.push(
-      riskCard({
-        severityLabel: 'ENGAGEMENT NOT YET MEASURED',
-        severityColor: '#64748b',
-        headline: 'Engagement measurement is not available for this month yet',
-        situation:
-          'The monthly report did not find any weekly engagement strain records for measured teams.',
-        businessRisk:
-          'Without engagement strain data, leaders can still see workload and retention proxies, but they cannot yet see the earlier operating-condition signals that often move before survey scores or attrition.',
-        action:
-          'Confirm the weekly engagement scoring job is running and that connected integrations have enough team-level metadata. Once available, this section will show strain risk, conditions score, teams in strain, trend, and top drivers.',
-        upside:
-          'Engagement becomes visible as a structural work condition instead of a late-stage survey or resignation signal.',
-      })
-    );
-  }
-
-  const cardsHtml =
-    cards.length > 0
-      ? cards.join('')
-      : `<div style="padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
-        <p style="margin:0;font-size:14px;color:#15803d;">✅ No significant risks identified for this period.</p>
-      </div>`;
-
-  // ── Summary stats bar ──
-  const summaryStats = [
-    meetHours > 0
-      ? statPill(
-          `${meetHours}h`,
-          'Mtg Hrs/Week',
-          meetHours > 300 ? '#ef4444' : meetHours > 150 ? '#f59e0b' : '#22c55e'
-        )
-      : null,
-    b2b > 0
-      ? statPill(`${b2b}`, 'B2B Blocks', b2b > 20 ? '#ef4444' : b2b > 10 ? '#f59e0b' : '#22c55e')
-      : null,
-    afterHours > 0
-      ? statPill(
-          `${afterHours}%`,
-          'After-Hours',
-          afterHours > 25 ? '#ef4444' : afterHours > 10 ? '#f59e0b' : '#22c55e'
-        )
-      : null,
-    rci > 0
-      ? statPill(`${rci}/100`, 'RCI', rci >= 70 ? '#ef4444' : rci >= 40 ? '#f59e0b' : '#22c55e')
-      : null,
-    execDrag > 0
-      ? statPill(
-          `${execDrag}/100`,
-          'Exec Drag',
-          execDrag >= 60 ? '#ef4444' : execDrag >= 35 ? '#f59e0b' : '#22c55e'
-        )
-      : null,
-    turnoverRisk > 0
-      ? statPill(
-          `${turnoverRisk}%`,
-          'Turnover Risk',
-          turnoverRisk > 20 ? '#ef4444' : turnoverRisk > 10 ? '#f59e0b' : '#22c55e'
-        )
-      : null,
-    teamsMeasured > 0
-      ? statPill(
-          `${engagementConditions}/100`,
-          'Engagement',
-          engagementRisk >= 70 ? '#ef4444' : engagementRisk >= 50 ? '#f59e0b' : '#16a34a'
-        )
-      : null,
-  ]
-    .filter(Boolean)
-    .join('<div style="width:8px;flex-shrink:0;"></div>');
-
-  // ── Situation summary sentence ──
-  const situationLines = [];
-  if (meetHours > 0)
-    situationLines.push(
-      `${org.name} averaged <strong>${meetHours} meeting hours per week</strong> over the past month`
-    );
-  if (b2b > 0) situationLines.push(`<strong>${b2b} back-to-back meeting blocks</strong> per week`);
-  if (afterHours > 0)
-    situationLines.push(`<strong>${afterHours}% of messages</strong> sent outside working hours`);
-  if (rci >= 70)
-    situationLines.push(
-      `Recovery Collapse Index at <strong>${rci}/100</strong> — maximum stress load`
-    );
-  const situationText =
-    situationLines.length > 0
-      ? situationLines.join(', with ') + '.'
-      : 'No significant signals detected this period.';
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:28px 18px;background:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+export function generateMonthlyEmailHTML({ org, report }) {
+  const fmtDate = (date) =>
+    new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  const periodLabel = `${fmtDate(report.periodStart)} - ${fmtDate(report.periodEnd)}`;
+  const appUrl = process.env.FRONTEND_URL || 'https://app.signaltrue.ai';
+  const readiness = report.dataReadiness || {};
+  const shellStart = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:28px 18px;background:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0f172a;">
 <div style="max-width:680px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #d9e2ee;box-shadow:0 18px 45px rgba(15,23,42,.08);">
+<div style="background:#0f172a;color:#fff;padding:30px 34px 25px;">
+<div style="font-size:10px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;">Monthly ${report.reportMode === 'decision' ? 'Decision Brief' : 'Setup Brief'}</div>
+<h1 style="margin:0 0 6px;font-size:25px;">${escapeHtml(org.name)}</h1>
+<div style="font-size:13px;color:#cbd5e1;">${periodLabel}</div>
+</div>`;
+  const shellEnd = `<div style="padding:16px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+<p style="color:#64748b;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> on ${fmtDate(new Date())}</p>
+<p style="color:#94a3b8;font-size:11px;margin:5px 0 0;">Team-level metadata only. Indicators describe measured work patterns; they are not diagnoses or individual performance scores.</p>
+</div></div></body></html>`;
 
-  <!-- Header -->
-  <div style="background:#0f172a;color:#fff;padding:32px 34px 26px;">
-    <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;">Monthly Leadership Briefing</div>
-    <h1 style="margin:0 0 6px;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>
-    <div style="font-size:13px;color:#cbd5e1;">${periodLabel}</div>
-  </div>
-
-  <!-- Situation banner -->
-  <div style="background:#ffffff;border-bottom:1px solid #e2e8f0;padding:22px 34px;">
-    <p style="margin:0 0 7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.3px;color:#64748b;">Executive readout</p>
-    <p style="margin:0;font-size:15px;color:#0f172a;line-height:1.7;">${situationText}</p>
-  </div>
-
-  <!-- Stats bar -->
-  <div style="padding:18px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-    <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:2px;">
-      ${summaryStats}
-    </div>
-  </div>
-
-  <!-- Risk cards -->
-  <div style="padding:26px 28px 8px;">
-    <h2 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#475569;margin:0 0 16px;">Priority decisions</h2>
-    ${cardsHtml}
-  </div>
-
-  <!-- Footer -->
-  <div style="padding:16px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;margin-top:16px;">
-    <p style="color:#64748b;font-size:12px;margin:0;">Generated by <strong>SignalTrue</strong> · Monthly Leadership Briefing · ${fmtDate(new Date())}</p>
-    <p style="color:#94a3b8;font-size:11px;margin:4px 0 0;">Org-aggregate signals only. No individual names or personal data included.</p>
-  </div>
-
+  if (report.reportMode !== 'decision') {
+    return `${shellStart}
+<div style="padding:24px 34px;border-bottom:1px solid #e2e8f0;">
+<p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 8px;">Executive readout</p>
+<h2 style="font-size:20px;margin:0 0 9px;">Leadership conclusions are paused</h2>
+<p style="font-size:14px;line-height:1.65;color:#334155;margin:0;">SignalTrue does not have enough representative team data to make a trustworthy monthly recommendation. This brief shows exactly what must be fixed.</p>
 </div>
-</body></html>`;
+<div style="padding:20px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;">
+${monthlyStat(`${readiness.mappedUsers || 0}/${readiness.totalUsers || 0}`, 'Mapped users')}
+${monthlyStat(`${readiness.readyTeams || 0}/${readiness.eligibleTeams || 0}`, 'Ready teams')}
+${monthlyStat(`${readiness.weeklySnapshots || 0}/3`, 'Weekly snapshots')}
+</div>
+<div style="padding:26px 34px;">
+<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#475569;margin:0 0 14px;">Required before the next brief</h2>
+${setupStep('1', 'Review people without a named team', `Directory departments are the primary source. Use public website suggestions only for remaining gaps, then approve each assignment.`)}
+${setupStep('2', 'Reach the privacy-safe team threshold', `Each reported team needs at least ${readiness.minimumTeamSize || 5} active mapped members. Catch-all and smaller groups remain suppressed.`)}
+${setupStep('3', 'Collect independent weekly evidence', `The monthly brief needs at least three weekly snapshots; ${readiness.weeklySnapshots || 0} are currently available.`)}
+<div style="text-align:center;margin-top:20px;"><a href="${appUrl}/app/employees" style="display:inline-block;background:#0f172a;color:#fff;padding:11px 25px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">Review team setup</a></div>
+</div>${shellEnd}`;
+  }
+
+  const health = report.orgHealth || {};
+  const engagement = report.engagementSignals || {};
+  const outcomes = report.actionOutcomes || {};
+  const persistentRisks = [...(report.persistentRisks || [])].sort(
+    (a, b) => (b.avgScore || 0) - (a.avgScore || 0)
+  );
+  const primaryRisk = persistentRisks[0];
+  const decision = getMonthlyDecision(primaryRisk, health, engagement);
+  const measuredItems = (outcomes.items || []).filter((item) => item.percentChange != null);
+
+  return `${shellStart}
+<div style="padding:24px 34px;border-bottom:1px solid #e2e8f0;">
+<p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 8px;">Decision for this month</p>
+<h2 style="font-size:20px;line-height:1.35;margin:0 0 9px;">${escapeHtml(decision.headline)}</h2>
+<p style="font-size:14px;line-height:1.65;color:#334155;margin:0;">${escapeHtml(decision.evidence)}</p>
+</div>
+<div style="padding:20px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;">
+${monthlyStat(`${health.avgMeetingHoursWeekly || 0}h`, 'Participant-hours / week')}
+${monthlyStat(`${health.avgMeetingCount || 0}`, 'Unique meetings / week')}
+${monthlyStat(`${health.avgBackToBackBlocks || 0}`, 'Person-level B2B blocks')}
+${monthlyStat(`${health.avgAfterHoursPct || 0}%`, 'Outside work schedule')}
+</div>
+<div style="padding:26px 34px 8px;">
+<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#475569;margin:0 0 14px;">Did last month's actions work?</h2>
+${
+  measuredItems.length > 0
+    ? measuredItems
+        .slice(0, 3)
+        .map(
+          (
+            item
+          ) => `<div style="padding:13px 15px;margin-bottom:10px;border:1px solid ${item.improved ? '#bbf7d0' : '#fde68a'};background:${item.improved ? '#f0fdf4' : '#fffbeb'};border-radius:9px;">
+<p style="font-size:13px;margin:0 0 4px;"><strong>${escapeHtml(item.title)}</strong>${item.teamName ? ` - ${escapeHtml(item.teamName)}` : ''}</p>
+<p style="font-size:12px;color:#475569;margin:0;">Measured change: <strong>${Number(item.percentChange) > 0 ? '+' : ''}${Number(item.percentChange).toFixed(1)}%</strong> - ${item.improved ? 'improvement recorded' : 'target not yet met'}</p></div>`
+        )
+        .join('')
+    : `<div style="padding:13px 15px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:9px;"><p style="font-size:13px;line-height:1.6;margin:0;">No completed action has a measured before/after result this month. ${outcomes.active || 0} action(s) are active. Log decisions in SignalTrue so the next brief can prove what changed.</p></div>`
+}
+</div>
+<div style="padding:18px 34px 28px;">
+<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#475569;margin:0 0 14px;">Action card</h2>
+<div style="border:1px solid #c7d2fe;border-left:4px solid #4f46e5;border-radius:10px;padding:17px 18px;">
+<p style="font-size:14px;line-height:1.6;margin:0 0 9px;"><strong>Decision:</strong> ${escapeHtml(decision.action)}</p>
+<p style="font-size:12px;color:#475569;line-height:1.6;margin:0;"><strong>Owner:</strong> ${escapeHtml(decision.owner)} &nbsp;|&nbsp; <strong>Measure:</strong> ${escapeHtml(decision.measure)} &nbsp;|&nbsp; <strong>Review:</strong> next monthly brief</p>
+</div>
+<p style="font-size:11px;color:#94a3b8;line-height:1.55;margin:14px 0 0;">Monthly values average ${readiness.weeklySnapshots || 0} independent weekly snapshots. Persistence is reported only when the underlying weekly records meet the configured threshold for at least ${PERSISTENT_RISK_WEEKS} weeks.</p>
+</div>${shellEnd}`;
+}
+
+function monthlyStat(value, label) {
+  return `<div style="flex:1;min-width:118px;padding:13px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:9px;"><div style="font-size:20px;font-weight:750;">${escapeHtml(value)}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-top:5px;">${escapeHtml(label)}</div></div>`;
+}
+
+function setupStep(number, title, detail) {
+  return `<div style="padding:14px 15px;margin-bottom:10px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:9px;"><p style="font-size:13px;margin:0 0 4px;"><strong>${number}. ${escapeHtml(title)}</strong></p><p style="font-size:12px;line-height:1.55;color:#475569;margin:0;">${escapeHtml(detail)}</p></div>`;
+}
+
+function getMonthlyDecision(primaryRisk, health, engagement) {
+  if (primaryRisk?.riskType === 'overload') {
+    return {
+      headline: 'Reduce the most persistent meeting-pressure pattern',
+      evidence: `${primaryRisk.affectedTeams?.length || 0} team(s) crossed the overload threshold in ${primaryRisk.weeksAboveThreshold} measured weeks.`,
+      action:
+        'Choose the affected team with the highest score and remove or shorten one recurring meeting block before adding new coordination rules.',
+      owner: 'Leadership with the team lead',
+      measure: 'back-to-back blocks and participant-hours',
+    };
+  }
+  if (primaryRisk?.riskType === 'execution') {
+    return {
+      headline: 'Resolve one persistent execution bottleneck',
+      evidence: `${primaryRisk.affectedTeams?.length || 0} team(s) remained above the execution-risk threshold for ${primaryRisk.weeksAboveThreshold} measured weeks.`,
+      action:
+        'Select the highest-risk workflow, name one decision owner, and remove one recurring handoff or approval step.',
+      owner: 'Executive sponsor',
+      measure: 'execution-risk score and decision velocity',
+    };
+  }
+  if (primaryRisk?.riskType === 'retention') {
+    return {
+      headline: 'Validate the persistent retention-risk signal',
+      evidence: `${primaryRisk.affectedTeams?.length || 0} privacy-eligible team(s) remained above the measured risk threshold for ${primaryRisk.weeksAboveThreshold} weeks.`,
+      action:
+        'Review aggregate workload drivers with HR and the relevant team lead; choose one structural pressure to reduce and avoid individual targeting.',
+      owner: 'HR',
+      measure: 'aggregate risk score and its strongest driver',
+    };
+  }
+  if ((engagement.teamsInStrain || 0) > 0) {
+    return {
+      headline: 'Investigate the strongest team operating-condition signal',
+      evidence: `${engagement.teamsInStrain} measured team(s) are in strain or critical state; average conditions score is ${engagement.avgConditionsScore || 0}/100.`,
+      action:
+        'Ask the relevant team lead what changed, then test one adjustment tied to the strongest measured driver.',
+      owner: 'HR with the team lead',
+      measure: 'conditions score and strongest driver',
+    };
+  }
+  return {
+    headline: 'No persistent risk crossed the monthly decision threshold',
+    evidence: `Across the measured weekly snapshots, no team-level pattern remained elevated for ${PERSISTENT_RISK_WEEKS} weeks. Meeting participant-hours trend is ${health.bdiTrend || 'stable'}.`,
+    action:
+      'Keep current operating practices and log any planned change so its effect can be measured next month.',
+    owner: 'Operations or HR',
+    measure: 'the metric targeted by the logged action',
+  };
 }
 
 /**
  * Returns true if the report has real data worth sending to a client.
  */
 function reportHasRealData(report) {
+  if (report.reportMode === 'setup') {
+    return (report.dataReadiness?.totalUsers || 0) > 0;
+  }
   const meetHours = report.orgHealth?.avgMeetingHoursWeekly || 0;
   const bdi = report.orgHealth?.avgBDI || 0;
   const rci = report.orgHealth?.avgRCI || 0;
@@ -1169,16 +1094,21 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
     month: 'long',
     year: 'numeric',
   });
-  const subject = `${previewOnly ? '👁 PREVIEW — ' : ''}Monthly Leadership Report — ${org.name} — ${periodLabel}`;
+  const subject = `${previewOnly ? 'PREVIEW - ' : ''}${report.reportMode === 'setup' ? 'Monthly Setup Brief' : 'Monthly Decision Brief'} - ${org.name} - ${periodLabel}`;
   const html = generateMonthlyEmailHTML({ org, report });
 
-  // Build recipient list: master_admin + hr_admin + executive users
+  // Setup issues go to admins/HR. Leadership recipients receive decision-ready reports only.
+  const recipientRoles =
+    report.reportMode === 'setup'
+      ? ['master_admin', 'hr_admin', 'admin']
+      : ['master_admin', 'hr_admin', 'admin', 'executive'];
   const orgUsers = await User.find({
     orgId,
-    role: { $in: ['master_admin', 'hr_admin', 'executive'] },
+    role: { $in: recipientRoles },
   }).select('email');
   const userEmails = orgUsers.map((u) => u.email);
-  const overrides = org.settings?.monthlyReportRecipients || [];
+  const overrides =
+    report.reportMode === 'decision' ? org.settings?.monthlyReportRecipients || [] : [];
   const recipients = previewOnly ? [] : [...new Set([...userEmails, ...overrides])];
 
   // ── Data quality gate: never send all-zero report to clients ──────────────

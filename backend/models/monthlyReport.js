@@ -18,6 +18,42 @@ const monthlyReportSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    reportMode: {
+      type: String,
+      enum: ['setup', 'decision'],
+      default: 'setup',
+      index: true,
+    },
+    dataReadiness: {
+      status: {
+        type: String,
+        enum: ['ready', 'partial', 'needs_mapping'],
+        default: 'needs_mapping',
+      },
+      mappedUsers: { type: Number, default: 0 },
+      totalUsers: { type: Number, default: 0 },
+      userCoveragePct: { type: Number, default: 0 },
+      readyTeams: { type: Number, default: 0 },
+      eligibleTeams: { type: Number, default: 0 },
+      teamCoveragePct: { type: Number, default: 0 },
+      weeklySnapshots: { type: Number, default: 0 },
+      minimumTeamSize: { type: Number, default: 5 },
+    },
+    actionOutcomes: {
+      measured: { type: Number, default: 0 },
+      improved: { type: Number, default: 0 },
+      active: { type: Number, default: 0 },
+      items: [
+        {
+          title: String,
+          teamName: String,
+          status: String,
+          percentChange: Number,
+          improved: Boolean,
+          reviewDate: Date,
+        },
+      ],
+    },
 
     // Organization-level health metrics
     orgHealth: {
@@ -264,7 +300,6 @@ const monthlyReportSchema = new mongoose.Schema(
     aiSummary: {
       narrative: {
         type: String,
-        required: true,
       },
       keyRisks: [
         {
@@ -322,6 +357,9 @@ monthlyReportSchema.methods.getLeadershipView = function () {
   return {
     periodStart: this.periodStart,
     periodEnd: this.periodEnd,
+    reportMode: this.reportMode,
+    dataReadiness: this.dataReadiness,
+    actionOutcomes: this.actionOutcomes,
     orgHealth: this.orgHealth,
     persistentRisks: this.persistentRisks.map((risk) => ({
       riskType: risk.riskType,
@@ -354,10 +392,10 @@ monthlyReportSchema.methods.getLeadershipView = function () {
     topStructuralDrivers: this.topStructuralDrivers,
     crisisPatterns: this.crisisPatterns,
     aiSummary: {
-      narrative: this.aiSummary.narrative,
-      keyRisks: this.aiSummary.keyRisks,
-      leadershipDecisionsRequired: this.aiSummary.leadershipDecisionsRequired,
-      organizationalTrajectory: this.aiSummary.organizationalTrajectory,
+      narrative: this.aiSummary?.narrative,
+      keyRisks: this.aiSummary?.keyRisks || [],
+      leadershipDecisionsRequired: this.aiSummary?.leadershipDecisionsRequired || [],
+      organizationalTrajectory: this.aiSummary?.organizationalTrajectory,
     },
     generatedAt: this.generatedAt,
   };

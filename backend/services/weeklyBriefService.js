@@ -2,10 +2,8 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
-import DriftEvent from '../models/driftEvent.js';
 import BehavioralDriftIndex from '../models/behavioralDriftIndex.js';
 import Team from '../models/team.js';
-import DriftPlaybook from '../models/driftPlaybook.js';
 import WorkEvent from '../models/workEvent.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
@@ -16,8 +14,8 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import TeamSizeGate from '../models/teamSizeGate.js';
 import Intervention from '../models/intervention.js';
 import BriefPrediction from '../models/briefPrediction.js';
-import { generateWeeklyAIAnalysis, INDUSTRY_BENCHMARKS } from './weeklyAIAnalysisService.js';
-import { calculateTeamStatus, getStatusMeta, STATUS_LEVELS } from './escalationService.js';
+import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
+import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
 
 // ─── Signal type presentation (same as in signals.js) ───
@@ -40,13 +38,13 @@ const SIGNAL_TYPE_PRESENTATION = {
   'recovery-deficit': {
     family: 'Capacity Drift',
     businessTitle: 'Recovery time between workdays is shrinking',
-    whatItMeans:
-      'Sustained recovery loss often precedes strain, slower decisions, and burnout risk.',
+    whatItMeans: 'The measured schedule leaves less time between work periods than the baseline.',
   },
   'context-switching': {
     family: 'Capacity Drift',
     businessTitle: 'Work patterns are becoming more fragmented',
-    whatItMeans: 'Higher fragmentation usually means less sustained progress on meaningful work.',
+    whatItMeans:
+      'This metric rises when meetings leave more short gaps across the measured workday.',
   },
   'network-bottleneck': {
     family: 'Coordination Drift',
@@ -73,7 +71,8 @@ const SIGNAL_TYPE_PRESENTATION = {
   'rework-churn': {
     family: 'Coordination Drift',
     businessTitle: 'More work is being revisited or reworked',
-    whatItMeans: 'Rework often points to coordination breakdowns, unclear decisions, or overload.',
+    whatItMeans:
+      'Measured rework increased; review whether ownership, decisions, or workload changed.',
   },
   'sentiment-decline': {
     family: 'Cohesion Drift',
@@ -84,12 +83,14 @@ const SIGNAL_TYPE_PRESENTATION = {
   'meeting-exclusion': {
     family: 'Culture Drift',
     businessTitle: 'Some team members are being left out of meetings',
-    whatItMeans: 'Exclusion from meetings often means exclusion from decisions and context.',
+    whatItMeans:
+      'Measured meeting participation is uneven; confirm how decisions and context are shared.',
   },
   'peripheral-member': {
     family: 'Culture Drift',
     businessTitle: 'A team member is becoming structurally peripheral',
-    whatItMeans: 'Peripheral members often disengage quietly before anyone notices.',
+    whatItMeans:
+      'Measured network participation is lower for part of the team; confirm whether that matches role expectations.',
   },
   'hybrid-response-gap': {
     family: 'Culture Drift',
@@ -100,8 +101,7 @@ const SIGNAL_TYPE_PRESENTATION = {
   'fading-voice': {
     family: 'Culture Drift',
     businessTitle: 'A team member has declining participation over time',
-    whatItMeans:
-      'A fading voice is often the earliest metadata signal of disengagement or burnout.',
+    whatItMeans: 'Participation changed relative to baseline; validate the context before acting.',
   },
 };
 
@@ -258,6 +258,37 @@ function chooseOrgMetricRecords(records) {
   const orgRecords = records.filter(isOrgMetricRecord);
   return orgRecords.length > 0 ? orgRecords : records;
 }
+function chooseLatestMetricRecords(records) {
+  const preferred = chooseOrgMetricRecords(records);
+  if (preferred.some(isOrgMetricRecord)) {
+    return [...preferred].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 1);
+  }
+  const latestByTeam = new Map();
+  [...preferred]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .forEach((record) => {
+      const key = String(record.teamId || 'unassigned');
+      if (!latestByTeam.has(key)) latestByTeam.set(key, record);
+    });
+  return [...latestByTeam.values()];
+}
+function chooseWeeklyMetricSnapshots(records) {
+  const preferred = chooseOrgMetricRecords(records);
+  const snapshots = new Map();
+  [...preferred]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .forEach((record) => {
+      const date = new Date(record.date);
+      const day = date.getUTCDay() || 7;
+      const monday = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+      );
+      monday.setUTCDate(monday.getUTCDate() - day + 1);
+      const key = `${monday.toISOString().slice(0, 10)}:${record.teamId || 'org'}`;
+      if (!snapshots.has(key)) snapshots.set(key, record);
+    });
+  return [...snapshots.values()];
+}
 
 // Catch-all buckets ("Unassigned", "General", "Other") are not real teams and
 // must never be scored or presented as team-level insight.
@@ -274,7 +305,14 @@ const STALE_SYNC_DAYS = 7;
  * is almost always a pipeline failure, not a behavior change — declare it, never
  * interpret it as "healthy improvement".
  */
-export function detectDataAnomalies({ tw, sixWeekAvg, twMessages, sixWeekRawAvg, integrationConnections, now }) {
+export function detectDataAnomalies({
+  tw,
+  sixWeekAvg,
+  twMessages,
+  sixWeekRawAvg,
+  integrationConnections,
+  now,
+}) {
   const anomalies = [];
   const suspectMetrics = new Set();
 
@@ -286,7 +324,10 @@ export function detectDataAnomalies({ tw, sixWeekAvg, twMessages, sixWeekRawAvg,
   });
   for (const conn of staleConnectors) {
     const last = conn.sync?.lastSyncAt
-      ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        })
       : 'never';
     anomalies.push({
       kind: 'stale_connector',
@@ -384,7 +425,6 @@ function generateManagerPrompts({
   tw,
   lw,
   sixWeekAvg,
-  observations,
   orgStatus,
   teamBDIData,
   twSignals,
@@ -393,13 +433,12 @@ function generateManagerPrompts({
 
   // Meeting load prompts
   if (tw.meetingHours > 0) {
-    const hoursPerDay = tw.meetingHours / 5;
-    if (hoursPerDay > 3.5) {
+    if (sixWeekAvg.meetingHours > 0 && tw.meetingHours > sixWeekAvg.meetingHours * 1.15) {
       prompts.push(
-        `Your team is averaging ${fmtNum(hoursPerDay, 1)} hours of meetings per day. Which meetings this week felt most valuable, and which could have been an email or async update?`
+        `Meeting participant-hours per person are ${fmtNum(tw.meetingHours, 1)}h this week versus a ${fmtNum(sixWeekAvg.meetingHours, 1)}h six-week baseline. Which change explains the increase, and which recurring meeting should be reviewed first?`
       );
     }
-    if (tw.meetingHours > lw.meetingHours * 1.2) {
+    if (lw.meetingHours > 0 && tw.meetingHours > lw.meetingHours * 1.2) {
       prompts.push(
         `Meeting hours jumped ${Math.round(((tw.meetingHours - lw.meetingHours) / lw.meetingHours) * 100)}% this week. Was this driven by a specific project, or is coordination overhead growing?`
       );
@@ -407,31 +446,38 @@ function generateManagerPrompts({
   }
 
   // Back-to-back prompts
-  if (tw.backToBack > 5) {
+  if (sixWeekAvg.backToBack > 0 && tw.backToBack > sixWeekAvg.backToBack * 1.15) {
     prompts.push(
-      `There were ${Math.round(tw.backToBack)} back-to-back meeting blocks this week. Are people getting enough transition time between calls? Could you add 10-minute buffers?`
+      `Back-to-back meeting blocks per person rose to ${fmtNum(tw.backToBack, 1)} from a ${fmtNum(sixWeekAvg.backToBack, 1)} six-week baseline. What created the clustering, and where could a transition gap be tested?`
     );
   }
 
   // After-hours prompts
   const afterHoursPct = Math.round((tw.afterHoursRatio || 0) * 100);
-  if (afterHoursPct > 20) {
+  if (
+    sixWeekAvg.afterHoursRatio > 0 &&
+    tw.afterHoursRatio > sixWeekAvg.afterHoursRatio + 0.05
+  ) {
     prompts.push(
-      `${afterHoursPct}% of messages were sent outside working hours. Is the team feeling deadline pressure, or has after-hours work become a cultural norm?`
+      `${afterHoursPct}% of messages were sent outside the configured schedule, above the ${Math.round(sixWeekAvg.afterHoursRatio * 100)}% six-week baseline. Did deadlines, time zones, or working agreements change?`
     );
   }
 
   // Focus time prompts
-  if (tw.focusTimeAvailability && tw.focusTimeAvailability / 5 < 2.5) {
+  if (
+    tw.focusTimeAvailability &&
+    sixWeekAvg.focusTimeAvailability > 0 &&
+    tw.focusTimeAvailability < sixWeekAvg.focusTimeAvailability * 0.85
+  ) {
     prompts.push(
-      `Focus time availability is only ${fmtNum(tw.focusTimeAvailability / 5, 1)} hours per day. What's making it hard for people to get uninterrupted work done?`
+      `Measured uninterrupted time fell to ${fmtNum(tw.focusTimeAvailability, 1)}h per person from a ${fmtNum(sixWeekAvg.focusTimeAvailability, 1)}h six-week baseline. Which calendar change best explains the drop?`
     );
   }
 
   // Communication drop
   if (lw.messages > 0 && tw.messages < lw.messages * 0.75) {
     prompts.push(
-      `Team messaging dropped significantly. Is the team in deep-work mode, or are people disengaging from shared channels?`
+      `Team messaging dropped significantly. Was this a planned quiet week, a channel change, or a connector coverage issue?`
     );
   }
 
@@ -467,9 +513,12 @@ function generateManagerPrompts({
   }
 
   // Calendar fragmentation
-  if (tw.calendarFragmentation > 60) {
+  if (
+    sixWeekAvg.calendarFragmentation > 0 &&
+    tw.calendarFragmentation > sixWeekAvg.calendarFragmentation * 1.15
+  ) {
     prompts.push(
-      `Calendar fragmentation is high (${fmtNum(tw.calendarFragmentation, 0)}/100). Are meetings spread too thin across the day? Could you consolidate them into blocks?`
+      `Calendar fragmentation is ${fmtNum(tw.calendarFragmentation, 0)}/100 versus a ${fmtNum(sixWeekAvg.calendarFragmentation, 0)}/100 six-week baseline. Which meeting pattern spread the day into shorter gaps?`
     );
   }
 
@@ -517,7 +566,6 @@ export async function generateWeeklyBrief(orgId) {
     lwSignals,
     twCKSignals,
     lwCKSignals,
-    driftEvents,
     contextTags,
     engagementStrainDocs,
     integrationConnections,
@@ -561,17 +609,20 @@ export async function generateWeeklyBrief(orgId) {
       orgId: org._id,
       detectedAt: { $gte: lastWeekStart, $lt: thisWeekStart },
     }).lean(),
-    DriftEvent.find({ orgId, date: { $gte: thisWeekStart } })
-      .sort({ date: -1 })
-      .lean(),
     WeekContext.find({
       orgId: org._id,
       weekStart: { $lte: now },
       weekEnd: { $gte: thisWeekStart },
     }).lean(),
-    // Engagement Strain: latest record per team for this org
+    // Engagement Strain: current-period records that pass the privacy floor.
     EngagementStrainWeekly.aggregate([
-      { $match: { orgId: org._id } },
+      {
+        $match: {
+          orgId: org._id,
+          weekStart: { $gte: thisWeekStart.toISOString().slice(0, 10) },
+          activePeopleCount: { $gte: minimumTeamSize },
+        },
+      },
       { $sort: { teamId: 1, weekStart: -1 } },
       { $group: { _id: '$teamId', doc: { $first: '$$ROOT' } } },
       { $replaceRoot: { newRoot: '$doc' } },
@@ -581,32 +632,28 @@ export async function generateWeeklyBrief(orgId) {
   ]);
 
   // ─── Second-stage parallel fetch: impact loop, predictions, tenure, coverage trend ───
-  const [
-    recentInterventions,
-    priorPredictions,
-    firstMetricRecord,
-    lastWeekMappedActors,
-  ] = await Promise.all([
-    // Actions the org logged (decision log / impact loop) — last 60 days
-    Intervention.find({
-      orgId: org._id,
-      startDate: { $gte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000) },
-    })
-      .populate('teamId', 'name')
-      .sort({ startDate: -1 })
-      .limit(10)
-      .lean(),
-    // Predictions made in earlier briefs (most recent first) — for grading + track record
-    BriefPrediction.find({ orgId: org._id }).sort({ weekStart: -1 }).limit(9).lean(),
-    // Oldest metric record → how many weeks of baseline history exist
-    IntegrationMetricsDaily.findOne({ orgId: org._id }).sort({ date: 1 }).select('date').lean(),
-    // Mapping coverage last week — to detect coverage regression
-    WorkEvent.distinct('actorUserId', {
-      orgId: org._id,
-      actorUserId: { $ne: null },
-      timestamp: { $gte: lastWeekStart, $lt: thisWeekStart },
-    }),
-  ]);
+  const [recentInterventions, priorPredictions, firstMetricRecord, lastWeekMappedActors] =
+    await Promise.all([
+      // Actions the org logged (decision log / impact loop) — last 60 days
+      Intervention.find({
+        orgId: org._id,
+        startDate: { $gte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000) },
+      })
+        .populate('teamId', 'name')
+        .sort({ startDate: -1 })
+        .limit(10)
+        .lean(),
+      // Predictions made in earlier briefs (most recent first) — for grading + track record
+      BriefPrediction.find({ orgId: org._id }).sort({ weekStart: -1 }).limit(9).lean(),
+      // Oldest metric record → how many weeks of baseline history exist
+      IntegrationMetricsDaily.findOne({ orgId: org._id }).sort({ date: 1 }).select('date').lean(),
+      // Mapping coverage last week — to detect coverage regression
+      WorkEvent.distinct('actorUserId', {
+        orgId: org._id,
+        actorUserId: { $ne: null },
+        timestamp: { $gte: lastWeekStart, $lt: thisWeekStart },
+      }),
+    ]);
   const weeksOfHistory = firstMetricRecord?.date
     ? Math.max(0, Math.floor((now - new Date(firstMetricRecord.date)) / (7 * 24 * 60 * 60 * 1000)))
     : 0;
@@ -632,13 +679,22 @@ export async function generateWeeklyBrief(orgId) {
   // ─── Engagement Strain — attach team names ───
   // Catch-all buckets ("Unassigned", "General") are never scored: a strain score
   // for a non-team is noise and undermines trust in the real team scores.
+  const teamById = new Map(teams.map((team) => [String(team._id), team]));
   const teamNameMap = Object.fromEntries(teams.map((t) => [String(t._id), t.name]));
   const engagementStrainByTeam = engagementStrainDocs
     .map((doc) => ({
       ...doc,
       teamName: teamNameMap[String(doc.teamId)] ?? null,
     }))
-    .filter((doc) => !isCatchAllTeam(doc.teamName));
+    .filter((doc) => {
+      const team = teamById.get(String(doc.teamId));
+      const knownSize = team?.metadata?.actualSize;
+      return (
+        !isCatchAllTeam(doc.teamName) &&
+        team?.analyticsEnabled !== false &&
+        (knownSize == null || knownSize >= minimumTeamSize)
+      );
+    });
   const engagementDriverLabel = (driver) =>
     ({
       recovery_debt: 'Recovery debt',
@@ -697,8 +753,8 @@ export async function generateWeeklyBrief(orgId) {
     arr.find((e) => e._id.source === source && e._id.eventType === eventType)?.count || 0;
   const getCountByType = (arr, eventType) =>
     arr.filter((e) => e._id.eventType === eventType).reduce((s, e) => s + e.count, 0);
-  const twMeetings = getCountByType(twEvents, 'meeting');
-  const lwMeetings = getCountByType(lwEvents, 'meeting');
+  let twMeetings = getCountByType(twEvents, 'meeting');
+  let lwMeetings = getCountByType(lwEvents, 'meeting');
   const twMessages = getCountByType(twEvents, 'message');
   const lwMessages = getCountByType(lwEvents, 'message');
   const twTotal = twEvents.reduce((s, e) => s + e.count, 0);
@@ -715,9 +771,9 @@ export async function generateWeeklyBrief(orgId) {
     gchat: getCount(sixWeekEvents, 'google-chat', 'message') / 6,
   };
 
-  const twOrgMetricsArr = chooseOrgMetricRecords(twMetricsArr);
-  const lwOrgMetricsArr = chooseOrgMetricRecords(lwMetricsArr);
-  const sixWeekOrgMetricsArr = chooseOrgMetricRecords(sixWeekMetricsArr);
+  const twOrgMetricsArr = chooseLatestMetricRecords(twMetricsArr);
+  const lwOrgMetricsArr = chooseLatestMetricRecords(lwMetricsArr);
+  const sixWeekOrgMetricsArr = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
 
   const mappedActorCount = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
@@ -790,8 +846,16 @@ export async function generateWeeklyBrief(orgId) {
 
   const mappingCoveragePct =
     totalUsers > 0 ? Math.round((mappedActorCount.length / totalUsers) * 100) : 0;
+  const eligibleTeamReadiness = teamReadiness.filter(
+    (item) => !['Excluded (catch-all)', 'Suppressed'].includes(item.status)
+  );
+  const readyTeamCount = eligibleTeamReadiness.filter(
+    (item) => item.status === 'Ready for scoring'
+  ).length;
   const teamCoveragePct =
-    teams.length > 0 ? Math.round((mappedTeamCount.length / teams.length) * 100) : 0;
+    eligibleTeamReadiness.length > 0
+      ? Math.round((readyTeamCount / eligibleTeamReadiness.length) * 100)
+      : 0;
   const dataReadinessStatus =
     mappingCoveragePct >= 80 && teamCoveragePct >= 80
       ? 'Ready'
@@ -854,6 +918,22 @@ export async function generateWeeklyBrief(orgId) {
     calendarFragmentation: avgField(sixWeekOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(sixWeekOrgMetricsArr, 'recurringMeetingBurden'),
   };
+  // Prefer deduplicated calendar-instance metrics. Raw WorkEvent counts are
+  // attendee-expanded and therefore are not a truthful meeting count.
+  twMeetings = Math.round(
+    avgField(twOrgMetricsArr, 'meetingInstanceCount7d') ||
+      avgField(twOrgMetricsArr, 'meetingCount7d') ||
+      twMeetings
+  );
+  lwMeetings = Math.round(
+    avgField(lwOrgMetricsArr, 'meetingInstanceCount7d') ||
+      avgField(lwOrgMetricsArr, 'meetingCount7d') ||
+      lwMeetings
+  );
+  sixWeekRawAvg.meetings =
+    avgField(sixWeekOrgMetricsArr, 'meetingInstanceCount7d') ||
+    avgField(sixWeekOrgMetricsArr, 'meetingCount7d') ||
+    sixWeekRawAvg.meetings;
 
   // Per-source event counts
   const twOutlook = getCount(twEvents, 'microsoft-outlook', 'meeting');
@@ -876,7 +956,11 @@ export async function generateWeeklyBrief(orgId) {
   if (integrations.googleChat?.accessToken) connectedSources.push('Google Chat');
 
   // ═══ DATA SANITY LAYER — runs BEFORE any narrative is generated ═══
-  const { anomalies: dataAnomalies, suspectMetrics, staleConnectors } = detectDataAnomalies({
+  const {
+    anomalies: dataAnomalies,
+    suspectMetrics,
+    staleConnectors,
+  } = detectDataAnomalies({
     tw,
     sixWeekAvg,
     twMessages,
@@ -887,8 +971,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // Coverage regression: the one thing that got worse should never go unflagged
   const coverageRegressed =
-    lastWeekMappedActors.length > 0 &&
-    mappedActorCount.length < lastWeekMappedActors.length * 0.8;
+    lastWeekMappedActors.length > 0 && mappedActorCount.length < lastWeekMappedActors.length * 0.8;
 
   // ─── Grade last week's prediction (self-grading track record) ───
   const gradingCtx = { tw, twMeetings, twMessages };
@@ -928,16 +1011,20 @@ export async function generateWeeklyBrief(orgId) {
   ].slice(0, 8);
   const predictionsHeld = evaluatedPredictions.filter((p) => p.outcome.held).length;
 
-  // ─── Cost estimate (€) — directional, only from trustworthy metrics ───
-  const hourlyCost = Number(org.settings?.avgHourlyCost) || 45; // € per hour, configurable
-  const HEALTHY_MEETING_HOURS_WEEK = 15; // ~3h/day
+  // Cost is shown only when the client supplied a loaded hourly cost. The
+  // comparison uses the organization's own baseline, not an invented benchmark.
+  const hourlyCost = Number(org.settings?.loadedHourlyCost) || 0;
+  const configuredCurrency = String(org.settings?.currency || 'EUR').toUpperCase();
+  const currency = /^[A-Z]{3}$/.test(configuredCurrency) ? configuredCurrency : 'EUR';
   let costEstimate = null;
   if (
-    coveragePct >= 40 &&
-    tw.meetingHours > HEALTHY_MEETING_HOURS_WEEK &&
+    dataReadinessStatus === 'Ready' &&
+    hourlyCost > 0 &&
+    sixWeekAvg.meetingHours > 0 &&
+    tw.meetingHours > sixWeekAvg.meetingHours * 1.15 &&
     !suspectMetrics.has('meetings')
   ) {
-    const excessHoursPerPerson = tw.meetingHours - HEALTHY_MEETING_HOURS_WEEK;
+    const excessHoursPerPerson = tw.meetingHours - sixWeekAvg.meetingHours;
     const peopleWithData = usersWithDataThisWeek.length;
     const weeklyCost = Math.round(excessHoursPerPerson * peopleWithData * hourlyCost);
     costEstimate = {
@@ -945,6 +1032,13 @@ export async function generateWeeklyBrief(orgId) {
       excessHoursPerPerson: Math.round(excessHoursPerPerson * 10) / 10,
       peopleWithData,
       hourlyCost,
+      currency,
+      baselineHours: Math.round(sixWeekAvg.meetingHours * 10) / 10,
+      formattedWeeklyCost: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+      }).format(weeklyCost),
     };
   }
 
@@ -953,7 +1047,7 @@ export async function generateWeeklyBrief(orgId) {
   // SHRINKS instead of padding: a setup-focused brief with zero scores, zero AI
   // narrative, zero benchmarks. Shipping untrustworthy numbers with a "low
   // confidence" label teaches clients to ignore the product.
-  const reportMode = dataReadinessStatus === 'Needs mapping' ? 'setup' : 'full';
+  const reportMode = dataReadinessStatus === 'Ready' ? 'full' : 'setup';
 
   if (reportMode === 'setup') {
     let html = '';
@@ -967,7 +1061,7 @@ export async function generateWeeklyBrief(orgId) {
     // Verdict: honest, short, no scores
     html += `<div style="padding:22px 34px;border-bottom:1px solid #e2e8f0;">`;
     html += `<h2 style="margin:0 0 8px 0;font-size:20px;font-weight:750;">Data setup is incomplete — health scores are paused</h2>`;
-    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${mappedTeamCount.length} of ${teams.length} teams</strong> have mapped activity this week. Team health, engagement, and benchmark conclusions are suppressed until coverage improves — publishing them now would mean reporting numbers we don't trust.</p>`;
+    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams</strong> have enough mapped activity this week. Team health and engagement conclusions are paused until both reach 80% coverage.</p>`;
     if (coverageRegressed) {
       html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage went down:</strong> ${lastWeekMappedActors.length} mapped users last week → ${mappedActorCount.length} this week. Something changed in your integrations or user mapping — this is the most important thing to investigate.</p></div>`;
     }
@@ -996,10 +1090,17 @@ export async function generateWeeklyBrief(orgId) {
             ? `${conn.coverage.mappedUsers || 0}/${conn.coverage.totalUsers}`
             : '—';
         const lastSync = conn.sync?.lastSyncAt
-          ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          ? new Date(conn.sync.lastSyncAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })
           : '—';
         const statusLabel = isStale ? 'stale' : conn.status;
-        const statusColor = isStale ? '#dc2626' : conn.status === 'connected' ? '#16a34a' : '#f59e0b';
+        const statusColor = isStale
+          ? '#dc2626'
+          : conn.status === 'connected'
+            ? '#16a34a'
+            : '#f59e0b';
         html += `<tr><td style="${S.td}">${conn.integrationType}</td><td style="${S.tdR};color:${statusColor};font-weight:700;">${statusLabel}</td><td style="${S.tdR}">${coverage}</td><td style="${S.tdR}">${lastSync}</td></tr>`;
       }
       html += `</tbody></table>`;
@@ -1019,13 +1120,13 @@ export async function generateWeeklyBrief(orgId) {
       `<strong>Map users:</strong> ${totalUsers - mappedActorCount.length} user(s) have no mapped activity. In Settings → Employees, re-run the employee sync and match integration accounts to SignalTrue users.`
     );
     steps.push(
-      `<strong>Assign teams:</strong> ${teams.length - mappedTeamCount.length} team(s) have no mapped events${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Move people out of catch-all buckets (e.g. "Unassigned") into their real teams — scoring resumes automatically once a team has ${minimumTeamSize}+ mapped members.`
+      `<strong>Assign teams:</strong> ${eligibleTeamReadiness.length - readyTeamCount} eligible team(s) are not ready${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Review directory departments, then use public website suggestions for remaining unassigned people. Every suggested change requires admin approval.`
     );
     steps.slice(0, 3).forEach((step, i) => {
       html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}.</strong> ${step}</p></div>`;
     });
-    html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when at least 40% of users have mapped activity. At 80%+ you'll get high-confidence team-level insight.</p>`;
-    html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/settings/integrations" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Fix data setup</a></div>`;
+    html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when mapped-user and eligible-team readiness are both at least 80%.</p>`;
+    html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/employees" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Review team setup</a></div>`;
     html += `</div>`;
 
     // Named team readiness — the mapping to-do list
@@ -1082,11 +1183,11 @@ export async function generateWeeklyBrief(orgId) {
     if (meetDeltaPct > 15) {
       const conf = obsConfidence([meetDeltaPct > 25, aboveSixWeek, tw.backToBack > lw.backToBack]);
       observations.push({
-        text: `Meetings increased ${Math.round(meetDeltaPct)}% this week (${lwMeetings} → ${twMeetings}). This usually means more coordination or an active planning phase — healthy in the short term, but worth watching if it continues.`,
+        text: `Meetings increased ${Math.round(meetDeltaPct)}% this week (${lwMeetings} → ${twMeetings})${aboveSixWeek ? ' and are above the six-week baseline' : ''}. This is a measured change; a planning cycle, launch, or client deadline could explain it.`,
         confidence: conf,
       });
       risks.push(
-        'When meeting count keeps growing week over week, teams lose the uninterrupted time they need for deep work. This can quietly erode output quality within 2–3 weeks.'
+        'If meeting growth continues without a matching increase in planned coordination work, less calendar time remains available for uninterrupted tasks.'
       );
       recommendations.push(
         "Review this week's calendar with team leads: identify and cancel or shorten the 2–3 lowest-value recurring meetings. Aim to protect at least one 2-hour focus block per person per day."
@@ -1094,7 +1195,7 @@ export async function generateWeeklyBrief(orgId) {
     } else if (meetDeltaPct < -15) {
       const conf = obsConfidence([meetDeltaPct < -25, tw.messages >= lw.messages]);
       observations.push({
-        text: `Meetings dropped ${Math.abs(Math.round(meetDeltaPct))}% this week (${lwMeetings} → ${twMeetings}). Teams have more uninterrupted time — a positive sign for execution.`,
+        text: `Meetings dropped ${Math.abs(Math.round(meetDeltaPct))}% this week (${lwMeetings} → ${twMeetings}). Check the focus-time measure before concluding that the released calendar time became productive time.`,
         confidence: conf,
       });
     }
@@ -1105,14 +1206,20 @@ export async function generateWeeklyBrief(orgId) {
   const meetingsTrending = meetDeltaPct; // positive = up, negative = down
   if (tw.meetingHours > 0) {
     const hoursPerDay = tw.meetingHours / 5;
-    if (hoursPerDay > 4) {
-      const conf = obsConfidence([hoursPerDay > 5, tw.backToBack > 5, tw.afterHoursRatio > 0.2]);
+    const meetingHoursAboveBaseline =
+      sixWeekAvg.meetingHours > 0 && tw.meetingHours > sixWeekAvg.meetingHours * 1.15;
+    if (meetingHoursAboveBaseline) {
+      const conf = obsConfidence([
+        tw.meetingHours > sixWeekAvg.meetingHours * 1.25,
+        tw.backToBack > sixWeekAvg.backToBack * 1.15,
+        tw.afterHoursRatio > sixWeekAvg.afterHoursRatio * 1.15,
+      ]);
       observations.push({
-        text: `People are spending an average of ${fmtNum(hoursPerDay, 1)} hours per day in meetings (${fmtNum(tw.meetingHours, 1)} total hours this week). The healthy threshold is around 3 hours/day.`,
+        text: `Meeting participant-hours averaged ${fmtNum(hoursPerDay, 1)} per person per day (${fmtNum(tw.meetingHours, 1)} this week), above the organization's ${fmtNum(sixWeekAvg.meetingHours, 1)}h weekly baseline.`,
         confidence: conf,
       });
       risks.push(
-        'When more than 60% of the workday is spent in meetings, the pace of actual work slows down and people often end up working late to catch up.'
+        'The measured increase leaves less scheduled time for non-meeting work. Check whether focus availability or after-hours activity moved in the same direction.'
       );
       // Only recommend reducing meetings if they are NOT already declining
       if (meetingsTrending >= -10) {
@@ -1120,9 +1227,9 @@ export async function generateWeeklyBrief(orgId) {
           'Consider introducing meeting-free mornings or one meeting-free day per week. Try defaulting meeting lengths to 25 or 50 minutes instead of 30 or 60.'
         );
       }
-    } else if (hoursPerDay > 2.5 && meetingsTrending >= 0) {
+    } else if (meetingsTrending > 15) {
       observations.push({
-        text: `Meeting time is at ${fmtNum(hoursPerDay, 1)} hours/day (${fmtNum(tw.meetingHours, 1)} total hours). This is manageable but worth keeping an eye on if the trend continues upward.`,
+        text: `Meeting participant-hours are ${fmtNum(tw.meetingHours, 1)} per person this week and are trending upward, but have not crossed the organization's baseline escalation threshold.`,
         confidence: 'Low',
       });
     }
@@ -1136,7 +1243,7 @@ export async function generateWeeklyBrief(orgId) {
       confidence: conf,
     });
     risks.push(
-      'Consecutive meetings without breaks reduce decision quality and leave people feeling drained. After 3+ meetings in a row, focus and engagement typically drop noticeably.'
+      'These calendar sequences leave five minutes or less between sessions. Validate whether the affected teams had enough protected focus time elsewhere in the week.'
     );
     // Only suggest fixing back-to-back if meetings are not already declining overall
     if (meetingsTrending >= -10) {
@@ -1185,18 +1292,18 @@ export async function generateWeeklyBrief(orgId) {
         tw.meetingHours > 15,
       ]);
       observations.push({
-        text: `${afterHoursRatioPct}% of team messages were sent outside working hours (before 8am or after 6pm). ${totalAfterHours > 0 ? `That's ${Math.round(totalAfterHours)} after-hours messages this week.` : ''}`,
+        text: `${afterHoursRatioPct}% of team messages were sent outside the configured working schedule. ${totalAfterHours > 0 ? `That's ${Math.round(totalAfterHours)} out-of-hours messages this week.` : ''}`,
         confidence: conf,
       });
       risks.push(
-        'After-hours ratios above 25% are associated with increased burnout risk and declining next-day focus quality.'
+        'Out-of-hours activity is above SignalTrue’s review threshold. This describes schedule spillover, not its cause; confirm deadlines, time zones, and working agreements.'
       );
       recommendations.push(
         'Implement "quiet hours" in Teams/Slack (e.g., schedule send for next morning). Leadership should model boundary-setting by not sending after 6pm.'
       );
     } else if (afterHoursRatioPct >= 15) {
       observations.push({
-        text: `After-hours messaging is at ${afterHoursRatioPct}% — within normal range but worth monitoring.`,
+        text: `Out-of-hours messaging is at ${afterHoursRatioPct}%, below the escalation threshold but available for trend monitoring.`,
         confidence: 'Low',
       });
     }
@@ -1216,18 +1323,21 @@ export async function generateWeeklyBrief(orgId) {
   // Focus time analysis (new metric)
   if (tw.focusTimeAvailability != null && tw.focusTimeAvailability > 0) {
     const focusPerDay = tw.focusTimeAvailability / 5;
-    if (focusPerDay < 2) {
+    if (
+      sixWeekAvg.focusTimeAvailability > 0 &&
+      tw.focusTimeAvailability < sixWeekAvg.focusTimeAvailability * 0.85
+    ) {
       const conf = obsConfidence([
         focusPerDay < 1.5,
         tw.calendarFragmentation > 60,
         tw.backToBack > 5,
       ]);
       observations.push({
-        text: `Focus time is compressed to ${fmtNum(focusPerDay, 1)} hrs/day (${fmtNum(tw.focusTimeAvailability, 1)}h total). Teams need at least 2h/day of uninterrupted time for deep work.`,
+        text: `Measured uninterrupted time is ${fmtNum(focusPerDay, 1)} hrs/day (${fmtNum(tw.focusTimeAvailability, 1)}h this week), below the organization's ${fmtNum(sixWeekAvg.focusTimeAvailability, 1)}h weekly baseline.`,
         confidence: conf,
       });
       risks.push(
-        'Focus time below 2h/day is a strong predictor of rising after-hours work and declining output quality.'
+        'Protected uninterrupted time moved below baseline. Check whether meeting load, short gaps, or a planned high-coordination week explains the change.'
       );
     }
   }
@@ -1240,7 +1350,7 @@ export async function generateWeeklyBrief(orgId) {
       tw.focusTimeAvailability < 15,
     ]);
     observations.push({
-      text: `Calendar fragmentation score: ${fmtNum(tw.calendarFragmentation, 0)}/100. Calendars are highly fragmented — meetings scattered throughout the day break deep work.`,
+      text: `Calendar fragmentation score is ${fmtNum(tw.calendarFragmentation, 0)}/100, reflecting more short gaps and meetings spread across the day.`,
       confidence: conf,
     });
   }
@@ -1427,7 +1537,11 @@ export async function generateWeeklyBrief(orgId) {
     const mhPerDay = tw.meetingHours / 5;
     const afterHoursPct = Math.round((tw.afterHoursRatio || 0) * 100);
     let candidate = null;
-    if (tw.meetingHours > HEALTHY_MEETING_HOURS_WEEK && tw.meetingHours >= lw.meetingHours * 0.95) {
+    if (
+      sixWeekAvg.meetingHours > 0 &&
+      tw.meetingHours > sixWeekAvg.meetingHours * 1.15 &&
+      tw.meetingHours >= lw.meetingHours * 0.95
+    ) {
       // Sustained heavy meeting load → predict it persists unless someone intervenes
       const threshold = Math.round(tw.meetingHours * 0.9 * 10) / 10;
       candidate = {
@@ -1494,7 +1608,7 @@ export async function generateWeeklyBrief(orgId) {
   //   8. Week-over-Week Comparison (with 6-week avg column)
   //   9. Drift Signals Detail (kept but compact)
   //  10. Team Health (BDI)
-  //  11. Industry Benchmark (demoted, secondary)
+  //  11. Data-readiness appendix
   //  12. Footer
   // ════════════════════════════════════════════════════════════
 
@@ -1679,8 +1793,8 @@ export async function generateWeeklyBrief(orgId) {
     }
     if (costEstimate) {
       html += `<div style="${S.warnBox} border-left:3px solid #f59e0b;">`;
-      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Estimated cost of excess coordination this week: ~€${costEstimate.weeklyCost.toLocaleString('en-US')}</strong></p>`;
-      html += `<p style="${S.pSmall} margin:0;">Basis: ${costEstimate.excessHoursPerPerson}h/person above the ${HEALTHY_MEETING_HOURS_WEEK}h/week healthy meeting threshold × ${costEstimate.peopleWithData} people with data × €${costEstimate.hourlyCost}/h. Directional estimate — adjust the hourly rate in Settings → Organization.</p>`;
+      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Estimated coordination cost above your baseline: ~${costEstimate.formattedWeeklyCost}</strong></p>`;
+      html += `<p style="${S.pSmall} margin:0;">Basis: ${costEstimate.excessHoursPerPerson} participant-hours/person above your ${costEstimate.baselineHours}h six-week baseline × ${costEstimate.peopleWithData} people with data × ${costEstimate.hourlyCost} ${costEstimate.currency}/h. This is a directional estimate using your configured cost input.</p>`;
       html += `</div>`;
     }
     if (risks.length > 2) {
@@ -1708,41 +1822,34 @@ export async function generateWeeklyBrief(orgId) {
       aiAnalysis.managerActions?.length ||
       aiAnalysis.leadershipActions?.length)
   ) {
-    const renderRoleActions = (title, icon, actions, boxStyle) => {
-      if (!actions?.length) return '';
-      let s = `<h4 style="${S.h4}">${title}</h4>`;
-      for (const a of actions.slice(0, 2)) {
-        const effortColor =
-          a.effort === 'Low' ? '#10b981' : a.effort === 'Medium' ? '#f59e0b' : '#ef4444';
-        s += `<div style="${boxStyle}">`;
-        s += `<p style="${S.p} margin:0 0 4px 0;"><strong>${a.action}</strong></p>`;
-        s += `<p style="${S.pSmall} margin:0;">`;
-        s += `<span style="${S.badge(effortColor + '20', effortColor)}">${a.effort} effort</span> `;
-        s += `Expected: ${a.expectedOutcome} · Review in ${a.reviewWindow}`;
-        s += `</p></div>`;
-      }
-      return s;
-    };
-
-    html += renderRoleActions('For HR', '👤', aiAnalysis.hrActions, S.recBox);
-    html += renderRoleActions(
-      'For HR to share with team leads',
-      '👥',
-      aiAnalysis.managerActions,
-      `${S.recBox} border-left:3px solid #6366f1;`
-    );
-    if (orgStatus.status !== STATUS_LEVELS.STABLE && orgStatus.status !== STATUS_LEVELS.WATCH) {
-      html += renderRoleActions(
-        'For Leadership',
-        '🏢',
-        aiAnalysis.leadershipActions,
-        `${S.recBox} border-left:3px solid #ef4444;`
-      );
+    const primaryAction =
+      aiAnalysis.leadershipActions?.[0] ||
+      aiAnalysis.hrActions?.[0] ||
+      aiAnalysis.managerActions?.[0];
+    const owner =
+      aiAnalysis.leadershipActions?.[0] === primaryAction
+        ? 'Leadership'
+        : aiAnalysis.hrActions?.[0] === primaryAction
+          ? 'HR'
+          : 'Team lead';
+    const effortColor =
+      primaryAction.effort === 'Low'
+        ? '#10b981'
+        : primaryAction.effort === 'Medium'
+          ? '#f59e0b'
+          : '#ef4444';
+    html += `<h4 style="${S.h4}">Decision for this week</h4>`;
+    html += `<div style="${S.recBox} border-left:3px solid #6366f1;">`;
+    html += `<p style="${S.p} margin:0 0 5px 0;"><strong>${primaryAction.action}</strong></p>`;
+    html += `<p style="${S.pSmall} margin:0;"><strong>Owner:</strong> ${owner} · <strong>Review:</strong> ${primaryAction.reviewWindow || 'next weekly brief'} · <span style="${S.badge(effortColor + '20', effortColor)}">${primaryAction.effort || 'Medium'} effort</span></p>`;
+    if (primaryAction.expectedOutcome) {
+      html += `<p style="${S.pSmall} margin:5px 0 0 0;"><strong>Measure:</strong> ${primaryAction.expectedOutcome}</p>`;
     }
+    html += `</div>`;
   } else if (recommendations.length > 0) {
     // Fallback: use rule-based recommendations
     html += `<p style="${S.pSmall}">Based on this week's data patterns.</p>`;
-    recommendations.slice(0, 3).forEach((rec, i) => {
+    recommendations.slice(0, 1).forEach((rec, i) => {
       html += `<div style="${S.recBox}">`;
       html += `<p style="${S.p} margin:0;"><strong>${i + 1}.</strong> ${rec}</p>`;
       html += `</div>`;
@@ -1776,7 +1883,8 @@ export async function generateWeeklyBrief(orgId) {
       html += `<div style="${S.recBox} border-left:3px solid ${good ? '#10b981' : '#f59e0b'};">`;
       html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${iv.title || iv.actionTaken || iv.interventionType || 'Action'}</strong>${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''}</p>`;
       html += `<p style="${S.pSmall} margin:0;">Started ${new Date(iv.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · Measured after 14 days: <strong style="color:${good ? '#16a34a' : '#d97706'};">${arrow}${d.percentChange}%</strong> ${good ? '— improvement confirmed' : '— no improvement yet; consider adjusting or extending'}</p>`;
-      if (iv.outcomeSummary) html += `<p style="${S.pSmall} margin:4px 0 0 0;">${iv.outcomeSummary}</p>`;
+      if (iv.outcomeSummary)
+        html += `<p style="${S.pSmall} margin:4px 0 0 0;">${iv.outcomeSummary}</p>`;
       html += `</div>`;
     }
     for (const iv of activeInterventions.slice(0, 2)) {
@@ -1822,7 +1930,6 @@ export async function generateWeeklyBrief(orgId) {
     tw,
     lw,
     sixWeekAvg,
-    observations,
     orgStatus,
     teamBDIData,
     twSignals,
@@ -1831,7 +1938,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `<div style="${S.card} border-left:4px solid #8b5cf6;">`;
     html += `<h3 style="${S.h3} margin-top:0;">Questions worth raising with team leads</h3>`;
     html += `<p style="${S.pSmall}">Diagnostic questions HR can bring to team leads or leadership check-ins. Based on this week's data — not prescriptive, just conversation starters.</p>`;
-    for (const prompt of managerPrompts.slice(0, 5)) {
+    for (const prompt of managerPrompts.slice(0, 2)) {
       html += `<div style="padding:8px 12px; margin-bottom:6px; background:#faf5ff; border-radius:8px;">`;
       html += `<p style="${S.p} margin:0;"><strong>Q:</strong> ${prompt}</p>`;
       html += `</div>`;
@@ -1843,9 +1950,9 @@ export async function generateWeeklyBrief(orgId) {
   if (aiAnalysis?.hypotheses?.length > 0) {
     html += `<div style="${S.card} border-left:4px solid #6366f1;">`;
     html += `<div style="display:flex; align-items:center; margin-bottom:12px;">`;
-    html += `<h3 style="${S.h3} margin:0;">AI Interpretation</h3>`;
+    html += `<h3 style="${S.h3} margin:0;">Evidence and interpretation</h3>`;
     html += `</div>`;
-    for (const h of aiAnalysis.hypotheses.slice(0, 3)) {
+    for (const h of aiAnalysis.hypotheses.slice(0, 1)) {
       const hConf =
         h.confidence === 'High' ? '#10b981' : h.confidence === 'Medium' ? '#f59e0b' : '#9ca3af';
       html += `<div style="padding:12px 14px; margin-bottom:10px; background:#f0f0ff; border-radius:8px;">`;
@@ -1860,18 +1967,6 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
     }
 
-    // Trend outlook
-    if (aiAnalysis.trendOutlook) {
-      html += `<div style="margin-top:12px; padding:10px 14px; background:#fffbeb; border-radius:8px; border-left:3px solid #f59e0b;">`;
-      html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Trend outlook:</strong> ${aiAnalysis.trendOutlook.likelyNextStageRisk || ''}</p>`;
-      if (aiAnalysis.trendOutlook.metricToWatchNextWeek) {
-        html += `<p style="${S.pSmall} margin:0;">Watch next week: <strong>${aiAnalysis.trendOutlook.metricToWatchNextWeek}</strong>`;
-        if (aiAnalysis.trendOutlook.escalationTrigger)
-          html += ` · Escalation trigger: ${aiAnalysis.trendOutlook.escalationTrigger}`;
-        html += `</p>`;
-      }
-      html += `</div>`;
-    }
     html += `</div>`;
   }
 
@@ -1916,9 +2011,15 @@ export async function generateWeeklyBrief(orgId) {
 
   // Per-source if available
   if (twOutlook > 0 || lwOutlook > 0)
-    addTableRow('&nbsp;&nbsp;Outlook meetings', sixWeekRawAvg.outlook, lwOutlook, twOutlook, true);
+    addTableRow(
+      '&nbsp;&nbsp;Outlook attendance records',
+      sixWeekRawAvg.outlook,
+      lwOutlook,
+      twOutlook,
+      true
+    );
   if (twGcal > 0 || lwGcal > 0)
-    addTableRow('&nbsp;&nbsp;Google Calendar', sixWeekRawAvg.gcal, lwGcal, twGcal, true);
+    addTableRow('&nbsp;&nbsp;Google Calendar records', sixWeekRawAvg.gcal, lwGcal, twGcal, true);
   if (twTeamsMsg > 0 || lwTeamsMsg > 0)
     addTableRow('&nbsp;&nbsp;Teams messages', sixWeekRawAvg.teams, lwTeamsMsg, twTeamsMsg, false);
   if (twSlack > 0 || lwSlack > 0)
@@ -1930,7 +2031,7 @@ export async function generateWeeklyBrief(orgId) {
   if (twMetricsArr.length > 0 || lwMetricsArr.length > 0) {
     html += `<tr><td colspan="5" style="padding:10px 10px 4px; font-weight:600; color:#6366f1; border-bottom:2px solid #e5e7eb; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Workload Detail (rolling 7-day avg, per person)</td></tr>`;
     addTableRow(
-      'Meeting hours',
+      'Meeting participant-hours / person',
       sixWeekAvg.meetingHours,
       lw.meetingHours,
       tw.meetingHours,
@@ -2114,15 +2215,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `</div>`;
   }
 
-  // ─── 11. Industry Benchmark (demoted — secondary, compact) ───
-  if (aiAnalysis?.industryComparison) {
-    html += `<div style="${S.card} opacity:0.85;">`;
-    html += `<h3 style="${S.h3} margin-top:0; font-size:13px; color:#64748b;">Industry context: ${org.industry || 'General'}</h3>`;
-    html += `<p style="${S.pSmall}">${aiAnalysis.industryComparison}</p>`;
-    html += `</div>`;
-  }
-
-  // ─── 11b. Engagement Level ───
+  // ─── 11. Team-level engagement detail ───
   if (engagementStrainByTeam.length === 0) {
     html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
     html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Engagement level</h3>`;
@@ -2180,20 +2273,11 @@ export async function generateWeeklyBrief(orgId) {
     const worstColor = riskStateColor(worstState);
 
     html += `<div style="${S.card} border-left:4px solid ${worstColor};">`;
-    html += `<h3 style="${S.h3} margin-top:0; color:#0f172a;">Engagement level</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0; color:#0f172a;">Team condition detail</h3>`;
 
-    // Why it matters — always shown, non-optional
+    // Scope and privacy note.
     html += `<div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 16px; margin-bottom:16px;">`;
-    html += `<p style="${S.p} margin:0 0 6px 0; font-weight:600; color:#0369a1;">Why engagement level is in this report</p>`;
-    html += `<p style="${S.p} margin:0 0 6px 0;">`;
-    html += `Engagement isn't measured through surveys here — it's derived from <strong>behavioral metadata</strong>: `;
-    html += `how recovery time, focus availability, responsiveness pressure, and collaboration patterns shift week to week. `;
-    html += `</p>`;
-    html += `<p style="${S.p} margin:0 0 6px 0;">`;
-    html += `This matters because engagement problems appear in <strong>system behavior 4–8 weeks before</strong> `;
-    html += `people report them in surveys, or before they show up in attrition and performance metrics. `;
-    html += `Acting at the structural level now prevents the downstream cost.`;
-    html += `</p>`;
+    html += `<p style="${S.p} margin:0 0 6px 0;">These are <strong>operating-condition indicators</strong> derived from changes in recovery time, focus availability, responsiveness pressure, and collaboration patterns. They are not survey, sentiment, performance, burnout, or attrition scores.</p>`;
     html += `<p style="${S.pSmall} margin:0;">No surveillance. No sentiment analysis. No individual names. Metadata-derived team-level patterns only.</p>`;
     html += `</div>`;
 
@@ -2207,7 +2291,7 @@ export async function generateWeeklyBrief(orgId) {
     // Per-team blocks — "what this means" is rendered ONCE per risk state below,
     // not cloned under every team (identical boilerplate reads as templated noise).
     const renderedStates = new Set();
-    for (const t of engagementStrainByTeam) {
+    for (const t of engagementStrainByTeam.slice(0, 3)) {
       const tc = riskStateColor(t.riskState);
       html += `<div style="${S.cardAlert(tc)} margin-bottom:12px;">`;
       html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">`;
@@ -2241,10 +2325,10 @@ export async function generateWeeklyBrief(orgId) {
         let stateMsg = '';
         if (t.riskState === 'critical') {
           stateMsg =
-            'Critical engagement strain: structural conditions for sustained work have significantly degraded. Expect rising attrition risk and declining output quality within 2–4 weeks without intervention.';
+            'Critical operating strain: several work-pattern indicators are materially outside this team’s baseline. Validate context with the team lead and reduce the strongest measured pressure.';
         } else if (t.riskState === 'strain') {
           stateMsg =
-            "Strain-level conditions: the team is working against friction most people won't explicitly name. Recovery time is likely shrinking or responsiveness pressure is high. Act before it compounds.";
+            'Strain-level conditions: recovery time, focus availability, or responsiveness pressure has moved in a concerning direction. Review the strongest driver before choosing an action.';
         } else if (t.riskState === 'watch' && t.trend === 'rising') {
           stateMsg =
             'Watch-level risk with a rising trend — conditions are not critical, but the direction is wrong. This is the optimal intervention window.';

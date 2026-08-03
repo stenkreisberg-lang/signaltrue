@@ -7,6 +7,8 @@ const organizationSchema = new mongoose.Schema(
     name: { type: String, required: true },
     slug: { type: String, unique: true, sparse: true }, // URL-friendly identifier
     domain: { type: String },
+    websiteUrl: { type: String },
+    linkedinUrl: { type: String },
     logo: { type: String },
     industry: { type: String, default: 'Other' },
     size: { type: String },
@@ -123,6 +125,12 @@ const organizationSchema = new mongoose.Schema(
       onboardingComplete: { type: Boolean, default: false },
       // Organizations may raise the reporting threshold, but never lower the privacy floor.
       minTeamSize: { type: Number, default: 5, min: 5 },
+      timezone: { type: String, default: 'UTC' },
+      workdayStart: { type: String, default: '09:00' },
+      workdayEnd: { type: String, default: '17:00' },
+      // Optional, client-provided input. Reports never invent a labor-cost assumption.
+      loadedHourlyCost: { type: Number, min: 0, default: null },
+      currency: { type: String, default: 'EUR' },
       // Default alert sensitivity
       alertSensitivity: {
         type: String,
@@ -141,6 +149,17 @@ const organizationSchema = new mongoose.Schema(
       monthlyReportRecipients: [{ type: String }],
       quarterlyReportRecipients: [{ type: String }],
       semiAnnualReportRecipients: [{ type: String }],
+    },
+
+    teamEnrichment: {
+      status: {
+        type: String,
+        enum: ['not_started', 'pending_review', 'completed', 'failed'],
+        default: 'not_started',
+      },
+      lastAnalyzedAt: Date,
+      lastSourceUrls: [{ type: String }],
+      lastError: String,
     },
 
     // Calibration state

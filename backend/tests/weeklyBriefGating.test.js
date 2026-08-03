@@ -40,7 +40,11 @@ beforeEach(async () => {
 const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
 async function seedOrg() {
-  const org = await Organization.create({ name: 'TestOrg', industry: 'Technology' });
+  const org = await Organization.create({
+    name: 'TestOrg',
+    industry: 'Technology',
+    settings: { loadedHourlyCost: 75, currency: 'EUR' },
+  });
   const teamA = await Team.create({ name: 'Engineering', orgId: org._id });
   const catchAll = await Team.create({ name: 'Unassigned', orgId: org._id });
   const users = [];
@@ -105,13 +109,24 @@ describe('hard readiness gate (setup mode)', () => {
     expect(html).not.toContain('Strain risk');
     expect(html).not.toContain("This week's call"); // no predictions on broken data
   });
+
+  test('partial user coverage remains setup-only even when one team is privacy-eligible', async () => {
+    const { org, teamA, users } = await seedOrg();
+    await seedMeetingEvents(org, teamA, users, 5);
+
+    const html = await generateWeeklyBrief(org._id);
+
+    expect(html).toContain('Setup Required');
+    expect(html).toContain('health scores are paused');
+    expect(html).not.toContain('Week-over-week comparison');
+  });
 });
 
 describe('full report mode', () => {
   async function seedFullOrg() {
     const seeded = await seedOrg();
     const { org, teamA, catchAll } = seeded;
-    // 8/10 users mapped → 80% coverage → Partial/full report
+    // 8/10 users mapped and the only eligible named team is ready → full report
     await seedMeetingEvents(org, teamA, seeded.users, 8);
 
     // Org-level metrics: heavy meeting load (200h org total / 8 people = 25h/person),
@@ -126,7 +141,7 @@ describe('full report mode', () => {
       focusTimeAvailabilityHours: 0,
     });
     await IntegrationMetricsDaily.insertMany([
-      mkMetric(daysAgo(2), 0),
+      { ...mkMetric(daysAgo(2), 0), meetingDurationTotalHours7d: 260 },
       mkMetric(daysAgo(9), 0.2),
       mkMetric(daysAgo(16), 0.2),
       mkMetric(daysAgo(23), 0.22),
@@ -165,7 +180,7 @@ describe('full report mode', () => {
     expect(html).toContain('Baselines built on'); // tenure line
     expect(html).toContain('Prediction check');
     expect(html).toContain("This week's call");
-    expect(html).toContain('Estimated cost of excess coordination'); // € impact
+    expect(html).toContain('Estimated coordination cost above your baseline');
     expect(html).toContain('Was this week unusual?'); // annotation loop
 
     // A prediction was persisted for grading next week
@@ -192,7 +207,7 @@ describe('full report mode', () => {
     expect(html).toContain('Excluded (catch-all)');
     // Engagement section shows the real team but not the catch-all bucket
     const engagementSection = html.slice(
-      html.indexOf('Engagement level'),
+      html.indexOf('Team condition detail'),
       html.indexOf('Appendix — Data readiness')
     );
     expect(engagementSection).toContain('Engineering');

@@ -1,8 +1,8 @@
 import WorkEvent from '../models/workEvent.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import IntegrationConnection from '../models/integrationConnection.js';
-import User from '../models/user.js';
 import Team from '../models/team.js';
+import Organization from '../models/organizationModel.js';
 
 /**
  * Integration Metrics Computation Service
@@ -39,13 +39,26 @@ export async function computeDailyMetrics(orgId, date = new Date()) {
 
   // Get all teams for this org
   const teams = await Team.find({ orgId }).lean();
+  const organization = await Organization.findById(orgId).select('settings').lean();
+  const orgWorkSchedule = {
+    timezone: organization?.settings?.timezone || 'UTC',
+    workdayStart: organization?.settings?.workdayStart || '09:00',
+    workdayEnd: organization?.settings?.workdayEnd || '17:00',
+  };
 
   // Compute org-level metrics
-  await computeOrgMetrics(orgId, normalizedDate, startOfDay, endOfDay, dataCoverage);
+  await computeOrgMetrics(
+    orgId,
+    normalizedDate,
+    startOfDay,
+    endOfDay,
+    dataCoverage,
+    orgWorkSchedule
+  );
 
   // Compute team-level metrics
   for (const team of teams) {
-    await computeTeamMetrics(orgId, team._id, normalizedDate, startOfDay, endOfDay, dataCoverage);
+    await computeTeamMetrics(orgId, team, normalizedDate, startOfDay, endOfDay, dataCoverage);
   }
 
   console.log(`Daily metrics computation complete for org ${orgId}`);
@@ -54,7 +67,8 @@ export async function computeDailyMetrics(orgId, date = new Date()) {
 /**
  * Compute metrics for a specific team
  */
-async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dataCoverage) {
+async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataCoverage) {
+  const teamId = team._id;
   // Get events for this team in the date range (7-day window for rolling metrics)
   const window7dStart = new Date(date);
   window7dStart.setDate(window7dStart.getDate() - 7);
@@ -69,7 +83,12 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
   const taskMetrics = computeTaskMetrics(events, date);
 
   // Compute email metrics (Gmail)
-  const emailMetrics = computeEmailMetrics(events, date);
+  const workSchedule = {
+    timezone: team.timezone || 'UTC',
+    workdayStart: team.workConfig?.workdayStart || '09:00',
+    workdayEnd: team.workConfig?.workdayEnd || '17:00',
+  };
+  const emailMetrics = computeEmailMetrics(events, date, workSchedule);
 
   // Compute meeting metrics (Google Meet/Calendar/Microsoft Outlook)
   const meetingMetrics = computeMeetingMetrics(events, date);
@@ -84,7 +103,7 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
   const basecampMetrics = computeBasecampMetrics(events, date);
 
   // Compute messaging metrics (Slack/Teams/Google Chat)
-  const messagingMetrics = computeMessagingMetrics(events, date);
+  const messagingMetrics = computeMessagingMetrics(events, date, workSchedule);
 
   // Get baseline data for robust-z calculations
   const baseline = await getTrailingBaseline(orgId, teamId, null, date, 28);
@@ -133,7 +152,7 @@ async function computeTeamMetrics(orgId, teamId, date, startOfDay, endOfDay, dat
 /**
  * Compute org-level aggregate metrics
  */
-async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage) {
+async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage, workSchedule) {
   const window7dStart = new Date(date);
   window7dStart.setDate(window7dStart.getDate() - 7);
 
@@ -143,12 +162,12 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
   }).lean();
 
   const taskMetrics = computeTaskMetrics(events, date);
-  const emailMetrics = computeEmailMetrics(events, date);
+  const emailMetrics = computeEmailMetrics(events, date, workSchedule);
   const meetingMetrics = computeMeetingMetrics(events, date);
   const notionMetrics = computeNotionMetrics(events, date);
   const crmMetrics = computeCRMMetrics(events, date);
   const basecampMetrics = computeBasecampMetrics(events, date);
-  const messagingMetrics = computeMessagingMetrics(events, date);
+  const messagingMetrics = computeMessagingMetrics(events, date, workSchedule);
 
   const baseline = await getTrailingBaseline(orgId, null, null, date, 28);
   const compositeMetrics = computeCompositeMetrics(
@@ -299,7 +318,7 @@ function computeTaskMetrics(events, date) {
 // EMAIL METRICS (Gmail)
 // ============================================================
 
-function computeEmailMetrics(events, date) {
+function computeEmailMetrics(events, date, workSchedule = {}) {
   const emailEvents = events.filter((e) => e.source === 'gmail');
 
   const window7dStart = new Date(date);
@@ -313,7 +332,11 @@ function computeEmailMetrics(events, date) {
   const emailReceived7d = receivedEvents.length;
 
   // After-hours
-  const afterHoursSent = sentEvents.filter((e) => e.metadata?.isAfterHours);
+  const afterHoursSent = sentEvents.filter(
+    (e) =>
+      e.metadata?.isAfterHours === true ||
+      (e.metadata?.isAfterHours == null && isOutsideWorkingHours(e.timestamp, workSchedule))
+  );
   const afterHoursSentCount = afterHoursSent.length;
   const afterHoursSentRatio = emailSent7d > 0 ? afterHoursSentCount / emailSent7d : 0;
 
@@ -355,7 +378,25 @@ function computeEmailMetrics(events, date) {
 // MEETING METRICS (Google Meet / Calendar)
 // ============================================================
 
-function computeMeetingMetrics(events, date) {
+function getMeetingInstanceKey(event) {
+  const explicit = event.metadata?.meetingInstanceIdHash || event.metadata?.meetingIdHash;
+  if (explicit) return String(explicit);
+  const externalId = String(event.externalId || '');
+  // Older Outlook rows append the attendee's Mongo ObjectId to a shared event id.
+  return externalId.replace(/-[a-f0-9]{24}$/i, '') || String(event._id || '');
+}
+
+function getEventDurationMinutes(event) {
+  if ((event.metadata?.durationMinutes || 0) > 0) return event.metadata.durationMinutes;
+  if (event.metadata?.startTime && event.metadata?.endTime) {
+    const duration =
+      (new Date(event.metadata.endTime) - new Date(event.metadata.startTime)) / (1000 * 60);
+    return duration > 0 ? duration : 0;
+  }
+  return 0;
+}
+
+export function computeMeetingMetrics(events, date) {
   // Include all calendar/meeting sources: Google Calendar, Microsoft Outlook, Meet
   const meetEvents = events.filter(
     (e) =>
@@ -374,59 +415,70 @@ function computeMeetingMetrics(events, date) {
   const meetingStarts = events7d.filter(
     (e) => e.eventType === 'meet_started' || e.eventType === 'meeting'
   );
-  const meetingCount7d = meetingStarts.length;
+  const meetingCount7d = new Set(meetingStarts.map(getMeetingInstanceKey)).size;
 
-  const durations = events7d
-    .filter((e) => (e.metadata?.durationMinutes || 0) > 0)
-    .map((e) => e.metadata.durationMinutes);
-  // Also compute duration from start/end times if durationMinutes isn't set
-  for (const e of events7d) {
-    if (!e.metadata?.durationMinutes && e.metadata?.startTime && e.metadata?.endTime) {
-      const dur = (new Date(e.metadata.endTime) - new Date(e.metadata.startTime)) / (1000 * 60);
-      if (dur > 0) durations.push(dur);
-    }
-  }
-  const meetingDurationTotalHours7d = durations.reduce((sum, d) => sum + d, 0) / 60;
+  // New calendar rows are attendee-expanded. For legacy aggregate rows, use the
+  // recorded internal-attendee count and conservatively assume one observed attendee.
+  const meetingDurationTotalHours7d =
+    meetingStarts.reduce((sum, event) => {
+      const duration = getEventDurationMinutes(event);
+      const participantWeight = event.actorUserId
+        ? 1
+        : Math.max(1, Number(event.metadata?.internalAttendeeCount) || 0);
+      return sum + duration * participantWeight;
+    }, 0) / 60;
 
   // Ad-hoc meetings
-  const adHocMeetings = events7d.filter((e) => e.metadata?.isAdHoc);
-  const adHocMeetingCount7d = adHocMeetings.length;
+  const adHocMeetingCount7d = new Set(
+    meetingStarts.filter((e) => e.metadata?.isAdHoc).map(getMeetingInstanceKey)
+  ).size;
   const adHocMeetingRate7d = meetingCount7d > 0 ? adHocMeetingCount7d / meetingCount7d : 0;
 
-  // Back-to-back detection (meetings within 5 min of each other)
-  const sortedMeetings = meetingStarts
-    .map((e) => ({
-      start: new Date(e.metadata?.startTime || e.timestamp),
-      end: new Date(e.metadata?.endTime || e.timestamp),
-    }))
-    .sort((a, b) => a.start - b.start);
+  // Back-to-back pressure is a person-level condition. Never join one employee's
+  // calendar event to another employee's next event.
+  const meetingsByActor = new Map();
+  meetingStarts.forEach((event) => {
+    if (!event.actorUserId) return;
+    const actorId = String(event.actorUserId);
+    if (!meetingsByActor.has(actorId)) meetingsByActor.set(actorId, new Map());
+    meetingsByActor.get(actorId).set(getMeetingInstanceKey(event), {
+      start: new Date(event.metadata?.startTime || event.timestamp),
+      end: new Date(
+        event.metadata?.endTime ||
+          new Date(event.timestamp).getTime() + getEventDurationMinutes(event) * 60 * 1000
+      ),
+    });
+  });
 
+  const gaps = [];
   let backToBackMeetingBlocks = 0;
-  for (let i = 1; i < sortedMeetings.length; i++) {
-    const gap = (sortedMeetings[i].start - sortedMeetings[i - 1].end) / (1000 * 60); // minutes
-    if (gap >= 0 && gap <= 5) {
-      backToBackMeetingBlocks++;
+  for (const actorMeetings of meetingsByActor.values()) {
+    const sortedMeetings = [...actorMeetings.values()].sort((a, b) => a.start - b.start);
+    for (let i = 1; i < sortedMeetings.length; i++) {
+      const gap = (sortedMeetings[i].start - sortedMeetings[i - 1].end) / (1000 * 60);
+      if (gap >= 0) gaps.push(gap);
+      if (gap >= 0 && gap <= 5) backToBackMeetingBlocks++;
     }
   }
 
-  // Meeting fragmentation
-  const gaps = [];
-  for (let i = 1; i < sortedMeetings.length; i++) {
-    const gap = (sortedMeetings[i].start - sortedMeetings[i - 1].end) / (1000 * 60);
-    if (gap > 0) gaps.push(gap);
-  }
   const avgGapBetweenMeetingsMins = mean(gaps) || 0;
   const meetingFragmentationIndex =
     avgGapBetweenMeetingsMins > 0 ? meetingCount7d * (60 / avgGapBetweenMeetingsMins) : 0;
 
   // External meetings
-  const meetingsWithExternalParticipants = events7d.filter(
-    (e) => e.metadata?.isExternalParticipant
-  ).length;
+  const meetingsWithExternalParticipants = new Set(
+    meetingStarts
+      .filter(
+        (e) => e.metadata?.isExternalParticipant || (e.metadata?.externalAttendeeCount || 0) > 0
+      )
+      .map(getMeetingInstanceKey)
+  ).size;
 
   return {
     meetingDurationTotalHours7d,
+    meetingParticipantHours7d: meetingDurationTotalHours7d,
     meetingCount7d,
+    meetingInstanceCount7d: meetingCount7d,
     adHocMeetingCount7d,
     adHocMeetingRate7d,
     backToBackMeetingBlocks,
@@ -571,7 +623,37 @@ function computeBasecampMetrics(events, date) {
 // MESSAGING METRICS (Slack / Microsoft Teams / Google Chat)
 // ============================================================
 
-function computeMessagingMetrics(events, date) {
+function parseClock(value, fallback) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value || '');
+  if (!match) return fallback;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function localDateParts(date, timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  } catch {
+    return localDateParts(date, 'UTC');
+  }
+}
+
+export function isOutsideWorkingHours(timestamp, workSchedule = {}) {
+  const parts = localDateParts(new Date(timestamp), workSchedule.timezone || 'UTC');
+  const localMinutes = Number(parts.hour) * 60 + Number(parts.minute);
+  const start = parseClock(workSchedule.workdayStart, 9 * 60);
+  const end = parseClock(workSchedule.workdayEnd, 17 * 60);
+  const isWeekend = parts.weekday === 'Sat' || parts.weekday === 'Sun';
+  return isWeekend || localMinutes < start || localMinutes >= end;
+}
+
+export function computeMessagingMetrics(events, date, workSchedule = {}) {
   const messagingSources = ['slack', 'microsoft-teams', 'google-chat'];
   const messagingEvents = events.filter(
     (e) => messagingSources.includes(e.source) || e.eventType === 'message'
@@ -585,11 +667,9 @@ function computeMessagingMetrics(events, date) {
   const daysInWindow = 7;
   const messagesPerDay = messageCount7d / daysInWindow;
 
-  // After-hours messages (before 8am or after 6pm local)
-  const afterHoursMessageCount = events7d.filter((e) => {
-    const hour = new Date(e.timestamp).getHours();
-    return hour < 8 || hour >= 18;
-  }).length;
+  const afterHoursMessageCount = events7d.filter((e) =>
+    isOutsideWorkingHours(e.timestamp, workSchedule)
+  ).length;
   const afterHoursMessageRatio = messageCount7d > 0 ? afterHoursMessageCount / messageCount7d : 0;
 
   // Unique channels/conversations
@@ -619,8 +699,6 @@ function computeMessagingMetrics(events, date) {
 // ============================================================
 
 function computeCompositeMetrics(taskMetrics, emailMetrics, meetingMetrics, crmMetrics, baseline) {
-  const epsilon = 0.001;
-
   // A) CVIR - Completion vs Interruption Ratio
   // CVIR = completed_tasks_7d / (interrupt_events_7d + 1)
   const interruptEvents7d =
@@ -822,7 +900,11 @@ function calculateConfidence(dataCoverage, eventsCount) {
   }
 
   // +25 for calendar/meetings
-  if (dataCoverage.meetConnected || dataCoverage.microsoftOutlookConnected || dataCoverage.googleCalendarConnected) {
+  if (
+    dataCoverage.meetConnected ||
+    dataCoverage.microsoftOutlookConnected ||
+    dataCoverage.googleCalendarConnected
+  ) {
     score += 25;
   }
 
@@ -917,7 +999,7 @@ export async function computeWeeklyRollups(orgId) {
 
   // Create weekly rollup for each scope
   const rollups = [];
-  for (const [key, metrics] of Object.entries(byScope)) {
+  for (const metrics of Object.values(byScope)) {
     const avgMetrics = {
       taskCompletionRate: average(metrics.map((m) => m.taskCompletionRate)),
       wipCurrent: average(metrics.map((m) => m.wipCurrent)),

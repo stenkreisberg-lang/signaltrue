@@ -8,6 +8,7 @@ const links = [
   { to: '/app/actions', label: 'Actions' },
   { to: '/app/executive-summary', label: 'Executive Summary' },
   { to: '/app/signal-coverage', label: 'Data Coverage' },
+  { to: '/app/employees', label: 'Team Setup', adminOnly: true },
   { to: '/app/site-analytics', label: 'Site Analytics' },
 ];
 
@@ -43,15 +44,20 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             SignalTrue
           </Link>
           <nav className="app-navigation" aria-label="Application navigation">
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
-              >
-                {link.label}
-              </NavLink>
-            ))}
+            {links
+              .filter(
+                (link) =>
+                  !link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)
+              )
+              .map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
           </nav>
           <div className="app-account">
             {section && <span className="app-section-pill">{section}</span>}

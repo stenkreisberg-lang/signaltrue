@@ -159,6 +159,8 @@ const workEventSchema = new mongoose.Schema(
 
       // --- Google Meet / Calendar fields ---
       meetingIdHash: String,
+      // Stable across attendee-expanded copies of the same calendar event.
+      meetingInstanceIdHash: String,
       startTime: Date,
       endTime: Date,
       participantCountPeak: Number,

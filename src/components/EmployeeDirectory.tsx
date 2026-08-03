@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../utils/api';
 
 interface Employee {
@@ -40,6 +40,47 @@ interface SyncStatus {
   microsoftConnected: boolean;
 }
 
+interface TeamMappingSuggestion {
+  _id: string;
+  suggestedTeamName: string;
+  suggestedFunction: string;
+  confidence: number;
+  reason: string;
+  sourceType: 'directory' | 'public_website' | 'title_inference' | 'ai_title_inference';
+  userId: Employee;
+}
+
+interface EnrichmentStatus {
+  websiteUrl: string;
+  linkedinUrl: string;
+  unassignedCount: number;
+  enrichment?: {
+    status?: 'not_started' | 'pending_review' | 'completed' | 'failed';
+    lastAnalyzedAt?: string;
+    lastError?: string;
+  };
+  suggestions: TeamMappingSuggestion[];
+  reportSettings?: ReportSettings;
+}
+
+interface ReportSettings {
+  timezone: string;
+  workdayStart: string;
+  workdayEnd: string;
+  loadedHourlyCost: number | null;
+  currency: string;
+}
+
+interface ApiError {
+  response?: {
+    status?: number;
+    data?: { message?: string };
+  };
+}
+
+const apiErrorMessage = (error: unknown, fallback: string) =>
+  (error as ApiError).response?.data?.message || fallback;
+
 const EmployeeDirectory: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -55,27 +96,37 @@ const EmployeeDirectory: React.FC = () => {
   const [bulkAssignTeamId, setBulkAssignTeamId] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [enrichment, setEnrichment] = useState<EnrichmentStatus | null>(null);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [analyzingWebsite, setAnalyzingWebsite] = useState(false);
+  const [reviewingSuggestions, setReviewingSuggestions] = useState(false);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
+  const [savingReportSettings, setSavingReportSettings] = useState(false);
+  const [reportSettings, setReportSettings] = useState<ReportSettings>({
+    timezone: 'UTC',
+    workdayStart: '09:00',
+    workdayEnd: '17:00',
+    loadedHourlyCost: null,
+    currency: 'EUR',
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
       // Fetch employees and teams (always available)
-      const [employeesRes, teamsRes] = await Promise.all([
+      const [employeesRes, teamsRes, enrichmentRes] = await Promise.all([
         api.get('/team-members').catch(() => ({ data: [] })),
         api.get('/team-management/organization').catch(() => ({ data: [] })),
+        api.get('/team-enrichment').catch(() => ({ data: null })),
       ]);
 
       // Try to fetch sync status (may not be available on all backends)
       let syncRes;
       try {
         syncRes = await api.get('/employee-sync/status');
-      } catch (error) {
-        console.log('Sync status endpoint not available yet');
+      } catch {
         syncRes = {
           data: {
             totalUsers: 0,
@@ -101,13 +152,33 @@ const EmployeeDirectory: React.FC = () => {
       setEmployees(employeesWithTeams);
       setTeams(teamsRes.data);
       setSyncStatus(syncRes.data);
+      if (enrichmentRes.data) {
+        setEnrichment(enrichmentRes.data);
+        setWebsiteUrl(enrichmentRes.data.websiteUrl || '');
+        setLinkedinUrl(enrichmentRes.data.linkedinUrl || '');
+        if (enrichmentRes.data.reportSettings) {
+          setReportSettings(enrichmentRes.data.reportSettings);
+        }
+        setSelectedSuggestions(
+          new Set(
+            enrichmentRes.data.suggestions.map(
+              (suggestion: TeamMappingSuggestion) => suggestion._id
+            )
+          )
+        );
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
-      showError('Failed to load employee directory');
+      setErrorMessage('Failed to load employee directory');
+      setTimeout(() => setErrorMessage(''), 5000);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSync = async (source: 'slack' | 'google' | 'microsoft') => {
     try {
@@ -126,12 +197,12 @@ const EmployeeDirectory: React.FC = () => {
       } else {
         showError(response.data.message || 'Sync failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sync error:', error);
-      if (error.response?.status === 404) {
+      if ((error as ApiError).response?.status === 404) {
         showError('Employee sync feature not yet deployed to production backend');
       } else {
-        showError(error.response?.data?.message || 'Failed to sync employees');
+        showError(apiErrorMessage(error, 'Failed to sync employees'));
       }
     } finally {
       setSyncing(false);
@@ -143,9 +214,9 @@ const EmployeeDirectory: React.FC = () => {
       await api.put(`/team-management/${teamId}/members/${employeeId}`);
       showSuccess('Employee assigned to team successfully');
       await fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Assign error:', error);
-      showError(error.response?.data?.message || 'Failed to assign employee');
+      showError(apiErrorMessage(error, 'Failed to assign employee'));
     }
   };
 
@@ -167,10 +238,70 @@ const EmployeeDirectory: React.FC = () => {
       setShowBulkAssign(false);
       setBulkAssignTeamId('');
       await fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Bulk assign error:', error);
-      showError(error.response?.data?.message || 'Failed to assign employees');
+      showError(apiErrorMessage(error, 'Failed to assign employees'));
     }
+  };
+
+  const analyzeCompanyWebsite = async () => {
+    if (!websiteUrl.trim()) {
+      showError('Add the public company homepage before running team analysis');
+      return;
+    }
+    try {
+      setAnalyzingWebsite(true);
+      const response = await api.post('/team-enrichment/analyze', {
+        websiteUrl: websiteUrl.trim(),
+        linkedinUrl: linkedinUrl.trim() || undefined,
+      });
+      showSuccess(response.data.message);
+      await fetchData();
+    } catch (error: unknown) {
+      showError(apiErrorMessage(error, 'Failed to analyze the company website'));
+    } finally {
+      setAnalyzingWebsite(false);
+    }
+  };
+
+  const reviewTeamSuggestions = async (decision: 'apply' | 'reject') => {
+    if (selectedSuggestions.size === 0) {
+      showError('Select at least one team suggestion');
+      return;
+    }
+    try {
+      setReviewingSuggestions(true);
+      const response = await api.post(`/team-enrichment/${decision}`, {
+        suggestionIds: Array.from(selectedSuggestions),
+      });
+      showSuccess(response.data.message);
+      await fetchData();
+    } catch (error: unknown) {
+      showError(apiErrorMessage(error, `Failed to ${decision} team suggestions`));
+    } finally {
+      setReviewingSuggestions(false);
+    }
+  };
+
+  const saveReportSettings = async () => {
+    try {
+      setSavingReportSettings(true);
+      const response = await api.put('/team-enrichment/report-settings', reportSettings);
+      showSuccess(response.data.message);
+    } catch (error: unknown) {
+      showError(apiErrorMessage(error, 'Failed to update report assumptions'));
+    } finally {
+      setSavingReportSettings(false);
+    }
+  };
+
+  const toggleSuggestion = (suggestionId: string) => {
+    setSelectedSuggestions((current) => {
+      const next = new Set(current);
+      if (next.has(suggestionId)) next.delete(suggestionId);
+      else next.add(suggestionId);
+      return next;
+    });
   };
 
   const toggleSelectEmployee = (employeeId: string) => {
@@ -383,6 +514,203 @@ const EmployeeDirectory: React.FC = () => {
                 )}
             </div>
           </div>
+        </div>
+      )}
+
+      {enrichment && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Report assumptions</h2>
+          <p className="text-sm text-gray-600 mt-1 mb-4">
+            Working hours apply to all teams and control local after-hours detection. Cost estimates
+            appear only when you provide a loaded hourly cost; SignalTrue does not invent one.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <label className="text-sm font-medium text-gray-700 lg:col-span-2">
+              IANA timezone
+              <input
+                value={reportSettings.timezone}
+                onChange={(event) =>
+                  setReportSettings((current) => ({ ...current, timezone: event.target.value }))
+                }
+                placeholder="Europe/Tallinn"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+              />
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              Workday start
+              <input
+                type="time"
+                value={reportSettings.workdayStart}
+                onChange={(event) =>
+                  setReportSettings((current) => ({ ...current, workdayStart: event.target.value }))
+                }
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+              />
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              Workday end
+              <input
+                type="time"
+                value={reportSettings.workdayEnd}
+                onChange={(event) =>
+                  setReportSettings((current) => ({ ...current, workdayEnd: event.target.value }))
+                }
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+              />
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              Loaded cost / hour
+              <div className="flex mt-1">
+                <input
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value={reportSettings.loadedHourlyCost ?? ''}
+                  onChange={(event) =>
+                    setReportSettings((current) => ({
+                      ...current,
+                      loadedHourlyCost:
+                        event.target.value === '' ? null : Number(event.target.value),
+                    }))
+                  }
+                  className="min-w-0 w-full px-3 py-2 border border-gray-300 rounded-l-lg bg-white text-gray-900"
+                />
+                <input
+                  value={reportSettings.currency}
+                  maxLength={3}
+                  aria-label="Currency"
+                  onChange={(event) =>
+                    setReportSettings((current) => ({
+                      ...current,
+                      currency: event.target.value.toUpperCase(),
+                    }))
+                  }
+                  className="w-16 px-2 py-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 text-gray-900 uppercase"
+                />
+              </div>
+            </label>
+          </div>
+          <button
+            onClick={saveReportSettings}
+            disabled={savingReportSettings}
+            className="mt-4 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50"
+          >
+            {savingReportSettings ? 'Saving...' : 'Save report assumptions'}
+          </button>
+        </div>
+      )}
+
+      {/* Public team-structure recovery */}
+      {enrichment && (enrichment.unassignedCount > 0 || enrichment.suggestions.length > 0) && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-blue-100">
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Recover missing team structure
+              </h2>
+              <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+                SignalTrue uses directory departments first. For remaining unassigned people, it can
+                analyze public Team and About pages and prepare suggestions for HR review. It never
+                changes an employee's team without approval.
+              </p>
+            </div>
+            <div className="text-sm font-medium text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+              {enrichment.unassignedCount} unassigned
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-sm font-medium text-gray-700">
+              Company homepage
+              <input
+                type="url"
+                value={websiteUrl}
+                onChange={(event) => setWebsiteUrl(event.target.value)}
+                placeholder="https://company.com"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+              />
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              LinkedIn company page (reference only)
+              <input
+                type="url"
+                value={linkedinUrl}
+                onChange={(event) => setLinkedinUrl(event.target.value)}
+                placeholder="https://www.linkedin.com/company/..."
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            LinkedIn is not crawled. Public website text and anonymous job titles may be processed
+            by the configured AI provider; employee emails and message content are not sent.
+          </p>
+          <button
+            onClick={analyzeCompanyWebsite}
+            disabled={analyzingWebsite}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {analyzingWebsite ? 'Analyzing public pages...' : 'Suggest teams from public website'}
+          </button>
+
+          {enrichment.suggestions.length > 0 && (
+            <div className="mt-6 border-t pt-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Review suggestions</h3>
+                  <p className="text-sm text-gray-600">
+                    Evidence is directional; approve only assignments you recognize.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => reviewTeamSuggestions('reject')}
+                    disabled={reviewingSuggestions || selectedSuggestions.size === 0}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Reject selected
+                  </button>
+                  <button
+                    onClick={() => reviewTeamSuggestions('apply')}
+                    disabled={reviewingSuggestions || selectedSuggestions.size === 0}
+                    className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    Apply selected
+                  </button>
+                </div>
+              </div>
+              <div className="divide-y border rounded-lg">
+                {enrichment.suggestions.map((suggestion) => (
+                  <label
+                    key={suggestion._id}
+                    className="flex gap-3 p-3 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSuggestions.has(suggestion._id)}
+                      onChange={() => toggleSuggestion(suggestion._id)}
+                      className="mt-1 rounded border-gray-300"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-gray-900">{suggestion.userId.name}</span>
+                        <span className="text-gray-400">to</span>
+                        <span className="font-semibold text-blue-700">
+                          {suggestion.suggestedTeamName}
+                        </span>
+                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                          {suggestion.confidence}% confidence
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {suggestion.userId.profile?.title || 'No job title'} · {suggestion.reason}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

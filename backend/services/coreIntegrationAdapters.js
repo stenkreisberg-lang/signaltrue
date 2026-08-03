@@ -111,14 +111,14 @@ class OrgIntegrationAdapter {
   /**
    * Override in subclass to get the right integrations path
    */
-  getIntegrationData(org) {
+  getIntegrationData(_org) {
     throw new Error('getIntegrationData must be implemented');
   }
 
   /**
    * Override in subclass to refresh the token
    */
-  async refreshToken(org, integration) {
+  async refreshToken(_org, _integration) {
     throw new Error('refreshToken must be implemented');
   }
 
@@ -188,7 +188,7 @@ class OrgIntegrationAdapter {
     }
   }
 
-  async updateSyncStatus(orgId, success, count, error = null) {
+  async updateSyncStatus(_orgId, _success, _count, _error = null) {
     // Override in subclass
   }
 
@@ -223,11 +223,11 @@ class OrgIntegrationAdapter {
     );
   }
 
-  async fetchEvents(orgId, accessToken, since, until) {
+  async fetchEvents(_orgId, _accessToken, _since, _until) {
     throw new Error('fetchEvents must be implemented');
   }
 
-  async transformToWorkEvents(rawEvents, orgId) {
+  async transformToWorkEvents(_rawEvents, _orgId) {
     throw new Error('transformToWorkEvents must be implemented');
   }
 }
@@ -256,7 +256,7 @@ export class SlackAdapter extends OrgIntegrationAdapter {
     });
   }
 
-  async fetchEvents(orgId, accessToken, since, until) {
+  async fetchEvents(_orgId, accessToken, since, until) {
     const allMessages = [];
 
     // Get list of channels
@@ -905,6 +905,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             timestamp: start,
             duration: durationMinutes,
             metadata: {
+              meetingIdHash: hashMetadata(orgId, event.id),
+              meetingInstanceIdHash: hashMetadata(orgId, event.id),
               attendeeCount,
               internalAttendeeCount: userId ? 1 : internalParticipants.length,
               externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
@@ -1054,35 +1056,68 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
   }
 
   async transformToWorkEvents(rawEvents, orgId) {
-    return rawEvents.map((event) => {
+    const orgUsers = await User.find({
+      orgId,
+      accountStatus: { $ne: 'inactive' },
+    })
+      .select('_id email teamId')
+      .lean();
+    const userByEmail = new Map(
+      orgUsers.filter((user) => user.email).map((user) => [user.email.toLowerCase(), user])
+    );
+
+    return rawEvents.flatMap((event) => {
       const start = event.start?.dateTime
         ? new Date(event.start.dateTime)
         : new Date(event.start?.date);
       const end = event.end?.dateTime ? new Date(event.end.dateTime) : new Date(event.end?.date);
       const durationMinutes = (end - start) / (1000 * 60);
-
-      return {
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || durationMinutes <= 0) {
+        return [];
+      }
+      const organizerEmail = event.organizer?.email?.toLowerCase();
+      const participantEmails = [
+        ...new Set(
+          [organizerEmail, ...(event.attendees || []).map((attendee) => attendee.email)]
+            .filter(Boolean)
+            .map((email) => email.toLowerCase())
+        ),
+      ];
+      const internalParticipants = participantEmails
+        .map((email) => userByEmail.get(email))
+        .filter(Boolean);
+      const attendeeCount = participantEmails.length;
+      const baseMetadata = {
+        meetingIdHash: hashMetadata(orgId, event.id),
+        meetingInstanceIdHash: hashMetadata(orgId, event.id),
+        organizerHash: hashMetadata(orgId, organizerEmail),
+        attendeeCount,
+        internalAttendeeCount: internalParticipants.length,
+        externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
+        isAllDay: !event.start?.dateTime,
+        isOnlineMeeting: !!event.conferenceData,
+        isRecurring: !!event.recurringEventId,
+        durationMinutes,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      };
+      const participants = internalParticipants.length > 0 ? internalParticipants : [null];
+      return participants.map((participant) => ({
         orgId: new mongoose.Types.ObjectId(orgId),
         source: 'google-calendar',
         eventType: 'meeting',
-        externalId: `gcal-${event.id}`,
+        actorUserId: participant?._id || null,
+        teamId: participant?.teamId || null,
+        externalId: `gcal-${event.id}${participant?._id ? `-${participant._id}` : ''}`,
         timestamp: start,
         duration: durationMinutes,
         metadata: {
-          summary: event.summary,
-          organizer: event.organizer?.email,
-          attendeeCount: event.attendees?.length || 0,
-          hasVideoConference: !!event.conferenceData,
-          status: event.status,
-          isAllDay: !event.start?.dateTime,
-          location: event.location,
-          recurrence: !!event.recurringEventId,
-          durationMinutes,
-          startTime: start.toISOString(),
-          endTime: end.toISOString(),
+          ...baseMetadata,
+          internalAttendeeCount: participant ? 1 : internalParticipants.length,
+          attendeeHashes: participant ? [hashMetadata(orgId, participant._id)] : [],
         },
         raw: { id: event.id },
-      };
+      }));
     });
   }
 }
@@ -1142,7 +1177,7 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
     });
   }
 
-  async fetchEvents(orgId, accessToken, since, until) {
+  async fetchEvents(_orgId, accessToken, _since, _until) {
     // Get list of spaces
     const spacesRes = await fetch('https://chat.googleapis.com/v1/spaces?pageSize=20', {
       headers: { Authorization: `Bearer ${accessToken}` },

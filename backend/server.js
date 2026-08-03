@@ -100,6 +100,7 @@ import analyticsRoutes from './routes/analytics.js';
 import teamRoutes from './routes/teamRoutes.js';
 import teamManagementRoutes from './routes/teams.js';
 import employeeSyncRoutes from './routes/employeeSync.js';
+import teamEnrichmentRoutes from './routes/teamEnrichment.js';
 import slackRoutes from './routes/slackRoutes.js';
 import googleChatRoutes from './routes/googleChatRoutes.js';
 import historyRoutes from './routes/historyRoutes.js';
@@ -320,6 +321,7 @@ async function main() {
     app.use('/api/teams', authenticateToken, teamRoutes);
     app.use('/api/team-management', teamManagementRoutes);
     app.use('/api/employee-sync', employeeSyncRoutes);
+    app.use('/api/team-enrichment', teamEnrichmentRoutes);
     app.use('/api/slack', authenticateToken, slackRoutes);
     app.use('/api/google-chat', authenticateToken, googleChatRoutes);
     app.use('/api/history', authenticateToken, historyRoutes);

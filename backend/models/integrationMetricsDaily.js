@@ -97,8 +97,12 @@ const integrationMetricsDailySchema = new mongoose.Schema(
     // MEETING METRICS (Google Meet / Calendar)
     // ============================================================
 
+    // Participant-hours: one hour attended by five people contributes five hours.
     meetingDurationTotalHours7d: { type: Number, default: 0 },
+    meetingParticipantHours7d: { type: Number, default: 0 },
+    // Unique calendar instances, deduplicated across attendee-expanded work events.
     meetingCount7d: { type: Number, default: 0 },
+    meetingInstanceCount7d: { type: Number, default: 0 },
 
     // Ad-hoc vs scheduled
     adHocMeetingCount7d: { type: Number, default: 0 },
