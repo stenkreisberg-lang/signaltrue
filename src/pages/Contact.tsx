@@ -7,7 +7,9 @@ import api from '../utils/api';
 
 const Contact: React.FC = () => {
   const location = useLocation();
-  const defaultIntent = new URLSearchParams(location.search).get('intent') || '';
+  const query = new URLSearchParams(location.search);
+  const defaultIntent = query.get('intent') || '';
+  const cta = query.get('cta') || 'direct_contact';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -35,6 +37,8 @@ const Contact: React.FC = () => {
     trackEvent('form_start', {
       source_page: window.location.pathname,
       intent: formData.intent || undefined,
+      form_id: 'demo-request-form',
+      cta,
     });
   };
 
@@ -42,6 +46,13 @@ const Contact: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setSubmitError('');
+
+    trackEvent('demo_form_submit', {
+      source_page: window.location.pathname,
+      intent: formData.intent || undefined,
+      form_id: 'demo-request-form',
+      cta,
+    });
 
     try {
       const challenge = [
@@ -60,19 +71,38 @@ const Contact: React.FC = () => {
         challenge,
         source: 'Website demo request',
         tag: formData.intent || 'demo',
+        attribution: {
+          landingPage: window.location.href,
+          referrer: document.referrer || '',
+          cta,
+          utmSource: query.get('utm_source') || '',
+          utmMedium: query.get('utm_medium') || '',
+          utmCampaign: query.get('utm_campaign') || '',
+          utmContent: query.get('utm_content') || '',
+          utmTerm: query.get('utm_term') || '',
+        },
         timestamp: new Date().toISOString(),
       });
 
-      trackEvent('demo_request_submitted', {
+      trackEvent('generate_lead', {
         company_size: formData.companySize || undefined,
         intent: formData.intent || undefined,
         problem_area: formData.mainProblem || undefined,
         source_page: window.location.pathname,
+        form_id: 'demo-request-form',
+        cta,
       });
 
       setSubmitted(true);
     } catch (error) {
       console.error('Contact form submission failed:', error);
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      trackEvent('demo_form_error', {
+        source_page: window.location.pathname,
+        intent: formData.intent || undefined,
+        form_id: 'demo-request-form',
+        error_type: status ? `http_${status}` : 'network_error',
+      });
       setSubmitError(
         'We could not send your request. Please try again or email hello@signaltrue.ai.'
       );
@@ -165,12 +195,12 @@ const Contact: React.FC = () => {
                     We will contact you about SignalTrue and share the next step for a demo or
                     workload scan.
                   </p>
-                  <Link
-                    to="/"
+                  <a
+                    href="https://calendly.com/sten-kreisberg-signaltrue/30min"
                     className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                   >
-                    Back to Home
-                  </Link>
+                    Choose a time now
+                  </a>
                 </div>
               ) : (
                 <>
@@ -199,7 +229,12 @@ const Contact: React.FC = () => {
                     </ul>
                   </div>
 
-                  <form onSubmit={handleSubmit} onFocus={handleFormStart} className="space-y-6">
+                  <form
+                    id="demo-request-form"
+                    onSubmit={handleSubmit}
+                    onFocus={handleFormStart}
+                    className="space-y-6"
+                  >
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label
@@ -253,6 +288,7 @@ const Contact: React.FC = () => {
                             type="text"
                             id="company"
                             name="company"
+                            required
                             value={formData.company}
                             onChange={handleChange}
                             className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
@@ -364,7 +400,7 @@ const Contact: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          Request demo
+                          Book my 20-minute review
                         </>
                       )}
                     </button>

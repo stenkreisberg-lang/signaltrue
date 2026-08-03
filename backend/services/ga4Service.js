@@ -2,12 +2,54 @@ import { google } from 'googleapis';
 
 const ANALYTICS_READONLY_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
+const SITE_HOSTNAME = process.env.GA4_SITE_HOSTNAME || 'www.signaltrue.ai';
 const CONVERSION_EVENT_NAMES = new Set([
+  'generate_lead',
   'demo_request_submitted',
   'contact_form_submit',
-  'early_signal_preview_requested',
-  'sample_report_request',
+  'email_submitted',
+  'trial_started',
 ]);
+const FUNNEL_EVENT_NAMES = [
+  'demo_cta_click',
+  'sample_report_click',
+  'sample_report_request',
+  'form_start',
+  'demo_form_submit',
+  'generate_lead',
+  'demo_request_submitted',
+  'contact_form_submit',
+  'demo_form_error',
+];
+
+function productionHostnameFilter() {
+  return {
+    filter: {
+      fieldName: 'hostName',
+      stringFilter: {
+        matchType: 'EXACT',
+        value: SITE_HOSTNAME,
+        caseSensitive: false,
+      },
+    },
+  };
+}
+
+function withProductionHostname(request) {
+  const hostFilter = productionHostnameFilter();
+  if (!request.dimensionFilter) {
+    return { ...request, dimensionFilter: hostFilter };
+  }
+
+  return {
+    ...request,
+    dimensionFilter: {
+      andGroup: {
+        expressions: [hostFilter, request.dimensionFilter],
+      },
+    },
+  };
+}
 
 function parseServiceAccountJson() {
   const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
@@ -94,73 +136,108 @@ export async function getGa4Overview(options = {}) {
   const { client, propertyId } = analytics;
   const dateRanges = [
     {
-      startDate: options.startDate || '30daysAgo',
+      startDate: options.startDate || '29daysAgo',
       endDate: options.endDate || 'today',
     },
   ];
   const previousDateRanges = [
     {
-      startDate: options.previousStartDate || '60daysAgo',
-      endDate: options.previousEndDate || '31daysAgo',
+      startDate: options.previousStartDate || '59daysAgo',
+      endDate: options.previousEndDate || '30daysAgo',
     },
   ];
 
   const [summary, previousSummary, topPages, trafficSources, daily, keyEvents] = await Promise.all([
-    runReport(client, propertyId, {
-      dateRanges,
-      metrics: [
-        { name: 'activeUsers' },
-        { name: 'sessions' },
-        { name: 'screenPageViews' },
-        { name: 'engagementRate' },
-        { name: 'averageSessionDuration' },
-        { name: 'keyEvents' },
-      ],
-    }),
-    runReport(client, propertyId, {
-      dateRanges: previousDateRanges,
-      metrics: [
-        { name: 'activeUsers' },
-        { name: 'sessions' },
-        { name: 'screenPageViews' },
-        { name: 'engagementRate' },
-        { name: 'averageSessionDuration' },
-        { name: 'keyEvents' },
-      ],
-    }),
-    runReport(client, propertyId, {
-      dateRanges,
-      dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
-      metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'engagementRate' }],
-      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-      limit: 10,
-    }),
-    runReport(client, propertyId, {
-      dateRanges,
-      dimensions: [{ name: 'sessionDefaultChannelGroup' }],
-      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
-      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-      limit: 8,
-    }),
-    runReport(client, propertyId, {
-      dateRanges,
-      dimensions: [{ name: 'date' }],
-      metrics: [
-        { name: 'activeUsers' },
-        { name: 'sessions' },
-        { name: 'screenPageViews' },
-        { name: 'keyEvents' },
-      ],
-      orderBys: [{ dimension: { dimensionName: 'date' } }],
-      limit: 31,
-    }),
-    runReport(client, propertyId, {
-      dateRanges,
-      dimensions: [{ name: 'eventName' }],
-      metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
-      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
-      limit: 25,
-    }),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges,
+        dimensions: [{ name: 'hostName' }],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'sessions' },
+          { name: 'screenPageViews' },
+          { name: 'engagementRate' },
+          { name: 'averageSessionDuration' },
+          { name: 'keyEvents' },
+        ],
+      })
+    ),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges: previousDateRanges,
+        dimensions: [{ name: 'hostName' }],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'sessions' },
+          { name: 'screenPageViews' },
+          { name: 'engagementRate' },
+          { name: 'averageSessionDuration' },
+          { name: 'keyEvents' },
+        ],
+      })
+    ),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges,
+        dimensions: [{ name: 'pagePath' }, { name: 'hostName' }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'engagementRate' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 10,
+      })
+    ),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges,
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'hostName' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        limit: 8,
+      })
+    ),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges,
+        dimensions: [{ name: 'date' }, { name: 'hostName' }],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'sessions' },
+          { name: 'screenPageViews' },
+          { name: 'keyEvents' },
+        ],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+        limit: 31,
+      })
+    ),
+    runReport(
+      client,
+      propertyId,
+      withProductionHostname({
+        dateRanges,
+        dimensions: [{ name: 'eventName' }, { name: 'hostName' }],
+        metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'eventName',
+            inListFilter: {
+              values: [...new Set([...FUNNEL_EVENT_NAMES, ...CONVERSION_EVENT_NAMES])],
+              caseSensitive: true,
+            },
+          },
+        },
+        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+        limit: 50,
+      })
+    ),
   ]);
 
   const summaryHeaders = summary.metricHeaders || [];
@@ -208,6 +285,7 @@ export async function getGa4Overview(options = {}) {
   return {
     connected: true,
     propertyId,
+    hostname: SITE_HOSTNAME,
     dateRange: {
       label: options.label || 'Last 30 days',
       startDate: dateRanges[0].startDate,
@@ -217,7 +295,6 @@ export async function getGa4Overview(options = {}) {
     previousSummary: previousMetrics,
     topPages: (topPages.rows || []).map((row) => ({
       path: getDimension(row, topPages.dimensionHeaders || [], 'pagePath'),
-      title: getDimension(row, topPages.dimensionHeaders || [], 'pageTitle'),
       views: getMetric(row, topPages.metricHeaders || [], 'screenPageViews'),
       activeUsers: getMetric(row, topPages.metricHeaders || [], 'activeUsers'),
       engagementRate: formatPercent(getMetric(row, topPages.metricHeaders || [], 'engagementRate')),
@@ -239,6 +316,7 @@ export async function getGa4Overview(options = {}) {
       keyEvents: getMetric(row, daily.metricHeaders || [], 'keyEvents'),
     })),
     keyEvents: eventRows,
+    funnelEvents: eventRows.filter((event) => FUNNEL_EVENT_NAMES.includes(event.eventName)),
     conversionEvents,
     conversionEventCount: conversionEvents.reduce((sum, event) => sum + event.eventCount, 0),
   };

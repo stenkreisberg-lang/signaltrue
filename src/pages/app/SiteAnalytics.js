@@ -15,10 +15,9 @@ import api from '../../utils/api';
 import { GA_MEASUREMENT_ID } from '../../lib/analytics';
 
 const conversionEvents = new Set([
+  'generate_lead',
   'demo_request_submitted',
   'contact_form_submit',
-  'sample_report_request',
-  'early_signal_preview_requested',
   'email_submitted',
   'trial_started',
 ]);
@@ -160,9 +159,9 @@ export default function SiteAnalytics() {
             </div>
             <div className="app-dashboard-card">
               <span className="app-dashboard-card-value">{measuredConversions}</span>
-              <span className="app-dashboard-card-label">Measured conversions</span>
+              <span className="app-dashboard-card-label">Confirmed leads</span>
               <span className="app-dashboard-card-note">
-                Completed demo, preview, sample-report, email, and trial submissions.
+                Completed demo, contact, email, and trial submissions.
               </span>
             </div>
           </div>
@@ -170,15 +169,12 @@ export default function SiteAnalytics() {
           <section className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
             <div className="app-section-heading">
               <div>
-                <h2>Conversion actions</h2>
-                <p>
-                  GA4 event counts for high-intent actions. Mark these as key events in GA4 when
-                  admin access is available.
-                </p>
+                <h2>Lead funnel</h2>
+                <p>CTA clicks, form starts, attempts, confirmed leads, and errors from GA4.</p>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {(ga4.conversionEvents || []).map((event) => (
+              {(ga4.funnelEvents || []).map((event) => (
                 <div key={event.eventName} className="rounded-lg bg-slate-50 px-4 py-3">
                   <div className="text-sm font-semibold text-slate-900">
                     {formatEventName(event.eventName)}
@@ -187,9 +183,9 @@ export default function SiteAnalytics() {
                   <div className="text-xs text-slate-500">GA4 event count</div>
                 </div>
               ))}
-              {(ga4.conversionEvents || []).length === 0 && (
+              {(ga4.funnelEvents || []).length === 0 && (
                 <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  No conversion actions recorded in the selected GA4 window yet.
+                  No lead-funnel actions recorded in the selected GA4 window yet.
                 </div>
               )}
             </div>
@@ -258,12 +254,9 @@ export default function SiteAnalytics() {
                 </thead>
                 <tbody>
                   {(ga4.topPages || []).map((page) => (
-                    <tr key={`${page.path}-${page.title}`} className="border-t border-slate-100">
+                    <tr key={page.path} className="border-t border-slate-100">
                       <td className="py-3 pr-4">
-                        <div className="font-semibold text-slate-900">
-                          {page.title || page.path}
-                        </div>
-                        <div className="text-xs text-slate-500">{page.path}</div>
+                        <div className="font-semibold text-slate-900">{page.path || '/'}</div>
                       </td>
                       <td className="py-3 pr-4">{page.views}</td>
                       <td className="py-3 pr-4">{page.activeUsers}</td>

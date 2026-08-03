@@ -49,6 +49,17 @@ const leadSchema = new mongoose.Schema(
       trim: true,
     },
 
+    attribution: {
+      landingPage: { type: String, trim: true, maxlength: 2048 },
+      referrer: { type: String, trim: true, maxlength: 2048 },
+      cta: { type: String, trim: true, maxlength: 255 },
+      utmSource: { type: String, trim: true, maxlength: 255 },
+      utmMedium: { type: String, trim: true, maxlength: 255 },
+      utmCampaign: { type: String, trim: true, maxlength: 255 },
+      utmContent: { type: String, trim: true, maxlength: 255 },
+      utmTerm: { type: String, trim: true, maxlength: 255 },
+    },
+
     // Notification status
     clientEmailSent: {
       type: Boolean,

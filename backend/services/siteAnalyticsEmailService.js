@@ -18,10 +18,16 @@ function changePercent(current = 0, previous = 0) {
   return Math.round(((current - previous) / previous) * 100);
 }
 
-function changeLabel(current = 0, previous = 0) {
-  if (!previous) return current > 0 ? 'new activity' : 'no baseline';
+function changeLabel(current = 0, previous = 0, formatPrevious = formatNumber) {
+  if (!previous) return current > 0 ? 'new activity (previously 0)' : 'no previous activity';
   const change = changePercent(current, previous);
-  return `${change >= 0 ? '+' : ''}${change}%`;
+  return `${change >= 0 ? '+' : ''}${change}% vs ${formatPrevious(previous)}`;
+}
+
+function rateChangeLabel(current = 0, previous = 0) {
+  if (!previous) return current > 0 ? 'new activity (previously 0%)' : 'no previous activity';
+  const change = Number(current) - Number(previous);
+  return `${change >= 0 ? '+' : ''}${change.toFixed(1)} pp vs ${formatPercent(previous)}`;
 }
 
 function eventLabel(name) {
@@ -35,7 +41,7 @@ function inferRecommendations(overview) {
   const summary = overview.summary || {};
   const topPages = overview.topPages || [];
   const trafficSources = overview.trafficSources || [];
-  const conversions = overview.conversionEvents || [];
+  const funnelEvents = overview.funnelEvents || [];
   const totalConversions = overview.conversionEventCount || 0;
   const sessions = summary.sessions || 0;
   const views = summary.views || 0;
@@ -48,16 +54,27 @@ function inferRecommendations(overview) {
   const pricing = topPages.find((page) => page.path === '/pricing');
   const product = topPages.find((page) => page.path === '/product');
   const contact = topPages.find((page) => page.path === '/contact');
-  const sampleReportEvent = conversions.find((event) =>
+  const sampleReportEvent = funnelEvents.find((event) =>
     ['sample_report_click', 'sample_report_view', 'sample_report_request'].includes(event.eventName)
   );
+  const formStarts =
+    funnelEvents.find((event) => event.eventName === 'form_start')?.eventCount || 0;
+
+  if (formStarts > 0 && totalConversions === 0) {
+    recs.push({
+      title: 'Remove friction after visitors start the demo form',
+      why: `${formatNumber(formStarts)} form starts produced no confirmed leads.`,
+      action:
+        'Review form errors and completion steps, keep only essential fields, and verify the success message, notification email, and scheduling link end to end.',
+    });
+  }
 
   if (sessions && conversionRate < 8) {
     recs.push({
       title: 'Make the primary CTA more specific on high-traffic pages',
-      why: `${formatNumber(sessions)} sessions produced ${formatNumber(totalConversions)} measured conversion actions (${formatPercent(conversionRate)}).`,
+      why: `${formatNumber(sessions)} sessions produced ${formatNumber(totalConversions)} confirmed leads (${formatPercent(conversionRate)}).`,
       action:
-        'On the homepage and product page, keep one main CTA: "See early team risk signals", with "View sample report" as the secondary option.',
+        'On the homepage and product page, keep one main CTA: "Book a 20-minute workload risk review", with "View sample report" as the secondary option.',
     });
   }
 
@@ -84,7 +101,7 @@ function inferRecommendations(overview) {
       title: 'Grow organic search traffic with specific signal pages',
       why: `Organic Search produced only ${formatNumber(organicSessions)} sessions, while Direct produced ${formatNumber(directSessions)}.`,
       action:
-        'Publish or improve pages for manager load, meeting overload, burnout early warning, and employee engagement leading indicators; link them from Product and footer.',
+        'Improve the existing manager load, meeting overload, burnout early warning, and employee engagement pages with original evidence and clear links to Product and the sample report.',
     });
   }
 
@@ -137,7 +154,7 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
   const previous = overview.previousSummary || {};
   const topPages = overview.topPages || [];
   const trafficSources = overview.trafficSources || [];
-  const conversions = overview.conversionEvents || [];
+  const funnelEvents = overview.funnelEvents || [];
   const sessions = summary.sessions || 0;
   const conversionRate = sessions ? ((overview.conversionEventCount || 0) / sessions) * 100 : 0;
 
@@ -165,19 +182,23 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ],
           ['Views', formatNumber(summary.views), changeLabel(summary.views, previous.views)],
           [
-            'Conversions',
+            'Confirmed leads',
             formatNumber(overview.conversionEventCount),
             `${formatPercent(conversionRate)} of sessions`,
           ],
           [
             'Engagement',
             formatPercent(summary.engagementRate),
-            changeLabel(summary.engagementRate, previous.engagementRate),
+            rateChangeLabel(summary.engagementRate, previous.engagementRate),
           ],
           [
             'Avg duration',
             `${formatNumber(summary.averageSessionDuration)}s`,
-            changeLabel(summary.averageSessionDuration, previous.averageSessionDuration),
+            changeLabel(
+              summary.averageSessionDuration,
+              previous.averageSessionDuration,
+              (value) => `${formatNumber(value)}s`
+            ),
           ],
         ]
           .map(
@@ -190,6 +211,10 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           )
           .join('')}
       </div>
+
+      <p style="margin:0 4px 16px;color:#64748b;font-size:12px;line-height:1.6;">
+        Production host only: ${overview.hostname || 'www.signaltrue.ai'}. Weekly percentages are directional when traffic is below 50 sessions.
+      </p>
 
       <div style="background:white;border:1px solid #e2e8f0;border-radius:18px;padding:22px;margin-bottom:16px;">
         <h2 style="margin:0 0 12px;font-size:20px;">This week's improvement priorities</h2>
@@ -214,7 +239,7 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
               topPages.slice(0, 8),
               (page) => `
               <tr style="border-top:1px solid #e2e8f0;">
-                <td style="padding:10px 8px;"><strong>${page.path || '/'}</strong><br><span style="color:#64748b;">${page.title || ''}</span></td>
+                <td style="padding:10px 8px;"><strong>${page.path || '/'}</strong></td>
                 <td style="padding:10px 8px;">${formatNumber(page.views)}</td>
                 <td style="padding:10px 8px;">${formatNumber(page.activeUsers)}</td>
                 <td style="padding:10px 8px;">${formatPercent(page.engagementRate)}</td>
@@ -236,9 +261,9 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           )}
         </div>
         <div style="background:white;border:1px solid #e2e8f0;border-radius:18px;padding:22px;">
-          <h2 style="margin:0 0 12px;font-size:20px;">Visitor actions</h2>
+          <h2 style="margin:0 0 12px;font-size:20px;">Lead funnel</h2>
           ${sectionRows(
-            conversions,
+            funnelEvents,
             (event) => `
             <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding:10px 0;">
               <span>${eventLabel(event.eventName)}</span><strong>${formatNumber(event.eventCount)}</strong>
@@ -248,7 +273,7 @@ function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       </div>
 
       <p style="color:#64748b;font-size:12px;line-height:1.6;margin:20px 4px 0;">
-        This report is generated automatically from GA4 and SignalTrue conversion-event definitions.
+        This report is generated automatically from production-host GA4 data and SignalTrue's confirmed-lead event definitions.
         It is sent only to the configured admin recipient.
       </p>
     </div>
@@ -264,10 +289,10 @@ export async function sendWeeklySiteAnalyticsReport(trigger = 'manual') {
   const recipientEmail = process.env.SITE_ANALYTICS_REPORT_EMAIL || DEFAULT_RECIPIENT;
   const overview = await getGa4Overview({
     label: 'Last 7 days',
-    startDate: '7daysAgo',
+    startDate: '6daysAgo',
     endDate: 'today',
-    previousStartDate: '14daysAgo',
-    previousEndDate: '8daysAgo',
+    previousStartDate: '13daysAgo',
+    previousEndDate: '7daysAgo',
   });
 
   if (!overview.connected) {
@@ -277,7 +302,7 @@ export async function sendWeeklySiteAnalyticsReport(trigger = 'manual') {
   const recommendations = inferRecommendations(overview);
   const sessions = overview.summary?.sessions || 0;
   const conversions = overview.conversionEventCount || 0;
-  const subject = `SignalTrue weekly site report: ${formatNumber(sessions)} sessions, ${formatNumber(conversions)} actions`;
+  const subject = `SignalTrue weekly site report: ${formatNumber(sessions)} sessions, ${formatNumber(conversions)} confirmed leads`;
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const result = await resend.emails.send({

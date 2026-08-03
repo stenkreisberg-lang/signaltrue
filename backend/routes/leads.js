@@ -218,6 +218,21 @@ function generateInternalNotificationHTML(lead) {
   const challengeSection = lead.challenge
     ? `<p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 16px 0 0;"><strong>${challengeLabel}:</strong><br>${escapeHtml(lead.challenge).replace(/\n/g, '<br>')}</p>`
     : '';
+  const attributionRows = [
+    ['CTA', lead.attribution?.cta],
+    ['Landing page', lead.attribution?.landingPage],
+    ['Referrer', lead.attribution?.referrer],
+    ['UTM source', lead.attribution?.utmSource],
+    ['UTM medium', lead.attribution?.utmMedium],
+    ['UTM campaign', lead.attribution?.utmCampaign],
+    ['UTM content', lead.attribution?.utmContent],
+    ['UTM term', lead.attribution?.utmTerm],
+  ].filter(([, value]) => value);
+  const attributionSection = attributionRows.length
+    ? `<p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 16px 0 0;"><strong>Attribution:</strong><br>${attributionRows
+        .map(([label, value]) => `${label}: ${escapeHtml(value)}`)
+        .join('<br>')}</p>`
+    : '';
 
   return `
 <!DOCTYPE html>
@@ -254,6 +269,7 @@ function generateInternalNotificationHTML(lead) {
                       <strong>${dateLabel}:</strong> ${new Date().toLocaleString(isWebsiteDemo ? 'en-GB' : 'et-EE', { timeZone: 'Europe/Tallinn' })}
                     </p>
                     ${challengeSection}
+                    ${attributionSection}
                   </td>
                 </tr>
               </table>
@@ -278,7 +294,8 @@ function generateInternalNotificationHTML(lead) {
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, title, organization, email, challenge, source, tag, timestamp } = req.body;
+    const { name, title, organization, email, challenge, source, tag, timestamp, attribution } =
+      req.body;
 
     // Validate required fields
     if (!name || !email || !source) {
@@ -296,6 +313,10 @@ router.post('/', async (req, res) => {
       challenge,
       source,
       tag,
+      attribution:
+        attribution && typeof attribution === 'object' && !Array.isArray(attribution)
+          ? attribution
+          : undefined,
       submittedAt: timestamp ? new Date(timestamp) : new Date(),
     });
 
@@ -328,7 +349,10 @@ router.post('/', async (req, res) => {
         console.log(`✅ Internal notification sent to: ${notificationEmail}`);
       } catch (emailError) {
         internalNotificationError = emailError;
-        console.error(`❌ Failed to send internal notification to ${notificationEmail}:`, emailError);
+        console.error(
+          `❌ Failed to send internal notification to ${notificationEmail}:`,
+          emailError
+        );
       }
 
       // 2. Send the visitor a confirmation email without blocking the lead alert.
@@ -363,7 +387,8 @@ router.post('/', async (req, res) => {
     if (source === 'Website demo request' && !lead.internalNotificationSent) {
       return res.status(502).json({
         success: false,
-        message: 'Your request was saved, but the notification email could not be sent. Please try again.',
+        message:
+          'Your request was saved, but the notification email could not be sent. Please try again.',
         leadId: lead._id,
         notificationEmail,
         error: internalNotificationError?.message,
@@ -376,6 +401,7 @@ router.post('/', async (req, res) => {
       leadId: lead._id,
       notificationEmail,
       internalNotificationSent: lead.internalNotificationSent,
+      calendarLink: CALENDAR_LINK,
     });
   } catch (error) {
     console.error('❌ Lead submission error:', error);
