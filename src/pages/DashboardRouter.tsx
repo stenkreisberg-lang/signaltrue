@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 
 // Import the different dashboard views
 import Dashboard from '../components/Dashboard';
 import { HRAdminOnboarding, ITAdminOnboarding } from '../components/onboarding';
+
+const RETURN_TO_KEY = 'signaltrue:returnTo';
+
+const CompleteDashboardRedirect: React.FC = () => {
+  const requested = sessionStorage.getItem(RETURN_TO_KEY);
+  const destination = requested?.startsWith('/app/') ? requested : '/app/overview';
+
+  useEffect(() => {
+    sessionStorage.removeItem(RETURN_TO_KEY);
+  }, []);
+
+  return <Navigate to={destination} replace />;
+};
 
 // ── Payment result banner ──────────────────────────────────────────────────────
 const PaymentBanner: React.FC<{ result: 'success' | 'cancelled'; onDismiss: () => void }> = ({
@@ -188,12 +201,15 @@ const DashboardRouter: React.FC = () => {
 
         const response = await api.get('/onboarding/status');
         setStatus(response.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const requestError = err as {
+          response?: { status?: number; data?: { message?: string } };
+        };
         console.error('Onboarding status error:', err);
-        setError(err.response?.data?.message || 'Failed to load dashboard');
+        setError(requestError.response?.data?.message || 'Failed to load dashboard');
 
         // If unauthorized, redirect to login
-        if (err.response?.status === 401) {
+        if (requestError.response?.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           navigate('/login');
@@ -236,7 +252,7 @@ const DashboardRouter: React.FC = () => {
   }
 
   // Route based on role and onboarding status
-  const { role, requirements, integrationsComplete } = status;
+  const { role, integrationsComplete } = status;
 
   // HR Admin Flow
   if (role === 'hr_admin') {
@@ -258,18 +274,8 @@ const DashboardRouter: React.FC = () => {
       return <HRAdminOnboarding status={status} />;
     }
 
-    // Integrations complete - show full dashboard
-    return (
-      <>
-        {isImpersonating && <ImpersonationBanner />}
-        {isImpersonating && <div style={{ height: 44 }} />}
-        {paymentBanner && (
-          <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
-        )}
-        {paymentBanner && <div style={{ height: 52 }} />}
-        <Dashboard />
-      </>
-    );
+    // Integrations complete - open the evidence-led application dashboard.
+    return <CompleteDashboardRedirect />;
   }
 
   // IT Admin Flow
@@ -279,28 +285,11 @@ const DashboardRouter: React.FC = () => {
       return <ITAdminOnboarding status={status} />;
     }
 
-    // Integrations complete - show success screen with link to dashboard
-    return (
-      <>
-        {isImpersonating && <ImpersonationBanner />}
-        {isImpersonating && <div style={{ height: 44 }} />}
-        <Dashboard />
-      </>
-    );
+    return <CompleteDashboardRedirect />;
   }
 
-  // Admin, Master Admin, or other roles - full access
-  return (
-    <>
-      {isImpersonating && <ImpersonationBanner />}
-      {isImpersonating && <div style={{ height: 44 }} />}
-      {paymentBanner && (
-        <PaymentBanner result={paymentBanner} onDismiss={() => setPaymentBanner(null)} />
-      )}
-      {paymentBanner && <div style={{ height: 52 }} />}
-      <Dashboard />
-    </>
-  );
+  // Admin, Master Admin, executive, and other completed roles use the current application shell.
+  return <CompleteDashboardRedirect />;
 };
 
 const styles: { [key: string]: React.CSSProperties } = {

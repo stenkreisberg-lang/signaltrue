@@ -16,6 +16,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import BriefPrediction from '../models/briefPrediction.js';
+import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 import { generateWeeklyBrief } from '../services/weeklyBriefService.js';
 
 jest.setTimeout(120000);
@@ -108,6 +109,11 @@ describe('hard readiness gate (setup mode)', () => {
     expect(html).not.toContain('Industry context');
     expect(html).not.toContain('Strain risk');
     expect(html).not.toContain("This week's call"); // no predictions on broken data
+
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+    expect(snapshot.reportMode).toBe('setup');
+    expect(snapshot.payload.metrics).toHaveLength(0);
+    expect(snapshot.payload.coverage.mappingCoveragePct).toBeLessThan(40);
   });
 
   test('partial user coverage remains setup-only even when one team is privacy-eligible', async () => {
@@ -183,6 +189,12 @@ describe('full report mode', () => {
     expect(html).toContain("This week's call");
     expect(html).toContain('Estimated coordination cost above your baseline');
     expect(html).toContain('Was this week unusual?'); // annotation loop
+
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+    expect(snapshot.reportMode).toBe('full');
+    expect(snapshot.payload.metrics.length).toBeGreaterThan(5);
+    expect(snapshot.payload.trend.length).toBeGreaterThan(1);
+    expect(snapshot.payload.status.summary).toBeTruthy();
 
     // A prediction was persisted for grading next week
     const predictions = await BriefPrediction.find({ orgId: org._id });

@@ -959,9 +959,11 @@
     .app-navigation {
       order: 3;
       width: 100%;
+      flex: 0 0 100%;
       overflow-x: auto;
       gap: 18px;
       flex-direction: row;
+      padding-bottom: 2px;
     }
 
     .app-nav-link {

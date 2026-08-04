@@ -17,6 +17,7 @@ import BriefPrediction from '../models/briefPrediction.js';
 import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
+import { upsertWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 
 // ─── Signal type presentation (same as in signals.js) ───
 const SIGNAL_TYPE_PRESENTATION = {
@@ -298,6 +299,93 @@ function chooseWeeklyMetricSnapshots(records) {
 const CATCH_ALL_TEAM_RE = /^(unassigned|general|other|default|no[ -]?team)$/i;
 export function isCatchAllTeam(name) {
   return CATCH_ALL_TEAM_RE.test(String(name || '').trim());
+}
+
+function roundValue(value, decimals = 1) {
+  if (value == null || Number.isNaN(Number(value))) return null;
+  const factor = 10 ** decimals;
+  return Math.round(Number(value) * factor) / factor;
+}
+
+function metricRow({
+  key,
+  label,
+  current,
+  previous,
+  baseline,
+  unit,
+  decimals = 1,
+  higherIsBetter = false,
+  available = true,
+  measurementType = 'derived',
+  note,
+}) {
+  const safeCurrent = available ? roundValue(current, decimals) : null;
+  const safePrevious = available ? roundValue(previous, decimals) : null;
+  const safeBaseline = available ? roundValue(baseline, decimals) : null;
+  let direction = 'neutral';
+  if (available && safeCurrent != null && safePrevious != null && safeCurrent !== safePrevious) {
+    const improved = higherIsBetter ? safeCurrent > safePrevious : safeCurrent < safePrevious;
+    direction = improved ? 'intended' : 'review';
+  }
+  const changePct =
+    available && safePrevious != null && safePrevious !== 0 && safeCurrent != null
+      ? roundValue(((safeCurrent - safePrevious) / Math.abs(safePrevious)) * 100, 0)
+      : null;
+
+  return {
+    key,
+    label,
+    current: safeCurrent,
+    previous: safePrevious,
+    baseline: safeBaseline,
+    unit,
+    available,
+    direction,
+    changePct,
+    higherIsBetter,
+    measurementType,
+    note,
+  };
+}
+
+function serializeIntegration(connection, staleConnectors) {
+  const stale = staleConnectors.some((item) => String(item._id) === String(connection._id));
+  return {
+    type: connection.integrationType,
+    status: stale ? 'stale' : connection.status,
+    mappedUsers: connection.coverage?.mappedUsers ?? null,
+    totalUsers: connection.coverage?.totalUsers ?? null,
+    lastSyncAt: connection.sync?.lastSyncAt || null,
+  };
+}
+
+function serializeTeamReadiness(item) {
+  return {
+    teamId: String(item.team?._id || ''),
+    teamName: item.team?.name || 'Team',
+    members: item.memberCount,
+    mappedActiveUsers: item.activeUsers,
+    mappedEvents: item.events,
+    status: item.status,
+    reason: item.reason,
+  };
+}
+
+async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payload }) {
+  try {
+    await upsertWeeklyBriefSnapshot({
+      orgId: org._id,
+      orgName: org.name,
+      periodStart,
+      periodEnd,
+      reportMode,
+      generatedAt: periodEnd,
+      payload,
+    });
+  } catch (error) {
+    console.error('[WeeklyBrief] Failed to persist dashboard snapshot:', error.message);
+  }
 }
 
 const STALE_SYNC_DAYS = 7;
@@ -1104,20 +1192,29 @@ export async function generateWeeklyBrief(orgId) {
     // Fix steps — the single deliverable of a setup-mode brief
     html += `<div style="${S.card}">`;
     html += `<h3 style="${S.h3} margin-top:0;">How to fix it (3 steps)</h3>`;
-    const steps = [];
+    const setupSteps = [];
     if (staleConnectors.length > 0) {
-      steps.push(
-        `<strong>Re-authenticate stale connectors:</strong> ${staleConnectors.map((c) => c.integrationType).join(', ')} — reconnect in Settings → Integrations, then confirm a fresh sync timestamp.`
-      );
+      setupSteps.push({
+        title: 'Re-authenticate stale connectors',
+        detail: `${staleConnectors.map((c) => c.integrationType).join(', ')}. Reconnect in Settings > Integrations, then confirm a fresh sync timestamp.`,
+        owner: 'IT / Admin',
+        reviewWindow: 'After the next sync',
+      });
     }
-    steps.push(
-      `<strong>Map users:</strong> ${totalUsers - mappedActorCount.length} user(s) have no mapped activity. In Settings → Employees, re-run the employee sync and match integration accounts to SignalTrue users.`
-    );
-    steps.push(
-      `<strong>Assign teams:</strong> ${eligibleTeamReadiness.length - readyTeamCount} eligible team(s) are not ready${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Review directory departments, then use public website suggestions for remaining unassigned people. Every suggested change requires admin approval.`
-    );
-    steps.slice(0, 3).forEach((step, i) => {
-      html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}.</strong> ${step}</p></div>`;
+    setupSteps.push({
+      title: 'Map users',
+      detail: `${totalUsers - mappedActorCount.length} user(s) have no mapped activity. In Settings > Employees, re-run the employee sync and match integration accounts to SignalTrue users.`,
+      owner: 'IT / Admin',
+      reviewWindow: 'After the next sync',
+    });
+    setupSteps.push({
+      title: 'Assign teams',
+      detail: `${eligibleTeamReadiness.length - readyTeamCount} eligible team(s) are not ready${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Review directory departments, then use public website suggestions for remaining unassigned people. Every suggested change requires admin approval.`,
+      owner: 'HR / Admin',
+      reviewWindow: 'Before the next weekly run',
+    });
+    setupSteps.slice(0, 3).forEach((step, i) => {
+      html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}. ${step.title}:</strong> ${step.detail}</p></div>`;
     });
     html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when mapped-user and eligible-team readiness are both at least 80%.</p>`;
     html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/employees" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Review team setup</a></div>`;
@@ -1146,6 +1243,72 @@ export async function generateWeeklyBrief(orgId) {
     html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses modeled scores rather than reporting numbers built on ${mappingCoveragePct}% coverage.</p>`;
     html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()}</p>`;
     html += `</div></div>`;
+
+    await persistSnapshot({
+      org,
+      periodStart: thisWeekStart,
+      periodEnd: now,
+      reportMode,
+      payload: {
+        status: {
+          label: 'Data setup is incomplete',
+          evidenceGrade: 'Low',
+          summary: `Only ${mappedActorCount.length} of ${totalUsers} users and ${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams have enough mapped activity. Modeled conclusions are paused until both reach 80% coverage.`,
+          baselineWeeks: weeksOfHistory,
+          contextTags: contextTags.map((item) => item.tag),
+        },
+        coverage: {
+          status: dataReadinessStatus,
+          mappingCoveragePct,
+          teamCoveragePct,
+          mappedUsers: mappedActorCount.length,
+          totalUsers,
+          mappedTeams: mappedTeamCount.length,
+          totalTeams: teams.length,
+          readyTeams: readyTeamCount,
+          eligibleTeams: eligibleTeamReadiness.length,
+          unmappedUserEvents: unmappedActorEvents,
+          unmappedTeamEvents,
+          coverageRegressed,
+          minimumTeamSize,
+        },
+        metrics: [],
+        trend: [],
+        observations: dataAnomalies.map((item) => ({
+          text: item.text,
+          evidenceGrade: 'High',
+          type: 'data_quality',
+        })),
+        risks: [],
+        actions: {
+          primary: setupSteps[0] || null,
+          roleBased: { admin: setupSteps },
+        },
+        questions: [
+          'Which users are still missing integration-account matches?',
+          'Which named teams are below the minimum mapped-activity requirement?',
+          'Did a connector stop syncing or did team assignments change?',
+        ],
+        interpretations: [],
+        outlook: null,
+        prediction: null,
+        costEstimate: null,
+        workPattern: null,
+        signals: [],
+        teamHealth: [],
+        actionOutcomes: [],
+        integrations: integrationConnections.map((item) =>
+          serializeIntegration(item, staleConnectors)
+        ),
+        teamReadiness: teamReadiness.map(serializeTeamReadiness),
+        dataQuality: {
+          anomalies: dataAnomalies,
+          suspectMetrics: [...suspectMetrics],
+          coverageRegressed,
+        },
+        connectedSources,
+      },
+    });
     return html;
   }
 
@@ -1859,7 +2022,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // CTA button
   html += `<div style="text-align:center; margin-top:16px;">`;
-  html += `<a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/dashboard" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open dashboard</a>`;
+  html += `<a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/latest-brief" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Explore this brief</a>`;
   html += `</div>`;
   html += `</div>`;
 
@@ -2408,7 +2571,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 11d. Annotation loop — teach SignalTrue about unusual weeks ───
   html += `<div style="${S.card} border-left:4px solid #2563eb;">`;
   html += `<p style="${S.p} margin:0;"><strong>Was this week unusual?</strong> A launch, offsite, vacation period, or client crunch changes how these numbers should be read. Tag the week on the dashboard and future briefs will interpret your data with that context.</p>`;
-  html += `<p style="${S.pSmall} margin:6px 0 0 0;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/dashboard" style="color:#2563eb;font-weight:700;text-decoration:none;">Tag this week →</a></p>`;
+  html += `<p style="${S.pSmall} margin:6px 0 0 0;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/latest-brief#context" style="color:#2563eb;font-weight:700;text-decoration:none;">Tag this week →</a></p>`;
   html += `</div>`;
 
   // ─── 12. Footer ───
@@ -2423,6 +2586,339 @@ export async function generateWeeklyBrief(orgId) {
   html += `</div>`;
 
   html += `</div>`;
+
+  const normalizeAction = (action, owner) =>
+    action
+      ? {
+          action: action.action || action.title || String(action),
+          owner,
+          effort: action.effort || 'Medium',
+          measure: action.expectedOutcome || action.expectedImpact || null,
+          reviewWindow: action.reviewWindow || '14 days',
+        }
+      : null;
+  const roleBasedActions = {
+    leadership: (aiAnalysis?.leadershipActions || []).map((item) =>
+      normalizeAction(item, 'Leadership')
+    ),
+    hr: (aiAnalysis?.hrActions || []).map((item) => normalizeAction(item, 'HR')),
+    manager: (aiAnalysis?.managerActions || []).map((item) => normalizeAction(item, 'Team lead')),
+  };
+  const primaryAction =
+    roleBasedActions.leadership[0] ||
+    roleBasedActions.hr[0] ||
+    roleBasedActions.manager[0] ||
+    (recommendations[0]
+      ? {
+          action: recommendations[0],
+          owner: 'HR / Team lead',
+          effort: 'Medium',
+          measure: 'Review the related direct metric against the same baseline.',
+          reviewWindow: '14 days',
+        }
+      : null);
+
+  const metrics = [
+    metricRow({
+      key: 'meetings',
+      label: 'Meetings',
+      current: twMeetings,
+      previous: lwMeetings,
+      baseline: sixWeekRawAvg.meetings,
+      unit: 'meetings',
+      decimals: 0,
+      measurementType: 'observed',
+      note: 'Deduplicated calendar meeting instances.',
+    }),
+    metricRow({
+      key: 'meeting_hours',
+      label: 'Meeting participant-hours per person',
+      current: tw.meetingHours,
+      previous: lw.meetingHours,
+      baseline: sixWeekAvg.meetingHours,
+      unit: 'hours',
+      measurementType: 'derived',
+      note: 'Participant-hours divided by connected users.',
+    }),
+    metricRow({
+      key: 'back_to_back',
+      label: 'Consecutive meeting blocks',
+      current: tw.backToBack,
+      previous: lw.backToBack,
+      baseline: sixWeekAvg.backToBack,
+      unit: 'blocks per person',
+      decimals: 0,
+      measurementType: 'derived',
+    }),
+    metricRow({
+      key: 'messages',
+      label: 'Team messages',
+      current: twMessages,
+      previous: lwMessages,
+      baseline: sixWeekRawAvg.messages,
+      unit: 'messages',
+      decimals: 0,
+      higherIsBetter: true,
+      available: !suspectMetrics.has('messages'),
+      measurementType: 'observed',
+      note: 'Volume is contextual and is not a performance measure.',
+    }),
+    metricRow({
+      key: 'after_hours',
+      label: 'Out-of-hours work',
+      current: (tw.afterHoursRatio || 0) * 100,
+      previous: (lw.afterHoursRatio || 0) * 100,
+      baseline: (sixWeekAvg.afterHoursRatio || 0) * 100,
+      unit: '%',
+      decimals: 0,
+      available: !suspectMetrics.has('afterHours'),
+      measurementType: 'derived',
+      note: 'Share of measured activity outside the configured work schedule.',
+    }),
+    metricRow({
+      key: 'focus_time',
+      label: 'Uninterrupted time per person',
+      current: tw.focusTimeAvailability,
+      previous: lw.focusTimeAvailability,
+      baseline: sixWeekAvg.focusTimeAvailability,
+      unit: 'hours',
+      higherIsBetter: true,
+      available: !suspectMetrics.has('focusTime'),
+      measurementType: 'derived',
+      note: 'Calendar availability proxy, not measured output quality.',
+    }),
+    metricRow({
+      key: 'fragmentation',
+      label: 'Schedule fragmentation',
+      current: tw.calendarFragmentation,
+      previous: lw.calendarFragmentation,
+      baseline: sixWeekAvg.calendarFragmentation,
+      unit: '/100',
+      decimals: 0,
+      measurementType: 'internal_index',
+      note: 'Internal descriptive index based on the distribution of calendar gaps.',
+    }),
+    metricRow({
+      key: 'recurring_load',
+      label: 'Recurring meeting load',
+      current: (tw.recurringBurden || 0) * 100,
+      previous: (lw.recurringBurden || 0) * 100,
+      baseline: (sixWeekAvg.recurringBurden || 0) * 100,
+      unit: '%',
+      decimals: 0,
+      measurementType: 'derived',
+    }),
+    metricRow({
+      key: 'active_alerts',
+      label: 'Active review signals',
+      current: twSignals.length + twCKSignals.length,
+      previous: lwSignals.length + lwCKSignals.length,
+      baseline: null,
+      unit: 'signals',
+      decimals: 0,
+      measurementType: 'rule_based',
+      note: 'Internal review rules, not incident or outcome probabilities.',
+    }),
+  ];
+
+  const trend = [
+    ...weeklyHistory.map((point) => {
+      const date = new Date(thisWeekStart);
+      date.setUTCDate(date.getUTCDate() - point.weeksAgo * 7);
+      return {
+        weekStart: date,
+        label: `${point.weeksAgo}w ago`,
+        meetingHours: roundValue(point.meetingHours, 1),
+        afterHoursPct: roundValue(point.afterHoursRatioPct, 0),
+        focusHours: roundValue(point.focusTimeAvailability, 1),
+        fragmentation: roundValue(point.calendarFragmentation, 0),
+      };
+    }),
+    {
+      weekStart: thisWeekStart,
+      label: 'Current',
+      meetingHours: roundValue(tw.meetingHours, 1),
+      afterHoursPct: roundValue((tw.afterHoursRatio || 0) * 100, 0),
+      focusHours: roundValue(tw.focusTimeAvailability, 1),
+      fragmentation: roundValue(tw.calendarFragmentation, 0),
+    },
+  ];
+
+  const signals = [
+    ...twSignals.map((signal) => {
+      const presentation = SIGNAL_TYPE_PRESENTATION[signal.signalType] || {};
+      return {
+        type: signal.signalType,
+        title: presentation.businessTitle || signal.title,
+        family: presentation.family || 'General',
+        severity: signal.severity,
+        teamName: signal.teamId?.name || 'Organization',
+        evidence: presentation.whatItMeans || '',
+        action: signal.recommendedActions?.[0]?.action || null,
+        source: 'signal_rule',
+      };
+    }),
+    ...highCK.map((signal) => {
+      const presentation = CK_SIGNAL_LABELS[signal.signalType] || {};
+      return {
+        type: signal.signalType,
+        title: presentation.label || signal.signalType,
+        family: presentation.family || 'General',
+        severity: signal.severity,
+        teamName: 'Organization',
+        evidence: signal.explanation || '',
+        action: presentation.rec || null,
+        source: 'pipeline_rule',
+      };
+    }),
+  ];
+
+  await persistSnapshot({
+    org,
+    periodStart: thisWeekStart,
+    periodEnd: now,
+    reportMode,
+    payload: {
+      status: {
+        label: verdictText,
+        evidenceGrade: verdictConfidence,
+        summary: verdictSummary,
+        escalationAction: orgStatus.escalationAction || null,
+        baselineWeeks: weeksOfHistory,
+        contextTags: contextTags.map((item) => item.tag),
+      },
+      coverage: {
+        status: dataReadinessStatus,
+        mappingCoveragePct,
+        teamCoveragePct,
+        mappedUsers: mappedActorCount.length,
+        totalUsers,
+        mappedTeams: mappedTeamCount.length,
+        totalTeams: teams.length,
+        readyTeams: readyTeamCount,
+        eligibleTeams: eligibleTeamReadiness.length,
+        unmappedUserEvents: unmappedActorEvents,
+        unmappedTeamEvents,
+        coverageRegressed,
+        minimumTeamSize,
+      },
+      metrics,
+      trend,
+      observations: observations.map((item) => ({
+        text: item.text || String(item),
+        evidenceGrade: item.confidence || 'Low',
+        type: item.text?.startsWith('⚠️') ? 'data_quality' : 'measured_change',
+      })),
+      risks,
+      actions: {
+        primary: primaryAction,
+        roleBased: roleBasedActions,
+        ruleBased: recommendations,
+      },
+      questions: managerPrompts,
+      interpretations: (aiAnalysis?.hypotheses || []).map((item) => ({
+        pattern: item.patternObserved,
+        evidence: item.evidence || [],
+        interpretation: item.whatThisMayMean,
+        evidenceGrade: item.confidence,
+        alternativeExplanation: item.whatCouldAlsoExplainIt,
+        source: 'ai_interpretation',
+      })),
+      outlook: aiAnalysis?.trendOutlook || null,
+      prediction: {
+        current: newPrediction
+          ? {
+              statement: newPrediction.statement,
+              metric: newPrediction.metric,
+              comparator: newPrediction.comparator,
+              threshold: newPrediction.threshold,
+            }
+          : null,
+        lastGraded: gradedPrediction
+          ? {
+              statement: gradedPrediction.statement,
+              metric: gradedPrediction.metric,
+              actualValue: gradedPrediction.outcome?.actualValue,
+              matched: gradedPrediction.outcome?.held,
+            }
+          : null,
+        trackRecord: {
+          matched: predictionsHeld,
+          evaluated: evaluatedPredictions.length,
+        },
+        limitation: 'Experimental directional rule, not a probability or validated prediction.',
+      },
+      costEstimate,
+      workPattern: engagementSnapshot
+        ? {
+            ...engagementSnapshot,
+            modelVersion: '2.1.0',
+            limitation:
+              'Internal descriptive model. It does not measure engagement, burnout, attrition, health, intent, or performance.',
+            teams: engagementStrainByTeam.map((team) => ({
+              teamId: String(team.teamId),
+              teamName: team.teamName,
+              deviationIndex: team.engagementStrainRisk,
+              dataReadiness: team.confidenceScore,
+              state: team.riskState,
+              trend: team.trend,
+              activePeople: team.activePeopleCount,
+              drivers: (team.topDrivers || []).map((driver) => ({
+                key: driver.driver,
+                label: engagementDriverLabel(driver.driver),
+                score: driver.score,
+                changeVsBaseline: driver.changeVsBaseline,
+                explanation: driver.explanation,
+              })),
+            })),
+          }
+        : null,
+      signals,
+      teamHealth: teamBDIData.map(({ teamName, bdi, prevBDI }) => ({
+        teamName,
+        score: bdi.driftScore,
+        previousScore: prevBDI?.driftScore ?? null,
+        state: bdi.driftState,
+        dataReadiness: bdi.confidence,
+        drivers: (bdi.drivers || []).slice(0, 3),
+        recommendation:
+          bdi.recommendedPlaybooks?.[0]?.action?.title ||
+          bdi.recommendedPlaybooks?.[0]?.title ||
+          null,
+      })),
+      actionOutcomes: recentInterventions.map((intervention) => ({
+        title:
+          intervention.title ||
+          intervention.actionTaken ||
+          intervention.interventionType ||
+          'Action',
+        teamName: intervention.teamId?.name || null,
+        status: intervention.status,
+        startedAt: intervention.startDate,
+        reviewAt: intervention.reviewDate || intervention.recheckDate || null,
+        outcome: intervention.outcomeDelta?.computedAt
+          ? {
+              metricBefore: intervention.outcomeDelta.metricBefore,
+              metricAfter: intervention.outcomeDelta.metricAfter,
+              percentChange: intervention.outcomeDelta.percentChange,
+              improved: intervention.outcomeDelta.improved,
+              measuredAt: intervention.outcomeDelta.computedAt,
+              summary: intervention.outcomeSummary || null,
+            }
+          : null,
+      })),
+      integrations: integrationConnections.map((item) =>
+        serializeIntegration(item, staleConnectors)
+      ),
+      teamReadiness: teamReadiness.map(serializeTeamReadiness),
+      dataQuality: {
+        anomalies: dataAnomalies,
+        suspectMetrics: [...suspectMetrics],
+        coverageRegressed,
+      },
+      connectedSources,
+    },
+  });
 
   return html;
 }

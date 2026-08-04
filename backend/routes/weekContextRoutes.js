@@ -27,7 +27,7 @@ router.post('/', authenticateToken, async (req, res) => {
       tag,
       description,
       confidenceReduction: confidenceReduction || 'moderate',
-      taggedBy: req.user._id,
+      taggedBy: req.user.userId,
     });
 
     await context.save();

@@ -19,6 +19,7 @@ const Register = lazy(() => import('./pages/Register'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DashboardRouter = lazy(() => import('./pages/DashboardRouter'));
 const Overview = lazy(() => import('./pages/app/Overview'));
+const LatestBrief = lazy(() => import('./pages/app/LatestBrief'));
 const Insights = lazy(() => import('./pages/app/Insights'));
 const Signals = lazy(() => import('./pages/app/Signals'));
 const ActiveMonitoring = lazy(() => import('./pages/app/ActiveMonitoring'));
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/dashboard" element={<DashboardRouter />} />
                 <Route path="/app" element={<Navigate to="/app/overview" replace />} />
                 <Route path="/app/overview" element={<Overview />} />
+                <Route path="/app/latest-brief" element={<LatestBrief />} />
                 <Route path="/app/insights" element={<Insights />} />
                 <Route path="/app/insights/:teamId" element={<Insights />} />
                 <Route path="/app/signals" element={<Signals />} />

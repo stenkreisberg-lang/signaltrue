@@ -3,6 +3,11 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 const links = [
   { to: '/app/overview', label: 'Overview' },
+  {
+    to: '/app/latest-brief',
+    label: 'Latest Brief',
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+  },
   { to: '/app/signals', label: 'Signals' },
   { to: '/app/active-monitoring', label: 'Monitoring' },
   { to: '/app/actions', label: 'Actions' },
@@ -33,11 +38,26 @@ export function PageHeader({ eyebrow, title, description, action }) {
 
 export default function AppShell({ children, user, section, width = 'wide' }) {
   const navigate = useNavigate();
+  const isImpersonating = Boolean(localStorage.getItem('impersonation_token'));
+
+  const returnToSuperadmin = () => {
+    const originalToken = localStorage.getItem('impersonation_token');
+    if (originalToken) {
+      localStorage.setItem('token', originalToken);
+    }
+    localStorage.removeItem('impersonation_token');
+    localStorage.removeItem('impersonation_org');
+    localStorage.removeItem('user');
+    navigate('/superadmin');
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('orgId');
     localStorage.removeItem('teamId');
+    localStorage.removeItem('impersonation_token');
+    localStorage.removeItem('impersonation_org');
     navigate('/login');
   };
 
@@ -78,6 +98,21 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         </div>
       </aside>
       <div className="app-workspace">
+        {isImpersonating && (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white">
+            <span>
+              Viewing as {localStorage.getItem('impersonation_org') || 'client organization'}.
+              Superadmin impersonation is active.
+            </span>
+            <button
+              type="button"
+              className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-amber-800"
+              onClick={returnToSuperadmin}
+            >
+              Return to Superadmin
+            </button>
+          </div>
+        )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
             <strong>Privacy protected.</strong> Metadata only, aggregated at team level. No message
