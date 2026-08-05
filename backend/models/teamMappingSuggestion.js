@@ -40,10 +40,15 @@ const teamMappingSuggestionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'applied', 'rejected'],
+      enum: ['pending', 'applied', 'rejected', 'skipped'],
       default: 'pending',
       index: true,
     },
+    decisionMode: {
+      type: String,
+      enum: ['admin_approved', 'auto_high_confidence'],
+    },
+    decisionNote: String,
     decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     decidedAt: Date,
   },

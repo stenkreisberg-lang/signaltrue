@@ -5,6 +5,8 @@ import {
 } from '../services/integrationMetricsService.js';
 import {
   extractPublicTeamPage,
+  shouldAutoApplyTeamSuggestion,
+  suggestPublicWebsiteUrl,
   validatePublicWebsiteUrl,
 } from '../services/publicTeamEnrichmentService.js';
 import {
@@ -108,7 +110,7 @@ describe('public company page enrichment', () => {
   test('extracts structured people and same-origin team links without page scripts', () => {
     const html = `
       <html><body>
-        <a href="/about/team">Meet our team</a>
+        <nav><a href="/about/team">Meet our team</a></nav>
         <a href="https://elsewhere.example/team">Other team</a>
         <script>secret script text</script>
         <script type="application/ld+json">
@@ -125,6 +127,40 @@ describe('public company page enrichment', () => {
     expect(result.candidateLinks).toEqual(['https://company.example/about/team']);
     expect(result.text).toContain('We build workplace software.');
     expect(result.text).not.toContain('secret script text');
+  });
+
+  test('extracts visible name and title cards linked by a public work email', () => {
+    const html = `
+      <div class="team-grid-item">
+        <div class="name">Tanel Reino</div>
+        <div class="position">Creative Director</div>
+        <a href="mailto:tanel.reino@company.example">Email</a>
+      </div>
+      <footer>
+        <span>Company contact information</span>
+        <a href="mailto:info@company.example">Email us</a>
+      </footer>`;
+
+    const people = extractPublicTeamPage(html, 'https://company.example/about').people;
+    expect(people).toHaveLength(1);
+    expect(people).toContainEqual({
+      name: 'Tanel Reino',
+      title: 'Creative Director',
+      team: 'Design',
+    });
+  });
+
+  test('infers a homepage from a work email and limits automatic application to strong evidence', () => {
+    expect(suggestPublicWebsiteUrl({ domain: 'company', email: 'owner@company.example' })).toBe(
+      'https://company.example'
+    );
+    expect(suggestPublicWebsiteUrl({ email: 'owner@gmail.com' })).toBe('');
+    expect(shouldAutoApplyTeamSuggestion({ confidence: 92, sourceType: 'public_website' })).toBe(
+      true
+    );
+    expect(
+      shouldAutoApplyTeamSuggestion({ confidence: 90, sourceType: 'ai_title_inference' })
+    ).toBe(false);
   });
 
   test('rejects LinkedIn crawling and private hosts', async () => {

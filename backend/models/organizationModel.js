@@ -160,6 +160,12 @@ const organizationSchema = new mongoose.Schema(
       lastAnalyzedAt: Date,
       lastSourceUrls: [{ type: String }],
       lastError: String,
+      lastPagesScanned: { type: Number, default: 0 },
+      lastPeopleFound: { type: Number, default: 0 },
+      lastEmployeesConsidered: { type: Number, default: 0 },
+      lastAutoApplied: { type: Number, default: 0 },
+      lastPendingReview: { type: Number, default: 0 },
+      lastUnmatched: { type: Number, default: 0 },
     },
 
     // Calibration state

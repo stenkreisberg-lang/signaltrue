@@ -58,9 +58,26 @@ interface EnrichmentStatus {
     status?: 'not_started' | 'pending_review' | 'completed' | 'failed';
     lastAnalyzedAt?: string;
     lastError?: string;
+    lastPagesScanned?: number;
+    lastPeopleFound?: number;
+    lastEmployeesConsidered?: number;
+    lastAutoApplied?: number;
+    lastPendingReview?: number;
+    lastUnmatched?: number;
   };
   suggestions: TeamMappingSuggestion[];
   reportSettings?: ReportSettings;
+}
+
+interface EnrichmentSummary {
+  pagesScanned: number;
+  peopleFound: number;
+  employeesConsidered: number;
+  suggestionsCreated: number;
+  autoApplied: number;
+  skipped: number;
+  pendingReview: number;
+  unmatched: number;
 }
 
 interface ReportSettings {
@@ -100,6 +117,10 @@ const EmployeeDirectory: React.FC = () => {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [analyzingWebsite, setAnalyzingWebsite] = useState(false);
+  const [enrichmentNotice, setEnrichmentNotice] = useState<{
+    type: 'progress' | 'success' | 'error';
+    text: string;
+  } | null>(null);
   const [reviewingSuggestions, setReviewingSuggestions] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   const [savingReportSettings, setSavingReportSettings] = useState(false);
@@ -245,20 +266,34 @@ const EmployeeDirectory: React.FC = () => {
   };
 
   const analyzeCompanyWebsite = async () => {
-    if (!websiteUrl.trim()) {
-      showError('Add the public company homepage before running team analysis');
-      return;
-    }
     try {
       setAnalyzingWebsite(true);
-      const response = await api.post('/team-enrichment/analyze', {
-        websiteUrl: websiteUrl.trim(),
-        linkedinUrl: linkedinUrl.trim() || undefined,
+      setEnrichmentNotice({
+        type: 'progress',
+        text: 'Scanning public Team, People, About, and Leadership pages. This can take up to a minute.',
       });
-      showSuccess(response.data.message);
+      const response = await api.post(
+        '/team-enrichment/analyze',
+        {
+          websiteUrl: websiteUrl.trim() || undefined,
+          linkedinUrl: linkedinUrl.trim() || undefined,
+        },
+        { timeout: 120000 }
+      );
+      const summary = response.data.summary as EnrichmentSummary;
+      setEnrichmentNotice({
+        type: 'success',
+        text: `Scan complete: ${summary.pagesScanned} pages and ${summary.peopleFound} public profiles checked. ${summary.autoApplied} automatically assigned, ${summary.pendingReview} need review, and ${summary.unmatched} remain unmatched.`,
+      });
       await fetchData();
     } catch (error: unknown) {
-      showError(apiErrorMessage(error, 'Failed to analyze the company website'));
+      const message = apiErrorMessage(
+        error,
+        (error as { code?: string }).code === 'ECONNABORTED'
+          ? 'The website scan timed out. Please try again.'
+          : 'Failed to analyze the company website'
+      );
+      setEnrichmentNotice({ type: 'error', text: message });
     } finally {
       setAnalyzingWebsite(false);
     }
@@ -601,7 +636,7 @@ const EmployeeDirectory: React.FC = () => {
       )}
 
       {/* Public team-structure recovery */}
-      {enrichment && (enrichment.unassignedCount > 0 || enrichment.suggestions.length > 0) && (
+      {enrichment && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-blue-100">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div>
@@ -610,8 +645,9 @@ const EmployeeDirectory: React.FC = () => {
               </h2>
               <p className="text-sm text-gray-600 mt-1 max-w-3xl">
                 SignalTrue uses directory departments first. For remaining unassigned people, it can
-                analyze public Team and About pages and prepare suggestions for HR review. It never
-                changes an employee's team without approval.
+                scan public Team and About pages, match names and roles, and automatically apply
+                high-confidence assignments. It never overwrites an existing named team; uncertain
+                matches stay here for HR review.
               </p>
             </div>
             <div className="text-sm font-medium text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
@@ -627,6 +663,7 @@ const EmployeeDirectory: React.FC = () => {
                 value={websiteUrl}
                 onChange={(event) => setWebsiteUrl(event.target.value)}
                 placeholder="https://company.com"
+                disabled={analyzingWebsite}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
               />
             </label>
@@ -637,6 +674,7 @@ const EmployeeDirectory: React.FC = () => {
                 value={linkedinUrl}
                 onChange={(event) => setLinkedinUrl(event.target.value)}
                 placeholder="https://www.linkedin.com/company/..."
+                disabled={analyzingWebsite}
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
               />
             </label>
@@ -645,13 +683,39 @@ const EmployeeDirectory: React.FC = () => {
             LinkedIn is not crawled. Public website text and anonymous job titles may be processed
             by the configured AI provider; employee emails and message content are not sent.
           </p>
+          {enrichmentNotice && (
+            <div
+              aria-live="polite"
+              className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+                enrichmentNotice.type === 'error'
+                  ? 'border-red-200 bg-red-50 text-red-800'
+                  : enrichmentNotice.type === 'success'
+                    ? 'border-green-200 bg-green-50 text-green-800'
+                    : 'border-blue-200 bg-blue-50 text-blue-800'
+              }`}
+            >
+              {enrichmentNotice.text}
+            </div>
+          )}
           <button
             onClick={analyzeCompanyWebsite}
             disabled={analyzingWebsite}
             className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {analyzingWebsite ? 'Analyzing public pages...' : 'Suggest teams from public website'}
+            {analyzingWebsite
+              ? 'Scanning and matching people...'
+              : 'Scan website and assign high-confidence matches'}
           </button>
+
+          {!enrichmentNotice && enrichment.enrichment?.lastAnalyzedAt && (
+            <p className="mt-3 text-xs text-gray-500">
+              Last scan {formatDate(enrichment.enrichment.lastAnalyzedAt)}:{' '}
+              {enrichment.enrichment.lastPagesScanned || 0} pages,{' '}
+              {enrichment.enrichment.lastPeopleFound || 0} public profiles,{' '}
+              {enrichment.enrichment.lastAutoApplied || 0} automatically assigned,{' '}
+              {enrichment.enrichment.lastPendingReview || 0} pending review.
+            </p>
+          )}
 
           {enrichment.suggestions.length > 0 && (
             <div className="mt-6 border-t pt-5">

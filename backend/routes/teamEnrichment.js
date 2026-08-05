@@ -6,8 +6,9 @@ import Team from '../models/team.js';
 import User from '../models/user.js';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
 import {
-  analyzePublicTeamStructure,
+  analyzeAndApplyPublicTeamStructure,
   applyTeamMappingSuggestions,
+  suggestPublicWebsiteUrl,
 } from '../services/publicTeamEnrichmentService.js';
 
 const router = express.Router();
@@ -31,10 +32,10 @@ router.get('/', async (req, res) => {
     })
       .select('_id')
       .lean();
-    const [org, suggestions, unassignedCount] = await Promise.all([
+    const [org, suggestions, unassignedCount, representativeUser] = await Promise.all([
       Organization.findById(orgId)
         .select(
-          'websiteUrl linkedinUrl teamEnrichment settings.timezone settings.workdayStart settings.workdayEnd settings.loadedHourlyCost settings.currency'
+          'domain websiteUrl linkedinUrl teamEnrichment settings.timezone settings.workdayStart settings.workdayEnd settings.loadedHourlyCost settings.currency'
         )
         .lean(),
       TeamMappingSuggestion.find({ orgId, status: 'pending' })
@@ -50,9 +51,18 @@ router.get('/', async (req, res) => {
           { teamId: { $in: catchAllTeams.map((team) => team._id) } },
         ],
       }),
+      User.findOne({ orgId, accountStatus: { $ne: 'inactive' } })
+        .sort({ role: 1, createdAt: 1 })
+        .select('email')
+        .lean(),
     ]);
+    const resolvedWebsiteUrl = suggestPublicWebsiteUrl({
+      websiteUrl: org?.websiteUrl,
+      domain: org?.domain,
+      email: representativeUser?.email,
+    });
     res.json({
-      websiteUrl: org?.websiteUrl || '',
+      websiteUrl: resolvedWebsiteUrl,
       linkedinUrl: org?.linkedinUrl || '',
       enrichment: org?.teamEnrichment || { status: 'not_started' },
       reportSettings: {
@@ -143,17 +153,17 @@ router.put('/report-settings', async (req, res) => {
 router.post('/analyze', analyzeLimiter, async (req, res) => {
   const orgId = req.user.orgId;
   try {
-    const suggestions = await analyzePublicTeamStructure({
+    const result = await analyzeAndApplyPublicTeamStructure({
       orgId,
       websiteUrl: req.body.websiteUrl,
       linkedinUrl: req.body.linkedinUrl,
+      decidedBy: req.user.userId,
     });
+    const { summary } = result;
     res.json({
-      message:
-        suggestions.length > 0
-          ? `Created ${suggestions.length} suggestion(s) for review.`
-          : 'Analysis completed, but there was not enough evidence to suggest team assignments.',
-      suggestions,
+      message: `Scanned ${summary.pagesScanned} public page(s) and found ${summary.peopleFound} named profile(s). Automatically assigned ${summary.autoApplied} employee(s); ${summary.pendingReview} suggestion(s) need review; ${summary.unmatched} remain unmatched.`,
+      suggestions: result.suggestions,
+      summary,
     });
   } catch (error) {
     await Organization.updateOne(
