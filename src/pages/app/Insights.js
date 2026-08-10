@@ -410,25 +410,6 @@ function Insights() {
             )}
           </div>
         </section>
-
-        {/* Supporting Metrics Link */}
-        <section>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
-              <strong>How to read this:</strong> Counts and durations are observed metadata. Scores
-              and review bands are descriptive SignalTrue models, not probabilities, diagnoses, or
-              individual performance measures. Review the{' '}
-              <a href="/app/methodology" className="underline hover:text-blue-700">
-                measurement methodology
-              </a>{' '}
-              and detailed metrics on the{' '}
-              <a href={`/app/team/${teamId}`} className="underline hover:text-blue-700">
-                Team Dashboard
-              </a>
-              .
-            </p>
-          </div>
-        </section>
       </div>
     </div>
   );

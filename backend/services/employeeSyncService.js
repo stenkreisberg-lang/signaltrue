@@ -190,13 +190,20 @@ export async function remapWorkEventTeams(orgId) {
 }
 
 export async function cleanupInvalidEmployees(orgId, options = {}) {
-  const { protectedUserId = null, dryRun = false } = options;
+  const { protectedUserId = null, dryRun = false, sources = null } = options;
   const org = await Organization.findById(orgId);
   const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
-  const users = await User.find({ orgId, isMasterAdmin: { $ne: true } });
-  const activeOrgAdminCount = users.filter(
-    (user) => ORG_ADMIN_ROLES.includes(user.role) && user.accountStatus !== 'inactive'
-  ).length;
+  const userQuery = { orgId, isMasterAdmin: { $ne: true } };
+  if (Array.isArray(sources) && sources.length > 0) {
+    userQuery.source = { $in: sources };
+  }
+  const users = await User.find(userQuery);
+  const activeOrgAdminCount = await User.countDocuments({
+    orgId,
+    isMasterAdmin: { $ne: true },
+    role: { $in: ORG_ADMIN_ROLES },
+    accountStatus: { $ne: 'inactive' },
+  });
 
   const invalidUsers = [];
   const protectedUsers = [];
@@ -821,17 +828,20 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
 
     const validatedMsUsers = [];
     for (const msUser of domainFilteredUsers) {
-      const identity = classifyEmployeeCandidate({
-        email: msUser.mail || msUser.userPrincipalName,
-        firstName: msUser.givenName,
-        lastName: msUser.surname,
-        displayName: msUser.displayName,
-        jobTitle: msUser.jobTitle,
-        department: msUser.department,
-        accountEnabled: msUser.accountEnabled,
-        userType: msUser.userType,
-        employeeType: msUser.employeeType,
-      });
+      const identity = classifyEmployeeCandidate(
+        {
+          email: msUser.mail || msUser.userPrincipalName,
+          firstName: msUser.givenName,
+          lastName: msUser.surname,
+          displayName: msUser.displayName,
+          jobTitle: msUser.jobTitle,
+          department: msUser.department,
+          accountEnabled: msUser.accountEnabled,
+          userType: msUser.userType,
+          employeeType: msUser.employeeType,
+        },
+        { requireExplicitNameParts: true }
+      );
 
       if (!identity.ok) {
         trackSkippedCandidate(syncStats, msUser.mail || msUser.userPrincipalName, identity.reason);
@@ -948,6 +958,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
     await Organization.findByIdAndUpdate(orgId, {
       $set: { 'integrations.microsoft.lastEmployeeSync': new Date() },
     });
+    const invalidCleanup = await cleanupInvalidEmployees(orgId, { sources: ['microsoft'] });
     await Team.updateMany({ orgId, isActive: { $exists: false } }, { $set: { isActive: true } });
     await refreshTeamSizes(orgId, Math.max(5, org.settings?.minTeamSize ?? 5));
     const eventRemap = await remapWorkEventTeams(orgId);
@@ -961,7 +972,12 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
 
     return {
       success: true,
-      stats: syncStats,
+      stats: {
+        ...syncStats,
+        removedInvalid: invalidCleanup.removed,
+        normalizedInvalid: invalidCleanup.normalized,
+      },
+      invalidCleanup,
       eventRemap,
     };
   } catch (error) {

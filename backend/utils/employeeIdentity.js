@@ -17,6 +17,9 @@ const EMAIL_LOCAL_PART_BLOCKLIST = new Set([
   'info',
   'invoice',
   'it',
+  'kalender',
+  'klienditeenindus',
+  'klienditugi',
   'marketing',
   'meeting',
   'meetings',
@@ -29,7 +32,9 @@ const EMAIL_LOCAL_PART_BLOCKLIST = new Set([
   'room',
   'rooms',
   'sales',
+  'scan',
   'security',
+  'seo',
   'service',
   'support',
   'team',
@@ -37,6 +42,22 @@ const EMAIL_LOCAL_PART_BLOCKLIST = new Set([
   'webmaster',
   'zoom',
 ]);
+
+const EMAIL_LOCAL_PART_PATTERNS = [
+  /^info/,
+  /bookings?/,
+  /broneer|broneri/,
+  /kalender/,
+  /kliendi(te)?enindus|klienditugi|ariklienditugi/,
+  /konsultatsioon/,
+  /iseturundaja|iseteenindus/,
+  /nobeldigital/,
+  /personal/,
+  /sync_?me|syncme/,
+  /tarkus/,
+  /usaldus/,
+  /veebikohtumine|veebitugi|videokonsultatsioon/,
+];
 
 const NON_EMPLOYEE_PATTERNS = [
   /\b(bot|robot|automation)\b/i,
@@ -48,24 +69,57 @@ const NON_EMPLOYEE_PATTERNS = [
   /\b(no-?reply|do not reply|donotreply)\b/i,
 ];
 
+const NON_EMPLOYEE_COMPARISON_PATTERNS = [
+  /\b(bookings?|broneer|broneri|demo|test)\b/,
+  /\b(calendar|kalender)\b/,
+  /\b(klienditeenindus|klienditugi|ariklienditugi)\b/,
+  /\b(konsultatsioon|videokonsultatsioon|tasuta)\b/,
+  /\b(iseturundaja|iseteenindus)\b/,
+  /\b(personal|instagram|syncme|tarkus|usaldus)\b/,
+  /\b(veebikohtumine|veebitugi)\b/,
+  /\bseo\s+(haldus|kalender)\b/,
+  /\bnobel\s+digital\b/,
+];
+
 const NAME_TOKEN_BLOCKLIST = new Set([
   'admin',
   'all',
   'bot',
+  'bookings',
   'calendar',
   'conference',
   'demo',
+  'digital',
   'group',
+  'haldus',
+  'instagram',
+  'iseteenindus',
+  'iseturundaja',
+  'iseturundaja.ee',
+  'kalender',
+  'klienditeenindus',
+  'klienditugi',
+  'konsultatsioon',
   'meeting',
+  'nobel',
+  'personal',
   'printer',
   'resource',
   'room',
   'scanner',
+  'seo',
   'service',
   'shared',
+  'syncme',
   'system',
   'team',
+  'tarkus',
+  'tasuta',
   'test',
+  'usaldus',
+  'veebikohtumine',
+  'veebitugi',
+  'videokonsultatsioon',
 ]);
 
 function removeDiacritics(value) {
@@ -101,6 +155,8 @@ function parseFullName(value) {
   const normalized = normalizeDirectoryString(value);
   if (!normalized || normalized.includes('@')) return null;
   if (NON_EMPLOYEE_PATTERNS.some((pattern) => pattern.test(normalized))) return null;
+  const comparison = removeDiacritics(normalized).toLowerCase();
+  if (NON_EMPLOYEE_COMPARISON_PATTERNS.some((pattern) => pattern.test(comparison))) return null;
 
   const tokens = normalized.split(/\s+/).map(cleanNameToken).filter(Boolean);
 
@@ -117,7 +173,7 @@ function parseFullName(value) {
   };
 }
 
-export function resolveEmployeeNameIdentity(candidate = {}) {
+export function resolveEmployeeNameIdentity(candidate = {}, options = {}) {
   const explicitFirst = cleanNameToken(
     candidate.firstName || candidate.givenName || candidate.given_name
   );
@@ -136,6 +192,8 @@ export function resolveEmployeeNameIdentity(candidate = {}) {
       name: `${explicitFirst} ${explicitLast}`,
     };
   }
+
+  if (options.requireExplicitNameParts) return null;
 
   return parseFullName(
     candidate.displayName || candidate.fullName || candidate.name || candidate.realName
@@ -162,12 +220,14 @@ function isLikelyServiceAccount(candidate, email) {
   }
 
   const localPart = email.split('@')[0];
+  const normalizedLocalPart = removeDiacritics(localPart).toLowerCase();
   const localTokens = localPart
     .split(/[._+\-\d]+/)
     .map((part) => removeDiacritics(part).toLowerCase())
     .filter(Boolean);
 
-  if (EMAIL_LOCAL_PART_BLOCKLIST.has(localPart)) return true;
+  if (EMAIL_LOCAL_PART_BLOCKLIST.has(normalizedLocalPart)) return true;
+  if (EMAIL_LOCAL_PART_PATTERNS.some((pattern) => pattern.test(normalizedLocalPart))) return true;
   if (localTokens.some((token) => EMAIL_LOCAL_PART_BLOCKLIST.has(token))) return true;
 
   const combined = [
@@ -183,11 +243,15 @@ function isLikelyServiceAccount(candidate, email) {
     .map(normalizeDirectoryString)
     .filter(Boolean)
     .join(' ');
+  const comparison = removeDiacritics(combined).toLowerCase();
 
-  return NON_EMPLOYEE_PATTERNS.some((pattern) => pattern.test(combined));
+  return (
+    NON_EMPLOYEE_PATTERNS.some((pattern) => pattern.test(combined)) ||
+    NON_EMPLOYEE_COMPARISON_PATTERNS.some((pattern) => pattern.test(comparison))
+  );
 }
 
-export function classifyEmployeeCandidate(candidate = {}) {
+export function classifyEmployeeCandidate(candidate = {}, options = {}) {
   const email = normalizeEmail(
     candidate.email || candidate.mail || candidate.primaryEmail || candidate.userPrincipalName
   );
@@ -200,7 +264,7 @@ export function classifyEmployeeCandidate(candidate = {}) {
     return { ok: false, email, reason: 'non_employee_resource_or_service_account' };
   }
 
-  const identity = resolveEmployeeNameIdentity(candidate);
+  const identity = resolveEmployeeNameIdentity(candidate, options);
   if (!identity) {
     return { ok: false, email, reason: 'missing_first_name_or_surname' };
   }
@@ -212,17 +276,22 @@ export function classifyEmployeeCandidate(candidate = {}) {
   };
 }
 
-export function classifyUserDirectoryRecord(user) {
-  return classifyEmployeeCandidate({
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    name: user.name,
-    displayName: user.name,
-    title: user.profile?.title,
-    department: user.profile?.department,
-    isBot: user.profile?.isBot,
-    isResource: user.profile?.isResource,
-    source: user.source,
-  });
+export function classifyUserDirectoryRecord(user, options = {}) {
+  return classifyEmployeeCandidate(
+    {
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: user.name,
+      displayName: user.name,
+      title: user.profile?.title,
+      department: user.profile?.department,
+      isBot: user.profile?.isBot,
+      isResource: user.profile?.isResource,
+      source: user.source,
+    },
+    {
+      requireExplicitNameParts: options.requireExplicitNameParts ?? user.source === 'microsoft',
+    }
+  );
 }

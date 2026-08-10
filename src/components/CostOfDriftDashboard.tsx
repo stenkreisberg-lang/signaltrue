@@ -9,7 +9,6 @@ import {
   Calendar,
   Download,
   RefreshCw,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -73,7 +72,6 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [showMethodology, setShowMethodology] = useState(false);
 
   useEffect(() => {
     fetchCostOfDrift();
@@ -179,13 +177,6 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
         </div>
         <div className="flex items-center gap-2 print:hidden">
           <button
-            onClick={() => setShowMethodology(!showMethodology)}
-            className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
-            title="How this is calculated"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-          <button
             onClick={exportToPDF}
             className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
             title="Export as PDF"
@@ -201,34 +192,6 @@ const CostOfDriftDashboard: React.FC<Props> = ({ teamId, orgId, showOrgLevel = f
           </button>
         </div>
       </div>
-
-      {/* Methodology Explainer (collapsible) */}
-      {showMethodology && (
-        <div className="px-6 py-4 bg-slate-900/50 border-b border-slate-700">
-          <h3 className="font-semibold text-slate-200 mb-2">How we calculate this</h3>
-          <div className="text-sm text-slate-400 space-y-2">
-            <p>
-              <strong className="text-slate-300">Formula:</strong> Cost = (Meeting Hours Lost +
-              Execution Delay + Rework Hours) × Avg Hourly Cost
-            </p>
-            <p>
-              <strong className="text-slate-300">Meeting Hours Lost:</strong> Hours spent in
-              meetings above your baseline
-            </p>
-            <p>
-              <strong className="text-slate-300">Execution Delay:</strong> Focus time erosion +
-              response time slowdown
-            </p>
-            <p>
-              <strong className="text-slate-300">Rework Hours:</strong> Estimated from after-hours
-              catch-up activity
-            </p>
-            <p className="text-xs text-slate-500 mt-3">
-              * Shown as a range (±20%) to reflect estimate uncertainty. Actual costs may vary.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Main Cost Display */}
       <div className="p-6">

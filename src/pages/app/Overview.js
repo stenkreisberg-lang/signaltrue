@@ -25,11 +25,6 @@ const nextSteps = [
     note: 'Record a reversible change and compare the same metric later.',
     to: '/app/actions',
   },
-  {
-    title: 'Read methodology',
-    note: 'See what is observed, derived, modeled, or AI-generated.',
-    to: '/app/methodology',
-  },
 ];
 
 export default function Overview() {
@@ -112,9 +107,6 @@ export default function Overview() {
             Check coverage, inspect the underlying metric, ask what changed, and test one reversible
             action. Do not act on a score alone.
           </p>
-          <Link className="mt-4 inline-block text-sm font-bold text-teal-800" to="/app/methodology">
-            Read methods and limits
-          </Link>
         </div>
       </div>
 

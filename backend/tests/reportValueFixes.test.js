@@ -252,8 +252,8 @@ describe('monthly report trust', () => {
     expect(html).toContain("Did last month's actions work?");
     expect(html).toContain('Meeting reset');
     expect(html).toContain('Owner:');
-    expect(html).toContain('internal descriptive models');
-    expect(html).toContain('Methods and limits');
+    expect(html).toContain('Team-level metadata only');
+    expect(html).not.toContain('Methods and limits');
     expect(html).not.toContain('Conditions Score');
     expect(html).not.toContain('Turnover Risk');
     expect(html).not.toContain('attrition within 6 months');

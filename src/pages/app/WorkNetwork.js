@@ -285,9 +285,8 @@ export default function WorkNetwork() {
                 <p className="app-eyebrow">Formal vs. observed</p>
                 <h2 className="text-2xl font-bold text-slate-900">Company work network</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-600">
-                  Dashed lines are formal cross-team reporting links. Teal lines are observed links
-                  that align with formal structure. Amber lines are observed metadata links not
-                  explained by the current reporting map; they require contextual review.
+                  Dashed lines are formal cross-team reporting links. Teal lines align with the
+                  reporting map. Amber lines are work connections worth reviewing in context.
                 </p>
               </div>
               <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
@@ -378,9 +377,7 @@ export default function WorkNetwork() {
                 <p className="app-eyebrow">Decision queue</p>
                 <h2 className="text-2xl font-bold text-slate-900">Patterns worth reviewing</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Relative to this company’s own network, with one reversible action and a 14-day
-                  measure. Percentiles and review bands are transparent internal product rules, not
-                  causal findings or scientifically validated risk thresholds.
+                  Review the pattern, choose one reversible action, and check again after 14 days.
                 </p>
               </div>
               {network.insights.length === 0 ? (
@@ -512,17 +509,6 @@ export default function WorkNetwork() {
               </div>
             </section>
           )}
-
-          <section className="app-panel border-l-4 border-l-slate-400">
-            <p className="app-eyebrow">Measurement status</p>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              {network.methodology.validationStatus}{' '}
-              <Link to="/app/methodology" className="font-semibold text-teal-800 underline">
-                Read methods and limits
-              </Link>
-              .
-            </p>
-          </section>
 
           <section className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
             <strong className="text-slate-900">Privacy and interpretation:</strong>{' '}

@@ -955,14 +955,6 @@ export default function LatestBrief() {
             ))}
           </div>
         )}
-
-        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-          <p>
-            Counts and durations are observed metadata. Ratios are derived. Internal 0-100 indices
-            and review bands are descriptive product models, not probabilities, diagnoses, causal
-            findings, employee rankings, or validated performance measures.
-          </p>
-        </div>
       </section>
     </AppShell>
   );

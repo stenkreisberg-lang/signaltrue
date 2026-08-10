@@ -270,12 +270,10 @@ function buildEmailHtml(orgId, weekStart, records, teamMap, minimumTeamSize) {
         <tr>
           <td style="border-top:1px solid #1e293b;padding-top:20px;text-align:center;">
             <p style="margin:0 0 6px;font-size:11px;color:#475569;">
-              Counts and durations are observed team metadata. The 0-100 deviation index and its
-              review bands are internal descriptive models, not probabilities, diagnoses,
-              validated predictions, or employee performance measures. No individual is scored.
+              Team-level metadata only. No individual is scored.
             </p>
             <p style="margin:0;font-size:11px;color:#334155;">
-              Minimum team size: ${minimumTeamSize} · Per-metric minimum contributors: ${MIN_METRIC_CONTRIBUTORS} · <a href="${appUrl}/app/methodology" style="color:#64748b;">Methods and limits</a>
+              Minimum team size: ${minimumTeamSize} · Per-metric minimum contributors: ${MIN_METRIC_CONTRIBUTORS}
             </p>
           </td>
         </tr>

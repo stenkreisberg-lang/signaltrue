@@ -90,6 +90,74 @@ describe('directory mapping', () => {
       reason: 'missing_first_name_or_surname',
     });
   });
+
+  test('rejects Microsoft resource names that look like two-word display names', () => {
+    const invalidMicrosoftRows = [
+      ['ISE - Iseturundaja.ee äriklienditugi', 'iseturundajaeeriklienditugi@nobeldigital.ee'],
+      ['Nobel bookings test', 'nobelbookingstest@nobeldigital.ee'],
+      ['Seo Haldus', 'seo.haldus@nobeldigital.ee'],
+      ['Seo kalender', 'seo_kalender@nobeldigital.ee'],
+      ['SyncMe - Klienditugi', 'sync_me@nobeldigital.ee'],
+      ['Tasuta 1-tunnine konsultatsioon', 'tasuta1tunninekonsultatsioon@nobeldigital.ee'],
+      ['Videokonsultatsioon (Johann)', 'broneerivideokonsultatsioon@nobeldigital.ee'],
+    ];
+
+    for (const [displayName, email] of invalidMicrosoftRows) {
+      expect(
+        classifyEmployeeCandidate({
+          email,
+          displayName,
+        })
+      ).toMatchObject({
+        ok: false,
+        reason: 'non_employee_resource_or_service_account',
+      });
+    }
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'karola.mitt@nobeldigital.ee',
+        firstName: 'Karola',
+        lastName: 'Mitt',
+        displayName: 'Karola Mitt',
+      })
+    ).toMatchObject({
+      ok: true,
+      firstName: 'Karola',
+      lastName: 'Mitt',
+    });
+  });
+
+  test('can require source-provided first name and surname for Microsoft users', () => {
+    expect(
+      classifyEmployeeCandidate(
+        {
+          email: 'ada@example.com',
+          displayName: 'Ada Lovelace',
+        },
+        { requireExplicitNameParts: true }
+      )
+    ).toMatchObject({
+      ok: false,
+      reason: 'missing_first_name_or_surname',
+    });
+
+    expect(
+      classifyEmployeeCandidate(
+        {
+          email: 'ada@example.com',
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          displayName: 'Ada Lovelace',
+        },
+        { requireExplicitNameParts: true }
+      )
+    ).toMatchObject({
+      ok: true,
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    });
+  });
 });
 
 describe('Microsoft Graph pagination', () => {
