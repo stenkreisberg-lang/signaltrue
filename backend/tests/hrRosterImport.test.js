@@ -1,10 +1,17 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
-import { importHrRosterRows, parseHrRosterPdfText } from '../services/hrRosterImportService.js';
+import {
+  importHrRosterRows,
+  parseHrRosterFile,
+  parseHrRosterPdfText,
+} from '../services/hrRosterImportService.js';
 
 jest.setTimeout(120000);
 
@@ -98,5 +105,28 @@ describe('HR roster import', () => {
         Department: 'Engineering',
       },
     ]);
+  });
+
+  test('parses temp-file uploads from multer v3', async () => {
+    const filePath = path.join(os.tmpdir(), `signaltrue-roster-${Date.now()}.csv`);
+    await fs.writeFile(
+      filePath,
+      'Name,Email,Position,Department\nAda Lovelace,ada@example.com,Engineering Lead,Engineering\n'
+    );
+
+    const rows = await parseHrRosterFile({
+      originalName: 'employees.csv',
+      path: filePath,
+    });
+
+    expect(rows).toEqual([
+      {
+        Name: 'Ada Lovelace',
+        Email: 'ada@example.com',
+        Position: 'Engineering Lead',
+        Department: 'Engineering',
+      },
+    ]);
+    await expect(fs.access(filePath)).rejects.toThrow();
   });
 });

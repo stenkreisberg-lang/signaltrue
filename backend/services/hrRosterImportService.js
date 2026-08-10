@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
@@ -188,12 +189,34 @@ export function parseHrRosterPdfText(text) {
   return parseFreeformPdfLines(lines);
 }
 
+function getUploadedFileName(file) {
+  return file.originalname || file.originalName || file.clientReportedFileName || '';
+}
+
+async function getUploadedFileBuffer(file) {
+  if (file.buffer) return file.buffer;
+  if (file.path) {
+    const data = await fs.readFile(file.path);
+    await fs.unlink(file.path).catch(() => {});
+    return data;
+  }
+  if (file.stream) {
+    const chunks = [];
+    for await (const chunk of file.stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+  throw new Error('Uploaded roster file could not be read.');
+}
+
 export async function parseHrRosterFile(file) {
-  const extension = path.extname(file.originalname || '').toLowerCase();
+  const extension = path.extname(getUploadedFileName(file)).toLowerCase();
+  const buffer = await getUploadedFileBuffer(file);
 
   if (['.xlsx', '.xls', '.csv'].includes(extension)) {
     const XLSX = await import('xlsx');
-    const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: false });
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
     const firstSheetName = workbook.SheetNames[0];
     if (!firstSheetName) return [];
     return XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
@@ -205,7 +228,7 @@ export async function parseHrRosterFile(file) {
 
   if (extension === '.pdf') {
     const { PDFParse } = await import('pdf-parse');
-    const parser = new PDFParse({ data: file.buffer });
+    const parser = new PDFParse({ data: buffer });
     try {
       const parsed = await parser.getText();
       return parseHrRosterPdfText(parsed.text);

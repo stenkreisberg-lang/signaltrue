@@ -14,7 +14,6 @@ import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
 const upload = multer({
-  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 const rosterUpload = (req, res, next) => {
@@ -205,7 +204,7 @@ router.post(
       }
 
       const result = await importHrRosterRows(orgId, rows, {
-        sourceFilename: req.file.originalname,
+        sourceFilename: req.file.originalname || req.file.originalName || null,
       });
 
       res.json({
