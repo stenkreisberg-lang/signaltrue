@@ -5,6 +5,7 @@ import {
   MIN_TEAM_SIZE,
   suppressMetricIfTooFew,
 } from '../utils/privacyGate.js';
+import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
 import { normalizeDepartmentName } from '../services/employeeSyncService.js';
 import {
   fetchGraphCollection,
@@ -45,6 +46,49 @@ describe('directory mapping', () => {
     expect(normalizeDepartmentName('Customer Success\u200B')).toBe('Customer Success');
     expect(normalizeDepartmentName('   ')).toBeNull();
     expect(normalizeDepartmentName(null)).toBeNull();
+  });
+
+  test('accepts only real employees with first name and surname', () => {
+    expect(
+      classifyEmployeeCandidate({
+        email: 'ada@example.com',
+        displayName: 'Ada Lovelace',
+      })
+    ).toMatchObject({
+      ok: true,
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    });
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'room-4@example.com',
+        displayName: 'Meeting Room 4',
+      })
+    ).toMatchObject({
+      ok: false,
+      reason: 'non_employee_resource_or_service_account',
+    });
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'support@example.com',
+        displayName: 'Support',
+      })
+    ).toMatchObject({
+      ok: false,
+      reason: 'non_employee_resource_or_service_account',
+    });
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'prince@example.com',
+        displayName: 'Prince',
+      })
+    ).toMatchObject({
+      ok: false,
+      reason: 'missing_first_name_or_surname',
+    });
   });
 });
 

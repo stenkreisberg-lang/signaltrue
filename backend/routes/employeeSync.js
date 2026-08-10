@@ -1,15 +1,32 @@
 import express from 'express';
+import multer from 'multer';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
 import {
+  cleanupInvalidEmployees,
   syncEmployeesFromSlack,
   syncEmployeesFromGoogle,
   syncEmployeesFromMicrosoft,
   getSyncStatus,
 } from '../services/employeeSyncService.js';
+import { importHrRosterRows, parseHrRosterFile } from '../services/hrRosterImportService.js';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+const rosterUpload = (req, res, next) => {
+  upload.single('file')(req, res, (error) => {
+    if (!error) return next();
+    return res.status(400).json({
+      success: false,
+      message:
+        error.code === 'LIMIT_FILE_SIZE' ? 'Roster file must be 10MB or smaller.' : error.message,
+    });
+  });
+};
 
 /**
  * GET /api/employee-sync/status
@@ -125,6 +142,84 @@ router.post(
 );
 
 /**
+ * POST /api/employee-sync/cleanup-invalid
+ * Remove non-employee directory records and normalize real employee names.
+ * Available to: hr_admin, admin, master_admin
+ */
+router.post(
+  '/cleanup-invalid',
+  authenticateToken,
+  requireRoles(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      if (!orgId) {
+        return res.status(400).json({ message: 'User not associated with an organization' });
+      }
+
+      const result = await cleanupInvalidEmployees(orgId, {
+        protectedUserId: req.user.userId || req.user._id,
+        dryRun: req.body?.dryRun === true || req.query?.dryRun === 'true',
+      });
+
+      res.json({
+        ...result,
+        message: result.dryRun
+          ? `${result.wouldRemove} non-employee record(s) would be removed.`
+          : `Removed ${result.removed} non-employee record(s) and normalized ${result.normalized} employee name(s).`,
+      });
+    } catch (error) {
+      console.error('Invalid employee cleanup error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
+ * POST /api/employee-sync/hr-roster
+ * Upload a CSV/XLS/XLSX/PDF roster exported from HR.
+ * Available to: hr_admin, admin, master_admin
+ */
+router.post(
+  '/hr-roster',
+  authenticateToken,
+  requireRoles(['hr_admin', 'admin', 'master_admin']),
+  rosterUpload,
+  async (req, res) => {
+    try {
+      const orgId = req.user.orgId;
+      if (!orgId) {
+        return res.status(400).json({ message: 'User not associated with an organization' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: 'Roster file is required' });
+      }
+
+      const rows = await parseHrRosterFile(req.file);
+      if (!rows.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'No employee rows found. Upload a spreadsheet with name, email, position, and team columns, or a selectable-text PDF.',
+        });
+      }
+
+      const result = await importHrRosterRows(orgId, rows, {
+        sourceFilename: req.file.originalname,
+      });
+
+      res.json({
+        ...result,
+        message: `Imported HR roster: ${result.stats.created} created, ${result.stats.updated} updated, ${result.stats.skipped} skipped.`,
+      });
+    } catch (error) {
+      console.error('HR roster import error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
  * POST /api/employee-sync/cleanup-domain
  * Remove synced employees whose email doesn't match the org's domain.
  * Uses org.domain to determine which users belong.
@@ -159,7 +254,7 @@ router.post(
         orgId,
         source: 'microsoft',
         email: { $not: new RegExp(`@${orgDomain.replace('.', '\\.')}$`, 'i') },
-        _id: { $ne: req.user._id },
+        _id: { $ne: req.user.userId || req.user._id },
       });
 
       const count = nonDomainUsers.length;
@@ -257,6 +352,72 @@ router.post('/admin/set-domain-and-cleanup', async (req, res) => {
     });
   } catch (error) {
     console.error('Admin cleanup error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/employee-sync/admin/cleanup-invalid
+ * Admin-key protected cleanup across all organizations or one selected org.
+ * Body: { "orgSlug": "nobeldigital", "dryRun": true }
+ */
+router.post('/admin/cleanup-invalid', async (req, res) => {
+  try {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_API_KEY) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { orgSlug, orgId, dryRun = false } = req.body || {};
+    const query = orgId ? { _id: orgId } : orgSlug ? { slug: orgSlug } : {};
+    const orgs = await Organization.find(query).select('_id name slug').lean();
+    if (orgs.length === 0) {
+      return res.status(404).json({ message: `Organization not found (${orgSlug || orgId})` });
+    }
+
+    const results = [];
+    for (const org of orgs) {
+      const result = await cleanupInvalidEmployees(org._id, { dryRun });
+      results.push({
+        orgId: org._id,
+        orgName: org.name,
+        orgSlug: org.slug,
+        ...result,
+      });
+    }
+
+    const totals = results.reduce(
+      (acc, result) => {
+        acc.evaluated += result.evaluated;
+        acc.removed += result.removed;
+        acc.wouldRemove += result.wouldRemove;
+        acc.normalized += result.normalized;
+        acc.wouldNormalize += result.wouldNormalize;
+        acc.protected += result.protected;
+        return acc;
+      },
+      {
+        orgs: results.length,
+        evaluated: 0,
+        removed: 0,
+        wouldRemove: 0,
+        normalized: 0,
+        wouldNormalize: 0,
+        protected: 0,
+      }
+    );
+
+    res.json({
+      success: true,
+      dryRun,
+      totals,
+      results,
+      message: dryRun
+        ? `${totals.wouldRemove} non-employee record(s) would be removed across ${totals.orgs} org(s).`
+        : `Removed ${totals.removed} non-employee record(s) across ${totals.orgs} org(s).`,
+    });
+  } catch (error) {
+    console.error('Admin invalid employee cleanup error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

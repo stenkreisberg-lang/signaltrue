@@ -1,8 +1,13 @@
 import express from 'express';
 import User from '../models/user.js';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import WorkEvent from '../models/workEvent.js';
+import Organization from '../models/organizationModel.js';
+import { authenticateToken, requireAdmin, requireRoles } from '../middleware/auth.js';
+import { refreshTeamSizes } from '../services/employeeSyncService.js';
+import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
 
 const router = express.Router();
+const ORG_ADMIN_ROLES = ['hr_admin', 'admin', 'org_admin', 'super_admin', 'master_admin'];
 
 // Get team members — HR/admin roles see all org employees, others see own team only
 router.get('/', authenticateToken, async (req, res) => {
@@ -34,10 +39,22 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { email, password, name, role } = req.body;
     const teamId = req.user.teamId;
+    const orgId = req.user.orgId;
 
     // Validate required fields
     if (!email || !password || !name) {
       return res.status(400).json({ message: 'Email, password, and name are required' });
+    }
+
+    const identity = classifyEmployeeCandidate({ email, name, displayName: name });
+    if (!identity.ok) {
+      return res.status(400).json({
+        message:
+          identity.reason === 'missing_first_name_or_surname'
+            ? 'Employee must have both first name and surname.'
+            : 'Only real employee accounts can be added. Bots, rooms, resources, and shared mailboxes are blocked.',
+        reason: identity.reason,
+      });
     }
 
     // Check if user already exists
@@ -48,10 +65,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
     // Create new user with the admin's team
     const user = new User({
-      email,
+      email: identity.email,
       password,
-      name,
+      name: identity.name,
+      firstName: identity.firstName,
+      lastName: identity.lastName,
       role: role || 'viewer',
+      orgId,
       teamId,
     });
 
@@ -98,7 +118,21 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
 
     // Update user
     if (role) user.role = role;
-    if (name) user.name = name;
+    if (name) {
+      const identity = classifyEmployeeCandidate({ email: user.email, name, displayName: name });
+      if (!identity.ok) {
+        return res.status(400).json({
+          message:
+            identity.reason === 'missing_first_name_or_surname'
+              ? 'Employee must have both first name and surname.'
+              : 'Only real employee accounts can be added. Bots, rooms, resources, and shared mailboxes are blocked.',
+          reason: identity.reason,
+        });
+      }
+      user.name = identity.name;
+      user.firstName = identity.firstName;
+      user.lastName = identity.lastName;
+    }
 
     await user.save();
 
@@ -118,33 +152,82 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Delete team member (admin only)
-router.delete('/:userId', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const teamId = req.user.teamId;
+// Delete employee profile from the organization (HR/admin roles only)
+router.delete(
+  '/:userId',
+  authenticateToken,
+  requireRoles(['hr_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const requesterId = req.user.userId || req.user._id;
+      const requesterOrgId = req.user.orgId;
 
-    // Prevent admin from deleting themselves if they're the only admin
-    if (userId === req.user.userId) {
-      const adminCount = await User.countDocuments({ teamId, role: 'admin' });
-      if (adminCount <= 1) {
-        return res.status(400).json({
-          message: 'Cannot delete the last admin. Promote another user to admin first.',
-        });
+      if (String(userId) === String(requesterId)) {
+        return res.status(400).json({ message: 'Cannot delete your own account' });
       }
-    }
 
-    // Find and delete user
-    const user = await User.findOneAndDelete({ _id: userId, teamId });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found or not in your team' });
-    }
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
 
-    res.json({ message: 'Team member removed successfully' });
-  } catch (error) {
-    console.error('Delete team member error:', error);
-    res.status(500).json({ message: error.message });
+      if (!requesterOrgId || String(user.orgId) !== String(requesterOrgId)) {
+        return res.status(403).json({ message: 'User not in your organization' });
+      }
+
+      if (ORG_ADMIN_ROLES.includes(user.role)) {
+        const adminCount = await User.countDocuments({
+          orgId: user.orgId,
+          role: { $in: ORG_ADMIN_ROLES },
+          accountStatus: { $ne: 'inactive' },
+        });
+        if (adminCount <= 1) {
+          return res.status(400).json({
+            message: 'Cannot delete the last admin in the organization.',
+          });
+        }
+      }
+
+      await Promise.all([
+        WorkEvent.updateMany(
+          { orgId: user.orgId, actorUserId: user._id },
+          { $set: { actorUserId: null, teamId: null } }
+        ),
+        WorkEvent.updateMany(
+          { orgId: user.orgId, targetUserId: user._id },
+          { $set: { targetUserId: null } }
+        ),
+        WorkEvent.updateMany(
+          { orgId: user.orgId, 'metadata.assigneeUserId': user._id },
+          { $set: { 'metadata.assigneeUserId': null } }
+        ),
+        WorkEvent.updateMany(
+          { orgId: user.orgId, 'metadata.reporterUserId': user._id },
+          { $set: { 'metadata.reporterUserId': null } }
+        ),
+      ]);
+
+      await User.findByIdAndDelete(user._id);
+
+      const org = await Organization.findById(user.orgId).select('settings.minTeamSize').lean();
+      const minTeamSize = Math.max(5, Number(org?.settings?.minTeamSize) || 5);
+      await refreshTeamSizes(user.orgId, minTeamSize);
+
+      res.json({
+        message: 'Employee profile deleted successfully',
+        deletedUser: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          teamId: user.teamId,
+        },
+      });
+    } catch (error) {
+      console.error('Delete employee profile error:', error);
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 export default router;

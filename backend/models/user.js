@@ -46,7 +46,15 @@ const userSchema = new mongoose.Schema(
     // Source of user creation
     source: {
       type: String,
-      enum: ['manual', 'slack', 'google_chat', 'google_workspace', 'microsoft', 'invitation'],
+      enum: [
+        'manual',
+        'slack',
+        'google_chat',
+        'google_workspace',
+        'microsoft',
+        'hr_import',
+        'invitation',
+      ],
       default: 'manual',
     },
     // External IDs for syncing
@@ -63,6 +71,7 @@ const userSchema = new mongoose.Schema(
       title: { type: String },
       department: { type: String },
       phone: { type: String },
+      officeLocation: { type: String },
     },
     // Work mode for hybrid culture drift segmentation
     workMode: {

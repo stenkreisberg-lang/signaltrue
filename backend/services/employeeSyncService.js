@@ -3,15 +3,60 @@ import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import WorkEvent from '../models/workEvent.js';
+import {
+  classifyEmployeeCandidate,
+  classifyUserDirectoryRecord,
+  normalizeDirectoryString,
+} from '../utils/employeeIdentity.js';
+
+const ORG_ADMIN_ROLES = ['admin', 'hr_admin', 'org_admin', 'super_admin', 'master_admin'];
 
 export function normalizeDepartmentName(value) {
-  if (typeof value !== 'string') return null;
-  const normalized = value
-    .normalize('NFKC')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .trim()
-    .replace(/\s+/g, ' ');
-  return normalized || null;
+  return normalizeDirectoryString(value);
+}
+
+export async function getOrCreateUnassignedTeam(orgId) {
+  let unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' });
+  if (!unassignedTeam) {
+    unassignedTeam = new Team({
+      name: 'Unassigned',
+      orgId,
+      metadata: {
+        function: 'Other',
+        sizeBand: '1-5',
+      },
+    });
+    await unassignedTeam.save();
+    console.log('[EmployeeSync] Created "Unassigned" team for org:', orgId);
+  }
+  return unassignedTeam;
+}
+
+function applyEmployeeIdentity(user, identity) {
+  let updated = false;
+
+  if (identity.name && user.name !== identity.name) {
+    user.name = identity.name;
+    updated = true;
+  }
+  if (identity.firstName && user.firstName !== identity.firstName) {
+    user.firstName = identity.firstName;
+    updated = true;
+  }
+  if (identity.lastName && user.lastName !== identity.lastName) {
+    user.lastName = identity.lastName;
+    updated = true;
+  }
+
+  return updated;
+}
+
+function trackSkippedCandidate(syncStats, email, reason) {
+  syncStats.skipped++;
+  syncStats.invalidSkipped = (syncStats.invalidSkipped || 0) + 1;
+  if (syncStats.skippedCandidates.length < 25) {
+    syncStats.skippedCandidates.push({ email: email || null, reason });
+  }
 }
 
 async function mergeDuplicateDirectoryTeams(orgId, teams) {
@@ -93,7 +138,7 @@ function resolveDirectoryTeam(msUser, mapping) {
     : mapping.unassignedTeam;
 }
 
-async function refreshTeamSizes(orgId, minimumTeamSize) {
+export async function refreshTeamSizes(orgId, minimumTeamSize) {
   const counts = await User.aggregate([
     { $match: { orgId } },
     { $group: { _id: '$teamId', count: { $sum: 1 } } },
@@ -144,6 +189,103 @@ export async function remapWorkEventTeams(orgId) {
   return { matched, modified };
 }
 
+export async function cleanupInvalidEmployees(orgId, options = {}) {
+  const { protectedUserId = null, dryRun = false } = options;
+  const org = await Organization.findById(orgId);
+  const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
+  const users = await User.find({ orgId, isMasterAdmin: { $ne: true } });
+  const activeOrgAdminCount = users.filter(
+    (user) => ORG_ADMIN_ROLES.includes(user.role) && user.accountStatus !== 'inactive'
+  ).length;
+
+  const invalidUsers = [];
+  const protectedUsers = [];
+  const normalizedUsers = [];
+
+  for (const user of users) {
+    const classification = classifyUserDirectoryRecord(user);
+    if (classification.ok) {
+      const changed = applyEmployeeIdentity(user, classification);
+      if (changed) {
+        normalizedUsers.push({
+          id: user._id,
+          email: user.email,
+          name: classification.name,
+          firstName: classification.firstName,
+          lastName: classification.lastName,
+        });
+      }
+      continue;
+    }
+
+    const isProtectedRequester = protectedUserId && String(user._id) === String(protectedUserId);
+    const isLastActiveOrgAdmin =
+      ORG_ADMIN_ROLES.includes(user.role) &&
+      user.accountStatus !== 'inactive' &&
+      activeOrgAdminCount <= 1;
+    if (isProtectedRequester || isLastActiveOrgAdmin) {
+      protectedUsers.push({
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        reason: isLastActiveOrgAdmin ? 'last_active_org_admin' : classification.reason,
+      });
+      continue;
+    }
+
+    invalidUsers.push({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      reason: classification.reason,
+    });
+  }
+
+  if (!dryRun) {
+    await Promise.all(
+      normalizedUsers.map((entry) =>
+        User.findByIdAndUpdate(entry.id, {
+          $set: {
+            name: entry.name,
+            firstName: entry.firstName,
+            lastName: entry.lastName,
+          },
+        })
+      )
+    );
+
+    const invalidIds = invalidUsers.map((entry) => entry.id);
+    if (invalidIds.length > 0) {
+      await Promise.all([
+        WorkEvent.updateMany(
+          { orgId, actorUserId: { $in: invalidIds } },
+          { $set: { actorUserId: null, teamId: null } }
+        ),
+        WorkEvent.updateMany(
+          { orgId, targetUserId: { $in: invalidIds } },
+          { $set: { targetUserId: null } }
+        ),
+      ]);
+      await User.deleteMany({ _id: { $in: invalidIds }, orgId });
+    }
+
+    await refreshTeamSizes(orgId, minimumTeamSize);
+  }
+
+  return {
+    success: true,
+    dryRun,
+    evaluated: users.length,
+    removed: dryRun ? 0 : invalidUsers.length,
+    wouldRemove: invalidUsers.length,
+    normalized: dryRun ? 0 : normalizedUsers.length,
+    wouldNormalize: normalizedUsers.length,
+    protected: protectedUsers.length,
+    removedEmployees: invalidUsers.slice(0, 100),
+    protectedEmployees: protectedUsers.slice(0, 25),
+  };
+}
+
 /**
  * Employee Sync Service
  * Automatically syncs employees from Slack/Google Workspace after integration
@@ -183,28 +325,36 @@ export async function syncEmployeesFromSlack(orgId) {
       created: 0,
       updated: 0,
       skipped: 0,
+      invalidSkipped: 0,
+      skippedCandidates: [],
       errors: [],
     };
 
     // Get or create a default "Unassigned" team
-    let unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' });
-    if (!unassignedTeam) {
-      unassignedTeam = new Team({
-        name: 'Unassigned',
-        orgId,
-        metadata: {
-          function: 'Other',
-          sizeBand: '1-5',
-        },
-      });
-      await unassignedTeam.save();
-      console.log('[EmployeeSync] Created "Unassigned" team');
-    }
+    const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
 
     for (const slackUser of slackUsers) {
       try {
-        const email = slackUser.profile.email.toLowerCase();
-        const name = slackUser.profile.real_name || slackUser.name || email.split('@')[0];
+        const identity = classifyEmployeeCandidate({
+          email: slackUser.profile.email,
+          firstName: slackUser.profile.first_name,
+          lastName: slackUser.profile.last_name,
+          displayName:
+            slackUser.profile.real_name_normalized || slackUser.profile.real_name || slackUser.name,
+          name: slackUser.name,
+          title: slackUser.profile.title,
+          department: slackUser.profile.department,
+          deleted: slackUser.deleted,
+          isBot: slackUser.is_bot,
+          isAppUser: slackUser.is_app_user,
+        });
+
+        if (!identity.ok) {
+          trackSkippedCandidate(syncStats, slackUser.profile.email, identity.reason);
+          continue;
+        }
+
+        const { email, name, firstName, lastName } = identity;
 
         // Check if user already exists
         let user = await User.findOne({
@@ -213,7 +363,7 @@ export async function syncEmployeesFromSlack(orgId) {
 
         if (user) {
           // Update existing user with Slack info
-          let updated = false;
+          let updated = applyEmployeeIdentity(user, identity);
 
           if (!user.externalIds?.slackUserId) {
             user.externalIds = user.externalIds || {};
@@ -240,6 +390,12 @@ export async function syncEmployeesFromSlack(orgId) {
             updated = true;
           }
 
+          if (slackUser.profile.department) {
+            user.profile = user.profile || {};
+            user.profile.department = slackUser.profile.department;
+            updated = true;
+          }
+
           if (updated) {
             await user.save();
             syncStats.updated++;
@@ -258,6 +414,8 @@ export async function syncEmployeesFromSlack(orgId) {
             role: 'team_member',
             orgId,
             teamId: unassignedTeam._id,
+            firstName,
+            lastName,
             externalIds: {
               slackUserId: slackUser.id,
               slackTeamId: org.integrations.slack.teamId,
@@ -362,22 +520,13 @@ export async function syncEmployeesFromGoogle(orgId) {
       created: 0,
       updated: 0,
       skipped: 0,
+      invalidSkipped: 0,
+      skippedCandidates: [],
       errors: [],
     };
 
     // Get or create "Unassigned" team
-    let unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' });
-    if (!unassignedTeam) {
-      unassignedTeam = new Team({
-        name: 'Unassigned',
-        orgId,
-        metadata: {
-          function: 'Other',
-          sizeBand: '1-5',
-        },
-      });
-      await unassignedTeam.save();
-    }
+    const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
 
     try {
       // Fetch all users from Google Workspace
@@ -396,8 +545,24 @@ export async function syncEmployeesFromGoogle(orgId) {
             continue;
           }
 
-          const email = googleUser.primaryEmail.toLowerCase();
-          const name = googleUser.name?.fullName || email.split('@')[0];
+          const identity = classifyEmployeeCandidate({
+            email: googleUser.primaryEmail,
+            firstName: googleUser.name?.givenName,
+            lastName: googleUser.name?.familyName,
+            fullName: googleUser.name?.fullName,
+            displayName: googleUser.name?.fullName,
+            suspended: googleUser.suspended,
+            isResource: googleUser.isResource,
+            title: googleUser.organizations?.[0]?.title,
+            department: googleUser.organizations?.[0]?.department,
+          });
+
+          if (!identity.ok) {
+            trackSkippedCandidate(syncStats, googleUser.primaryEmail, identity.reason);
+            continue;
+          }
+
+          const { email, name, firstName, lastName } = identity;
 
           // Check if user exists
           let user = await User.findOne({
@@ -406,7 +571,7 @@ export async function syncEmployeesFromGoogle(orgId) {
 
           if (user) {
             // Update existing user
-            let updated = false;
+            let updated = applyEmployeeIdentity(user, identity);
 
             if (!user.externalIds?.googleUserId) {
               user.externalIds = user.externalIds || {};
@@ -444,6 +609,8 @@ export async function syncEmployeesFromGoogle(orgId) {
               role: 'team_member',
               orgId,
               teamId: unassignedTeam._id,
+              firstName,
+              lastName,
               externalIds: {
                 googleUserId: googleUser.id,
               },
@@ -582,28 +749,18 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       created: 0,
       updated: 0,
       skipped: 0,
+      invalidSkipped: 0,
+      skippedCandidates: [],
       errors: [],
     };
 
     // Get or create "Unassigned" team for this org
-    let unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' });
-    if (!unassignedTeam) {
-      unassignedTeam = new Team({
-        name: 'Unassigned',
-        orgId,
-        metadata: {
-          function: 'Other',
-          sizeBand: '1-5',
-        },
-      });
-      await unassignedTeam.save();
-      console.log('[EmployeeSync] Created "Unassigned" team for org:', orgId);
-    }
+    const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
 
     // Fetch users from Microsoft Graph (with pagination)
     let allMsUsers = [];
     let nextLink =
-      'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,mail,userPrincipalName,jobTitle,department,officeLocation,mobilePhone,accountEnabled';
+      'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,givenName,surname,mail,userPrincipalName,jobTitle,department,officeLocation,mobilePhone,accountEnabled,userType,employeeType';
 
     while (nextLink) {
       const response = await fetch(nextLink, {
@@ -662,24 +819,36 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       `[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`
     );
 
-    const teamMapping = await buildDepartmentTeamMap(orgId, domainFilteredUsers, unassignedTeam);
+    const validatedMsUsers = [];
+    for (const msUser of domainFilteredUsers) {
+      const identity = classifyEmployeeCandidate({
+        email: msUser.mail || msUser.userPrincipalName,
+        firstName: msUser.givenName,
+        lastName: msUser.surname,
+        displayName: msUser.displayName,
+        jobTitle: msUser.jobTitle,
+        department: msUser.department,
+        accountEnabled: msUser.accountEnabled,
+        userType: msUser.userType,
+        employeeType: msUser.employeeType,
+      });
+
+      if (!identity.ok) {
+        trackSkippedCandidate(syncStats, msUser.mail || msUser.userPrincipalName, identity.reason);
+        continue;
+      }
+
+      validatedMsUsers.push({ ...msUser, _identity: identity });
+    }
+
+    const teamMapping = await buildDepartmentTeamMap(orgId, validatedMsUsers, unassignedTeam);
     const teamById = new Map(teamMapping.teams.map((team) => [String(team._id), team]));
 
-    for (const msUser of domainFilteredUsers) {
+    for (const msUser of validatedMsUsers) {
       try {
-        const email = (msUser.mail || msUser.userPrincipalName).toLowerCase();
-        const name = msUser.displayName || email.split('@')[0];
+        const identity = msUser._identity;
+        const { email, name, firstName, lastName } = identity;
         const desiredTeam = resolveDirectoryTeam(msUser, teamMapping);
-
-        // Skip service accounts / shared mailboxes (heuristic)
-        if (
-          email.startsWith('no-reply') ||
-          email.startsWith('noreply') ||
-          email.includes('shared')
-        ) {
-          syncStats.skipped++;
-          continue;
-        }
 
         // Check if user already exists
         let user = await User.findOne({
@@ -689,7 +858,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
 
         if (user) {
           // Update existing user
-          let updated = false;
+          let updated = applyEmployeeIdentity(user, identity);
 
           if (!user.externalIds?.microsoftUserId) {
             user.externalIds = user.externalIds || {};
@@ -746,6 +915,8 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
             role: 'team_member',
             orgId,
             teamId: desiredTeam._id,
+            firstName,
+            lastName,
             externalIds: {
               microsoftUserId: msUser.id,
             },

@@ -10,6 +10,7 @@ mockJest.mock('../utils/api', () => ({
     get: mockJest.fn(),
     post: mockJest.fn(),
     put: mockJest.fn(),
+    delete: mockJest.fn(),
   },
 }));
 
@@ -17,6 +18,7 @@ const mockedApi = api as unknown as {
   get: Mock<unknown, [string, ...unknown[]]>;
   post: Mock<unknown, [string, ...unknown[]]>;
   put: Mock<unknown, [string, ...unknown[]]>;
+  delete: Mock<unknown, [string, ...unknown[]]>;
 };
 
 let completeScan: (() => void) | undefined;
@@ -97,6 +99,11 @@ beforeEach(() => {
       },
     };
   });
+  mockedApi.delete.mockImplementation(() =>
+    Promise.resolve({
+      data: { message: 'Employee profile deleted successfully' },
+    })
+  );
 });
 
 test('scans the inferred website, applies strong matches, and reports the result in the card', async () => {
@@ -123,4 +130,20 @@ test('scans the inferred website, applies strong matches, and reports the result
       /Scan complete: 4 pages and 18 public profiles checked. 1 automatically assigned/
     )
   ).toBeTruthy();
+});
+
+test('deletes an employee profile from the directory row actions', async () => {
+  const confirmSpy = mockJest.spyOn(window, 'confirm').mockReturnValue(true);
+
+  render(<EmployeeDirectory />);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Ada Example' }));
+
+  await waitFor(() =>
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('Delete Ada Example'))
+  );
+  await waitFor(() => expect(mockedApi.delete).toHaveBeenCalledWith('/team-members/employee-1'));
+  expect(await screen.findByText('Ada Example deleted from employee directory')).toBeTruthy();
+
+  confirmSpy.mockRestore();
 });

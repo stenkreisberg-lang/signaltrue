@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { ShieldCheck, Trash2, Upload } from 'lucide-react';
 import api from '../utils/api';
 
 interface Employee {
@@ -88,6 +89,16 @@ interface ReportSettings {
   currency: string;
 }
 
+interface HrRosterStats {
+  sourceFilename?: string | null;
+  rowsProcessed: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  teamsCreated: number;
+  skippedRows: Array<{ rowNumber: number; email: string | null; reason: string }>;
+}
+
 interface ApiError {
   response?: {
     status?: number;
@@ -96,7 +107,7 @@ interface ApiError {
 }
 
 const apiErrorMessage = (error: unknown, fallback: string) =>
-  (error as ApiError).response?.data?.message || fallback;
+  (error as ApiError | undefined)?.response?.data?.message || fallback;
 
 const EmployeeDirectory: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -124,6 +135,11 @@ const EmployeeDirectory: React.FC = () => {
   const [reviewingSuggestions, setReviewingSuggestions] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   const [savingReportSettings, setSavingReportSettings] = useState(false);
+  const [cleaningDirectory, setCleaningDirectory] = useState(false);
+  const [rosterFile, setRosterFile] = useState<File | null>(null);
+  const [importingRoster, setImportingRoster] = useState(false);
+  const [rosterStats, setRosterStats] = useState<HrRosterStats | null>(null);
+  const [deletingEmployeeIds, setDeletingEmployeeIds] = useState<Set<string>>(new Set());
   const [reportSettings, setReportSettings] = useState<ReportSettings>({
     timezone: 'UTC',
     workdayStart: '09:00',
@@ -241,6 +257,105 @@ const EmployeeDirectory: React.FC = () => {
     }
   };
 
+  const markEmployeesDeleting = (employeeIds: string[], isDeleting: boolean) => {
+    setDeletingEmployeeIds((current) => {
+      const next = new Set(current);
+      employeeIds.forEach((employeeId) => {
+        if (isDeleting) next.add(employeeId);
+        else next.delete(employeeId);
+      });
+      return next;
+    });
+  };
+
+  const handleDeleteEmployee = async (employee: Employee) => {
+    if (
+      !window.confirm(
+        `Delete ${employee.name}'s profile from SignalTrue? This removes the profile from teams and reporting.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      markEmployeesDeleting([employee._id], true);
+      await api.delete(`/team-members/${employee._id}`);
+      setSelectedEmployees((current) => {
+        const next = new Set(current);
+        next.delete(employee._id);
+        return next;
+      });
+      showSuccess(`${employee.name} deleted from employee directory`);
+      await fetchData();
+    } catch (error: unknown) {
+      console.error('Delete employee error:', error);
+      showError(apiErrorMessage(error, 'Failed to delete employee profile'));
+    } finally {
+      markEmployeesDeleting([employee._id], false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const employeesToDelete = employees.filter((employee) => selectedEmployees.has(employee._id));
+    if (employeesToDelete.length === 0) {
+      showError('Select at least one employee profile to delete');
+      return;
+    }
+
+    const previewNames = employeesToDelete
+      .slice(0, 3)
+      .map((employee) => employee.name)
+      .join(', ');
+    const remainingCount = employeesToDelete.length - 3;
+    const preview =
+      remainingCount > 0 ? `${previewNames} and ${remainingCount} more` : previewNames;
+
+    if (
+      !window.confirm(
+        `Delete ${employeesToDelete.length} selected employee ${
+          employeesToDelete.length === 1 ? 'profile' : 'profiles'
+        } from SignalTrue? ${preview} will be removed from teams and reporting.`
+      )
+    ) {
+      return;
+    }
+
+    const employeeIds = employeesToDelete.map((employee) => employee._id);
+    try {
+      markEmployeesDeleting(employeeIds, true);
+      const results = await Promise.allSettled(
+        employeeIds.map((employeeId) => api.delete(`/team-members/${employeeId}`))
+      );
+      const deletedIds = employeeIds.filter((_, index) => results[index].status === 'fulfilled');
+      const failed = employeeIds.length - deletedIds.length;
+
+      setSelectedEmployees((current) => {
+        const next = new Set(current);
+        deletedIds.forEach((employeeId) => next.delete(employeeId));
+        return next;
+      });
+
+      if (failed > 0) {
+        const firstFailure = results.find(
+          (result): result is PromiseRejectedResult => result.status === 'rejected'
+        );
+        showError(
+          `${deletedIds.length} deleted; ${failed} could not be deleted. ${apiErrorMessage(
+            firstFailure?.reason,
+            'Please try again.'
+          )}`
+        );
+      } else {
+        showSuccess(`${deletedIds.length} employee profile(s) deleted from the directory`);
+        setShowBulkAssign(false);
+      }
+
+      await fetchData();
+    } finally {
+      markEmployeesDeleting(employeeIds, false);
+    }
+  };
+
   const handleBulkAssign = async (teamIdParam?: string) => {
     const teamId = teamIdParam || bulkAssignTeamId;
     if (!teamId || selectedEmployees.size === 0) {
@@ -262,6 +377,41 @@ const EmployeeDirectory: React.FC = () => {
     } catch (error: unknown) {
       console.error('Bulk assign error:', error);
       showError(apiErrorMessage(error, 'Failed to assign employees'));
+    }
+  };
+
+  const cleanupInvalidEmployees = async () => {
+    try {
+      setCleaningDirectory(true);
+      const response = await api.post('/employee-sync/cleanup-invalid');
+      showSuccess(response.data.message);
+      await fetchData();
+    } catch (error: unknown) {
+      showError(apiErrorMessage(error, 'Failed to clean employee directory'));
+    } finally {
+      setCleaningDirectory(false);
+    }
+  };
+
+  const importHrRoster = async () => {
+    if (!rosterFile) {
+      showError('Choose an HR roster file first');
+      return;
+    }
+
+    try {
+      setImportingRoster(true);
+      const formData = new FormData();
+      formData.append('file', rosterFile);
+      const response = await api.post('/employee-sync/hr-roster', formData, { timeout: 120000 });
+      setRosterStats(response.data.stats);
+      setRosterFile(null);
+      showSuccess(response.data.message);
+      await fetchData();
+    } catch (error: unknown) {
+      showError(apiErrorMessage(error, 'Failed to import HR roster'));
+    } finally {
+      setImportingRoster(false);
     }
   };
 
@@ -427,6 +577,8 @@ const EmployeeDirectory: React.FC = () => {
       slack: '💬',
       google_workspace: '📧',
       google_chat: '📧',
+      microsoft: 'M365',
+      hr_import: 'HR',
       manual: '✋',
       invitation: '✉️',
     };
@@ -551,6 +703,69 @@ const EmployeeDirectory: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6 border border-slate-200">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Employee source controls</h2>
+            <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+              Directory entries must have first name, surname, and work email. Bots, rooms,
+              resources, and shared mailboxes are blocked from employee lists and team assignment.
+            </p>
+          </div>
+          <button
+            onClick={cleanupInvalidEmployees}
+            disabled={cleaningDirectory}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50"
+          >
+            <ShieldCheck size={16} aria-hidden="true" />
+            {cleaningDirectory ? 'Cleaning...' : 'Clean current list'}
+          </button>
+        </div>
+
+        <div className="mt-5 pt-5 border-t border-slate-200">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <label className="text-sm font-medium text-gray-700">
+              HR roster export
+              <input
+                type="file"
+                accept=".csv,.xls,.xlsx,.pdf"
+                disabled={importingRoster}
+                onChange={(event) => setRosterFile(event.target.files?.[0] || null)}
+                className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </label>
+            <button
+              onClick={importHrRoster}
+              disabled={importingRoster || !rosterFile}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Upload size={16} aria-hidden="true" />
+              {importingRoster ? 'Importing...' : 'Import roster'}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            Accepted columns include first name, surname, email, position, team, and department. PDF
+            imports work best with selectable table text.
+          </p>
+
+          {rosterStats && (
+            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <div className="font-medium">
+                {rosterStats.rowsProcessed} rows processed · {rosterStats.created} created ·{' '}
+                {rosterStats.updated} updated · {rosterStats.teamsCreated} teams created ·{' '}
+                {rosterStats.skipped} skipped
+              </div>
+              {rosterStats.skippedRows.length > 0 && (
+                <div className="mt-2 text-xs text-blue-800">
+                  First skipped row: #{rosterStats.skippedRows[0].rowNumber},{' '}
+                  {rosterStats.skippedRows[0].reason.replace(/_/g, ' ')}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {enrichment && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -848,6 +1063,17 @@ const EmployeeDirectory: React.FC = () => {
               Assign to Team
             </button>
             <button
+              type="button"
+              onClick={handleBulkDelete}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={Array.from(selectedEmployees).some((employeeId) =>
+                deletingEmployeeIds.has(employeeId)
+              )}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Delete Profiles
+            </button>
+            <button
               onClick={deselectAll}
               className="px-4 py-2 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
             >
@@ -986,25 +1212,38 @@ const EmployeeDirectory: React.FC = () => {
                     <td className="px-4 py-3">{getStatusBadge(employee.accountStatus)}</td>
                     <td className="px-4 py-3">{getSourceBadge(employee.source)}</td>
                     <td className="px-4 py-3">
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleAssignToTeam(employee._id, e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-                        defaultValue=""
-                      >
-                        <option value="">Assign to team...</option>
-                        {teams
-                          .filter((team) => team._id !== employee.teamId)
-                          .map((team) => (
-                            <option key={team._id} value={team._id}>
-                              {team.name}
-                            </option>
-                          ))}
-                      </select>
+                      <div className="flex min-w-[230px] items-center gap-2">
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleAssignToTeam(employee._id, e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                          className="min-w-[160px] text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                          defaultValue=""
+                          disabled={deletingEmployeeIds.has(employee._id)}
+                        >
+                          <option value="">Assign to team...</option>
+                          {teams
+                            .filter((team) => team._id !== employee.teamId)
+                            .map((team) => (
+                              <option key={team._id} value={team._id}>
+                                {team.name}
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEmployee(employee)}
+                          className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-red-200 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={`Delete ${employee.name}`}
+                          title={`Delete ${employee.name}`}
+                          disabled={deletingEmployeeIds.has(employee._id)}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
