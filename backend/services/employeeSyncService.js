@@ -140,7 +140,7 @@ function resolveDirectoryTeam(msUser, mapping) {
 
 export async function refreshTeamSizes(orgId, minimumTeamSize) {
   const counts = await User.aggregate([
-    { $match: { orgId } },
+    { $match: { orgId, accountStatus: { $ne: 'inactive' } } },
     { $group: { _id: '$teamId', count: { $sum: 1 } } },
   ]);
   const countByTeam = new Map(counts.map((entry) => [String(entry._id), entry.count]));
@@ -707,17 +707,27 @@ export async function getSyncStatus(orgId) {
     throw new Error('Organization not found');
   }
 
-  const totalUsers = await User.countDocuments({ orgId });
+  const activeUserQuery = { orgId, accountStatus: { $ne: 'inactive' } };
+  const totalUsers = await User.countDocuments(activeUserQuery);
   const pendingUsers = await User.countDocuments({ orgId, accountStatus: 'pending' });
-  const activeUsers = await User.countDocuments({ orgId, accountStatus: 'active' });
-  const unassignedUsers = await User.countDocuments({
-    orgId,
-    teamId: await Team.findOne({ orgId, name: 'Unassigned' }).then((t) => t?._id),
+  const directorySyncedUsers = await User.countDocuments({
+    ...activeUserQuery,
+    source: { $in: ['slack', 'google_workspace', 'google_chat', 'microsoft', 'hr_import'] },
   });
+  const activeUsers = await User.countDocuments({ orgId, accountStatus: 'active' });
+  const unassignedTeam = await Team.findOne({ orgId, name: 'Unassigned' }).select('_id').lean();
+  const unassignedUsers = unassignedTeam
+    ? await User.countDocuments({
+        ...activeUserQuery,
+        teamId: unassignedTeam._id,
+      })
+    : 0;
 
   return {
     totalUsers,
     pendingUsers,
+    directorySyncedUsers,
+    unclaimedUsers: pendingUsers,
     activeUsers,
     unassignedUsers,
     lastSlackSync: org.integrations?.slack?.lastEmployeeSync,

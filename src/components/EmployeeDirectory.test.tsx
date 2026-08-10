@@ -49,7 +49,7 @@ beforeEach(() => {
             _id: 'employee-1',
             name: 'Ada Example',
             email: 'ada@company.example',
-            accountStatus: 'active',
+            accountStatus: 'pending',
             source: 'microsoft',
             role: 'viewer',
             teamId: 'unassigned-team',
@@ -67,8 +67,10 @@ beforeEach(() => {
       return Promise.resolve({
         data: {
           totalUsers: 1,
-          pendingUsers: 0,
-          activeUsers: 1,
+          pendingUsers: 1,
+          directorySyncedUsers: 1,
+          unclaimedUsers: 1,
+          activeUsers: 0,
           unassignedUsers: 1,
           slackConnected: false,
           googleConnected: false,
@@ -104,6 +106,15 @@ beforeEach(() => {
       data: { message: 'Employee profile deleted successfully' },
     })
   );
+});
+
+test('labels synced directory people without pending account wording', async () => {
+  render(<EmployeeDirectory />);
+
+  expect(await screen.findAllByText('Synced')).toBeTruthy();
+  expect(screen.getByText('Directory Synced')).toBeTruthy();
+  expect(screen.queryByText('Pending')).toBeNull();
+  expect(screen.queryByText('Pending (Not Claimed)')).toBeNull();
 });
 
 test('scans the inferred website, applies strong matches, and reports the result in the card', async () => {

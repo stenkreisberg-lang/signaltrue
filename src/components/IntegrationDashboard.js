@@ -9,6 +9,7 @@ import {
   TrendingUp,
   BarChart3,
   Mail,
+  MessageSquare,
   Video,
   FileText,
   Briefcase,
@@ -24,8 +25,51 @@ import {
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
+const CORE_OAUTH_START_PATHS = {
+  'microsoft-outlook': '/api/integrations/microsoft/oauth/start?scope=outlook',
+  'microsoft-teams': '/api/integrations/microsoft/oauth/start?scope=teams',
+  slack: '/api/integrations/slack/oauth/start',
+  'google-calendar': '/api/integrations/google/oauth/start?scope=calendar',
+  'google-chat': '/api/integrations/google-chat/oauth/start',
+};
+
 // Integration definitions with icons and descriptions
 const INTEGRATIONS = {
+  'microsoft-outlook': {
+    name: 'Microsoft Outlook',
+    icon: Mail,
+    color: 'bg-teal-700',
+    description: 'Track calendar and meeting metadata',
+    signals: ['Meeting load', 'Calendar gaps', 'After-hours coordination'],
+  },
+  'microsoft-teams': {
+    name: 'Microsoft Teams',
+    icon: MessageSquare,
+    color: 'bg-teal-700',
+    description: 'Track Teams collaboration metadata',
+    signals: ['Collaboration load', 'After-hours messaging', 'Channel activity'],
+  },
+  slack: {
+    name: 'Slack',
+    icon: MessageSquare,
+    color: 'bg-teal-700',
+    description: 'Track Slack collaboration metadata',
+    signals: ['Collaboration load', 'After-hours messaging', 'Channel activity'],
+  },
+  'google-calendar': {
+    name: 'Google Calendar',
+    icon: Video,
+    color: 'bg-teal-700',
+    description: 'Track calendar and meeting metadata',
+    signals: ['Meeting load', 'Calendar gaps', 'After-hours coordination'],
+  },
+  'google-chat': {
+    name: 'Google Chat',
+    icon: MessageSquare,
+    color: 'bg-teal-700',
+    description: 'Track Chat collaboration metadata',
+    signals: ['Collaboration load', 'After-hours messaging', 'Space activity'],
+  },
   jira: {
     name: 'Jira',
     icon: LayoutGrid,
@@ -104,6 +148,9 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           connected: integration.status === 'connected',
           coverage: integration.coverage?.percent || 0,
           signals_enabled: integration.whatWeMeasure?.length || 0,
+          last_sync: integration.lastSync,
+          sync_status: integration.lastSyncStatus,
+          sync_error: integration.statusMessage,
           ...integration,
         }))
       );
@@ -121,6 +168,13 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   // Start OAuth flow
   const connectIntegration = async (source) => {
     const token = localStorage.getItem('token');
+    const coreOauthPath = CORE_OAUTH_START_PATHS[source];
+    if (coreOauthPath) {
+      const separator = coreOauthPath.includes('?') ? '&' : '?';
+      window.location.href = `${API_BASE}${coreOauthPath}${separator}token=${encodeURIComponent(token || '')}`;
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/oauth/start?format=json`, {
         headers: { Authorization: `Bearer ${token}` },

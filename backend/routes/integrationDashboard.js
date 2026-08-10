@@ -32,6 +32,11 @@ router.get('/status', authenticateToken, async (req, res) => {
 
     // Build response for all integration types
     const integrationTypes = [
+      { type: 'microsoft-outlook', name: 'Microsoft Outlook', category: 'Meetings & Email' },
+      { type: 'microsoft-teams', name: 'Microsoft Teams', category: 'Communication' },
+      { type: 'slack', name: 'Slack', category: 'Communication' },
+      { type: 'google-calendar', name: 'Google Calendar', category: 'Meetings' },
+      { type: 'google-chat', name: 'Google Chat', category: 'Communication' },
       { type: 'jira', name: 'Jira', category: 'Project Management' },
       { type: 'asana', name: 'Asana', category: 'Project Management' },
       { type: 'gmail', name: 'Gmail', category: 'Communication' },
@@ -554,6 +559,11 @@ router.post('/:type/sync', authenticateToken, async (req, res) => {
 
 function isIntegrationAvailable(type) {
   const envVars = {
+    'microsoft-outlook': 'MS_APP_CLIENT_ID',
+    'microsoft-teams': 'MS_APP_CLIENT_ID',
+    slack: 'SLACK_CLIENT_ID',
+    'google-calendar': 'GOOGLE_CLIENT_ID',
+    'google-chat': 'GOOGLE_CLIENT_ID',
     jira: 'JIRA_CLIENT_ID',
     asana: 'ASANA_CLIENT_ID',
     gmail: 'GOOGLE_CLIENT_ID',
@@ -569,6 +579,36 @@ function isIntegrationAvailable(type) {
 
 function getWhatWeMeasure(type) {
   const measures = {
+    'microsoft-outlook': [
+      'Scheduled meeting counts and duration',
+      'Participant-hour load by eligible team',
+      'Calendar gap and after-hours meeting patterns',
+      'Coverage of mapped internal attendees',
+    ],
+    'microsoft-teams': [
+      'Message volume and timing patterns',
+      'After-hours collaboration metadata',
+      'Team/channel activity changes',
+      'Coverage of mapped internal participants',
+    ],
+    slack: [
+      'Message volume and timing patterns',
+      'After-hours collaboration metadata',
+      'Channel activity changes',
+      'Coverage of mapped internal participants',
+    ],
+    'google-calendar': [
+      'Scheduled meeting counts and duration',
+      'Participant-hour load by eligible team',
+      'Calendar gap and after-hours meeting patterns',
+      'Coverage of mapped internal attendees',
+    ],
+    'google-chat': [
+      'Message volume and timing patterns',
+      'After-hours collaboration metadata',
+      'Space activity changes',
+      'Coverage of mapped internal participants',
+    ],
     jira: [
       'Task completion rates and cycle time',
       'Work-in-progress saturation',

@@ -1,7 +1,10 @@
 import express from 'express';
 import Team from '../models/team.js';
 import User from '../models/user.js';
+import WorkEvent from '../models/workEvent.js';
+import Organization from '../models/organizationModel.js';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
+import { refreshTeamSizes } from '../services/employeeSyncService.js';
 
 const router = express.Router();
 
@@ -22,7 +25,10 @@ router.get('/organization', authenticateToken, async (req, res) => {
     // Get member counts for each team
     const teamsWithCounts = await Promise.all(
       teams.map(async (team) => {
-        const memberCount = await User.countDocuments({ teamId: team._id });
+        const memberCount = await User.countDocuments({
+          teamId: team._id,
+          accountStatus: { $ne: 'inactive' },
+        });
         return {
           ...team.toObject(),
           memberCount,
@@ -288,6 +294,14 @@ router.put(
       const oldTeamId = user.teamId;
       user.teamId = teamId;
       await user.save();
+      await WorkEvent.updateMany(
+        { orgId: user.orgId, actorUserId: user._id },
+        { $set: { teamId: team._id } }
+      );
+
+      const org = await Organization.findById(user.orgId).select('settings.minTeamSize').lean();
+      const minTeamSize = Math.max(5, Number(org?.settings?.minTeamSize) || 5);
+      await refreshTeamSizes(user.orgId, minTeamSize);
 
       res.json({
         message: 'User moved to new team successfully',

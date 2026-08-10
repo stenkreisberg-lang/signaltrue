@@ -193,7 +193,7 @@ class OrgIntegrationAdapter {
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
-    const totalUsers = await User.countDocuments({ orgId });
+    const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
     const mappedUsers = new Set(
       workEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
     ).size;
@@ -385,7 +385,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
-    const totalUsers = await User.countDocuments({ orgId });
+    const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
 
     const updateForType = async (integrationType, source) => {
       const sourceEvents = workEvents.filter((event) => event.source === source);

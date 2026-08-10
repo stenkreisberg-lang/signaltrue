@@ -31,6 +31,8 @@ interface Team {
 interface SyncStatus {
   totalUsers: number;
   pendingUsers: number;
+  directorySyncedUsers?: number;
+  unclaimedUsers?: number;
   activeUsers: number;
   unassignedUsers: number;
   lastSlackSync?: string;
@@ -517,7 +519,7 @@ const EmployeeDirectory: React.FC = () => {
     } else if (filter === 'unassigned') {
       filtered = filtered.filter((e) => !e.teamName || e.teamName === 'Unassigned');
     } else if (filter === 'pending') {
-      filtered = filtered.filter((e) => e.accountStatus === 'pending');
+      filtered = filtered.filter((e) => isDirectorySyncedEmployee(e));
     } else if (filter === 'active') {
       filtered = filtered.filter((e) => e.accountStatus === 'active');
     }
@@ -536,6 +538,9 @@ const EmployeeDirectory: React.FC = () => {
 
     return filtered;
   };
+
+  const isDirectorySyncedEmployee = (employee: Employee) =>
+    employee.accountStatus === 'pending' && !['manual', 'invitation'].includes(employee.source);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -557,17 +562,31 @@ const EmployeeDirectory: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (employee: Employee) => {
+    if (isDirectorySyncedEmployee(employee)) {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+          Synced
+        </span>
+      );
+    }
+
+    const { accountStatus: status } = employee;
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800',
       active: 'bg-green-100 text-green-800',
       inactive: 'bg-gray-100 text-gray-800',
     };
+    const labels = {
+      pending: 'Unclaimed',
+      active: 'Active',
+      inactive: 'Inactive',
+    };
     return (
       <span
         className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status as keyof typeof styles] || styles.inactive}`}
       >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {labels[status as keyof typeof labels] || status}
       </span>
     );
   };
@@ -628,12 +647,14 @@ const EmployeeDirectory: React.FC = () => {
               <div className="text-sm text-gray-600">Total Employees</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-yellow-600">{syncStatus.pendingUsers}</div>
-              <div className="text-sm text-gray-600">Pending (Not Claimed)</div>
+              <div className="text-3xl font-bold text-blue-600">
+                {syncStatus.directorySyncedUsers ?? syncStatus.pendingUsers}
+              </div>
+              <div className="text-sm text-gray-600">Directory Synced</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600">{syncStatus.activeUsers}</div>
-              <div className="text-sm text-gray-600">Active</div>
+              <div className="text-sm text-gray-600">Claimed Logins</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600">{syncStatus.unassignedUsers}</div>
@@ -1035,7 +1056,7 @@ const EmployeeDirectory: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Pending
+              Synced
             </button>
             <button
               onClick={() => setFilter('active')}
@@ -1209,7 +1230,7 @@ const EmployeeDirectory: React.FC = () => {
                         {employee.teamName || 'Unassigned'}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{getStatusBadge(employee.accountStatus)}</td>
+                    <td className="px-4 py-3">{getStatusBadge(employee)}</td>
                     <td className="px-4 py-3">{getSourceBadge(employee.source)}</td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[230px] items-center gap-2">
