@@ -277,6 +277,7 @@ export function classifyEmployeeCandidate(candidate = {}, options = {}) {
 }
 
 export function classifyUserDirectoryRecord(user, options = {}) {
+  const includeProfileForServiceDetection = options.includeProfileForServiceDetection === true;
   return classifyEmployeeCandidate(
     {
       email: user.email,
@@ -284,14 +285,14 @@ export function classifyUserDirectoryRecord(user, options = {}) {
       lastName: user.lastName,
       name: user.name,
       displayName: user.name,
-      title: user.profile?.title,
-      department: user.profile?.department,
+      title: includeProfileForServiceDetection ? user.profile?.title : undefined,
+      department: includeProfileForServiceDetection ? user.profile?.department : undefined,
       isBot: user.profile?.isBot,
       isResource: user.profile?.isResource,
       source: user.source,
     },
     {
-      requireExplicitNameParts: options.requireExplicitNameParts ?? user.source === 'microsoft',
+      requireExplicitNameParts: options.requireExplicitNameParts ?? false,
     }
   );
 }

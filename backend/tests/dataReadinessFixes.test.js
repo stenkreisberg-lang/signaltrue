@@ -5,7 +5,10 @@ import {
   MIN_TEAM_SIZE,
   suppressMetricIfTooFew,
 } from '../utils/privacyGate.js';
-import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
+import {
+  classifyEmployeeCandidate,
+  classifyUserDirectoryRecord,
+} from '../utils/employeeIdentity.js';
 import { normalizeDepartmentName } from '../services/employeeSyncService.js';
 import {
   fetchGraphCollection,
@@ -156,6 +159,32 @@ describe('directory mapping', () => {
       ok: true,
       firstName: 'Ada',
       lastName: 'Lovelace',
+    });
+  });
+
+  test('existing Microsoft records can be cleaned without deleting real display names', () => {
+    expect(
+      classifyUserDirectoryRecord({
+        email: 'alo.latt@nobeldigital.ee',
+        name: 'Alo Lätt',
+        source: 'microsoft',
+        profile: { department: 'Klienditugi' },
+      })
+    ).toMatchObject({
+      ok: true,
+      firstName: 'Alo',
+      lastName: 'Lätt',
+    });
+
+    expect(
+      classifyUserDirectoryRecord({
+        email: 'seo.haldus@nobeldigital.ee',
+        name: 'Seo Haldus',
+        source: 'microsoft',
+      })
+    ).toMatchObject({
+      ok: false,
+      reason: 'non_employee_resource_or_service_account',
     });
   });
 });
