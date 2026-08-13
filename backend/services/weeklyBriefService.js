@@ -622,8 +622,9 @@ export async function generateWeeklyBrief(orgId) {
   const sixWeekStart = new Date(thisWeekStart);
   sixWeekStart.setDate(sixWeekStart.getDate() - 42); // 6 full weeks before this week
 
-  // ─── Data coverage: how many users have calendar events this week ───
-  const totalUsers = await User.countDocuments({ orgId: org._id });
+  // ─── Data coverage: active directory size and measured activity this week ───
+  const activeUserQuery = { orgId: org._id, accountStatus: { $ne: 'inactive' } };
+  const totalUsers = await User.countDocuments(activeUserQuery);
   const usersWithDataThisWeek = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
     source: { $in: ['microsoft-outlook', 'google-calendar'] },
@@ -877,8 +878,15 @@ export async function generateWeeklyBrief(orgId) {
     $or: [{ teamId: null }, { teamId: { $exists: false } }],
     timestamp: { $gte: thisWeekStart, $lte: now },
   });
+  const totalActivityEvents = twEvents.reduce((sum, event) => sum + event.count, 0);
+  const mappedActorEventCount = Math.max(totalActivityEvents - unmappedActorEvents, 0);
+  const mappedTeamEventCount = Math.max(totalActivityEvents - unmappedTeamEvents, 0);
+  const userActivityCoveragePct =
+    totalUsers > 0 ? Math.round((mappedActorCount.length / totalUsers) * 100) : 0;
+  const teamAttributionPct =
+    totalActivityEvents > 0 ? Math.round((mappedTeamEventCount / totalActivityEvents) * 100) : 0;
   const teamMemberCounts = await User.aggregate([
-    { $match: { orgId: org._id } },
+    { $match: activeUserQuery },
     { $group: { _id: '$teamId', count: { $sum: 1 } } },
   ]);
   const teamEventCounts = await WorkEvent.aggregate([
@@ -927,21 +935,29 @@ export async function generateWeeklyBrief(orgId) {
   });
 
   const mappingCoveragePct =
-    totalUsers > 0 ? Math.round((mappedActorCount.length / totalUsers) * 100) : 0;
+    totalActivityEvents > 0 ? Math.round((mappedActorEventCount / totalActivityEvents) * 100) : 0;
   const eligibleTeamReadiness = teamReadiness.filter(
     (item) => !['Excluded (catch-all)', 'Suppressed'].includes(item.status)
   );
   const readyTeamCount = eligibleTeamReadiness.filter(
     (item) => item.status === 'Ready for scoring'
   ).length;
+  const requiredReadyTeamCount =
+    eligibleTeamReadiness.length === 0
+      ? 0
+      : eligibleTeamReadiness.length <= 4
+        ? Math.max(1, eligibleTeamReadiness.length - 1)
+        : Math.ceil(eligibleTeamReadiness.length * 0.8);
   const teamCoveragePct =
     eligibleTeamReadiness.length > 0
       ? Math.round((readyTeamCount / eligibleTeamReadiness.length) * 100)
       : 0;
+  const hasEnoughTeamCoverage =
+    eligibleTeamReadiness.length === 0 || readyTeamCount >= requiredReadyTeamCount;
   const dataReadinessStatus =
-    mappingCoveragePct >= 80 && teamCoveragePct >= 80
+    mappingCoveragePct >= 80 && hasEnoughTeamCoverage
       ? 'Ready'
-      : mappingCoveragePct >= 40
+      : mappingCoveragePct >= 80 || userActivityCoveragePct >= 40
         ? 'Partial'
         : 'Needs mapping';
   const dataReadinessColor =
@@ -1053,7 +1069,9 @@ export async function generateWeeklyBrief(orgId) {
 
   // Coverage regression: the one thing that got worse should never go unflagged
   const coverageRegressed =
-    lastWeekMappedActors.length > 0 && mappedActorCount.length < lastWeekMappedActors.length * 0.8;
+    mappingCoveragePct < 80 &&
+    lastWeekMappedActors.length > 0 &&
+    mappedActorCount.length < lastWeekMappedActors.length * 0.8;
 
   // ─── Grade last week's prediction (self-grading track record) ───
   const gradingCtx = { tw, twMeetings, twMessages };
@@ -1143,9 +1161,9 @@ export async function generateWeeklyBrief(orgId) {
     // Verdict: honest, short, no scores
     html += `<div style="padding:22px 34px;border-bottom:1px solid #e2e8f0;">`;
     html += `<h2 style="margin:0 0 8px 0;font-size:20px;font-weight:750;">Data setup is incomplete — modeled scores are paused</h2>`;
-    html += `<p style="${S.p}">Only <strong>${mappedActorCount.length} of ${totalUsers} users (${mappingCoveragePct}%)</strong> and <strong>${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams</strong> have enough mapped activity this week. Modeled work-pattern conclusions are paused until both reach 80% coverage.</p>`;
+    html += `<p style="${S.p}">Only <strong>${mappedActorEventCount} of ${totalActivityEvents} activity events (${mappingCoveragePct}%)</strong> are mapped to users, and <strong>${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams</strong> have enough mapped activity this week. Modeled work-pattern conclusions are paused until activity attribution is at least 80% and enough eligible teams are ready.</p>`;
     if (coverageRegressed) {
-      html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage went down:</strong> ${lastWeekMappedActors.length} mapped users last week → ${mappedActorCount.length} this week. Something changed in your integrations or user mapping — this is the most important thing to investigate.</p></div>`;
+      html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage went down:</strong> represented users dropped from ${lastWeekMappedActors.length} last period to ${mappedActorCount.length} this period while event attribution is below target. Check integrations and user mapping.</p></div>`;
     }
     html += `</div>`;
 
@@ -1201,12 +1219,14 @@ export async function generateWeeklyBrief(orgId) {
         reviewWindow: 'After the next sync',
       });
     }
-    setupSteps.push({
-      title: 'Map users',
-      detail: `${totalUsers - mappedActorCount.length} user(s) have no mapped activity. In Settings > Employees, re-run the employee sync and match integration accounts to SignalTrue users.`,
-      owner: 'IT / Admin',
-      reviewWindow: 'After the next sync',
-    });
+    if (mappingCoveragePct < 80) {
+      setupSteps.push({
+        title: 'Map activity events',
+        detail: `${unmappedActorEvents} of ${totalActivityEvents} event(s) have no user attribution. In Settings > Employees, re-run the employee sync and match integration accounts to SignalTrue users.`,
+        owner: 'IT / Admin',
+        reviewWindow: 'After the next sync',
+      });
+    }
     setupSteps.push({
       title: 'Assign teams',
       detail: `${eligibleTeamReadiness.length - readyTeamCount} eligible team(s) are not ready${unmappedTeamEvents > 0 ? `, and ${unmappedTeamEvents} event(s) have no team attribution` : ''}. Review directory departments, then use public website suggestions for remaining unassigned people. Every suggested change requires admin approval.`,
@@ -1216,7 +1236,7 @@ export async function generateWeeklyBrief(orgId) {
     setupSteps.slice(0, 3).forEach((step, i) => {
       html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}. ${step.title}:</strong> ${step.detail}</p></div>`;
     });
-    html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when mapped-user and eligible-team readiness are both at least 80%.</p>`;
+    html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when activity attribution is at least 80% and enough eligible teams have mapped activity.</p>`;
     html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/employees" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Review team setup</a></div>`;
     html += `</div>`;
 
@@ -1239,8 +1259,8 @@ export async function generateWeeklyBrief(orgId) {
 
     // Footer
     html += `<div style="padding:17px 34px;background:#f8fafc;border-top:1px solid #e2e8f0;">`;
-    html += `<p style="${S.pSmall}">Mapping coverage: <strong>${mappingCoveragePct}%</strong> of users${lastWeekMappedActors.length > 0 ? ` (last week: ${totalUsers > 0 ? Math.round((lastWeekMappedActors.length / totalUsers) * 100) : 0}%)` : ''} · ${weeksOfHistory} week(s) of data history collected — baselines keep building while you fix mapping.</p>`;
-    html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses modeled scores rather than reporting numbers built on ${mappingCoveragePct}% coverage.</p>`;
+    html += `<p style="${S.pSmall}">Activity attribution: <strong>${mappingCoveragePct}%</strong> of events · ${mappedActorCount.length}/${totalUsers} directory users represented in this period · ${weeksOfHistory} week(s) of data history collected.</p>`;
+    html += `<p style="${S.pSmall}">This is a shortened setup brief. SignalTrue suppresses modeled scores rather than reporting numbers built on incomplete attribution.</p>`;
     html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()}</p>`;
     html += `</div></div>`;
 
@@ -1253,20 +1273,26 @@ export async function generateWeeklyBrief(orgId) {
         status: {
           label: 'Data setup is incomplete',
           evidenceGrade: 'Low',
-          summary: `Only ${mappedActorCount.length} of ${totalUsers} users and ${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams have enough mapped activity. Modeled conclusions are paused until both reach 80% coverage.`,
+          summary: `Only ${mappedActorEventCount} of ${totalActivityEvents} activity events are mapped to users, and ${readyTeamCount} of ${eligibleTeamReadiness.length} eligible teams have enough mapped activity. Modeled conclusions are paused until activity attribution and team readiness improve.`,
           baselineWeeks: weeksOfHistory,
           contextTags: contextTags.map((item) => item.tag),
         },
         coverage: {
           status: dataReadinessStatus,
           mappingCoveragePct,
+          eventMappingCoveragePct: mappingCoveragePct,
+          teamAttributionPct,
+          userActivityCoveragePct,
           teamCoveragePct,
           mappedUsers: mappedActorCount.length,
           totalUsers,
+          mappedEvents: mappedActorEventCount,
+          totalEvents: totalActivityEvents,
           mappedTeams: mappedTeamCount.length,
           totalTeams: teams.length,
           readyTeams: readyTeamCount,
           eligibleTeams: eligibleTeamReadiness.length,
+          requiredReadyTeams: requiredReadyTeamCount,
           unmappedUserEvents: unmappedActorEvents,
           unmappedTeamEvents,
           coverageRegressed,
@@ -1633,7 +1659,7 @@ export async function generateWeeklyBrief(orgId) {
   const verdictSummary =
     dataReadinessStatus === 'Ready'
       ? orgStatus.reason
-      : `SignalTrue is receiving workplace metadata, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Modeled work-pattern conclusions are unavailable until mapping coverage improves.`;
+      : `SignalTrue is receiving workplace metadata, but ${mappedActorEventCount}/${totalActivityEvents} activity events are mapped to users and ${readyTeamCount}/${eligibleTeamReadiness.length} eligible teams are ready this week. Modeled work-pattern conclusions are unavailable until attribution and team readiness improve.`;
 
   // If no observations were generated but we have data, add a neutral one
   if (observations.length === 0 && twTotal > 0) {
@@ -1972,7 +1998,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `<h4 style="${S.h4}">For IT / Admin</h4>`;
     html += `<div style="${S.recBox} border-left:3px solid #dc2626;">`;
     html += `<p style="${S.p} margin:0 0 4px 0;"><strong>Fix user and team mapping before acting on health signals.</strong></p>`;
-    html += `<p style="${S.pSmall} margin:0;">Microsoft/Teams/Calendar events are present, but only ${mappedActorCount.length}/${totalUsers} users and ${mappedTeamCount.length}/${teams.length} teams have mapped activity this week. Re-sync Microsoft users, confirm every user has a team, and verify event actor/team attribution.</p>`;
+    html += `<p style="${S.pSmall} margin:0;">Microsoft/Teams/Calendar events are present, but ${mappedActorEventCount}/${totalActivityEvents} activity events are mapped to users and ${readyTeamCount}/${eligibleTeamReadiness.length} eligible teams are ready this week. Re-sync Microsoft users, confirm every user has a team, and verify event actor/team attribution.</p>`;
     html += `</div>`;
   }
 
@@ -2521,13 +2547,13 @@ export async function generateWeeklyBrief(orgId) {
   html += `<h3 style="${S.h3} margin-top:0; font-size:13px; color:#64748b;">Appendix — Data readiness</h3>`;
   html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">`;
   html += `<span style="${S.badge(dataReadinessColor + '20', dataReadinessColor)}">${dataReadinessStatus}</span>`;
-  html += `<span style="${S.pSmall}">Mapped users: <strong>${mappedActorCount.length}/${totalUsers}</strong> · Mapped teams: <strong>${mappedTeamCount.length}/${teams.length}</strong> · Unmapped events: <strong>${unmappedActorEvents}</strong></span>`;
+  html += `<span style="${S.pSmall}">Activity attribution: <strong>${mappedActorEventCount}/${totalActivityEvents}</strong> · Users represented: <strong>${mappedActorCount.length}/${totalUsers}</strong> · Team attribution: <strong>${mappedTeamEventCount}/${totalActivityEvents}</strong></span>`;
   html += `</div>`;
   if (coverageRegressed) {
-    html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage regression:</strong> mapped users dropped from ${lastWeekMappedActors.length} last week to ${mappedActorCount.length} this week. Check integrations and user mapping — declining coverage quietly degrades every score in this report.</p></div>`;
+    html += `<div style="${S.alertBox}"><p style="${S.p} margin:0;"><strong>Coverage regression:</strong> represented users dropped from ${lastWeekMappedActors.length} last period to ${mappedActorCount.length} this period while event attribution is below target. Check integrations and user mapping.</p></div>`;
   }
   if (dataReadinessStatus !== 'Ready') {
-    html += `<p style="${S.pSmall}">${mappingCoveragePct}% of users and ${teamCoveragePct}% of teams have mapped activity. Named-team insights below full strength until Microsoft/Google/Slack events are attributed to users and teams.${unmappedTeamEvents > 0 ? ` ${unmappedTeamEvents} event(s) have no team mapping.` : ''}</p>`;
+    html += `<p style="${S.pSmall}">${mappingCoveragePct}% of activity events are attributed to users and ${teamCoveragePct}% of eligible teams are ready. Named-team insights below full strength until Microsoft/Google/Slack events are attributed to users and teams.${unmappedTeamEvents > 0 ? ` ${unmappedTeamEvents} event(s) have no team mapping.` : ''}</p>`;
   }
   if (integrationConnections.length > 0) {
     html += `<table style="${S.table}; margin-top:8px;">`;
@@ -2789,13 +2815,19 @@ export async function generateWeeklyBrief(orgId) {
       coverage: {
         status: dataReadinessStatus,
         mappingCoveragePct,
+        eventMappingCoveragePct: mappingCoveragePct,
+        teamAttributionPct,
+        userActivityCoveragePct,
         teamCoveragePct,
         mappedUsers: mappedActorCount.length,
         totalUsers,
+        mappedEvents: mappedActorEventCount,
+        totalEvents: totalActivityEvents,
         mappedTeams: mappedTeamCount.length,
         totalTeams: teams.length,
         readyTeams: readyTeamCount,
         eligibleTeams: eligibleTeamReadiness.length,
+        requiredReadyTeams: requiredReadyTeamCount,
         unmappedUserEvents: unmappedActorEvents,
         unmappedTeamEvents,
         coverageRegressed,

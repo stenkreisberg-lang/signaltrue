@@ -151,8 +151,11 @@ export async function backfillWorkEventAttribution(orgId, { since = null, source
   return { scanned: events.length, matched, updated };
 }
 
-export async function updateConnectionCoverageFromEvents(orgId, { since = null, sources = null } = {}) {
-  const totalUsers = await User.countDocuments({ orgId });
+export async function updateConnectionCoverageFromEvents(
+  orgId,
+  { since = null, sources = null } = {}
+) {
+  const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
   const sourceToIntegration = {
     slack: 'slack',
     'microsoft-outlook': 'microsoft-outlook',

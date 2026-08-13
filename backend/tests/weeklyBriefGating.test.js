@@ -82,11 +82,28 @@ async function seedMeetingEvents(org, teamA, users, count) {
   await WorkEvent.insertMany(docs);
 }
 
+async function seedUnmappedEvents(org, count) {
+  const docs = [];
+  for (let i = 0; i < count; i++) {
+    docs.push({
+      orgId: org._id,
+      source: 'microsoft-outlook',
+      eventType: 'meeting',
+      actorUserId: null,
+      teamId: null,
+      timestamp: daysAgo(1),
+      externalId: `test-unmapped-${org._id}-${i}`,
+    });
+  }
+  await WorkEvent.insertMany(docs);
+}
+
 describe('hard readiness gate (setup mode)', () => {
-  test('low mapping coverage produces a setup-only brief with no health scores', async () => {
+  test('low event attribution produces a setup-only brief with no health scores', async () => {
     const { org, teamA, users } = await seedOrg();
-    // Only 2/10 users mapped → ~20% coverage → "Needs mapping"
+    // Most events lack actor/team attribution, so the report must stay setup-only.
     await seedMeetingEvents(org, teamA, users, 2);
+    await seedUnmappedEvents(org, 12);
     await IntegrationConnection.create({
       orgId: org._id,
       integrationType: 'microsoft-teams',
@@ -116,15 +133,19 @@ describe('hard readiness gate (setup mode)', () => {
     expect(snapshot.payload.coverage.mappingCoveragePct).toBeLessThan(40);
   });
 
-  test('partial user coverage remains setup-only even when one team is privacy-eligible', async () => {
+  test('partial represented users can still produce a full report when events are attributed', async () => {
     const { org, teamA, users } = await seedOrg();
     await seedMeetingEvents(org, teamA, users, 5);
 
     const html = await generateWeeklyBrief(org._id);
 
-    expect(html).toContain('Setup Required');
-    expect(html).toContain('modeled scores are paused');
-    expect(html).not.toContain('Week-over-week comparison');
+    expect(html).toContain('Weekly Intelligence Brief');
+    expect(html).toContain('Week-over-week comparison');
+
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+    expect(snapshot.reportMode).toBe('full');
+    expect(snapshot.payload.coverage.mappingCoveragePct).toBe(100);
+    expect(snapshot.payload.coverage.userActivityCoveragePct).toBe(50);
   });
 });
 

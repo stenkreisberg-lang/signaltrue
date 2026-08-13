@@ -389,35 +389,47 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
 
     const updateForType = async (integrationType, source) => {
       const sourceEvents = workEvents.filter((event) => event.source === source);
-      if (sourceEvents.length === 0) return;
 
       const coverageStart = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000);
-      const mappedUsers = (
-        await WorkEvent.distinct('actorUserId', {
+      const [sourceEventCount, mappedUsers] = await Promise.all([
+        WorkEvent.countDocuments({
+          orgId,
+          source,
+          timestamp: { $gte: coverageStart },
+        }),
+        WorkEvent.distinct('actorUserId', {
           orgId,
           source,
           timestamp: { $gte: coverageStart },
           actorUserId: { $ne: null },
-        })
-      ).length;
+        }),
+      ]);
+      const mappedUserCount = mappedUsers.length;
+      const hasMappedHistory = mappedUserCount > 0;
 
       const setPayload = {
-        status: mappedUsers > 0 ? 'connected' : 'needs_admin',
+        status: hasMappedHistory ? 'connected' : 'needs_admin',
         statusMessage:
-          mappedUsers > 0
-            ? 'Microsoft metadata is syncing and mapped to internal users'
-            : 'Microsoft metadata is syncing, but events are not mapped to internal users',
+          sourceEvents.length === 0 && hasMappedHistory
+            ? 'Microsoft metadata is connected; no new events were found in the latest sync'
+            : hasMappedHistory
+              ? 'Microsoft metadata is syncing and mapped to internal users'
+              : 'Microsoft metadata is syncing, but events are not mapped to internal users',
         statusUpdatedAt: new Date(),
         connectedAt: new Date(),
         'sync.lastSyncAt': new Date(),
-        'sync.lastSyncStatus': mappedUsers > 0 ? 'success' : 'partial',
+        'sync.lastSyncStatus': hasMappedHistory ? 'success' : 'partial',
         'sync.lastSyncEventsCount': sourceEvents.length,
         'coverage.totalUsers': totalUsers,
-        'coverage.mappedUsers': mappedUsers,
+        'coverage.mappedUsers': mappedUserCount,
         'coverage.lastCoverageUpdatedAt': new Date(),
         measurementScope: 'metadata only',
       };
-      if (mappedUsers > 0) setPayload['sync.lastSuccessfulSyncAt'] = new Date();
+      if (hasMappedHistory) setPayload['sync.lastSuccessfulSyncAt'] = new Date();
+      if (sourceEventCount === 0 && sourceEvents.length === 0) {
+        setPayload.statusMessage =
+          'Microsoft metadata is connected, but no Teams or Outlook events were found in the coverage window';
+      }
 
       await IntegrationConnection.findOneAndUpdate(
         { orgId, integrationType },
@@ -960,6 +972,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
               externalChannelId: event.channelId || event.channelIdentity?.channelId,
               externalMessageId: event.id,
               microsoftUserId: senderMsId,
+              eventSource: event.eventSource || 'teams',
               channelType: event.channelType || 'public',
               channelHash: hashMetadata(orgId, conversationId),
               threadIdHash: hashMetadata(orgId, event.replyToId || event.id),

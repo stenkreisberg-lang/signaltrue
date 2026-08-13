@@ -444,7 +444,7 @@ export default function LatestBrief() {
               history available.
             </p>
             <p>
-              <strong>{brief.coverage?.mappingCoveragePct || 0}%</strong> user mapping and{' '}
+              <strong>{brief.coverage?.mappingCoveragePct || 0}%</strong> activity attribution and{' '}
               <strong>{brief.coverage?.teamCoveragePct || 0}%</strong> eligible-team readiness.
             </p>
             <p>Evidence grades are rules, not confidence intervals or outcome probabilities.</p>
@@ -914,7 +914,7 @@ export default function LatestBrief() {
             <p className="text-2xl font-extrabold text-slate-900">
               {brief.coverage?.mappingCoveragePct}%
             </p>
-            <p className="text-xs text-slate-500">Mapped users</p>
+            <p className="text-xs text-slate-500">Activity attributed</p>
           </div>
           <div className="rounded-xl bg-slate-50 p-4">
             <p className="text-2xl font-extrabold text-slate-900">

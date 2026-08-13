@@ -10,6 +10,7 @@ import WeekContext from '../models/weekContext.js';
 
 const router = express.Router();
 const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin', 'executive'];
+const SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 function requireOrgContext(req, res, next) {
   if (!req.user?.orgId) {
@@ -20,7 +21,9 @@ function requireOrgContext(req, res, next) {
 
 async function loadOrGenerateLatest(orgId) {
   let snapshot = await getLatestWeeklyBriefSnapshot(orgId);
-  if (!snapshot) {
+  const generatedAt = snapshot?.generatedAt || snapshot?.updatedAt || snapshot?.createdAt;
+  const stale = !generatedAt || Date.now() - new Date(generatedAt).getTime() > SNAPSHOT_MAX_AGE_MS;
+  if (!snapshot || stale) {
     await generateWeeklyBrief(orgId);
     snapshot = await getLatestWeeklyBriefSnapshot(orgId);
   }
