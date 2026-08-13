@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 const links = [
   { to: '/app/overview', label: 'Overview' },
@@ -36,7 +36,17 @@ export function PageHeader({ eyebrow, title, description, action }) {
 
 export default function AppShell({ children, user, section, width = 'wide' }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigationRef = useRef(null);
   const isImpersonating = Boolean(localStorage.getItem('impersonation_token'));
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 1040px)').matches) return;
+
+    navigationRef.current
+      ?.querySelector('.app-nav-link.is-active')
+      ?.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+  }, [location.pathname]);
 
   const returnToSuperadmin = () => {
     const originalToken = localStorage.getItem('impersonation_token');
@@ -67,7 +77,7 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             <span className="app-brand-mark" />
             SignalTrue
           </Link>
-          <nav className="app-navigation" aria-label="Application navigation">
+          <nav ref={navigationRef} className="app-navigation" aria-label="Application navigation">
             {links
               .filter(
                 (link) =>

@@ -71,7 +71,7 @@ const SIGNAL_TYPE_PRESENTATION = {
     businessDescription:
       'People appear to have less time to recover between the last signal of one day and the first of the next.',
     whatItMeans:
-      'Sustained recovery loss often precedes strain, slower decisions, and burnout risk.',
+      'Sustained recovery loss is a work-condition exposure worth validating with team context.',
   },
   'context-switching': {
     family: 'Capacity Drift',

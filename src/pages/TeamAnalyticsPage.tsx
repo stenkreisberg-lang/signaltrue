@@ -75,7 +75,7 @@ const analyticsPatterns = [
       'Communication response delays',
     ],
     whyItMatters:
-      'When effort rises but forward motion slows, the team is compensating for structural problems. This predicts burnout and attrition.',
+      'When effort rises but forward motion slows, the team may be compensating for structural problems. Validate the pattern with delivery outcomes and direct team context.',
   },
 ];
 

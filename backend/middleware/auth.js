@@ -149,8 +149,15 @@ export function isMasterAdmin(user) {
   return user?.role === 'master_admin' && user?.isMasterAdmin === true;
 }
 
+export function referenceId(value) {
+  return value?._id || value?.id || value;
+}
+
 export function canAccessOrg(user, orgId) {
-  return isMasterAdmin(user) || String(user?.orgId || '') === String(orgId || '');
+  return (
+    isMasterAdmin(user) ||
+    String(referenceId(user?.orgId) || '') === String(referenceId(orgId) || '')
+  );
 }
 
 export function requireMasterAdmin(req, res, next) {
@@ -191,7 +198,10 @@ export function requireTeamAccess(paramName = 'teamId') {
       if (!canAccessOrg(req.user, team.orgId)) {
         return res.status(403).json({ message: 'Forbidden: Team access denied' });
       }
-      if (req.user?.role === 'manager' && String(req.user?.teamId || '') !== String(team._id)) {
+      if (
+        req.user?.role === 'manager' &&
+        String(referenceId(req.user?.teamId) || '') !== String(team._id)
+      ) {
         return res
           .status(403)
           .json({ message: 'Forbidden: Manager access is limited to their team' });

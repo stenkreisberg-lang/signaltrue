@@ -1,4 +1,6 @@
 import express from 'express';
+import OperationalOutcome from '../models/operationalOutcome.js';
+import Intervention from '../models/intervention.js';
 import Team from '../models/team.js';
 import {
   authenticateToken,
@@ -7,11 +9,27 @@ import {
   requireTeamAccess,
 } from '../middleware/auth.js';
 import { privacyGate, privacyGateOrg } from '../middleware/privacyGate.js';
+import { summarizeOutcomeEvidence } from '../services/outcomeAnalysisService.js';
 
 const router = express.Router();
 
-// POST /api/outcomes/team/:teamId/record
-// Record outcome metrics (turnover, absenteeism, delivery)
+function mondayString(value = new Date()) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const day = date.getUTCDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  date.setUTCDate(date.getUTCDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function optionalNonNegative(value) {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+// Record independent operational labels. SignalTrue never converts these into
+// a fabricated turnover multiplier or causal claim.
 router.post(
   '/team/:teamId/record',
   authenticateToken,
@@ -20,37 +38,70 @@ router.post(
   privacyGate,
   async (req, res) => {
     try {
-      const { teamId } = req.params;
-      const { turnoverCount, absenteeismDays, deliveryReliability } = req.body;
-
-      const team = await Team.findById(teamId);
+      const team = await Team.findById(req.params.teamId).select('_id orgId').lean();
       if (!team) return res.status(404).json({ message: 'Team not found' });
 
-      // Add to history (store in bdiHistory for now, could be separate collection)
-      if (!team.outcomeHistory) team.outcomeHistory = [];
-      team.outcomeHistory.unshift({
-        date: new Date(),
-        turnoverCount: turnoverCount || 0,
-        absenteeismDays: absenteeismDays || 0,
-        deliveryReliability: deliveryReliability || 100,
-      });
+      const weekStart = mondayString(req.body.weekStart || new Date());
+      if (!weekStart) return res.status(400).json({ message: 'Invalid weekStart' });
 
-      // Keep last 12 months
-      if (team.outcomeHistory.length > 12) {
-        team.outcomeHistory = team.outcomeHistory.slice(0, 12);
+      const voluntaryExits = optionalNonNegative(req.body.voluntaryExits ?? req.body.turnoverCount);
+      const absenceDays = optionalNonNegative(req.body.absenceDays ?? req.body.absenteeismDays);
+      const deliveryReliability = optionalNonNegative(req.body.deliveryReliability);
+      if (voluntaryExits == null && absenceDays == null && deliveryReliability == null) {
+        return res.status(400).json({ message: 'At least one measured outcome is required' });
       }
 
-      await team.save();
-      res.json({ message: 'Outcomes recorded', team });
-    } catch (err) {
-      console.error('Record outcomes error', err);
-      res.status(500).json({ message: err.message });
+      const records = [];
+      if (voluntaryExits != null || absenceDays != null) {
+        records.push(
+          await OperationalOutcome.findOneAndUpdate(
+            { orgId: team.orgId, teamId: team._id, weekStart, family: 'people' },
+            {
+              $set: {
+                orgId: team.orgId,
+                teamId: team._id,
+                weekStart,
+                family: 'people',
+                source: 'manual',
+                voluntaryExits,
+                absenceDays,
+                confidence: 'medium',
+              },
+            },
+            { upsert: true, new: true }
+          )
+        );
+      }
+      if (deliveryReliability != null) {
+        records.push(
+          await OperationalOutcome.findOneAndUpdate(
+            { orgId: team.orgId, teamId: team._id, weekStart, family: 'delivery' },
+            {
+              $set: {
+                orgId: team.orgId,
+                teamId: team._id,
+                weekStart,
+                family: 'delivery',
+                source: 'manual',
+                value: deliveryReliability,
+                label: 'delivery_reliability',
+                confidence: 'medium',
+              },
+            },
+            { upsert: true, new: true }
+          )
+        );
+      }
+
+      return res.json({ message: 'Measured outcomes recorded', records });
+    } catch (error) {
+      console.error('[Outcomes] Record error:', error);
+      return res.status(500).json({ message: error.message });
     }
   }
 );
 
-// GET /api/outcomes/org/:orgId/analysis
-// Analyze correlation between BDI patterns and outcomes
+// Summarize only recorded outcomes and measured before/after action reviews.
 router.get(
   '/org/:orgId/analysis',
   authenticateToken,
@@ -58,45 +109,42 @@ router.get(
   privacyGateOrg,
   async (req, res) => {
     try {
-      const { orgId } = req.params;
-      const teams = (await Team.find({ orgId })).filter(
-        (team) => !req.suppressedTeamIds.has(team._id.toString())
-      );
+      const days = Math.min(365, Math.max(28, Number(req.query.days) || 180));
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const sinceWeek = since.toISOString().slice(0, 10);
+      const suppressed = req.suppressedTeamIds || new Set();
+      const orgTeams = await Team.find({ orgId: req.params.orgId }).select('_id').lean();
+      const visibleTeams = orgTeams
+        .filter((team) => !suppressed.has(String(team._id)))
+        .map((team) => team._id);
 
-      // Analyze teams that have been in Surge for >3 weeks
-      const surgeTeams = teams.filter((t) => {
-        if (!t.bdiHistory || t.bdiHistory.length < 3) return false;
-        const last3Weeks = t.bdiHistory.slice(0, 3);
-        return last3Weeks.every((h) => h.bdi >= 70); // Surge threshold
+      const [outcomes, interventions] = await Promise.all([
+        OperationalOutcome.find({
+          orgId: req.params.orgId,
+          teamId: { $in: visibleTeams },
+          weekStart: { $gte: sinceWeek },
+        })
+          .populate('teamId', 'name')
+          .sort({ weekStart: 1 })
+          .lean(),
+        Intervention.find({
+          orgId: req.params.orgId,
+          teamId: { $in: visibleTeams },
+          createdAt: { $gte: since },
+          'outcomeDelta.metricAfter': { $type: 'number' },
+        })
+          .populate('teamId', 'name')
+          .sort({ createdAt: -1 })
+          .lean(),
+      ]);
+
+      return res.json({
+        periodDays: days,
+        ...summarizeOutcomeEvidence(outcomes, interventions),
       });
-
-      // Compute turnover risk multiplier (simplified - would use actual data)
-      const avgTurnoverSurge = surgeTeams.length > 0 ? 1.8 : 1.0;
-      // Analyze Recovery teams and delivery reliability
-      const recoveryTeams = teams.filter((t) => t.zone === 'Recovery');
-      const avgDeliveryRecovery = recoveryTeams.length > 0 ? 112 : 100; // +12% improvement
-
-      const insights = [
-        {
-          pattern: 'Sustained Surge (>3 weeks)',
-          outcome: 'Turnover Risk',
-          multiplier: `${avgTurnoverSurge}x higher`,
-          affectedTeams: surgeTeams.length,
-          recommendation: 'Implement cooldown period and workload rebalancing',
-        },
-        {
-          pattern: 'Recovery Phase',
-          outcome: 'Delivery Reliability',
-          multiplier: `+${avgDeliveryRecovery - 100}% improvement`,
-          affectedTeams: recoveryTeams.length,
-          recommendation: 'Maintain supportive environment and celebrate wins',
-        },
-      ];
-
-      res.json({ insights, totalTeams: teams.length });
-    } catch (err) {
-      console.error('Outcomes analysis error', err);
-      res.status(500).json({ message: err.message });
+    } catch (error) {
+      console.error('[Outcomes] Analysis error:', error);
+      return res.status(500).json({ message: error.message });
     }
   }
 );

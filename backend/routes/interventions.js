@@ -5,11 +5,24 @@
 
 import express from 'express';
 import Intervention from '../models/intervention.js';
+import Signal from '../models/signal.js';
 import SignalV2 from '../models/signalV2.js';
 import MetricsDaily from '../models/metricsDaily.js';
-import { authenticateToken } from '../middleware/auth.js';
+import Team from '../models/team.js';
+import {
+  authenticateToken,
+  canAccessOrg,
+  isMasterAdmin,
+  referenceId,
+  requireOrganizationAccess,
+  requireTeamAccess,
+} from '../middleware/auth.js';
 import { requireTier } from '../middleware/checkTier.js';
 import { computeWorkNetworkInterventionOutcome } from '../services/workNetworkActionService.js';
+import {
+  getGovernanceSnapshot,
+  getSignalMeasurementTarget,
+} from '../config/measurementGovernance.js';
 
 const router = express.Router();
 
@@ -28,32 +41,71 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       signalType,
       actionTaken,
       actionType,
+      title,
+      description,
       expectedEffect,
       effort,
       timeframe,
       metricBefore,
+      targetMetric,
+      targetMetricLabel,
+      targetDirection,
+      ownerRole,
+      decisionRationale,
+      hypothesis,
+      consultationStatus,
     } = req.body;
 
     let resolvedTeamId = teamId;
     let resolvedOrgId = orgId;
     let resolvedSignalType = signalType;
     let resolvedMetricBefore = metricBefore;
+    let resolvedSignal = null;
 
     // If signalId provided, fetch signal context
     if (signalId) {
-      const signal = await SignalV2.findById(signalId);
-      if (!signal) {
+      resolvedSignal =
+        (await SignalV2.findOne({ _id: signalId, orgId: referenceId(req.user.orgId) })) ||
+        (await Signal.findOne({ _id: signalId, orgId: referenceId(req.user.orgId) }));
+      if (!resolvedSignal) {
         return res.status(404).json({ message: 'Signal not found' });
       }
-      resolvedTeamId = signal.teamId;
-      resolvedOrgId = signal.orgId;
-      resolvedSignalType = signal.signalType;
-      resolvedMetricBefore = metricBefore || signal.currentValue;
+      resolvedTeamId = resolvedSignal.teamId;
+      resolvedOrgId = resolvedSignal.orgId;
+      resolvedSignalType = resolvedSignal.signalType;
+      resolvedMetricBefore =
+        metricBefore ?? resolvedSignal.currentValue ?? resolvedSignal.deviation?.currentValue;
     } else if (!teamId || !orgId) {
       // Team-centric intervention requires teamId and orgId when no signalId
       return res
         .status(400)
         .json({ message: 'Either signalId or both teamId and orgId are required' });
+    }
+
+    if (!canAccessOrg(req.user, resolvedOrgId)) {
+      return res.status(403).json({ message: 'Forbidden: Organization access denied' });
+    }
+
+    const team = await Team.findOne({ _id: resolvedTeamId, orgId: resolvedOrgId })
+      .select('_id orgId')
+      .lean();
+    if (!team) return res.status(404).json({ message: 'Team not found' });
+    if (
+      req.user.role === 'manager' &&
+      String(referenceId(req.user.teamId) || '') !== String(referenceId(resolvedTeamId) || '')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Forbidden: Manager access is limited to their team' });
+    }
+
+    const configuredTarget = getSignalMeasurementTarget(resolvedSignalType);
+    const reviewStart = new Date();
+    const primaryReviewDate = addDays(reviewStart, 14);
+    const followUpReviewDate = addDays(reviewStart, 28);
+    const resolvedTitle = title || actionTaken;
+    if (!resolvedTitle) {
+      return res.status(400).json({ message: 'Action title is required' });
     }
 
     // Create intervention
@@ -62,12 +114,32 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       signalType: resolvedSignalType,
       teamId: resolvedTeamId,
       orgId: resolvedOrgId,
-      actionTaken,
+      title: resolvedTitle,
+      description,
+      actionTaken: actionTaken || resolvedTitle,
       actionType,
       expectedEffect,
       effort,
       timeframe,
-      startDate: new Date(),
+      targetMetric: targetMetric || configuredTarget?.metricKey,
+      targetMetricLabel: targetMetricLabel || configuredTarget?.metricLabel,
+      targetDirection: targetDirection || configuredTarget?.direction,
+      decision: {
+        ownerRole: ownerRole || 'Team lead',
+        rationale: decisionRationale,
+        hypothesis: hypothesis || expectedEffect,
+        selectedAt: reviewStart,
+      },
+      consultation: {
+        status: consultationStatus || 'not_needed',
+      },
+      evidenceSnapshot: buildEvidenceSnapshot(resolvedSignal, resolvedMetricBefore),
+      governance: getGovernanceSnapshot(),
+      startDate: reviewStart,
+      reviewDate: primaryReviewDate,
+      recheckDate: primaryReviewDate,
+      followUpReviewDate,
+      status: 'active',
       outcomeDelta: {
         metricBefore: resolvedMetricBefore,
       },
@@ -80,6 +152,7 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       message: 'Intervention logged successfully',
       intervention,
       recheckDate: intervention.recheckDate,
+      followUpReviewDate: intervention.followUpReviewDate,
     });
   } catch (error) {
     console.error('[Interventions] Error creating intervention:', error);
@@ -97,7 +170,7 @@ router.get('/pending', authenticateToken, requireTier('detection'), async (req, 
     const now = new Date();
 
     const pendingInterventions = await Intervention.find({
-      orgId: req.user.orgId,
+      orgId: referenceId(req.user.orgId),
       status: { $in: ['active', 'pending-recheck'] },
       recheckDate: { $lte: now },
     })
@@ -123,29 +196,64 @@ router.get('/pending', authenticateToken, requireTier('detection'), async (req, 
  * Get all interventions for a team
  * REQUIRES: Detection tier or higher (30-day history) or Impact Proof (90-day)
  */
-router.get('/team/:teamId', authenticateToken, requireTier('detection'), async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { status } = req.query;
+router.get(
+  '/team/:teamId',
+  authenticateToken,
+  requireTier('detection'),
+  requireTeamAccess(),
+  async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { status } = req.query;
 
-    const filter = { teamId };
-    if (status) {
-      filter.status = status;
+      const filter = { teamId, orgId: req.team.orgId };
+      if (status) filter.status = { $in: String(status).split(',') };
+
+      const interventions = await Intervention.find(filter)
+        .populate('signalId', 'signalType currentValue severity detectedAt')
+        .populate('createdBy', 'name email')
+        .populate('acknowledgedBy', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(50);
+
+      res.json({ interventions });
+    } catch (error) {
+      console.error('[Interventions] Error fetching team interventions:', error);
+      res.status(500).json({ message: 'Failed to fetch interventions', error: error.message });
     }
-
-    const interventions = await Intervention.find(filter)
-      .populate('signalId', 'signalType currentValue severity detectedAt')
-      .populate('createdBy', 'name email')
-      .populate('acknowledgedBy', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(50);
-
-    res.json({ interventions });
-  } catch (error) {
-    console.error('[Interventions] Error fetching team interventions:', error);
-    res.status(500).json({ message: 'Failed to fetch interventions', error: error.message });
   }
-});
+);
+
+/**
+ * GET /api/interventions/org/:orgId
+ * Organization-wide action register for HR and executive review.
+ */
+router.get(
+  '/org/:orgId',
+  authenticateToken,
+  requireTier('detection'),
+  requireOrganizationAccess(),
+  async (req, res) => {
+    try {
+      const filter = { orgId: req.params.orgId };
+      if (req.query.status) filter.status = { $in: String(req.query.status).split(',') };
+      if (req.query.teamId) filter.teamId = req.query.teamId;
+
+      const interventions = await Intervention.find(filter)
+        .populate('signalId', 'signalType currentValue severity detectedAt weekStart')
+        .populate('teamId', 'name')
+        .populate('createdBy', 'name email')
+        .populate('acknowledgedBy', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(100);
+
+      res.json({ interventions });
+    } catch (error) {
+      console.error('[Interventions] Error fetching organization interventions:', error);
+      res.status(500).json({ message: 'Failed to fetch interventions', error: error.message });
+    }
+  }
+);
 
 /**
  * PUT /api/interventions/:id/outcome
@@ -157,7 +265,7 @@ router.put('/:id/outcome', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { metricAfter, userNotes } = req.body;
 
-    const intervention = await Intervention.findById(id);
+    const intervention = await findAccessibleIntervention(req, id);
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
@@ -196,10 +304,7 @@ router.post('/:id/auto-compute', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const intervention = await Intervention.findOne({
-      _id: id,
-      orgId: req.user.orgId,
-    }).populate('signalId');
+    const intervention = await findAccessibleIntervention(req, id, { populateSignal: true });
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
@@ -224,19 +329,26 @@ router.post('/:id/auto-compute', authenticateToken, async (req, res) => {
       });
     }
 
+    const metricField = intervention.targetMetric || getMetricField(intervention.signalType);
+    if (!metricField) {
+      return res.status(422).json({
+        message:
+          'This action has no reproducible metric mapping. Add a target metric before measuring it.',
+      });
+    }
+
     // Fetch current metric value from recent metrics
     const recentMetric = await MetricsDaily.findOne({
       teamId: intervention.teamId,
       date: { $gte: intervention.recheckDate },
     })
       .sort({ date: -1 })
-      .select(getMetricField(intervention.signalType));
+      .select(metricField);
 
     if (!recentMetric) {
       return res.status(404).json({ message: 'No recent metric data available for auto-compute' });
     }
 
-    const metricField = getMetricField(intervention.signalType);
     const currentValue = recentMetric[metricField];
 
     if (currentValue === undefined) {
@@ -267,7 +379,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const intervention = await Intervention.findById(id);
+    const intervention = await findAccessibleIntervention(req, id);
     if (!intervention) {
       return res.status(404).json({ message: 'Intervention not found' });
     }
@@ -288,17 +400,47 @@ router.delete('/:id', authenticateToken, async (req, res) => {
  * Helper: Map signal type to metric field name
  */
 function getMetricField(signalType) {
-  const mapping = {
-    'coordination-risk': 'meetingLoadIndex',
-    'boundary-erosion': 'afterHoursActivity',
-    'execution-drag': 'responseLatency',
-    'focus-erosion': 'focusTime',
-    'morale-volatility': 'sentimentScore',
-    'dependency-spread': 'collaborationBreadth',
-    'recovery-deficit': 'recoveryScore',
-    'handoff-bottleneck': 'handoffDelay',
+  return getSignalMeasurementTarget(signalType)?.metricKey || null;
+}
+
+function addDays(date, days) {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function buildEvidenceSnapshot(signal, metricBefore) {
+  if (!signal && metricBefore == null) return undefined;
+  return {
+    value: metricBefore,
+    baselineValue: signal?.baselineValue ?? signal?.deviation?.baselineValue,
+    deltaPct: signal?.deltaPct ?? signal?.deviation?.deltaPercent,
+    periodStart: signal?.periodStart ?? signal?.deviation?.startDate,
+    periodEnd: signal?.periodEnd,
+    confidence:
+      typeof signal?.confidence === 'number'
+        ? signal.confidence
+        : signal?.confidenceScore != null
+          ? signal.confidenceScore / 100
+          : undefined,
+    contributorCount: signal?.dataQuality?.activeUsersCount,
+    sources: signal?.sources || [],
+    capturedAt: new Date(),
   };
-  return mapping[signalType] || 'value';
+}
+
+async function findAccessibleIntervention(req, id, { populateSignal = false } = {}) {
+  const filter = { _id: id };
+  if (!isMasterAdmin(req.user)) filter.orgId = referenceId(req.user.orgId);
+  let query = Intervention.findOne(filter);
+  if (populateSignal) query = query.populate('signalId');
+  const intervention = await query;
+  if (!intervention) return null;
+  if (
+    req.user.role === 'manager' &&
+    String(referenceId(req.user.teamId) || '') !== String(referenceId(intervention.teamId) || '')
+  ) {
+    return null;
+  }
+  return intervention;
 }
 
 export default router;

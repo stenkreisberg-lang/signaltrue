@@ -84,14 +84,14 @@ const pageContent: Record<
 > = {
   '/burnout-early-warning-system': {
     eyebrow: 'Burnout early warning system',
-    title: 'Detect burnout risk before surveys or resignations reveal it.',
+    title: 'Review work conditions between surveys.',
     description:
       'SignalTrue uses work metadata to show team-level pressure patterns while there is still time to fix workload, coordination, and recovery conditions.',
     metaTitle: 'Burnout Early Warning System for Teams | SignalTrue',
     metaDescription:
-      'SignalTrue detects burnout risk early with team-level metadata signals for meetings, focus time, recovery, response pressure, and manager load.',
+      'SignalTrue shows team-level work-condition patterns for meetings, focus time, recovery, response pressure, and manager load without diagnosing burnout.',
     points: [
-      'See sustained pressure before it becomes absence, attrition, or missed delivery.',
+      'See sustained work pressure early enough to investigate with direct team context.',
       'Use team-level patterns instead of individual surveillance or sentiment guessing.',
       'Give leaders practical actions: reduce meeting load, protect focus, rebalance decision pressure.',
     ],

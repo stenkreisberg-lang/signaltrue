@@ -410,7 +410,8 @@ export const SIGNAL_TEMPLATES = {
     consequences: {
       INFO: 'Response norms are tightening. Early sign of urgency creep.',
       RISK: 'Sustained responsiveness pressure reduces focus and increases stress.',
-      CRITICAL: 'High reactivity pressure. Expect burnout risk and shallow decision-making.',
+      CRITICAL:
+        'High reactivity pressure. Review whether interruption demand is displacing sustained work.',
     },
 
     timeToImpact: {

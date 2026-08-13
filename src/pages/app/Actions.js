@@ -1,587 +1,506 @@
-/**
- * Actions - Suggested Actions page
- * Per SignalTrue Product Spec Section 8
- *
- * "These actions are derived from observed signal patterns.
- * They are recommendations, not mandates."
- */
-
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Clock3, FlaskConical, Play, RefreshCw, Users, XCircle } from 'lucide-react';
+import AppShell, { PageHeader } from '../../components/app/AppShell';
 import api from '../../utils/api';
-import { getAuthenticatedContext } from '../../utils/authContext';
+import { getAuthenticatedContext, normalizeId } from '../../utils/authContext';
+
+const ORG_ROLES = new Set(['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive']);
+const ACTIVE_STATUSES = new Set(['planned', 'active', 'pending-recheck']);
+const COMPLETE_STATUSES = new Set(['completed', 'resolved']);
+
+function actionTitle(action) {
+  return action.title || action.actionTaken || action.action || 'Work-pattern action';
+}
+
+function formatDate(value) {
+  if (!value) return 'Not scheduled';
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
+}
+
+function normalizeRecommendation(signal, action, index) {
+  return {
+    ...action,
+    key: `${signal._id}:${action.actionId || index}`,
+    signalId: signal._id,
+    teamId: normalizeId(signal.teamId),
+    teamName: signal.teamId?.name,
+    signalTitle: signal.title,
+    signalType: signal.signalType,
+    severity: signal.severity,
+    title: action.title || action.action,
+    description: action.description,
+    expectedEffect: action.expectedEffect,
+    actionType: action.actionId,
+  };
+}
+
+function statusLabel(status) {
+  return (
+    {
+      planned: 'Planned',
+      active: 'In progress',
+      'pending-recheck': 'Review ready',
+      completed: 'Reviewed',
+      abandoned: 'Stopped',
+    }[status] || status
+  );
+}
 
 export default function Actions() {
-  const navigate = useNavigate();
-  const [actions, setActions] = useState([]);
-  const [completedActions, setCompletedActions] = useState([]);
+  const [context, setContext] = useState(null);
+  const [interventions, setInterventions] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [ownerRole, setOwnerRole] = useState('Team lead');
+  const [rationale, setRationale] = useState('');
+  const [consultationStatus, setConsultationStatus] = useState('planned');
+  const [reviewNotes, setReviewNotes] = useState({});
+  const [busyId, setBusyId] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const context = await getAuthenticatedContext();
-      setUser(context.user);
-      if (!context.teamId || !context.orgId) throw new Error('No organization context available.');
+      const nextContext = await getAuthenticatedContext();
+      setContext(nextContext);
+      if (!nextContext.orgId) throw new Error('No organization context available.');
 
-      // Fetch interventions/actions for the team
-      const interventionRes = await api.get(`/interventions/team/${context.teamId}`);
-      const allInterventions = interventionRes.data.interventions || [];
+      const orgView = ORG_ROLES.has(nextContext.user?.role);
+      if (!orgView && !nextContext.teamId) throw new Error('No team context available.');
+      const interventionPath = orgView
+        ? `/interventions/org/${nextContext.orgId}`
+        : `/interventions/team/${nextContext.teamId}`;
 
-      // Separate active from completed
-      const active = allInterventions.filter((i) =>
-        ['suggested', 'active', 'pending-recheck'].includes(i.status)
+      const [interventionRes, signalRes] = await Promise.all([
+        api.get(interventionPath),
+        api.get(`/signals/org/${nextContext.orgId}`),
+      ]);
+      const nextInterventions = interventionRes.data.interventions || [];
+      setInterventions(nextInterventions);
+
+      const activeSignalIds = new Set(
+        nextInterventions
+          .filter((item) => ACTIVE_STATUSES.has(item.status))
+          .map((item) => normalizeId(item.signalId))
+          .filter(Boolean)
       );
-      const completed = allInterventions.filter((i) =>
-        ['completed', 'resolved'].includes(i.status)
-      );
-
-      setActions(active);
-      setCompletedActions(completed);
-
-      // If no interventions, try to get recommended actions from signals
-      if (active.length === 0) {
-        const signalsRes = await api.get(`/signals/org/${context.orgId}`, {
-          params: { status: 'open,acknowledged', limit: 5 },
-        });
-
-        const signalActions = [];
-        (signalsRes.data.signals || []).forEach((signal) => {
-          if (signal.actions) {
-            signal.actions.forEach((action) => {
-              signalActions.push({
-                ...action,
-                signalType: signal.signalType,
-                signalId: signal._id,
-                severity: signal.severity,
-                status: 'suggested',
-              });
-            });
-          }
-        });
-
-        setActions(signalActions.slice(0, 5));
-      }
+      const nextRecommendations = (signalRes.data.signals || [])
+        .filter((signal) => ['Open', 'Acknowledged'].includes(signal.status))
+        .flatMap((signal) =>
+          (signal.recommendedActions || signal.actions || []).map((action, index) =>
+            normalizeRecommendation(signal, action, index)
+          )
+        )
+        .filter((action) => action.title && !activeSignalIds.has(action.signalId))
+        .slice(0, 12);
+      setRecommendations(nextRecommendations);
     } catch (err) {
       console.error('[Actions] Error:', err);
-      setError('Suggested actions are currently unavailable. No recommendations are inferred.');
+      setError(err.response?.data?.message || err.message || 'Actions are currently unavailable.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const active = useMemo(
+    () => interventions.filter((item) => ACTIVE_STATUSES.has(item.status)),
+    [interventions]
+  );
+  const completed = useMemo(
+    () => interventions.filter((item) => COMPLETE_STATUSES.has(item.status)),
+    [interventions]
+  );
+  const dueCount = active.filter(
+    (item) => item.status === 'pending-recheck' || new Date(item.recheckDate) <= new Date()
+  ).length;
+
+  const openStartForm = (action) => {
+    setDraft(action);
+    setOwnerRole('Team lead');
+    setRationale(`Selected in response to: ${action.signalTitle}`);
+    setConsultationStatus('planned');
+    setNotice(null);
   };
 
-  const handleTakeAction = async (action) => {
+  const startAction = async (event) => {
+    event.preventDefault();
+    if (!draft) return;
+    setBusyId(draft.key);
     try {
       await api.post('/interventions', {
-        signalId: action.signalId,
-        actionId: action._id,
-        actionTaken: action.title,
-        expectedEffect: action.expectedImpact,
+        signalId: draft.signalId,
+        teamId: draft.teamId,
+        orgId: context.orgId,
+        signalType: draft.signalType,
+        title: draft.title,
+        description: draft.description,
+        actionTaken: draft.title,
+        actionType: draft.actionType,
+        expectedEffect: draft.expectedEffect,
+        effort: normalizeEffort(draft.effort),
+        timeframe: draft.timeframe || '2 weeks',
+        ownerRole,
+        decisionRationale: rationale,
+        consultationStatus,
       });
-
-      // Update local state
-      setActions((prev) =>
-        prev.map((a) => (a._id === action._id ? { ...a, status: 'active' } : a))
-      );
+      setDraft(null);
+      setNotice('Action started. SignalTrue will compare the same metric again after 14 days.');
+      await loadData();
     } catch (err) {
-      console.error('Error taking action:', err);
+      setError(err.response?.data?.message || 'The action could not be started.');
+    } finally {
+      setBusyId(null);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
+  const measureAction = async (intervention) => {
+    setBusyId(intervention._id);
+    setError(null);
+    try {
+      await api.post(`/interventions/${intervention._id}/auto-compute`);
+      setNotice('The review was measured against the same recorded metric.');
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'The review could not be measured yet.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      suggested: { bg: '#dbeafe', color: '#1e40af', text: 'Suggested' },
-      active: { bg: '#fef3c7', color: '#92400e', text: 'In Progress' },
-      'pending-recheck': { bg: '#e0e7ff', color: '#3730a3', text: 'Awaiting Results' },
-      completed: { bg: '#d1fae5', color: '#065f46', text: 'Resolved' },
-    };
-    return styles[status] || styles.suggested;
+  const acknowledgeReview = async (intervention) => {
+    setBusyId(intervention._id);
+    setError(null);
+    try {
+      await api.put(`/interventions/${intervention._id}/outcome`, {
+        userNotes: reviewNotes[intervention._id] || '',
+      });
+      setNotice('Review acknowledged and added to the organization evidence register.');
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'The review could not be acknowledged.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p style={styles.loadingText}>Loading suggested actions...</p>
-      </div>
-    );
+  const stopAction = async (intervention) => {
+    setBusyId(intervention._id);
+    setError(null);
+    try {
+      await api.delete(`/interventions/${intervention._id}`);
+      setNotice('Action stopped. Its history remains available for audit.');
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'The action could not be stopped.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading && !context) {
+    return <div className="app-loading">Loading action reviews...</div>;
   }
 
   return (
-    <div style={styles.container}>
-      {/* Top Nav */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <div style={styles.navLeft}>
-            <Link to="/" style={{ textDecoration: 'none' }}>
-              <h1 style={styles.logo}>SignalTrue</h1>
-            </Link>
-          </div>
-          <div style={styles.navRight}>
-            <Link to="/app/overview" style={styles.navLink}>
-              Team Overview
-            </Link>
-            <Link to="/app/signals" style={styles.navLink}>
-              Signals
-            </Link>
-            <Link to="/app/active-monitoring" style={styles.navLink}>
-              Active Monitoring
-            </Link>
-            <span style={styles.navLinkActive}>Actions</span>
-            <Link to="/app/executive-summary" style={styles.navLink}>
-              Executive Summary
-            </Link>
-            <Link to="/app/signal-coverage" style={styles.navLink}>
-              Data Coverage
-            </Link>
-            {user && (
-              <div style={styles.userMenu}>
-                <span style={styles.userName}>{user.name || user.email}</span>
-                <button style={styles.logoutButton} onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+    <AppShell user={context?.user} section="Actions" width="wide">
+      <PageHeader
+        eyebrow="Observe, act, re-measure"
+        title="Action reviews"
+        description="Turn a measured team pattern into an owned change, then check the same metric after 14 days. Observed changes are evidence for review, not proof of causation."
+        action={
+          <button type="button" className="action-icon-button" onClick={loadData} title="Refresh">
+            <RefreshCw size={17} aria-hidden="true" />
+            <span>Refresh</span>
+          </button>
+        }
+      />
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        <div style={styles.content}>
-          {/* Header per spec Section 8 */}
-          <div style={styles.header}>
+      <div className="action-summary" aria-label="Action review summary">
+        <SummaryMetric value={active.length} label="Active actions" icon={Play} />
+        <SummaryMetric value={dueCount} label="Reviews due" icon={Clock3} />
+        <SummaryMetric value={completed.length} label="Measured reviews" icon={FlaskConical} />
+        <SummaryMetric value={recommendations.length} label="Ready to consider" icon={Users} />
+      </div>
+
+      {error && <div className="action-notice is-error">{error}</div>}
+      {notice && <div className="action-notice is-success">{notice}</div>}
+
+      {draft && (
+        <form className="action-start-form" onSubmit={startAction}>
+          <div className="action-start-heading">
             <div>
-              <h2 style={styles.title}>Suggested Actions</h2>
-              <p style={styles.subtitle}>
-                These actions are derived from observed signal patterns. They are recommendations,
-                not mandates.
-              </p>
+              <p className="app-eyebrow">Start a measured change</p>
+              <h2>{draft.title}</h2>
+              <p>{draft.expectedEffect || draft.description}</p>
+            </div>
+            <button
+              type="button"
+              className="action-close-button"
+              onClick={() => setDraft(null)}
+              title="Close"
+            >
+              <XCircle size={20} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="action-form-grid">
+            <label>
+              Owner
+              <select value={ownerRole} onChange={(event) => setOwnerRole(event.target.value)}>
+                <option>Team lead</option>
+                <option>HR</option>
+                <option>Executive sponsor</option>
+                <option>Operations</option>
+              </select>
+            </label>
+            <label>
+              Team consultation
+              <select
+                value={consultationStatus}
+                onChange={(event) => setConsultationStatus(event.target.value)}
+              >
+                <option value="planned">Planned</option>
+                <option value="completed">Completed</option>
+                <option value="not_needed">Not needed</option>
+              </select>
+            </label>
+            <label className="action-form-wide">
+              Decision rationale
+              <textarea
+                value={rationale}
+                onChange={(event) => setRationale(event.target.value)}
+                rows={3}
+                required
+              />
+            </label>
+          </div>
+          <div className="action-form-footer">
+            <span>Reviews are scheduled for day 14 and day 28.</span>
+            <button type="submit" className="action-primary-button" disabled={busyId === draft.key}>
+              <Play size={16} aria-hidden="true" />
+              Start review
+            </button>
+          </div>
+        </form>
+      )}
+
+      <section className="action-section">
+        <div className="app-section-heading">
+          <div>
+            <h2>In progress</h2>
+            <p>Owned changes with a defined metric and review date.</p>
+          </div>
+        </div>
+        {active.length === 0 ? (
+          <EmptyRow text="No actions are currently being measured." />
+        ) : (
+          <div className="action-list">
+            {active.map((item) => (
+              <InterventionRow
+                key={item._id}
+                item={item}
+                busy={busyId === item._id}
+                notes={reviewNotes[item._id] || ''}
+                onNotes={(value) =>
+                  setReviewNotes((current) => ({ ...current, [item._id]: value }))
+                }
+                onMeasure={() => measureAction(item)}
+                onAcknowledge={() => acknowledgeReview(item)}
+                onStop={() => stopAction(item)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="action-section">
+        <div className="app-section-heading">
+          <div>
+            <h2>Ready to consider</h2>
+            <p>Recommendations tied to currently visible, privacy-gated signals.</p>
+          </div>
+        </div>
+        {recommendations.length === 0 ? (
+          <EmptyRow text="No additional evidence-backed actions are ready." />
+        ) : (
+          <div className="action-list">
+            {recommendations.map((item) => (
+              <article className="action-row" key={item.key}>
+                <div className="action-row-main">
+                  <div className="action-row-heading">
+                    <h3>{item.title}</h3>
+                    <span className="action-status">Suggested</span>
+                  </div>
+                  <p>{item.description || item.expectedEffect}</p>
+                  <div className="action-meta">
+                    <span>{item.teamName || 'Team'}</span>
+                    <span>{item.signalTitle}</span>
+                    {item.effort && <span>{normalizeEffort(item.effort)} effort</span>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="action-primary-button"
+                  onClick={() => openStartForm(item)}
+                >
+                  <Play size={16} aria-hidden="true" />
+                  Review action
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {completed.length > 0 && (
+        <section className="action-section">
+          <div className="app-section-heading">
+            <div>
+              <h2>Evidence register</h2>
+              <p>Observed before-and-after changes retained for organizational learning.</p>
             </div>
           </div>
-          {error && <div style={styles.errorNotice}>{error}</div>}
+          <div className="action-list">
+            {completed.slice(0, 12).map((item) => (
+              <CompletedRow key={item._id} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+    </AppShell>
+  );
+}
 
-          {/* Actions List */}
-          {actions.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>Clear</div>
-              <h3 style={styles.emptyTitle}>No Actions Required</h3>
-              <p style={styles.emptyText}>
-                No verified recommendations are currently available. Suggested actions appear only
-                after sufficient signal evidence is established.
-              </p>
-              <Link to="/app/active-monitoring" style={styles.emptyButton}>
-                View Active Monitoring
-              </Link>
-            </div>
-          ) : (
-            <div style={styles.actionsList}>
-              {actions.map((action, idx) => {
-                const badge = getStatusBadge(action.status);
-                return (
-                  <div key={action._id || idx} style={styles.actionCard}>
-                    <div style={styles.actionHeader}>
-                      <h3 style={styles.actionTitle}>{action.title}</h3>
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          background: badge.bg,
-                          color: badge.color,
-                        }}
-                      >
-                        {badge.text}
-                      </span>
-                    </div>
-
-                    {action.description && (
-                      <p style={styles.actionDescription}>{action.description}</p>
-                    )}
-
-                    <div style={styles.actionDetails}>
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Why this helps:</span>
-                        <span style={styles.detailValue}>
-                          {action.whyThisHelps || 'Addresses detected pattern deviation'}
-                        </span>
-                      </div>
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Expected signal impact:</span>
-                        <span style={styles.detailValue}>
-                          {action.expectedImpact || 'Improvement within 2 weeks'}
-                        </span>
-                      </div>
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Suggested owner:</span>
-                        <span style={styles.detailValue}>
-                          {action.suggestedOwner || 'Leadership / Team Lead'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {action.status === 'suggested' && (
-                      <div style={styles.actionFooter}>
-                        <button
-                          style={styles.takeActionButton}
-                          onClick={() => handleTakeAction(action)}
-                        >
-                          Take This Action
-                        </button>
-                        <button style={styles.dismissButton}>Not Now</button>
-                      </div>
-                    )}
-
-                    {action.status === 'active' && (
-                      <div style={styles.inProgressNote}>
-                        <span style={styles.inProgressIcon}>⏳</span>
-                        <span>Action in progress. We'll check signal changes in 14 days.</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Completed Actions */}
-          {completedActions.length > 0 && (
-            <div style={styles.completedSection}>
-              <h3 style={styles.completedTitle}>Completed Actions</h3>
-              <div style={styles.completedList}>
-                {completedActions.slice(0, 3).map((action, idx) => (
-                  <div key={action._id || idx} style={styles.completedCard}>
-                    <span style={styles.completedCheck}>✓</span>
-                    <div>
-                      <p style={styles.completedAction}>{action.actionTaken || action.title}</p>
-                      {action.outcomeDelta && (
-                        <p style={styles.completedOutcome}>
-                          Result: {action.outcomeDelta.percentChange > 0 ? '+' : ''}
-                          {action.outcomeDelta.percentChange}% change
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+function SummaryMetric({ value, label, icon: Icon }) {
+  return (
+    <div className="action-summary-item">
+      <Icon size={18} aria-hidden="true" />
+      <strong>{value}</strong>
+      <span>{label}</span>
     </div>
   );
 }
 
-// Styles
-const styles = {
-  container: {
-    minHeight: '100vh',
-    background: '#f8fafc',
-  },
-  loadingContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#f8fafc',
-  },
-  spinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #0f766e',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-  },
-  loadingText: {
-    marginTop: '1rem',
-    color: '#475569',
-    fontSize: '1rem',
-  },
-  nav: {
-    background: '#ffffff',
-    borderBottom: '1px solid #e2e8f0',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '1rem 2rem',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  navLeft: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  logo: {
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    color: '#0f172a',
-    margin: 0,
-  },
-  navRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1.5rem',
-  },
-  navLink: {
-    color: '#475569',
-    textDecoration: 'none',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-  },
-  navLinkActive: {
-    color: '#0f766e',
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    borderBottom: '2px solid #0f766e',
-    paddingBottom: '2px',
-  },
-  userMenu: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    marginLeft: '1rem',
-    paddingLeft: '1rem',
-    borderLeft: '1px solid #e2e8f0',
-  },
-  userName: {
-    color: '#475569',
-    fontSize: '0.875rem',
-  },
-  logoutButton: {
-    background: 'transparent',
-    color: '#475569',
-    border: '1px solid #cbd5e1',
-    borderRadius: '6px',
-    padding: '0.5rem 1rem',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-  },
-  main: {
-    padding: '3rem 2rem',
-  },
-  content: {
-    maxWidth: '900px',
-    margin: '0 auto',
-  },
-  header: {
-    marginBottom: '2rem',
-  },
-  title: {
-    fontSize: '2rem',
-    fontWeight: 700,
-    color: '#0f172a',
-    margin: '0 0 0.5rem 0',
-  },
-  subtitle: {
-    fontSize: '1rem',
-    color: '#475569',
-    margin: 0,
-  },
-  emptyState: {
-    background: 'white',
-    borderRadius: '16px',
-    padding: '4rem 2rem',
-    textAlign: 'center',
-  },
-  emptyIcon: {
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    color: '#0f766e',
-    background: '#ccfbf1',
-    display: 'inline-block',
-    padding: '0.35rem 0.8rem',
-    borderRadius: '999px',
-    marginBottom: '1rem',
-  },
-  emptyTitle: {
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    color: '#111827',
-    marginBottom: '0.5rem',
-  },
-  emptyText: {
-    fontSize: '1rem',
-    color: '#6b7280',
-    marginBottom: '2rem',
-    maxWidth: '400px',
-    margin: '0 auto 2rem',
-  },
-  emptyButton: {
-    display: 'inline-block',
-    background: '#0f766e',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    padding: '0.75rem 1.5rem',
-    fontSize: '1rem',
-    fontWeight: 600,
-  },
-  actionsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-  },
-  actionCard: {
-    background: 'white',
-    borderRadius: '12px',
-    padding: '1.5rem',
-    border: '1px solid #e2e8f0',
-    borderLeft: '4px solid #0f766e',
-  },
-  actionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '0.75rem',
-  },
-  actionTitle: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    color: '#111827',
-    margin: 0,
-    flex: 1,
-    paddingRight: '1rem',
-  },
-  statusBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    flexShrink: 0,
-  },
-  actionDescription: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    marginBottom: '1rem',
-  },
-  actionDetails: {
-    background: '#f9fafb',
-    borderRadius: '8px',
-    padding: '1rem',
-    marginBottom: '1rem',
-  },
-  detailRow: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '0.5rem',
-  },
-  detailLabel: {
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    color: '#374151',
-    minWidth: '150px',
-  },
-  detailValue: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    flex: 1,
-  },
-  actionFooter: {
-    display: 'flex',
-    gap: '1rem',
-  },
-  takeActionButton: {
-    background: '#0f766e',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.75rem 1.5rem',
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  dismissButton: {
-    background: 'transparent',
-    color: '#6b7280',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '0.75rem 1.5rem',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-  inProgressNote: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    fontSize: '0.875rem',
-    color: '#92400e',
-    background: '#fef3c7',
-    padding: '0.75rem 1rem',
-    borderRadius: '8px',
-  },
-  inProgressIcon: {
-    fontSize: '1rem',
-  },
-  completedSection: {
-    marginTop: '3rem',
-  },
-  completedTitle: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    color: '#0f172a',
-    marginBottom: '1rem',
-  },
-  completedList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-  },
-  completedCard: {
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    padding: '1rem',
-    display: 'flex',
-    gap: '1rem',
-    alignItems: 'flex-start',
-  },
-  completedCheck: {
-    width: '24px',
-    height: '24px',
-    background: '#10b981',
-    color: 'white',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '0.75rem',
-    fontWeight: 700,
-    flexShrink: 0,
-  },
-  completedAction: {
-    fontSize: '0.875rem',
-    color: '#0f172a',
-    margin: '0 0 0.25rem 0',
-  },
-  completedOutcome: {
-    fontSize: '0.75rem',
-    color: '#10b981',
-    margin: 0,
-  },
-  errorNotice: {
-    border: '1px solid #fde68a',
-    background: '#fffbeb',
-    color: '#92400e',
-    borderRadius: '10px',
-    padding: '0.875rem 1rem',
-    marginBottom: '1.5rem',
-    fontSize: '0.875rem',
-  },
-};
+function EmptyRow({ text }) {
+  return (
+    <div className="action-empty">
+      <CheckCircle2 size={20} aria-hidden="true" />
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function InterventionRow({ item, busy, notes, onNotes, onMeasure, onAcknowledge, onStop }) {
+  const due = new Date(item.recheckDate) <= new Date();
+  const reviewReady = item.status === 'pending-recheck' && item.outcomeDelta?.metricAfter != null;
+  const change = item.outcomeDelta?.percentChange;
+  return (
+    <article className="action-row is-active">
+      <div className="action-row-main">
+        <div className="action-row-heading">
+          <h3>{actionTitle(item)}</h3>
+          <span className={`action-status status-${item.status}`}>{statusLabel(item.status)}</span>
+        </div>
+        <p>{item.description || item.expectedEffect}</p>
+        <div className="action-meta">
+          <span>{item.teamId?.name || 'Team'}</span>
+          <span>Owner: {item.decision?.ownerRole || 'Team lead'}</span>
+          <span>Review: {formatDate(item.recheckDate)}</span>
+          {item.targetMetricLabel && <span>Metric: {item.targetMetricLabel}</span>}
+        </div>
+        {item.evidenceSnapshot?.value != null && (
+          <div className="action-evidence">
+            <strong>Starting evidence</strong>
+            <span>{item.evidenceSnapshot.value}</span>
+            {item.evidenceSnapshot.baselineValue != null && (
+              <span>Team baseline {item.evidenceSnapshot.baselineValue}</span>
+            )}
+          </div>
+        )}
+        {reviewReady && (
+          <div className="action-review">
+            <div>
+              <strong>Observed at review</strong>
+              <span>
+                {item.outcomeDelta.metricBefore} to {item.outcomeDelta.metricAfter}
+                {change != null ? ` (${change > 0 ? '+' : ''}${change}%)` : ''}
+              </span>
+            </div>
+            <label>
+              Context or confounding events
+              <textarea value={notes} onChange={(event) => onNotes(event.target.value)} rows={2} />
+            </label>
+          </div>
+        )}
+      </div>
+      <div className="action-row-controls">
+        {reviewReady ? (
+          <button
+            type="button"
+            className="action-primary-button"
+            onClick={onAcknowledge}
+            disabled={busy}
+          >
+            <CheckCircle2 size={16} aria-hidden="true" />
+            Acknowledge
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="action-primary-button"
+            onClick={onMeasure}
+            disabled={!due || busy}
+            title={
+              due ? 'Measure the same metric now' : `Available ${formatDate(item.recheckDate)}`
+            }
+          >
+            <FlaskConical size={16} aria-hidden="true" />
+            {due ? 'Measure now' : 'Await review'}
+          </button>
+        )}
+        <button type="button" className="action-secondary-button" onClick={onStop} disabled={busy}>
+          Stop
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function CompletedRow({ item }) {
+  const review = item.reviews?.[item.reviews.length - 1];
+  const change = item.outcomeDelta?.percentChange;
+  return (
+    <article className="action-row is-complete">
+      <div className="action-row-main">
+        <div className="action-row-heading">
+          <h3>{actionTitle(item)}</h3>
+          <span className="action-status status-completed">Reviewed</span>
+        </div>
+        <p>{item.outcomeSummary || item.userNotes || 'No additional context recorded.'}</p>
+        <div className="action-meta">
+          <span>{item.teamId?.name || 'Team'}</span>
+          {item.targetMetricLabel && <span>{item.targetMetricLabel}</span>}
+          {item.outcomeDelta?.metricAfter != null && (
+            <span>
+              Observed change: {change != null ? `${change > 0 ? '+' : ''}${change}%` : 'recorded'}
+            </span>
+          )}
+          {review?.interpretation && <span>{review.interpretation.replaceAll('_', ' ')}</span>}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function normalizeEffort(value) {
+  const normalized = String(value || 'Medium').toLowerCase();
+  if (normalized === 'low') return 'Low';
+  if (normalized === 'high') return 'High';
+  return 'Medium';
+}

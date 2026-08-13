@@ -33,6 +33,17 @@ const interventionSchema = new mongoose.Schema(
         'team_rhythm_stability',
         'manager_capacity_risk',
         'execution_drag_risk',
+        // Signal V2 types
+        'recovery_gap_index',
+        'focus_fragmentation',
+        'meeting_load_drift',
+        'responsiveness_pressure',
+        'engagement_asymmetry',
+        'signal_convergence',
+        'context_switching',
+        'network_bottleneck',
+        'rework_churn',
+        'drift_velocity',
       ],
     },
 
@@ -82,6 +93,54 @@ const interventionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
     },
 
+    // The observed metric this action intends to move. Keeping this explicit
+    // prevents the review job from silently substituting an unrelated proxy.
+    targetMetric: { type: String, index: true },
+    targetMetricLabel: { type: String },
+    targetDirection: {
+      type: String,
+      enum: ['increase', 'decrease', 'stabilize'],
+    },
+
+    // Decision record: who owns the change and why it was selected.
+    decision: {
+      ownerRole: { type: String },
+      rationale: { type: String },
+      hypothesis: { type: String },
+      selectedAt: { type: Date },
+    },
+
+    // Optional consultation record for changes that affect team working norms.
+    consultation: {
+      status: {
+        type: String,
+        enum: ['not_needed', 'planned', 'completed'],
+        default: 'not_needed',
+      },
+      participantCount: { type: Number, min: 0 },
+      notes: { type: String },
+      completedAt: { type: Date },
+    },
+
+    // Immutable evidence captured when the action starts.
+    evidenceSnapshot: {
+      value: { type: Number },
+      baselineValue: { type: Number },
+      deltaPct: { type: Number },
+      periodStart: { type: Date },
+      periodEnd: { type: Date },
+      confidence: { type: Number },
+      contributorCount: { type: Number },
+      sources: [{ type: String }],
+      capturedAt: { type: Date },
+    },
+
+    governance: {
+      measurementVersion: { type: String },
+      privacyPolicyVersion: { type: String },
+      reviewProtocolVersion: { type: String },
+    },
+
     // Monitored signals — which signals are we watching for improvement
     monitoredSignals: [
       {
@@ -122,6 +181,25 @@ const interventionSchema = new mongoose.Schema(
         return date;
       },
     },
+    followUpReviewDate: { type: Date },
+
+    reviews: [
+      {
+        day: { type: Number, enum: [14, 28] },
+        dueDate: { type: Date },
+        measuredAt: { type: Date },
+        metricValue: { type: Number },
+        absoluteChange: { type: Number },
+        percentChange: { type: Number },
+        interpretation: {
+          type: String,
+          enum: ['improved', 'no_material_change', 'worsened', 'insufficient_data'],
+        },
+        notes: { type: String },
+        acknowledgedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        _id: false,
+      },
+    ],
 
     // Outcome summary (spec field — human-written summary of what happened)
     outcomeSummary: {
@@ -209,31 +287,52 @@ interventionSchema.methods.markForRecheck = async function () {
 
 // Method: Compute outcome delta
 interventionSchema.methods.computeOutcome = async function (currentMetricValue) {
-  if (!this.outcomeDelta.metricBefore) {
+  if (this.outcomeDelta?.metricBefore == null) {
     throw new Error('Baseline metric not set');
   }
 
   const before = this.outcomeDelta.metricBefore;
   const after = currentMetricValue;
-  const percentChange = ((after - before) / before) * 100;
+  const absoluteChange = after - before;
+  const percentChange = before === 0 ? null : (absoluteChange / Math.abs(before)) * 100;
 
-  // Determine if improved (depends on signal type)
-  const improvementIsNegative = [
-    'coordination-risk', // Lower meeting load = better
-    'boundary-erosion', // Lower after-hours = better
-    'execution-drag', // Lower response time = better
-  ].includes(this.signalType);
-
-  const improved = improvementIsNegative ? percentChange < 0 : percentChange > 0;
+  const direction = this.targetDirection || 'decrease';
+  const improved =
+    direction === 'increase'
+      ? absoluteChange > 0
+      : direction === 'stabilize'
+        ? Math.abs(percentChange || absoluteChange) < 5
+        : absoluteChange < 0;
+  const materialChange =
+    percentChange == null ? Math.abs(absoluteChange) > 0 : Math.abs(percentChange) >= 5;
+  const interpretation = !materialChange
+    ? 'no_material_change'
+    : improved
+      ? 'improved'
+      : 'worsened';
 
   this.outcomeDelta = {
     metricBefore: before,
     metricAfter: after,
-    percentChange: Math.round(percentChange * 10) / 10, // Round to 1 decimal
+    percentChange: percentChange == null ? null : Math.round(percentChange * 10) / 10,
     improved,
     autoComputed: true,
     computedAt: new Date(),
   };
+
+  const measuredAt = new Date();
+  const elapsedDays = Math.max(0, Math.round((measuredAt - this.startDate) / 86400000));
+  const reviewDay = elapsedDays >= 21 ? 28 : 14;
+  this.reviews = (this.reviews || []).filter((review) => review.day !== reviewDay);
+  this.reviews.push({
+    day: reviewDay,
+    dueDate: reviewDay === 28 ? this.followUpReviewDate : this.recheckDate,
+    measuredAt,
+    metricValue: after,
+    absoluteChange: Math.round(absoluteChange * 10) / 10,
+    percentChange: percentChange == null ? null : Math.round(percentChange * 10) / 10,
+    interpretation,
+  });
 
   await this.save();
   return this.outcomeDelta;

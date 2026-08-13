@@ -1,7 +1,9 @@
 import express from 'express';
 import Intervention from '../models/intervention.js';
-import { authenticateToken, requireRoles } from '../middleware/auth.js';
+import { authenticateToken, referenceId, requireRoles } from '../middleware/auth.js';
 import { getWorkNetworkMap, readWorkNetworkMetric } from '../services/workNetworkService.js';
+import { getWorkNetworkTargetDirection } from '../services/workNetworkActionService.js';
+import { getGovernanceSnapshot } from '../config/measurementGovernance.js';
 
 const router = express.Router();
 const leadershipOnly = requireRoles([
@@ -20,9 +22,10 @@ router.get('/', async (req, res) => {
     if (!Number.isFinite(days) || days < 14 || days > 90) {
       return res.status(400).json({ message: 'Days must be between 14 and 90.' });
     }
-    const network = await getWorkNetworkMap(req.user.orgId, { days });
+    const orgId = referenceId(req.user.orgId);
+    const network = await getWorkNetworkMap(orgId, { days });
     const trackedActions = await Intervention.find({
-      orgId: req.user.orgId,
+      orgId,
       actionType: /^work_network_/,
       status: { $nin: ['cancelled', 'ignored', 'abandoned'] },
     })
@@ -80,7 +83,8 @@ router.post('/actions', async (req, res) => {
       return res.status(400).json({ message: 'Days must be between 14 and 90.' });
     }
 
-    const network = await getWorkNetworkMap(req.user.orgId, { days });
+    const orgId = referenceId(req.user.orgId);
+    const network = await getWorkNetworkMap(orgId, { days });
     if (!network.readiness.ready) {
       return res
         .status(409)
@@ -92,7 +96,7 @@ router.post('/actions', async (req, res) => {
     }
 
     const existing = await Intervention.findOne({
-      orgId: req.user.orgId,
+      orgId,
       status: { $in: ['planned', 'active', 'pending-recheck'] },
       'expectedEffectJson.workNetworkInsightId': insight.id,
     }).lean();
@@ -107,7 +111,7 @@ router.post('/actions', async (req, res) => {
     const measurementNetwork =
       days === measurementWindowDays
         ? network
-        : await getWorkNetworkMap(req.user.orgId, { days: measurementWindowDays });
+        : await getWorkNetworkMap(orgId, { days: measurementWindowDays });
     if (!measurementNetwork.readiness.ready) {
       return res.status(409).json({
         message: 'At least 14 days of ready data are required to establish an action baseline.',
@@ -131,7 +135,7 @@ router.post('/actions', async (req, res) => {
           ? 'dependency-spread'
           : 'handoff-bottleneck';
     const intervention = await Intervention.create({
-      orgId: req.user.orgId,
+      orgId,
       teamId: insight.primaryTeamId,
       signalType,
       interventionType: `work_network_${insight.type}`,
@@ -150,6 +154,21 @@ router.post('/actions', async (req, res) => {
         sourceWindowDays: days,
         measurementWindowDays,
       },
+      targetMetric: insight.metric?.name,
+      targetMetricLabel: insight.metric?.label || insight.metric?.name,
+      targetDirection: getWorkNetworkTargetDirection(insight.metric?.name),
+      decision: {
+        ownerRole: insight.action.owner,
+        rationale: insight.summary,
+        hypothesis: insight.action.measure,
+        selectedAt: new Date(),
+      },
+      evidenceSnapshot: {
+        value: baselineValue,
+        contributorCount: insight.evidence?.contributors,
+        capturedAt: new Date(),
+      },
+      governance: getGovernanceSnapshot(),
       monitoredSignals: ['coordination_strain'],
       effort: 'Low',
       timeframe: '2 weeks',

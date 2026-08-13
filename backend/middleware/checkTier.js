@@ -8,6 +8,18 @@
 
 import Organization from '../models/organizationModel.js';
 
+export function resolveOrganizationTier(org) {
+  if (org?.pilot?.isActive) return 'impact_proof';
+
+  const currentPlan = org?.subscription?.plan || 'free';
+  if (['detection', 'impact_proof'].includes(currentPlan)) return currentPlan;
+
+  const modernPlan = org?.subscriptionPlanId;
+  if (modernPlan === 'team') return 'detection';
+  if (['leadership', 'custom'].includes(modernPlan)) return 'impact_proof';
+  return 'free';
+}
+
 /**
  * Check if user's organization has required tier
  * @param {string} requiredTier - 'free', 'detection', or 'impact_proof'
@@ -30,7 +42,7 @@ export function requireTier(requiredTier) {
         return res.status(404).json({ message: 'Organization not found' });
       }
 
-      const currentTier = org.subscription?.plan || 'free';
+      const currentTier = resolveOrganizationTier(org);
 
       // Tier hierarchy: impact_proof > detection > free
       const tierLevels = {
@@ -75,7 +87,7 @@ export function checkFeatureAccess(feature) {
       const { orgId } = req.user;
 
       const org = await Organization.findById(orgId);
-      const currentTier = org?.subscription?.plan || 'free';
+      const currentTier = resolveOrganizationTier(org);
 
       // Feature access matrix
       const featureAccess = {
@@ -150,7 +162,7 @@ export async function attachTierLimits(req, res, next) {
     const { orgId } = req.user;
 
     const org = await Organization.findById(orgId);
-    const currentTier = org?.subscription?.plan || 'free';
+    const currentTier = resolveOrganizationTier(org);
 
     req.tierLimits = getTierLimits(currentTier);
     req.currentTier = currentTier;

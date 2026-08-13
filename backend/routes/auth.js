@@ -338,8 +338,8 @@ router.post('/login', validateLogin, async (req, res) => {
         userId: user._id,
         email: user.email, // Note: this is the encrypted email
         role: user.role,
-        teamId: user.teamId,
-        orgId: user.orgId,
+        teamId: user.teamId?._id || user.teamId,
+        orgId: user.orgId?._id || user.orgId,
         isMasterAdmin: user.isMasterAdmin,
       },
       JWT_SECRET,

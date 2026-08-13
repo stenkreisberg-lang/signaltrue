@@ -10,6 +10,10 @@ const LOWER_IS_BETTER = new Set([
   'crossTeamMeetingHours',
 ]);
 
+export function getWorkNetworkTargetDirection(metricName) {
+  return LOWER_IS_BETTER.has(metricName) ? 'decrease' : 'increase';
+}
+
 export function calculateWorkNetworkOutcome(metricName, before, after) {
   const baseline = Number(before);
   const current = Number(after);
@@ -20,7 +24,10 @@ export function calculateWorkNetworkOutcome(metricName, before, after) {
     metricBefore: baseline,
     metricAfter: current,
     percentChange,
-    improved: LOWER_IS_BETTER.has(metricName) ? current < baseline : current > baseline,
+    improved:
+      getWorkNetworkTargetDirection(metricName) === 'decrease'
+        ? current < baseline
+        : current > baseline,
     autoComputed: true,
     computedAt: new Date(),
   };
@@ -119,5 +126,6 @@ export async function recheckDueWorkNetworkInterventions(options = {}) {
 export default {
   calculateWorkNetworkOutcome,
   computeWorkNetworkInterventionOutcome,
+  getWorkNetworkTargetDirection,
   recheckDueWorkNetworkInterventions,
 };
