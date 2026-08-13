@@ -54,6 +54,9 @@ beforeEach(() => {
             role: 'viewer',
             teamId: 'unassigned-team',
             profile: { title: 'Engineering Lead' },
+            activityEventCount: 7,
+            lastMeasuredActivityAt: '2026-08-12T10:00:00.000Z',
+            measuredSourceTypes: ['microsoft-outlook', 'slack'],
             createdAt: '2026-08-01T00:00:00.000Z',
           },
         ],
@@ -72,6 +75,8 @@ beforeEach(() => {
           unclaimedUsers: 1,
           activeUsers: 0,
           unassignedUsers: 1,
+          assignedUsers: 0,
+          measuredUsers: 1,
           slackConnected: false,
           googleConnected: false,
           microsoftConnected: true,
@@ -113,6 +118,9 @@ test('labels synced directory people without pending account wording', async () 
 
   expect(await screen.findAllByText('Synced')).toBeTruthy();
   expect(screen.getByText('Directory Synced')).toBeTruthy();
+  expect(screen.getByText('Measured Activity')).toBeTruthy();
+  expect(screen.getAllByText('Measured').length).toBeGreaterThan(0);
+  expect(screen.getByText('Unclaimed')).toBeTruthy();
   expect(screen.queryByText('Pending')).toBeNull();
   expect(screen.queryByText('Pending (Not Claimed)')).toBeNull();
 });

@@ -414,6 +414,15 @@ export default function LatestBrief() {
         </div>
       )}
 
+      {brief.freshness?.userCountChanged && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <strong>Directory changed since this brief was generated.</strong> This snapshot was based
+          on {brief.freshness.snapshotTotalUsers} active users; the current directory has{' '}
+          {brief.freshness.currentTotalUsers}. Refresh measured data to regenerate the brief from
+          the current people and team mapping.
+        </div>
+      )}
+
       <section className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
           <div className="flex flex-wrap items-center gap-2">

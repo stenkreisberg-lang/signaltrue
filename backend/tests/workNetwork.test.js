@@ -48,6 +48,19 @@ function meetingCopies(meetingId, participants, options = {}) {
   );
 }
 
+function channelMessage(channelHash, actorUserId, index) {
+  return {
+    source: 'slack',
+    eventType: 'message',
+    actorUserId,
+    timestamp: new Date(`2026-07-15T10:${String(index).padStart(2, '0')}:00.000Z`),
+    metadata: {
+      channelHash,
+      threadIdHash: `${channelHash}:thread`,
+    },
+  };
+}
+
 function baseData() {
   const teams = [team('eng', 'Engineering'), team('product', 'Product'), team('sales', 'Sales')];
   const users = [
@@ -144,6 +157,29 @@ describe('Work Network analysis', () => {
       status: 'ready',
     });
     expect(JSON.stringify(result)).not.toMatch(/e1|s1|s2/);
+  });
+
+  test('uses connector-agnostic chat metadata for cross-team correspondence', () => {
+    const actors = ['e1', 'e2', 'e3', 's1', 's2', 's3', 'e4', 's4', 'e5', 's5'];
+    const currentEvents = actors.map((actor, index) =>
+      channelMessage('shared-growth-channel', actor, index)
+    );
+
+    const result = analyze({ currentEvents });
+    const edge = result.actualEdges.find((item) => item.teamBName === 'Sales');
+    const correspondence = result.leadershipQuestions.find(
+      (item) => item.id === 'cross_team_correspondence'
+    );
+
+    expect(result.readiness.ready).toBe(true);
+    expect(result.sourceCoverage.hasChat).toBe(true);
+    expect(result.sourceCoverage.hasCalendar).toBe(false);
+    expect(edge.messageCount).toBe(10);
+    expect(edge.sourceLabels).toContain('Slack');
+    expect(edge.sourceBasis).toContain('Chat metadata');
+    expect(correspondence).toMatchObject({ status: 'ready' });
+    expect(correspondence.sourceBasis).toContain('Slack');
+    expect(JSON.stringify(result)).not.toMatch(/e1|s1|shared-growth-channel/);
   });
 
   test('suppresses the observed map when user-to-team coverage is below 80%', () => {

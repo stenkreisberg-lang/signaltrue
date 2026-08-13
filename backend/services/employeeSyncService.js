@@ -12,7 +12,20 @@ import {
 const ORG_ADMIN_ROLES = ['admin', 'hr_admin', 'org_admin', 'super_admin', 'master_admin'];
 
 export function normalizeDepartmentName(value) {
-  return normalizeDirectoryString(value);
+  const normalized = normalizeDirectoryString(value);
+  if (!normalized) return null;
+  const withoutNoise = normalized
+    .replace(/\b(osakond|department|dept|team|unit|division|tiim|üksus|yksus)\b/gi, ' ')
+    .replace(/\b(ou|oü|ltd|llc|inc)\b/gi, ' ')
+    .replace(/\s*[-–—]\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const canonical = withoutNoise || normalized;
+  const compact = canonical.toLowerCase();
+  if (['it', 'i t'].includes(compact)) return 'IT';
+  if (['hr', 'people', 'personal'].includes(compact)) return 'HR';
+  if (['ops', 'operations', 'operatsioonid'].includes(compact)) return 'Operations';
+  return canonical;
 }
 
 export async function getOrCreateUnassignedTeam(orgId) {
@@ -722,6 +735,27 @@ export async function getSyncStatus(orgId) {
         teamId: unassignedTeam._id,
       })
     : 0;
+  const assignedUsers = await User.countDocuments({
+    ...activeUserQuery,
+    teamId: unassignedTeam
+      ? { $exists: true, $ne: null, $nin: [unassignedTeam._id] }
+      : { $exists: true, $ne: null },
+  });
+  const measuredSince = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const measuredUserIds = await WorkEvent.distinct('actorUserId', {
+    orgId: org._id,
+    actorUserId: { $ne: null },
+    eventType: {
+      $in: ['meeting', 'message', 'email_sent', 'email_received', 'task_comment_added'],
+    },
+    timestamp: { $gte: measuredSince },
+  });
+  const measuredUsers = measuredUserIds.length
+    ? await User.countDocuments({
+        ...activeUserQuery,
+        _id: { $in: measuredUserIds },
+      })
+    : 0;
 
   return {
     totalUsers,
@@ -730,6 +764,8 @@ export async function getSyncStatus(orgId) {
     unclaimedUsers: pendingUsers,
     activeUsers,
     unassignedUsers,
+    assignedUsers,
+    measuredUsers,
     lastSlackSync: org.integrations?.slack?.lastEmployeeSync,
     lastGoogleSync: org.integrations?.googleChat?.lastEmployeeSync,
     lastMicrosoftSync: org.integrations?.microsoft?.lastEmployeeSync,

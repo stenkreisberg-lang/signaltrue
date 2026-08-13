@@ -44,6 +44,12 @@ const brief = {
     readyTeams: 8,
     eligibleTeams: 8,
   },
+  freshness: {
+    userCountChanged: true,
+    snapshotTotalUsers: 95,
+    currentTotalUsers: 59,
+    directoryDelta: -36,
+  },
   metrics: [
     {
       key: 'meeting_hours',
@@ -97,6 +103,7 @@ test('shows the saved email brief with deeper evidence and report-grounded quest
   expect(screen.getByText('Ask about this brief')).toBeInTheDocument();
   expect(screen.getByText('Meeting hours increased.')).toBeInTheDocument();
   expect(screen.getByText('Review recurring meetings.')).toBeInTheDocument();
+  expect(screen.getByText(/This snapshot was based on 95 active users/)).toBeInTheDocument();
 });
 
 test('submits a follow-up question to the weekly brief assistant', async () => {

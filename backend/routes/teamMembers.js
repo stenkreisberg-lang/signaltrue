@@ -8,6 +8,14 @@ import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
 
 const router = express.Router();
 const ORG_ADMIN_ROLES = ['hr_admin', 'admin', 'org_admin', 'super_admin', 'master_admin'];
+const ACTIVITY_LOOKBACK_DAYS = 90;
+const MEASURED_EVENT_TYPES = [
+  'meeting',
+  'message',
+  'email_sent',
+  'email_received',
+  'task_comment_added',
+];
 
 // Get team members — HR/admin roles see all org employees, others see own team only
 router.get('/', authenticateToken, async (req, res) => {
@@ -25,9 +33,44 @@ router.get('/', authenticateToken, async (req, res) => {
       query = { teamId };
     }
 
-    const members = await User.find(query).select('-password').sort({ role: -1, name: 1 }); // Admins first, then alphabetically
+    const members = await User.find(query).select('-password').sort({ role: -1, name: 1 }).lean(); // Admins first, then alphabetically
+    const memberIds = members.map((member) => member._id);
+    const activityOrgId = members[0]?.orgId || orgId;
+    const since = new Date(Date.now() - ACTIVITY_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+    const activityRows =
+      activityOrgId && memberIds.length
+        ? await WorkEvent.aggregate([
+            {
+              $match: {
+                orgId: activityOrgId,
+                actorUserId: { $in: memberIds },
+                eventType: { $in: MEASURED_EVENT_TYPES },
+                timestamp: { $gte: since },
+              },
+            },
+            {
+              $group: {
+                _id: '$actorUserId',
+                count: { $sum: 1 },
+                lastMeasuredActivityAt: { $max: '$timestamp' },
+                sources: { $addToSet: '$source' },
+              },
+            },
+          ])
+        : [];
+    const activityByUser = new Map(activityRows.map((row) => [String(row._id), row]));
 
-    res.json(members);
+    res.json(
+      members.map((member) => {
+        const activity = activityByUser.get(String(member._id));
+        return {
+          ...member,
+          activityEventCount: activity?.count || 0,
+          lastMeasuredActivityAt: activity?.lastMeasuredActivityAt || null,
+          measuredSourceTypes: activity?.sources || [],
+        };
+      })
+    );
   } catch (error) {
     console.error('Get team members error:', error);
     res.status(500).json({ message: error.message });

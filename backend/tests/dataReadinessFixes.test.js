@@ -47,6 +47,9 @@ describe('directory mapping', () => {
   test('normalizes department names without inventing a department', () => {
     expect(normalizeDepartmentName('  Customer   Success ')).toBe('Customer Success');
     expect(normalizeDepartmentName('Customer Success\u200B')).toBe('Customer Success');
+    expect(normalizeDepartmentName('IT osakond')).toBe('IT');
+    expect(normalizeDepartmentName('it')).toBe('IT');
+    expect(normalizeDepartmentName('Operations Department')).toBe('Operations');
     expect(normalizeDepartmentName('   ')).toBeNull();
     expect(normalizeDepartmentName(null)).toBeNull();
   });

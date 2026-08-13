@@ -7,6 +7,7 @@ import {
 } from '../services/weeklyBriefSnapshotService.js';
 import { askWeeklyBrief } from '../services/weeklyBriefAssistantService.js';
 import WeekContext from '../models/weekContext.js';
+import User from '../models/user.js';
 
 const router = express.Router();
 const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin', 'executive'];
@@ -29,10 +30,33 @@ async function loadOrGenerateLatest(orgId) {
       snapshot = await getLatestWeeklyBriefSnapshot(orgId);
     } catch (err) {
       if (!snapshot) throw err;
-      console.warn('[WeeklyBrief] Returning stale dashboard snapshot after refresh failed:', err.message);
+      console.warn(
+        '[WeeklyBrief] Returning stale dashboard snapshot after refresh failed:',
+        err.message
+      );
     }
   }
   return snapshot;
+}
+
+async function addSnapshotFreshness(orgId, snapshot) {
+  if (!snapshot) return snapshot;
+  const currentTotalUsers = await User.countDocuments({
+    orgId,
+    accountStatus: { $ne: 'inactive' },
+  });
+  const snapshotTotalUsers = Number(snapshot.coverage?.totalUsers || 0);
+  const directoryDelta = currentTotalUsers - snapshotTotalUsers;
+  return {
+    ...snapshot,
+    freshness: {
+      currentTotalUsers,
+      snapshotTotalUsers,
+      directoryDelta,
+      userCountChanged: snapshotTotalUsers > 0 && directoryDelta !== 0,
+      generatedAt: snapshot.generatedAt,
+    },
+  };
 }
 
 // GET /api/weekly-brief/latest - exact structured snapshot behind the emailed brief
@@ -40,7 +64,7 @@ router.get('/latest', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (r
   try {
     const snapshot = await loadOrGenerateLatest(req.user.orgId);
     if (!snapshot) return res.status(404).json({ message: 'No weekly brief is available yet' });
-    res.json(snapshot);
+    res.json(await addSnapshotFreshness(req.user.orgId, snapshot));
   } catch (err) {
     console.error('[WeeklyBrief] Failed to load latest dashboard snapshot:', err.message);
     res.status(500).json({ message: 'Unable to load the latest weekly brief' });
@@ -63,7 +87,7 @@ router.post('/refresh', requireHROrAdmin, requireOrgContext, async (req, res) =>
   try {
     await generateWeeklyBrief(req.user.orgId);
     const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
-    res.json(snapshot);
+    res.json(await addSnapshotFreshness(req.user.orgId, snapshot));
   } catch (err) {
     console.error('[WeeklyBrief] Failed to refresh dashboard snapshot:', err.message);
     res.status(500).json({ message: 'Unable to refresh the weekly brief' });

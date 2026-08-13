@@ -17,6 +17,9 @@ interface Employee {
     department?: string;
     phone?: string;
   };
+  activityEventCount?: number;
+  lastMeasuredActivityAt?: string | null;
+  measuredSourceTypes?: string[];
   createdAt: string;
 }
 
@@ -35,6 +38,8 @@ interface SyncStatus {
   unclaimedUsers?: number;
   activeUsers: number;
   unassignedUsers: number;
+  assignedUsers?: number;
+  measuredUsers?: number;
   lastSlackSync?: string;
   lastGoogleSync?: string;
   lastMicrosoftSync?: string;
@@ -117,9 +122,9 @@ const EmployeeDirectory: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'assigned' | 'unassigned' | 'pending' | 'active'>(
-    'all'
-  );
+  const [filter, setFilter] = useState<
+    'all' | 'assigned' | 'unassigned' | 'synced' | 'measured' | 'claimed'
+  >('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
@@ -172,6 +177,8 @@ const EmployeeDirectory: React.FC = () => {
             pendingUsers: 0,
             activeUsers: 0,
             unassignedUsers: 0,
+            assignedUsers: 0,
+            measuredUsers: 0,
             slackConnected: false,
             googleConnected: false,
             microsoftConnected: false,
@@ -518,9 +525,11 @@ const EmployeeDirectory: React.FC = () => {
       filtered = filtered.filter((e) => e.teamName && e.teamName !== 'Unassigned');
     } else if (filter === 'unassigned') {
       filtered = filtered.filter((e) => !e.teamName || e.teamName === 'Unassigned');
-    } else if (filter === 'pending') {
+    } else if (filter === 'synced') {
       filtered = filtered.filter((e) => isDirectorySyncedEmployee(e));
-    } else if (filter === 'active') {
+    } else if (filter === 'measured') {
+      filtered = filtered.filter((e) => (e.activityEventCount || 0) > 0);
+    } else if (filter === 'claimed') {
       filtered = filtered.filter((e) => e.accountStatus === 'active');
     }
 
@@ -562,34 +571,41 @@ const EmployeeDirectory: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (employee: Employee) => {
-    if (isDirectorySyncedEmployee(employee)) {
-      return (
-        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-          Synced
-        </span>
+  const statusPill = (label: string, className: string, title?: string) => (
+    <span
+      title={title}
+      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}
+    >
+      {label}
+    </span>
+  );
+
+  const getDirectoryBadge = (employee: Employee) =>
+    isDirectorySyncedEmployee(employee) || employee.source !== 'manual'
+      ? statusPill('Synced', 'bg-blue-100 text-blue-800')
+      : statusPill('Manual', 'bg-slate-100 text-slate-700');
+
+  const getActivityBadge = (employee: Employee) => {
+    const count = employee.activityEventCount || 0;
+    if (count > 0) {
+      const sources = employee.measuredSourceTypes?.length
+        ? employee.measuredSourceTypes.join(', ')
+        : 'measured metadata';
+      return statusPill(
+        'Measured',
+        'bg-green-100 text-green-800',
+        `${count} event(s) in the last 90 days from ${sources}`
       );
     }
-
-    const { accountStatus: status } = employee;
-    const styles = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-    };
-    const labels = {
-      pending: 'Unclaimed',
-      active: 'Active',
-      inactive: 'Inactive',
-    };
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-semibold rounded-full ${styles[status as keyof typeof styles] || styles.inactive}`}
-      >
-        {labels[status as keyof typeof labels] || status}
-      </span>
-    );
+    return statusPill('No activity yet', 'bg-slate-100 text-slate-600');
   };
+
+  const getLoginBadge = (employee: Employee) =>
+    employee.accountStatus === 'active'
+      ? statusPill('Claimed', 'bg-green-100 text-green-800')
+      : employee.accountStatus === 'pending'
+        ? statusPill('Unclaimed', 'bg-yellow-100 text-yellow-800')
+        : statusPill('Inactive', 'bg-gray-100 text-gray-800');
 
   const getSourceBadge = (source: string) => {
     const icons: { [key: string]: string } = {
@@ -641,7 +657,7 @@ const EmployeeDirectory: React.FC = () => {
       {syncStatus && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Sync Status</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             <div>
               <div className="text-3xl font-bold text-blue-600">{syncStatus.totalUsers}</div>
               <div className="text-sm text-gray-600">Total Employees</div>
@@ -653,12 +669,20 @@ const EmployeeDirectory: React.FC = () => {
               <div className="text-sm text-gray-600">Directory Synced</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-green-600">{syncStatus.activeUsers}</div>
-              <div className="text-sm text-gray-600">Claimed Logins</div>
+              <div className="text-3xl font-bold text-teal-600">
+                {syncStatus.assignedUsers ?? syncStatus.totalUsers - syncStatus.unassignedUsers}
+              </div>
+              <div className="text-sm text-gray-600">Team Assigned</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-orange-600">{syncStatus.unassignedUsers}</div>
-              <div className="text-sm text-gray-600">Unassigned</div>
+              <div className="text-3xl font-bold text-green-600">
+                {syncStatus.measuredUsers ?? 0}
+              </div>
+              <div className="text-sm text-gray-600">Measured Activity</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-indigo-600">{syncStatus.activeUsers}</div>
+              <div className="text-sm text-gray-600">Claimed Logins</div>
             </div>
           </div>
 
@@ -1049,9 +1073,9 @@ const EmployeeDirectory: React.FC = () => {
               Unassigned
             </button>
             <button
-              onClick={() => setFilter('pending')}
+              onClick={() => setFilter('synced')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'pending'
+                filter === 'synced'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -1059,14 +1083,24 @@ const EmployeeDirectory: React.FC = () => {
               Synced
             </button>
             <button
-              onClick={() => setFilter('active')}
+              onClick={() => setFilter('measured')}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                filter === 'active'
+                filter === 'measured'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Active
+              Measured
+            </button>
+            <button
+              onClick={() => setFilter('claimed')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                filter === 'claimed'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Claimed
             </button>
           </div>
         </div>
@@ -1149,7 +1183,7 @@ const EmployeeDirectory: React.FC = () => {
           <div className="p-8 text-center text-gray-500">
             {searchTerm
               ? 'No employees match your search.'
-              : 'No employees found. Connect Slack or Google to sync employees.'}
+              : 'No employees found. Connect Slack, Google, Microsoft, or import an HR roster to sync employees.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1177,7 +1211,13 @@ const EmployeeDirectory: React.FC = () => {
                     Team
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Directory
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activity
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Login
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Source
@@ -1230,7 +1270,18 @@ const EmployeeDirectory: React.FC = () => {
                         {employee.teamName || 'Unassigned'}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{getStatusBadge(employee)}</td>
+                    <td className="px-4 py-3">{getDirectoryBadge(employee)}</td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        {getActivityBadge(employee)}
+                        {employee.lastMeasuredActivityAt && (
+                          <div className="text-xs text-gray-500">
+                            Last {formatDate(employee.lastMeasuredActivityAt)}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{getLoginBadge(employee)}</td>
                     <td className="px-4 py-3">{getSourceBadge(employee.source)}</td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[230px] items-center gap-2">

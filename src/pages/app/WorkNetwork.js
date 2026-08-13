@@ -50,6 +50,11 @@ function LeadershipQuestions({ questions = [] }) {
               </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-700">{item.answer}</p>
+            {item.sourceBasis && (
+              <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                Based on {item.sourceBasis}
+              </p>
+            )}
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
               {item.evidence.map((line) => (
                 <li key={line} className="flex gap-2">
@@ -61,6 +66,54 @@ function LeadershipQuestions({ questions = [] }) {
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+function SourceCoveragePanel({ coverage }) {
+  if (!coverage?.items?.length) return null;
+  return (
+    <section className="app-panel">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="app-eyebrow">Evidence sources</p>
+          <h2 className="text-2xl font-bold text-slate-900">What is actually measured</h2>
+        </div>
+        <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800">
+          {coverage.basisLabel}
+        </span>
+      </div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {coverage.items.map((item) => (
+          <div key={item.type} className="rounded-lg border border-slate-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-bold text-slate-900">{item.label}</p>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                  item.status === 'measured'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {item.status === 'measured' ? 'Measured' : 'Not measured'}
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              {number(item.mappedEvents)} mapped of {number(item.events)} events
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              {item.sourceLabels?.length ? item.sourceLabels.join(', ') : 'No source in period'}
+            </p>
+          </div>
+        ))}
+      </div>
+      {coverage.limitations?.length > 0 && (
+        <ul className="mt-4 space-y-1 text-sm text-slate-600">
+          {coverage.limitations.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -409,6 +462,8 @@ export default function WorkNetwork() {
 
           {readiness.ready && <LeadershipQuestions questions={network.leadershipQuestions || []} />}
 
+          <SourceCoveragePanel coverage={network.sourceCoverage || readiness.sourceCoverage} />
+
           {readiness.ready && <TeamDemandTable teams={network.teamDemand || []} />}
 
           <section className="app-panel">
@@ -474,6 +529,7 @@ export default function WorkNetwork() {
                         <th className="px-3 py-3">Meetings</th>
                         <th className="px-3 py-3">Dominant direction</th>
                         <th className="px-3 py-3">Invite load</th>
+                        <th className="px-3 py-3">Evidence source</th>
                         <th className="px-3 py-3">Concentration</th>
                         <th className="px-3 py-3">Trend</th>
                       </tr>
@@ -511,6 +567,14 @@ export default function WorkNetwork() {
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
                               {number(edge.inviteCount)} invited slots
+                            </p>
+                          </td>
+                          <td className="px-3 py-4">
+                            <p className="font-semibold text-slate-900">
+                              {edge.sourceTypes?.length ? edge.sourceTypes.join(' + ') : 'Measured'}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {edge.sourceLabels?.join(', ') || edge.sourceBasis || 'Metadata'}
                             </p>
                           </td>
                           <td className="px-3 py-4">{pct(edge.bridgeConcentration)}</td>
@@ -559,6 +623,11 @@ export default function WorkNetwork() {
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                           Evidence
                         </p>
+                        {insight.sourceBasis && (
+                          <p className="mt-2 text-xs font-semibold text-slate-500">
+                            Based on {insight.sourceBasis}
+                          </p>
+                        )}
                         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
                           {insight.evidence.map((item) => (
                             <li key={item}>{item}</li>
