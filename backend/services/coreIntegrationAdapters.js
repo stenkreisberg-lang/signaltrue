@@ -76,6 +76,62 @@ function getMessageLengthBucket(content) {
   return 'long';
 }
 
+async function fetchSlackCollection(url, accessToken, { maxPages = 100 } = {}) {
+  const items = [];
+  let nextUrl = url;
+  let pages = 0;
+
+  while (nextUrl && pages < maxPages) {
+    const response = await fetch(nextUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await response.json();
+    if (!data.ok) {
+      throw new Error(data.error || 'Slack API request failed');
+    }
+    items.push(...(data.channels || data.messages || []));
+    const cursor = data.response_metadata?.next_cursor;
+    if (!cursor) break;
+    const next = new URL(nextUrl);
+    next.searchParams.set('cursor', cursor);
+    nextUrl = next.toString();
+    pages++;
+  }
+
+  if (nextUrl && pages >= maxPages) {
+    console.warn(`[Slack] Pagination stopped after ${maxPages} pages for ${url}`);
+  }
+  return items;
+}
+
+async function fetchGoogleCollection(url, accessToken, itemKey, { maxPages = 100 } = {}) {
+  const items = [];
+  let nextUrl = url;
+  let pages = 0;
+
+  while (nextUrl && pages < maxPages) {
+    const response = await fetch(nextUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Google API ${response.status}: ${error.slice(0, 300)}`);
+    }
+    const data = await response.json();
+    items.push(...(data[itemKey] || []));
+    if (!data.nextPageToken) break;
+    const next = new URL(nextUrl);
+    next.searchParams.set('pageToken', data.nextPageToken);
+    nextUrl = next.toString();
+    pages++;
+  }
+
+  if (nextUrl && pages >= maxPages) {
+    console.warn(`[Google] Pagination stopped after ${maxPages} pages for ${url}`);
+  }
+  return items;
+}
+
 function normalizeAttendeeResponse(value) {
   const response = String(value || 'none').trim();
   if (
@@ -278,41 +334,30 @@ export class SlackAdapter extends OrgIntegrationAdapter {
   async fetchEvents(_orgId, accessToken, since, until) {
     const allMessages = [];
 
-    // Get list of channels
-    const channelsRes = await fetch(
-      'https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=100',
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
-    const channelsData = await channelsRes.json();
-
-    if (!channelsData.ok) {
-      console.warn('Slack channels fetch failed:', channelsData.error);
+    const channels = await fetchSlackCollection(
+      'https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=200',
+      accessToken
+    ).catch((error) => {
+      console.warn('Slack channels fetch failed:', error.message);
       return [];
-    }
-
-    const channels = channelsData.channels || [];
+    });
     const oldestTs = Math.floor(since.getTime() / 1000);
     const latestTs = Math.floor(until.getTime() / 1000);
 
-    // Fetch messages from each channel (limit to first 5 channels for performance)
-    for (const channel of channels.slice(0, 5)) {
+    for (const channel of channels) {
       try {
-        const historyRes = await fetch(
+        const messages = await fetchSlackCollection(
           `https://slack.com/api/conversations.history?channel=${channel.id}&oldest=${oldestTs}&latest=${latestTs}&limit=200`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
+          accessToken,
+          { maxPages: 25 }
         );
-        const historyData = await historyRes.json();
-
-        if (historyData.ok && historyData.messages) {
-          const messages = historyData.messages.map((m) => ({
+        allMessages.push(
+          ...messages.map((m) => ({
             ...m,
             channelId: channel.id,
-            channelName: channel.name,
-          }));
-          allMessages.push(...messages);
-        }
+            channelType: channel.is_im ? 'dm' : channel.is_private ? 'private' : 'public',
+          }))
+        );
       } catch (err) {
         console.warn(`Failed to fetch Slack channel ${channel.id}:`, err.message);
       }
@@ -326,18 +371,23 @@ export class SlackAdapter extends OrgIntegrationAdapter {
       orgId: new mongoose.Types.ObjectId(orgId),
       source: 'slack',
       eventType: 'message',
-      externalId: `slack-${msg.ts}`,
+      externalId: `slack-${msg.channelId}-${msg.ts}`,
       timestamp: new Date(parseFloat(msg.ts) * 1000),
       metadata: {
-        channelId: msg.channelId,
-        channelName: msg.channelName,
-        userId: msg.user,
-        threadTs: msg.thread_ts,
-        hasReactions: (msg.reactions?.length || 0) > 0,
-        messageLength: msg.text?.length || 0,
-        isReply: !!msg.thread_ts,
+        slackUserId: msg.user,
+        channelType: msg.channelType || 'public',
+        channelHash: hashMetadata(orgId, msg.channelId),
+        externalChannelId: msg.channelId,
+        externalMessageId: msg.ts,
+        threadIdHash: hashMetadata(orgId, msg.thread_ts || msg.ts),
+        replyToIdHash:
+          msg.thread_ts && msg.thread_ts !== msg.ts ? hashMetadata(orgId, msg.thread_ts) : null,
+        isReply: Boolean(msg.thread_ts && msg.thread_ts !== msg.ts),
+        reactionCount: msg.reactions?.length || 0,
+        messageLengthBucket: getMessageLengthBucket(msg.text),
+        hasAttachment: (msg.files?.length || 0) > 0,
       },
-      raw: { text: msg.text?.substring(0, 500) }, // Truncate for storage
+      raw: { ts: msg.ts },
     }));
   }
 }
@@ -1141,19 +1191,9 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
     url.searchParams.set('timeMax', until.toISOString());
     url.searchParams.set('singleEvents', 'true');
     url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', '100');
+    url.searchParams.set('maxResults', '2500');
 
-    const response = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Google Calendar fetch failed: ${error}`);
-    }
-
-    const data = await response.json();
-    return data.items || [];
+    return fetchGoogleCollection(url.toString(), accessToken, 'items');
   }
 
   async transformToWorkEvents(rawEvents, orgId) {
@@ -1324,29 +1364,44 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
     });
   }
 
-  async fetchEvents(_orgId, accessToken, _since, _until) {
-    // Get list of spaces
-    const spacesRes = await fetch('https://chat.googleapis.com/v1/spaces?pageSize=20', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+  async fetchEvents(_orgId, accessToken, since, until) {
+    const spaces = await fetchGoogleCollection(
+      'https://chat.googleapis.com/v1/spaces?pageSize=100',
+      accessToken,
+      'spaces'
+    ).catch((error) => {
+      console.warn('Google Chat spaces fetch failed:', error.message);
+      return [];
     });
-    const spacesData = await spacesRes.json();
-    const spaces = spacesData.spaces || [];
 
     const allMessages = [];
 
-    // Fetch messages from each space (limit to 5 spaces)
-    for (const space of spaces.slice(0, 5)) {
+    for (const space of spaces) {
       try {
-        const messagesRes = await fetch(
-          `https://chat.googleapis.com/v1/${space.name}/messages?pageSize=50`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
+        const messagesUrl = new URL(`https://chat.googleapis.com/v1/${space.name}/messages`);
+        messagesUrl.searchParams.set('pageSize', '1000');
+        messagesUrl.searchParams.set('orderBy', 'createTime desc');
+        messagesUrl.searchParams.set('filter', `createTime > "${since.toISOString()}"`);
+        const messages = await fetchGoogleCollection(
+          messagesUrl.toString(),
+          accessToken,
+          'messages',
+          {
+            maxPages: 25,
+          }
         );
-        const messagesData = await messagesRes.json();
-        const messages = (messagesData.messages || []).map((m) => ({
-          ...m,
-          spaceName: space.displayName || space.name,
-        }));
-        allMessages.push(...messages);
+        allMessages.push(
+          ...messages
+            .filter((m) => {
+              const created = new Date(m.createTime);
+              return !Number.isNaN(created.getTime()) && created <= until;
+            })
+            .map((m) => ({
+              ...m,
+              spaceId: space.name,
+              spaceType: space.spaceType,
+            }))
+        );
       } catch (err) {
         console.warn(`Failed to fetch Google Chat space ${space.name}:`, err.message);
       }
@@ -1363,12 +1418,17 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
       externalId: `gchat-${msg.name}`,
       timestamp: new Date(msg.createTime),
       metadata: {
-        spaceName: msg.spaceName,
-        senderName: msg.sender?.displayName,
+        googleUserId: msg.sender?.name,
         senderType: msg.sender?.type,
-        hasAttachments: (msg.attachment?.length || 0) > 0,
-        hasThread: !!msg.thread,
-        messageLength: msg.text?.length || 0,
+        channelType: msg.spaceType === 'DIRECT_MESSAGE' ? 'dm' : 'group_dm',
+        channelHash: hashMetadata(orgId, msg.spaceId),
+        externalChannelId: msg.spaceId,
+        externalMessageId: msg.name,
+        threadIdHash: hashMetadata(orgId, msg.thread?.name || msg.name),
+        isReply: Boolean(msg.thread?.name),
+        hasAttachment: (msg.attachment?.length || 0) > 0,
+        hasThread: Boolean(msg.thread),
+        messageLengthBucket: getMessageLengthBucket(msg.text),
       },
       raw: { name: msg.name },
     }));

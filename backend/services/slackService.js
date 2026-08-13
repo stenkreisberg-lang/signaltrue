@@ -2,7 +2,6 @@
 import { WebClient } from '@slack/web-api';
 import Team from '../models/team.js';
 import Organization from '../models/organizationModel.js';
-import getProvider from '../utils/aiProvider.js';
 import { createSnapshot } from '../utils/bdiHistory.js';
 
 // ...existing code...
@@ -19,30 +18,8 @@ export async function fetchChannelMessages(channelId, days = 7) {
   return res.messages || [];
 }
 
-export async function analyzeSentiment(messages) {
-  // Sample up to 20 messages for sentiment analysis
-  const sample = messages.filter((m) => m.text && m.text.length > 10).slice(0, 20);
-  if (sample.length === 0) return 0;
-
-  const combinedText = sample.map((m) => m.text).join('\n');
-
-  try {
-    const providerClient = getProvider();
-    const prompt = `Analyze the sentiment of these Slack messages on a scale from -1 (very negative) to +1 (very positive). Return only a number between -1 and 1:\n\n${combinedText}`;
-
-    const completion = await providerClient.generate({
-      prompt,
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-      max_tokens: 10,
-    });
-
-    const content = completion.choices?.[0]?.message?.content || '0';
-    const sentiment = parseFloat(content.trim());
-    return isNaN(sentiment) ? 0 : Math.max(-1, Math.min(1, sentiment));
-  } catch (err) {
-    console.warn('Sentiment analysis failed:', err.message);
-    return 0;
-  }
+export async function analyzeSentiment() {
+  return 0;
 }
 
 export async function analyzeChannel(channelId) {
@@ -64,10 +41,7 @@ export async function analyzeChannel(channelId) {
   }
   const avgResponseDelayHours = delays ? totalDelay / delays / 3600 : 0;
 
-  // Analyze sentiment using AI
-  const sentiment = await analyzeSentiment(messages);
-
-  return { messageCount, avgResponseDelayHours, sentiment };
+  return { messageCount, avgResponseDelayHours };
 }
 
 export async function refreshAllTeamsFromSlack() {
@@ -84,13 +58,12 @@ export async function refreshAllTeamsFromSlack() {
       t.slackSignals = {
         messageCount: data.messageCount,
         avgResponseDelayHours: Math.round(data.avgResponseDelayHours * 10) / 10,
-        sentiment: Math.round(data.sentiment * 100) / 100,
+        sentiment: 0,
       };
 
-      // Update BDI based on signals
-      const sentimentImpact = data.sentiment * 10;
+      // Update legacy BDI using metadata only. No message content or sentiment is read.
       const responseImpact = Math.max(-10, Math.min(10, (5 - data.avgResponseDelayHours) * 2));
-      t.bdi = Math.max(0, Math.min(100, t.bdi + Math.round(sentimentImpact + responseImpact)));
+      t.bdi = Math.max(0, Math.min(100, t.bdi + Math.round(responseImpact)));
 
       await t.save();
       // Update organization sync counters

@@ -31,17 +31,29 @@ interface AnalyticsData {
     meetingToFocusRatio: number;
   };
   risks: {
-    attritionRisk: number;
-    burnoutRisk: number;
-    collaborationRisk: number;
+    retentionExposure?: number;
+    recoveryExposure?: number;
+    collaborationRisk?: number;
+    attritionRisk?: number;
+    burnoutRisk?: number;
   };
 }
+
+const normalizeAnalyticsData = (data: AnalyticsData): AnalyticsData => ({
+  ...data,
+  risks: {
+    ...data.risks,
+    retentionExposure: data.risks?.retentionExposure ?? data.risks?.attritionRisk ?? 0,
+    recoveryExposure: data.risks?.recoveryExposure ?? data.risks?.burnoutRisk ?? 0,
+    collaborationRisk: data.risks?.collaborationRisk ?? 0,
+  },
+});
 
 const TeamAnalytics: React.FC = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error] = useState('');
 
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -60,7 +72,7 @@ const TeamAnalytics: React.FC = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setAnalytics(data);
+          setAnalytics(normalizeAnalyticsData(data));
         } else {
           // Use fallback demo data if API not available
           setAnalytics({
@@ -81,8 +93,8 @@ const TeamAnalytics: React.FC = () => {
               meetingToFocusRatio: 0.82,
             },
             risks: {
-              attritionRisk: 15,
-              burnoutRisk: 22,
+              retentionExposure: 15,
+              recoveryExposure: 22,
               collaborationRisk: 8,
             },
           });
@@ -108,8 +120,8 @@ const TeamAnalytics: React.FC = () => {
             meetingToFocusRatio: 0.82,
           },
           risks: {
-            attritionRisk: 15,
-            burnoutRisk: 22,
+            retentionExposure: 15,
+            recoveryExposure: 22,
             collaborationRisk: 8,
           },
         });
@@ -138,6 +150,10 @@ const TeamAnalytics: React.FC = () => {
     if (risk <= 40) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  const retentionExposure = analytics?.risks.retentionExposure ?? 0;
+  const recoveryExposure = analytics?.risks.recoveryExposure ?? 0;
+  const collaborationRisk = analytics?.risks.collaborationRisk ?? 0;
 
   if (loading) {
     return (
@@ -258,7 +274,7 @@ const TeamAnalytics: React.FC = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-600">Slack Messages (This Week)</span>
+                  <span className="text-gray-600">Collaboration Messages (This Week)</span>
                   <span className="font-semibold text-gray-900">
                     {analytics?.communicationMetrics.slackMessages.toLocaleString()}
                   </span>
@@ -323,34 +339,30 @@ const TeamAnalytics: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-700 font-medium">Attrition Risk</span>
+                <span className="text-gray-700 font-medium">Retention Exposure</span>
               </div>
-              <div
-                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.attritionRisk || 0)}`}
-              >
-                {analytics?.risks.attritionRisk}%
+              <div className={`text-3xl font-bold ${getRiskColor(retentionExposure)}`}>
+                {retentionExposure}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${(analytics?.risks.attritionRisk || 0) <= 20 ? 'bg-green-500' : (analytics?.risks.attritionRisk || 0) <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                  style={{ width: `${analytics?.risks.attritionRisk}%` }}
+                  className={`h-2 rounded-full ${retentionExposure <= 20 ? 'bg-green-500' : retentionExposure <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${retentionExposure}%` }}
                 ></div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-700 font-medium">Burnout Risk</span>
+                <span className="text-gray-700 font-medium">Recovery Exposure</span>
               </div>
-              <div
-                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.burnoutRisk || 0)}`}
-              >
-                {analytics?.risks.burnoutRisk}%
+              <div className={`text-3xl font-bold ${getRiskColor(recoveryExposure)}`}>
+                {recoveryExposure}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${(analytics?.risks.burnoutRisk || 0) <= 20 ? 'bg-green-500' : (analytics?.risks.burnoutRisk || 0) <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                  style={{ width: `${analytics?.risks.burnoutRisk}%` }}
+                  className={`h-2 rounded-full ${recoveryExposure <= 20 ? 'bg-green-500' : recoveryExposure <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${recoveryExposure}%` }}
                 ></div>
               </div>
             </div>
@@ -359,15 +371,13 @@ const TeamAnalytics: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Collaboration Risk</span>
               </div>
-              <div
-                className={`text-3xl font-bold ${getRiskColor(analytics?.risks.collaborationRisk || 0)}`}
-              >
-                {analytics?.risks.collaborationRisk}%
+              <div className={`text-3xl font-bold ${getRiskColor(collaborationRisk)}`}>
+                {collaborationRisk}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${(analytics?.risks.collaborationRisk || 0) <= 20 ? 'bg-green-500' : (analytics?.risks.collaborationRisk || 0) <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                  style={{ width: `${analytics?.risks.collaborationRisk}%` }}
+                  className={`h-2 rounded-full ${collaborationRisk <= 20 ? 'bg-green-500' : collaborationRisk <= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${collaborationRisk}%` }}
                 ></div>
               </div>
             </div>

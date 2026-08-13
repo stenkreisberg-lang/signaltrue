@@ -13,6 +13,8 @@ import { normalizeDepartmentName } from '../services/employeeSyncService.js';
 import {
   fetchGraphCollection,
   GoogleCalendarAdapter,
+  GoogleChatAdapter,
+  SlackAdapter,
 } from '../services/coreIntegrationAdapters.js';
 import {
   getNextWeeklyRun,
@@ -28,7 +30,7 @@ afterEach(() => {
 });
 
 describe('small-team configuration', () => {
-  test('enforces the five-person privacy floor by default', () => {
+  test('enforces the five-person operational privacy floor by default', () => {
     expect(MIN_TEAM_SIZE).toBe(5);
     expect(MIN_METRIC_CONTRIBUTORS).toBe(5);
     expect(checkTeamSize(1)).toBe(false);
@@ -40,6 +42,58 @@ describe('small-team configuration', () => {
   test('new teams are active by default', () => {
     const team = new Team({ name: 'Nobel team', orgId: '507f1f77bcf86cd799439011' });
     expect(team.isActive).toBe(true);
+  });
+});
+
+describe('metadata-only collaboration transforms', () => {
+  test('Slack adapter stores hashed metadata without message text or channel names', async () => {
+    const adapter = new SlackAdapter();
+    const [event] = await adapter.transformToWorkEvents(
+      [
+        {
+          ts: '1780000000.000100',
+          user: 'U123',
+          channelId: 'C123',
+          channelType: 'private',
+          thread_ts: '1780000000.000000',
+          text: 'This body must not be stored',
+          reactions: [{ name: 'thumbsup' }],
+        },
+      ],
+      '507f1f77bcf86cd799439001'
+    );
+
+    expect(event.metadata.slackUserId).toBe('U123');
+    expect(event.metadata.channelHash).toHaveLength(64);
+    expect(event.metadata.channelName).toBeUndefined();
+    expect(event.metadata.messageLengthBucket).toBe('short');
+    expect(event.raw).toEqual({ ts: '1780000000.000100' });
+  });
+
+  test('Google Chat adapter stores hashed metadata without sender names or message text', async () => {
+    const adapter = new GoogleChatAdapter();
+    const [event] = await adapter.transformToWorkEvents(
+      [
+        {
+          name: 'spaces/AAA/messages/BBB',
+          createTime: '2026-08-03T09:00:00Z',
+          sender: { name: 'users/123', displayName: 'Ada Lovelace', type: 'HUMAN' },
+          spaceId: 'spaces/AAA',
+          spaceType: 'SPACE',
+          thread: { name: 'spaces/AAA/threads/TTT' },
+          text: 'This body must not be stored either',
+          attachment: [{}],
+        },
+      ],
+      '507f1f77bcf86cd799439001'
+    );
+
+    expect(event.metadata.googleUserId).toBe('users/123');
+    expect(event.metadata.channelHash).toHaveLength(64);
+    expect(event.metadata.senderName).toBeUndefined();
+    expect(event.metadata.messageLengthBucket).toBe('short');
+    expect(event.metadata.hasAttachment).toBe(true);
+    expect(event.raw).toEqual({ name: 'spaces/AAA/messages/BBB' });
   });
 });
 

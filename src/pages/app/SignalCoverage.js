@@ -40,6 +40,22 @@ export default function SignalCoverage() {
   }, []);
 
   const connected = status.sources.filter((source) => source.status === 'connected').length;
+  const measuredSources = status.sources.filter(
+    (source) => (source.coverage?.mapped || 0) > 0
+  ).length;
+
+  const getSourceStatus = (source) => {
+    if (source.status === 'connected' && (source.coverage?.mapped || 0) > 0) {
+      return { label: 'Measuring', className: 'status-ok' };
+    }
+    if (source.status === 'connected') {
+      return { label: 'Connected, unmapped', className: 'status-warn' };
+    }
+    if (source.status === 'needs_admin') {
+      return { label: 'Needs admin', className: 'status-warn' };
+    }
+    return { label: 'Not connected', className: 'status-muted' };
+  };
 
   return (
     <AppShell user={user} section="Data Coverage">
@@ -59,8 +75,8 @@ export default function SignalCoverage() {
         <div className="app-metric">
           <ShieldCheck size={20} />
           <div>
-            <strong>{status.calibration?.isInCalibration ? 'Calibrating' : 'Active'}</strong>
-            <span>Signal readiness</span>
+            <strong>{status.loading ? '...' : measuredSources}</strong>
+            <span>Sources measuring people</span>
           </div>
         </div>
         <div className="app-metric">
@@ -81,21 +97,33 @@ export default function SignalCoverage() {
             <p className="coverage-empty">No connected sources are available yet.</p>
           ) : (
             <div className="coverage-list">
-              {status.sources.map((source) => (
-                <div key={source.type} className="coverage-source">
-                  <span>{source.name || source.type}</span>
-                  <span className={source.status === 'connected' ? 'status-ok' : 'status-muted'}>
-                    {source.status === 'connected' ? 'Connected' : 'Not connected'}
-                  </span>
-                </div>
-              ))}
+              {status.sources.map((source) => {
+                const sourceStatus = getSourceStatus(source);
+                const mapped = source.coverage?.mapped || 0;
+                const total = source.coverage?.total || 0;
+                return (
+                  <div key={source.type} className="coverage-source">
+                    <div className="coverage-source-main">
+                      <span>{source.name || source.type}</span>
+                      <small>
+                        {mapped}/{total} mapped people
+                        {source.lastSync
+                          ? ` · last sync ${new Date(source.lastSync).toLocaleDateString()}`
+                          : ''}
+                      </small>
+                      {source.statusMessage && <small>{source.statusMessage}</small>}
+                    </div>
+                    <span className={sourceStatus.className}>{sourceStatus.label}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
         <div className="app-panel">
           <h2>Privacy controls</h2>
           {[
-            'No message, email or document content is collected.',
+            'No message, email or document content is stored or analyzed.',
             'No individual employee scores are exposed.',
             'Minimum group thresholds suppress sensitive results.',
             'Role-based access protects organization data.',

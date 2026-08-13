@@ -47,8 +47,8 @@ const GoogleChatConnect = ({ integrations }) => {
         <>
           <p style={styles.detailLine}>Account: {userEmail}</p>
           <p style={styles.cardText}>
-            Your Google Chat is connected. SignalTrue will analyze message patterns, response times,
-            and detect ad-hoc meetings from Google Meet links.
+            Your Google Chat is connected. SignalTrue will use metadata-only activity patterns,
+            response timing, and channel structure.
           </p>
           <button onClick={handleDisconnect} style={styles.btnSecondary}>
             Disconnect Google Chat
@@ -56,16 +56,16 @@ const GoogleChatConnect = ({ integrations }) => {
         </>
       ) : (
         <>
-          <p style={styles.cardText}>Connect your Google Chat workspace to analyze:</p>
+          <p style={styles.cardText}>Connect your Google Chat workspace to measure:</p>
           <ul style={styles.featureList}>
             <li>✓ Message response times</li>
             <li>✓ After-hours activity</li>
             <li>✓ Thread depth & interruptions</li>
-            <li>✓ Team sentiment analysis</li>
-            <li>✓ Ad-hoc meetings from Meet links</li>
+            <li>✓ Cross-team coordination patterns</li>
+            <li>✓ Metadata-only activity coverage</li>
           </ul>
           <p style={styles.privacyNote}>
-            🔒 We only analyze metadata and patterns. Message content is never stored.
+            Metadata only. Message content is never stored or analyzed.
           </p>
           <button onClick={handleConnect} style={styles.btnPrimary}>
             Connect Google Chat

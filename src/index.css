@@ -870,6 +870,23 @@
     font-size: 14px;
   }
 
+  .coverage-source-main {
+    min-width: 0;
+  }
+
+  .coverage-source-main span {
+    display: block;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .coverage-source-main small {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
   .coverage-rule {
     justify-content: flex-start;
   }
@@ -888,7 +905,9 @@
   }
 
   .status-ok,
+  .status-warn,
   .status-muted {
+    flex: 0 0 auto;
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 12px;
@@ -898,6 +917,11 @@
   .status-ok {
     color: #047857;
     background: #ecfdf5;
+  }
+
+  .status-warn {
+    color: #92400e;
+    background: #fef3c7;
   }
 
   .status-muted {

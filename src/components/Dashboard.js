@@ -165,7 +165,6 @@ function Dashboard() {
 
   const disconnect = async (provider) => {
     try {
-      const token = localStorage.getItem('token');
       const res = await api.post(`/integrations/${provider}/disconnect`);
       if (res.status !== 200) throw new Error('Could not disconnect');
       // Refresh status
@@ -371,7 +370,7 @@ function Dashboard() {
               </p>
             )}
             <p style={styles.cardText}>
-              Import your team's communication patterns and sentiment data
+              Import metadata-only communication patterns. No message content or sentiment.
             </p>
             {!integrations?.connected?.slack ? (
               <button style={styles.cardButton} onClick={() => openOrGuide('slack')}>
@@ -669,7 +668,7 @@ function Dashboard() {
             <div style={styles.cardIcon}>📊</div>
             <h3 style={styles.cardTitle}>View Analytics</h3>
             <p style={styles.cardText}>
-              Once connected, see real-time burnout detection and insights
+              Once connected, see team-level work-pattern evidence and coverage status.
             </p>
             <button style={styles.cardButton} onClick={() => navigate('/team-analytics')}>
               Open Analytics Dashboard
@@ -705,7 +704,8 @@ function Dashboard() {
                 <ol style={styles.helpList}>
                   <li>Ask your workspace admin to install the SignalTrue Slack App.</li>
                   <li>
-                    Approve read-only scopes to analyze public channel activity and sentiment.
+                    Approve read-only metadata scopes for message timing, channel structure, and
+                    activity coverage.
                   </li>
                   <li>
                     After authorization, you'll be redirected back here and your first sync will

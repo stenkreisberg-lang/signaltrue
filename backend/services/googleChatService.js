@@ -6,7 +6,6 @@
 
 import Team from '../models/team.js';
 import Organization from '../models/organizationModel.js';
-import getProvider from '../utils/aiProvider.js';
 import { createSnapshot } from '../utils/bdiHistory.js';
 import { decryptString } from '../utils/crypto.js';
 
@@ -78,93 +77,21 @@ export async function listSpaces(accessToken) {
 }
 
 /**
- * Analyze sentiment of messages using AI
- * @param {Array} messages - Google Chat messages
- * @returns {number} Sentiment score between -1 and 1
+ * Deprecated compatibility stub. SignalTrue does not analyze chat sentiment.
  */
-export async function analyzeSentiment(messages) {
-  // Sample up to 20 messages for sentiment analysis
-  const sample = messages.filter((m) => m.text && m.text.length > 10).slice(0, 20);
-
-  if (sample.length === 0) return 0;
-
-  const combinedText = sample.map((m) => m.text).join('\n');
-
-  try {
-    const providerClient = getProvider();
-    const prompt = `Analyze the sentiment of these Google Chat messages on a scale from -1 (very negative) to +1 (very positive). Return only a number between -1 and 1:\n\n${combinedText}`;
-
-    const completion = await providerClient.generate({
-      prompt,
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-      max_tokens: 10,
-    });
-
-    const content = completion.choices?.[0]?.message?.content || '0';
-    const sentiment = parseFloat(content.trim());
-    return isNaN(sentiment) ? 0 : Math.max(-1, Math.min(1, sentiment));
-  } catch (err) {
-    console.warn('Sentiment analysis failed:', err.message);
-    return 0;
-  }
+export async function analyzeSentiment() {
+  return 0;
 }
 
 /**
- * Detect ad-hoc meetings from Google Meet links in messages
- * @param {Array} messages - Google Chat messages
- * @returns {Object} Ad-hoc meeting stats
+ * Deprecated compatibility stub. We do not inspect message text for meeting links.
  */
-export function detectAdHocMeetings(messages) {
-  const meetLinks = [];
-  const meetPattern = /meet\.google\.com\/[a-z-]+/gi;
-
-  for (const msg of messages) {
-    const text = msg.text || '';
-    const matches = text.match(meetPattern);
-
-    if (matches) {
-      for (const link of matches) {
-        // Check if this is a new meeting (not in a thread with previous mentions)
-        const isNewMeeting =
-          !msg.thread ||
-          !messages.some(
-            (m) =>
-              m.thread?.name === msg.thread?.name &&
-              m.createTime < msg.createTime &&
-              m.text?.includes(link)
-          );
-
-        if (isNewMeeting) {
-          meetLinks.push({
-            link,
-            timestamp: new Date(msg.createTime),
-            sender: msg.sender?.name || 'unknown',
-            messageId: msg.name,
-          });
-        }
-      }
-    }
-  }
-
-  // Calculate meeting duration estimate (assume 30 min default for ad-hoc)
-  const adHocMeetingCount = meetLinks.length;
-  const estimatedMeetingHours = adHocMeetingCount * 0.5; // 30 min each
-
-  // Count after-hours meetings (before 8am or after 6pm)
-  const afterHoursMeetings = meetLinks.filter((m) => {
-    const hour = m.timestamp.getHours();
-    return hour < 8 || hour >= 18;
-  }).length;
-
+export function detectAdHocMeetings() {
   return {
-    adHocMeetingCount,
-    estimatedMeetingHours,
-    afterHoursMeetings,
-    meetLinks: meetLinks.map((m) => ({
-      link: m.link,
-      timestamp: m.timestamp,
-      isAfterHours: m.timestamp.getHours() < 8 || m.timestamp.getHours() >= 18,
-    })),
+    adHocMeetingCount: 0,
+    estimatedMeetingHours: 0,
+    afterHoursMeetings: 0,
+    meetLinks: [],
   };
 }
 
@@ -212,10 +139,7 @@ export async function analyzeSpace(accessToken, spaceId) {
   const threadMessages = messages.filter((m) => m.thread?.name).length;
   const avgThreadDepth = threadMessages / Math.max(1, messageCount);
 
-  // Analyze sentiment using AI
-  const sentiment = await analyzeSentiment(messages);
-
-  // Detect ad-hoc meetings from Google Meet links
+  // Compatibility field only. Meeting links are not read from message bodies.
   const meetingData = detectAdHocMeetings(messages);
 
   return {
@@ -224,7 +148,7 @@ export async function analyzeSpace(accessToken, spaceId) {
     afterHoursCount,
     afterHoursPercentage: messageCount > 0 ? Math.round((afterHoursCount / messageCount) * 100) : 0,
     avgThreadDepth: Math.round(avgThreadDepth * 100) / 100,
-    sentiment: Math.round(sentiment * 100) / 100,
+    sentiment: 0,
     adHocMeetings: meetingData,
   };
 }
@@ -286,19 +210,14 @@ export async function refreshAllTeamsFromGoogleChat() {
             adHocAfterHoursMeetings: data.adHocMeetings.afterHoursMeetings,
           };
 
-          // Update BDI based on signals (similar to Slack)
-          const sentimentImpact = data.sentiment * 10;
+          // Update legacy BDI using metadata only. No message content or sentiment is read.
           const responseImpact = Math.max(-10, Math.min(10, (5 - data.avgResponseDelayHours) * 2));
           const afterHoursImpact = -Math.min(15, data.afterHoursPercentage * 0.3);
           const meetingImpact = -Math.min(10, data.adHocMeetings.adHocMeetingCount * 2);
 
           team.bdi = Math.max(
             0,
-            Math.min(
-              100,
-              team.bdi +
-                Math.round(sentimentImpact + responseImpact + afterHoursImpact + meetingImpact)
-            )
+            Math.min(100, team.bdi + Math.round(responseImpact + afterHoursImpact + meetingImpact))
           );
 
           await team.save();

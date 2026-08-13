@@ -18,14 +18,15 @@ import Organization from '../models/organizationModel.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_TEAM_SIZE = 5;
-export const MIN_METRIC_CONTRIBUTORS = 5;
+export const MIN_OPERATIONAL_TEAM_SIZE = 5;
+export const MIN_HEALTH_SAFETY_TEAM_SIZE = 8;
+export const MIN_TEAM_SIZE = MIN_OPERATIONAL_TEAM_SIZE;
+export const MIN_METRIC_CONTRIBUTORS = MIN_OPERATIONAL_TEAM_SIZE;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
-// Engagement Strain / Manager-overload pipeline uses a stricter team floor (8)
-// to match the marketed privacy minimum. Per-metric contributor floor stays at 5.
+// Engagement Strain / Manager-overload pipeline uses the stricter H&S floor by default.
 // See docs/PIVOT_REPORT_SPEC.md §9.
-export const MIN_ENGAGEMENT_TEAM_SIZE = 8;
+export const MIN_ENGAGEMENT_TEAM_SIZE = MIN_HEALTH_SAFETY_TEAM_SIZE;
 
 // Minimum base value before a week-over-week percentage change is meaningful.
 // Below this, a change is noise (e.g. messages 12 -> 2) and must be suppressed
