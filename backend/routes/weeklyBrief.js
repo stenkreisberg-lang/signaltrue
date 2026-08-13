@@ -24,8 +24,13 @@ async function loadOrGenerateLatest(orgId) {
   const generatedAt = snapshot?.generatedAt || snapshot?.updatedAt || snapshot?.createdAt;
   const stale = !generatedAt || Date.now() - new Date(generatedAt).getTime() > SNAPSHOT_MAX_AGE_MS;
   if (!snapshot || stale) {
-    await generateWeeklyBrief(orgId);
-    snapshot = await getLatestWeeklyBriefSnapshot(orgId);
+    try {
+      await generateWeeklyBrief(orgId);
+      snapshot = await getLatestWeeklyBriefSnapshot(orgId);
+    } catch (err) {
+      if (!snapshot) throw err;
+      console.warn('[WeeklyBrief] Returning stale dashboard snapshot after refresh failed:', err.message);
+    }
   }
   return snapshot;
 }
