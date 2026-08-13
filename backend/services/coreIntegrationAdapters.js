@@ -76,6 +76,25 @@ function getMessageLengthBucket(content) {
   return 'long';
 }
 
+function normalizeAttendeeResponse(value) {
+  const response = String(value || 'none').trim();
+  if (
+    ['organizer', 'accepted', 'declined', 'tentativelyAccepted', 'notResponded', 'none'].includes(
+      response
+    )
+  ) {
+    return response;
+  }
+  if (response === 'tentative') return 'tentativelyAccepted';
+  if (response === 'needsAction') return 'notResponded';
+  return 'none';
+}
+
+function normalizeAttendeeType(value) {
+  const type = String(value || 'unknown').trim();
+  return ['required', 'optional', 'resource', 'organizer'].includes(type) ? type : 'unknown';
+}
+
 // ============================================================
 // BASE CLASS FOR ORG-LEVEL INTEGRATIONS
 // ============================================================
@@ -856,6 +875,67 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         .map((u) => [String(u.externalIds.microsoftUserId), u])
     );
 
+    function summarizeOutlookParticipants(event, organizerEmail) {
+      const attendees = (event.attendees || [])
+        .map((attendee) => {
+          const email = attendee.emailAddress?.address?.toLowerCase();
+          if (!email) return null;
+          return {
+            email,
+            response: normalizeAttendeeResponse(attendee.status?.response),
+            type: normalizeAttendeeType(attendee.type),
+          };
+        })
+        .filter(Boolean);
+      const attendeeByEmail = new Map(attendees.map((attendee) => [attendee.email, attendee]));
+      const participantEmails = [
+        ...new Set(
+          [...attendees.map((attendee) => attendee.email), organizerEmail].filter(Boolean)
+        ),
+      ];
+      const internalParticipants = participantEmails
+        .map((email) => {
+          const user = userByEmail.get(email);
+          if (!user) return null;
+          const isOrganizer = Boolean(organizerEmail && email === organizerEmail);
+          const attendee = attendeeByEmail.get(email);
+          return {
+            email,
+            user,
+            response: isOrganizer
+              ? 'organizer'
+              : normalizeAttendeeResponse(attendee?.response || 'none'),
+            type: isOrganizer ? 'organizer' : normalizeAttendeeType(attendee?.type),
+          };
+        })
+        .filter(Boolean);
+      const responseCounts = {
+        accepted: 0,
+        declined: 0,
+        tentative: 0,
+        notResponded: 0,
+      };
+      for (const participant of internalParticipants) {
+        if (participant.response === 'organizer') continue;
+        if (participant.response === 'accepted') responseCounts.accepted++;
+        else if (participant.response === 'declined') responseCounts.declined++;
+        else if (participant.response === 'tentativelyAccepted') responseCounts.tentative++;
+        else responseCounts.notResponded++;
+      }
+
+      return {
+        participantEmails,
+        internalParticipants,
+        organizerUser: organizerEmail ? userByEmail.get(organizerEmail) : null,
+        participantTeamIds: [
+          ...new Set(
+            internalParticipants.map((item) => String(item.user.teamId || '')).filter(Boolean)
+          ),
+        ],
+        responseCounts,
+      };
+    }
+
     // Helper: parse dateTime safely regardless of whether it already has a TZ offset
     function parseDateTime(dt) {
       if (!dt) return null;
@@ -876,19 +956,18 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           // Resolve userId: prefer the _internalUserId stamped during per-user fetch,
           // fall back to matching organizer email against the User table
           const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
+          const participantSummary = summarizeOutlookParticipants(event, organizerEmail);
           const matchedUser =
             orgUsers.find((u) => String(u._id) === String(event._internalUserId)) ||
             (organizerEmail ? userByEmail.get(organizerEmail) : null);
           const userId = matchedUser?._id || null;
-          const attendeeEmails = (event.attendees || [])
-            .map((attendee) => attendee.emailAddress?.address?.toLowerCase())
-            .filter(Boolean);
-          const participantEmails = [
-            ...new Set([...attendeeEmails, organizerEmail].filter(Boolean)),
-          ];
-          const internalParticipants = participantEmails
-            .map((email) => userByEmail.get(email))
-            .filter(Boolean);
+          const actorParticipant = participantSummary.internalParticipants.find(
+            (participant) => String(participant.user._id) === String(userId)
+          );
+          const participantEmails = participantSummary.participantEmails;
+          const internalParticipants = participantSummary.internalParticipants.map(
+            (participant) => participant.user
+          );
           const participantTeamIds = new Set(
             internalParticipants.map((user) => String(user.teamId || '')).filter(Boolean)
           );
@@ -924,6 +1003,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
               externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
               attendeeHashes: userId ? [hashMetadata(orgId, userId)] : [],
               organizerHash: hashMetadata(orgId, organizerEmail),
+              organizerUserId: participantSummary.organizerUser?._id || null,
+              organizerTeamId: participantSummary.organizerUser?.teamId || null,
               isOnlineMeeting: event.isOnlineMeeting,
               isAllDay: event.isAllDay,
               isRecurring: Boolean(
@@ -936,6 +1017,13 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
               is1to1: isOneOnOne,
               meetingType,
               durationMinutes,
+              participantTeamIds: participantSummary.participantTeamIds,
+              attendeeResponseStatus: actorParticipant?.response,
+              attendeeType: actorParticipant?.type,
+              acceptedAttendeeCount: participantSummary.responseCounts.accepted,
+              declinedAttendeeCount: participantSummary.responseCounts.declined,
+              tentativeAttendeeCount: participantSummary.responseCounts.tentative,
+              notRespondedAttendeeCount: participantSummary.responseCounts.notResponded,
               startTime: start.toISOString(),
               endTime: end ? end.toISOString() : null,
             },
@@ -1099,14 +1187,48 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
       const internalParticipants = participantEmails
         .map((email) => userByEmail.get(email))
         .filter(Boolean);
+      const organizerUser = organizerEmail ? userByEmail.get(organizerEmail) : null;
+      const attendeeByEmail = new Map(
+        (event.attendees || [])
+          .filter((attendee) => attendee.email)
+          .map((attendee) => [attendee.email.toLowerCase(), attendee])
+      );
+      const responseCounts = {
+        accepted: 0,
+        declined: 0,
+        tentative: 0,
+        notResponded: 0,
+      };
+      for (const participant of internalParticipants) {
+        if (String(participant._id) === String(organizerUser?._id)) continue;
+        const attendee = attendeeByEmail.get(participant.email?.toLowerCase());
+        const response = normalizeAttendeeResponse(attendee?.responseStatus);
+        if (response === 'accepted') responseCounts.accepted++;
+        else if (response === 'declined') responseCounts.declined++;
+        else if (response === 'tentativelyAccepted') responseCounts.tentative++;
+        else responseCounts.notResponded++;
+      }
       const attendeeCount = participantEmails.length;
       const baseMetadata = {
         meetingIdHash: hashMetadata(orgId, event.id),
         meetingInstanceIdHash: hashMetadata(orgId, event.id),
         organizerHash: hashMetadata(orgId, organizerEmail),
+        organizerUserId: organizerUser?._id || null,
+        organizerTeamId: organizerUser?.teamId || null,
+        participantTeamIds: [
+          ...new Set(
+            internalParticipants
+              .map((participant) => String(participant.teamId || ''))
+              .filter(Boolean)
+          ),
+        ],
         attendeeCount,
         internalAttendeeCount: internalParticipants.length,
         externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
+        acceptedAttendeeCount: responseCounts.accepted,
+        declinedAttendeeCount: responseCounts.declined,
+        tentativeAttendeeCount: responseCounts.tentative,
+        notRespondedAttendeeCount: responseCounts.notResponded,
         isAllDay: !event.start?.dateTime,
         isOnlineMeeting: !!event.conferenceData,
         isRecurring: !!event.recurringEventId,
@@ -1128,6 +1250,18 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
           ...baseMetadata,
           internalAttendeeCount: participant ? 1 : internalParticipants.length,
           attendeeHashes: participant ? [hashMetadata(orgId, participant._id)] : [],
+          attendeeResponseStatus:
+            participant && String(participant._id) === String(organizerUser?._id)
+              ? 'organizer'
+              : normalizeAttendeeResponse(
+                  participant
+                    ? attendeeByEmail.get(participant.email?.toLowerCase())?.responseStatus
+                    : null
+                ),
+          attendeeType:
+            participant && String(participant._id) === String(organizerUser?._id)
+              ? 'organizer'
+              : 'unknown',
         },
         raw: { id: event.id },
       }));

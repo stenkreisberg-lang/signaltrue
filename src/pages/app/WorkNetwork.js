@@ -15,10 +15,138 @@ function trend(value) {
   return `${value > 0 ? '+' : ''}${value}% vs prior period`;
 }
 
+function number(value) {
+  return Math.round(Number(value) || 0).toLocaleString();
+}
+
+function hours(value) {
+  const numeric = Number(value) || 0;
+  return `${numeric % 1 === 0 ? numeric.toFixed(0) : numeric.toFixed(1)}h`;
+}
+
 function badgeClass(severity) {
   if (severity === 'high') return 'bg-red-100 text-red-800';
   if (severity === 'medium') return 'bg-amber-100 text-amber-800';
   return 'bg-slate-100 text-slate-700';
+}
+
+function LeadershipQuestions({ questions = [] }) {
+  if (!questions.length) return null;
+  return (
+    <section>
+      <div className="mb-4">
+        <p className="app-eyebrow">Leadership questions</p>
+        <h2 className="text-2xl font-bold text-slate-900">What the pattern says</h2>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {questions.map((item) => (
+          <article key={item.id} className="app-panel">
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-lg font-bold text-slate-900">{item.question}</h3>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-bold ${badgeClass(item.severity)}`}
+              >
+                {item.status === 'ready' ? 'measured' : item.status.replaceAll('_', ' ')}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-700">{item.answer}</p>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              {item.evidence.map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-teal-700" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TeamDemandTable({ teams = [] }) {
+  if (!teams.length) return null;
+  return (
+    <section className="app-panel">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="app-eyebrow">Meeting demand</p>
+          <h2 className="text-2xl font-bold text-slate-900">Who sends and absorbs meeting load</h2>
+        </div>
+        <span className="text-xs text-slate-500">Team-level, privacy-gated</span>
+      </div>
+      <div className="mt-5 overflow-x-auto">
+        <table className="min-w-full text-left text-sm">
+          <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+            <tr>
+              <th className="px-3 py-3">Team</th>
+              <th className="px-3 py-3">Sends to others</th>
+              <th className="px-3 py-3">Receives from others</th>
+              <th className="px-3 py-3">Net load</th>
+              <th className="px-3 py-3">Invite friction</th>
+              <th className="px-3 py-3">Reach</th>
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((team) => (
+              <tr key={team.id} className="border-b border-slate-100 text-slate-700">
+                <td className="px-3 py-4">
+                  <p className="font-semibold text-slate-900">{team.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">{team.memberCount} mapped members</p>
+                </td>
+                <td className="px-3 py-4">
+                  <p className="font-semibold text-slate-900">{hours(team.sentAttendeeHours)}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {number(team.sentInviteCount)} invited slots · {trend(team.sentTrendPct)}
+                  </p>
+                </td>
+                <td className="px-3 py-4">
+                  <p className="font-semibold text-slate-900">
+                    {hours(team.receivedAttendeeHours)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {number(team.receivedInviteCount)} received slots ·{' '}
+                    {trend(team.receivedTrendPct)}
+                  </p>
+                </td>
+                <td className="px-3 py-4">
+                  <span
+                    className={
+                      team.netReceivedAttendeeHours > 0
+                        ? 'font-semibold text-amber-700'
+                        : 'font-semibold text-teal-700'
+                    }
+                  >
+                    {team.netReceivedAttendeeHours > 0 ? '+' : ''}
+                    {hours(team.netReceivedAttendeeHours)}
+                  </span>
+                </td>
+                <td className="px-3 py-4">
+                  {team.declineRate == null ? (
+                    <span className="text-slate-500">
+                      {team.responseCount > 0 ? 'Privacy suppressed' : 'No response base'}
+                    </span>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-slate-900">
+                        {pct(team.declineRate)} declined
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {number(team.responseCount)} responses · {pct(team.responseCoverage)}{' '}
+                        coverage
+                      </p>
+                    </>
+                  )}
+                </td>
+                <td className="px-3 py-4">{number(team.partnerCount)} partner teams</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function buildPositions(nodes) {
@@ -229,9 +357,9 @@ export default function WorkNetwork() {
   return (
     <AppShell user={user} section="Work Network">
       <PageHeader
-        eyebrow="Observed coordination map"
-        title="How coordination moves between teams"
-        description="Compare formal reporting links with team-to-team coordination observed in connected metadata. This is a descriptive map, not proof of dependency or cause."
+        eyebrow="Coordination intelligence"
+        title="How work moves between teams"
+        description="See which teams create meeting demand, absorb cross-team load, decline invitations, and carry information across departments."
         action={
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             Period
@@ -265,8 +393,8 @@ export default function WorkNetwork() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             {[
               ['Measured teams', network.summary.measuredTeams],
-              ['Observed links', network.summary.observedConnections],
-              ['Unmapped links', network.summary.hiddenDependencies],
+              ['Organizer links', network.summary.measurableOrganizerLinks],
+              ['Invite responses', network.summary.measurableInviteResponses],
               ['Concentrated', network.summary.concentratedInterfaces],
               ['Data readiness', readiness.label],
             ].map(([label, value]) => (
@@ -279,11 +407,15 @@ export default function WorkNetwork() {
 
           {!readiness.ready && <ReadinessNotice readiness={readiness} />}
 
+          {readiness.ready && <LeadershipQuestions questions={network.leadershipQuestions || []} />}
+
+          {readiness.ready && <TeamDemandTable teams={network.teamDemand || []} />}
+
           <section className="app-panel">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="app-eyebrow">Formal vs. observed</p>
-                <h2 className="text-2xl font-bold text-slate-900">Company work network</h2>
+                <p className="app-eyebrow">Network evidence</p>
+                <h2 className="text-2xl font-bold text-slate-900">Formal vs. observed links</h2>
                 <p className="mt-2 max-w-3xl text-sm text-slate-600">
                   Dashed lines are formal cross-team reporting links. Teal lines align with the
                   reporting map. Amber lines are work connections worth reviewing in context.
@@ -340,7 +472,8 @@ export default function WorkNetwork() {
                         <th className="px-3 py-3">Interface</th>
                         <th className="px-3 py-3">Structure</th>
                         <th className="px-3 py-3">Meetings</th>
-                        <th className="px-3 py-3">Directed</th>
+                        <th className="px-3 py-3">Dominant direction</th>
+                        <th className="px-3 py-3">Invite load</th>
                         <th className="px-3 py-3">Concentration</th>
                         <th className="px-3 py-3">Trend</th>
                       </tr>
@@ -358,7 +491,27 @@ export default function WorkNetwork() {
                             {edge.meetingCount} · {edge.meetingHours}h
                           </td>
                           <td className="px-3 py-4">
-                            {edge.messageCount + edge.otherInteractionCount}
+                            {edge.dominantDirection ? (
+                              <>
+                                <p className="font-semibold text-slate-900">
+                                  {edge.dominantDirection.fromTeamName} →{' '}
+                                  {edge.dominantDirection.toTeamName}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {pct(edge.dominantDirection.share)} of directed demand
+                                </p>
+                              </>
+                            ) : (
+                              <span className="text-slate-500">No direction measured</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-4">
+                            <p className="font-semibold text-slate-900">
+                              {hours(edge.inviteeHours)}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {number(edge.inviteCount)} invited slots
+                            </p>
                           </td>
                           <td className="px-3 py-4">{pct(edge.bridgeConcentration)}</td>
                           <td className="px-3 py-4">{trend(edge.trendPct)}</td>

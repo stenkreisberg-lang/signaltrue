@@ -10,10 +10,18 @@ function team(_id, name) {
 }
 
 function user(_id, teamId) {
-  return { _id, teamId, accountStatus: 'active' };
+  return { _id, email: `${_id}@example.com`, teamId, accountStatus: 'active' };
 }
 
-function meeting(meetingId, actorUserId, timestamp = '2026-07-15T10:00:00.000Z') {
+function teamForUser(userId) {
+  if (userId.startsWith('e')) return 'eng';
+  if (userId.startsWith('p')) return 'product';
+  if (userId.startsWith('s')) return 'sales';
+  return null;
+}
+
+function meeting(meetingId, actorUserId, timestamp = '2026-07-15T10:00:00.000Z', options = {}) {
+  const organizerUserId = options.organizerUserId || actorUserId;
   return {
     source: 'microsoft-outlook',
     eventType: 'meeting',
@@ -21,6 +29,12 @@ function meeting(meetingId, actorUserId, timestamp = '2026-07-15T10:00:00.000Z')
     timestamp: new Date(timestamp),
     metadata: {
       meetingInstanceIdHash: meetingId,
+      organizerUserId,
+      organizerTeamId: options.organizerTeamId || teamForUser(organizerUserId),
+      attendeeResponseStatus:
+        actorUserId === organizerUserId
+          ? 'organizer'
+          : options.responses?.[actorUserId] || 'accepted',
       durationMinutes: 30,
       attendeeCount: 5,
       meetingType: 'cross_team',
@@ -28,8 +42,10 @@ function meeting(meetingId, actorUserId, timestamp = '2026-07-15T10:00:00.000Z')
   };
 }
 
-function meetingCopies(meetingId, participants) {
-  return participants.map((participant) => meeting(meetingId, participant));
+function meetingCopies(meetingId, participants, options = {}) {
+  return participants.map((participant) =>
+    meeting(meetingId, participant, options.timestamp, options)
+  );
 }
 
 function baseData() {
@@ -84,12 +100,50 @@ describe('Work Network analysis', () => {
     expect(result.insights.find((item) => item.type === 'hidden_dependency').metric.name).toBe(
       'meetingHours'
     );
+    const engineeringDemand = result.teamDemand.find((item) => item.name === 'Engineering');
+    const salesDemand = result.teamDemand.find((item) => item.name === 'Sales');
+    expect(engineeringDemand.sentAttendeeHours).toBe(12);
+    expect(salesDemand.receivedAttendeeHours).toBe(10);
+    expect(
+      result.leadershipQuestions.find((item) => item.id === 'meeting_initiators').answer
+    ).toContain('Engineering');
     expect(readWorkNetworkMetric(result, 'meetingHours', ['eng', 'sales'])).toBe(2.5);
     expect(readWorkNetworkMetric(result, 'bridgeConcentration', ['eng', 'sales'])).toBe(100);
     expect(result.methodology.validationStatus).toContain('not externally validated');
     expect(result.confidence).toBeUndefined();
     expect(result.privacy.contentUsed).toBe(false);
     expect(JSON.stringify(result)).not.toMatch(/e1|s1|p1/);
+  });
+
+  test('answers meeting demand and decline-friction questions at team level', () => {
+    const participants = ['e1', 's1', 's2', 's3', 's4', 's5'];
+    const responses = Object.fromEntries(
+      participants.slice(1).map((participant) => [participant, 'declined'])
+    );
+    const currentEvents = [
+      ...meetingCopies('decline-1', participants, { organizerUserId: 'e1', responses }),
+      ...meetingCopies('decline-2', participants, { organizerUserId: 'e1', responses }),
+    ];
+
+    const result = analyze({ currentEvents });
+    const engineeringDemand = result.teamDemand.find((item) => item.name === 'Engineering');
+    const salesDemand = result.teamDemand.find((item) => item.name === 'Sales');
+    const edge = result.actualEdges.find((item) => item.teamBName === 'Sales');
+
+    expect(result.readiness.ready).toBe(true);
+    expect(engineeringDemand.sentInviteCount).toBe(10);
+    expect(engineeringDemand.sentAttendeeHours).toBe(5);
+    expect(salesDemand.receivedInviteCount).toBe(10);
+    expect(salesDemand.declineRate).toBe(1);
+    expect(edge.dominantDirection).toMatchObject({
+      fromTeamName: 'Engineering',
+      toTeamName: 'Sales',
+      share: 1,
+    });
+    expect(result.leadershipQuestions.find((item) => item.id === 'invite_friction')).toMatchObject({
+      status: 'ready',
+    });
+    expect(JSON.stringify(result)).not.toMatch(/e1|s1|s2/);
   });
 
   test('suppresses the observed map when user-to-team coverage is below 80%', () => {

@@ -183,7 +183,22 @@ const workEventSchema = new mongoose.Schema(
       internalAttendeeCount: Number, // internal-only attendees
       externalAttendeeCount: Number, // external attendees
       organizerHash: String, // hashed organizer identity
+      organizerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      organizerTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
       attendeeHashes: [String], // hashed attendee identities
+      participantTeamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
+      attendeeResponseStatus: {
+        type: String,
+        enum: ['organizer', 'accepted', 'declined', 'tentativelyAccepted', 'notResponded', 'none'],
+      },
+      attendeeType: {
+        type: String,
+        enum: ['required', 'optional', 'resource', 'organizer', 'unknown'],
+      },
+      acceptedAttendeeCount: Number,
+      declinedAttendeeCount: Number,
+      tentativeAttendeeCount: Number,
+      notRespondedAttendeeCount: Number,
       organizer: String, // normalized organizer email for attribution/debugging
       attendees: [String], // normalized attendee emails for attribution/debugging
       userEmail: String, // normalized calendar owner/sender email when available
