@@ -1,6 +1,22 @@
 /* eslint-env jest */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import LatestBrief from './LatestBrief';
+
+const installMatchMedia = () => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+};
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
@@ -10,6 +26,7 @@ jest.mock(
     Link: ({ children }) => children,
     NavLink: ({ children }) => children,
     useNavigate: () => jest.fn(),
+    useLocation: () => ({ pathname: '/app/latest-brief' }),
   }),
   { virtual: true }
 );
@@ -84,6 +101,7 @@ const brief = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  installMatchMedia();
   getAuthenticatedContext.mockResolvedValue({
     user: { name: 'Admin', role: 'hr_admin' },
     orgId: 'org-1',

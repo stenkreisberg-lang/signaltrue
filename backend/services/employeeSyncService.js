@@ -516,7 +516,10 @@ export async function syncEmployeesFromGoogle(orgId) {
     console.log('[EmployeeSync] Starting Google Workspace employee sync for org:', orgId);
 
     const org = await Organization.findById(orgId);
-    if (!org || !org.integrations?.googleChat?.accessToken) {
+    const workspaceDelegated =
+      !!org?.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt &&
+      !!org?.integrations?.googleWorkspace?.delegatedAdminEmail;
+    if (!org || (!workspaceDelegated && !org.integrations?.googleChat?.accessToken)) {
       throw new Error('Google Workspace integration not found or not connected');
     }
 
@@ -524,15 +527,24 @@ export async function syncEmployeesFromGoogle(orgId) {
     // You'll need to add the scope: https://www.googleapis.com/auth/admin.directory.user.readonly
     // For now, we'll implement the basic structure
 
-    const [{ google }, { decryptString }] = await Promise.all([
+    const [{ google }, { decryptString }, { createGoogleWorkspaceAuth }] = await Promise.all([
       import('googleapis'),
       import('../utils/crypto.js'),
+      import('./googleWorkspaceAdminService.js'),
     ]);
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({
-      access_token: decryptString(org.integrations.googleChat.accessToken),
-      refresh_token: decryptString(org.integrations.googleChat.refreshToken),
-    });
+    let oauth2Client;
+    if (workspaceDelegated) {
+      oauth2Client = createGoogleWorkspaceAuth(
+        org.integrations.googleWorkspace.delegatedAdminEmail,
+        ['https://www.googleapis.com/auth/admin.directory.user.readonly']
+      );
+    } else {
+      oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({
+        access_token: decryptString(org.integrations.googleChat.accessToken),
+        refresh_token: decryptString(org.integrations.googleChat.refreshToken),
+      });
+    }
 
     const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
 
@@ -672,6 +684,7 @@ export async function syncEmployeesFromGoogle(orgId) {
       );
 
       // Update last sync timestamp
+      org.integrations.googleChat = org.integrations.googleChat || {};
       org.integrations.googleChat.lastEmployeeSync = new Date();
       await org.save();
 

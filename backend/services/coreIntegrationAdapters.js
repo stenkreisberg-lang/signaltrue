@@ -14,6 +14,7 @@ import { getMicrosoftAppToken } from './tokenService.js';
 import { enrichWorkEvents } from './workEventAttributionService.js';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
+import { createGoogleWorkspaceAuth } from './googleWorkspaceAdminService.js';
 
 export async function fetchGraphCollection(
   initialUrl,
@@ -1143,6 +1144,12 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
     return org.integrations?.google;
   }
 
+  async getAccessToken(orgId) {
+    const org = await Organization.findById(orgId).lean();
+    if (org?.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) return 'workspace-dwd';
+    return super.getAccessToken(orgId);
+  }
+
   async refreshToken(org, integration) {
     const refreshToken = decryptString(integration.refreshToken);
 
@@ -1186,6 +1193,30 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
   }
 
   async fetchEvents(orgId, accessToken, since, until) {
+    if (accessToken === 'workspace-dwd') {
+      const org = await Organization.findById(orgId).lean();
+      const users = await User.find({
+        orgId,
+        accountStatus: { $ne: 'inactive' },
+        email: { $ne: '' },
+      })
+        .select('email')
+        .lean();
+      const uniqueEvents = new Map();
+      for (const user of users) {
+        try {
+          const auth = createGoogleWorkspaceAuth(user.email, [
+            'https://www.googleapis.com/auth/calendar.readonly',
+          ]);
+          const token = await auth.getAccessToken();
+          const userEvents = await this.fetchEvents(orgId, token.token || token, since, until);
+          userEvents.forEach((event) => uniqueEvents.set(event.id, event));
+        } catch (error) {
+          console.warn(`[Google Calendar] ${user.email} sync skipped: ${error.message}`);
+        }
+      }
+      return [...uniqueEvents.values()];
+    }
     const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
     url.searchParams.set('timeMin', since.toISOString());
     url.searchParams.set('timeMax', until.toISOString());
@@ -1322,6 +1353,12 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
     return org.integrations?.googleChat;
   }
 
+  async getAccessToken(orgId) {
+    const org = await Organization.findById(orgId).lean();
+    if (org?.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) return 'workspace-dwd';
+    return super.getAccessToken(orgId);
+  }
+
   async refreshToken(org, integration) {
     const refreshToken = decryptString(integration.refreshToken);
 
@@ -1364,7 +1401,31 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
     });
   }
 
-  async fetchEvents(_orgId, accessToken, since, until) {
+  async fetchEvents(orgId, accessToken, since, until) {
+    if (accessToken === 'workspace-dwd') {
+      const users = await User.find({
+        orgId,
+        accountStatus: { $ne: 'inactive' },
+        email: { $ne: '' },
+      })
+        .select('email')
+        .lean();
+      const uniqueMessages = new Map();
+      for (const user of users) {
+        try {
+          const auth = createGoogleWorkspaceAuth(user.email, [
+            'https://www.googleapis.com/auth/chat.spaces.readonly',
+            'https://www.googleapis.com/auth/chat.messages.readonly',
+          ]);
+          const token = await auth.getAccessToken();
+          const messages = await this.fetchEvents(orgId, token.token || token, since, until);
+          messages.forEach((message) => uniqueMessages.set(message.name, message));
+        } catch (error) {
+          console.warn(`[Google Chat] ${user.email} sync skipped: ${error.message}`);
+        }
+      }
+      return [...uniqueMessages.values()];
+    }
     const spaces = await fetchGoogleCollection(
       'https://chat.googleapis.com/v1/spaces?pageSize=100',
       accessToken,
@@ -1475,7 +1536,10 @@ export async function syncCoreIntegrations(orgId, since, until) {
   }
 
   // Google Calendar
-  if (org.integrations?.google?.accessToken) {
+  if (
+    org.integrations?.google?.accessToken ||
+    org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt
+  ) {
     try {
       const adapter = new GoogleCalendarAdapter();
       const result = await adapter.sync(orgId, since, until);
@@ -1486,7 +1550,10 @@ export async function syncCoreIntegrations(orgId, since, until) {
   }
 
   // Google Chat
-  if (org.integrations?.googleChat?.accessToken) {
+  if (
+    org.integrations?.googleChat?.accessToken ||
+    org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt
+  ) {
     try {
       const adapter = new GoogleChatAdapter();
       const result = await adapter.sync(orgId, since, until);

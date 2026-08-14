@@ -1,23 +1,15 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { Resend } from 'resend';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
 import Invitation from '../models/invitation.js';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import Team from '../models/team.js';
 import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
+import { deliverInvitation, invitationUrl } from '../services/invitationDeliveryService.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-// Resend client for invitation emails
-const getResendClient = () => {
-  if (process.env.RESEND_API_KEY) {
-    return new Resend(process.env.RESEND_API_KEY);
-  }
-  return null;
-};
 
 // GET /api/onboarding/status
 router.get('/onboarding/status', authenticateToken, async (req, res) => {
@@ -101,9 +93,14 @@ router.get(
     try {
       const orgId = req.user?.orgId;
       const now = new Date();
-      const invites = await Invitation.find({ orgId, acceptedAt: null, expiresAt: { $gt: now } })
+      const invites = await Invitation.find({
+        orgId,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { $gt: now },
+      })
         .sort({ createdAt: -1 })
-        .select('-_id email name role createdAt expiresAt');
+        .select('_id email name role createdAt expiresAt delivery');
       res.json(invites);
     } catch (e) {
       res.status(500).json({ message: e.message });
@@ -139,108 +136,72 @@ router.post(
         ttlHours: typeof ttlHours === 'number' ? ttlHours : 24 * 7,
       });
 
-      // Send invitation email via Resend
-      const resend = getResendClient();
-      const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
-      const inviteUrl = `${frontendUrl}/onboarding?token=${inv.token}`;
-
-      let emailSent = false;
-      let emailWarning = null;
-      if (resend) {
-        try {
-          const roleNames = {
-            hr_admin: 'HR Administrator',
-            it_admin: 'IT Administrator',
-            team_member: 'Team Member',
-          };
-
-          const result = await resend.emails.send({
-            from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
-            to: email,
-            subject: `You've been invited to ${org?.name || 'SignalTrue'}`,
-            html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-              <!-- Header -->
-              <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 40px 20px; text-align: center;">
-                <div style="background: white; width: 60px; height: 60px; border-radius: 12px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                  <div style="font-size: 32px;">📊</div>
-                </div>
-                <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">You're Invited!</h1>
-              </div>
-              
-              <!-- Content -->
-              <div style="padding: 40px 30px;">
-                <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
-                  <strong>${inviterUser?.name || 'Someone'}</strong> has invited you to join <strong>${org?.name || 'their organization'}</strong> on SignalTrue as a <strong>${roleNames[role] || role}</strong>.
-                </p>
-                
-                <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 0 0 24px 0;">
-                  ${
-                    role === 'it_admin'
-                      ? "As an IT Administrator, you'll help authorize Microsoft 365, Slack, or Google Workspace integrations and verify that company-wide metadata access is working."
-                      : role === 'hr_admin'
-                        ? "As an HR Administrator, you'll have access to team health metrics, engagement signals, and actionable insights to support your people."
-                        : "As a Team Member, you'll be able to view team metrics and collaborate with your organization on SignalTrue."
-                  }
-                </p>
-                
-                <!-- CTA Button -->
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);">
-                    Accept Invitation
-                  </a>
-                </div>
-                
-                <p style="font-size: 14px; color: #6b7280; margin: 24px 0 0 0; text-align: center;">
-                  This invitation expires in ${Math.floor(inv.expiresAt - Date.now()) / (1000 * 60 * 60)} hours
-                </p>
-                
-                <!-- Alternative link -->
-                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-                  <p style="font-size: 12px; color: #9ca3af; margin: 0 0 8px 0;">
-                    Or copy and paste this link into your browser:
-                  </p>
-                  <p style="font-size: 12px; color: #6366f1; word-break: break-all; margin: 0;">
-                    ${inviteUrl}
-                  </p>
-                </div>
-              </div>
-              
-              <!-- Footer -->
-              <div style="background: #f9fafb; padding: 24px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-                <p style="font-size: 12px; color: #6b7280; margin: 0 0 8px 0;">
-                  SignalTrue - Team Health Intelligence
-                </p>
-                <p style="font-size: 11px; color: #9ca3af; margin: 0;">
-                  If you didn't expect this invitation, you can safely ignore this email.
-                </p>
-              </div>
-            </div>
-          `,
-          });
-          console.log('Invitation email sent to:', email, 'Result:', JSON.stringify(result));
-          emailSent = true;
-        } catch (emailError) {
-          console.error('Resend invitation email error:', emailError);
-          emailWarning = 'The invitation was created, but the email could not be delivered.';
-        }
-      } else {
-        console.log('⚠️  Resend not configured. Invitation URL:', inviteUrl);
-        emailWarning = 'The invitation was created, but email delivery is not configured.';
-      }
+      const delivery = await deliverInvitation(inv, { organization: org, inviter: inviterUser });
 
       res.json({
         email: inv.email,
         role: inv.role,
-        token: inv.token,
         expiresAt: inv.expiresAt,
-        emailSent,
-        warning: emailWarning,
-        inviteUrl: inviteUrl, // Include URL in response for testing
+        ...delivery,
       });
     } catch (e) {
       res.status(500).json({ message: e.message });
     }
+  }
+);
+
+router.post(
+  '/onboarding/invitations/:id/resend',
+  authenticateToken,
+  requireRoles(['admin', 'hr_admin', 'master_admin']),
+  async (req, res) => {
+    const inv = await Invitation.findOne({
+      _id: req.params.id,
+      orgId: req.user.orgId,
+      acceptedAt: null,
+      revokedAt: null,
+    });
+    if (!inv) return res.status(404).json({ message: 'Pending invitation not found' });
+    inv.rotateToken();
+    await inv.save();
+    const [organization, inviter] = await Promise.all([
+      Organization.findById(inv.orgId),
+      User.findById(req.user.userId),
+    ]);
+    const delivery = await deliverInvitation(inv, { organization, inviter });
+    return res.json({ _id: inv._id, expiresAt: inv.expiresAt, ...delivery });
+  }
+);
+
+router.get(
+  '/onboarding/invitations/:id/link',
+  authenticateToken,
+  requireRoles(['admin', 'hr_admin', 'master_admin']),
+  async (req, res) => {
+    const inv = await Invitation.findOne({
+      _id: req.params.id,
+      orgId: req.user.orgId,
+      acceptedAt: null,
+      revokedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+    if (!inv) return res.status(404).json({ message: 'Pending invitation not found' });
+    return res.json({ inviteUrl: invitationUrl(inv.token) });
+  }
+);
+
+router.delete(
+  '/onboarding/invitations/:id',
+  authenticateToken,
+  requireRoles(['admin', 'hr_admin', 'master_admin']),
+  async (req, res) => {
+    const inv = await Invitation.findOneAndUpdate(
+      { _id: req.params.id, orgId: req.user.orgId, acceptedAt: null, revokedAt: null },
+      { $set: { revokedAt: new Date(), revokedBy: req.user.userId } },
+      { new: true }
+    );
+    if (!inv) return res.status(404).json({ message: 'Pending invitation not found' });
+    return res.status(204).end();
   }
 );
 
@@ -251,6 +212,7 @@ router.get('/onboarding/invitations/:token', async (req, res) => {
     const inv = await Invitation.findOne({
       token: req.params.token,
       acceptedAt: null,
+      revokedAt: null,
       expiresAt: { $gt: new Date() },
     })
       .populate('orgId', 'name')
@@ -279,7 +241,12 @@ router.post('/onboarding/accept', async (req, res) => {
     }
 
     const now = new Date();
-    const inv = await Invitation.findOne({ token, expiresAt: { $gt: now }, acceptedAt: null });
+    const inv = await Invitation.findOne({
+      token,
+      expiresAt: { $gt: now },
+      acceptedAt: null,
+      revokedAt: null,
+    });
     if (!inv) return res.status(400).json({ message: 'Invitation token is invalid or expired' });
 
     // Ensure teamId: if invitation lacks one, find or create "General" team for the org

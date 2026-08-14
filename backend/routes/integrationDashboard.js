@@ -4,6 +4,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
+import { getOrganizationIntegrationHealth } from '../services/integrationHealthMonitorService.js';
 
 const router = express.Router();
 
@@ -28,7 +29,10 @@ router.get('/status', authenticateToken, async (req, res) => {
     }
 
     const setup = await getOrganizationReadiness(orgId);
-    const connections = await IntegrationConnection.find({ orgId }).lean();
+    const [connections, healthIssues] = await Promise.all([
+      IntegrationConnection.find({ orgId }).lean(),
+      getOrganizationIntegrationHealth(orgId),
+    ]);
 
     // Build response for all integration types
     const integrationTypes = [
@@ -114,6 +118,7 @@ router.get('/status', authenticateToken, async (req, res) => {
       integrations,
       overallCoverage,
       setup,
+      healthIssues,
       oauthBaseUrl: '/api/integrations',
     });
   } catch (err) {

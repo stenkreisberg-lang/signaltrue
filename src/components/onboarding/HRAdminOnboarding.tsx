@@ -41,8 +41,16 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
   const [error, setError] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<
-    Array<{ email: string; name?: string; createdAt: string; expiresAt: string }>
+    Array<{
+      _id: string;
+      email: string;
+      name?: string;
+      createdAt: string;
+      expiresAt: string;
+      delivery?: { status?: string; error?: string };
+    }>
   >([]);
+  const [invitationAction, setInvitationAction] = useState('');
 
   const loadPendingInvitations = useCallback(async () => {
     try {
@@ -83,6 +91,29 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
       setError(err.response?.data?.message || 'Failed to send invitation');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInvitationAction = async (id: string, action: 'resend' | 'copy' | 'revoke') => {
+    setInvitationAction(`${id}:${action}`);
+    setError('');
+    try {
+      if (action === 'resend') {
+        const response = await api.post(`/onboarding/invitations/${id}/resend`);
+        setSuccess(response.data?.warning || 'Invitation resent.');
+      } else if (action === 'copy') {
+        const response = await api.get(`/onboarding/invitations/${id}/link`);
+        await navigator.clipboard.writeText(response.data.inviteUrl);
+        setSuccess('Invitation link copied.');
+      } else {
+        await api.delete(`/onboarding/invitations/${id}`);
+        setSuccess('Invitation revoked.');
+      }
+      await loadPendingInvitations();
+    } catch (err: any) {
+      setError(err.response?.data?.message || `Failed to ${action} invitation`);
+    } finally {
+      setInvitationAction('');
     }
   };
 
@@ -186,10 +217,39 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 <div style={styles.pendingBox}>
                   <strong>Pending invitation</strong>
                   {pendingInvitations.map((invitation) => (
-                    <div key={`${invitation.email}-${invitation.createdAt}`}>
-                      {invitation.name ? `${invitation.name} · ` : ''}
-                      {invitation.email} · expires{' '}
-                      {new Date(invitation.expiresAt).toLocaleDateString()}
+                    <div key={invitation._id} style={styles.pendingInvitation}>
+                      <div>
+                        {invitation.name ? `${invitation.name} · ` : ''}
+                        {invitation.email} · expires{' '}
+                        {new Date(invitation.expiresAt).toLocaleDateString()} ·{' '}
+                        {invitation.delivery?.status || 'pending'}
+                      </div>
+                      <div style={styles.invitationActions}>
+                        <button
+                          type="button"
+                          style={styles.smallButton}
+                          disabled={!!invitationAction}
+                          onClick={() => handleInvitationAction(invitation._id, 'resend')}
+                        >
+                          Resend
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.smallButton}
+                          disabled={!!invitationAction}
+                          onClick={() => handleInvitationAction(invitation._id, 'copy')}
+                        >
+                          Copy link
+                        </button>
+                        <button
+                          type="button"
+                          style={styles.dangerButton}
+                          disabled={!!invitationAction}
+                          onClick={() => handleInvitationAction(invitation._id, 'revoke')}
+                        >
+                          Revoke
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -429,6 +489,32 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#475569',
     fontSize: '0.8rem',
     lineHeight: '1.6',
+  },
+  pendingInvitation: {
+    borderTop: '1px solid #e2e8f0',
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+  },
+  invitationActions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    marginTop: '0.5rem',
+  },
+  smallButton: {
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    background: 'white',
+    padding: '0.35rem 0.65rem',
+    cursor: 'pointer',
+  },
+  dangerButton: {
+    border: '1px solid #fecaca',
+    borderRadius: '6px',
+    background: '#fff1f2',
+    color: '#be123c',
+    padding: '0.35rem 0.65rem',
+    cursor: 'pointer',
   },
   helpBox: {
     background: '#f3f4f6',

@@ -96,6 +96,12 @@ const organizationSchema = new mongoose.Schema(
           lastRunAt: Date,
         },
       },
+      googleWorkspace: {
+        delegatedAdminEmail: String,
+        domainWideDelegationVerifiedAt: Date,
+        lastVerificationAt: Date,
+        lastVerificationError: String,
+      },
       microsoft: {
         scope: String, // 'outlook', 'teams', or 'both'
         refreshToken: { type: String, set: encryptString },

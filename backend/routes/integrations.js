@@ -3,7 +3,11 @@ import crypto from 'node:crypto';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js'; // Import User model
 import IntegrationConnection from '../models/integrationConnection.js';
-import { authenticateToken, authenticateTokenFromHeaderOrQuery } from '../middleware/auth.js';
+import {
+  authenticateToken,
+  authenticateTokenFromHeaderOrQuery,
+  requireRoles,
+} from '../middleware/auth.js';
 import { encryptString } from '../utils/crypto.js';
 import {
   syncEmployeesFromSlack,
@@ -20,8 +24,83 @@ import {
   getOrgVsBenchmarks,
 } from '../services/immediateInsightsService.js';
 import { triggerImmediateSync } from '../services/integrationSyncScheduler.js';
+import {
+  getGoogleWorkspacePublicConfig,
+  verifyGoogleWorkspaceDelegation,
+} from '../services/googleWorkspaceAdminService.js';
 
 const router = express.Router();
+
+router.get('/integrations/google-workspace/admin-status', authenticateToken, async (req, res) => {
+  const org = await Organization.findById(req.user?.orgId).lean();
+  if (!org) return res.status(404).json({ message: 'Organization not found' });
+  return res.json({
+    ...getGoogleWorkspacePublicConfig(),
+    delegatedAdminEmail: org.integrations?.googleWorkspace?.delegatedAdminEmail || '',
+    verifiedAt: org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt || null,
+    lastVerificationAt: org.integrations?.googleWorkspace?.lastVerificationAt || null,
+    lastVerificationError: org.integrations?.googleWorkspace?.lastVerificationError || null,
+  });
+});
+
+router.post(
+  '/integrations/google-workspace/admin-verify',
+  authenticateToken,
+  requireRoles(['it_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    const delegatedAdminEmail = String(req.body?.delegatedAdminEmail || '')
+      .trim()
+      .toLowerCase();
+    if (!delegatedAdminEmail.includes('@')) {
+      return res.status(400).json({ message: 'A valid Workspace administrator email is required' });
+    }
+    const attemptedAt = new Date();
+    try {
+      const verification = await verifyGoogleWorkspaceDelegation(delegatedAdminEmail);
+      await Organization.findByIdAndUpdate(req.user.orgId, {
+        $set: {
+          'integrations.googleWorkspace.delegatedAdminEmail': delegatedAdminEmail,
+          'integrations.googleWorkspace.domainWideDelegationVerifiedAt': attemptedAt,
+          'integrations.googleWorkspace.lastVerificationAt': attemptedAt,
+          'integrations.googleWorkspace.lastVerificationError': null,
+        },
+      });
+      await Promise.all(
+        ['google-calendar', 'google-chat'].map((integrationType) =>
+          IntegrationConnection.findOneAndUpdate(
+            { orgId: req.user.orgId, integrationType },
+            {
+              $set: {
+                status: 'connected',
+                statusMessage: 'Company-wide Google Workspace access verified',
+                statusUpdatedAt: attemptedAt,
+                connectedAt: attemptedAt,
+                connectedBy: req.user.userId,
+                measurementScope: 'organization-wide metadata via Workspace delegation',
+              },
+            },
+            { upsert: true, new: true }
+          )
+        )
+      );
+      const employeeSync = await syncEmployeesFromGoogle(req.user.orgId);
+      triggerImmediateSync(req.user.orgId).catch((error) =>
+        console.error('Google Workspace immediate sync failed:', error.message)
+      );
+      return res.json({ verifiedAt: attemptedAt, verification, employeeSync });
+    } catch (error) {
+      await Organization.findByIdAndUpdate(req.user.orgId, {
+        $set: {
+          'integrations.googleWorkspace.delegatedAdminEmail': delegatedAdminEmail,
+          'integrations.googleWorkspace.lastVerificationAt': attemptedAt,
+          'integrations.googleWorkspace.lastVerificationError': String(error.message).slice(0, 500),
+        },
+        $unset: { 'integrations.googleWorkspace.domainWideDelegationVerifiedAt': 1 },
+      });
+      return res.status(400).json({ message: error.message });
+    }
+  }
+);
 
 // GET /api/integrations/metrics - returns Google/Microsoft event/team counts for current org
 router.get('/integrations/metrics', authenticateToken, async (req, res) => {

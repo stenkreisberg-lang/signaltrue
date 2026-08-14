@@ -128,6 +128,10 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const [syncing, setSyncing] = useState({});
   const [showConnectModal, setShowConnectModal] = useState(null);
   const [setup, setSetup] = useState(null);
+  const [healthIssues, setHealthIssues] = useState([]);
+  const [googleWorkspace, setGoogleWorkspace] = useState(null);
+  const [googleAdminEmail, setGoogleAdminEmail] = useState('');
+  const [verifyingGoogle, setVerifyingGoogle] = useState(false);
 
   // Fetch integration status
   const fetchIntegrations = useCallback(async () => {
@@ -144,6 +148,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
       const data = await res.json();
       setSetup(data.setup || null);
+      setHealthIssues(data.healthIssues || []);
       setIntegrations(
         (data.integrations || []).map((integration) => ({
           ...integration,
@@ -159,12 +164,40 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           sync_error: integration.statusMessage,
         }))
       );
+      const googleRes = await fetch(`${API_BASE}/api/integrations/google-workspace/admin-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (googleRes.ok) {
+        const googleData = await googleRes.json();
+        setGoogleWorkspace(googleData);
+        setGoogleAdminEmail(googleData.delegatedAdminEmail || '');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const verifyGoogleWorkspace = async () => {
+    setVerifyingGoogle(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/integrations/google-workspace/admin-verify`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delegatedAdminEmail: googleAdminEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Workspace verification failed');
+      await fetchIntegrations();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifyingGoogle(false);
+    }
+  };
 
   useEffect(() => {
     fetchIntegrations();
@@ -277,6 +310,18 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           Data source status is temporarily unavailable. {error}
         </div>
       )}
+      {healthIssues.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+          <h3 className="font-semibold text-red-950">Data source attention required</h3>
+          <ul className="mt-2 space-y-1 text-sm text-red-900">
+            {healthIssues.map((issue) => (
+              <li key={issue.key}>
+                • {issue.source}: {issue.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {setup && !setup.readiness?.setupComplete && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
           <h3 className="font-semibold text-amber-950">Complete data readiness</h3>
@@ -295,6 +340,55 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             <span>Activity: {setup.activity?.totalEvents || 0} events</span>
             <span>•</span>
             <span>Report-ready teams: {setup.teams?.ready || 0}</span>
+          </div>
+        </div>
+      )}
+      {googleWorkspace && (
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <h3 className="font-semibold text-slate-950">Google Workspace company-wide access</h3>
+              <p className="mt-1 text-sm text-slate-600">
+                A normal Google sign-in only covers one user. A Workspace administrator must add
+                SignalTrue under Security → API controls → Domain-wide delegation, then verify it
+                here.
+              </p>
+              {googleWorkspace.serviceAccountClientId && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Client ID: <code>{googleWorkspace.serviceAccountClientId}</code>
+                </p>
+              )}
+              <p className="mt-1 break-all text-xs text-slate-500">
+                Scopes: {(googleWorkspace.requiredScopes || []).join(', ')}
+              </p>
+            </div>
+            {googleWorkspace.verifiedAt ? (
+              <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800">
+                Company-wide access verified
+              </div>
+            ) : (
+              <div className="flex min-w-[300px] flex-col gap-2">
+                <input
+                  type="email"
+                  value={googleAdminEmail}
+                  onChange={(event) => setGoogleAdminEmail(event.target.value)}
+                  placeholder="workspace-admin@company.com"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={verifyGoogleWorkspace}
+                  disabled={verifyingGoogle || !googleWorkspace.serviceAccountConfigured}
+                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {verifyingGoogle ? 'Verifying…' : 'Verify company-wide access'}
+                </button>
+                {!googleWorkspace.serviceAccountConfigured && (
+                  <p className="text-xs text-amber-700">
+                    SignalTrue service account configuration is required first.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

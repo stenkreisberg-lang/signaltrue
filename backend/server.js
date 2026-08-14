@@ -463,6 +463,18 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: Integration data pull every 15 minutes (6am-10pm)');
 
+      cron.schedule('10 * * * *', async () => {
+        try {
+          const { runIntegrationHealthMonitor } =
+            await import('./services/integrationHealthMonitorService.js');
+          const result = await runIntegrationHealthMonitor();
+          if (result.notificationsCreated) console.log('Integration health alerts:', result);
+        } catch (err) {
+          console.error('Integration health monitor failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: integration health monitor hourly');
+
       // Work Network action outcomes - daily after the first integration sync
       cron.schedule('20 6 * * *', async () => {
         console.log('⏰ Rechecking due Work Network actions...');
