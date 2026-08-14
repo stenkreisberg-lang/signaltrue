@@ -32,13 +32,19 @@ const CTASection = () => {
             time, response pressure, after-hours work, and manager load into an early warning view.
           </p>
 
-          {/* Single CTA per spec */}
-          <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
-            <Button variant="hero" size="xl">
-              Book a 20-minute review
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to="/register">
+              <Button variant="hero" size="xl">
+                Start pilot
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
+              <Button variant="hero-outline" size="xl">
+                Book a 20-minute review
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </section>
