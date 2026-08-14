@@ -196,7 +196,7 @@ export async function notifyInterventionDue(userId, orgId, data) {
     data: {
       interventionId,
       teamId,
-      actionUrl: `/interventions/${interventionId}`,
+      actionUrl: '/app/actions',
       actionLabel: 'Record Outcome',
     },
   });
@@ -219,7 +219,7 @@ export async function notifyInterventionComplete(userId, orgId, data) {
       interventionId,
       teamId,
       metricValue: impact,
-      actionUrl: `/interventions/${interventionId}`,
+      actionUrl: '/app/actions',
       actionLabel: 'View Results',
     },
   });

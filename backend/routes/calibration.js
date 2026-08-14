@@ -3,6 +3,7 @@ import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import Baseline from '../models/baseline.js';
 import { authenticateToken, requireOrganizationAccess } from '../middleware/auth.js';
+import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 
 const router = express.Router();
 
@@ -20,14 +21,18 @@ router.get('/status/:orgId', authenticateToken, requireOrganizationAccess(), asy
     }
 
     const { calibration } = org;
+    const setup = await getOrganizationReadiness(org);
 
     // Calculate calibration day if in calibration
     let currentDay = calibration.calibrationDay;
-    if (calibration.isInCalibration && calibration.calibrationStartDate) {
+    const effectiveStart = setup.activity.firstEventAt || calibration.calibrationStartDate;
+    if (calibration.isInCalibration && effectiveStart && setup.readiness.reportingReady) {
       const daysSinceStart = Math.floor(
-        (Date.now() - new Date(calibration.calibrationStartDate).getTime()) / (1000 * 60 * 60 * 24)
+        (Date.now() - new Date(effectiveStart).getTime()) / (1000 * 60 * 60 * 24)
       );
       currentDay = Math.min(daysSinceStart, 30);
+    } else if (!setup.readiness.reportingReady) {
+      currentDay = 0;
     }
 
     res.json({
@@ -35,11 +40,18 @@ router.get('/status/:orgId', authenticateToken, requireOrganizationAccess(), asy
       calibrationDay: currentDay,
       calibrationProgress: Math.floor((currentDay / 30) * 100),
       calibrationConfidence: calibration.calibrationConfidence,
-      calibrationStartDate: calibration.calibrationStartDate,
+      calibrationStartDate: effectiveStart,
       calibrationEndDate: calibration.calibrationEndDate,
-      dataSourcesConnected: calibration.dataSourcesConnected || [],
+      dataSourcesConnected: setup.sources
+        .filter((source) => source.status !== 'disconnected')
+        .map((source) => ({
+          source: source.type,
+          status: source.status,
+          connectedAt: source.connectedAt,
+        })),
       featuresUnlocked: calibration.featuresUnlocked,
       daysRemaining: Math.max(0, 30 - currentDay),
+      setup,
     });
   } catch (err) {
     console.error('Error fetching calibration status:', err);

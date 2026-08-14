@@ -73,6 +73,11 @@ const Navbar = () => {
                 Login
               </Button>
             </Link>
+            <Link to="/register">
+              <Button variant="cta" size="sm">
+                Start pilot
+              </Button>
+            </Link>
             <Link to="/sample-report" onClick={() => handleSampleReport('navbar_desktop')}>
               <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
                 Sample report
@@ -82,8 +87,8 @@ const Navbar = () => {
               to="/contact?intent=demo&cta=navbar_desktop"
               onClick={() => handleRequestDemo('navbar_desktop')}
             >
-              <Button variant="cta" size="sm">
-                Book a 20-minute review
+              <Button variant="ghost" size="sm">
+                Request a review
               </Button>
             </Link>
           </div>
@@ -118,6 +123,11 @@ const Navbar = () => {
                     Login
                   </Button>
                 </Link>
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="cta" size="sm" className="w-full">
+                    Start pilot
+                  </Button>
+                </Link>
                 <Link
                   to="/sample-report"
                   onClick={() => {
@@ -136,8 +146,8 @@ const Navbar = () => {
                     handleRequestDemo('navbar_mobile');
                   }}
                 >
-                  <Button variant="cta" size="sm" className="w-full">
-                    Book a 20-minute review
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Request a review
                   </Button>
                 </Link>
               </div>

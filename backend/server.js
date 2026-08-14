@@ -479,6 +479,19 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: Work Network rechecks daily at 6:20 AM');
 
+      cron.schedule('35 6 * * *', async () => {
+        console.log('⏰ Sending due action-review reminders...');
+        try {
+          const { sendDueInterventionReminders } =
+            await import('./services/interventionReminderService.js');
+          const result = await sendDueInterventionReminders();
+          console.log(`✅ Action-review reminders: ${result.sent} sent, ${result.failed} failed`);
+        } catch (err) {
+          console.error('❌ Action-review reminder run failed:', err.message);
+        }
+      });
+      console.log('⏰ Cron job scheduled: Action-review reminders daily at 6:35 AM');
+
       // Start weekly diagnosis scheduler (runs every Monday at 1 AM)
       scheduleWeeklyJob();
 

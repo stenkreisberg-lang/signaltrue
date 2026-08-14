@@ -13,6 +13,11 @@ const links = [
   { to: '/app/actions', label: 'Actions' },
   { to: '/app/signal-coverage', label: 'Data Coverage' },
   {
+    to: '/integrations',
+    label: 'Data Sources',
+    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
+  },
+  {
     to: '/app/work-network',
     label: 'Work Network',
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],

@@ -10,6 +10,7 @@ import {
   classifyUserDirectoryRecord,
 } from '../utils/employeeIdentity.js';
 import { normalizeDepartmentName } from '../services/employeeSyncService.js';
+import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
   fetchGraphCollection,
   GoogleCalendarAdapter,
@@ -27,6 +28,20 @@ import User from '../models/user.js';
 
 afterEach(() => {
   jest.restoreAllMocks();
+});
+
+describe('organization identity setup', () => {
+  test('preserves the complete work-email domain', () => {
+    expect(normalizeWorkEmailDomain('Helen@Tehnopol.EE')).toBe('tehnopol.ee');
+    expect(normalizeWorkEmailDomain('admin@csc.ee')).toBe('csc.ee');
+    expect(normalizeWorkEmailDomain('not-an-email')).toBeNull();
+  });
+
+  test('accepts IANA timezones and rejects ambiguous values', () => {
+    expect(isValidIanaTimezone('Europe/Tallinn')).toBe(true);
+    expect(isValidIanaTimezone('UTC')).toBe(true);
+    expect(isValidIanaTimezone('Tallinn time')).toBe(false);
+  });
 });
 
 describe('small-team configuration', () => {
@@ -134,6 +149,16 @@ describe('directory mapping', () => {
       classifyEmployeeCandidate({
         email: 'support@example.com',
         displayName: 'Support',
+      })
+    ).toMatchObject({
+      ok: false,
+      reason: 'non_employee_resource_or_service_account',
+    });
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'backup.user@example.com',
+        displayName: 'Backup User',
       })
     ).toMatchObject({
       ok: false,

@@ -6,6 +6,7 @@ import Invitation from '../models/invitation.js';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import Team from '../models/team.js';
+import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -18,40 +19,26 @@ const getResendClient = () => {
   return null;
 };
 
-function integrationsChecklist(org) {
-  const slackConnected = !!org?.integrations?.slack?.accessToken;
-  const googleChatConnected = !!org?.integrations?.googleChat?.accessToken;
-  const msScope = org?.integrations?.microsoft?.scope;
-  const msHasToken = !!org?.integrations?.microsoft?.accessToken;
-  const teamsConnected = msHasToken && (msScope === 'teams' || msScope === 'both');
-  const chatConnected = !!(slackConnected || googleChatConnected || teamsConnected);
-
-  const googleCal =
-    org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
-  const msOutlook = msHasToken && (msScope === 'outlook' || msScope === 'both');
-  const calendarConnected = !!(googleCal || msOutlook);
-
-  return {
-    slackConnected,
-    googleChatConnected,
-    teamsConnected,
-    chatConnected,
-    calendarConnected,
-    integrationsComplete: chatConnected && calendarConnected,
-  };
-}
-
 // GET /api/onboarding/status
 router.get('/onboarding/status', authenticateToken, async (req, res) => {
   try {
     const orgId = req.user?.orgId;
     const role = req.user?.role;
-    const userId = req.user?.userId;
-
     let org = null;
     if (orgId) org = await Organization.findById(orgId);
 
-    const checklist = integrationsChecklist(org);
+    const setup = org ? await getOrganizationReadiness(org) : null;
+    const source = (type) => setup?.sources.find((item) => item.type === type);
+    const connected = (type) => source(type)?.status !== 'disconnected';
+    const checklist = {
+      slackConnected: connected('slack'),
+      googleChatConnected: connected('google-chat'),
+      teamsConnected: connected('microsoft-teams'),
+      chatConnected: connected('slack') || connected('google-chat') || connected('microsoft-teams'),
+      calendarConnected: connected('google-calendar') || connected('microsoft-outlook'),
+      integrationsComplete: setup?.readiness.setupComplete || false,
+      connectionsAuthorized: setup?.readiness.permissionsReady || false,
+    };
 
     // Check if user is the first user (HR admin typically)
     const usersInOrg = await User.countDocuments({ orgId });
@@ -62,22 +49,26 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
       hr_admin: {
         canInviteITAdmin: true,
         canViewData: checklist.integrationsComplete, // Can only see data after integrations
-        mustInviteITAdmin: !checklist.integrationsComplete && isFirstUser,
+        mustInviteITAdmin: setup?.readiness.connectedSources === 0 && isFirstUser,
         nextStep: checklist.integrationsComplete
           ? 'view_dashboard'
-          : 'invite_it_admin_or_connect_integrations',
+          : setup?.readiness.nextStep || 'invite_it_admin_or_connect_integrations',
       },
       it_admin: {
         canConfigureIntegrations: true,
         canViewData: false, // IT admin focuses on setup, not data viewing
-        mustCompleteIntegrations: !checklist.integrationsComplete,
-        nextStep: checklist.integrationsComplete ? 'setup_complete' : 'connect_integrations',
+        mustCompleteIntegrations: !checklist.connectionsAuthorized,
+        nextStep: checklist.connectionsAuthorized
+          ? 'authorization_complete'
+          : setup?.readiness.nextStep || 'connect_integrations',
       },
       admin: {
         canInviteUsers: true,
         canConfigureIntegrations: true,
         canViewData: true,
-        nextStep: checklist.integrationsComplete ? 'view_dashboard' : 'connect_integrations',
+        nextStep: checklist.integrationsComplete
+          ? 'view_dashboard'
+          : setup?.readiness.nextStep || 'connect_integrations',
       },
       master_admin: {
         canDoEverything: true,
@@ -93,6 +84,7 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
       orgName: org?.name || null,
       isFirstUser,
       requirements: roleRequirements[role] || {},
+      setup,
       ...checklist,
     });
   } catch (e) {
@@ -111,7 +103,7 @@ router.get(
       const now = new Date();
       const invites = await Invitation.find({ orgId, acceptedAt: null, expiresAt: { $gt: now } })
         .sort({ createdAt: -1 })
-        .select('-_id email role token createdAt expiresAt');
+        .select('-_id email name role createdAt expiresAt');
       res.json(invites);
     } catch (e) {
       res.status(500).json({ message: e.message });
@@ -126,7 +118,7 @@ router.post(
   requireRoles(['admin', 'hr_admin', 'master_admin']),
   async (req, res) => {
     try {
-      const { email, role, teamId, ttlHours } = req.body || {};
+      const { email, name, role, teamId, ttlHours } = req.body || {};
       if (!email || !role) return res.status(400).json({ message: 'email and role are required' });
       if (!['hr_admin', 'it_admin', 'team_member'].includes(role)) {
         return res.status(400).json({ message: 'Invalid role for invitation' });
@@ -139,6 +131,7 @@ router.post(
 
       const inv = await Invitation.createWithToken({
         email: String(email).toLowerCase(),
+        name: String(name || '').trim() || undefined,
         role,
         orgId: req.user.orgId,
         teamId: teamId || undefined,
@@ -151,6 +144,8 @@ router.post(
       const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
       const inviteUrl = `${frontendUrl}/onboarding?token=${inv.token}`;
 
+      let emailSent = false;
+      let emailWarning = null;
       if (resend) {
         try {
           const roleNames = {
@@ -182,7 +177,7 @@ router.post(
                 <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 0 0 24px 0;">
                   ${
                     role === 'it_admin'
-                      ? "As an IT Administrator, you'll help set up integrations with your team's collaboration tools (Slack, Google Workspace, etc.) to enable powerful team health insights."
+                      ? "As an IT Administrator, you'll help authorize Microsoft 365, Slack, or Google Workspace integrations and verify that company-wide metadata access is working."
                       : role === 'hr_admin'
                         ? "As an HR Administrator, you'll have access to team health metrics, engagement signals, and actionable insights to support your people."
                         : "As a Team Member, you'll be able to view team metrics and collaborate with your organization on SignalTrue."
@@ -224,12 +219,14 @@ router.post(
           `,
           });
           console.log('Invitation email sent to:', email, 'Result:', JSON.stringify(result));
+          emailSent = true;
         } catch (emailError) {
           console.error('Resend invitation email error:', emailError);
-          // Don't fail the request - invitation is still created
+          emailWarning = 'The invitation was created, but the email could not be delivered.';
         }
       } else {
         console.log('⚠️  Resend not configured. Invitation URL:', inviteUrl);
+        emailWarning = 'The invitation was created, but email delivery is not configured.';
       }
 
       res.json({
@@ -237,6 +234,8 @@ router.post(
         role: inv.role,
         token: inv.token,
         expiresAt: inv.expiresAt,
+        emailSent,
+        warning: emailWarning,
         inviteUrl: inviteUrl, // Include URL in response for testing
       });
     } catch (e) {
@@ -244,6 +243,32 @@ router.post(
     }
   }
 );
+
+// GET /api/onboarding/invitations/:token
+// Public, token-scoped invitation preview used before an invited admin creates an account.
+router.get('/onboarding/invitations/:token', async (req, res) => {
+  try {
+    const inv = await Invitation.findOne({
+      token: req.params.token,
+      acceptedAt: null,
+      expiresAt: { $gt: new Date() },
+    })
+      .populate('orgId', 'name')
+      .select('email name role orgId expiresAt')
+      .lean();
+
+    if (!inv) return res.status(404).json({ message: 'Invitation is invalid or expired' });
+    return res.json({
+      email: inv.email,
+      name: inv.name || '',
+      role: inv.role,
+      organizationName: inv.orgId?.name || 'your organization',
+      expiresAt: inv.expiresAt,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
 
 // POST /api/onboarding/accept { token, name, password }
 router.post('/onboarding/accept', async (req, res) => {

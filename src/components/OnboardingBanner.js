@@ -2,20 +2,17 @@
  * OnboardingBanner - Day-based confidence messaging
  * Per SignalTrue Product Spec Section 4
  *
- * Shows different banners based on days since org signup:
- * - Day 0-1: "Signal monitoring has started. Initial patterns will appear within 3–5 days."
- * - Day 2-3: "Early directional signals detected. These indicate trends, not conclusions."
- * - Day 4-7: "Signal confidence increasing. Patterns are stabilizing."
- * - Day 7+: "Signals are now stable enough to inform decisions."
+ * Shows setup blockers first, then baseline confidence once reporting inputs are ready.
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const CONFIDENCE_PHASES = {
   BASELINE_FORMING: {
     days: [0, 1],
     level: 'Baseline forming',
-    banner: 'Signal monitoring has started. Initial patterns will appear within 3–5 days.',
+    banner: 'Data is flowing. A trustworthy organization baseline requires up to 30 days.',
     color: '#64748b',
     bgColor: '#f1f5f9',
     borderColor: '#cbd5e1',
@@ -23,7 +20,7 @@ const CONFIDENCE_PHASES = {
   LOW_CONFIDENCE: {
     days: [2, 3],
     level: 'Low confidence',
-    banner: 'Early directional signals detected. These indicate trends, not conclusions.',
+    banner: 'Baseline evidence is accumulating. Early values are descriptive, not conclusions.',
     color: '#0369a1',
     bgColor: '#e0f2fe',
     borderColor: '#7dd3fc',
@@ -31,7 +28,7 @@ const CONFIDENCE_PHASES = {
   MEDIUM_CONFIDENCE: {
     days: [4, 5, 6, 7],
     level: 'Medium confidence',
-    banner: 'Signal confidence increasing. Patterns are stabilizing.',
+    banner: 'Baseline confidence is increasing as measured activity accumulates.',
     color: '#b45309',
     bgColor: '#fef3c7',
     borderColor: '#fcd34d',
@@ -39,7 +36,7 @@ const CONFIDENCE_PHASES = {
   HIGH_CONFIDENCE: {
     days: null, // 7+
     level: 'High confidence',
-    banner: 'Signals are now stable enough to inform decisions.',
+    banner: 'The 30-day baseline is ready for evidence-backed review.',
     color: '#15803d',
     bgColor: '#dcfce7',
     borderColor: '#86efac',
@@ -53,7 +50,58 @@ function getConfidencePhase(daysSinceSignup) {
   return CONFIDENCE_PHASES.HIGH_CONFIDENCE;
 }
 
-export default function OnboardingBanner({ orgCreatedAt, calibrationDay }) {
+const SETUP_MESSAGES = {
+  connect_sources: {
+    level: 'Connection required',
+    banner: 'Connect a metadata source before onboarding can continue.',
+    to: '/integrations',
+    action: 'Connect sources',
+  },
+  grant_admin_access: {
+    level: 'Administrator required',
+    banner: 'The source is connected, but company-wide administrator consent is still required.',
+    to: '/integrations',
+    action: 'Review access',
+  },
+  sync_directory: {
+    level: 'Directory required',
+    banner: 'Authorization is ready. Sync the employee directory before building teams.',
+    to: '/app/employees',
+    action: 'Open Team Setup',
+  },
+  confirm_timezone: {
+    level: 'Timezone required',
+    banner: 'Confirm working timezone and hours so after-hours activity is classified correctly.',
+    to: '/app/employees',
+    action: 'Confirm assumptions',
+  },
+  assign_teams: {
+    level: 'Team setup required',
+    banner: 'Assign enough directory employees to named teams before reporting begins.',
+    to: '/app/employees',
+    action: 'Assign teams',
+  },
+  waiting_for_activity: {
+    level: 'Waiting for activity',
+    banner: 'Authorization and directory setup are ready. No activity events have arrived yet.',
+    to: '/app/signal-coverage',
+    action: 'Check coverage',
+  },
+  map_activity: {
+    level: 'Mapping required',
+    banner: 'Activity is arriving, but too little is mapped to employees and teams for reporting.',
+    to: '/app/signal-coverage',
+    action: 'Review mapping',
+  },
+  build_team_coverage: {
+    level: 'Coverage forming',
+    banner: 'Activity is mapped, but no privacy-eligible team has enough measured coverage yet.',
+    to: '/app/signal-coverage',
+    action: 'Review coverage',
+  },
+};
+
+export default function OnboardingBanner({ orgCreatedAt, calibrationDay, setup }) {
   // Calculate days since signup
   let daysSinceSignup = calibrationDay;
 
@@ -68,7 +116,17 @@ export default function OnboardingBanner({ orgCreatedAt, calibrationDay }) {
     daysSinceSignup = 0;
   }
 
-  const phase = getConfidencePhase(daysSinceSignup);
+  const setupMessage = setup?.readiness?.setupComplete
+    ? null
+    : SETUP_MESSAGES[setup?.readiness?.nextStep];
+  const phase = setupMessage
+    ? {
+        ...setupMessage,
+        color: '#b45309',
+        bgColor: '#fffbeb',
+        borderColor: '#fde68a',
+      }
+    : getConfidencePhase(daysSinceSignup);
 
   return (
     <div
@@ -104,6 +162,11 @@ export default function OnboardingBanner({ orgCreatedAt, calibrationDay }) {
         >
           {phase.banner}
         </p>
+        {phase.to && (
+          <Link to={phase.to} style={{ color: phase.color, fontSize: '13px', fontWeight: 700 }}>
+            {phase.action}
+          </Link>
+        )}
       </div>
       <span
         style={{

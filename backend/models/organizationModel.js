@@ -126,6 +126,7 @@ const organizationSchema = new mongoose.Schema(
       // Organizations may raise the reporting threshold, but never lower the privacy floor.
       minTeamSize: { type: Number, default: 5, min: 5 },
       timezone: { type: String, default: 'UTC' },
+      timezoneConfirmedAt: { type: Date },
       workdayStart: { type: String, default: '09:00' },
       workdayEnd: { type: String, default: '17:00' },
       // Optional, client-provided input. Reports never invent a labor-cost assumption.

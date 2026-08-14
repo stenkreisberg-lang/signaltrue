@@ -9,6 +9,7 @@ import ReminderEmail from '../models/reminderEmail.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
 import { encryptString } from '../utils/crypto.js';
 import { sendNewUserReminder } from '../services/reminderEmailService.js';
+import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
   validateUserRegistration,
   validateLogin,
@@ -138,7 +139,7 @@ router.post('/register-master', requireApiKey, async (req, res) => {
 // Register new user
 router.post('/register', validateUserRegistration, async (req, res) => {
   try {
-    const { email, password, name, firstName, lastName, companyName, company } = req.body;
+    const { email, password, name, firstName, lastName, companyName, company, timezone } = req.body;
 
     // Support both 'companyName' and 'company' from frontend
     const resolvedCompanyName = companyName || company;
@@ -146,7 +147,8 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     // Helper to format name with proper capitalization
     const formatName = (n) => {
       if (!n) return '';
-      return n.trim().charAt(0).toUpperCase() + n.trim().slice(1).toLowerCase();
+      const trimmed = n.trim();
+      return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     };
 
     // Parse firstName and lastName from name if not provided separately
@@ -180,7 +182,7 @@ router.post('/register', validateUserRegistration, async (req, res) => {
       'yandex.com',
       'zoho.com',
     ]);
-    const emailDomain = (email.split('@')[1] || '').toLowerCase();
+    const emailDomain = normalizeWorkEmailDomain(email);
     if (consumerDomains.has(emailDomain)) {
       return res.status(400).json({
         message: 'Please use your professional work email (consumer domains are not accepted).',
@@ -201,10 +203,19 @@ router.post('/register', validateUserRegistration, async (req, res) => {
     if (!resolvedOrgId || !resolvedTeamId) {
       try {
         // Determine organization name: prefer companyName, else derive from email domain
-        const domain = (email.split('@')[1] || '').split('.')[0];
-        const orgName = resolvedCompanyName || domain.charAt(0).toUpperCase() + domain.slice(1);
+        const domain = normalizeWorkEmailDomain(email);
+        const nameSeed = domain.split('.')[0];
+        const orgName = resolvedCompanyName || nameSeed.charAt(0).toUpperCase() + nameSeed.slice(1);
 
-        const newOrg = new Organization({ name: orgName, domain });
+        const timezoneIsValid = isValidIanaTimezone(timezone);
+        const newOrg = new Organization({
+          name: orgName,
+          domain,
+          websiteUrl: domain ? `https://${domain}` : undefined,
+          settings: timezoneIsValid
+            ? { timezone, timezoneConfirmedAt: new Date() }
+            : { timezone: 'UTC' },
+        });
         await newOrg.save();
         resolvedOrgId = newOrg._id;
 

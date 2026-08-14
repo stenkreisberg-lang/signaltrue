@@ -476,11 +476,9 @@ router.get(
     const clientId = process.env.SLACK_CLIENT_ID;
     const redirectUri = process.env.SLACK_REDIRECT_URI;
     if (!clientId || !redirectUri) {
-      return res
-        .status(503)
-        .json({
-          message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.',
-        });
+      return res.status(503).json({
+        message: 'Slack OAuth not configured. Set SLACK_CLIENT_ID and SLACK_REDIRECT_URI.',
+      });
     }
     const state = signState({
       orgId: req.user.orgId?.toString() || null,
@@ -796,6 +794,7 @@ router.get(
     const scopes = [
       'https://www.googleapis.com/auth/chat.messages.readonly', // Read messages
       'https://www.googleapis.com/auth/chat.spaces.readonly', // Read spaces/rooms
+      'https://www.googleapis.com/auth/admin.directory.user.readonly', // Workspace employee directory
       'openid',
       'email',
       'profile',

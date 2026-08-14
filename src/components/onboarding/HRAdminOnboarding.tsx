@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 
@@ -37,9 +37,25 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<boolean | string>(false);
   const [error, setError] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<
+    Array<{ email: string; name?: string; createdAt: string; expiresAt: string }>
+  >([]);
+
+  const loadPendingInvitations = useCallback(async () => {
+    try {
+      const response = await api.get('/onboarding/invitations');
+      setPendingInvitations(response.data || []);
+    } catch {
+      setPendingInvitations([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPendingInvitations();
+  }, [loadPendingInvitations]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,15 +63,16 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
     setError('');
 
     try {
-      await api.post('/onboarding/invitations', {
+      const response = await api.post('/onboarding/invitations', {
         email,
         name,
         role: 'it_admin',
       });
 
-      setSuccess(true);
+      setSuccess(response.data?.warning || true);
       setEmail('');
       setName('');
+      await loadPendingInvitations();
 
       // Show success message
       setTimeout(() => {
@@ -124,8 +141,9 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                 <form onSubmit={handleInvite} style={styles.inviteForm}>
                   {success && (
                     <div style={styles.successBanner}>
-                      ✅ Invitation sent successfully! They'll receive an email with setup
-                      instructions.
+                      {typeof success === 'string'
+                        ? `Invitation created. ${success}`
+                        : "Invitation sent successfully. They'll receive an email with setup instructions."}
                     </div>
                   )}
 
@@ -164,6 +182,18 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                   </div>
                 </form>
               )}
+              {pendingInvitations.length > 0 && (
+                <div style={styles.pendingBox}>
+                  <strong>Pending invitation</strong>
+                  {pendingInvitations.map((invitation) => (
+                    <div key={`${invitation.email}-${invitation.createdAt}`}>
+                      {invitation.name ? `${invitation.name} · ` : ''}
+                      {invitation.email} · expires{' '}
+                      {new Date(invitation.expiresAt).toLocaleDateString()}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Option 2: Set up myself */}
@@ -174,7 +204,7 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
               </h3>
               <p style={styles.optionDescription}>
                 You can configure the integrations yourself if you have admin access to your
-                organization's Slack workspace and Google Workspace.
+                organization's Microsoft 365, Slack, or Google Workspace environment.
               </p>
               <button
                 onClick={() => navigate('/dashboard?setup=true')}
@@ -390,6 +420,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     fontSize: '0.875rem',
     fontWeight: '500',
+  },
+  pendingBox: {
+    marginTop: '1rem',
+    padding: '0.75rem',
+    borderRadius: '8px',
+    background: '#f8fafc',
+    color: '#475569',
+    fontSize: '0.8rem',
+    lineHeight: '1.6',
   },
   helpBox: {
     background: '#f3f4f6',

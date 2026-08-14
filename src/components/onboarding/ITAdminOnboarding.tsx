@@ -19,6 +19,14 @@ interface OnboardingStatus {
   chatConnected: boolean;
   calendarConnected: boolean;
   integrationsComplete: boolean;
+  connectionsAuthorized?: boolean;
+  setup?: {
+    readiness: {
+      connectedSources: number;
+      needsAdminSources: number;
+      permissionsReady: boolean;
+    };
+  };
 }
 
 interface Props {
@@ -82,8 +90,15 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
     }
   };
 
-  const { chatConnected, calendarConnected, integrationsComplete } = status;
-  const progress = (chatConnected ? 50 : 0) + (calendarConnected ? 50 : 0);
+  const { chatConnected, calendarConnected, connectionsAuthorized } = status;
+  const authorizationComplete = Boolean(connectionsAuthorized);
+  const progress = authorizationComplete
+    ? 100
+    : status.setup?.readiness.connectedSources
+      ? status.setup.readiness.permissionsReady
+        ? 75
+        : 50
+      : 0;
 
   // Microsoft delegated connect only covers the signed-in account. Tenant-wide
   // coverage requires a separate admin-consent grant by a Microsoft 365 Global
@@ -124,7 +139,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
 
       <div style={styles.content}>
         <div style={styles.setupCard}>
-          {!integrationsComplete ? (
+          {!authorizationComplete ? (
             <>
               <div style={styles.iconContainer}>
                 <span style={styles.icon}>🔧</span>
@@ -132,7 +147,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
 
               <h1 style={styles.title}>Integration Setup</h1>
               <p style={styles.subtitle}>
-                Connect your collaboration tools to start analyzing team health signals
+                Authorize the organization’s collaboration tools. Data collection only starts after
+                the required administrator permissions are granted.
               </p>
 
               {/* Progress Bar */}
@@ -280,9 +296,10 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                 <span style={styles.successIcon}>🎉</span>
               </div>
 
-              <h1 style={styles.title}>Setup Complete!</h1>
+              <h1 style={styles.title}>Authorization complete</h1>
               <p style={styles.subtitle}>
-                All integrations are connected. SignalTrue is now analyzing team signals.
+                The required data-source permissions are connected. The organization administrator
+                can now finish employee sync, timezone confirmation, and team setup.
               </p>
 
               <div style={styles.successBox}>
@@ -303,7 +320,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                 </div>
                 <div style={styles.successItem}>
                   <span style={styles.successCheckmark}>✓</span>
-                  <span>First analysis running in background</span>
+                  <span>Authorization handed back to the organization administrator</span>
                 </div>
               </div>
 
@@ -312,12 +329,13 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
               <div style={styles.divider} />
 
               <p style={styles.description}>
-                The HR admin who invited you can now view team health insights. Your job here is
-                done!
+                SignalTrue will only show measured insights after employee identities are mapped,
+                eligible teams have activity, and the baseline has formed. No result is inferred
+                from an empty connection.
               </p>
 
-              <Link to="/dashboard" style={{ textDecoration: 'none' }}>
-                <button style={styles.primaryButton}>View Dashboard</button>
+              <Link to="/app/overview" style={{ textDecoration: 'none' }}>
+                <button style={styles.primaryButton}>View setup status</button>
               </Link>
             </>
           )}

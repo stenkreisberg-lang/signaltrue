@@ -127,6 +127,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState({});
   const [showConnectModal, setShowConnectModal] = useState(null);
+  const [setup, setSetup] = useState(null);
 
   // Fetch integration status
   const fetchIntegrations = useCallback(async () => {
@@ -142,16 +143,20 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       if (!res.ok) throw new Error('Failed to fetch integrations');
 
       const data = await res.json();
+      setSetup(data.setup || null);
       setIntegrations(
         (data.integrations || []).map((integration) => ({
+          ...integration,
           source: integration.type,
-          connected: integration.status === 'connected',
+          connected: ['connected', 'measuring', 'needs_admin', 'error'].includes(
+            integration.status
+          ),
           coverage: integration.coverage?.percent || 0,
+          eventCount: integration.coverage?.events || 0,
           signals_enabled: integration.whatWeMeasure?.length || 0,
           last_sync: integration.lastSync,
           sync_status: integration.lastSyncStatus,
           sync_error: integration.statusMessage,
-          ...integration,
         }))
       );
     } catch (err) {
@@ -261,6 +266,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   }
 
   const connectedCount = integrations.filter((i) => i.connected).length;
+  const measuringCount = integrations.filter((i) => i.status === 'measuring').length;
+  const needsAdminCount = integrations.filter((i) => i.status === 'needs_admin').length;
   const dataQuality = calculateDataQuality();
 
   return (
@@ -268,6 +275,27 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       {error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Data source status is temporarily unavailable. {error}
+        </div>
+      )}
+      {setup && !setup.readiness?.setupComplete && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <h3 className="font-semibold text-amber-950">Complete data readiness</h3>
+          <p className="mt-1 text-sm text-amber-900">
+            {needsAdminCount > 0
+              ? `${needsAdminCount} source${needsAdminCount === 1 ? '' : 's'} still require administrator consent.`
+              : connectedCount === 0
+                ? 'Connect a data source to begin.'
+                : measuringCount === 0
+                  ? 'Sources are authorized, but no activity events have arrived yet.'
+                  : 'Activity is arriving. Finish employee mapping, timezone confirmation, and team setup before reports are released.'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-amber-900">
+            <span>Directory: {setup.directory?.directorySyncedUsers || 0} synced</span>
+            <span>•</span>
+            <span>Activity: {setup.activity?.totalEvents || 0} events</span>
+            <span>•</span>
+            <span>Report-ready teams: {setup.teams?.ready || 0}</span>
+          </div>
         </div>
       )}
       {/* Header Stats */}
@@ -279,7 +307,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{connectedCount}</p>
-              <p className="text-sm text-gray-500">Connected</p>
+              <p className="text-sm text-gray-500">Authorized sources</p>
             </div>
           </div>
         </div>
@@ -316,6 +344,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         {Object.entries(INTEGRATIONS).map(([source, config]) => {
           const integration = integrations.find((i) => i.source === source);
           const connected = integration?.connected || false;
+          const needsAdmin = integration?.status === 'needs_admin';
           const Icon = config.icon;
 
           return (
@@ -339,7 +368,9 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   </div>
                 </div>
 
-                {connected ? (
+                {needsAdmin ? (
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                ) : connected ? (
                   <CheckCircle2 className="w-5 h-5 text-teal-700" />
                 ) : (
                   <XCircle className="w-5 h-5 text-gray-300" />
@@ -350,6 +381,22 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <div className="p-4">
                 {connected ? (
                   <>
+                    <div
+                      className={`mb-4 rounded-lg px-3 py-2 text-xs ${
+                        needsAdmin
+                          ? 'bg-amber-50 text-amber-800'
+                          : integration.status === 'measuring'
+                            ? 'bg-teal-50 text-teal-800'
+                            : 'bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      {needsAdmin
+                        ? integration.statusMessage || 'Administrator consent is still required.'
+                        : integration.status === 'measuring'
+                          ? `Measuring from ${integration.eventCount || 0} activity events.`
+                          : integration.statusMessage ||
+                            'Authorized; waiting for the first activity sync.'}
+                    </div>
                     {/* Status */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div>

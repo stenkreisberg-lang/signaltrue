@@ -126,6 +126,7 @@ const EmployeeDirectory: React.FC = () => {
     'all' | 'assigned' | 'unassigned' | 'synced' | 'measured' | 'claimed'
   >('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const [bulkAssignTeamId, setBulkAssignTeamId] = useState('');
@@ -225,6 +226,10 @@ const EmployeeDirectory: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, searchTerm]);
 
   const handleSync = async (source: 'slack' | 'google' | 'microsoft') => {
     try {
@@ -508,9 +513,8 @@ const EmployeeDirectory: React.FC = () => {
     setSelectedEmployees(newSelected);
   };
 
-  const selectAll = () => {
-    const filtered = getFilteredEmployees();
-    setSelectedEmployees(new Set(filtered.map((e) => e._id)));
+  const selectAll = (employeesToSelect = getFilteredEmployees()) => {
+    setSelectedEmployees(new Set(employeesToSelect.map((e) => e._id)));
   };
 
   const deselectAll = () => {
@@ -633,6 +637,13 @@ const EmployeeDirectory: React.FC = () => {
   }
 
   const filteredEmployees = getFilteredEmployees();
+  const pageSize = 50;
+  const pageCount = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visibleEmployees = filteredEmployees.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -1167,11 +1178,16 @@ const EmployeeDirectory: React.FC = () => {
 
         <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
           <span>
-            Showing {filteredEmployees.length} of {employees.length} employees
+            Showing {(currentPage - 1) * pageSize + (visibleEmployees.length ? 1 : 0)}–
+            {(currentPage - 1) * pageSize + visibleEmployees.length} of {filteredEmployees.length}{' '}
+            matching employees ({employees.length} total)
           </span>
           {filteredEmployees.length > 0 && (
-            <button onClick={selectAll} className="text-blue-600 hover:text-blue-700 font-medium">
-              Select All {filteredEmployees.length}
+            <button
+              onClick={() => selectAll()}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Select all {filteredEmployees.length} matching employees
             </button>
           )}
         </div>
@@ -1194,10 +1210,12 @@ const EmployeeDirectory: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={
-                        filteredEmployees.length > 0 &&
-                        filteredEmployees.every((e) => selectedEmployees.has(e._id))
+                        visibleEmployees.length > 0 &&
+                        visibleEmployees.every((e) => selectedEmployees.has(e._id))
                       }
-                      onChange={(e) => (e.target.checked ? selectAll() : deselectAll())}
+                      onChange={(e) =>
+                        e.target.checked ? selectAll(visibleEmployees) : deselectAll()
+                      }
                       className="rounded border-gray-300"
                     />
                   </th>
@@ -1228,7 +1246,7 @@ const EmployeeDirectory: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredEmployees.map((employee) => (
+                {visibleEmployees.map((employee) => (
                   <tr key={employee._id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <input
@@ -1324,6 +1342,31 @@ const EmployeeDirectory: React.FC = () => {
           </div>
         )}
       </div>
+      {filteredEmployees.length > pageSize && (
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+          <span className="text-slate-600">
+            Page {currentPage} of {pageCount}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={currentPage === pageCount}
+              onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+              className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
     const [org, suggestions, unassignedCount, representativeUser] = await Promise.all([
       Organization.findById(orgId)
         .select(
-          'domain websiteUrl linkedinUrl teamEnrichment settings.timezone settings.workdayStart settings.workdayEnd settings.loadedHourlyCost settings.currency'
+          'domain websiteUrl linkedinUrl teamEnrichment settings.timezone settings.timezoneConfirmedAt settings.workdayStart settings.workdayEnd settings.loadedHourlyCost settings.currency'
         )
         .lean(),
       TeamMappingSuggestion.find({ orgId, status: 'pending' })
@@ -67,6 +67,7 @@ router.get('/', async (req, res) => {
       enrichment: org?.teamEnrichment || { status: 'not_started' },
       reportSettings: {
         timezone: org?.settings?.timezone || 'UTC',
+        timezoneConfirmed: !!org?.settings?.timezoneConfirmedAt,
         workdayStart: org?.settings?.workdayStart || '09:00',
         workdayEnd: org?.settings?.workdayEnd || '17:00',
         loadedHourlyCost: org?.settings?.loadedHourlyCost ?? null,
@@ -125,6 +126,7 @@ router.put('/report-settings', async (req, res) => {
       {
         $set: {
           'settings.timezone': timezone,
+          'settings.timezoneConfirmedAt': new Date(),
           'settings.workdayStart': workdayStart,
           'settings.workdayEnd': workdayEnd,
           'settings.loadedHourlyCost': loadedHourlyCost,

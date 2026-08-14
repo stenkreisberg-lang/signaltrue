@@ -3,6 +3,7 @@ const EMAIL_LOCAL_PART_BLOCKLIST = new Set([
   'administrator',
   'alerts',
   'billing',
+  'backup',
   'bookings',
   'calendar',
   'contact',
@@ -60,6 +61,7 @@ const EMAIL_LOCAL_PART_PATTERNS = [
 ];
 
 const NON_EMPLOYEE_PATTERNS = [
+  /\bbackup\s+(account|user|mailbox)?\b/i,
   /\b(bot|robot|automation)\b/i,
   /\b(service|system|test|demo)\s+(account|user)\b/i,
   /\b(shared|group)\s+(mailbox|calendar|inbox)\b/i,

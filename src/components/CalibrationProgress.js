@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, ProgressBar, Badge } from './UIComponents';
 
 /**
@@ -73,7 +74,53 @@ const CalibrationProgress = ({ orgId }) => {
     dataSourcesConnected,
     daysRemaining,
     featuresUnlocked,
+    setup,
   } = calibrationData;
+
+  if (setup && !setup.readiness.reportingReady) {
+    const checks = [
+      ['Company-wide permissions', setup.readiness.permissionsReady],
+      ['Employee directory', setup.readiness.directoryReady],
+      ['Timezone and working hours', setup.readiness.timezoneReady],
+      ['Privacy-eligible teams', setup.readiness.teamsReady],
+      ['Activity arriving', setup.readiness.activityReady],
+      ['Activity mapped', setup.readiness.mappingReady],
+    ];
+    const destination = ['grant_admin_access', 'connect_sources'].includes(setup.readiness.nextStep)
+      ? '/integrations'
+      : ['sync_directory', 'confirm_timezone', 'assign_teams'].includes(setup.readiness.nextStep)
+        ? '/app/employees'
+        : '/app/signal-coverage';
+    return (
+      <Card>
+        <h3 className="text-xl font-semibold text-slate-100 mb-2">Finish data setup</h3>
+        <p className="text-slate-400 text-sm mb-5">
+          The 30-day baseline starts only after company-wide access, team structure, and mapped
+          activity are ready.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {checks.map(([label, complete]) => (
+            <div
+              key={label}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                complete
+                  ? 'border-emerald-700 bg-emerald-900/20 text-emerald-300'
+                  : 'border-amber-700 bg-amber-900/20 text-amber-200'
+              }`}
+            >
+              {complete ? '✓' : '○'} {label}
+            </div>
+          ))}
+        </div>
+        <Link
+          to={destination}
+          className="mt-5 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:text-white"
+        >
+          Continue setup
+        </Link>
+      </Card>
+    );
+  }
 
   // If calibration is complete, show unlock message
   if (!isInCalibration && featuresUnlocked) {
@@ -153,87 +200,25 @@ const CalibrationProgress = ({ orgId }) => {
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-slate-300 mb-3">Data Sources Connected</h4>
         <div className="grid grid-cols-2 gap-3">
-          <div
-            className={`p-3 rounded-lg border ${
-              dataSourcesConnected.some((s) => s.source === 'slack')
-                ? 'bg-emerald-900/20 border-emerald-700'
-                : 'bg-slate-700/50 border-slate-600'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {dataSourcesConnected.some((s) => s.source === 'slack') ? (
-                <svg
-                  className="w-5 h-5 text-emerald-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5 text-slate-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              )}
-              <span className="text-sm font-medium text-slate-300">Slack</span>
+          {dataSourcesConnected.map((source) => (
+            <div
+              key={source.source}
+              className={`p-3 rounded-lg border ${
+                source.status === 'measuring'
+                  ? 'bg-emerald-900/20 border-emerald-700'
+                  : source.status === 'needs_admin'
+                    ? 'bg-amber-900/20 border-amber-700'
+                    : 'bg-slate-700/50 border-slate-600'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-slate-300">
+                  {source.source.replaceAll('-', ' ')}
+                </span>
+                <span className="text-xs text-slate-400">{source.status.replace('_', ' ')}</span>
+              </div>
             </div>
-          </div>
-
-          <div
-            className={`p-3 rounded-lg border ${
-              dataSourcesConnected.some((s) => s.source === 'google-calendar')
-                ? 'bg-emerald-900/20 border-emerald-700'
-                : 'bg-slate-700/50 border-slate-600'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {dataSourcesConnected.some((s) => s.source === 'google-calendar') ? (
-                <svg
-                  className="w-5 h-5 text-emerald-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5 text-slate-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              )}
-              <span className="text-sm font-medium text-slate-300">Google Calendar</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

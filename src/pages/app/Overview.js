@@ -89,7 +89,10 @@ export default function Overview() {
   return (
     <AppShell user={user} section="Overview">
       <AntiWeaponizationNotice variant="sticky" />
-      <OnboardingBanner calibrationDay={calibrationStatus?.calibrationDay} />
+      <OnboardingBanner
+        calibrationDay={calibrationStatus?.calibrationDay}
+        setup={calibrationStatus?.setup}
+      />
 
       <div className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">

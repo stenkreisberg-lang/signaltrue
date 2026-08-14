@@ -104,10 +104,15 @@ const interventionSchema = new mongoose.Schema(
 
     // Decision record: who owns the change and why it was selected.
     decision: {
+      ownerName: { type: String },
       ownerRole: { type: String },
       rationale: { type: String },
       hypothesis: { type: String },
       selectedAt: { type: Date },
+    },
+
+    reminders: {
+      reviewDueNotifiedAt: { type: Date },
     },
 
     // Optional consultation record for changes that affect team working norms.

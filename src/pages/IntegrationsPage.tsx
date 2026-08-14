@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import IntegrationDashboard from '../components/IntegrationDashboard';
 import AICopilotPanel from '../components/AICopilotPanel';
 import { Link2, CheckCircle2, XCircle, ArrowLeft, Settings } from 'lucide-react';
+import AppShell from '../components/app/AppShell';
+import { getAuthenticatedContext } from '../utils/authContext';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -31,6 +33,7 @@ export default function IntegrationsPage() {
   const [callbackStatus, setCallbackStatus] = useState<CallbackStatus | null>(null);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Handle OAuth callback
   useEffect(() => {
@@ -117,156 +120,162 @@ export default function IntegrationsPage() {
 
   useEffect(() => {
     fetchSignals();
+    getAuthenticatedContext()
+      .then((context) => setUser(context.user))
+      .catch(() => setUser(null));
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <AppShell user={user} section="Data Sources" width="wide">
+      <div className="min-h-screen bg-slate-50">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">Data sources</h1>
+                <p className="text-sm text-slate-600">
+                  Connect metadata sources for privacy-protected organizational signals
+                </p>
+              </div>
+            </div>
+
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard')}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Data sources</h1>
-              <p className="text-sm text-slate-600">
-                Connect metadata sources for privacy-protected organizational signals
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      {/* Callback Status Banner */}
-      {callbackStatus && (
-        <div className={`px-6 py-4 ${callbackStatus.success ? 'bg-green-50' : 'bg-red-50'}`}>
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {callbackStatus.success ? (
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-600" />
-              )}
-              <span className={callbackStatus.success ? 'text-green-700' : 'text-red-700'}>
-                {callbackStatus.message}
-              </span>
-            </div>
-
-            <button
-              onClick={() => setCallbackStatus(null)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ×
+              <Settings className="w-5 h-5" />
             </button>
           </div>
-        </div>
-      )}
+        </header>
 
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-700 rounded-full animate-spin" />
-            <p className="mt-4 text-gray-600">Connecting integration...</p>
-          </div>
-        </div>
-      )}
+        {/* Callback Status Banner */}
+        {callbackStatus && (
+          <div className={`px-6 py-4 ${callbackStatus.success ? 'bg-green-50' : 'bg-red-50'}`}>
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {callbackStatus.success ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-600" />
+                )}
+                <span className={callbackStatus.success ? 'text-green-700' : 'text-red-700'}>
+                  {callbackStatus.message}
+                </span>
+              </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Integration Dashboard */}
-          <div className="lg:col-span-2">
-            <IntegrationDashboard orgId={null} onIntegrationChange={fetchSignals} />
-          </div>
-
-          {/* AI Copilot Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Current insights</h2>
-
-              <AICopilotPanel
-                orgId={null}
-                signals={signals as any}
-                viewerRole="TEAM_LEAD"
-                onActionTaken={() => {}}
-              />
-
-              {/* Getting Started Tips */}
-              {signals.length === 0 && (
-                <div className="mt-6 p-5 bg-white border border-slate-200 rounded-xl">
-                  <h3 className="font-medium text-slate-900 mb-2">Establish coverage</h3>
-                  <ol className="space-y-2 text-sm text-slate-600">
-                    <li className="flex items-start gap-2">
-                      <span className="font-bold">1.</span>
-                      Connect at least two metadata sources for broader coverage
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="font-bold">2.</span>
-                      Map team members to integration users
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="font-bold">3.</span>
-                      Allow 24-48 hours for baseline calculation
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="font-bold">4.</span>
-                      Signals will appear once patterns are detected
-                    </li>
-                  </ol>
-                </div>
-              )}
+              <button
+                onClick={() => setCallbackStatus(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Privacy Notice */}
-        <div className="mt-12 p-6 bg-teal-50 border border-teal-100 rounded-xl">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-              <Link2 className="w-5 h-5 text-teal-700" />
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-8 flex flex-col items-center">
+              <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-700 rounded-full animate-spin" />
+              <p className="mt-4 text-gray-600">Connecting integration...</p>
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">Privacy protected by design</h3>
-              <p className="text-slate-600 mt-1">
-                SignalTrue only accesses <strong>metadata</strong>: timestamps, counts, and
-                patterns. We never read email content, document text, chat messages, or any
-                personally identifiable information. All data is encrypted in transit and at rest.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
-                  ✓ No email content
-                </span>
-                <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
-                  ✓ No document text
-                </span>
-                <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
-                  ✓ No chat messages
-                </span>
-                <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
-                  ✓ Encrypted tokens
-                </span>
-                <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
-                  ✓ GDPR compliant
-                </span>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Integration Dashboard */}
+            <div className="lg:col-span-2">
+              <IntegrationDashboard orgId={null} onIntegrationChange={fetchSignals} />
+            </div>
+
+            {/* AI Copilot Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8">
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">Current insights</h2>
+
+                <AICopilotPanel
+                  orgId={null}
+                  signals={signals as any}
+                  viewerRole="TEAM_LEAD"
+                  onActionTaken={() => {}}
+                />
+
+                {/* Getting Started Tips */}
+                {signals.length === 0 && (
+                  <div className="mt-6 p-5 bg-white border border-slate-200 rounded-xl">
+                    <h3 className="font-medium text-slate-900 mb-2">Establish coverage</h3>
+                    <ol className="space-y-2 text-sm text-slate-600">
+                      <li className="flex items-start gap-2">
+                        <span className="font-bold">1.</span>
+                        Connect at least two metadata sources for broader coverage
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-bold">2.</span>
+                        Map team members to integration users
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-bold">3.</span>
+                        Allow up to 30 days after activity and team coverage are ready for the first
+                        reliable baseline
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-bold">4.</span>
+                        Signals will appear once patterns are detected
+                      </li>
+                    </ol>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+
+          {/* Privacy Notice */}
+          <div className="mt-12 p-6 bg-teal-50 border border-teal-100 rounded-xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                <Link2 className="w-5 h-5 text-teal-700" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Privacy protected by design</h3>
+                <p className="text-slate-600 mt-1">
+                  SignalTrue only accesses <strong>metadata</strong>: timestamps, counts, and
+                  patterns. We never read email content, document text, chat messages, or any
+                  personally identifiable information. All data is encrypted in transit and at rest.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                    ✓ No email content
+                  </span>
+                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                    ✓ No document text
+                  </span>
+                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                    ✓ No chat messages
+                  </span>
+                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                    ✓ Encrypted tokens
+                  </span>
+                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                    ✓ GDPR compliant
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </AppShell>
   );
 }
 

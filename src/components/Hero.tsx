@@ -82,14 +82,19 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/contact?intent=demo&cta=homepage_hero" onClick={handleRequestDemo}>
+              <Link to="/register">
                 <Button variant="hero" size="xl">
-                  Book a 20-minute workload risk review
+                  Start a pilot
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/sample-report" onClick={handleHowItWorks}>
+              <Link to="/contact?intent=demo&cta=homepage_hero" onClick={handleRequestDemo}>
                 <Button variant="hero-outline" size="xl">
+                  Request a workload risk review
+                </Button>
+              </Link>
+              <Link to="/sample-report" onClick={handleHowItWorks}>
+                <Button variant="ghost" size="xl">
                   View sample report
                 </Button>
               </Link>

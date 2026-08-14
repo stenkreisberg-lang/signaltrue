@@ -33,7 +33,7 @@ const createUser = async () => {
     }
 
     // Create a new Organization
-    const domain = email.split('@')[1].split('.')[0];
+    const domain = email.split('@')[1].toLowerCase();
     const orgName = domain.charAt(0).toUpperCase() + domain.slice(1);
     const newOrg = new Organization({ name: orgName, domain });
     await newOrg.save();

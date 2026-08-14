@@ -7,18 +7,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import RecommendedAction from '../../components/RecommendedAction';
+import AppShell from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function ActiveMonitoring() {
-  const navigate = useNavigate();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [interventions, setInterventions] = useState({});
+  const [setup, setSetup] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -32,14 +33,19 @@ export default function ActiveMonitoring() {
       if (!context.orgId) throw new Error('No organization context available.');
 
       // Fetch current signals for user's team/org
-      const signalsRes = await api.get(`/signals/org/${context.orgId}`, {
-        params: {
-          status: 'open,acknowledged',
-          limit: 10,
-        },
-      });
+      const [signalsRes, onboardingRes] = await Promise.all([
+        api.get(`/signals/org/${context.orgId}`, {
+          params: {
+            status: 'open,acknowledged',
+            limit: 10,
+          },
+        }),
+        api.get('/onboarding/status'),
+      ]);
+      setSetup(onboardingRes.data.setup || null);
 
-      const rawSignals = signalsRes.data.signals || [];
+      const reportingReady = onboardingRes.data.setup?.readiness?.reportingReady;
+      const rawSignals = reportingReady ? signalsRes.data.signals || [] : [];
 
       // Sort by: 1) Severity (CRITICAL > RISK > INFO), 2) Velocity (trend), 3) Time unresolved
       const sorted = rawSignals.sort((a, b) => {
@@ -85,12 +91,6 @@ export default function ActiveMonitoring() {
     }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -115,103 +115,82 @@ export default function ActiveMonitoring() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* Top Nav */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <div style={styles.navLeft}>
-            <Link to="/" style={{ textDecoration: 'none' }}>
-              <h1 style={styles.logo}>SignalTrue</h1>
-            </Link>
+    <AppShell user={user} section="Monitoring" width="wide">
+      <div style={styles.content}>
+        {/* Header - per spec Section 7 */}
+        <div style={styles.header}>
+          <div>
+            <h2 style={styles.title}>Active Monitoring</h2>
+            <p style={styles.subtitle}>
+              SignalTrue continuously watches for early risk patterns across workload, recovery, and
+              collaboration.
+            </p>
           </div>
-          <div style={styles.navRight}>
-            <Link to="/app/overview" style={styles.navLink}>
-              Team Overview
-            </Link>
-            <Link to="/app/signals" style={styles.navLink}>
-              Signals
-            </Link>
-            <span style={styles.navLinkActive}>Active Monitoring</span>
-            <Link to="/app/actions" style={styles.navLink}>
-              Actions
-            </Link>
-            <Link to="/app/executive-summary" style={styles.navLink}>
-              Executive Summary
-            </Link>
-            <Link to="/app/signal-coverage" style={styles.navLink}>
-              Data Coverage
-            </Link>
-            {user && (
-              <div style={styles.userMenu}>
-                <span style={styles.userName}>{user.name || user.email}</span>
-                <button style={styles.logoutButton} onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main style={styles.main}>
-        <div style={styles.content}>
-          {/* Header - per spec Section 7 */}
-          <div style={styles.header}>
-            <div>
-              <h2 style={styles.title}>Active Monitoring</h2>
-              <p style={styles.subtitle}>
-                SignalTrue continuously watches for early risk patterns across workload, recovery,
-                and collaboration.
-              </p>
-            </div>
-            {signals.length > 0 && (
-              <Link to="/app/signals" style={styles.viewAllLink}>
-                View All Signals →
-              </Link>
-            )}
-          </div>
-
-          {/* Signals List or Empty State */}
-          {signals.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>Monitoring active</div>
-              <h3 style={styles.emptyTitle}>No Active Risk Signals Detected</h3>
-              {/* CRITICAL COPY per spec Section 7 */}
-              <p style={styles.emptyText}>
-                We are currently monitoring workload intensity, recovery time, and collaboration
-                patterns. Directional signals typically emerge within 7–10 days.
-              </p>
-              <Link to="/app/overview" style={styles.emptyButton}>
-                Return to overview
-              </Link>
-            </div>
-          ) : (
-            <div style={styles.signalsList}>
-              {signals.map((signal, idx) => (
-                <SignalCard
-                  key={signal._id || signal.id || idx}
-                  signal={signal}
-                  intervention={interventions[signal._id || signal.id]}
-                  onActionTaken={handleActionTaken}
-                  rank={idx + 1}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Footer Note */}
           {signals.length > 0 && (
-            <div style={styles.footerNote}>
-              <p style={styles.footerText}>
-                Signals are updated every 24 hours based on team activity patterns. Taking action
-                early prevents larger problems later.
-              </p>
-            </div>
+            <Link to="/app/signals" style={styles.viewAllLink}>
+              View All Signals →
+            </Link>
           )}
         </div>
-      </main>
-    </div>
+
+        {/* Signals List or Empty State */}
+        {signals.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>
+              {setup?.readiness?.reportingReady ? 'Monitoring active' : 'Setup required'}
+            </div>
+            <h3 style={styles.emptyTitle}>
+              {setup?.readiness?.reportingReady
+                ? 'No active risk signals detected'
+                : 'Monitoring has not started yet'}
+            </h3>
+            {/* CRITICAL COPY per spec Section 7 */}
+            <p style={styles.emptyText}>
+              {setup?.readiness?.reportingReady
+                ? 'SignalTrue is monitoring qualified team activity. Reliable directional signals are evaluated against the 30-day baseline.'
+                : 'Finish administrator consent, employee sync, timezone confirmation, team assignment, and activity mapping before monitoring is described as active.'}
+            </p>
+            <Link
+              to={
+                setup?.readiness?.nextStep === 'connect_sources' ||
+                setup?.readiness?.nextStep === 'grant_admin_access'
+                  ? '/integrations'
+                  : setup?.readiness?.nextStep === 'sync_directory' ||
+                      setup?.readiness?.nextStep === 'confirm_timezone' ||
+                      setup?.readiness?.nextStep === 'assign_teams'
+                    ? '/app/employees'
+                    : '/app/signal-coverage'
+              }
+              style={styles.emptyButton}
+            >
+              {setup?.readiness?.reportingReady ? 'Return to overview' : 'Continue setup'}
+            </Link>
+          </div>
+        ) : (
+          <div style={styles.signalsList}>
+            {signals.map((signal, idx) => (
+              <SignalCard
+                key={signal._id || signal.id || idx}
+                signal={signal}
+                intervention={interventions[signal._id || signal.id]}
+                onActionTaken={handleActionTaken}
+                rank={idx + 1}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Footer Note */}
+        {signals.length > 0 && (
+          <div style={styles.footerNote}>
+            <p style={styles.footerText}>
+              Signals are updated every 24 hours based on team activity patterns. Taking action
+              early prevents larger problems later.
+            </p>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
 

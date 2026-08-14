@@ -12,16 +12,27 @@ const AcceptInvitation = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [invitationData, setInvitationData] = useState<any>(null);
+  const [validating, setValidating] = useState(true);
   const navigate = useNavigate();
 
   const token = searchParams.get('token');
 
   useEffect(() => {
-    // You could fetch invitation details here to show company name, role, etc.
-    // For now, we'll just validate the token exists
     if (!token) {
       setError('Invalid invitation link - no token provided');
+      setValidating(false);
+      return;
     }
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    fetch(`${apiUrl}/api/onboarding/invitations/${encodeURIComponent(token)}`)
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Invitation is invalid or expired');
+        setInvitationData(data);
+        setName(data.name || '');
+      })
+      .catch((validationError) => setError(validationError.message))
+      .finally(() => setValidating(false));
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,7 +110,22 @@ const AcceptInvitation = () => {
         {/* Accept Invitation Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
           <h1 className="text-2xl font-bold mb-2">Accept Your Invitation</h1>
-          <p className="text-muted-foreground mb-6">Set up your account to get started</p>
+          <p className="text-muted-foreground mb-6">
+            {invitationData
+              ? `Join ${invitationData.organizationName} as ${String(invitationData.role).replace('_', ' ')}`
+              : validating
+                ? 'Checking your invitation…'
+                : 'Set up your account to get started'}
+          </p>
+
+          {invitationData && (
+            <div className="mb-4 rounded-md border border-border bg-muted/40 p-3 text-sm">
+              <div className="font-medium">{invitationData.email}</div>
+              <div className="text-muted-foreground">
+                This invitation is only valid for the account above.
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
@@ -146,7 +172,11 @@ const AcceptInvitation = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !token}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || validating || !token || !invitationData}
+            >
               {loading ? 'Creating Account...' : 'Accept Invitation'}
             </Button>
           </form>

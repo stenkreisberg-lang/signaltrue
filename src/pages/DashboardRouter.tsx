@@ -89,6 +89,15 @@ interface OnboardingStatus {
   chatConnected: boolean;
   calendarConnected: boolean;
   integrationsComplete: boolean;
+  connectionsAuthorized?: boolean;
+  setup?: {
+    readiness: {
+      connectedSources: number;
+      needsAdminSources: number;
+      permissionsReady: boolean;
+      nextStep: string;
+    };
+  };
 }
 
 // ── Impersonation banner ───────────────────────────────────────────────────────
@@ -252,7 +261,7 @@ const DashboardRouter: React.FC = () => {
   }
 
   // Route based on role and onboarding status
-  const { role, integrationsComplete } = status;
+  const { role, connectionsAuthorized, setup } = status;
 
   // HR Admin Flow
   if (role === 'hr_admin') {
@@ -269,8 +278,9 @@ const DashboardRouter: React.FC = () => {
       );
     }
 
-    // If integrations are not complete, show onboarding prompt
-    if (!integrationsComplete) {
+    // Invite IT before a source is connected. Once authorization starts, let HR
+    // finish the directory, timezone, team, and activity-readiness steps in-app.
+    if ((setup?.readiness.connectedSources || 0) === 0) {
       return <HRAdminOnboarding status={status} />;
     }
 
@@ -281,7 +291,7 @@ const DashboardRouter: React.FC = () => {
   // IT Admin Flow
   if (role === 'it_admin') {
     // If arriving from invitation acceptance, force to integrations setup
-    if (onboardingParam === 'integrations' || !integrationsComplete) {
+    if (onboardingParam === 'integrations' || !connectionsAuthorized) {
       return <ITAdminOnboarding status={status} />;
     }
 

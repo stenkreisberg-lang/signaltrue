@@ -2,8 +2,8 @@ import express from 'express';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
-import WorkEvent from '../models/workEvent.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ router.get('/status', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Organization ID required' });
     }
 
-    // Get all integration connections for this org
+    const setup = await getOrganizationReadiness(orgId);
     const connections = await IntegrationConnection.find({ orgId }).lean();
 
     // Build response for all integration types
@@ -48,6 +48,14 @@ router.get('/status', authenticateToken, async (req, res) => {
     ];
 
     const integrations = integrationTypes.map(({ type, name, category }) => {
+      const canonical = setup.sources.find((source) => source.type === type);
+      if (canonical) {
+        return {
+          ...canonical,
+          available: isIntegrationAvailable(type),
+          whatWeMeasure: getWhatWeMeasure(type),
+        };
+      }
       const conn = connections.find((c) => c.integrationType === type);
 
       // Check if this integration is available (env vars configured)
@@ -95,7 +103,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     });
 
     // Calculate overall data coverage
-    const connectedCount = connections.filter((c) => c.status === 'connected').length;
+    const connectedCount = setup.readiness.connectedSources;
     const overallCoverage = {
       connectedIntegrations: connectedCount,
       totalIntegrations: integrationTypes.length,
@@ -105,6 +113,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     res.json({
       integrations,
       overallCoverage,
+      setup,
       oauthBaseUrl: '/api/integrations',
     });
   } catch (err) {

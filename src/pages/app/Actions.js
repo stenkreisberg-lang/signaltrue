@@ -50,11 +50,13 @@ export default function Actions() {
   const [context, setContext] = useState(null);
   const [interventions, setInterventions] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [draft, setDraft] = useState(null);
   const [ownerRole, setOwnerRole] = useState('Team lead');
+  const [ownerName, setOwnerName] = useState('');
   const [rationale, setRationale] = useState('');
   const [consultationStatus, setConsultationStatus] = useState('planned');
   const [reviewNotes, setReviewNotes] = useState({});
@@ -74,10 +76,16 @@ export default function Actions() {
         ? `/interventions/org/${nextContext.orgId}`
         : `/interventions/team/${nextContext.teamId}`;
 
-      const [interventionRes, signalRes] = await Promise.all([
+      const [interventionRes, signalRes, teamRes] = await Promise.all([
         api.get(interventionPath),
         api.get(`/signals/org/${nextContext.orgId}`),
+        orgView
+          ? api.get('/team-management/organization').catch(() => ({ data: [] }))
+          : Promise.resolve({
+              data: nextContext.teamId ? [{ _id: nextContext.teamId, name: 'My team' }] : [],
+            }),
       ]);
+      setTeams(teamRes.data || []);
       const nextInterventions = interventionRes.data.interventions || [];
       setInterventions(nextInterventions);
 
@@ -124,7 +132,26 @@ export default function Actions() {
   const openStartForm = (action) => {
     setDraft(action);
     setOwnerRole('Team lead');
+    setOwnerName(context?.user?.name || '');
     setRationale(`Selected in response to: ${action.signalTitle}`);
+    setConsultationStatus('planned');
+    setNotice(null);
+  };
+
+  const openManualForm = () => {
+    setDraft({
+      key: 'manual',
+      manual: true,
+      teamId: context?.teamId || teams[0]?._id || '',
+      title: '',
+      description: '',
+      signalType: 'meeting_load',
+      expectedEffect: '',
+      timeframe: '2 weeks',
+    });
+    setOwnerRole('Team lead');
+    setOwnerName(context?.user?.name || '');
+    setRationale('');
     setConsultationStatus('planned');
     setNotice(null);
   };
@@ -147,6 +174,7 @@ export default function Actions() {
         effort: normalizeEffort(draft.effort),
         timeframe: draft.timeframe || '2 weeks',
         ownerRole,
+        ownerName,
         decisionRationale: rationale,
         consultationStatus,
       });
@@ -215,10 +243,16 @@ export default function Actions() {
         title="Action reviews"
         description="Turn a measured team pattern into an owned change, then check the same metric after 14 days. Observed changes are evidence for review, not proof of causation."
         action={
-          <button type="button" className="action-icon-button" onClick={loadData} title="Refresh">
-            <RefreshCw size={17} aria-hidden="true" />
-            <span>Refresh</span>
-          </button>
+          <div className="flex gap-2">
+            <button type="button" className="action-primary-button" onClick={openManualForm}>
+              <Play size={16} aria-hidden="true" />
+              Start an action
+            </button>
+            <button type="button" className="action-icon-button" onClick={loadData} title="Refresh">
+              <RefreshCw size={17} aria-hidden="true" />
+              <span>Refresh</span>
+            </button>
+          </div>
         }
       />
 
@@ -237,8 +271,12 @@ export default function Actions() {
           <div className="action-start-heading">
             <div>
               <p className="app-eyebrow">Start a measured change</p>
-              <h2>{draft.title}</h2>
-              <p>{draft.expectedEffect || draft.description}</p>
+              <h2>{draft.manual ? 'Manual measured action' : draft.title}</h2>
+              <p>
+                {draft.manual
+                  ? 'Use this when the organization has already chosen a change outside a SignalTrue recommendation.'
+                  : draft.expectedEffect || draft.description}
+              </p>
             </div>
             <button
               type="button"
@@ -250,8 +288,74 @@ export default function Actions() {
             </button>
           </div>
           <div className="action-form-grid">
+            {draft.manual && (
+              <>
+                <label className="action-form-wide">
+                  Action title
+                  <input
+                    value={draft.title}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, title: event.target.value }))
+                    }
+                    placeholder="For example: Protect Tuesday focus blocks"
+                    required
+                  />
+                </label>
+                <label>
+                  Team
+                  <select
+                    value={draft.teamId}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, teamId: event.target.value }))
+                    }
+                    required
+                  >
+                    <option value="">Select a team</option>
+                    {teams.map((team) => (
+                      <option key={team._id} value={team._id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Metric to re-measure
+                  <select
+                    value={draft.signalType}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, signalType: event.target.value }))
+                    }
+                  >
+                    <option value="meeting_load">Meeting load</option>
+                    <option value="boundary-erosion">After-hours activity</option>
+                    <option value="focus-erosion">Focus-time ratio</option>
+                    <option value="execution-drag">Median response time</option>
+                  </select>
+                </label>
+                <label className="action-form-wide">
+                  Expected effect
+                  <input
+                    value={draft.expectedEffect}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, expectedEffect: event.target.value }))
+                    }
+                    placeholder="What should change if this action helps?"
+                    required
+                  />
+                </label>
+              </>
+            )}
             <label>
-              Owner
+              Named owner
+              <input
+                value={ownerName}
+                onChange={(event) => setOwnerName(event.target.value)}
+                placeholder="Person responsible"
+                required
+              />
+            </label>
+            <label>
+              Owner role
               <select value={ownerRole} onChange={(event) => setOwnerRole(event.target.value)}>
                 <option>Team lead</option>
                 <option>HR</option>
@@ -327,7 +431,13 @@ export default function Actions() {
           </div>
         </div>
         {recommendations.length === 0 ? (
-          <EmptyRow text="No additional evidence-backed actions are ready." />
+          <div className="action-empty">
+            <CheckCircle2 size={20} aria-hidden="true" />
+            <span>
+              No evidence-backed actions are ready. Check data coverage and signals first.
+            </span>
+            <a href="/app/signal-coverage">Open data coverage</a>
+          </div>
         ) : (
           <div className="action-list">
             {recommendations.map((item) => (
@@ -410,7 +520,7 @@ function InterventionRow({ item, busy, notes, onNotes, onMeasure, onAcknowledge,
         <p>{item.description || item.expectedEffect}</p>
         <div className="action-meta">
           <span>{item.teamId?.name || 'Team'}</span>
-          <span>Owner: {item.decision?.ownerRole || 'Team lead'}</span>
+          <span>Owner: {item.decision?.ownerName || item.decision?.ownerRole || 'Team lead'}</span>
           <span>Review: {formatDate(item.recheckDate)}</span>
           {item.targetMetricLabel && <span>Metric: {item.targetMetricLabel}</span>}
         </div>

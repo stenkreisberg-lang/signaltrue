@@ -74,6 +74,7 @@ const Signals = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [inCalibration, setInCalibration] = useState(false);
+  const [setup, setSetup] = useState(null);
   const [selectedSignal, setSelectedSignal] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [familyScope, setFamilyScope] = useState('org');
@@ -112,11 +113,17 @@ const Signals = () => {
         if (statusFilter) params.append('status', statusFilter);
         if (params.toString()) url += `?${params.toString()}`;
 
-        const response = await api.get(url);
+        const [response, onboardingResponse] = await Promise.all([
+          api.get(url),
+          api.get('/onboarding/status'),
+        ]);
         const data = response.data;
+        const currentSetup = onboardingResponse.data.setup || null;
+        setSetup(currentSetup);
 
-        if (data.inCalibration) {
+        if (data.inCalibration || !currentSetup?.readiness?.reportingReady) {
           setInCalibration(true);
+          setSignals([]);
         } else {
           setSignals(data.signals || []);
           setDisplayPolicy(data.displayPolicy || null);
@@ -175,6 +182,8 @@ const Signals = () => {
     return `Updated ${hours}h ago`;
   };
 
+  const insightsReady = Boolean(setup?.readiness?.reportingReady) && !inCalibration;
+
   const handleCopySummary = async () => {
     if (!prioritySummary?.shareText || !navigator?.clipboard) return;
 
@@ -200,6 +209,7 @@ const Signals = () => {
           <div className="flex items-center gap-4 mb-2">
             <h1 className="text-3xl font-bold text-slate-900">Work Signals</h1>
             {(() => {
+              if (!insightsReady) return null;
               const health = getOrgHealthState(families);
               if (!health) return null;
               return (
@@ -245,7 +255,7 @@ const Signals = () => {
           </div>
         )}
 
-        {familiesLoading && (
+        {insightsReady && familiesLoading && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((key) => (
               <div
@@ -256,7 +266,7 @@ const Signals = () => {
           </div>
         )}
 
-        {teamId && (
+        {insightsReady && teamId && (
           <div className="mb-4 flex items-center gap-3">
             <span className="text-sm text-slate-600">Compare scope:</span>
             <Button
@@ -276,7 +286,7 @@ const Signals = () => {
           </div>
         )}
 
-        {families.length > 0 && (
+        {insightsReady && families.length > 0 && (
           <div className="mb-6 space-y-6">
             {prioritySummary && (
               <Card className="border-teal-200 bg-teal-50/60">
@@ -382,11 +392,30 @@ const Signals = () => {
                   />
                 </svg>
               }
-              title="Signals Available After Calibration"
-              description="Your baseline is being established. Signal Intelligence will unlock when calibration completes (30 days)."
+              title={
+                setup?.readiness?.activityReady
+                  ? 'Signals available after calibration'
+                  : 'Signal measurement has not started yet'
+              }
+              description={
+                setup?.readiness?.activityReady
+                  ? 'Activity is arriving. Reliable signals unlock after eligible teams have mapped coverage and the 30-day baseline has formed.'
+                  : 'Connect and authorize a data source, sync employees, confirm the timezone, and assign eligible teams. SignalTrue will not rank priorities from empty data.'
+              }
               action={
-                <Link to="/app/overview">
-                  <Button variant="primary">View Calibration Progress</Button>
+                <Link
+                  to={
+                    setup?.readiness?.nextStep === 'connect_sources' ||
+                    setup?.readiness?.nextStep === 'grant_admin_access'
+                      ? '/integrations'
+                      : setup?.readiness?.nextStep === 'sync_directory' ||
+                          setup?.readiness?.nextStep === 'confirm_timezone' ||
+                          setup?.readiness?.nextStep === 'assign_teams'
+                        ? '/app/employees'
+                        : '/app/signal-coverage'
+                  }
+                >
+                  <Button variant="primary">Continue setup</Button>
                 </Link>
               }
             />

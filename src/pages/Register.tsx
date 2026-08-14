@@ -19,13 +19,17 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [company, setCompany] = useState('');
+  const [timezone, setTimezone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  );
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // Helper to format name with proper capitalization
   const formatName = (name: string) => {
-    return name.trim().charAt(0).toUpperCase() + name.trim().slice(1).toLowerCase();
+    const trimmed = name.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +54,7 @@ const Register = () => {
           email,
           password,
           company,
+          timezone,
           plan: selectedPlan,
         }),
       });
@@ -187,6 +192,22 @@ const Register = () => {
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Company Timezone</label>
+              <Input
+                type="text"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="Europe/Tallinn"
+                required
+                disabled={loading}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Used to identify after-hours activity accurately. We detected this automatically;
+                change it if your main team works elsewhere.
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
