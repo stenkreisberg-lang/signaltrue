@@ -2,21 +2,22 @@ import { CheckCircle } from 'lucide-react';
 
 const outcomes = [
   {
-    title: 'Reduce manager bottlenecks',
-    description: 'See where decisions, meetings, and interruptions are overloading key people.',
-  },
-  {
-    title: 'Protect focus time',
-    description: 'Find where meetings and response pressure are crowding out real work.',
-  },
-  {
-    title: 'Stop after-hours creep',
-    description: 'Catch recovery risk before evening work becomes normal.',
-  },
-  {
-    title: 'Act before delivery slips',
+    title: 'Reduce excessive demands',
     description:
-      'Fix pressure patterns before they become missed work, burnout, or resignation risk.',
+      'Review workload, meeting load and decision demand before exposure becomes sustained.',
+  },
+  {
+    title: 'Improve work control',
+    description:
+      'Protect usable work time and clarify priorities, autonomy and response expectations.',
+  },
+  {
+    title: 'Protect recovery',
+    description: 'Identify when work outside normal hours is becoming a repeated team pattern.',
+  },
+  {
+    title: 'Review control effectiveness',
+    description: 'Assign an owner, record the action and compare the same indicator after 14 days.',
   },
 ];
 
@@ -34,7 +35,7 @@ const PromisedLand = () => {
               What leaders can fix earlier
             </p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#0F172A]">
-              What leaders can fix before delivery slows.
+              Turn evidence into preventive action.
             </h2>
           </div>
 
@@ -64,8 +65,8 @@ const PromisedLand = () => {
           {/* Summary */}
           <div className="mt-12 text-center">
             <p className="text-xl text-[#0F172A] font-medium">
-              SignalTrue helps leaders act before pressure becomes a people problem or delivery
-              problem.
+              A signal starts a health &amp; safety conversation. It never replaces worker
+              consultation, professional judgement or a formal risk assessment.
             </p>
           </div>
         </div>

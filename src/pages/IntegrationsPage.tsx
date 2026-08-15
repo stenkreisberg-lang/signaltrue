@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import IntegrationDashboard from '../components/IntegrationDashboard';
-import AICopilotPanel from '../components/AICopilotPanel';
 import { Link2, CheckCircle2, XCircle, ArrowLeft, Settings } from 'lucide-react';
 import AppShell from '../components/app/AppShell';
 import { getAuthenticatedContext } from '../utils/authContext';
@@ -14,13 +13,6 @@ interface CallbackStatus {
   message: string;
 }
 
-interface Signal {
-  _id: string;
-  signal_type: string;
-  severity: number;
-  confidence: number;
-}
-
 /**
  * Integrations Page
  *
@@ -31,7 +23,6 @@ export default function IntegrationsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [callbackStatus, setCallbackStatus] = useState<CallbackStatus | null>(null);
-  const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -84,9 +75,6 @@ export default function IntegrationsPage() {
 
       // Clear URL params
       navigate('/integrations', { replace: true });
-
-      // Fetch updated signals
-      fetchSignals();
     } catch (err) {
       setCallbackStatus({
         success: false,
@@ -98,28 +86,7 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Fetch active signals
-  const fetchSignals = async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      const res = await fetch(`${API_BASE}/api/signals?source=category-king`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setSignals(data.signals || []);
-      }
-    } catch (err) {
-      console.error('Error fetching signals:', err);
-    }
-  };
-
   useEffect(() => {
-    fetchSignals();
     getAuthenticatedContext()
       .then((context) => setUser(context.user))
       .catch(() => setUser(null));
@@ -134,6 +101,7 @@ export default function IntegrationsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
+                aria-label="Go back"
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -149,6 +117,7 @@ export default function IntegrationsPage() {
 
             <button
               onClick={() => navigate('/dashboard')}
+              aria-label="Return to dashboard"
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <Settings className="w-5 h-5" />
@@ -196,46 +165,36 @@ export default function IntegrationsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Integration Dashboard */}
             <div className="lg:col-span-2">
-              <IntegrationDashboard orgId={null} onIntegrationChange={fetchSignals} />
+              <IntegrationDashboard orgId={null} onIntegrationChange={() => {}} />
             </div>
 
-            {/* AI Copilot Sidebar */}
+            {/* Setup guidance */}
             <div className="lg:col-span-1">
               <div className="sticky top-8">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Current insights</h2>
-
-                <AICopilotPanel
-                  orgId={null}
-                  signals={signals as any}
-                  viewerRole="TEAM_LEAD"
-                  onActionTaken={() => {}}
-                />
-
-                {/* Getting Started Tips */}
-                {signals.length === 0 && (
-                  <div className="mt-6 p-5 bg-white border border-slate-200 rounded-xl">
-                    <h3 className="font-medium text-slate-900 mb-2">Establish coverage</h3>
-                    <ol className="space-y-2 text-sm text-slate-600">
-                      <li className="flex items-start gap-2">
-                        <span className="font-bold">1.</span>
-                        Connect at least two metadata sources for broader coverage
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-bold">2.</span>
-                        Map team members to integration users
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-bold">3.</span>
-                        Allow up to 30 days after activity and team coverage are ready for the first
-                        reliable baseline
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-bold">4.</span>
-                        Signals will appear once patterns are detected
-                      </li>
-                    </ol>
-                  </div>
-                )}
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                  Setup responsibilities
+                </h2>
+                <div className="p-5 bg-white border border-slate-200 rounded-xl">
+                  <h3 className="font-medium text-slate-900 mb-2">Establish qualified coverage</h3>
+                  <ol className="space-y-2 text-sm text-slate-600">
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold">1.</span>
+                      IT approves the minimum required read-only sources
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold">2.</span>
+                      The organization administrator maps eligible people and teams
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold">3.</span>
+                      Health &amp; Safety confirms the review purpose and consultation plan
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold">4.</span>
+                      SignalTrue reports only after coverage and baseline checks pass
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
           </div>

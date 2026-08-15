@@ -46,6 +46,7 @@ const EhrsSummit2026 = lazy(() => import('./pages/EhrsSummit2026'));
 const EngagementStrainTeamDetail = lazy(() => import('./pages/app/EngagementStrainTeamDetail'));
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
 const SeoLanding = lazy(() => import('./pages/SeoLanding'));
+const SampleReport = lazy(() => import('./pages/SampleReport'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,7 +67,19 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AnalyticsPageTracker />
-            <Suspense fallback={<div className="min-h-screen bg-background" />}>
+            <Suspense
+              fallback={
+                <div
+                  className="flex min-h-screen items-center justify-center bg-[#F8FAFC]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="rounded-xl border border-[#E2E8F0] bg-white px-6 py-4 text-sm font-semibold text-[#475569] shadow-sm">
+                    Loading SignalTrue…
+                  </div>
+                </div>
+              }
+            >
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/product" element={<Product />} />
@@ -118,7 +131,7 @@ const App = () => (
                 <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/demo" element={<Navigate to="/contact" replace />} />
-                <Route path="/sample-report" element={<SeoLanding />} />
+                <Route path="/sample-report" element={<SampleReport />} />
                 <Route path="/burnout-early-warning-system" element={<SeoLanding />} />
                 <Route path="/employee-engagement-leading-indicators" element={<SeoLanding />} />
                 <Route path="/solutions" element={<SeoLanding />} />

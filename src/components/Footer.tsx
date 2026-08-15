@@ -16,7 +16,7 @@ const footerLinks = {
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'Sample report', href: '/sample-report' },
-    { label: 'Request demo', href: '/contact' },
+    { label: 'Book a risk review', href: '/contact' },
   ],
   Company: [
     { label: 'About', href: '/about' },
@@ -31,11 +31,11 @@ const footerLinks = {
     { label: 'No message content', href: '/trust' },
     { label: 'No individual scores', href: '/trust' },
   ],
-  SEO: [
-    { label: 'Burnout early warning', href: '/burnout-early-warning-system' },
-    { label: 'Engagement indicators', href: '/employee-engagement-leading-indicators' },
-    { label: 'Manager load signal', href: '/signals/manager-load' },
-    { label: 'Meeting overload', href: '/signals/meeting-overload' },
+  Guides: [
+    { label: 'Psychosocial risk indicators', href: '/burnout-early-warning-system' },
+    { label: 'Worker engagement indicators', href: '/employee-engagement-leading-indicators' },
+    { label: 'Manager capacity', href: '/signals/manager-load' },
+    { label: 'Meeting demand', href: '/signals/meeting-overload' },
   ],
 };
 
@@ -53,7 +53,7 @@ const Footer = () => {
               <span className="text-xl font-display font-bold text-white">SignalTrue</span>
             </Link>
             <p className="text-[#CBD5E1] text-sm leading-relaxed max-w-sm mb-6">
-              Work-system early warning for healthier, faster teams.
+              Early team-level evidence for workplace health, safety and work-design prevention.
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -100,9 +100,11 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[#94A3B8]">
-            © 2026 SignalTrue. Built for prevention, not surveillance.
+            © 2026 SignalTrue. Evidence for prevention—not employee monitoring.
           </p>
-          <p className="text-sm text-[#94A3B8]">Work-system early warning platform.</p>
+          <p className="text-sm text-[#94A3B8]">
+            Signals support consultation; they do not diagnose.
+          </p>
         </div>
       </div>
     </footer>

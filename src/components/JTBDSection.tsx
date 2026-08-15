@@ -3,33 +3,33 @@ import { UserCheck, Users, Clock, Zap, Moon, RefreshCw } from 'lucide-react';
 const signals = [
   {
     icon: UserCheck,
-    name: 'Manager overload',
-    description: 'Managers lose focus time and become decision bottlenecks.',
+    name: 'Manager capacity',
+    description: 'Coordination and decision demands exceed usable management capacity.',
   },
   {
     icon: Users,
-    name: 'Meeting pressure',
-    description: 'Recurring meetings crowd out real work.',
+    name: 'Meeting demand',
+    description: 'Recurring meetings compress the time available to complete planned work.',
   },
   {
     icon: Clock,
-    name: 'Focus loss',
-    description: 'Deep work windows shrink or disappear.',
+    name: 'Work fragmentation',
+    description: 'Usable focus windows shrink and task switching increases.',
   },
   {
     icon: Zap,
-    name: 'Response pressure',
-    description: 'Urgent communication becomes the default.',
+    name: 'Communication pressure',
+    description: 'Short response expectations and urgent requests become routine.',
   },
   {
     icon: Moon,
-    name: 'Recovery risk',
-    description: 'Work shifts into evenings and repeated high-pressure periods.',
+    name: 'Recovery opportunity',
+    description: 'Work moves outside normal hours or high-demand periods repeat without recovery.',
   },
   {
     icon: RefreshCw,
-    name: 'Execution drag',
-    description: 'Several signals combine and the team starts moving slower.',
+    name: 'Combined exposure',
+    description: 'Several work-design risk indicators move together over time.',
   },
 ];
 
@@ -44,12 +44,12 @@ const JTBDSection = () => {
               What SignalTrue detects
             </p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4 text-[#0F172A]">
-              Early warning signals for manager overload and execution drag.
+              Leading indicators for psychosocial risk review.
             </h2>
             <p className="text-lg text-[#475569] max-w-2xl mx-auto">
-              SignalTrue compares each team's current work rhythm against its normal baseline and
-              flags changes in meetings, focus time, after-hours work, response pressure, and
-              manager load.
+              SignalTrue compares current team-level patterns with the team’s own baseline. It
+              highlights material changes for investigation—not diagnoses, individual scores or
+              conclusions about worker health.
             </p>
           </div>
 

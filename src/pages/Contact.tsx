@@ -124,7 +124,7 @@ const Contact: React.FC = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              See work-system pressure before it becomes disruption.
+              Review a psychosocial risk concern before it becomes harm or disruption.
             </h1>
             <p className="text-xl text-muted-foreground">
               Request a guided review of capacity, coordination, and recovery signals generated from
@@ -206,9 +206,11 @@ const Contact: React.FC = () => {
                 <>
                   <div className="text-center mb-8">
                     <p className="text-xs uppercase tracking-widest font-semibold text-primary mb-3">
-                      Request a demo
+                      Workplace risk review
                     </p>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">What we will cover</h2>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">
+                      What the 20-minute review covers
+                    </h2>
                     <ul className="text-muted-foreground text-sm space-y-1 mt-4 text-left max-w-sm mx-auto">
                       {[
                         'What SignalTrue detects',
@@ -310,55 +312,9 @@ const Contact: React.FC = () => {
                           value={formData.role}
                           onChange={handleChange}
                           className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                          placeholder="e.g. HR Director, COO"
+                          placeholder="e.g. Health & Safety Manager"
                         />
                       </div>
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="companySize"
-                        className="block text-sm font-medium text-foreground mb-2"
-                      >
-                        Company size
-                      </label>
-                      <select
-                        id="companySize"
-                        name="companySize"
-                        value={formData.companySize}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                      >
-                        <option value="">Select company size</option>
-                        <option value="under-50">Under 50</option>
-                        <option value="50-150">50 to 150</option>
-                        <option value="151-500">151 to 500</option>
-                        <option value="501-2500">501 to 2,500</option>
-                        <option value="2500+">2,500+</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="intent"
-                        className="block text-sm font-medium text-foreground mb-2"
-                      >
-                        What would help most?
-                      </label>
-                      <select
-                        id="intent"
-                        name="intent"
-                        value={formData.intent}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                      >
-                        <option value="">Select an option</option>
-                        <option value="demo">Book a guided demo</option>
-                        <option value="workload-scan">Discuss a workload scan</option>
-                        <option value="sample-report">Send me the sample report</option>
-                        <option value="checklist">Send me the 5-signal checklist</option>
-                        <option value="pricing">Discuss pricing</option>
-                      </select>
                     </div>
 
                     <div>
@@ -366,7 +322,7 @@ const Contact: React.FC = () => {
                         htmlFor="mainProblem"
                         className="block text-sm font-medium text-foreground mb-2"
                       >
-                        Main problem you want to understand
+                        Workplace risk concern to review
                       </label>
                       <select
                         id="mainProblem"
@@ -375,14 +331,17 @@ const Contact: React.FC = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
                       >
-                        <option value="">Select a problem area</option>
-                        <option value="manager-overload">Manager overload</option>
-                        <option value="too-many-meetings">Too many meetings</option>
-                        <option value="focus-fragmentation">Focus fragmentation</option>
-                        <option value="response-pressure">Response pressure</option>
-                        <option value="burnout-risk">Burnout risk</option>
-                        <option value="employee-engagement">Employee engagement</option>
-                        <option value="delivery-slowing">Delivery slowing down</option>
+                        <option value="">Select a risk concern</option>
+                        <option value="demands">Excessive or sustained demands</option>
+                        <option value="manager-capacity">Manager capacity</option>
+                        <option value="meeting-demand">
+                          Meeting demand and work fragmentation
+                        </option>
+                        <option value="recovery">After-hours work and recovery</option>
+                        <option value="control">
+                          Low control over priorities or response times
+                        </option>
+                        <option value="organizational-change">Organizational change</option>
                         <option value="not-sure">Not sure yet</option>
                       </select>
                     </div>
@@ -400,7 +359,7 @@ const Contact: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          Book my 20-minute review
+                          Book my workplace risk review
                         </>
                       )}
                     </button>

@@ -142,6 +142,25 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
             join.
           </p>
 
+          <div style={styles.journeyBox} aria-label="Organization setup journey">
+            {[
+              ['1', 'Health & Safety', 'Confirm purpose, scope and worker consultation plan'],
+              ['2', 'IT administrator', 'Authorize approved metadata sources'],
+              ['3', 'Organization administrator', 'Map directory, time zone and eligible teams'],
+              ['4', 'SignalTrue', 'Qualify coverage and form the team baseline'],
+              ['5', 'Health & Safety', 'Review the first brief and assign a preventive action'],
+            ].map(([number, owner, task]) => (
+              <div key={number} style={styles.journeyStep}>
+                <span style={styles.journeyNumber}>{number}</span>
+                <span>
+                  <strong>{owner}</strong>
+                  <br />
+                  {task}
+                </span>
+              </div>
+            ))}
+          </div>
+
           <div style={styles.divider} />
 
           <h2 style={styles.sectionTitle}>Connect trusted data sources</h2>
@@ -180,7 +199,12 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
 
                   {error && <div style={styles.errorBanner}>❌ {error}</div>}
 
+                  <label htmlFor="it-admin-name" style={styles.inputLabel}>
+                    IT administrator name
+                  </label>
                   <input
+                    id="it-admin-name"
+                    name="itAdminName"
                     type="text"
                     placeholder="IT Admin Name"
                     value={name}
@@ -189,7 +213,12 @@ const HRAdminOnboarding: React.FC<Props> = ({ status }) => {
                     style={styles.input}
                   />
 
+                  <label htmlFor="it-admin-email" style={styles.inputLabel}>
+                    IT administrator email
+                  </label>
                   <input
+                    id="it-admin-email"
+                    name="itAdminEmail"
                     type="email"
                     placeholder="IT Admin Email"
                     value={email}
@@ -363,6 +392,36 @@ const styles: { [key: string]: React.CSSProperties } = {
     background: '#e5e7eb',
     margin: '2rem 0',
   },
+  journeyBox: {
+    display: 'grid',
+    gap: '0.75rem',
+    padding: '1rem',
+    border: '1px solid #bfdbfe',
+    borderRadius: '12px',
+    background: '#eff6ff',
+    marginBottom: '2rem',
+  },
+  journeyStep: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.75rem',
+    color: '#334155',
+    fontSize: '0.85rem',
+    lineHeight: '1.45',
+  },
+  journeyNumber: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+    height: '24px',
+    flexShrink: 0,
+    borderRadius: '999px',
+    background: '#1d4ed8',
+    color: 'white',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+  },
   sectionTitle: {
     fontSize: '1.5rem',
     fontWeight: '600',
@@ -459,6 +518,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     boxSizing: 'border-box',
     color: '#111827',
     backgroundColor: '#ffffff',
+  },
+  inputLabel: {
+    color: '#334155',
+    fontSize: '0.8rem',
+    fontWeight: '600',
+    marginBottom: '-0.5rem',
   },
   buttonGroup: {
     display: 'grid',

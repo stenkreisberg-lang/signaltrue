@@ -143,7 +143,7 @@ const Product = () => {
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
         title="Burnout Early Warning Product | SignalTrue"
-        description="See how SignalTrue detects manager load, meeting overload, focus fragmentation, response pressure, recovery risk, and execution drag from metadata only."
+        description="See how SignalTrue helps health and safety managers identify changing work-design risks, consult workers and review preventive actions."
         path="/product"
       />
       <Navbar />
@@ -156,8 +156,8 @@ const Product = () => {
                 Product
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                See the signals that show{' '}
-                <span className="text-[#1D4ED8]">manager overload early.</span>
+                See changing work-design risks{' '}
+                <span className="text-[#1D4ED8]">before harm becomes visible.</span>
               </h1>
               <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-4">
                 SignalTrue detects team-level changes in meetings, focus time, response pressure,
@@ -169,17 +169,17 @@ const Product = () => {
                 scores.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  <Button variant="hero" size="xl">
-                    Request demo
+                <Button asChild variant="hero" size="xl">
+                  <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                    Book a risk review
                     <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/product#sample-report" onClick={() => trackEvent('sample_report_click')}>
-                  <Button variant="hero-outline" size="xl">
+                  </Link>
+                </Button>
+                <Button asChild variant="hero-outline" size="xl">
+                  <Link to="/sample-report" onClick={() => trackEvent('sample_report_click')}>
                     View sample report
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -194,26 +194,26 @@ const Product = () => {
                   Why teams use it
                 </p>
                 <h2 className="text-3xl font-display font-bold text-[#0F172A]">
-                  Different leaders, one shared view of work pressure.
+                  One shared evidence base for prevention.
                 </h2>
               </div>
               <div className="grid md:grid-cols-3 gap-5">
                 {[
                   {
-                    title: 'For HR',
-                    text: 'Move from lagging engagement surveys to leading indicators of burnout, recovery loss, and manager overload.',
+                    title: 'For Health & Safety',
+                    text: 'Prioritise psychosocial risk investigation with baseline-aware indicators and clear use boundaries.',
                     link: '/employee-engagement-leading-indicators',
                     linkText: 'Engagement indicators',
                   },
                   {
-                    title: 'For executives',
-                    text: 'See execution drag before delivery misses, escalations, or resignations make the risk obvious.',
+                    title: 'For operational leaders',
+                    text: 'Understand where work demands, control and recovery conditions may need preventive action.',
                     link: '/burnout-early-warning-system',
                     linkText: 'Burnout early warning',
                   },
                   {
-                    title: 'For managers',
-                    text: 'Get practical actions to reduce meeting pressure, protect focus time, and clarify decision ownership.',
+                    title: 'For managers and workers',
+                    text: 'Use a shared pattern to discuss causes and test practical changes without personal blame.',
                     link: '/signals/manager-load',
                     linkText: 'Manager load signal',
                   },
@@ -249,7 +249,7 @@ const Product = () => {
                   Sample report
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
-                  The weekly report leaders receive.
+                  The weekly workplace risk brief.
                 </h2>
                 <p className="text-lg text-[#475569] max-w-2xl mx-auto">
                   Each week, SignalTrue shows what changed, which teams are under pressure, and what
@@ -414,15 +414,15 @@ const Product = () => {
               </div>
 
               <div className="text-center mt-8">
-                <Link
-                  to="/contact?intent=sample-report"
-                  onClick={() => trackEvent('sample_report_request')}
-                >
-                  <Button variant="hero" size="lg">
+                <Button asChild variant="hero" size="lg">
+                  <Link
+                    to="/contact?intent=sample-report"
+                    onClick={() => trackEvent('sample_report_request')}
+                  >
                     Send me the sample report
                     <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -433,7 +433,7 @@ const Product = () => {
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
-                The six signals SignalTrue tracks
+                Six work-design indicators for investigation
               </h2>
               <p className="text-[#475569]">
                 Each signal shows where work is becoming heavier, slower, or harder to sustain.
@@ -485,7 +485,7 @@ const Product = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
-                  What SignalTrue does not do
+                  Clear limits on what SignalTrue can conclude
                 </h2>
                 <p className="text-lg text-[#475569]">
                   SignalTrue shows system pressure, not personal blame.
@@ -518,18 +518,18 @@ const Product = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
-                See the report your leaders would receive.
+                See the report your health &amp; safety team would review.
               </h2>
               <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
                 Request a demo and we will show how SignalTrue turns work patterns into a weekly
                 leadership report.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                <Button variant="hero" size="xl">
-                  Request demo
+              <Button asChild variant="hero" size="xl">
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                  Book a risk review
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </section>

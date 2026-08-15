@@ -22,8 +22,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <PageMeta
-        title="SignalTrue | Work-System Early Warning for Teams"
-        description="SignalTrue shows manager load, meeting pressure, focus loss, and recovery patterns from team-level metadata so leaders can improve work conditions earlier."
+        title="SignalTrue | Early Evidence for Psychosocial Risk Prevention"
+        description="SignalTrue helps health and safety managers identify changing team-level work-design risks, consult workers and review preventive actions."
         path="/"
       />
       <Navbar />

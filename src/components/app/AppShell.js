@@ -2,28 +2,37 @@ import React, { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 const links = [
-  { to: '/app/overview', label: 'Overview' },
+  { to: '/app/overview', label: 'Overview', group: 'Today' },
   {
     to: '/app/latest-brief',
-    label: 'Latest Brief',
+    label: 'Weekly Brief',
+    group: 'Today',
     roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
-  { to: '/app/signals', label: 'Signals' },
-  { to: '/app/active-monitoring', label: 'Monitoring' },
-  { to: '/app/actions', label: 'Actions' },
-  { to: '/app/signal-coverage', label: 'Data Coverage' },
+  { to: '/app/active-monitoring', label: 'Priority Signals', group: 'Investigate' },
+  { to: '/app/signals', label: 'All Signals', group: 'Investigate' },
+  { to: '/app/actions', label: 'Corrective Actions', group: 'Improve' },
+  { to: '/app/signal-coverage', label: 'Coverage', group: 'Setup & governance' },
   {
     to: '/integrations',
     label: 'Data Sources',
+    group: 'Setup & governance',
     roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
   },
   {
     to: '/app/work-network',
     label: 'Work Network',
+    group: 'Investigate',
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
   },
-  { to: '/app/employees', label: 'Team Setup', adminOnly: true },
-  { to: '/app/site-analytics', label: 'Site Analytics' },
+  { to: '/app/employees', label: 'Team Setup', group: 'Setup & governance', adminOnly: true },
+  { to: '/app/privacy', label: 'Data Policy', group: 'Setup & governance' },
+  {
+    to: '/app/site-analytics',
+    label: 'Site Analytics',
+    group: 'Operations',
+    roles: ['master_admin'],
+  },
 ];
 
 export function PageHeader({ eyebrow, title, description, action }) {
@@ -89,14 +98,18 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
                   (!link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
                   (!link.roles || link.roles.includes(user?.role))
               )
-              .map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
-                >
-                  {link.label}
-                </NavLink>
+              .map((link, index, visibleLinks) => (
+                <React.Fragment key={link.to}>
+                  {(index === 0 || visibleLinks[index - 1]?.group !== link.group) && (
+                    <span className="app-nav-group">{link.group}</span>
+                  )}
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
+                  >
+                    {link.label}
+                  </NavLink>
+                </React.Fragment>
               ))}
           </nav>
           <div className="app-account">
@@ -128,8 +141,8 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Privacy protected.</strong> Metadata only, aggregated at team level. No message
-            content or individual performance ranking.
+            <strong>Use with consultation.</strong> Signals support workplace risk review; they do
+            not diagnose health, establish cause or rank individual performance.
             <Link to="/app/privacy">View data policy</Link>
           </div>
           {children}

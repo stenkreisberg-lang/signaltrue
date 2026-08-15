@@ -76,7 +76,7 @@ export default function SignalCoverage() {
           <ShieldCheck size={20} />
           <div>
             <strong>{status.loading ? '...' : measuredSources}</strong>
-            <span>Sources measuring people</span>
+            <span>Sources with mapped coverage</span>
           </div>
         </div>
         <div className="app-metric">

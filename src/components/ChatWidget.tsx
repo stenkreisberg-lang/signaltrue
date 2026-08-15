@@ -49,7 +49,7 @@ export const ChatWidget: React.FC = () => {
     fetch(`${API_BASE_URL}/api/chat/suggested-prompts`)
       .then((res) => res.json())
       .then((data) => setSuggestedPrompts(data.prompts || []))
-      .catch((err) => console.error('Failed to load prompts:', err));
+      .catch(() => setSuggestedPrompts([]));
   }, []);
 
   // Load trial context on mount
@@ -75,8 +75,8 @@ export const ChatWidget: React.FC = () => {
             phase: data.trial.phase,
           });
         }
-      } catch (error) {
-        console.error('Failed to load trial context:', error);
+      } catch {
+        setTrialContext(null);
       }
     };
 
@@ -244,7 +244,7 @@ export const ChatWidget: React.FC = () => {
       {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 ${
+        className={`signaltrue-chat-toggle fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 ${
           isOpen ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'
         }`}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}

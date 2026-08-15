@@ -74,7 +74,7 @@ const steps = [
     title: 'Detect pressure changes',
     subtitle: 'Detect',
     description:
-      'SignalTrue flags early changes that suggest manager overload, meeting pressure, focus loss, response pressure, recovery risk, or execution drag.',
+      'SignalTrue flags material changes in demands, work fragmentation, response expectations, recovery opportunity and manager capacity.',
     examples: [
       'Manager overload',
       'Meeting pressure',
@@ -134,20 +134,20 @@ const HowItWorksPage = () => {
                 How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                How SignalTrue detects pressure{' '}
-                <span className="text-[#1D4ED8]">without watching people.</span>
+                From work-pattern evidence{' '}
+                <span className="text-[#1D4ED8]">to a reviewed preventive action.</span>
               </h1>
               <p className="text-lg text-[#334155] max-w-xl mx-auto mb-8">
                 SignalTrue uses metadata from work tools to detect team-level changes in meetings,
                 focus time, response pressure, recovery patterns, and manager load. No message
                 content. No individual scoring. No surveillance.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                <Button variant="hero" size="xl">
-                  Request demo
+              <Button asChild variant="hero" size="xl">
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                  Book a risk review
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -233,7 +233,7 @@ const HowItWorksPage = () => {
                   </span>
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#064E3B]">
-                  What We Never Do
+                  What the evidence cannot tell you
                 </h2>
               </div>
               <div className="grid md:grid-cols-3 gap-6">
@@ -283,23 +283,23 @@ const HowItWorksPage = () => {
                 See it for your organization
               </p>
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0F172A] mb-3">
-                Is manager overload already slowing your team?
+                Which psychosocial risk concern should you investigate first?
               </h2>
               <p className="text-[#334155] mb-8 max-w-xl mx-auto">
                 Take the free diagnostic. 8 questions. 7 minutes. No integrations needed.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/drift-diagnostic">
-                  <Button variant="hero" size="lg">
+                <Button asChild variant="hero" size="lg">
+                  <Link to="/drift-diagnostic">
                     Take the free diagnostic
                     <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  <Button variant="hero-outline" size="lg">
-                    Request a full demo
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
+                <Button asChild variant="hero-outline" size="lg">
+                  <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                    Book a workplace risk review
+                  </Link>
+                </Button>
               </div>
               <p className="text-xs text-[#475569] mt-4">
                 No personal data. No message content. Anonymous result.
@@ -315,12 +315,12 @@ const HowItWorksPage = () => {
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
                 See how work patterns become early warning signals.
               </h2>
-              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                <Button variant="hero" size="xl">
-                  Request demo
+              <Button asChild variant="hero" size="xl">
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                  Book a risk review
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </section>

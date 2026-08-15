@@ -2,20 +2,20 @@ import { XCircle } from 'lucide-react';
 
 const laggingIndicators = [
   {
-    name: 'Surveys',
-    problem: 'Show how people felt after pressure built up.',
+    name: 'Annual risk assessments',
+    problem: 'Can become a snapshot that misses how work changes between reviews.',
   },
   {
-    name: 'Exit interviews',
-    problem: 'Explain the problem after someone has already left.',
+    name: 'Absence and turnover data',
+    problem: 'Confirm harm or disruption after preventive opportunities have passed.',
   },
   {
-    name: 'Manager intuition',
-    problem: 'Useful, but inconsistent and hard to scale.',
+    name: 'Manager observations',
+    problem: 'Essential context, but difficult to compare consistently across teams.',
   },
   {
-    name: 'Project dashboards',
-    problem: 'Show missed work, not the pressure causing it.',
+    name: 'Delivery dashboards',
+    problem: 'Show delayed work, not the work-design conditions creating the risk.',
   },
 ];
 
@@ -32,9 +32,9 @@ const WhyOrganizationsGoBlind = () => {
 
           {/* Section headline */}
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center mb-6">
-            Teams rarely break suddenly.
+            Psychosocial risks build gradually.
             <br />
-            They slow down first.
+            The work pattern changes first.
           </h2>
 
           <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16">
@@ -44,8 +44,8 @@ const WhyOrganizationsGoBlind = () => {
               moves into evenings.
             </p>
             <p className="text-xl text-muted-foreground mt-4">
-              Most companies notice this too late because their tools show opinions, outputs, or
-              damage after pressure has already built up.
+              Most organizations notice too late because their evidence is periodic, fragmented or
+              focused on outcomes after exposure has already increased.
             </p>
           </div>
 
@@ -72,11 +72,11 @@ const WhyOrganizationsGoBlind = () => {
           {/* Highlight box */}
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-2xl bg-[#FEE2E2] border border-[#B91C1C]/20">
             <p className="text-lg lg:text-xl text-[#0F172A] font-medium">
-              SignalTrue helps leaders see pressure while it is still fixable.
+              SignalTrue adds continuous evidence to—not a replacement for—worker consultation.
             </p>
             <p className="text-[#334155] mt-2">
-              Meetings pile up. Focus time disappears. Managers become bottlenecks. Work moves into
-              evenings.
+              Identify the pattern, verify the cause with the team, select a proportionate control
+              and review the same measure after action.
             </p>
           </div>
         </div>

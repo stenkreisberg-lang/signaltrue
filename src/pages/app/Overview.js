@@ -68,21 +68,39 @@ export default function Overview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Spinner size="large" />
-      </div>
+      <AppShell user={user} section="Overview">
+        <div className="app-panel flex min-h-64 items-center justify-center">
+          <Spinner size="large" />
+          <span className="ml-3 text-sm text-slate-600">
+            Preparing the workplace risk overview…
+          </span>
+        </div>
+      </AppShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-4xl mx-auto">
-          <Card>
-            <div className="text-center text-red-700">Unable to load the overview. {error}</div>
-          </Card>
-        </div>
-      </div>
+      <AppShell user={user} section="Overview">
+        <Card>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-slate-900">
+              The overview is temporarily unavailable
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Your saved evidence has not been changed. Check Data Sources and Coverage, or try
+              again shortly.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        </Card>
+      </AppShell>
     );
   }
 
@@ -96,19 +114,18 @@ export default function Overview() {
 
       <div className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
-          <p className="app-dashboard-eyebrow">Leadership dashboard</p>
-          <h1 className="app-dashboard-title">Measured work patterns at a glance</h1>
+          <p className="app-dashboard-eyebrow">Workplace risk overview</p>
+          <h1 className="app-dashboard-title">Evidence, consultation and preventive action</h1>
           <p className="app-dashboard-copy">
-            Counts and durations come from connected metadata. Derived statistics and internal model
-            indices help prioritize a team conversation; they do not measure employee health,
-            engagement, performance, or intent.
+            Review the highest-priority team pattern, verify the context with workers and record one
+            proportionate corrective action. SignalTrue does not measure employee health or intent.
           </p>
         </div>
         <div className="app-dashboard-hero-side">
           <p className="app-dashboard-eyebrow">How to use this</p>
           <p className="text-sm leading-6 text-slate-700">
-            Check coverage, inspect the underlying metric, ask what changed, and test one reversible
-            action. Do not act on a score alone.
+            1. Check coverage. 2. Inspect the baseline. 3. Consult the team. 4. Assign a control. 5.
+            Review the same indicator after 14 days.
           </p>
         </div>
       </div>

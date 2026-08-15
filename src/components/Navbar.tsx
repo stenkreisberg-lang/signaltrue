@@ -1,4 +1,3 @@
-import { Button } from '../components/ui/button';
 import { Activity, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -69,27 +68,22 @@ const Navbar = () => {
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
-                Login
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="cta" size="sm">
-                Start pilot
-              </Button>
+              <span className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]">
+                Sign in
+              </span>
             </Link>
             <Link to="/sample-report" onClick={() => handleSampleReport('navbar_desktop')}>
-              <Button variant="ghost" size="sm" className="text-[#475569] hover:text-[#0F172A]">
+              <span className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]">
                 Sample report
-              </Button>
+              </span>
             </Link>
             <Link
               to="/contact?intent=demo&cta=navbar_desktop"
               onClick={() => handleRequestDemo('navbar_desktop')}
             >
-              <Button variant="ghost" size="sm">
-                Request a review
-              </Button>
+              <span className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]">
+                Book a risk review
+              </span>
             </Link>
           </div>
 
@@ -119,14 +113,9 @@ const Navbar = () => {
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full text-[#475569]">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="cta" size="sm" className="w-full">
-                    Start pilot
-                  </Button>
+                  <span className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]">
+                    Sign in
+                  </span>
                 </Link>
                 <Link
                   to="/sample-report"
@@ -135,9 +124,9 @@ const Navbar = () => {
                     handleSampleReport('navbar_mobile');
                   }}
                 >
-                  <Button variant="ghost" size="sm" className="w-full text-[#475569]">
+                  <span className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]">
                     Sample report
-                  </Button>
+                  </span>
                 </Link>
                 <Link
                   to="/contact?intent=demo&cta=navbar_mobile"
@@ -146,9 +135,9 @@ const Navbar = () => {
                     handleRequestDemo('navbar_mobile');
                   }}
                 >
-                  <Button variant="ghost" size="sm" className="w-full">
-                    Request a review
-                  </Button>
+                  <span className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-sm font-semibold text-white">
+                    Book a risk review
+                  </span>
                 </Link>
               </div>
             </div>

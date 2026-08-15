@@ -25,25 +25,22 @@ const CTASection = () => {
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6 text-white">
-            See where manager overload is building.
+            Bring one workplace risk concern.
           </h2>
           <p className="text-lg text-[#CBD5E1] mb-10 max-w-xl mx-auto">
-            Bring one workload concern. In 20 minutes, see how SignalTrue turns meetings, focus
-            time, response pressure, after-hours work, and manager load into an early warning view.
+            In 20 minutes, see how SignalTrue can support your psychosocial risk process with
+            baseline-aware evidence, worker consultation prompts and measurable corrective actions.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/register">
-              <Button variant="hero" size="xl">
-                Start pilot
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
-              <Button variant="hero-outline" size="xl">
-                Book a 20-minute review
-              </Button>
-            </Link>
+            <Button asChild variant="hero" size="xl">
+              <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
+                Book a workplace risk review <ArrowRight className="h-5 w-5" />
+              </Link>
+            </Button>
+            <Button asChild variant="hero-outline" size="xl">
+              <Link to="/sample-report">View sample report</Link>
+            </Button>
           </div>
         </div>
       </div>

@@ -151,8 +151,24 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                 the required administrator permissions are granted.
               </p>
 
+              <div style={styles.helpBox}>
+                <p style={styles.helpText}>
+                  <strong>Your part of the setup:</strong> authorize approved sources and, where
+                  required, organization-wide consent. The organization administrator then maps
+                  eligible people and teams. Health &amp; Safety owns consultation, interpretation
+                  and preventive action.
+                </p>
+              </div>
+
               {/* Progress Bar */}
-              <div style={styles.progressContainer}>
+              <div
+                style={styles.progressContainer}
+                role="progressbar"
+                aria-label="Integration authorization progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+              >
                 <div style={styles.progressBar}>
                   <div style={{ ...styles.progressFill, width: `${progress}%` }} />
                 </div>

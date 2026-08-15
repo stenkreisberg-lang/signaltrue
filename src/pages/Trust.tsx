@@ -140,10 +140,10 @@ const Trust = () => {
                   What we use
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
-                  Behavioral metadata only
+                  Work-pattern metadata with defined purpose
                 </h2>
                 <p className="text-lg text-[#475569] max-w-2xl mx-auto">
-                  We analyze patterns and timing, never content.
+                  We use the minimum fields needed to calculate team-level work-pattern indicators.
                 </p>
               </div>
 
@@ -273,6 +273,56 @@ const Trust = () => {
           </div>
         </section>
 
+        <section className="border-y border-[#E2E8F0] bg-white py-20 lg:py-24">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto max-w-5xl">
+              <div className="max-w-3xl">
+                <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#0F766E]">
+                  Responsible-use method
+                </p>
+                <h2 className="text-3xl font-bold text-[#0F172A] sm:text-4xl">
+                  A signal is the start of a risk review—not a conclusion.
+                </h2>
+                <p className="mt-4 text-lg leading-8 text-[#475569]">
+                  SignalTrue separates measured evidence from interpretation and records the
+                  consultation and control decision that follows.
+                </p>
+              </div>
+              <div className="mt-10 grid gap-5 md:grid-cols-4">
+                {[
+                  [
+                    '1. Qualify',
+                    'Coverage, group thresholds and baseline maturity must be sufficient.',
+                  ],
+                  [
+                    '2. Inspect',
+                    'The user sees the current value, baseline, change and confidence.',
+                  ],
+                  [
+                    '3. Consult',
+                    'Workers and managers verify context, causes and practical controls.',
+                  ],
+                  [
+                    '4. Review',
+                    'An owner records the action and the same indicator is measured again.',
+                  ],
+                ].map(([title, copy]) => (
+                  <div key={title} className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
+                    <h3 className="font-bold text-[#0F172A]">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#475569]">{copy}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm leading-6 text-amber-950">
+                <strong>Important limitation:</strong> metadata cannot establish a medical
+                condition, employee sentiment, intent or the cause of a work pattern. Organizations
+                remain responsible for worker consultation, professional judgement, local legal
+                duties and appropriate escalation.
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-20 lg:py-24 bg-white">
           <div className="container mx-auto px-6">
@@ -287,17 +337,15 @@ const Trust = () => {
                 </a>
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/contact">
-                  <Button variant="hero" size="xl">
+                <Button asChild variant="hero" size="xl">
+                  <Link to="/contact">
                     Talk to us
                     <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/how-it-works">
-                  <Button variant="hero-outline" size="xl">
-                    See how it works
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
+                <Button asChild variant="hero-outline" size="xl">
+                  <Link to="/how-it-works">See how it works</Link>
+                </Button>
               </div>
             </div>
           </div>

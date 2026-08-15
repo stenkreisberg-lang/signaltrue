@@ -1,0 +1,1482 @@
+
+
+===== PAGE 1 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  1
+SIGNALTRUE
+Product, Health & Safety
+and Technical Blueprint
+Continuous work-pattern exposure, psychosocial risk monitoring, control 
+effectiveness, organizational drift and evidence.
+Core product thesis
+Know when sustained work patterns are becoming an organizational risk while there is still time to 
+change the conditions. SignalTrue should measure the work system, not diagnose the person.
+Version 2026.08
+13 August 2026
+Prepared as the consolidated product and engineering direction for SignalTrue. Current implementation details are verified 
+against the main SignalTrue repository where available. Proposed additions are explicitly marked as target-state 
+recommendations.
+Important boundary
+This document is a product and technical blueprint, not legal or medical advice. SignalTrue must not 
+diagnose burnout, fatigue, mental-health conditions or individual productivity. Regulatory 
+references should be reviewed with local WHS counsel before customer-facing compliance claims 
+are made.
+
+===== PAGE 2 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  2
+Contents
+ 1. Executive summary
+ 2. Product direction and why it matters
+ 3. The problems customers actually pay to solve
+ 4. Health & Safety opportunity and regulatory fit
+ 5. Scientific and organizational research foundation
+ 6. Measurement contract: what SignalTrue can and cannot claim
+ 7. Core product engines
+ 8. Measurement model and algorithms
+ 9. H&S risk workflow and control loop
+ 10. UI and UX redesign
+ 11. Detailed screen specifications and copy
+ 12. User flows and permissions
+ 13. Reports, alerts and evidence packs
+ 14. Current technical stack
+ 15. Target technical architecture
+ 16. Data model and APIs
+ 17. Privacy, security and AI guardrails
+ 18. Validation and evidence program
+ 19. Implementation roadmap
+ 20. Commercial packaging and buyer value
+ 21. Acceptance criteria
+ Appendix A. Research library
+ Appendix B. Regulatory sources
+ Appendix C. Current-state vs target-state change log
+
+===== PAGE 3 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  3
+1. Executive summary
+SignalTrue should not be positioned primarily as a burnout-prediction product or as a generic wellbeing 
+dashboard. The stronger, more defensible and more urgent product is a continuous work-pattern risk and 
+evidence system. It helps Health & Safety, People & Safety, Operations and executives see persistent 
+workload exposure, capacity depletion, workday expansion, fragmentation and failed recovery before the 
+first reliable signal becomes a long absence, a claim, turnover or delivery failure.
+The commercial wedge is especially strong in markets where employers have explicit duties to manage 
+psychosocial hazards and fatigue. In Australia, the model WHS framework requires psychosocial risks to be 
+eliminated or minimised so far as is reasonably practicable. NSW has strengthened psychosocial-risk 
+requirements and now explicitly applies the hierarchy of controls. NSW also approved a Managing the Risk 
+of Fatigue at Work Code of Practice in February 2026. [R1-R4]
+The product should therefore close an evidence loop rather than merely display analytics: observe work 
+patterns, detect sustained exposure, require human review, support worker consultation, document 
+controls, measure control effectiveness, trigger re-review, and retain the evidence history.
+Figure 1. The product should close the risk-management loop, not stop at signal detection.
+The five highest-value product outcomes
+Priority Customer outcome Why it is urgent
+1 Persistent workload and capacity risk Shows when normal delivery is being 
+sustained by disappearing reserve 
+capacity or expanding work 
+boundaries.
+2 Psychosocial exposure evidence Turns metadata into duration, 
+frequency, severity and trend evidence 
+that can support H&S review.
+3 Control effectiveness Shows whether a control actually 
+reduced exposure or merely displaced 
+it to another day, channel or team.
+4 Recovery failure Separates a normal short-term surge 
+from a work pattern that fails to 
+unwind.
+
+===== PAGE 4 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  4
+5 Audit-ready evidence trail Keeps the signal, review, consultation, 
+control, owner, due date and outcome 
+in one timeline.
+Design rule
+Every major screen must answer one of three questions: What changed? Why does it require 
+review? What happened after we acted? If a screen cannot answer one of those, it is probably 
+secondary.
+2. Product direction and why it matters
+2.1 The old center of gravity
+Earlier SignalTrue concepts emphasized burnout, disengagement, a Team Energy Index and broad 
+behavioral early warning. Those ideas created a compelling story but mixed direct observation with 
+psychological interpretation. That is a scientific and commercial weakness. Metadata can show work-pattern 
+change. It cannot establish that a person is burned out, fatigued, disengaged, unmotivated or about to resign.
+2.2 The new center of gravity
+The new center is the work system. SignalTrue observes how demand is distributed through calendars and 
+collaboration metadata, whether pressure persists, whether people are compensating outside normal work 
+boundaries, whether usable capacity is shrinking, and whether a team returns toward its own prior 
+operating range after pressure ends.
+Figure 2. A review-state model grounded in work-pattern evidence rather than psychological diagnosis.
+2.3 Primary wedge versus secondary intelligence
+Capability Commercial role now Recommendation
+Persistent workload / capacity Primary wedge Build and sell now.
+Psychosocial risk exposure and controls Primary H&S wedge Build now for regulated markets.
+Recovery / persistence Core differentiator Build now.
+Organizational drift Underlying detection engine Keep, but tie it to material risk.
+Fatigue-related work exposure High-value H&S module Build for Australia/NSW and safety-
+sensitive organizations.
+Coordination intelligence Secondary ROI diagnostic Retain and expand after core loop 
+works.
+Network intelligence / silos Advanced diagnostic Later. Useful for transformation, 
+
+===== PAGE 5 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  5
+continuity and org design.
+Management attention analytics Advanced executive diagnostic Later. Requires context.
+Burnout probability Do not productize Not supported by metadata alone.
+Individual productivity monitoring Explicitly prohibited Conflicts with privacy model and 
+weakly represents productivity.
+3. The problems customers actually pay to solve
+3.1 Long-duration absence discovered too late
+The expensive event is not the first day of sick leave. The expensive event is the period before it, when 
+demand may already be persistently high and management still has a chance to redesign workload, remove 
+coordination, add capacity or change timing. Safe Work Australia reports that serious mental-health-
+condition claims in 2023-24p had a median 35.7 weeks of time lost and median compensation paid of AUD 
+67,400. [R5] SignalTrue must not claim it prevents such claims. The product value is earlier visibility into 
+work-pattern exposure that can justify earlier review and action.
+Customer job
+Show me which teams are maintaining delivery by consuming reserve capacity or expanding work 
+beyond normal boundaries, before absence or failure becomes the first reliable signal.
+3.2 Hidden capacity risk
+A team can hit every SLA while its reserve disappears. Conventional KPIs remain green because people 
+compensate. SignalTrue should expose the difference between healthy delivery and compensated delivery. 
+The output is not a vague workload score. It is evidence that usable focus windows have shrunk, after-hours 
+activity has risen, calendar occupancy is elevated and the pattern has persisted.
+3.3 Legal and governance evidence gaps
+An H&S professional may have an annual risk assessment, a pulse survey, incident reports and EAP data, 
+but still lack continuous evidence of how high job demands develop between those snapshots. SignalTrue 
+can fill part of this gap by measuring work-pattern exposure. It should never claim that digital metadata 
+alone completes a psychosocial risk assessment. Worker consultation and contextual review remain 
+necessary.
+3.4 Controls that exist on paper but are not verified
+A company may introduce a no-meeting day, staffing change, meeting reduction, workload redistribution or 
+manager rule and then wait months for another survey. SignalTrue can compare pre-control and post-
+control work patterns and identify improvement, no material change, worsening or displacement. This is a 
+stronger buying reason than another dashboard because it tells the H&S owner whether the intervention 
+changed the measured exposure.
+3.5 Gradual deterioration that becomes normal
+Slow changes are easy to normalize. A few extra meetings, a small increase in evening activity and a small 
+loss of focus time can become the new normal without a single dramatic week. SignalTrue needs long-term 
+baselines and persistence logic so the model does not simply relearn dysfunction as normal.
+
+===== PAGE 6 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  6
+3.6 Business continuity in critical teams
+Where a critical team has no reserve, one resignation, incident, major customer or unexpected project can 
+push the function into failure. Capacity risk is therefore not only a wellbeing problem. It is an operational-
+continuity problem. This is the bridge from H&S budget to COO and CFO value.
+4. Health & Safety opportunity and regulatory fit
+4.1 The H&S job to be done
+For a Health & Safety buyer, the product should map to the work they are already accountable for: identify a 
+hazard, understand exposure, review context with workers, choose controls, assign ownership, monitor 
+effectiveness, review when conditions change, and retain evidence.
+4.2 Australia and NSW fit
+Safe Work Australia's model Code of Practice on managing psychosocial hazards states that PCBUs must 
+eliminate or minimise psychosocial risks so far as is reasonably practicable. The model Code provides 
+practical guidance for identifying, assessing, controlling and reviewing psychosocial hazards. Its legal effect 
+depends on adoption in each jurisdiction. [R1]
+SafeWork NSW states that the Work Health and Safety Regulation 2025 strengthened the requirements for 
+managing psychosocial risks. Section 55C explicitly requires use of the hierarchy of controls where 
+elimination is not reasonably practicable, with relevant matters under section 55D considered when 
+controlling psychosocial risks. SafeWork NSW emphasizes higher-order controls such as redesigning work 
+before relying on lower-order controls such as coping strategies. [R2-R3]
+SafeWork NSW lists role overload, high workloads or job demands as a psychosocial hazard. [R6] NSW also 
+approved a fatigue Code of Practice on 20 February 2026. The broader Safe Work Australia fatigue model 
+Code emphasizes work hours, breaks, work design and consultation. [R4, R7] This makes digital work-
+boundary and scheduling exposure a particularly relevant SignalTrue module, provided the product uses 
+exposure language and does not claim to diagnose fatigue.
+4.3 H&S capability additions
+Capability What SignalTrue adds H&S value
+Exposure Engine Frequency, duration, intensity, trend 
+and confidence for team-level work 
+patterns.
+Turns raw analytics into a reviewable 
+exposure episode.
+Risk Case / Register Hazard, affected cohort, evidence, 
+owner, controls, dates and status.
+Fits existing risk-management 
+workflow.
+Control Effectiveness Pre/post comparison plus spillover and 
+displacement checks.
+Evidence whether the control changed 
+exposure.
+Digital Work & Fatigue Exposure Extended digital workday, after-hours, 
+short inter-day interval, weekend 
+activity, insufficient scheduled breaks, 
+timezone compensation.
+Provides objective work-pattern inputs 
+for fatigue review.
+Worker Consultation Pulse Short anonymous questions launched 
+in response to a signal.
+Adds context that metadata cannot 
+infer.
+Review Triggers Automatic re-review when exposure 
+persists, worsens or rebounds.
+Reduces dashboard watching.
+Evidence Timeline Immutable or tamper-evident history of 
+detection, review, action and outcome.
+Supports governance, internal audit 
+and board reporting.
+
+===== PAGE 7 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  7
+4.4 What the product can and cannot cover
+Psychosocial hazard / issue Metadata fit SignalTrue treatment
+High job demands / role overload High Direct work-pattern exposure 
+indicators plus worker context.
+Long / irregular digital work and 
+insufficient recovery opportunity
+High to medium Measure digital work span and 
+scheduling opportunity, not actual 
+fatigue or recovery.
+Remote / timezone strain Medium to high Measure structural timing and cross-
+timezone compensation.
+Poor support Low to medium Network availability can be a weak 
+structural signal only. Use pulse / 
+consultation.
+Low job control Low Do not infer from calendar. Ask 
+workers.
+Role conflict / unclear role Low Possible coordination symptoms are not 
+proof. Use consultation.
+Poor organizational change 
+management
+Medium Detect workload and coordination 
+change, not communication quality or 
+fairness.
+Recognition / reward / justice Low Not detectable from metadata.
+Bullying, harassment, violence, 
+traumatic events
+Do not infer Out of scope for contentless metadata 
+detection. Use established reporting and 
+safety processes.
+Compliance boundary
+SignalTrue can support hazard identification, exposure monitoring, control review and evidence. It 
+must not market itself as automatically determining legal compliance, a legal breach, or whether a 
+worker has a psychological injury.
+5. Scientific and organizational research foundation
+5.1 Why digital trace data is relevant
+Kalliomäki-Levanto and colleagues used 90 weeks of timestamped digital trace data to analyze dynamic job-
+demand processes. They argue that trace data can provide action-oriented, context-specific and time-
+sensitive information that periodic surveys cannot provide in the same way. [S1] This is one of the strongest 
+direct methodological supports for SignalTrue's approach.
+Zacher and Rudolph's 33-wave longitudinal research on workplace digitalization and workload also 
+reinforces a critical warning: relationships can be reciprocal. More digital activity can accompany more 
+workload, but a changing workload can also produce more digital activity. SignalTrue therefore must avoid 
+causal language unless an intervention or study design supports it. [S2]
+5.2 Demand, resource and recovery models
+The Job Demands-Resources model distinguishes demands from resources and shows why workload alone is 
+incomplete. Demands are strongly related to exhaustion, while a lack of resources is especially related to 
+disengagement. [S3] SignalTrue can observe some demands and some structural resources, such as available 
+time and schedule predictability. It cannot infer autonomy, fairness, recognition or meaning from metadata.
+McEwen's allostatic-load work makes persistence and failure to shut down more important than a single 
+peak. [S4] This supports the product distinction between temporary intensity and sustained activation. 
+
+===== PAGE 8 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  8
+Recovery research by Sonnentag and Fritz similarly reinforces the need to distinguish opportunity for 
+recovery from actual recovery experience. [S5]
+5.3 Interruption and meeting architecture
+Gloria Mark and colleagues showed that interrupted work can be compensated for by working faster while 
+increasing stress and frustration. [S6] Meeting-to-work transition research also supports the practical 
+importance of transition and recovery around meetings. [S7] The product implication is that calendar 
+whitespace is not automatically usable focus time. SignalTrue should calculate usable focus windows, 
+meeting islands, transition deficits and back-to-back chains.
+5.4 Organizational drift, routines and adaptation
+Cyert and March's behavioral theory of the firm, March's exploration/exploitation work, Rasmussen's 
+dynamic risk model, Dekker's drift-into-failure work and resilience engineering all point in the same 
+direction: organizations adapt locally and gradually, often through routines and workarounds. SignalTrue 
+can observe part of that adaptation through changes in recurring meetings, coordination load, work 
+boundaries and recovery patterns. These theories do not validate a SignalTrue score, but they provide a 
+strong conceptual basis for longitudinal drift and recovery analysis. [S8-S13]
+5.5 Organizational networks as a secondary engine
+Large-scale organizational-network research shows that communication metadata can reveal network 
+centralization, silos, cross-boundary ties and structural dependence. Remote-work research at Microsoft 
+found meaningful changes in collaboration networks when work arrangements changed. [S14-S18] These 
+capabilities are valuable, but they should be used as secondary diagnostics until the H&S exposure and 
+control loop is commercially proven.
+5.6 Monitoring and privacy warning
+Electronic monitoring can itself affect employee experience. Research on workplace monitoring and 
+wellbeing sensing highlights trust, purpose, governance and interpretation risks. [S19-S21] SignalTrue 
+therefore needs explicit anti-weaponization rules, cohort-level reporting, visible methodology, data 
+coverage, purpose limitation and no individual psychological scoring.
+6. Measurement contract: what SignalTrue can and cannot 
+claim
+6.1 Four measurement classes
+Class Examples Allowed interpretation
+Observed Meeting count, participant-hours, event 
+timestamps, calendar occupancy, 
+activity outside configured work 
+schedule.
+Direct aggregate from connected 
+metadata, subject to connector 
+coverage and mapping quality.
+Derived Percentage change, median, MAD 
+deviation, focus-window availability, 
+after-hours share, inter-day interval.
+Reproducible descriptive calculation, 
+not causal.
+Model index Exposure priority, capacity pressure, 
+drift, fragmentation, control-
+effectiveness score.
+Internal prioritization aid. Not a 
+validated clinical probability.
+AI interpretation Plain-language explanation, questions 
+to investigate, proposed reversible 
+controls.
+Hypothesis and workflow support. 
+Requires human review.
+
+===== PAGE 9 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  9
+6.2 Prohibited claims and uses
+ No probability that an individual will burn out, become fatigued, resign, fail or disengage.
+ No diagnosis of mental-health, medical or psychological conditions.
+ No individual employee productivity ranking.
+ No employment, compensation, promotion, disciplinary or termination decisions from SignalTrue 
+scores.
+ No causal statement such as “meetings caused burnout” from observational metadata alone.
+ No claim that a model band is an industry norm unless externally validated.
+ No content analysis if the product promise remains metadata-only. If a provider API returns content, 
+strip it before persistence and do not send it to an LLM.
+6.3 Required context on every signal
+Every model-generated signal should show data coverage, comparison period, baseline type, affected cohort 
+size, the observed metrics underneath the model, and a short statement of what the signal does not prove. 
+This is not UI clutter. It is part of the evidence contract.
+7. Core product engines
+7.1 Exposure Engine
+Purpose: convert raw work-pattern changes into a reviewable exposure episode. An exposure episode is a 
+team-level period in which one or more agreed work-pattern indicators remain outside their reference 
+range long enough or often enough to justify review.
+Component Definition Example
+Intensity Magnitude of deviation from the chosen 
+reference.
+After-hours share 2.2 robust deviations 
+above the 90-day baseline.
+Frequency How often the condition occurs in 
+eligible days/weeks.
+4.3 days per week with extended 
+workday exposure.
+Duration How long the pattern persists. 8 consecutive weeks.
+Direction Improving, stable or deteriorating. Usable focus capacity still falling.
+Confidence Coverage and agreement of 
+independent signals.
+High coverage across calendar + 
+messaging metadata.
+Context Known event, seasonality, worker 
+feedback or planned peak.
+Quarter-end, launch, audit or 
+reorganization.
+7.2 Capacity Pressure
+Purpose: detect when a team is losing its ability to absorb additional demand. This is more commercially 
+useful than a generic “workload score.” It combines calendar occupancy, usable focus windows, meeting 
+density, workday expansion, after-hours activity and optionally schedule volatility. It should be described as 
+capacity pressure or reserve depletion, not employee energy.
+7.3 Drift and Persistence
+Purpose: identify gradual structural movement that humans normalize. SignalTrue should compare current 
+behavior with both recent and long-term references. Drift should trigger only when direction, persistence 
+and data quality agree. A 30-day moving baseline alone is unsafe because it can eventually normalize a 
+deteriorated state.
+
+===== PAGE 10 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  10
+7.4 Recovery and Return-to-Range
+Purpose: separate a normal surge from a persistent work pattern. SignalTrue should measure how quickly 
+indicators return toward their pre-event or historical range after an event or control. It can measure 
+recovery of the work pattern, not biological or psychological recovery.
+7.5 Digital Work & Fatigue Exposure
+Purpose: provide objective work-pattern evidence relevant to fatigue review. Candidate indicators include 
+extended digital workday, repeated after-hours activity, weekend activity, short interval between last and 
+next digital work event, days with insufficient scheduled breaks, high back-to-back density and structural 
+timezone compensation. Thresholds should be configurable to company policy and jurisdiction. They are 
+exposure indicators, not a fatigue diagnosis.
+7.6 Control Effectiveness
+Purpose: answer “Did the control reduce the measured exposure?” The engine compares a defined pre-
+control window, guard period and post-control window across target and spillover metrics. It must be able 
+to identify displacement, where a no-meeting Friday reduces Friday meetings but pushes them into 
+Thursday evening or Monday morning.
+7.7 Secondary diagnostic engines
+Engine Use Do not lead with
+Coordination intelligence Participant-hours, recurring routine 
+growth, attendee expansion, rework 
+proxies, execution drag.
+“Meeting analytics.”
+Behavioral debt Temporary routines that remain after 
+the triggering event.
+A generic process-cleanup dashboard.
+Network resilience Cross-team bridges, concentration, 
+weak-tie decay, silos.
+Individual “influencer” rankings.
+Management attention Leadership time migration and 
+escalation depth.
+Claims about trust or management 
+quality.
+Transformation adoption Whether collaboration patterns actually 
+move after reorganization or M&A.
+Cultural conclusions from network 
+metadata alone.
+8. Measurement model and algorithms
+8.1 Baseline architecture
+Reference When used Purpose
+Provisional baseline First 30 days with sufficient coverage. Fast initial calibration. Clearly marked 
+provisional.
+Operating baseline Rolling 90 days excluding flagged 
+exceptional periods where appropriate.
+Current working norm.
+Historical reference 6-12 months when available. Prevents recent dysfunction from 
+becoming the only “normal.”
+Event baseline Comparable prior launches, quarter-
+ends, audits or restructurings.
+Expected surge and recovery 
+comparison.
+Desired / policy range Customer-configured rule where 
+appropriate.
+Explicit operating standard, not an 
+inferred scientific threshold.
+Recommended statistical base: robust median and median absolute deviation (MAD) for skewed work-
+pattern data, with minimum coverage requirements. Use EWMA or CUSUM-style persistence rules for 
+
+===== PAGE 11 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  11
+gradual drift in the MVP. A Bayesian change-point model can be added later if it materially improves 
+precision and explainability.
+8.2 Exposure episode logic
+An episode should be created only when a configured indicator or multi-signal pattern meets minimum data 
+coverage and persistence conditions. Avoid one-off red alerts. A practical MVP rule is: deviation above a 
+team-specific threshold on at least three eligible days in a week, repeated across at least two of three 
+consecutive weeks, with sufficient coverage. Exact bands remain product rules until validated.
+8.3 Exposure priority score
+Use a transparent prioritization formula rather than a “risk probability”:
+Recommended formula
+Priority = 0.35 × intensity + 0.25 × persistence + 0.20 × frequency + 0.10 × cross-signal agreement + 
+0.10 × data confidence. All inputs should be normalized and visible. The exact weights are internal 
+until validated, and customers should always see the underlying observed metrics.
+8.4 Recovery metrics
+Metric Definition
+Peak deviation Maximum distance from reference during the episode.
+T50 Time from peak until 50% of the deviation has unwound.
+T80 Time until 80% has unwound.
+Return-to-range First sustained period back within defined range.
+Residual load Remaining deviation after the expected recovery window.
+Rebound Exposure falls after intervention and then returns materially 
+toward pre-control level.
+8.5 Control-effectiveness status
+Status Rule concept Meaning
+Effective Target exposure improves materially 
+and spillover metrics do not worsen.
+Control appears to be reducing 
+measured exposure.
+Partially effective Some target metrics improve, others 
+remain elevated.
+Keep or adjust, then review.
+No material change Change is inside noise band or 
+insufficient.
+Control has not produced a clear 
+measurable effect.
+Displaced Target metric improves but related 
+exposure worsens elsewhere.
+Problem likely moved rather than 
+reduced.
+Worsened Target exposure increases after control. Urgent review.
+Insufficient data Coverage below gate or window too 
+short.
+Do not over-interpret.
+8.6 Candidate primitive metrics
+Domain Primitive metrics
+Meeting exposure Meeting hours, participant-hours, attendee count, recurring-
+load share, back-to-back chains, meeting islands, 
+reschedule/cancel rate.
+Focus capacity Usable 60/90/120-minute windows, protected focus blocks, 
+
+===== PAGE 12 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  12
+fragmentation index, transition deficit.
+Work boundary First/last digital event, workday span, after-hours share, 
+weekend share, consecutive extended days.
+Inter-day opportunity Interval between last and first work event, scheduled break 
+opportunities, late-to-early sequences.
+Messaging pressure Message volume, response-latency trend, burstiness, cross-
+channel duplication without content.
+Collaboration structure Cross-team contacts, network breadth, concentration, new tie 
+rate, weak-tie decay, timezone distribution.
+Data quality Active-user coverage, connector coverage, mapping quality, 
+missing days, source agreement.
+8.7 Data-quality gating
+Model outputs should be suppressed or downgraded when coverage is poor. A missing connector must not 
+silently become “healthy.” The UI should distinguish “within range” from “not enough evidence.” Data 
+quality is a first-class metric.
+9. H&S risk workflow and control loop
+Figure 3. End-to-end H&S workflow from observation to evidence.
+9.1 Signal to risk case
+1. SignalTrue detects a persistent work-pattern exposure episode at team level.
+2. The H&S owner reviews underlying metrics, data coverage, affected cohort size and known business 
+events.
+3. The owner chooses “Open review,” “Expected temporary peak,” “Monitor,” or “Dismiss with reason.”
+4. If review is opened, SignalTrue creates a Risk Case linked to the exposure episode.
+5. The H&S owner records worker consultation or launches a short anonymous pulse.
+6. The owner chooses or records controls, assigns an accountable owner, due date, target metrics and 
+review date.
+7. SignalTrue creates the pre-control baseline and begins post-control monitoring.
+
+===== PAGE 13 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  13
+8. At review date, the control-effectiveness engine classifies measured change and shows 
+spillover/displacement.
+9. The H&S owner closes, adjusts or escalates the case. The entire history remains in the evidence trail.
+9.2 Risk Case fields
+Field Purpose
+Case ID / status Stable record and workflow state.
+Hazard category Customer-selected taxonomy, e.g. high job demands, fatigue-
+related work exposure.
+Affected cohort Team or approved cohort. Must pass privacy gate.
+Signal evidence Observed and derived metrics, baseline, duration, frequency, 
+confidence.
+Context Known event, seasonality, staffing change, customer surge.
+Worker consultation Notes or anonymized pulse result.
+Control(s) What will change, owner, due date, target metric.
+Review date When effectiveness will be assessed.
+Effectiveness Effective, partial, no change, displaced, worsened, insufficient 
+data.
+Decision notes Human decision, rationale and next action.
+Attachments Optional policy, assessment, meeting note or evidence file.
+Audit entries Who changed what and when.
+9.3 Consultation pulse
+Keep the pulse short and contextual. The product should not attempt to become another engagement survey 
+platform. Example after a high-job-demand signal: “Is the current workload sustainable within normal 
+working hours?”, “Can you take adequate breaks and disconnect after work?”, and “What is creating the 
+greatest workload pressure?” Use anonymous team-level reporting and a configurable minimum response 
+threshold.
+10. UI and UX redesign
+10.1 Information architecture
+
+
+===== PAGE 14 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  14
+Figure 4. Proposed primary navigation.
+The current application already contains Overview, Latest Brief, Insights, Signals, Active Monitoring, 
+Actions, Privacy, Signal Coverage, Employees, Work Network and other specialist routes. The target H&S 
+experience should reduce cognitive load by grouping these capabilities around the risk-management job 
+rather than around internal feature names.
+10.2 Proposed primary navigation
+Navigation Purpose Current features absorbed
+Overview What needs attention, what changed, 
+what review is due.
+Overview, latest brief, high-priority 
+active monitoring.
+Exposures All open and historical work-pattern 
+exposure episodes.
+Signals, active monitoring, drift views, 
+engagement strain.
+Risks & Controls Risk cases, worker consultation, 
+controls, owners, reviews.
+Actions/interventions plus new H&S 
+workflow.
+Teams Team trends, workload/capacity, 
+recovery, optional network context.
+Team analytics, employees aggregate, 
+work network.
+Evidence & Reports Risk register, evidence timeline, weekly 
+brief, executive and audit exports.
+Reports, CEO summary, PDF export.
+Settings Integrations, org structure, working-
+hour policy, privacy, RBAC, retention, 
+model settings.
+Integrations, privacy, signal coverage, 
+admin settings.
+10.3 UX principles
+ Action first. Default view is a prioritized work queue, not a wall of scores.
+ Observed evidence first. Model index second. AI explanation last.
+ Trend and persistence over point-in-time color.
+ Always show why a signal exists and what evidence it is based on.
+ Always show “what this does not mean” for sensitive outcomes.
+ Use neutral review language: “Needs review,” “Persistent exposure,” “Insufficient data,” not “employee 
+at risk.”
+ Every intervention has an owner, review date and target measure.
+ Every report should be understandable without opening the dashboard.
+ No employee leaderboard, no individual psychological state, no manager productivity score.
+
+===== PAGE 15 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  15
+10.4 Overview wireframe
+Figure 5. Proposed Overview: a review queue with evidence, not a generic analytics homepage.
+11. Detailed screen specifications and updated copy
+11.1 Login and onboarding
+Goal
+Get the H&S owner to first useful signal quickly while setting the measurement contract and privacy 
+expectations before any data connection.
+Flow
+10. Create organization and choose role.
+11. Select jurisdiction and policy context. Do not claim legal automation.
+12. Connect one primary calendar source and optional messaging source.
+13. Map teams and confirm cohort privacy floor.
+14. Configure normal working schedule and timezone rules.
+15. Review data contract: metadata only, no content, team-level outputs, no individual scoring.
+16. Calibrate provisional baseline.
+17. Land on Overview with coverage status and “data still calibrating” if necessary.
+Updated onboarding copy
+Welcome
+SignalTrue monitors how work patterns change over time. It looks for persistent exposure, loss of 
+capacity and delayed recovery at team level. It does not read message content or diagnose 
+employees.
+
+===== PAGE 16 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  16
+11.2 Overview
+Top area: “What needs attention” with count of exposures needing review, controls due for review, data 
+coverage and privacy suppressions. Main list sorts by review urgency, not by a mysterious composite score.
+Suggested page subtitle
+See persistent work-pattern exposure, review what changed, and follow whether controls are 
+working.
+11.3 Exposure list
+Filters: hazard category, team, status, duration, confidence, control status, event context and date. Each row 
+should show team, exposure type, duration, direction, confidence and next action. Avoid displaying a 0-100 
+risk number as the main object.
+11.4 Exposure detail
+The detail page should contain: plain-language finding; timeline; observed metrics; frequency, duration and 
+intensity; baseline type; data coverage; known events; related risk cases; consultation; recommended review 
+questions; and an explicit limitation statement.
+Example finding
+Finance Operations has shown persistent high job-demand exposure for 8 weeks. After-hours 
+activity and meeting occupancy remain above the team’s historical range while usable focus 
+capacity has declined. This pattern does not establish fatigue or burnout. Review workload, staffing, 
+deadlines and worker feedback.
+11.5 Risks & Controls
+This is the operational heart of the H&S product. Default view is a case table: hazard, cohort, owner, control, 
+review date, status and effectiveness. A Kanban view is optional but should not replace the table because 
+H&S users often need sortable evidence and export.
+11.6 Control detail
+Example control
+Control: remove two recurring reporting meetings and redistribute one customer portfolio. Owner: 
+Head of Customer Success. Target: reduce weekly meeting participant-hours by 15% and after-hours 
+share by 20% without increasing Monday/Thursday spillover. Review: 30 days.
+11.7 Control-effectiveness review
+Show pre-control window, post-control window, target metrics and spillover metrics in one comparison. The 
+primary answer should be categorical and explainable: Effective, Partially effective, No material change, 
+Displaced, Worsened or Insufficient data.
+11.8 Digital Work & Fatigue Exposure
+This page should use language such as “extended workday exposure,” “short inter-day work interval,” 
+“after-hours activity” and “scheduled break opportunity.” Do not label employees or teams as fatigued. 
+Include jurisdiction/policy configuration and data limitations.
+
+===== PAGE 17 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  17
+11.9 Teams
+Team detail becomes a diagnostic context page, not an employee monitoring page. Recommended modules: 
+capacity pressure, focus-window availability, meeting exposure, work-boundary trend, recovery timeline, 
+open exposure episodes, controls, known events and optional network resilience. Individual names should 
+not be exposed to normal H&S/manager roles.
+11.10 Evidence & Reports
+Provide four export types: weekly H&S brief, open risk register, control-effectiveness report and 
+executive/board summary. Each export should contain date range, coverage, methodology version, privacy 
+rule, observed evidence, human decisions and limitation statement.
+11.11 Settings and trust
+Settings should contain: connectors, team mapping, working schedules, timezones, privacy floor, retention, 
+access roles, jurisdiction labels, alert policy, baseline policy, AI settings and audit logs. The Trust page should 
+explain exactly which provider fields are retained and which are discarded.
+11.12 Updated website and sales copy
+Homepage hero
+Headline
+Know when sustained workload is becoming an organizational risk, while there is still time to 
+change it.
+Subheadline
+SignalTrue continuously measures team-level work patterns from the tools your people already use. 
+It flags persistent workload exposure, loss of capacity and delayed recovery without reading 
+message content or scoring individuals.
+Primary CTA
+See how work-pattern exposure is measured
+H&S section
+Section headline
+From hazard signal to control evidence.
+Suggested body copy: “Annual surveys and incident reports are snapshots. SignalTrue adds continuous 
+work-pattern evidence between those snapshots. When exposure persists, you can open a review, consult 
+workers, record a control and see whether the measured exposure actually falls.”
+Trust copy
+“SignalTrue measures the work system, not the person. No message content. No individual burnout, fatigue 
+or productivity score. Analytics are cohort-level and suppressed when privacy requirements are not met.”
+What not to say
+ “Predict burnout 4-8 weeks early.”
+ “AI knows who is disengaged.”
+
+===== PAGE 18 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  18
+ “Detect fatigued employees.”
+ “Prove legal compliance automatically.”
+ “Measure employee productivity from Slack and calendar data.”
+12. User flows and permissions
+12.1 H&S / People & Safety lead
+18. Open Overview and review “Needs attention.”
+19. Open exposure episode and inspect evidence/coverage.
+20. Add context or link known event.
+21. Open Risk Case.
+22. Launch or record worker consultation.
+23. Select/create control, assign owner and review date.
+24. Monitor weekly without manually checking dashboards.
+25. Receive review-due notification.
+26. Complete effectiveness review and close/adjust/escalate.
+27. Export evidence pack when required.
+12.2 Line manager
+Managers should see only approved aggregated team evidence and actions assigned to them. They should 
+not see individual risk scores, sensitive H&S notes or organization-wide data unless role permits. The 
+manager experience should emphasize work-design actions, not employee blame.
+12.3 Executive
+Executives need a portfolio view: which critical functions have persistent exposure, how many cases are 
+open, how long controls take to close, which exposures are not recovering and whether systemic patterns 
+recur. Keep the executive view short and trend-based.
+12.4 System administrator
+Admins manage integrations, team mapping, schedules, retention, privacy floor, access roles, audit exports 
+and data coverage. They should not automatically gain H&S case-note access. Separate technical 
+administration from sensitive case access where possible.
+12.5 Proposed roles
+Role Core access
+System Admin Integrations, mappings, retention, tenant config, no default 
+sensitive case notes.
+H&S Admin Exposure episodes, risk cases, controls, consultation 
+summaries, evidence exports.
+People & Safety Viewer Read-only H&S portfolio and reports.
+Manager Own-team aggregates and controls assigned to them.
+Executive Organization-level portfolio, no individual analytics.
+Auditor / Reviewer Time-limited read-only evidence access.
+Master Admin Platform support with strict audit and least privilege.
+
+===== PAGE 19 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  19
+13. Reports, alerts and evidence packs
+13.1 Alerts should be review triggers, not panic notifications
+Trigger Example notification
+New persistent exposure “Finance Operations has exceeded its historical range for 3 
+consecutive weeks. Review recommended.”
+Exposure worsening “Intensity increased while duration reached 7 weeks.”
+Control review due “Customer Success control review is due in 4 days.”
+Control displaced “Friday meeting exposure fell, but Thursday after-hours 
+activity increased materially.”
+Recovery delayed “Post-launch work pattern remains elevated beyond the 
+team’s historical recovery window.”
+Data quality problem “Microsoft calendar coverage fell below the reporting 
+threshold. Conclusions are suppressed.”
+13.2 Weekly H&S brief
+ New exposures requiring review.
+ Existing exposures worsening or improving.
+ Controls due for review.
+ Controls with no material effect or displacement.
+ Teams with insufficient data.
+ Closed cases and verified improvement.
+ No individual names or psychological predictions.
+13.3 Evidence pack
+A case-level PDF should contain case metadata, source coverage, exposure timeline, underlying observed 
+metrics, consultation record, chosen controls, owner, implementation date, review outcome, 
+model/methodology version and limitation statement. Exports should be reproducible from stored 
+scoring/audit records.
+14. Current technical stack
+Source status
+Current-state items in this section are verified against the SignalTrue main repository as of 13 
+August 2026. Where the repository contains older claims or conflicting design documents, this 
+blueprint treats the current code/package configuration as the stronger source and marks target-
+state changes separately.
+14.1 Frontend
+Layer Current implementation
+Framework React 19.2 with React DOM 19.2, Create React App / react-
+scripts and CRACO.
+Language TypeScript 5.9 plus JavaScript components.
+Routing react-router-dom 7.9.
+Server state TanStack React Query 5.90.
+UI system Tailwind CSS 3.4, Radix UI primitives, Headless UI, class-
+variance-authority, tailwind-merge.
+
+===== PAGE 20 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  20
+Charts Recharts 2.15.
+Forms / validation React Hook Form 7.69, Zod 4.3.
+HTTP Axios 1.13.
+Icons / feedback Lucide, Heroicons, Sonner / toast.
+Exports / tooling PDFKit, json2csv, Puppeteer and markdown-it utilities.
+Hosting Vercel configuration present; frontend build pipeline uses 
+CRACO and Vercel build scripts.
+14.2 Current application routes
+The current React app includes routes for Overview, Latest Brief, Insights, Signals, Active Monitoring/Risk 
+Feed, Actions, Privacy, Signal Coverage, Employees, Work Network, Team Analytics, Integrations, drift 
+diagnostic/report, engagement strain and multiple marketing/SEO pages. The redesign should consolidate 
+this functional richness rather than recreate it.
+14.3 Backend
+Layer Current implementation
+Runtime / API Node.js with Express 5.1, ES modules.
+Database MongoDB through Mongoose 9.
+Auth JWT, bcryptjs, RBAC middleware.
+Security middleware Helmet, CORS, compression, express-rate-limit, express-
+validator, express-mongo-sanitize, HPP.
+Connectors Google APIs, Slack Web API, Microsoft integration code, 
+Axios.
+Scheduling node-cron plus Render cron safety-net jobs.
+AI clients OpenAI and Anthropic SDKs are present. AI must remain an 
+interpretation layer, not the scoring authority.
+Files / storage AWS S3 client, Multer, XLSX/PDF parsing and PDF generation.
+Messaging / email Resend and Nodemailer.
+Billing Stripe.
+Testing Jest, Supertest, mongodb-memory-server.
+Hosting Render blueprint currently deploys the backend in Oregon 
+on a Starter plan.
+14.4 Current security and privacy controls
+The repository documents JWT authentication, rate limiting, input sanitization, security headers, OAuth-
+token encryption using AES-256-GCM, TLS, team-level aggregation, audit logging and a current 5-person 
+minimum privacy gate. The current Full System Spec also defines raw-event retention of 90 days and 
+aggregated metrics retention of two years. These rules should be revalidated against actual production 
+behavior before enterprise commitments are made.
+Target privacy change
+For the H&S product, move the default cohort privacy floor from the current documented 5 to 8 
+unless a customer-specific privacy review approves another threshold. Keep 5 only as a 
+legacy/current-state note. This is a product recommendation, not a statutory threshold.
+14.5 Existing analytical assets worth reusing
+ Behavioral Drift Index and signal infrastructure.
+ Robust baseline and measurement model card work.
+
+===== PAGE 21 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  21
+ Work Event / daily metrics schema and audit-log direction.
+ Loop-Closing features including focus forecast, work-health delta, meeting collision, after-hours cost, 
+intervention simulator, load balance and execution drag.
+ Role-based onboarding and integration flows.
+ Weekly brief, PDF reporting and AI Copilot infrastructure.
+ Work Network and signal-coverage pages.
+15. Target technical architecture
+Figure 6. Proposed target architecture. The scoring layer is deterministic and auditable; AI explains but does not create facts.
+15.1 Architecture principle
+Do not rebuild the whole product. Preserve the current React/Node/MongoDB foundation for pilots and add 
+a bounded H&S domain layer. The major architectural change is not the programming language. It is the 
+introduction of explicit ExposureEpisode, RiskCase, ControlAction, Consultation, Review and Evidence/Audit 
+entities plus a stricter measurement contract.
+15.2 Pilot architecture
+Component Recommendation
+Frontend Keep React + Vercel.
+Backend Keep Express + Render during pilot if customer requirements 
+allow.
+Database Keep MongoDB Atlas.
+Scheduling Keep node-cron for low scale, but make jobs idempotent and 
+separately auditable.
+Scoring Move exposure/drift/control calculations into deterministic 
+service modules with versioned formulas.
+AI Use only structured aggregated inputs after deterministic 
+
+===== PAGE 22 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  22
+scoring.
+Exports Keep PDFKit initially; introduce a dedicated report-rendering 
+service if reports become complex.
+15.3 Enterprise target state
+For larger Australian enterprise deployments, create an Australia-resident deployment option rather than 
+forcing the current Oregon backend architecture. A practical target is backend compute and primary data in 
+an Australian cloud region, with encryption keys, object storage, logs and backups kept in the same 
+approved region where customer requirements demand it. This is an enterprise architecture option, not a 
+blanket legal requirement.
+Component Target recommendation
+Compute Containerized Node/TypeScript service on AWS ECS/Fargate 
+or equivalent in an Australian region.
+Primary datastore MongoDB Atlas in an approved Australian region, or a 
+migration path to managed PostgreSQL if relational case 
+workflows justify it.
+Queue / jobs SQS/EventBridge or managed queue for ingestion, scoring 
+and report jobs. Idempotent consumers.
+Object storage S3 for reports/attachments with KMS-managed encryption 
+and lifecycle rules.
+Secrets Cloud secrets manager / KMS. No long-lived secrets in repo or 
+frontend.
+Observability Structured logs, traces, metrics and alerting with tenant-safe 
+data handling.
+Identity Enterprise SSO and SCIM when required. Keep RBAC and 
+introduce separation of duties.
+Audit Append-only/tamper-evident audit event stream for scoring, 
+access and H&S case changes.
+Disaster recovery Document RPO/RTO, backup restore testing and tenant-level 
+incident procedure.
+15.4 Data pipeline
+28. Connector fetches only the minimum fields required for metadata analytics.
+29. Ingestion validates tenant, source, timestamps and identities.
+30. Content fields are stripped before persistence.
+31. Raw events are pseudonymized and stored only for the defined retention window.
+32. Daily normalization creates team-level primitives.
+33. Baseline service calculates reference ranges with coverage gates.
+34. Exposure service creates or updates Exposure Episodes.
+35. Risk workflow remains human-controlled. SignalTrue does not automatically declare legal risk.
+36. Control service stores target metrics and implementation dates.
+37. Effectiveness engine compares pre/post windows and spillover.
+38. Reporting service renders reproducible evidence from stored versioned calculations.
+16. Data model and APIs
+16.1 New core collections / entities
+Entity Key fields
+ExposureEpisode orgId, teamId/cohortId, exposureType, startDate, lastSeen, 
+intensity, frequency, duration, direction, confidence, 
+
+===== PAGE 23 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  23
+baselineRef, metricEvidence[], contextEventIds[], status, 
+modelVersion.
+RiskCase caseId, hazardCategory, exposureEpisodeIds[], cohort, owner, 
+status, openedAt, reviewDueAt, consultationIds[], 
+controlIds[], decisionNotes, jurisdictionLabel.
+ControlAction type, description, hierarchyLevel, owner, implementedAt, 
+targetMetrics[], spilloverMetrics[], reviewDate, status.
+ControlReview preWindow, postWindow, guardPeriod, metricDeltas[], 
+effectivenessStatus, reviewer, rationale, nextAction.
+Consultation method, questionSetVersion, cohort, responseCount, 
+aggregateResults, notes, privacySuppressed.
+OrgEvent type, start/end, affectedTeams, description, 
+expectedDuration, createdBy.
+OutcomeLink optional aggregate absence/incident/turnover outcome, 
+period, cohort, data-source provenance. Never used for 
+individual prediction.
+EvidenceAuditEvent actor, action, entityType/id, timestamp, priorHash/hash or 
+immutable-log reference, modelVersion, requestId.
+PolicyConfig working hours, timezone, weekend days, privacy floor, 
+retention, exposure review rules, jurisdiction labels.
+ModelRegistry model name/version, formula/weights hash, effective date, 
+validation status, release notes.
+16.2 Extend existing MetricsDaily
+ usableFocus60/90/120
+ calendarOccupancy
+ meetingParticipantHours
+ meetingIslands
+ transitionDeficit
+ workdaySpan
+ extendedWorkdayFlag
+ afterHoursShare
+ weekendShare
+ interDayDigitalRestHours
+ shortInterDayIntervalFlag
+ rescheduleRate
+ cancelRate
+ crossTimezoneShare
+ dataCoverageBySource
+ mappingConfidence
+16.3 Recommended API surface
+Method / endpoint Purpose
+GET /api/exposures Filtered exposure work queue.
+GET /api/exposures/:id Evidence, baseline, trend and context.
+POST /api/exposures/:id/review Human classification and rationale.
+POST /api/risk-cases Create case from one or more exposures.
+GET /api/risk-cases/:id Case detail and evidence timeline.
+POST /api/risk-cases/:id/consultations Record or launch consultation.
+POST /api/risk-cases/:id/controls Create control and target metrics.
+POST /api/controls/:id/review Calculate and record effectiveness review.
+GET /api/controls/:id/effectiveness Pre/post evidence and displacement check.
+POST /api/org-events Add launch, restructure, audit, quarter-end or other context.
+
+===== PAGE 24 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  24
+GET /api/reports/hs-weekly Weekly H&S briefing.
+GET /api/reports/risk-register Export current register.
+GET /api/reports/cases/:id/evidence.pdf Case evidence pack.
+GET /api/methodology/models Visible model versions and validation state.
+GET /api/data-coverage Tenant/team coverage and suppressions.
+16.4 Service boundaries
+Service Responsibility
+connectorService Fetch provider metadata with minimal scopes.
+normalizationService Normalize provider events to canonical schema.
+coverageService Calculate data completeness and suppress weak results.
+baselineService Versioned robust baselines and event references.
+exposureService Episode creation, persistence, priority and state.
+recoveryService Peak, T50/T80, return-to-range and residual load.
+controlEffectivenessService Pre/post comparison, spillover and displacement.
+riskWorkflowService Cases, owners, statuses, due dates.
+consultationService Anonymous pulse and aggregate result gate.
+auditService Access, scoring, model and case change trail.
+reportService Reproducible PDF/CSV evidence.
+aiExplanationService Explain structured results and suggest 
+questions/experiments. No new facts.
+17. Privacy, security and AI guardrails
+17.1 Privacy architecture
+ Default reporting at team/cohort level only.
+ Target privacy floor: 8 people for H&S analytics, with customer-specific policy configuration only after 
+privacy review.
+ No individual-level H&S risk scores in manager or executive views.
+ Pseudonymize event identities before analytical storage where technically feasible.
+ Strip message body, subject, attachment content and sensitive free text unless a separate, explicitly 
+consented product scope exists. The current strategic promise should remain metadata-only.
+ Use the shortest raw-event retention that supports recalculation and audit; aggregate longer only where 
+justified.
+ Expose data-source coverage and suppression decisions to customers.
+ Separate system-administration permissions from sensitive H&S case access.
+ Log all privileged access and exports.
+17.2 AI role
+AI should never calculate the authoritative exposure state. Deterministic code should calculate observed 
+metrics, baselines, episodes, control deltas and status. The LLM receives only structured aggregated facts 
+plus approved context and can produce: explanation, questions to investigate, a draft review note, suggested 
+reversible controls and report narrative.
+AI guardrail
+The AI may say “After-hours activity rose 31% and persisted for 7 weeks.” It may not say “The team 
+is burned out” or “The manager caused the overload.”
+
+===== PAGE 25 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  25
+17.3 Security priorities before enterprise scale
+ Migrate from shared-secret HS256 JWT toward enterprise identity / OIDC where required.
+ Centralized secret management and rotation.
+ Formal data-flow inventory and connector permission inventory.
+ Threat model for administrator misuse and inference attacks.
+ Penetration test and dependency/security scanning.
+ Backup restore test and incident-response exercise.
+ Tenant-isolation tests.
+ Audit-log tamper resistance.
+ Documented DSAR and deletion workflows.
+ Security claims must match production reality. Avoid “SOC 2 ready” as a proxy for certification.
+18. Validation and evidence program
+18.1 What must be validated first
+Track Question Evidence
+Connector accuracy Are timestamps, participants and event 
+categories mapped correctly?
+Golden test tenants and manual 
+reconciliation.
+Metric reliability Do repeated calculations produce the 
+same result?
+Unit/integration tests and versioned 
+scoring audit.
+Construct validity Does “capacity pressure” correspond to 
+independently measured 
+workload/recovery opportunity?
+Validated pulse instruments and expert 
+review.
+Episode precision Are alerts useful rather than noisy? H&S reviewer labeling across pilots.
+Control effectiveness Does measured exposure respond when 
+a real control changes the work system?
+Pre/post intervention studies.
+Outcome association Do sustained exposure patterns precede 
+aggregate absence/claims/turnover 
+more often?
+Longitudinal, aggregate outcome data 
+with proper statistical design.
+External review Would occupational-health / H&S 
+experts accept the measurement 
+contract?
+Independent methods review and 
+publication.
+Privacy / trust Do employees understand and accept 
+the purpose and limits?
+Worker consultation, transparency tests 
+and privacy review.
+18.2 Pilot study design
+Start with 5-10 organizations where H&S owners will label exposure episodes and record real controls. 
+Measure false-positive/false-negative perception, time to review, control adoption, change in target metrics, 
+data coverage and employee trust. Do not wait for rare clinical outcomes to validate basic product utility.
+18.3 Strongest long-term moat
+The defensible dataset is not raw meeting counts. It is a longitudinal library of context-linked episodes: 
+business event or demand change -> work-pattern response -> persistence -> control -> measured change -> 
+aggregate outcome. This can eventually support organization-specific evidence and better priors without 
+turning the product into individual surveillance.
+
+===== PAGE 26 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  26
+19. Implementation roadmap
+Phase 0: 1-2 weeks - claim and taxonomy cleanup
+ Replace burnout/fatigue prediction copy with work-pattern exposure language across product and 
+website.
+ Rename or demote Team Energy Index in H&S views.
+ Define canonical metric dictionary and exposure types.
+ Set target privacy floor and document legacy 5-person behavior.
+ Create model registry and methodology version labels.
+Phase 1: 4-6 weeks - Exposure Engine + H&S work queue
+ ExposureEpisode model and service.
+ Multi-baseline logic with historical reference.
+ Overview “Needs attention” queue.
+ Exposure list/detail UI.
+ Data coverage and confidence gating.
+ Review decisions and context events.
+Phase 2: 4-6 weeks - Risk Cases + Controls
+ RiskCase and ControlAction models.
+ Owner/due/review workflow.
+ Control effectiveness engine.
+ Displacement checks.
+ Risk register UI and evidence timeline.
+ Case PDF export.
+Phase 3: 3-5 weeks - Fatigue exposure + consultation
+ Digital workday / inter-day interval / weekend / break-opportunity indicators.
+ Policy/jurisdiction configuration.
+ Anonymous consultation pulse.
+ Review triggers and weekly H&S brief.
+Phase 4: 4-8 weeks - Enterprise hardening
+ Enterprise SSO / SCIM if demanded.
+ Australia-resident deployment option.
+ Tamper-evident audit.
+ Observability and incident controls.
+ Pen test, privacy assessment, data-processing materials.
+Phase 5: later - Advanced organizational intelligence
+ Coordination inflation and behavioral debt.
+ Network resilience and critical bridge concentration.
+ Management attention migration.
+ Transformation and M&A adoption views.
+ Aggregate outcome linkage and longitudinal benchmarking after validation.
+Build order
+Do not build network intelligence before the H&S case-and-control loop works. The first paid value is 
+earlier exposure visibility plus evidence that action changed the work pattern.
+
+===== PAGE 27 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  27
+20. Commercial packaging and buyer value
+20.1 Primary H&S proposition
+One sentence
+SignalTrue continuously measures work-pattern exposure, flags persistent deterioration, records the 
+controls taken, and shows whether those controls actually reduced the exposure.
+20.2 Why an H&S buyer can justify the purchase
+Buyer problem SignalTrue response Economic / governance value
+Risk is visible only in surveys or after 
+an incident.
+Continuous team-level work-pattern 
+evidence.
+Earlier review and better prioritization.
+Long absence is discovered after 
+conditions have already deteriorated.
+Persistence, capacity and recovery 
+monitoring.
+Potential to act while work design can 
+still be changed.
+Control exists but effectiveness is 
+unknown.
+Pre/post control measurement and 
+displacement check.
+Evidence that the action worked or 
+needs adjustment.
+Audit / board asks what was done. Case timeline and evidence pack. Faster, more defensible governance.
+Critical team is delivering but has no 
+reserve.
+Capacity pressure and hidden 
+compensation.
+Operational continuity and staffing 
+decision support.
+20.3 Secondary buyer value
+COO: hidden capacity, coordination cost and recovery after operating shocks. CFO: lost capacity, prolonged 
+absence exposure and cost of persistent workarounds. CEO: systemic hotspots and control progress. 
+Transformation lead: whether new work design is actually changing operating behavior.
+20.4 Packaging recommendation
+Package Included Purpose
+SignalTrue H&S Monitor Exposure Engine, capacity, drift, 
+recovery, fatigue-related work 
+exposure, weekly brief.
+Entry product.
+SignalTrue H&S Control Everything above + risk cases, controls, 
+consultation, effectiveness and 
+evidence exports.
+Core product and preferred package.
+SignalTrue Organizational Intelligence Advanced coordination, network, 
+behavioral debt, transformation and 
+event analytics.
+Enterprise add-on after core adoption.
+20.5 ROI framing
+Do not promise that SignalTrue “prevents X sick days.” Use scenario-based ROI. Example: if one critical team 
+recovers 5% of wasted coordination capacity, or one persistent overload case is addressed earlier, the 
+annual software cost may be small relative to lost labor capacity. Keep savings assumptions visible and 
+customer-editable.
+
+===== PAGE 28 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  28
+21. Acceptance criteria
+21.1 Product
+ An H&S user can move from a detected exposure to a closed, reviewed control without leaving 
+SignalTrue.
+ Every exposure shows underlying evidence, baseline, coverage, duration, frequency and limitation 
+language.
+ No user can obtain an individual burnout/fatigue/productivity probability.
+ Control reviews can identify improvement, no change, worsening and displacement.
+ The Overview prioritizes due work, not vanity metrics.
+ Every report states methodology/model version and data coverage.
+21.2 Technical
+ Every score is reproducible from versioned inputs and model version.
+ Jobs are idempotent and retry-safe.
+ Content fields are stripped before analytics persistence.
+ Cohort privacy gate is enforced server-side, not only in UI.
+ Tenant isolation and RBAC have automated tests.
+ Audit events exist for scoring, case changes, privileged access and export.
+ Data deletion/retention jobs are tested.
+ AI can be disabled without breaking core scoring or workflow.
+21.3 Commercial
+ The buyer can explain the product internally without using “AI burnout prediction.”
+ Pilot success is measurable in time-to-detect, review completion, control adoption and verified change.
+ The product can produce an evidence pack that an H&S professional finds useful in a real review.
+Appendix A. Research library
+Ref Source SignalTrue implication
+S1 Kalliomäki-Levanto, T. et al. (2023). 
+Topic modeling and clustering in the 
+trace data-driven analysis of job 
+demands among teachers. Scientific 
+Reports 13, 17995. DOI: 10.1038/s41598-
+023-45356-0.
+Digital trace data can reveal dynamic 
+job-demand processes and intervention 
+targets.
+S2 Zacher, H. & Rudolph, C.W. (2024). 
+Workplace digitalization and workload: 
+changes and reciprocal relations across 
+3 years. Scientific Reports.
+Important causal warning: digital 
+activity and workload can influence 
+each other.
+S3 Demerouti, E., Bakker, A.B., Nachreiner, 
+F. & Schaufeli, W.B. (2001). The Job 
+Demands-Resources model of burnout. 
+Journal of Applied Psychology 86(3), 
+499-512. PMID 11419809.
+Separates demands from resources; 
+workload alone is incomplete.
+S4 McEwen, B.S. (1998). Stress, adaptation, 
+and disease. Allostasis and allostatic 
+load. Annals of the New York Academy 
+of Sciences 840, 33-44. PMID 9629234.
+Persistence and failure to shut down 
+matter, supporting recovery logic.
+S5 Sonnentag, S. & Fritz, C. (2007). The 
+Recovery Experience Questionnaire. 
+Journal of Occupational Health 
+Psychology. PMID 17638488.
+Supports careful distinction between 
+recovery opportunity and experience.
+
+===== PAGE 29 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  29
+S6 Mark, G., Gudith, D. & Klocke, U. (2008). 
+The Cost of Interrupted Work: More 
+Speed and Stress. CHI. DOI 
+10.1145/1357054.1357072.
+Supports fragmentation and 
+interruption measurement.
+S7 Allen, J.A. et al. (2022). Exploring 
+Meeting-to-Work Transition Time and 
+Recovery. PMID 35901195.
+Supports meeting-transition and 
+recovery-opportunity metrics.
+S8 Cyert, R.M. & March, J.G. A Behavioral 
+Theory of the Firm.
+Organizations adapt through routines, 
+aspiration levels, search and slack.
+S9 March, J.G. (1991). Exploration and 
+Exploitation in Organizational 
+Learning. Organization Science 2(1), 71-
+87.
+Network renewal and organizational 
+learning lens.
+S10 Rasmussen, J. (1997). Risk management 
+in a dynamic society: a modelling 
+problem. Safety Science.
+Gradual migration toward boundaries 
+supports drift detection.
+S11 Dekker, S. Drift into Failure. Locally rational adaptations can 
+accumulate into system risk.
+S12 Hollnagel, E., Woods, D.D. & Leveson, N. 
+Resilience Engineering.
+Monitor, respond, learn and anticipate 
+as a systems loop.
+S13 Feldman, M.S. & Pentland, B.T. (2003). 
+Reconceptualizing Organizational 
+Routines as a Source of Flexibility and 
+Change.
+Supports routine persistence and 
+behavioral debt.
+S14 Ocasio, W. (1997). Towards an 
+Attention-Based View of the Firm. 
+Strategic Management Journal.
+Managerial attention is scarce and 
+structurally allocated.
+S15 Galbraith, J.R. (1974). Organization 
+Design: An Information Processing 
+View.
+Uncertainty increases information-
+processing and coordination demand.
+S16 Yang, L. et al. (2022). The effects of 
+remote work on collaboration among 
+information workers. Nature Human 
+Behaviour.
+Large-scale evidence that work 
+arrangements change collaboration 
+networks.
+S17 Carmody, D. et al. The effect of co-
+location on human communication 
+networks. Nature Computational 
+Science.
+Weak-tie loss and regeneration are 
+observable in communication 
+networks.
+S18 Jacobs, A.Z. & Watts, D.J. Large-scale 
+organizational email network research. 
+Management Science.
+Shows organizational structure can be 
+studied at scale through metadata.
+S19 Siegel, R. et al. (2022). Meta-analysis of 
+electronic performance monitoring.
+Monitoring can affect stress and 
+satisfaction; governance matters.
+S20 Kawakami, A. et al. (2023). Sensing 
+Wellbeing in the Workplace, Why and 
+For Whom? ACM CHI.
+Highlights worker/stakeholder concerns 
+and purpose/governance problems.
+S21 Tesserae Project, year-long multimodal 
+workplace sensing study.
+Demonstrates feasibility and privacy 
+challenges of longitudinal workplace 
+sensing.
+S22 Cross, R., Rebele, R. & Grant, A. 
+Collaborative Overload.
+Collaboration can become a load and 
+can concentrate on a minority.
+S23 Cummings, J.N. (2004). Work Groups, 
+Structural Diversity, and Knowledge 
+Sharing. Management Science.
+Cross-boundary ties can matter 
+especially for structurally diverse 
+teams.
+S24 Tortoriello, M., Reagans, R. & McEvily, 
+B. (2012). Bridging the Knowledge Gap. 
+Organization Science.
+Network cohesion/range influence 
+cross-unit knowledge transfer.
+S25 Mell, J.N. et al. Temporal Brokerage in 
+Global Teams. Organization Science.
+Time-zone overlap can create hidden 
+coordination dependency.
+
+===== PAGE 30 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  30
+S26 Chauvin, J.P. et al. Working Around the 
+Clock: Temporal Distance, Intrafirm 
+Communication, and Local Worktime. 
+Organization Science.
+Supports structural timezone 
+compensation as a measurable work-
+design issue.
+S27 Bergman, P., David, G. & Song, H. (2023). 
+I Quit: Schedule Volatility as a Driver of 
+Voluntary Employee Turnover.
+Supports schedule volatility as a 
+material work-system measure.
+S28 Hobfoll, S.E. Conservation of Resources 
+theory.
+Resource-loss cascades provide a useful 
+conceptual model for capacity 
+depletion.
+S29 Karasek, R.A. Demand-Control model. Warns that demand without 
+autonomy/context is incomplete.
+S30 Dollard, M.F. & Bakker, A.B. 
+Psychosocial Safety Climate research.
+Shifts attention upstream to 
+organizational systems and 
+management priorities.
+Appendix B. Regulatory sources
+Ref Source URL
+R1 Safe Work Australia. Model Code of 
+Practice: Managing psychosocial 
+hazards at work. Published 1 Aug 2022.
+https://www.safeworkaustralia.gov.au/
+doc/model-code-practice-managing-
+psychosocial-hazards-work
+R2 SafeWork NSW. Code of Practice: 
+Managing psychosocial hazards at 
+work. Updated context includes WHS 
+Regulation 2025.
+https://www.safework.nsw.gov.au/
+resource-library/codes-of-practice/
+codes-of-practice/managing-
+psychosocial-hazards-at-work
+R3 SafeWork NSW. WHS Regulation 2025 
+legislation information.
+https://www.safework.nsw.gov.au/legal-
+obligations/legislation
+R4 SafeWork NSW. Managing the risk of 
+fatigue at work Code of Practice, 
+approved 20 Feb 2026.
+https://www.safework.nsw.gov.au/
+resource-library/codes-of-practice
+R5 Safe Work Australia. Key Work Health 
+and Safety Statistics Australia 2025.
+https://data.safeworkaustralia.gov.au/
+insights/key-whs-statistics-australia/
+latest-release
+R6 SafeWork NSW. Role overload (high 
+workloads or job demands).
+https://www.safework.nsw.gov.au/
+hazards-a-z/role-overload-high-
+workloads-or-job-demands
+R7 Safe Work Australia. Model Code of 
+Practice: Managing the risk of fatigue at 
+work, published 19 Sep 2025.
+https://www.safeworkaustralia.gov.au/
+doc/model-code-practice-managing-risk-
+fatigue-work
+Regulatory note: Model Codes only have legal effect where adopted/approved in the relevant jurisdiction. This blueprint uses 
+NSW as a concrete product-design example and does not substitute for jurisdiction-specific legal review.
+Appendix C. Current-state vs target-state change log
+Area Current / existing Target state
+Product claim Behavioral drift, overload, engagement 
+strain, historical burnout-oriented 
+marketing routes.
+Persistent work-pattern exposure and 
+control evidence. Burnout/fatigue 
+remain outcomes or review contexts, 
+not metadata diagnoses.
+Privacy floor Current repository documents 5-person 
+minimum.
+Default 8-person H&S cohort floor 
+recommended, configurable only 
+through privacy governance.
+Baseline Current spec includes rolling 30-day 30-day provisional + 90-day operating + 
+
+===== PAGE 31 =====
+SIGNALTRUE  |  Product, H&S and Technical Blueprint  |  v2026.08
+Confidential working blueprint  |  31
+learned baseline. 6-12 month historical + event + 
+desired/policy references.
+Primary UI Many specialist routes and score-
+oriented pages.
+Overview, Exposures, Risks & Controls, 
+Teams, Evidence & Reports, Settings.
+Actions Existing interventions / loop-closing 
+experiments.
+Formal ControlAction with owner, 
+target, review date and effectiveness.
+Drift Existing BDI and drift diagnostic. Drift becomes persistence engine 
+underneath material exposure use 
+cases.
+AI Current OpenAI/Anthropic clients and 
+AI Copilot.
+AI explanation only. Deterministic 
+engine remains source of truth.
+Hosting Frontend Vercel; backend Render 
+Oregon; MongoDB.
+Keep pilot stack, add Australia-resident 
+enterprise deployment option.
+Evidence Existing reports and scoring-audit 
+direction.
+Case-level evidence timeline with 
+model version, consultation, control 
+and review history.
+Advanced analytics Work Network, meeting ROI, execution 
+drag, load balance, forecasting.
+Retain as secondary diagnostics after 
+H&S core loop.
+Closing product decision
+The valuable addition to SignalTrue is not another score. It is the conversion of existing metadata and drift 
+capability into a complete work-pattern risk loop: exposure -> review -> consultation -> control -> measured 
+effect -> evidence. This is the part that makes the product easier for a Health & Safety buyer to justify, gives 
+operations a direct capacity story, and creates a stronger scientific boundary than individual burnout 
+prediction.
+North-star product question
+Where is the way work is currently organized becoming persistent, expensive or unsafe enough to 
+require review, and did the organization’s action actually improve it?

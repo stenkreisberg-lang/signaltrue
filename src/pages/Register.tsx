@@ -5,9 +5,9 @@ import { Input } from '../components/ui/input';
 import { Activity } from 'lucide-react';
 
 const planLabels: Record<string, string> = {
-  visibility: 'Visibility',
-  interpretation: 'Interpretation',
-  intervention: 'Intervention',
+  visibility: 'Leadership Signals',
+  interpretation: 'Team Signals',
+  intervention: 'Managed Prevention Programme',
 };
 
 const Register = () => {
@@ -116,9 +116,9 @@ const Register = () => {
 
         {/* Register Form */}
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">See your organizational signals</h1>
+          <h1 className="text-2xl font-bold mb-2">Create your SignalTrue account</h1>
           <p className="text-muted-foreground mb-6">
-            Create your account to get started
+            Set up the organization responsible for the workplace risk review.
             {selectedPlan && planLabels[selectedPlan] && (
               <span className="block mt-1 text-primary font-medium">
                 Selected plan: {planLabels[selectedPlan]}
@@ -135,8 +135,13 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">First Name</label>
+                <label htmlFor="register-first-name" className="block text-sm font-medium mb-2">
+                  First name
+                </label>
                 <Input
+                  id="register-first-name"
+                  name="firstName"
+                  autoComplete="given-name"
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -146,8 +151,13 @@ const Register = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Last Name</label>
+                <label htmlFor="register-last-name" className="block text-sm font-medium mb-2">
+                  Last name
+                </label>
                 <Input
+                  id="register-last-name"
+                  name="lastName"
+                  autoComplete="family-name"
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
@@ -159,8 +169,13 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Work Email</label>
+              <label htmlFor="register-email" className="block text-sm font-medium mb-2">
+                Work email
+              </label>
               <Input
+                id="register-email"
+                name="email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -171,8 +186,13 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Company</label>
+              <label htmlFor="register-company" className="block text-sm font-medium mb-2">
+                Organization
+              </label>
               <Input
+                id="register-company"
+                name="organization"
+                autoComplete="organization"
                 type="text"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
@@ -183,8 +203,13 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+              <label htmlFor="register-password" className="block text-sm font-medium mb-2">
+                Password
+              </label>
               <Input
+                id="register-password"
+                name="new-password"
+                autoComplete="new-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -195,8 +220,12 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Company Timezone</label>
+              <label htmlFor="register-timezone" className="block text-sm font-medium mb-2">
+                Primary workplace time zone
+              </label>
               <Input
+                id="register-timezone"
+                name="timezone"
                 type="text"
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}

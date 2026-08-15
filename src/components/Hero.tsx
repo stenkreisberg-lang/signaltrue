@@ -1,4 +1,3 @@
-import { Button } from '../components/ui/button';
 import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
@@ -47,7 +46,7 @@ const Hero = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Eye className="w-3.5 h-3.5 text-[#1D4ED8]" />
                 <span className="text-xs font-medium text-[#334155]">
-                  Work pressure early warning
+                  Psychosocial risk early evidence
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
@@ -62,17 +61,18 @@ const Hero = () => {
 
             {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 text-[#0F172A]">
-              Detect manager overload before delivery slows down.
+              Detect work-related stress risks before they become harm or disruption.
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-[#334155] max-w-lg mb-4 leading-relaxed">
-              SignalTrue shows when meetings, after-hours work, lost focus time, and response
-              pressure are creating execution drag in hybrid teams.
+              SignalTrue gives health &amp; safety managers early, team-level evidence of workload,
+              recovery, meeting and manager-capacity risks in hybrid work.
             </p>
 
             <p className="text-base text-[#334155] max-w-lg mb-4 leading-relaxed">
-              Catch the pattern before it becomes missed delivery, burnout, or resignation risk.
+              Use it to verify concerns with workers, prioritise preventive controls and review
+              whether conditions improve.
             </p>
 
             {/* Trust line */}
@@ -82,21 +82,15 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/register">
-                <Button variant="hero" size="xl">
-                  Start a pilot
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
               <Link to="/contact?intent=demo&cta=homepage_hero" onClick={handleRequestDemo}>
-                <Button variant="hero-outline" size="xl">
-                  Request a workload risk review
-                </Button>
+                <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-[#1E40AF] sm:w-auto">
+                  Book a workplace risk review <ArrowRight className="h-5 w-5" />
+                </span>
               </Link>
               <Link to="/sample-report" onClick={handleHowItWorks}>
-                <Button variant="ghost" size="xl">
+                <span className="inline-flex min-h-12 w-full items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 text-base font-bold text-[#0F172A] hover:border-[#1D4ED8] sm:w-auto">
                   View sample report
-                </Button>
+                </span>
               </Link>
             </div>
           </div>

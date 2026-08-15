@@ -37,21 +37,21 @@ const trackEvent = (eventName: string) => {
 const beliefs = [
   {
     icon: Activity,
-    title: 'The work system usually breaks before people do.',
+    title: 'Work design changes before harm becomes visible.',
     description:
-      'Burnout is rarely the first signal. Before that, meeting load rises, focus time disappears, response pressure increases, and recovery shrinks.',
+      'Before absence, ill health or disruption, demands rise, control reduces and recovery opportunities can shrink.',
   },
   {
     icon: Eye,
-    title: 'Managers are often the pressure layer.',
+    title: 'Managers need protection too.',
     description:
-      'Managers absorb leadership priorities, team questions, customer pressure, and unclear decisions. When managers overload, the whole team feels it.',
+      'Managers often absorb competing demands, unclear decisions and worker concerns. Their capacity is a work-design issue, not a personal weakness.',
   },
   {
     icon: Shield,
-    title: 'Surveys are useful, but late.',
+    title: 'Consultation needs timely evidence.',
     description:
-      'Surveys tell leaders how people felt after pressure was already building. SignalTrue helps leaders see where to act earlier.',
+      'Surveys and conversations remain essential. SignalTrue helps health & safety leaders decide where and when to investigate.',
   },
   {
     icon: Shield,
@@ -61,9 +61,9 @@ const beliefs = [
   },
   {
     icon: Activity,
-    title: 'The answer is system change, not personal blame.',
+    title: 'Prevention means changing the work.',
     description:
-      'If a signal rises, the question is not "Who is the problem?" The question is "What in the way we work is creating this pressure?"',
+      'A signal should lead to questions about demands, control, support, relationships, role and change—not questions about individual productivity.',
   },
 ];
 
@@ -80,20 +80,28 @@ const About = () => {
         {/* Hero Section */}
         <section className="py-20 bg-white border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
-                Why SignalTrue Exists
-              </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                Work does not break because people stop caring.{' '}
-                <span className="text-[#1D4ED8]">
-                  It breaks because the system makes caring harder.
-                </span>
-              </h1>
-              <p className="text-lg text-[#334155] max-w-xl mx-auto">
-                SignalTrue exists to help leaders see the work-system friction that usually stays
-                hidden until people burn out, delivery slows, or managers become bottlenecks.
-              </p>
+            <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
+              <div>
+                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+                  Why SignalTrue Exists
+                </p>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
+                  Safer work starts before harm becomes visible.{' '}
+                  <span className="text-[#1D4ED8]">
+                    It starts with better evidence about how work is designed.
+                  </span>
+                </h1>
+                <p className="text-lg text-[#334155] max-w-xl mx-auto">
+                  SignalTrue helps workplace health &amp; safety leaders detect changing
+                  psychosocial risk conditions, consult workers and review preventive controls
+                  earlier.
+                </p>
+              </div>
+              <img
+                src="/images/hero-team.jpg"
+                alt="Colleagues discussing work design and workplace risk controls"
+                className="h-full max-h-[430px] w-full rounded-3xl object-cover shadow-[0_24px_60px_rgba(15,23,42,0.14)]"
+              />
             </div>
           </div>
         </section>
@@ -106,18 +114,19 @@ const About = () => {
                 The founding insight
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-8 text-[#0F172A]">
-                Existing tools show the problem too late.
+                Lagging outcomes are not enough for prevention.
               </h2>
               <div className="space-y-6 text-lg text-[#334155]">
-                <p>Surveys show how people felt after pressure built up.</p>
-                <p>Exit interviews explain why someone left.</p>
-                <p>Project dashboards show missed work after delivery is already affected.</p>
+                <p>Worker surveys and consultation explain lived experience.</p>
+                <p>Absence, incidents and turnover show outcomes that require investigation.</p>
+                <p>Operational dashboards show whether delivery has already been affected.</p>
                 <p>
-                  All of these are useful. But they usually describe the damage after it happens.
+                  All are useful. SignalTrue adds earlier, continuous evidence about changing work
+                  conditions.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-[#1D4ED8] pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
-                  SignalTrue was built to detect pressure earlier, while leaders can still fix the
-                  system.
+                  The purpose is to target consultation and preventive action—not infer health
+                  status or replace a formal risk assessment.
                 </p>
               </div>
             </div>
@@ -161,11 +170,11 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-white">
-                Built for prevention, not surveillance.
+                Designed for responsible workplace risk management.
               </h2>
               <p className="text-[#CBD5E1] text-lg mb-6">
-                SignalTrue does not diagnose people, score performance, or expose private behavior.
-                It shows team-level work pressure so leaders can fix the system earlier.
+                Use team-level evidence to investigate demands, control and recovery conditions.
+                Never use a score as proof of cause or as an individual performance measure.
               </p>
               <div className="grid sm:grid-cols-3 gap-4 mt-8">
                 {['No individual scoring', 'No employee ranking', 'System-level signals only'].map(
@@ -188,24 +197,22 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
-                Built for prevention, not surveillance.
+                See the complete evidence-to-action process.
               </h2>
               <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
-                SignalTrue does not diagnose people, score performance, or expose private behavior.
-                It shows team-level work pressure so leaders can fix the system earlier.
+                Explore a fictional report showing the baseline, confidence, consultation prompts,
+                corrective action owner and 14-day review.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/how-it-works">
-                  <Button variant="hero-outline" size="xl">
-                    See how it works
-                  </Button>
-                </Link>
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  <Button variant="hero" size="xl">
-                    Request demo
+                <Button asChild variant="hero-outline" size="xl">
+                  <Link to="/sample-report">View sample report</Link>
+                </Button>
+                <Button asChild variant="hero" size="xl">
+                  <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                    Book a risk review
                     <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

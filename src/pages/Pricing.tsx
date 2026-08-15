@@ -53,6 +53,7 @@ const tiers = [
       'Best for small teams or organizations that want a clear picture before buying an always-on system.',
     price: 'Custom pilot price',
     period: '',
+    priceNote: 'Scope and one-off fee confirmed before the scan begins.',
     highlight: false,
     features: [
       '3–4 week baseline period',
@@ -75,6 +76,7 @@ const tiers = [
     description: 'Best for HR, People Ops, and team leaders who need ongoing visibility.',
     price: '€99',
     period: '/month',
+    priceNote: 'Ongoing team-level reporting. Final scope is confirmed before purchase.',
     highlight: false,
     features: [
       'Weekly team reports',
@@ -88,7 +90,7 @@ const tiers = [
       'Metadata-only reporting',
       'Team-level privacy rules',
     ],
-    cta: 'Request demo',
+    cta: 'Book a risk review',
   },
   {
     name: 'Leadership Signals',
@@ -97,6 +99,7 @@ const tiers = [
     description: 'Best for executives and leadership teams who need cross-team insight.',
     price: '€199',
     period: '/month',
+    priceNote: 'Cross-team leadership view. Final scope is confirmed before purchase.',
     highlight: true,
     features: [
       'Everything in Team Signals, plus:',
@@ -110,7 +113,7 @@ const tiers = [
       'Leadership review notes',
       'Board-ready summary',
     ],
-    cta: 'Request demo',
+    cta: 'Book a risk review',
   },
   {
     name: 'Enterprise',
@@ -119,6 +122,7 @@ const tiers = [
     description: 'Best for larger organizations with advanced requirements.',
     price: 'Custom',
     period: '',
+    priceNote: 'Quoted for security, integration and reporting requirements.',
     highlight: false,
     features: [
       'Everything in Leadership Signals, plus:',
@@ -197,7 +201,8 @@ const Pricing = () => {
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
-                Start with the level of visibility <span className="text-[#1D4ED8]">you need.</span>
+                Start with the level of workplace risk evidence{' '}
+                <span className="text-[#1D4ED8]">you need.</span>
               </h1>
               <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-6">
                 Use SignalTrue as a one-time workload scan, a team-level early warning system, or a
@@ -219,7 +224,8 @@ const Pricing = () => {
                   Who this is for
                 </p>
                 <h2 className="text-3xl font-display font-bold text-[#0F172A] mb-4">
-                  Best when leaders can feel pressure building, but cannot see the pattern clearly.
+                  Best when health &amp; safety leaders have a concern that needs timely, objective
+                  investigation.
                 </h2>
                 <p className="text-[#475569]">
                   SignalTrue is strongest for teams where meetings, manager load, response pressure,
@@ -230,16 +236,16 @@ const Pricing = () => {
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
                   {
-                    title: 'HR and People Ops',
-                    text: 'Find leading indicators of engagement risk before pulse surveys lag behind reality.',
+                    title: 'Health & Safety',
+                    text: 'Prioritise psychosocial risk reviews and document preventive actions.',
                   },
                   {
-                    title: 'Executives',
-                    text: 'See where execution capacity is weakening across teams and manager layers.',
+                    title: 'Operational leaders',
+                    text: 'See where work-design conditions may be creating sustained exposure.',
                   },
                   {
-                    title: 'Team leaders',
-                    text: 'Get practical actions for meetings, focus time, recovery, and decision load.',
+                    title: 'Managers and workers',
+                    text: 'Use team-level evidence to discuss causes and agree practical controls.',
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-2xl border border-[#E2E8F0] p-5">
@@ -293,7 +299,7 @@ const Pricing = () => {
             )}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
               {tiers.map((tier, index) => {
-                const isLoading = loadingPlan === tier.planKey;
+                const isLoading = loadingPlan !== null && loadingPlan === tier.planKey;
                 return (
                   <div
                     key={index}
@@ -325,6 +331,7 @@ const Pricing = () => {
                         {tier.price}
                       </span>
                       <span className="text-[#475569]">{tier.period}</span>
+                      <p className="mt-2 text-xs leading-5 text-[#64748B]">{tier.priceNote}</p>
                     </div>
 
                     <ul className="space-y-3 mb-8">
@@ -340,7 +347,7 @@ const Pricing = () => {
                       variant={tier.highlight ? 'cta' : 'outline'}
                       className="w-full"
                       size="lg"
-                      disabled={!!loadingPlan}
+                      disabled={loadingPlan !== null}
                       onClick={() => {
                         trackEvent('pricing_cta_clicked');
                         handleCheckout(tier.planKey);
@@ -379,15 +386,16 @@ const Pricing = () => {
                   choosing a plan.
                 </p>
               </div>
-              <Link to="/drift-diagnostic" className="flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#047857] text-[#047857] hover:bg-[#D1FAE5] whitespace-nowrap"
-                >
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-[#047857] text-[#047857] hover:bg-[#D1FAE5] whitespace-nowrap"
+              >
+                <Link to="/drift-diagnostic" className="flex-shrink-0">
                   Free diagnostic →
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -462,12 +470,12 @@ const Pricing = () => {
                 Start with a workload scan. See where pressure is building, then decide whether
                 SignalTrue should stay on continuously.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                <Button variant="hero" size="xl">
-                  Request demo
+              <Button asChild variant="hero" size="xl">
+                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
+                  Book a risk review
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </section>

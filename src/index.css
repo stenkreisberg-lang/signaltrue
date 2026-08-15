@@ -562,6 +562,20 @@
     flex: 1;
   }
 
+  .app-nav-group {
+    margin: 14px 12px 2px;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .app-nav-group:first-child {
+    margin-top: 0;
+  }
+
   .app-nav-link {
     padding: 10px 12px;
     border-radius: 9px;
@@ -582,6 +596,14 @@
     background: #eff6ff;
     box-shadow: inset 3px 0 0 #6366f1;
     font-weight: 750;
+  }
+
+  @media (max-width: 640px) {
+    .signaltrue-chat-toggle {
+      bottom: 12px;
+      right: 12px;
+      padding: 12px;
+    }
   }
 
   .app-account {

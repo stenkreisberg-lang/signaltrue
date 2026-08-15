@@ -68,8 +68,8 @@ const Login = () => {
           {/* Context text per spec */}
           <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
             <p className="text-sm text-muted-foreground text-center">
-              You're entering a system designed to reveal early organizational strain.
-              <strong className="text-foreground"> Not to monitor people.</strong>
+              This system supports workplace risk prevention with aggregated evidence.
+              <strong className="text-foreground"> It is not an employee-monitoring tool.</strong>
             </p>
           </div>
 
@@ -84,8 +84,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label htmlFor="login-email" className="block text-sm font-medium mb-2">
+                Email
+              </label>
               <Input
+                id="login-email"
+                name="email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -96,8 +101,13 @@ const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+              <label htmlFor="login-password" className="block text-sm font-medium mb-2">
+                Password
+              </label>
               <Input
+                id="login-password"
+                name="password"
+                autoComplete="current-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
