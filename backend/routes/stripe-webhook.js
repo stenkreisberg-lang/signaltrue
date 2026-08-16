@@ -20,6 +20,11 @@ router.post('/stripe/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  if (!webhookSecret && process.env.NODE_ENV === 'production') {
+    console.error('Stripe webhook rejected: STRIPE_WEBHOOK_SECRET is not configured.');
+    return res.status(503).json({ message: 'Webhook verification is not configured.' });
+  }
+
   let event;
   try {
     if (!webhookSecret) {
@@ -43,25 +48,34 @@ router.post('/stripe/webhook', async (req, res) => {
           const { default: Organization } = await import('../models/organizationModel.js');
           const meta = session.metadata || {};
           const rawPlan = (meta.plan || '').toString();
-          const normalizedPlan = rawPlan === 'pro' ? 'professional' : rawPlan || 'starter';
+          const planMap = {
+            visibility: 'team',
+            interpretation: 'leadership',
+            per_manager: 'team',
+            starter: 'team',
+            pro: 'leadership',
+            professional: 'leadership',
+            enterprise: 'custom',
+          };
+          const normalizedPlan = planMap[rawPlan] || 'team';
           const customerId = session.customer;
           const subscriptionId = session.subscription;
           const orgSlug = (meta.orgSlug || 'default').toString().toLowerCase();
+          const orgId = (meta.orgId || '').toString();
 
           // Upsert organization by slug
           const update = {
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
+            subscriptionPlanId: normalizedPlan,
             subscription: {
-              plan: ['starter', 'professional', 'enterprise', 'trial'].includes(normalizedPlan)
-                ? normalizedPlan
-                : 'starter',
+              plan: normalizedPlan,
               status: 'active',
             },
           };
 
           await Organization.findOneAndUpdate(
-            { slug: orgSlug },
+            orgId ? { _id: orgId } : { slug: orgSlug },
             {
               $setOnInsert: {
                 name:

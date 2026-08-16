@@ -35,7 +35,7 @@ const CTASection = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild variant="hero" size="xl">
               <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
-                Book a workplace risk review <ArrowRight className="h-5 w-5" />
+                Request a workplace risk review <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
             <Button asChild variant="hero-outline" size="xl">

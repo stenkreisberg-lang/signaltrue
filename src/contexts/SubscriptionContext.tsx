@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 interface SubscriptionPlan {
   planId: string;
@@ -64,15 +64,29 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   }, []);
 
   const fetchSubscription = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setSubscription(null);
+      setAccessibleFeatures([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await axios.get('/api/subscriptions/current');
-
-      setSubscription(response.data.current);
-      setAccessibleFeatures(response.data.access.features);
+      const response = await api.get('/subscriptions/current');
+      setSubscription(response.data?.current || null);
+      setAccessibleFeatures(
+        Array.isArray(response.data?.access?.features) ? response.data.access.features : []
+      );
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching subscription:', err);
+      if (err.response?.status !== 401) {
+        console.error('Error fetching subscription:', err);
+      }
+      setSubscription(null);
+      setAccessibleFeatures([]);
       setError(err.response?.data?.message || 'Failed to load subscription');
     } finally {
       setLoading(false);
@@ -136,7 +150,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
    */
   const upgrade = async (targetPlanId: string): Promise<any> => {
     try {
-      const response = await axios.put('/api/subscriptions/upgrade', {
+      const response = await api.put('/subscriptions/upgrade', {
         targetPlanId,
       });
 
@@ -156,7 +170,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
    */
   const downgrade = async (targetPlanId: string): Promise<any> => {
     try {
-      const response = await axios.put('/api/subscriptions/downgrade', {
+      const response = await api.put('/subscriptions/downgrade', {
         targetPlanId,
       });
 

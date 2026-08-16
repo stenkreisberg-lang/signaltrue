@@ -16,7 +16,7 @@ const navItems = [
   { label: 'How It Works', href: '/how-it-works' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
-  { label: 'Privacy', href: '/trust' },
+  { label: 'Trust', href: '/trust' },
 ];
 
 const Navbar = () => {
@@ -82,7 +82,7 @@ const Navbar = () => {
               onClick={() => handleRequestDemo('navbar_desktop')}
             >
               <span className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]">
-                Book a risk review
+                Request a risk review
               </span>
             </Link>
           </div>
@@ -136,7 +136,7 @@ const Navbar = () => {
                   }}
                 >
                   <span className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-sm font-semibold text-white">
-                    Book a risk review
+                    Request a risk review
                   </span>
                 </Link>
               </div>

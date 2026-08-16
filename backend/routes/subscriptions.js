@@ -9,8 +9,25 @@ import Organization from '../models/organizationModel.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
 import accessControlService from '../services/accessControlService.js';
 import { PLAN_DEFINITIONS } from '../utils/subscriptionConstants.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+router.use(authenticateToken);
+router.use(async (req, res, next) => {
+  try {
+    if (!req.user?.orgId) {
+      return res.status(403).json({ error: 'Organization context required' });
+    }
+    req.organization = await Organization.findById(req.user.orgId);
+    if (!req.organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
 
 /**
  * GET /api/subscriptions/plans
@@ -99,7 +116,7 @@ router.put('/upgrade', async (req, res) => {
     }
 
     // Check if user has permission to change subscription (admin only)
-    if (req.user.role !== 'HR_ADMIN' && req.user.role !== 'CEO') {
+    if (!['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Only HR admins and CEOs can change subscriptions',
       });
@@ -183,7 +200,7 @@ router.put('/downgrade', async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role !== 'HR_ADMIN' && req.user.role !== 'CEO') {
+    if (!['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Only HR admins and CEOs can change subscriptions',
       });

@@ -134,12 +134,12 @@ const DriftDiagnostic = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
-                    Burnout doesn't start with feelings
+                    Work-related risk develops through changing conditions
                   </h3>
                   <p className="text-[#334155]">
-                    It starts with small behavioral shifts—meeting creep, faster response
-                    expectations, disappearing recovery time. These patterns become visible in
-                    behavior before people can name them in surveys.
+                    Meeting creep, faster response expectations, and disappearing recovery time are
+                    conditions a health and safety manager can investigate. They are warning
+                    evidence, not a diagnosis of how workers feel.
                   </p>
                 </div>
               </div>
@@ -150,11 +150,11 @@ const DriftDiagnostic = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
-                    Surveys often look "fine" until they don't
+                    Consultation and work-pattern evidence answer different questions
                   </h3>
                   <p className="text-[#334155]">
-                    By the time engagement scores drop, the damage is done. Leading indicators show
-                    up in coordination patterns weeks or months before survey results change.
+                    Worker consultation remains essential. Aggregated work-pattern evidence adds a
+                    view of when and where conditions changed so the right control can be tested.
                   </p>
                 </div>
               </div>

@@ -1,4 +1,11 @@
-import { ArrowRight, CheckCircle2, ClipboardCheck, Database, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardCheck,
+  Database,
+  Printer,
+  ShieldCheck,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
@@ -50,6 +57,15 @@ const steps = [
 export default function SampleReport() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <style>{`
+        @media print {
+          nav, footer, .sample-report-no-print { display: none !important; }
+          main { padding-top: 0 !important; }
+          #report { padding: 0 !important; }
+          #report article { padding: 0 !important; }
+          #report article > div { border: 0 !important; box-shadow: none !important; }
+        }
+      `}</style>
       <PageMeta
         title="Sample Psychosocial Risk Review | SignalTrue"
         description="Explore a complete SignalTrue team-level workplace risk report with evidence, confidence, consultation prompts and corrective actions."
@@ -57,7 +73,7 @@ export default function SampleReport() {
       />
       <Navbar />
       <main className="pt-20">
-        <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
+        <section className="sample-report-no-print border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-5xl">
               <p className="mb-4 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
@@ -84,6 +100,13 @@ export default function SampleReport() {
                 >
                   Read the sample
                 </a>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                >
+                  <Printer className="h-4 w-4" aria-hidden="true" /> Print or save PDF
+                </button>
               </div>
             </div>
           </div>
@@ -135,7 +158,7 @@ export default function SampleReport() {
                       Evidence reviewed
                     </h2>
                   </div>
-                  <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0]">
+                  <div className="hidden overflow-x-auto rounded-2xl border border-[#E2E8F0] md:block">
                     <table className="w-full min-w-[860px] border-collapse text-left text-sm">
                       <thead className="bg-[#F1F5F9] text-[#334155]">
                         <tr>
@@ -176,10 +199,70 @@ export default function SampleReport() {
                       </tbody>
                     </table>
                   </div>
+                  <div className="grid gap-4 md:hidden">
+                    {signals.map((signal) => (
+                      <article
+                        key={signal.indicator}
+                        className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wide text-[#1D4ED8]">
+                              {signal.factor}
+                            </p>
+                            <h3 className="mt-1 font-bold text-[#0F172A]">{signal.indicator}</h3>
+                          </div>
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+                            {signal.change}
+                          </span>
+                        </div>
+                        <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <dt className="text-xs text-[#64748B]">Current</dt>
+                            <dd className="mt-1 font-bold">{signal.current}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-[#64748B]">Baseline</dt>
+                            <dd className="mt-1 font-bold">{signal.baseline}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-[#64748B]">Confidence</dt>
+                            <dd className="mt-1 font-bold">{signal.confidence}</dd>
+                          </div>
+                        </dl>
+                        <p className="mt-4 text-sm leading-6 text-[#475569]">
+                          {signal.interpretation}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
                   <p className="mt-3 text-xs leading-5 text-[#64748B]">
                     Confidence reflects coverage, baseline maturity and consistency across qualified
                     periods. It does not express certainty about cause.
                   </p>
+                </section>
+
+                <section>
+                  <h2 className="text-2xl font-bold text-[#0F172A]">Action record and sign-off</h2>
+                  <div className="mt-5 grid gap-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                      ['Risk process owner', 'Health & Safety Manager'],
+                      ['Operational owner', 'Product Director'],
+                      ['Consultation', 'Completed 21 May'],
+                      ['Control status', 'Active · review due 3 June'],
+                      ['Worker feedback', 'Review scheduled'],
+                      ['Executive barrier', 'No additional budget required'],
+                      ['Effectiveness decision', 'Pending review evidence'],
+                      ['Sign-off', 'H&S and operational owner'],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[#0F172A]">{value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </section>
 
                 <section>

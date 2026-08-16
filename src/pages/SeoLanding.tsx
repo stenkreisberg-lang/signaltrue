@@ -36,7 +36,7 @@ const signalContent: Record<string, { title: string; description: string; bullet
   'after-hours-drift': {
     title: 'After-hours drift signal',
     description:
-      'Identify teams where work is shifting into evenings and weekends before burnout becomes visible.',
+      'Identify teams where work is shifting into evenings and weekends before recovery loss becomes sustained.',
     bullets: [
       'Evening work patterns rising',
       'Weekend activity increasing',
@@ -83,11 +83,11 @@ const pageContent: Record<
   }
 > = {
   '/burnout-early-warning-system': {
-    eyebrow: 'Burnout early warning system',
+    eyebrow: 'Psychosocial risk early evidence',
     title: 'Review work conditions between surveys.',
     description:
       'SignalTrue uses work metadata to show team-level pressure patterns while there is still time to fix workload, coordination, and recovery conditions.',
-    metaTitle: 'Burnout Early Warning System for Teams | SignalTrue',
+    metaTitle: 'Psychosocial Risk Early Evidence for Teams | SignalTrue',
     metaDescription:
       'SignalTrue shows team-level work-condition patterns for meetings, focus time, recovery, response pressure, and manager load without diagnosing burnout.',
     points: [
@@ -97,17 +97,17 @@ const pageContent: Record<
     ],
   },
   '/employee-engagement-leading-indicators': {
-    eyebrow: 'Employee engagement leading indicators',
-    title: 'Measure the work conditions that weaken engagement before scores drop.',
+    eyebrow: 'Worker consultation indicators',
+    title: 'Use changing work conditions to target worker consultation.',
     description:
-      'SignalTrue gives HR and leaders leading indicators from how work actually happens: coordination load, focus loss, recovery risk, and execution drag.',
-    metaTitle: 'Employee Engagement Leading Indicators | SignalTrue',
+      'SignalTrue gives Health & Safety leaders team-level evidence about coordination demand, focus loss, recovery opportunity and manager capacity.',
+    metaTitle: 'Worker Consultation Indicators for Psychosocial Risk | SignalTrue',
     metaDescription:
-      'Use SignalTrue to monitor leading indicators of employee engagement: meeting pressure, focus fragmentation, recovery risk, and manager overload.',
+      'Use team-level work-pattern indicators to prioritise worker consultation about meeting demand, fragmentation, recovery and manager capacity.',
     points: [
-      'Move from lagging survey results to early work-system signals.',
-      'Understand whether engagement risk is caused by workload, meetings, responsiveness, or manager bottlenecks.',
-      'Track whether interventions improve the actual conditions teams experience.',
+      'Use evidence to decide where consultation is most urgent.',
+      'Ask workers to verify workload, meeting, response-time and manager-capacity context.',
+      'Track whether agreed controls improve the same measured condition.',
     ],
   },
   '/sample-report': {
@@ -126,30 +126,30 @@ const pageContent: Record<
   },
   '/solutions': {
     eyebrow: 'Solutions',
-    title: 'Work-system intelligence for HR, executives, and team leaders.',
+    title: 'Work-design evidence for Health & Safety, executives and operational owners.',
     description:
       'Use SignalTrue to see where overload, coordination drag, and recovery risk are building across teams.',
     metaTitle: 'Work-System Intelligence Solutions | SignalTrue',
     metaDescription:
       'SignalTrue helps HR, executives, and team leaders detect workload risk, manager overload, and execution drag early.',
     points: [
-      'HR sees engagement risk before surveys lag behind reality.',
-      'Executives see where delivery capacity is weakening.',
-      'Managers get practical actions that improve work conditions.',
+      'Health & Safety prioritises team-level psychosocial risk reviews.',
+      'Executives see evidence confidence, controls due and barriers requiring decisions.',
+      'Managers and workers agree practical controls and review effectiveness.',
     ],
   },
   '/resources': {
     eyebrow: 'Resources',
     title: 'Guides for spotting workload risk earlier.',
     description:
-      'Start with the sample report, diagnostic, and signal library to understand early indicators of burnout and execution drag.',
+      'Start with the sample report, client success process and signal library to understand team-level psychosocial risk evidence.',
     metaTitle: 'Workload Risk Resources | SignalTrue',
     metaDescription:
-      'Explore SignalTrue resources for burnout early warning, employee engagement leading indicators, and team workload risk.',
+      'Explore SignalTrue resources for psychosocial risk indicators, worker consultation, manager capacity and preventive action reviews.',
     points: [
-      'Read the burnout early warning guide.',
-      'Explore employee engagement leading indicators.',
-      'Review the sample team pressure report.',
+      'Review psychosocial risk indicator guidance.',
+      'Explore worker consultation prompts and responsibilities.',
+      'Inspect the complete evidence-to-action sample report.',
     ],
   },
 };
@@ -189,25 +189,25 @@ export default function SeoLanding() {
               </h1>
               <p className="text-xl text-[#334155] max-w-3xl mb-8">{page.description}</p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/contact"
-                  onClick={() => trackEvent('demo_cta_click', { source_page: location.pathname })}
-                >
-                  <Button variant="hero" size="xl">
-                    Request demo
+                <Button asChild variant="hero" size="xl">
+                  <Link
+                    to="/contact"
+                    onClick={() => trackEvent('demo_cta_click', { source_page: location.pathname })}
+                  >
+                    Request a risk review
                     <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link
-                  to="/product#sample-report"
-                  onClick={() =>
-                    trackEvent('sample_report_click', { source_page: location.pathname })
-                  }
-                >
-                  <Button variant="hero-outline" size="xl">
+                  </Link>
+                </Button>
+                <Button asChild variant="hero-outline" size="xl">
+                  <Link
+                    to="/sample-report"
+                    onClick={() =>
+                      trackEvent('sample_report_click', { source_page: location.pathname })
+                    }
+                  >
                     View sample report
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

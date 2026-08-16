@@ -5,8 +5,8 @@ import { Input } from '../components/ui/input';
 import { Activity } from 'lucide-react';
 
 const planLabels: Record<string, string> = {
-  visibility: 'Leadership Signals',
-  interpretation: 'Team Signals',
+  visibility: 'Team Signals',
+  interpretation: 'Leadership Signals',
   intervention: 'Managed Prevention Programme',
 };
 

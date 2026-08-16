@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
   AlertTriangle,
-  CheckCircle,
-  X,
-  Shield,
-  Calendar,
-  Clock,
   Building2,
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  Minus,
+  Printer,
+  ShieldCheck,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
-import DriftFamilyCard from '../components/drift/DriftFamilyCard';
-import DriftConfidencePanel from '../components/drift/DriftConfidencePanel';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+interface Observation {
+  direction: 'increased' | 'decreased' | 'stable';
+  percentChange?: number;
+  summary: string;
+}
 
 interface CeoSummaryData {
   organizationName: string;
@@ -23,442 +27,214 @@ interface CeoSummaryData {
   periodEnd: string;
   generatedAt: string;
   observations: {
-    meetingLoadChange: {
-      direction: 'increased' | 'decreased' | 'stable';
-      percentChange: number;
-      summary: string;
-    };
-    afterHoursWork: {
-      direction: 'increased' | 'decreased' | 'stable';
-      percentChange: number;
-      summary: string;
-    };
-    coordinationPressure: {
-      direction: 'increased' | 'decreased' | 'stable';
-      areasAffected: string[];
-      summary: string;
-    };
-    additionalObservations?: string[];
+    meetingLoadChange: Observation;
+    afterHoursWork: Observation;
+    coordinationPressure: Observation & { areasAffected?: string[] };
   };
-  significance: {
-    summary: string;
-    riskFactors: Array<{
-      type: 'delivery' | 'attrition' | 'coordination' | 'burnout';
-      severity: 'low' | 'medium' | 'high';
-      description: string;
-    }>;
-  };
+  significance: { summary: string };
   riskDirection: {
     overall: 'improving' | 'stable' | 'worsening';
     trendConfidence: 'low' | 'medium' | 'high';
     explanation: string;
   };
   privacyStatement: {
-    teamLevelOnly: boolean;
     minTeamSize: number;
     noContentAccess: boolean;
     noIndividualMonitoring: boolean;
-    notASurvey: boolean;
-    notSentimentAnalysis: boolean;
   };
   footer: string;
 }
 
-const DIRECTION_ICONS = {
-  improving: TrendingDown,
-  stable: Minus,
-  worsening: TrendingUp,
-  increased: TrendingUp,
-  decreased: TrendingDown,
-};
+function DirectionIcon({ direction }: { direction: Observation['direction'] }) {
+  if (direction === 'increased') return <TrendingUp className="h-5 w-5 text-amber-700" />;
+  if (direction === 'decreased') return <TrendingDown className="h-5 w-5 text-emerald-700" />;
+  return <Minus className="h-5 w-5 text-slate-500" />;
+}
 
-const DIRECTION_COLORS = {
-  improving: 'bg-success/10 text-success border-success/30',
-  stable: 'bg-muted/50 text-muted-foreground border-muted-foreground/30',
-  worsening: 'bg-warning/10 text-warning border-warning/30',
-  increased: 'text-warning',
-  decreased: 'text-success',
-};
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
+}
 
-const CeoSummaryPage: React.FC = () => {
+export default function CeoSummaryPage() {
   const { token } = useParams<{ token: string }>();
   const [summary, setSummary] = useState<CeoSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchSummary = async () => {
+    const load = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/trial/ceo-summary/${token}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          setSummary(data.summary);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.message || 'Summary not found');
-        }
-      } catch (err) {
-        setError('Failed to load summary');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Summary not found');
+        setSummary(data.summary);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Failed to load summary');
       } finally {
         setLoading(false);
       }
     };
-
-    if (token) {
-      fetchSummary();
-    }
+    if (token) load();
   }, [token]);
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const formatPeriod = (start: string, end: string) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center text-slate-600">
+        Preparing the executive brief…
       </div>
     );
   }
 
   if (error || !summary) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-2xl font-display font-bold text-foreground mb-4">
-            Summary Not Available
-          </h1>
-          <p className="text-muted-foreground">
-            {error || 'This executive summary link may have expired or is invalid.'}
-          </p>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-amber-700" />
+          <h1 className="mt-5 text-2xl font-bold text-slate-900">Executive brief unavailable</h1>
+          <p className="mt-3 text-slate-600">{error || 'This reviewed link may have expired.'}</p>
         </div>
       </div>
     );
   }
 
-  const DirectionIcon = DIRECTION_ICONS[summary.riskDirection.overall] || Minus;
-  const directionStyle = DIRECTION_COLORS[summary.riskDirection.overall] || DIRECTION_COLORS.stable;
-  const familyCards = [
-    {
-      name: 'Capacity Drift',
-      score: Math.min(100, Math.max(0, 50 + summary.observations.meetingLoadChange.percentChange)),
-      description: 'Overload, meeting pressure, and recovery strain.',
-      trend: [
-        42,
-        47,
-        52,
-        Math.min(100, Math.max(0, 50 + summary.observations.meetingLoadChange.percentChange)),
-      ].map((score, index) => ({ label: `W${index + 1}`, score })),
-    },
-    {
-      name: 'Coordination Drift',
-      score: summary.observations.coordinationPressure.direction === 'increased' ? 67 : 48,
-      description:
-        'Coordination drag, slower response loops, and concentration of routing pressure.',
-      trend: [
-        40,
-        44,
-        51,
-        summary.observations.coordinationPressure.direction === 'increased' ? 67 : 48,
-      ].map((score, index) => ({ label: `W${index + 1}`, score })),
-    },
-    {
-      name: 'Cohesion Drift',
-      score: summary.observations.afterHoursWork.direction === 'increased' ? 59 : 43,
-      description: 'Cohesion conditions that can weaken when strain and fragmentation rise.',
-      trend: [
-        38,
-        42,
-        46,
-        summary.observations.afterHoursWork.direction === 'increased' ? 59 : 43,
-      ].map((score, index) => ({ label: `W${index + 1}`, score })),
-    },
-  ];
-
-  const confidenceReasons = [
-    {
-      label: 'Trend confidence',
-      value: summary.riskDirection.trendConfidence,
-      note: 'Confidence reflects whether multiple structural signals align over time.',
-    },
-    {
-      label: 'Measurement scope',
-      value: 'Metadata-only',
-      note: 'This summary is based on work patterns, not message content or individual monitoring.',
-    },
-    {
-      label: 'Interpretation rule',
-      value: 'Structural drift, not emotion',
-      note: 'The model detects conditions that often precede overload, siloing, or disconnection.',
-    },
-  ];
+  const observations = [
+    ['Meeting demand', summary.observations.meetingLoadChange],
+    ['Recovery opportunity', summary.observations.afterHoursWork],
+    ['Coordination pressure', summary.observations.coordinationPressure],
+  ] as const;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Print-friendly styles */}
-      <style>{`
-        @media print {
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print { display: none !important; }
-          .print-break { page-break-after: always; }
-        }
-      `}</style>
-
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        {/* Header */}
-        <header className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary" />
-            </div>
+    <div className="min-h-screen bg-slate-100 py-8 print:bg-white print:py-0">
+      <style>{`@media print { .no-print { display: none !important; } }`}</style>
+      <main className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-7 shadow-sm print:border-0 print:shadow-none sm:p-10">
+        <header className="border-b border-slate-200 pb-8">
+          <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <p className="text-sm text-muted-foreground">Prepared for</p>
-              <p className="font-semibold text-foreground">{summary.organizationName}</p>
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <Building2 className="h-5 w-5" /> Prepared for {summary.organizationName}
+              </div>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                Executive psychosocial risk decision brief
+              </h1>
+              <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+                A team-level view of changing work conditions for leadership decisions. Not an
+                employee health or performance score.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="no-print inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white"
+            >
+              <Printer className="h-4 w-4" /> Print or save PDF
+            </button>
           </div>
-
-          <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-2">
-            Organizational Workload Signals – Executive Summary
-          </h1>
-
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {formatPeriod(summary.periodStart, summary.periodEnd)}
+          <div className="mt-5 flex flex-wrap gap-4 text-sm text-slate-500">
+            <span className="inline-flex items-center gap-2">
+              <Calendar className="h-4 w-4" /> {formatDate(summary.periodStart)}–
+              {formatDate(summary.periodEnd)}
             </span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              Generated {formatDate(summary.generatedAt)}
+            <span className="inline-flex items-center gap-2">
+              <Clock3 className="h-4 w-4" /> Generated {formatDate(summary.generatedAt)}
             </span>
           </div>
         </header>
 
-        <section className="mb-10">
-          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
-            Structural drift summary
+        <section className="py-8">
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
+            Decision status
+          </p>
+          <div className="mt-3 rounded-2xl bg-slate-950 p-6 text-white">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-slate-300">Exposure direction</p>
+                <p className="mt-1 text-2xl font-bold capitalize">
+                  {summary.riskDirection.overall}
+                </p>
+              </div>
+              <div className="rounded-full border border-slate-600 px-3 py-1 text-sm font-bold capitalize">
+                {summary.riskDirection.trendConfidence} confidence
+              </div>
+            </div>
+            <p className="mt-4 leading-7 text-slate-300">{summary.riskDirection.explanation}</p>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-200 py-8">
+          <h2 className="text-2xl font-bold text-slate-950">
+            What changed against qualified baselines
           </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {familyCards.map((family) => (
-              <DriftFamilyCard
-                key={family.name}
-                familyName={family.name}
-                score={Math.round(family.score)}
-                description={family.description}
-                trend={family.trend}
-                confidenceLabel={summary.riskDirection.trendConfidence}
-              />
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {observations.map(([title, observation]) => (
+              <article key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex items-center gap-2">
+                  <DirectionIcon direction={observation.direction} />
+                  <h3 className="font-bold text-slate-900">{title}</h3>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{observation.summary}</p>
+                {observation.percentChange != null && (
+                  <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Recorded change {observation.percentChange}%
+                  </p>
+                )}
+              </article>
             ))}
           </div>
         </section>
 
-        {/* Section 1: What we observed this month */}
-        <section className="mb-10">
-          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
-            What we observed this month
-          </h2>
-
-          <ul className="space-y-3">
-            {/* Meeting Load */}
-            <li className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
-              <div className={DIRECTION_COLORS[summary.observations.meetingLoadChange.direction]}>
-                {summary.observations.meetingLoadChange.direction === 'increased' ? (
-                  <TrendingUp className="w-5 h-5" />
-                ) : summary.observations.meetingLoadChange.direction === 'decreased' ? (
-                  <TrendingDown className="w-5 h-5" />
-                ) : (
-                  <Minus className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Meeting load</p>
-                <p className="text-sm text-muted-foreground">
-                  {summary.observations.meetingLoadChange.summary}
-                </p>
-              </div>
-            </li>
-
-            {/* After-hours work */}
-            <li className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
-              <div className={DIRECTION_COLORS[summary.observations.afterHoursWork.direction]}>
-                {summary.observations.afterHoursWork.direction === 'increased' ? (
-                  <TrendingUp className="w-5 h-5" />
-                ) : summary.observations.afterHoursWork.direction === 'decreased' ? (
-                  <TrendingDown className="w-5 h-5" />
-                ) : (
-                  <Minus className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">After-hours work trends</p>
-                <p className="text-sm text-muted-foreground">
-                  {summary.observations.afterHoursWork.summary}
-                </p>
-              </div>
-            </li>
-
-            {/* Coordination pressure */}
-            <li className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
-              <div
-                className={DIRECTION_COLORS[summary.observations.coordinationPressure.direction]}
-              >
-                {summary.observations.coordinationPressure.direction === 'increased' ? (
-                  <TrendingUp className="w-5 h-5" />
-                ) : summary.observations.coordinationPressure.direction === 'decreased' ? (
-                  <TrendingDown className="w-5 h-5" />
-                ) : (
-                  <Minus className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Coordination pressure concentration</p>
-                <p className="text-sm text-muted-foreground">
-                  {summary.observations.coordinationPressure.summary}
-                </p>
-              </div>
-            </li>
-          </ul>
-        </section>
-
-        {/* Section 2: Why this matters */}
-        <section className="mb-10">
-          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
-            Why this matters
-          </h2>
-
-          <div className="p-6 rounded-xl bg-secondary/20 border border-border/50">
-            <p className="text-foreground leading-relaxed">{summary.significance.summary}</p>
-          </div>
-        </section>
-
-        {/* Section 3: Direction of risk */}
-        <section className="mb-10">
-          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
-            Direction of risk
-          </h2>
-
-          <div className="flex items-center gap-6 mb-4">
-            <div
-              className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 ${directionStyle}`}
-            >
-              <DirectionIcon className="w-8 h-8" />
-              <div>
-                <p className="text-xs uppercase tracking-wider opacity-80">Risk Trend</p>
-                <p className="text-2xl font-display font-bold capitalize">
-                  {summary.riskDirection.overall}
-                </p>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <p>
-                Confidence:{' '}
-                <span className="font-medium capitalize">
-                  {summary.riskDirection.trendConfidence}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <p className="text-sm text-muted-foreground italic p-4 rounded-lg bg-muted/30">
-            {summary.riskDirection.explanation}
+        <section className="border-t border-slate-200 py-8">
+          <h2 className="text-2xl font-bold text-slate-950">Why leadership should review this</h2>
+          <p className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 leading-7 text-slate-700">
+            {summary.significance.summary}
           </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {[
+              [
+                'Verify',
+                'Ask Health & Safety what workers and managers have confirmed about context and cause.',
+              ],
+              [
+                'Own',
+                'Confirm a named operational owner and remove resource or decision barriers.',
+              ],
+              [
+                'Review',
+                'Require the same indicator, worker feedback and effectiveness decision at the review date.',
+              ],
+            ].map(([title, copy]) => (
+              <div key={title} className="rounded-xl border border-slate-200 p-4">
+                <h3 className="font-bold text-slate-900">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{copy}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
-        <section className="mb-10">
-          <DriftConfidencePanel
-            headline="Confidence reflects whether multiple structural patterns align over time and whether the view stays within metadata-only, team-level boundaries."
-            items={confidenceReasons}
-          />
-        </section>
-
-        {/* Section 4: What this is (and is not) */}
-        <section className="mb-10">
-          <h2 className="text-xl font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
-            What this is (and is not)
-          </h2>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* What it is */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-success/5 border border-success/20">
-                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-sm text-foreground">
-                  Team-level patterns only (min {summary.privacyStatement.minTeamSize} people)
-                </span>
-              </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-success/5 border border-success/20">
-                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-sm text-foreground">
-                  No message, email, or chat content read
-                </span>
-              </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-success/5 border border-success/20">
-                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-sm text-foreground">No individual monitoring</span>
-              </div>
-            </div>
-
-            {/* What it is not */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
-                <X className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">Not a survey</span>
-              </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
-                <X className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">Not sentiment analysis</span>
+        <section className="border-t border-slate-200 py-8">
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+            <div>
+              <h2 className="font-bold text-emerald-950">Use boundaries</h2>
+              <div className="mt-3 grid gap-2 text-sm leading-6 text-slate-700">
+                {[
+                  `Team-level reporting only; configured minimum ${summary.privacyStatement.minTeamSize || 5} people.`,
+                  'No message or email content and no individual productivity scoring.',
+                  'The evidence does not diagnose health, establish cause or replace worker consultation.',
+                ].map((item) => (
+                  <p key={item} className="flex gap-2">
+                    <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
+                    {item}
+                  </p>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="pt-6 border-t border-border">
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            <p>{summary.footer}</p>
-          </div>
-
-          {/* SignalTrue branding */}
-          <div className="mt-6 text-center text-xs text-muted-foreground">
-            <p>
-              Powered by{' '}
-              <a
-                href="https://signaltrue.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                SignalTrue
-              </a>{' '}
-              — Organizational workload intelligence
-            </p>
-          </div>
-
-          {/* Print button */}
-          <div className="mt-8 text-center no-print">
-            <button
-              onClick={() => window.print()}
-              className="px-6 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors text-sm font-medium"
-            >
-              Print or Save as PDF
-            </button>
-          </div>
+        <footer className="border-t border-slate-200 pt-6 text-sm text-slate-500">
+          {summary.footer}
         </footer>
-      </div>
+      </main>
     </div>
   );
-};
-
-export default CeoSummaryPage;
+}

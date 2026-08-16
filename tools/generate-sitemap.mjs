@@ -7,7 +7,7 @@ const OUTPUT_PATHS = [
   new URL('../public/sitemap.xml', import.meta.url),
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
-const CORE_LAST_MODIFIED = '2026-07-03';
+const CORE_LAST_MODIFIED = '2026-08-16';
 
 const staticPages = [
   ['/', 'weekly', '1.0'],
@@ -16,6 +16,7 @@ const staticPages = [
   ['/how-it-works', 'weekly', '0.9'],
   ['/drift-diagnostic', 'weekly', '0.9'],
   ['/sample-report', 'weekly', '0.9'],
+  ['/client-success', 'monthly', '0.85'],
   ['/burnout-early-warning-system', 'weekly', '0.95'],
   ['/employee-engagement-leading-indicators', 'weekly', '0.9'],
   ['/signals/meeting-overload', 'monthly', '0.8'],

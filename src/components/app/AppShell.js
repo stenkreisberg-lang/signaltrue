@@ -9,6 +9,12 @@ const links = [
     group: 'Today',
     roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
+  {
+    to: '/app/executive-summary',
+    label: 'Executive Brief',
+    group: 'Today',
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+  },
   { to: '/app/active-monitoring', label: 'Priority Signals', group: 'Investigate' },
   { to: '/app/signals', label: 'All Signals', group: 'Investigate' },
   { to: '/app/actions', label: 'Corrective Actions', group: 'Improve' },

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Mail, MessageSquare, Calendar, Building2, Send, CheckCircle } from 'lucide-react';
 import { trackEvent } from '../lib/analytics';
 import PageMeta from '../components/PageMeta';
 import api from '../utils/api';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const Contact: React.FC = () => {
   const location = useLocation();
@@ -115,9 +117,10 @@ const Contact: React.FC = () => {
     <div className="min-h-screen bg-background">
       <PageMeta
         title="Request a SignalTrue Demo | Workload Risk Review"
-        description="Request a SignalTrue demo or workload scan to see team-level pressure, manager overload, and burnout risk signals from metadata only."
+        description="Request a SignalTrue workplace risk review to discuss team-level psychosocial risk evidence, privacy boundaries and a responsible pilot."
         path="/contact"
       />
+      <Navbar />
       {/* Hero Section */}
       <section className="pt-20 pb-12 bg-hero-gradient relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
@@ -159,9 +162,9 @@ const Contact: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Product demonstration</h3>
               <p className="text-muted-foreground text-sm mb-3">See SignalTrue in action</p>
-              <Link to="/demo" className="text-primary hover:underline font-medium">
-                Schedule a call
-              </Link>
+              <a href="#demo-request-form" className="text-primary hover:underline font-medium">
+                Request a review
+              </a>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
@@ -192,8 +195,8 @@ const Contact: React.FC = () => {
                     Thanks. We received your request.
                   </h2>
                   <p className="text-muted-foreground mb-6">
-                    We will contact you about SignalTrue and share the next step for a demo or
-                    workload scan.
+                    We normally reply within one business day. You can also choose a meeting time
+                    now.
                   </p>
                   <a
                     href="https://calendly.com/sten-kreisberg-signaltrue/30min"
@@ -217,11 +220,11 @@ const Contact: React.FC = () => {
                         'What data it uses',
                         'What it does not collect',
                         'How privacy is protected',
-                        'What a weekly signal report looks like',
-                        'How manager overload is detected',
-                        'How recommendations work',
-                        'What a pilot or workload scan could look like',
-                        'A sample report or checklist if you are not ready for a demo',
+                        'Whether your risk question is suitable for team-level metadata',
+                        'Required sources, permissions and privacy boundaries',
+                        'Baseline, group-size and coverage requirements',
+                        'The client and SignalTrue responsibilities during a pilot',
+                        'What Health & Safety and the CEO receive',
                       ].map((item) => (
                         <li key={item} className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -359,7 +362,7 @@ const Contact: React.FC = () => {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          Book my workplace risk review
+                          Request my workplace risk review
                         </>
                       )}
                     </button>
@@ -371,7 +374,8 @@ const Contact: React.FC = () => {
                     )}
 
                     <p className="text-xs text-muted-foreground text-center">
-                      We will only use your information to contact you about SignalTrue.
+                      We normally respond within one business day and only use this information to
+                      contact you about SignalTrue.
                     </p>
                   </form>
                 </>
@@ -380,6 +384,7 @@ const Contact: React.FC = () => {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 };

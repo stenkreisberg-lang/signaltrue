@@ -10,7 +10,6 @@ import {
   BarChart2,
   AlertTriangle,
   FileText,
-  TrendingUp,
   ArrowRight,
   CheckCircle,
   Shield,
@@ -48,14 +47,15 @@ const steps = [
     icon: Plug,
     title: 'Connect work tools',
     subtitle: 'Connect',
-    description: 'Connect calendars and collaboration tools where work patterns already exist.',
+    description:
+      'Approve the specific calendar and collaboration sources required for the agreed risk question.',
     details: [
       'Google Calendar',
       'Outlook Calendar',
       'Slack',
       'Microsoft Teams',
-      'Google Chat',
-      'Email metadata where appropriate',
+      'Google Chat, where enabled',
+      'Email metadata only when explicitly scoped',
     ],
     privacyNote: 'SignalTrue does not read message content or private conversations.',
   },
@@ -66,7 +66,7 @@ const steps = [
     subtitle: 'Baseline',
     description:
       'SignalTrue learns the normal rhythm for each team: meeting load, focus availability, after-hours work, response delays, collaboration patterns, and manager load.',
-    note: 'A signal only matters when it changes from normal.',
+    note: 'A qualified baseline normally needs 3–4 weeks, sufficient mapped coverage and at least five active people. Some indicators require eight.',
   },
   {
     number: '03',
@@ -74,7 +74,7 @@ const steps = [
     title: 'Detect pressure changes',
     subtitle: 'Detect',
     description:
-      'SignalTrue flags material changes in demands, work fragmentation, response expectations, recovery opportunity and manager capacity.',
+      'SignalTrue flags material changes for investigation only after coverage, baseline maturity and group thresholds pass.',
     examples: [
       'Manager overload',
       'Meeting pressure',
@@ -87,16 +87,16 @@ const steps = [
   {
     number: '04',
     icon: FileText,
-    title: 'Report, act, and track',
-    subtitle: 'Report',
+    title: 'Consult, control, and review',
+    subtitle: 'Act safely',
     description:
-      'Leaders receive a weekly report showing what changed, which teams are under pressure, what risk is growing, what to fix next, and whether previous actions helped.',
+      'Health & Safety reviews the evidence with workers, records an owned control and measures the same indicator again.',
     details: [
-      'What changed',
-      'Which teams are under pressure',
-      'What risk is growing',
-      'What to fix next',
-      'Whether previous actions helped',
+      'Current value, baseline and confidence',
+      'Worker and manager context',
+      'Named control owner and review date',
+      '14-day and 28-day review',
+      'Executive decision brief',
     ],
   },
 ];
@@ -144,10 +144,64 @@ const HowItWorksPage = () => {
               </p>
               <Button asChild variant="hero" size="xl">
                 <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Book a risk review
+                  Request a risk review
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-[#E2E8F0] bg-white py-16 lg:py-20">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto max-w-6xl">
+              <div className="mb-10 max-w-3xl">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                  Implementation contract
+                </p>
+                <h2 className="text-3xl font-bold text-[#0F172A]">
+                  Everyone knows what must be true before a signal is used.
+                </h2>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                {[
+                  [
+                    'Purpose',
+                    'Health & Safety defines the risk question, in-scope teams and prohibited uses.',
+                  ],
+                  [
+                    'Permissions',
+                    'IT approves minimum metadata permissions and confirms source ownership.',
+                  ],
+                  [
+                    'Readiness',
+                    'SignalTrue reports coverage, baseline maturity and suppression before interpretation.',
+                  ],
+                  [
+                    'Review',
+                    'Workers verify context; an operational owner implements and reviews the control.',
+                  ],
+                ].map(([title, copy]) => (
+                  <div key={title} className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
+                    <h3 className="font-bold text-[#0F172A]">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#475569]">{copy}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:flex md:items-center md:justify-between md:gap-6">
+                <div>
+                  <h3 className="font-bold text-[#1E3A8A]">
+                    See deliverables, ownership and pilot success criteria
+                  </h3>
+                  <p className="mt-2 text-sm text-[#475569]">
+                    The client success process covers the complete journey from scope to executive
+                    review.
+                  </p>
+                </div>
+                <Button asChild className="mt-4 shrink-0 md:mt-0">
+                  <Link to="/client-success">View client success process</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
@@ -297,7 +351,7 @@ const HowItWorksPage = () => {
                 </Button>
                 <Button asChild variant="hero-outline" size="lg">
                   <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                    Book a workplace risk review
+                    Request a workplace risk review
                   </Link>
                 </Button>
               </div>
@@ -317,7 +371,7 @@ const HowItWorksPage = () => {
               </h2>
               <Button asChild variant="hero" size="xl">
                 <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Book a risk review
+                  Request a risk review
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>

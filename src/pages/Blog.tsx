@@ -127,8 +127,8 @@ const BlogList = () => {
               <span className="text-gradient">work to stay sustainable.</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Practical thinking on workload risk, execution drag, burnout prevention, manager
-              overload, and the future of team-level work intelligence.
+              Practical thinking on psychosocial risk, workload pressure, worker consultation,
+              corrective controls, and sustainable execution.
             </p>
           </div>
         </div>
@@ -513,8 +513,8 @@ const BlogPostView = ({ slug }: { slug: string }) => {
             {/* CTA */}
             <div className="text-center">
               <p className="text-muted-foreground mb-4">
-                Want to see workload risk before it becomes burnout, missed execution, or
-                resignations?
+                Want evidence of changing work conditions before they create preventable harm or
+                operational disruption?
               </p>
               <Link to="/product">
                 <Button variant="hero">
@@ -538,7 +538,7 @@ const Blog = () => {
     <div className="min-h-screen bg-background">
       <PageMeta
         title="SignalTrue Blog | Workload Risk and Burnout Prevention"
-        description="Practical ideas on burnout early warning, manager overload, employee engagement leading indicators, and team-level work intelligence."
+        description="Practical guidance on psychosocial risk evidence, manager capacity, worker consultation and team-level work-design prevention."
         path={slug ? `/blog/${slug}` : '/blog'}
       />
       <Navbar />

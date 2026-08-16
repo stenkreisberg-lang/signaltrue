@@ -18,6 +18,8 @@ import express from 'express';
 import Organization from '../models/organizationModel.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import CeoSummary from '../models/ceoSummary.js';
+import Signal from '../models/Signal.js';
+import Intervention from '../models/intervention.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
 
@@ -141,13 +143,18 @@ router.get('/status', authenticateToken, async (req, res) => {
     const currentDay = Math.max(0, daysDiff);
 
     // Determine phase
-    let currentPhase = 'baseline';
-    for (const [phase, config] of Object.entries(TRIAL_PHASES)) {
-      if (currentDay >= config.dayRange[0] && currentDay <= config.dayRange[1]) {
-        currentPhase = phase;
-        break;
-      }
-    }
+    const currentPhase =
+      currentDay > 30
+        ? 'expired'
+        : currentDay >= 25
+          ? 'report_delivered'
+          : currentDay >= 21
+            ? 'pre_close'
+            : currentDay >= 14
+              ? 'pattern_recognition'
+              : currentDay >= 7
+                ? 'first_signals'
+                : 'baseline';
 
     // Check if converted to paid or on active pilot
     const isPilot =
@@ -159,11 +166,9 @@ router.get('/status', authenticateToken, async (req, res) => {
       (organization.subscriptionPlanId && organization.subscriptionPlanId !== null);
 
     // Pilot users always get full access — override expired phase
-    if (isPilot && currentPhase === 'expired') {
-      currentPhase = 'baseline';
-    }
+    const effectivePhase = isPilot && currentPhase === 'expired' ? 'baseline' : currentPhase;
 
-    const phaseConfig = TRIAL_PHASES[currentPhase] || TRIAL_PHASES['baseline'];
+    const phaseConfig = TRIAL_PHASES[effectivePhase] || TRIAL_PHASES['baseline'];
 
     res.json({
       trial: {
@@ -179,7 +184,7 @@ router.get('/status', authenticateToken, async (req, res) => {
               Math.ceil((new Date(organization.pilot.endDate) - new Date()) / (1000 * 60 * 60 * 24))
             )
           : Math.max(0, 30 - currentDay),
-        phase: currentPhase,
+        phase: effectivePhase,
         banner: !isPaid && !isPilot ? phaseConfig.banner : null,
 
         // Milestones
@@ -235,60 +240,73 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    // Try to get recent signals to determine status
-    let signals = [];
-    try {
-      const Signal = (await import('../models/Signal.js')).default;
-      signals = await Signal.find({ orgId }).sort({ createdAt: -1 }).limit(20).lean();
-    } catch (err) {
-      console.log('[ExecutiveSummary] Signals not available:', err.message);
-    }
+    const [signals, interventions] = await Promise.all([
+      Signal.find({ orgId, status: { $in: ['Open', 'Acknowledged', 'In Progress'] } })
+        .populate('teamId', 'name')
+        .sort({ severity: -1, lastUpdated: -1 })
+        .limit(100)
+        .lean(),
+      Intervention.find({ orgId })
+        .populate('teamId', 'name')
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
+    ]);
 
-    // Determine status based on signals
-    const criticalSignals = signals.filter(
-      (s) => s.severity === 'Critical' || s.severity === 'High'
+    const severityRank = { Critical: 3, Risk: 2, Informational: 1 };
+    signals.sort(
+      (a, b) =>
+        (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0) ||
+        new Date(b.lastUpdated || b.createdAt) - new Date(a.lastUpdated || a.createdAt)
     );
+
+    const criticalSignals = signals.filter((signal) => signal.severity === 'Critical');
+    const reviewSignals = signals.filter((signal) => signal.severity === 'Risk');
     const currentStatus =
-      criticalSignals.length >= 3 ? 'Alert' : criticalSignals.length >= 1 ? 'Watch' : 'Stable';
+      criticalSignals.length > 0
+        ? 'Action required'
+        : reviewSignals.length > 0
+          ? 'Review'
+          : 'No qualified priority';
 
-    // Build top risks from recent signals
-    const topRisks = signals
-      .filter((s) => s.severity === 'Critical' || s.severity === 'High')
-      .slice(0, 3)
-      .map((s) => ({
-        title: s.title || s.name || 'Risk detected',
-        description: s.description || s.message || 'Elevated signal detected',
-      }));
+    const topRisks = signals.slice(0, 5).map((signal) => ({
+      id: signal._id,
+      title: signal.title,
+      teamName: signal.teamId?.name || 'Team',
+      severity: signal.severity,
+      confidence: signal.confidence,
+      currentValue: signal.deviation?.currentValue,
+      baselineValue: signal.deviation?.baselineValue,
+      deltaPercent: signal.deviation?.deltaPercent,
+      sustainedDays: signal.deviation?.sustainedDays,
+      evidenceStatement:
+        signal.consequence?.statement ||
+        'A qualified team-level pattern requires consultation before a cause is assigned.',
+    }));
 
-    // Default risks if none found
-    if (topRisks.length === 0) {
-      topRisks.push({
-        title: 'No critical risks detected',
-        description: 'Team health signals are within normal range',
-      });
-    }
+    const activeControls = interventions.filter((item) =>
+      ['planned', 'active', 'pending-recheck'].includes(item.status)
+    );
+    const completedControls = interventions.filter((item) => item.status === 'completed');
+    const now = new Date();
+    const overdueControls = activeControls.filter(
+      (item) => item.recheckDate && new Date(item.recheckDate) <= now
+    );
+    const improvedControls = completedControls.filter(
+      (item) => item.outcomeDelta?.improved === true
+    );
+    const consultedControls = interventions.filter(
+      (item) => item.consultation?.status === 'completed'
+    );
 
-    // Build recommended actions
-    const recommendedActions = [
-      { title: 'Review team workload distribution', impact: 'Helps identify capacity bottlenecks' },
-      {
-        title: 'Check meeting load across teams',
-        impact: 'May reveal coordination inefficiencies',
-      },
-      { title: 'Monitor after-hours activity trends', impact: 'Early indicator of burnout risk' },
-    ];
-
-    // Determine trend
     const recentSignalCount = signals.filter((s) => {
       const age = Date.now() - new Date(s.createdAt).getTime();
-      return age < 7 * 24 * 60 * 60 * 1000; // Last 7 days
+      return age < 7 * 24 * 60 * 60 * 1000;
     }).length;
-
     const olderSignalCount = signals.filter((s) => {
       const age = Date.now() - new Date(s.createdAt).getTime();
       return age >= 7 * 24 * 60 * 60 * 1000 && age < 14 * 24 * 60 * 60 * 1000;
     }).length;
-
     const trendDirection =
       recentSignalCount > olderSignalCount
         ? 'worsening'
@@ -296,16 +314,50 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
           ? 'improving'
           : 'stable';
 
+    const decisionPrompts = [];
+    if (overdueControls.length > 0) {
+      decisionPrompts.push({
+        title: 'Complete overdue control reviews',
+        decision: `${overdueControls.length} control review${overdueControls.length === 1 ? ' is' : 's are'} due. Confirm evidence, worker feedback and the next decision.`,
+      });
+    }
+    if (criticalSignals.length > 0) {
+      decisionPrompts.push({
+        title: 'Remove barriers for priority teams',
+        decision: `${criticalSignals.length} critical team-level pattern${criticalSignals.length === 1 ? ' requires' : 's require'} a named operational owner and worker consultation.`,
+      });
+    }
+    if (signals.length > 0 && activeControls.length === 0) {
+      decisionPrompts.push({
+        title: 'Require a documented control decision',
+        decision:
+          'Qualified evidence is visible, but no active control is recorded. Ask Health & Safety to verify context and record the decision.',
+      });
+    }
+
     res.json({
       currentStatus,
       topRisks,
-      recommendedActions,
       trendDirection,
-      weeklyTrend: [
-        { week: 'Week 1', status: 'stable' },
-        { week: 'Week 2', status: 'stable' },
-        { week: 'Week 3', status: currentStatus.toLowerCase() },
-        { week: 'Week 4', status: currentStatus.toLowerCase() },
+      decisionPrompts,
+      evidenceSummary: {
+        openQualifiedSignals: signals.length,
+        criticalSignals: criticalSignals.length,
+        teamsRequiringReview: new Set(
+          signals.map((signal) => String(signal.teamId?._id || signal.teamId))
+        ).size,
+        highConfidenceSignals: signals.filter((signal) => signal.confidence === 'High').length,
+      },
+      controlSummary: {
+        active: activeControls.length,
+        due: overdueControls.length,
+        completed: completedControls.length,
+        improved: improvedControls.length,
+        consulted: consultedControls.length,
+      },
+      limitations: [
+        'Team-level metadata does not diagnose health or establish cause.',
+        'Executives should use this brief to remove barriers and review control effectiveness—not assess individual performance.',
       ],
       generatedAt: new Date().toISOString(),
       orgName: organization.name,
@@ -485,6 +537,30 @@ router.post('/generate-ceo-summary', authenticateToken, async (req, res) => {
     });
 
     if (!summary) {
+      const sourceSignals = await Signal.find({
+        orgId: req.user.orgId,
+        status: { $in: ['Open', 'Acknowledged', 'In Progress'] },
+      })
+        .sort({ lastUpdated: -1 })
+        .limit(100)
+        .lean();
+      const meetingSignal = sourceSignals.find((item) =>
+        ['meeting-load-spike', 'context-switching'].includes(item.signalType)
+      );
+      const recoverySignal = sourceSignals.find((item) =>
+        ['after-hours-creep', 'recovery-deficit'].includes(item.signalType)
+      );
+      const affectedTeams = new Set(sourceSignals.map((item) => String(item.teamId))).size;
+      const directionFor = (signal, inverse = false) => {
+        const delta = Number(signal?.deviation?.deltaPercent || 0);
+        if (Math.abs(delta) < 5) return 'stable';
+        const increased = inverse ? delta < 0 : delta > 0;
+        return increased ? 'increased' : 'decreased';
+      };
+      const meetingDirection = directionFor(meetingSignal);
+      const recoveryDirection = directionFor(recoverySignal);
+      const highConfidenceCount = sourceSignals.filter((item) => item.confidence === 'High').length;
+
       // Generate new summary
       summary = new CeoSummary({
         orgId: req.user.orgId,
@@ -495,41 +571,41 @@ router.post('/generate-ceo-summary', authenticateToken, async (req, res) => {
 
         observations: {
           meetingLoadChange: {
-            direction:
-              report.orgHealth?.bdiTrend === 'deteriorating'
-                ? 'increased'
-                : report.orgHealth?.bdiTrend === 'improving'
-                  ? 'decreased'
-                  : 'stable',
-            percentChange: Math.round(Math.random() * 20), // Would be calculated from actual data
-            summary: `Meeting hours ${report.orgHealth?.bdiTrend === 'deteriorating' ? 'increased' : 'remained stable'} across teams`,
+            direction: meetingDirection,
+            percentChange: Math.abs(Number(meetingSignal?.deviation?.deltaPercent || 0)),
+            summary: meetingSignal
+              ? `Qualified team-level meeting demand is ${meetingDirection} against its recorded baseline.`
+              : 'No qualified meeting-demand signal is available for this period.',
           },
           afterHoursWork: {
-            direction: 'stable',
-            percentChange: 0,
-            summary: 'After-hours activity patterns within normal range',
+            direction: recoveryDirection,
+            percentChange: Math.abs(Number(recoverySignal?.deviation?.deltaPercent || 0)),
+            summary: recoverySignal
+              ? `Qualified after-hours or recovery activity is ${recoveryDirection} against its recorded baseline.`
+              : 'No qualified after-hours or recovery signal is available for this period.',
           },
           coordinationPressure: {
-            direction: report.orgHealth?.teamsAtRisk > 0 ? 'increased' : 'stable',
+            direction: affectedTeams > 0 ? 'increased' : 'stable',
             areasAffected: [],
             summary:
-              report.orgHealth?.teamsAtRisk > 0
-                ? `Coordination pressure detected in ${report.orgHealth.teamsAtRisk} team(s)`
-                : 'Coordination patterns stable',
+              affectedTeams > 0
+                ? `${affectedTeams} team${affectedTeams === 1 ? '' : 's'} currently require evidence review.`
+                : 'No qualified coordination pattern is currently visible. This does not establish absence of risk.',
           },
         },
 
         significance: {
           summary:
-            'Sustained workload and coordination pressure increase delivery risk, attrition risk, and leadership blind spots.',
+            'These team-level patterns identify where worker consultation and work-design review should be prioritised. They do not establish worker health or cause.',
           riskFactors: [],
         },
 
         riskDirection: {
           overall: report.orgHealth?.bdiTrend || 'stable',
-          trendConfidence: 'medium',
+          trendConfidence:
+            highConfidenceCount >= 2 ? 'high' : sourceSignals.length > 0 ? 'medium' : 'low',
           explanation:
-            'These are early signals. They typically appear before performance or retention issues become visible.',
+            'Direction reflects qualified team-level changes against recorded baselines. Leadership should verify context and review control effectiveness.',
         },
       });
 

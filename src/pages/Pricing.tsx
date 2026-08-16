@@ -71,12 +71,13 @@ const tiers = [
   },
   {
     name: 'Team Signals',
-    planKey: 'interpretation',
+    planKey: 'visibility',
     outcome: 'Weekly visibility into work-system pressure with practical recommendations.',
-    description: 'Best for HR, People Ops, and team leaders who need ongoing visibility.',
-    price: '€99',
+    description: 'Best for Health & Safety teams running ongoing team-level risk reviews.',
+    price: '€299',
     period: '/month',
-    priceNote: 'Ongoing team-level reporting. Final scope is confirmed before purchase.',
+    priceNote:
+      'Per organization workspace, per month, excluding VAT. Team scope is confirmed before activation.',
     highlight: false,
     features: [
       'Weekly team reports',
@@ -90,16 +91,17 @@ const tiers = [
       'Metadata-only reporting',
       'Team-level privacy rules',
     ],
-    cta: 'Book a risk review',
+    cta: 'Request a risk review',
   },
   {
     name: 'Leadership Signals',
-    planKey: 'visibility',
+    planKey: 'interpretation',
     outcome: 'Organizational visibility across multiple teams.',
     description: 'Best for executives and leadership teams who need cross-team insight.',
-    price: '€199',
+    price: '€499',
     period: '/month',
-    priceNote: 'Cross-team leadership view. Final scope is confirmed before purchase.',
+    priceNote:
+      'Per organization workspace, per month, excluding VAT. Includes the executive decision brief.',
     highlight: true,
     features: [
       'Everything in Team Signals, plus:',
@@ -113,7 +115,7 @@ const tiers = [
       'Leadership review notes',
       'Board-ready summary',
     ],
-    cta: 'Book a risk review',
+    cta: 'Request a risk review',
   },
   {
     name: 'Enterprise',
@@ -188,7 +190,7 @@ const Pricing = () => {
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
         title="SignalTrue Pricing | Workload Scan and Team Signals"
-        description="Compare SignalTrue workload scan, team signals, leadership signals, and enterprise plans for team-level burnout early warning."
+        description="Compare SignalTrue workload scan, team and leadership plans for team-level psychosocial risk evidence, action reviews and executive decisions."
         path="/pricing"
       />
       <Navbar />
@@ -274,8 +276,8 @@ const Pricing = () => {
                 {[
                   'Connect metadata sources and define privacy boundaries.',
                   'Build team baselines for meetings, focus, response pressure, and recovery.',
-                  'Review the first team pressure report with signal explanations.',
-                  'Choose three practical changes and track whether pressure improves.',
+                  'Review the first qualified risk evidence with workers and managers.',
+                  'Assign one proportionate control and schedule its effectiveness review.',
                 ].map((step, index) => (
                   <div key={step} className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
                     <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center text-sm font-bold mb-4">
@@ -285,6 +287,26 @@ const Pricing = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-[#E2E8F0] bg-white py-10">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-4">
+              {[
+                ['Billing unit', 'One organization workspace'],
+                ['Subscription', 'Monthly; VAT excluded'],
+                ['Baseline', 'Normally 3–4 qualified weeks'],
+                ['Activation', 'Team scope and sources confirmed first'],
+              ].map(([title, copy]) => (
+                <div key={title} className="rounded-xl border border-[#E2E8F0] p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                    {title}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-[#0F172A]">{copy}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -434,7 +456,7 @@ const Pricing = () => {
                 {[
                   {
                     q: 'Do we need a long implementation?',
-                    a: 'No. A workload scan can start with a short calibration period and a focused set of metadata sources.',
+                    a: 'A scoped pilot normally needs 3–4 qualified weeks to establish a baseline. Setup time depends on source approval and team mapping.',
                   },
                   {
                     q: 'Will managers see individual employee scores?',
@@ -446,7 +468,7 @@ const Pricing = () => {
                   },
                   {
                     q: 'What makes this different from surveys?',
-                    a: 'Surveys show reported sentiment after people feel it. SignalTrue shows changing work conditions earlier.',
+                    a: 'Surveys and worker consultation capture lived experience. SignalTrue adds continuous evidence about changing work conditions between reviews.',
                   },
                 ].map((item) => (
                   <div key={item.q} className="rounded-2xl border border-[#E2E8F0] p-6">
@@ -472,7 +494,7 @@ const Pricing = () => {
               </p>
               <Button asChild variant="hero" size="xl">
                 <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Book a risk review
+                  Request a risk review
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>

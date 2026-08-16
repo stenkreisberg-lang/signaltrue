@@ -59,7 +59,10 @@ export default function Actions() {
   const [ownerName, setOwnerName] = useState('');
   const [rationale, setRationale] = useState('');
   const [consultationStatus, setConsultationStatus] = useState('planned');
+  const [consultationNotes, setConsultationNotes] = useState('');
+  const [consultationParticipantCount, setConsultationParticipantCount] = useState('');
   const [reviewNotes, setReviewNotes] = useState({});
+  const [consultationUpdates, setConsultationUpdates] = useState({});
   const [busyId, setBusyId] = useState(null);
 
   const loadData = useCallback(async () => {
@@ -135,6 +138,8 @@ export default function Actions() {
     setOwnerName(context?.user?.name || '');
     setRationale(`Selected in response to: ${action.signalTitle}`);
     setConsultationStatus('planned');
+    setConsultationNotes('');
+    setConsultationParticipantCount('');
     setNotice(null);
   };
 
@@ -153,6 +158,8 @@ export default function Actions() {
     setOwnerName(context?.user?.name || '');
     setRationale('');
     setConsultationStatus('planned');
+    setConsultationNotes('');
+    setConsultationParticipantCount('');
     setNotice(null);
   };
 
@@ -177,12 +184,32 @@ export default function Actions() {
         ownerName,
         decisionRationale: rationale,
         consultationStatus,
+        consultationNotes,
+        consultationParticipantCount,
       });
       setDraft(null);
       setNotice('Action started. SignalTrue will compare the same metric again after 14 days.');
       await loadData();
     } catch (err) {
       setError(err.response?.data?.message || 'The action could not be started.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const completeConsultation = async (intervention) => {
+    const update = consultationUpdates[intervention._id] || {};
+    setBusyId(intervention._id);
+    setError(null);
+    try {
+      await api.put(`/interventions/${intervention._id}/consultation`, {
+        participantCount: update.participantCount,
+        notes: update.notes,
+      });
+      setNotice('Worker consultation was added to the action record.');
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'The consultation record could not be saved.');
     } finally {
       setBusyId(null);
     }
@@ -371,8 +398,32 @@ export default function Actions() {
               >
                 <option value="planned">Planned</option>
                 <option value="completed">Completed</option>
-                <option value="not_needed">Not needed</option>
+                <option value="not_needed">Not required for this action</option>
               </select>
+            </label>
+            {consultationStatus === 'completed' && (
+              <label>
+                People consulted
+                <input
+                  type="number"
+                  min="1"
+                  value={consultationParticipantCount}
+                  onChange={(event) => setConsultationParticipantCount(event.target.value)}
+                  required
+                />
+              </label>
+            )}
+            <label className="action-form-wide">
+              {consultationStatus === 'not_needed'
+                ? 'Reason consultation is not required'
+                : 'Consultation plan or notes'}
+              <textarea
+                value={consultationNotes}
+                onChange={(event) => setConsultationNotes(event.target.value)}
+                rows={3}
+                required
+                placeholder="Who will be consulted, what will be verified, and how feedback will affect the control?"
+              />
             </label>
             <label className="action-form-wide">
               Decision rationale
@@ -417,6 +468,14 @@ export default function Actions() {
                 onMeasure={() => measureAction(item)}
                 onAcknowledge={() => acknowledgeReview(item)}
                 onStop={() => stopAction(item)}
+                consultationUpdate={consultationUpdates[item._id] || {}}
+                onConsultationUpdate={(value) =>
+                  setConsultationUpdates((current) => ({
+                    ...current,
+                    [item._id]: { ...(current[item._id] || {}), ...value },
+                  }))
+                }
+                onCompleteConsultation={() => completeConsultation(item)}
               />
             ))}
           </div>
@@ -506,7 +565,18 @@ function EmptyRow({ text }) {
   );
 }
 
-function InterventionRow({ item, busy, notes, onNotes, onMeasure, onAcknowledge, onStop }) {
+function InterventionRow({
+  item,
+  busy,
+  notes,
+  onNotes,
+  onMeasure,
+  onAcknowledge,
+  onStop,
+  consultationUpdate,
+  onConsultationUpdate,
+  onCompleteConsultation,
+}) {
   const due = new Date(item.recheckDate) <= new Date();
   const reviewReady = item.status === 'pending-recheck' && item.outcomeDelta?.metricAfter != null;
   const change = item.outcomeDelta?.percentChange;
@@ -533,6 +603,41 @@ function InterventionRow({ item, busy, notes, onNotes, onMeasure, onAcknowledge,
             )}
           </div>
         )}
+        {item.consultation?.status === 'planned' && (
+          <div className="action-review">
+            <div>
+              <strong>Worker consultation required</strong>
+              <span>Record context and participation before the effectiveness decision.</span>
+            </div>
+            <label>
+              People consulted
+              <input
+                type="number"
+                min="1"
+                value={consultationUpdate.participantCount || ''}
+                onChange={(event) => onConsultationUpdate({ participantCount: event.target.value })}
+              />
+            </label>
+            <label>
+              Consultation outcome
+              <textarea
+                value={consultationUpdate.notes || ''}
+                onChange={(event) => onConsultationUpdate({ notes: event.target.value })}
+                rows={2}
+              />
+            </label>
+            <button
+              type="button"
+              className="action-secondary-button"
+              onClick={onCompleteConsultation}
+              disabled={
+                busy || !consultationUpdate.participantCount || !consultationUpdate.notes?.trim()
+              }
+            >
+              <Users size={16} aria-hidden="true" /> Record consultation
+            </button>
+          </div>
+        )}
         {reviewReady && (
           <div className="action-review">
             <div>
@@ -555,7 +660,12 @@ function InterventionRow({ item, busy, notes, onNotes, onMeasure, onAcknowledge,
             type="button"
             className="action-primary-button"
             onClick={onAcknowledge}
-            disabled={busy}
+            disabled={busy || item.consultation?.status === 'planned'}
+            title={
+              item.consultation?.status === 'planned'
+                ? 'Record worker consultation first'
+                : undefined
+            }
           >
             <CheckCircle2 size={16} aria-hidden="true" />
             Acknowledge

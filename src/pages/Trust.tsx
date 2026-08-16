@@ -56,25 +56,52 @@ const whatWeNeverUse = [
   'No individual productivity ranking',
 ];
 
-// Employee transparency features
+// Worker transparency responsibilities
 const employeeTransparency = [
   {
-    title: 'See what data is used',
-    description: 'Employees can view exactly which data sources contribute to team-level insights.',
-  },
-  {
-    title: 'See what is NOT used',
-    description: 'Clear documentation of data we explicitly do not collect or analyze.',
-  },
-  {
-    title: 'Understand the outputs',
+    title: 'Purpose before collection',
     description:
-      "Employees can see what insights are generated and how they're used at team level.",
+      'Workers should be told why the data is used, which teams are in scope and who can see outputs.',
   },
   {
-    title: 'Optional participation',
-    description: 'Organizations can configure employee opt-out for non-aggregate analysis.',
+    title: 'Fields and exclusions',
+    description:
+      'The implementation record lists included metadata and the content or individual measures that are excluded.',
   },
+  {
+    title: 'Understand the output',
+    description:
+      'Teams should see the same pattern, limitations and consultation questions used by decision-makers.',
+  },
+  {
+    title: 'Consultation and challenge',
+    description:
+      'Workers can add context, challenge an interpretation and help choose a proportionate control.',
+  },
+];
+
+const governanceRecord = [
+  [
+    'Purpose and lawful-use record',
+    'The risk question, scope, accountable owner and prohibited uses.',
+  ],
+  ['Data map', 'Sources, metadata fields, transformations, group rules and output recipients.'],
+  [
+    'Access matrix',
+    'Which roles can configure sources, review evidence, record actions or see executive summaries.',
+  ],
+  [
+    'Retention and deletion',
+    'Deployment-specific retention, deletion workflow and contract exit process.',
+  ],
+  [
+    'Hosting and subprocessors',
+    'Deployment location, service providers and incident contacts confirmed during security review.',
+  ],
+  [
+    'DPIA and DPA support',
+    'Information required by the customer to complete its own assessment and agreement.',
+  ],
 ];
 
 const Trust = () => {
@@ -202,11 +229,11 @@ const Trust = () => {
                   Employee transparency
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#0F172A]">
-                  Employees can see what we see
+                  Workers should understand and challenge how evidence is used
                 </h2>
                 <p className="text-lg text-[#475569] max-w-2xl mx-auto">
-                  Transparency builds trust. Employees can view exactly how their data contributes
-                  to team-level insights.
+                  Responsible use requires communication and consultation—not a hidden analytics
+                  process. SignalTrue provides the material needed for that conversation.
                 </p>
               </div>
 
@@ -245,7 +272,8 @@ const Trust = () => {
                   </div>
                   <h3 className="font-semibold text-[#0F172A] mb-2">Encryption</h3>
                   <p className="text-sm text-[#475569]">
-                    All data encrypted in transit (TLS 1.3) and at rest (AES-256).
+                    Data is encrypted in transit and at rest. Deployment-specific controls are
+                    confirmed during the security review.
                   </p>
                 </div>
 
@@ -255,7 +283,8 @@ const Trust = () => {
                   </div>
                   <h3 className="font-semibold text-[#0F172A] mb-2">Aggregation thresholds</h3>
                   <p className="text-sm text-[#475569]">
-                    Minimum team sizes enforced. No individual-level signals exposed.
+                    The reporting floor is five active people. Some sensitive indicators require
+                    eight, and an organization can set a higher threshold.
                   </p>
                 </div>
 
@@ -268,6 +297,46 @@ const Trust = () => {
                     Hard permission boundaries between team, org, and HR access levels.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-[#E2E8F0] bg-[#F8FAFC] py-20">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto max-w-5xl">
+              <div className="max-w-3xl">
+                <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#0F766E]">
+                  Procurement and governance
+                </p>
+                <h2 className="text-3xl font-bold text-[#0F172A] sm:text-4xl">
+                  The controls a buyer should verify before a pilot.
+                </h2>
+                <p className="mt-4 text-lg leading-8 text-[#475569]">
+                  SignalTrue confirms deployment-specific details in writing. Claims that depend on
+                  the customer configuration are not presented as universal guarantees.
+                </p>
+              </div>
+              <div className="mt-10 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
+                {governanceRecord.map(([title, copy]) => (
+                  <div
+                    key={title}
+                    className="grid gap-2 border-b border-[#E2E8F0] p-5 last:border-0 md:grid-cols-[240px_1fr]"
+                  >
+                    <strong className="text-[#0F172A]">{title}</strong>
+                    <span className="text-sm leading-6 text-[#475569]">{copy}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button asChild>
+                  <Link to="/contact?intent=security-review&cta=trust">
+                    Request the security review pack
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/client-success">See the client success process</Link>
+                </Button>
               </div>
             </div>
           </div>

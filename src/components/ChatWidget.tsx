@@ -244,7 +244,7 @@ export const ChatWidget: React.FC = () => {
       {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`signaltrue-chat-toggle fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 ${
+        className={`signaltrue-chat-toggle fixed bottom-6 right-6 z-50 hidden rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 md:block ${
           isOpen ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'
         }`}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
@@ -258,7 +258,7 @@ export const ChatWidget: React.FC = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] rounded-2xl bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-24 right-6 z-50 hidden w-96 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:flex">
           {/* Header */}
           <div className="bg-blue-600 px-4 py-4 text-white">
             <h3 className="font-semibold text-lg">Ask SignalTrue</h3>

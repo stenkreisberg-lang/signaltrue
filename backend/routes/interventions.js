@@ -55,6 +55,8 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       decisionRationale,
       hypothesis,
       consultationStatus,
+      consultationNotes,
+      consultationParticipantCount,
     } = req.body;
 
     let resolvedTeamId = teamId;
@@ -134,6 +136,9 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       },
       consultation: {
         status: consultationStatus || 'not_needed',
+        notes: consultationNotes?.trim(),
+        participantCount: Number(consultationParticipantCount) || 0,
+        completedAt: consultationStatus === 'completed' ? reviewStart : undefined,
       },
       evidenceSnapshot: buildEvidenceSnapshot(resolvedSignal, resolvedMetricBefore),
       governance: getGovernanceSnapshot(),
@@ -256,6 +261,33 @@ router.get(
     }
   }
 );
+
+router.put('/:id/consultation', authenticateToken, async (req, res) => {
+  try {
+    const intervention = await findAccessibleIntervention(req, req.params.id);
+    if (!intervention) return res.status(404).json({ message: 'Intervention not found' });
+
+    const participantCount = Number(req.body.participantCount);
+    const notes = String(req.body.notes || '').trim();
+    if (!Number.isFinite(participantCount) || participantCount < 1 || !notes) {
+      return res.status(400).json({
+        message: 'Participant count and consultation notes are required.',
+      });
+    }
+
+    intervention.consultation = {
+      status: 'completed',
+      participantCount,
+      notes,
+      completedAt: new Date(),
+    };
+    await intervention.save();
+    return res.json({ message: 'Consultation recorded', intervention });
+  } catch (error) {
+    console.error('[Interventions] Error recording consultation:', error);
+    return res.status(500).json({ message: 'Failed to record consultation' });
+  }
+});
 
 /**
  * PUT /api/interventions/:id/outcome

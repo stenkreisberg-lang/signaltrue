@@ -111,7 +111,7 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto">
               <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
-                The founding insight
+                Product rationale
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-8 text-[#0F172A]">
                 Lagging outcomes are not enough for prevention.
@@ -138,7 +138,7 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
-                What we believe
+                Design principles
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold text-[#0F172A]">
                 What we believe
@@ -161,6 +161,61 @@ const About = () => {
                   <p className="text-[#475569]">{belief.description}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-[#E2E8F0] bg-[#F8FAFC] py-16 lg:py-20">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto max-w-6xl">
+              <div className="mb-10 max-w-3xl">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                  Evidence before claims
+                </p>
+                <h2 className="text-3xl font-bold text-[#0F172A]">
+                  What a buyer can verify before deciding
+                </h2>
+                <p className="mt-3 text-[#475569]">
+                  Credibility should come from inspectable method, boundaries and delivery
+                  commitments—not invented social proof.
+                </p>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                {[
+                  [
+                    'Complete sample',
+                    'Inspect the evidence, confidence, consultation and control record before a demo.',
+                    '/sample-report',
+                  ],
+                  [
+                    'Responsible-use method',
+                    'Review the privacy floor, limitations and governance record.',
+                    '/trust',
+                  ],
+                  [
+                    'Client success process',
+                    'See owners, phases, deliverables and pilot success measures.',
+                    '/client-success',
+                  ],
+                  [
+                    'Commercial scope',
+                    'Compare the billing unit, baseline period and activation conditions.',
+                    '/pricing',
+                  ],
+                ].map(([title, copy, href]) => (
+                  <Link
+                    key={title}
+                    to={href}
+                    className="rounded-2xl border border-[#E2E8F0] bg-white p-5 hover:border-[#1D4ED8]"
+                  >
+                    <h3 className="font-bold text-[#0F172A]">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#475569]">{copy}</p>
+                    <span className="mt-4 inline-flex text-sm font-bold text-[#1D4ED8]">
+                      Review →
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -209,7 +264,7 @@ const About = () => {
                 </Button>
                 <Button asChild variant="hero" size="xl">
                   <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                    Book a risk review
+                    Request a risk review
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>

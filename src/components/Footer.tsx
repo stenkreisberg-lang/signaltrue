@@ -16,14 +16,15 @@ const footerLinks = {
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'Sample report', href: '/sample-report' },
-    { label: 'Book a risk review', href: '/contact' },
+    { label: 'Client success process', href: '/client-success' },
+    { label: 'Request a risk review', href: '/contact' },
   ],
   Company: [
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
     { label: 'Blog', href: '/blog' },
     { label: 'Resources', href: '/resources' },
-    { label: 'Privacy', href: '/trust' },
+    { label: 'Trust centre', href: '/trust' },
   ],
   Trust: [
     { label: 'Metadata only', href: '/trust' },
@@ -33,7 +34,7 @@ const footerLinks = {
   ],
   Guides: [
     { label: 'Psychosocial risk indicators', href: '/burnout-early-warning-system' },
-    { label: 'Worker engagement indicators', href: '/employee-engagement-leading-indicators' },
+    { label: 'Worker consultation indicators', href: '/employee-engagement-leading-indicators' },
     { label: 'Manager capacity', href: '/signals/manager-load' },
     { label: 'Meeting demand', href: '/signals/meeting-overload' },
   ],

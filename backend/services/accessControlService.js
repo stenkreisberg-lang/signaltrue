@@ -15,6 +15,14 @@ import {
 } from '../utils/subscriptionConstants.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
 
+const ROLE_ALIASES = {
+  hr_admin: ROLES.HR_ADMIN,
+  admin: ROLES.HR_ADMIN,
+  org_admin: ROLES.HR_ADMIN,
+  manager: ROLES.MANAGER,
+  executive: ROLES.CEO,
+};
+
 class AccessControlService {
   /**
    * Check if a user can access a specific feature
@@ -51,8 +59,12 @@ class AccessControlService {
       };
     }
 
+    if (user.role === 'master_admin') {
+      return { allowed: true, reason: 'Master administrator access' };
+    }
+
     // 2. Check role-based access matrix
-    const userRole = user.role;
+    const userRole = ROLE_ALIASES[user.role] || user.role;
 
     if (!userRole) {
       return { allowed: false, reason: 'User role not defined' };
