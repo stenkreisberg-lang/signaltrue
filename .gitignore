@@ -48,3 +48,6 @@ Thumbs.db
 # deployment metadata
 .vercel
 node_modules
+
+# local directory backups (contain PII — never commit)
+backend/backups/
