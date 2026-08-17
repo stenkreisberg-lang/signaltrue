@@ -16,7 +16,10 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import Organization from '../models/organizationModel.js';
-import { verifyMicrosoftCompanyWideAccess } from './microsoftAdminConsentService.js';
+import {
+  getGrantedApplicationRoles,
+  verifyMicrosoftCompanyWideAccess,
+} from './microsoftAdminConsentService.js';
 
 // ============================================================
 // SYNC SCHEDULER
@@ -143,6 +146,34 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
       console.warn(
         `[Microsoft Consent] Company-wide access is not verified for ${organization.name}: ${error.message}`
       );
+
+      // Consent often arrives one permission at a time. Calendar access alone
+      // is enough to build history, and withholding the backfill until Teams
+      // access also lands leaves the organization with only the 30-minute
+      // increments the recurring sync collects — months of calendar evidence
+      // that already exists would never be read.
+      try {
+        const org = await Organization.findById(organization._id)
+          .select('integrations.microsoft.tenantId integrations.microsoft.calendarBackfillStartedAt')
+          .lean();
+        if (org?.integrations?.microsoft?.calendarBackfillStartedAt) continue;
+
+        const roles = await getGrantedApplicationRoles(org?.integrations?.microsoft?.tenantId);
+        if (!roles.includes('Calendars.Read')) continue;
+
+        // Recorded before starting so a restart cannot queue it repeatedly.
+        await Organization.findByIdAndUpdate(organization._id, {
+          $set: { 'integrations.microsoft.calendarBackfillStartedAt': new Date() },
+        });
+        startMicrosoftCompanyBackfill(organization._id, 60);
+        console.log(
+          `[Microsoft Consent] ${organization.name} has calendar access only — starting a 60-day calendar backfill while the remaining permissions are outstanding`
+        );
+      } catch (partialError) {
+        console.warn(
+          `[Microsoft Consent] Could not start a calendar-only backfill for ${organization.name}: ${partialError.message}`
+        );
+      }
     }
   }
 

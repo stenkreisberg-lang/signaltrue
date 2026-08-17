@@ -6,7 +6,10 @@ const actionFind = jest.fn();
 jest.unstable_mockModule('../models/action.js', () => ({
   default: { find: actionFind },
 }));
-jest.unstable_mockModule('../models/organizationModel.js', () => ({ default: {} }));
+jest.unstable_mockModule('../models/organizationModel.js', () => ({
+  default: {},
+  ACTIVE_ORG_FILTER: { lifecycleStatus: { $ne: 'retired' } },
+}));
 jest.unstable_mockModule('../models/monthlyReport.js', () => ({ default: {} }));
 jest.unstable_mockModule('../models/signal.js', () => ({ default: {} }));
 jest.unstable_mockModule('../models/ceoSummary.js', () => ({ default: {} }));
@@ -21,6 +24,15 @@ function mockActions(actions) {
     sort: () => ({ limit: () => ({ lean: () => Promise.resolve(actions) }) }),
   });
 }
+
+describe('active organization filter', () => {
+  test('matches organizations that were never given a lifecycle status', async () => {
+    const { ACTIVE_ORG_FILTER } = await import('../models/organizationModel.js');
+    // $ne matches missing fields, so existing organizations stay active
+    // without a migration and only an explicit retirement excludes them.
+    expect(ACTIVE_ORG_FILTER).toEqual({ lifecycleStatus: { $ne: 'retired' } });
+  });
+});
 
 describe('brief response links', () => {
   test('signature is stable for the same response and differs per response', () => {

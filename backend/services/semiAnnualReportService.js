@@ -1,7 +1,7 @@
 import MonthlyReport from '../models/monthlyReport.js';
 import QuarterlyReport from '../models/quarterlyReport.js';
 import SemiAnnualReport from '../models/semiAnnualReport.js';
-import Organization from '../models/organizationModel.js';
+import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 import User from '../models/user.js';
 import { Resend } from 'resend';
 import { ccSuperadmin } from './superadminNotifyService.js';
@@ -926,7 +926,7 @@ export async function generateSemiAnnualReportForOrg(orgId, options = {}) {
 // ── Generate for all orgs ─────────────────────────────────────────────────────
 
 export async function generateSemiAnnualReportsForAllOrgs(options = {}) {
-  const orgs = await Organization.find({});
+  const orgs = await Organization.find(ACTIVE_ORG_FILTER);
   console.log(
     `\n📊 [SemiAnnualReport] Generating semi-annual reports for ${orgs.length} organizations...`
   );

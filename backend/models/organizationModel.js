@@ -2,6 +2,14 @@
 import mongoose from 'mongoose';
 import { encryptString } from '../utils/crypto.js';
 
+/**
+ * Organizations we still act for. Use this on every scheduled job that emails,
+ * syncs or reports, so retiring an organization actually stops the work rather
+ * than only labelling it. Matches documents where the field is absent, so
+ * existing organizations stay active without a migration.
+ */
+export const ACTIVE_ORG_FILTER = { lifecycleStatus: { $ne: 'retired' } };
+
 const organizationSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -16,6 +24,19 @@ const organizationSchema = new mongoose.Schema(
       plan: { type: String, default: 'free' },
       status: { type: String, default: 'active' },
     },
+
+    // Whether we still act on this organization's behalf. A retired
+    // organization is never emailed, never synced and never reported on:
+    // continuing after the relationship ends is both unwanted contact and
+    // processing of data there is no longer a reason to hold.
+    lifecycleStatus: {
+      type: String,
+      enum: ['active', 'retired'],
+      default: 'active',
+      index: true,
+    },
+    retiredAt: { type: Date, default: null },
+
     // Pricing tier and feature gating
     subscriptionPlanId: {
       type: String,

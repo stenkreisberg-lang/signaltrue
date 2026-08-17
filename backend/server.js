@@ -180,7 +180,7 @@ import { pullAllConnectedOrgs } from './services/integrationPullService.js';
 import { purgeAllOrgs } from './services/retentionPurgeService.js';
 import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
-import Organization from './models/organizationModel.js';
+import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -529,7 +529,7 @@ async function main() {
           const { generateMonthlyReportForOrg, sendMonthlyReportEmail } =
             await import('./services/monthlyReportService.js');
           const Organization = (await import('./models/organizationModel.js')).default;
-          const orgs = await Organization.find({});
+          const orgs = await Organization.find(ACTIVE_ORG_FILTER);
 
           for (const org of orgs) {
             try {
@@ -598,7 +598,7 @@ async function main() {
       cron.schedule('0 2 * * 1', async () => {
         console.log('⏰ Running weekly full scoring for all orgs...');
         try {
-          const orgs = await Organization.find({}).select('_id').lean();
+          const orgs = await Organization.find(ACTIVE_ORG_FILTER).select('_id').lean();
           const weekStart = (() => {
             const now = new Date();
             const day = now.getUTCDay();
@@ -627,7 +627,7 @@ async function main() {
         console.log('⏰ Running nightly BDI scoring...');
         try {
           const { runBDI } = await import('./services/scoringEngineService.js');
-          const orgs = await Organization.find({}).select('_id').lean();
+          const orgs = await Organization.find(ACTIVE_ORG_FILTER).select('_id').lean();
           const weekStart = (() => {
             const now = new Date();
             const day = now.getUTCDay();

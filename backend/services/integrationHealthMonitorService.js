@@ -1,6 +1,6 @@
 import IntegrationConnection from '../models/integrationConnection.js';
 import Notification from '../models/notification.js';
-import Organization from '../models/organizationModel.js';
+import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 import User from '../models/user.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -64,7 +64,7 @@ export async function getOrganizationIntegrationHealth(orgId) {
 }
 
 export async function runIntegrationHealthMonitor() {
-  const orgs = await Organization.find({}).select('_id').lean();
+  const orgs = await Organization.find(ACTIVE_ORG_FILTER).select('_id').lean();
   let notificationsCreated = 0;
   for (const org of orgs) {
     const issues = await getOrganizationIntegrationHealth(org._id);

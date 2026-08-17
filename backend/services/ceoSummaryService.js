@@ -8,7 +8,7 @@
  * without ever duplicating.
  */
 import crypto from 'crypto';
-import Organization from '../models/organizationModel.js';
+import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import Signal from '../models/signal.js';
 import CeoSummary from '../models/ceoSummary.js';
@@ -176,7 +176,7 @@ export async function generateCeoSummaryForOrg(orgId, options = {}) {
  * artifact exists without anyone having to remember to create it.
  */
 export async function generateCeoSummariesForAllOrgs() {
-  const organizations = await Organization.find({}).select('_id name').lean();
+  const organizations = await Organization.find(ACTIVE_ORG_FILTER).select('_id name').lean();
   const results = { generated: 0, existing: 0, skipped: 0, errors: 0 };
 
   for (const organization of organizations) {

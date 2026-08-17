@@ -35,6 +35,25 @@ async function graphProbe(url, token, label) {
   return response.json();
 }
 
+/**
+ * The application roles a tenant has actually granted.
+ *
+ * Reported without throwing, so a partial consent can be acted on: a tenant
+ * that has granted calendar access should not be left with no history just
+ * because the Teams permissions are still outstanding.
+ */
+export async function getGrantedApplicationRoles(tenantId) {
+  if (!tenantId) return [];
+  const appToken = await getMicrosoftAppToken(tenantId);
+  if (!appToken) return [];
+  try {
+    const claims = decodeTokenPayload(appToken);
+    return Array.isArray(claims.roles) ? [...new Set(claims.roles)].sort() : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null) {
   const attemptedAt = new Date();
   const organization = await Organization.findById(orgId).lean();

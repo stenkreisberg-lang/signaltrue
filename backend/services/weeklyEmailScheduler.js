@@ -69,8 +69,10 @@ async function executeWeeklyEmails(trigger = 'cron') {
 
   try {
     const { sendWeeklyBrief } = await import('../services/weeklyBriefService.js');
-    const Organization = (await import('../models/organizationModel.js')).default;
-    const orgs = await Organization.find({});
+    const { default: Organization, ACTIVE_ORG_FILTER } = await import(
+      '../models/organizationModel.js'
+    );
+    const orgs = await Organization.find(ACTIVE_ORG_FILTER);
 
     const results = [];
     let sentCount = 0;
@@ -204,8 +206,10 @@ async function executeWeeklyReportGeneration(trigger = 'cron') {
 
   try {
     const { generateWeeklyReportsForOrg } = await import('../services/weeklyReportService.js');
-    const Organization = (await import('../models/organizationModel.js')).default;
-    const orgs = await Organization.find({});
+    const { default: Organization, ACTIVE_ORG_FILTER } = await import(
+      '../models/organizationModel.js'
+    );
+    const orgs = await Organization.find(ACTIVE_ORG_FILTER);
 
     const results = [];
     let sentCount = 0;
