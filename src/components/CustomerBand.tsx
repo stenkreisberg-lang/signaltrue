@@ -4,27 +4,46 @@
  * Names the organizations measuring work health with SignalTrue, as a
  * continuously scrolling carousel showing three marks at a time.
  *
- * The files in /public/logos are SignalTrue-drawn typographic wordmarks, not
- * the customers' official logos — they give the band one consistent voice
- * without redistributing anyone's trademark artwork. To use a company's real
- * logo, replace its file with the asset they supply and keep the permission on
- * record; Cleveron and Tehnopol both require written approval for non-editorial
- * use. Every mark renders in grayscale at a uniform height either way.
+ * Marks are set in the site's own typeface and inherit the current text colour,
+ * so they follow the page theme and stay optically consistent with each other:
+ * one size, one tracking, with the compound names weighted two-tone. They are
+ * SignalTrue's own typographic wordmarks, not the customers' logo artwork.
+ *
+ * To use a company's real logo, set `logo` to a file in /public and it renders
+ * in place of the wordmark, grayscale at the same height. Keep their written
+ * permission on record — Cleveron and Tehnopol both require it for
+ * non-editorial use.
  */
 import { useEffect, useRef } from 'react';
 
 type Customer = {
   name: string;
+  /** Leading part set in bold; the rest of `name` follows in regular weight. */
+  strong?: string;
   logo?: string;
 };
 
 const customers: Customer[] = [
-  { name: 'Tehnopol', logo: '/logos/tehnopol.svg' },
-  { name: 'Nobel Digital', logo: '/logos/nobel-digital.svg' },
-  { name: 'Cleveron', logo: '/logos/cleveron.svg' },
-  { name: 'Sharewell', logo: '/logos/sharewell.svg' },
-  { name: 'Rutwol', logo: '/logos/rutwol.svg' },
+  { name: 'Tehnopol' },
+  { name: 'Nobel Digital', strong: 'Nobel' },
+  { name: 'Cleveron' },
+  { name: 'Sharewell', strong: 'Share' },
+  { name: 'Rutwol' },
 ];
+
+const Wordmark = ({ customer }: { customer: Customer }) => {
+  if (!customer.strong) {
+    return <span className="customer-wordmark">{customer.name}</span>;
+  }
+
+  const rest = customer.name.slice(customer.strong.length);
+  return (
+    <span className="customer-wordmark">
+      <b>{customer.strong}</b>
+      <i>{rest}</i>
+    </span>
+  );
+};
 
 const CustomerBand = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -73,7 +92,7 @@ const CustomerBand = () => {
                 {customer.logo ? (
                   <img src={customer.logo} alt={customer.name} loading="lazy" />
                 ) : (
-                  <span className="text-foreground">{customer.name}</span>
+                  <Wordmark customer={customer} />
                 )}
               </li>
             ))}

@@ -1553,17 +1553,28 @@
   opacity: 1;
 }
 
-.customer-slide span {
-  font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+/* Wordmarks are set in the page typeface and inherit the current text
+   colour, so the band follows the theme without per-theme assets. */
+.customer-wordmark {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   white-space: nowrap;
-  filter: grayscale(100%);
+  color: hsl(var(--foreground));
   opacity: 0.7;
   transition: opacity 0.2s ease;
 }
 
-.customer-slide:hover span {
+.customer-wordmark b {
+  font-weight: 700;
+}
+
+.customer-wordmark i {
+  font-weight: 400;
+  font-style: normal;
+}
+
+.customer-slide:hover .customer-wordmark {
   opacity: 1;
 }
 
