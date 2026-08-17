@@ -9,7 +9,7 @@ import {
   classifyEmployeeCandidate,
   classifyUserDirectoryRecord,
 } from '../utils/employeeIdentity.js';
-import { normalizeDepartmentName } from '../services/employeeSyncService.js';
+import { normalizeDepartmentName, resolveOrgWorkDomain } from '../services/employeeSyncService.js';
 import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
   fetchGraphCollection,
@@ -41,6 +41,13 @@ describe('organization identity setup', () => {
     expect(isValidIanaTimezone('Europe/Tallinn')).toBe(true);
     expect(isValidIanaTimezone('UTC')).toBe(true);
     expect(isValidIanaTimezone('Tallinn time')).toBe(false);
+  });
+
+  test('resolves the organization work-email domain for external filtering', () => {
+    expect(resolveOrgWorkDomain({ domain: 'Tehnopol.EE' })).toBe('tehnopol.ee');
+    expect(resolveOrgWorkDomain({ domain: '@tehnopol.ee' })).toBe('tehnopol.ee');
+    expect(resolveOrgWorkDomain({})).toBeNull();
+    expect(resolveOrgWorkDomain(null)).toBeNull();
   });
 });
 
@@ -210,6 +217,45 @@ describe('directory mapping', () => {
       ok: true,
       firstName: 'Karola',
       lastName: 'Mitt',
+    });
+  });
+
+  test('rejects Tehnopol resource and role mailboxes, keeps real people', () => {
+    const invalidTehnopolRows = [
+      ['Google Kalendar', 'google.kalendar@tehnopol.ee'],
+      ['Tehnopol Intune', 'intune@tehnopol.ee'],
+      ['Tehnopol Arved', 'tehnopol.arved@tehnopol.ee'],
+      ['Tehnopol Incubator', 'tehnopolincubator@tehnopol.ee'],
+      ['Web Expert', 'web.expert@tehnopol.ee'],
+      ['esitlus mac', 'mac1@tehnopol.ee'],
+      ['esitlus mac', 'mac2@tehnopol.ee'],
+      ['adm pavel', 'adm.pavel@tehnopol.ee'],
+      ['Koosolekud', 'koosolekud@tehnopol.ee'],
+    ];
+
+    for (const [displayName, email] of invalidTehnopolRows) {
+      expect(
+        classifyEmployeeCandidate({
+          email,
+          displayName,
+        })
+      ).toMatchObject({
+        ok: false,
+        reason: 'non_employee_resource_or_service_account',
+      });
+    }
+
+    expect(
+      classifyEmployeeCandidate({
+        email: 'agnes.roos@tehnopol.ee',
+        firstName: 'Agnes',
+        lastName: 'Roos',
+        displayName: 'Agnes Roos',
+      })
+    ).toMatchObject({
+      ok: true,
+      firstName: 'Agnes',
+      lastName: 'Roos',
     });
   });
 
