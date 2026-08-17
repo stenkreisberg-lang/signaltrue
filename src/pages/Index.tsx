@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import CustomerBand from '../components/CustomerBand';
 import WhyOrganizationsGoBlind from '../components/WhyOrganizationsGoBlind';
 import JTBDSection from '../components/JTBDSection';
 import PromisedLand from '../components/PromisedLand';
@@ -29,6 +30,7 @@ const Index = () => {
       <Navbar />
       <main>
         <Hero />
+        <CustomerBand />
         <WhyOrganizationsGoBlind />
         <JTBDSection />
         <PromisedLand />
