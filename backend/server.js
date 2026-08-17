@@ -539,6 +539,16 @@ async function main() {
             }
           }
           console.log('✅ Monthly reports generation + email completed');
+
+          // The sponsor-facing summary is built from the monthly report, so it
+          // is produced here rather than waiting for someone to request it.
+          const { generateCeoSummariesForAllOrgs } = await import(
+            './services/ceoSummaryService.js'
+          );
+          const ceoResults = await generateCeoSummariesForAllOrgs();
+          console.log(
+            `✅ CEO summaries: ${ceoResults.generated} generated, ${ceoResults.existing} already current, ${ceoResults.skipped} without a monthly report, ${ceoResults.errors} failed`
+          );
         } catch (err) {
           console.error('❌ Monthly reports generation failed:', err.message);
         }

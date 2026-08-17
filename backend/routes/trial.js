@@ -22,6 +22,7 @@ import Signal from '../models/signal.js';
 import Intervention from '../models/intervention.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';
+import { buildShareUrl, generateCeoSummaryForOrg } from '../services/ceoSummaryService.js';
 
 const router = express.Router();
 
@@ -520,113 +521,25 @@ router.post('/generate-ceo-summary', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    // Find the most recent monthly report
-    const report = await MonthlyReport.findOne({ orgId: req.user.orgId }).sort({ periodEnd: -1 });
+    const result = await generateCeoSummaryForOrg(req.user.orgId, {
+      generatedBy: req.user.userId,
+    });
 
-    if (!report) {
+    if (!result) {
       return res.status(404).json({
         error: 'No monthly report available',
         message: 'Generate your monthly report first before creating the CEO summary.',
       });
     }
 
-    // Check if summary already exists for this report
-    let summary = await CeoSummary.findOne({
-      orgId: req.user.orgId,
-      monthlyReportId: report._id,
-    });
-
-    if (!summary) {
-      const sourceSignals = await Signal.find({
-        orgId: req.user.orgId,
-        status: { $in: ['Open', 'Acknowledged', 'In Progress'] },
-      })
-        .sort({ lastUpdated: -1 })
-        .limit(100)
-        .lean();
-      const meetingSignal = sourceSignals.find((item) =>
-        ['meeting-load-spike', 'context-switching'].includes(item.signalType)
-      );
-      const recoverySignal = sourceSignals.find((item) =>
-        ['after-hours-creep', 'recovery-deficit'].includes(item.signalType)
-      );
-      const affectedTeams = new Set(sourceSignals.map((item) => String(item.teamId))).size;
-      const directionFor = (signal, inverse = false) => {
-        const delta = Number(signal?.deviation?.deltaPercent || 0);
-        if (Math.abs(delta) < 5) return 'stable';
-        const increased = inverse ? delta < 0 : delta > 0;
-        return increased ? 'increased' : 'decreased';
-      };
-      const meetingDirection = directionFor(meetingSignal);
-      const recoveryDirection = directionFor(recoverySignal);
-      const highConfidenceCount = sourceSignals.filter((item) => item.confidence === 'High').length;
-
-      // Generate new summary
-      summary = new CeoSummary({
-        orgId: req.user.orgId,
-        monthlyReportId: report._id,
-        periodStart: report.periodStart,
-        periodEnd: report.periodEnd,
-        generatedBy: req.user._id,
-
-        observations: {
-          meetingLoadChange: {
-            direction: meetingDirection,
-            percentChange: Math.abs(Number(meetingSignal?.deviation?.deltaPercent || 0)),
-            summary: meetingSignal
-              ? `Qualified team-level meeting demand is ${meetingDirection} against its recorded baseline.`
-              : 'No qualified meeting-demand signal is available for this period.',
-          },
-          afterHoursWork: {
-            direction: recoveryDirection,
-            percentChange: Math.abs(Number(recoverySignal?.deviation?.deltaPercent || 0)),
-            summary: recoverySignal
-              ? `Qualified after-hours or recovery activity is ${recoveryDirection} against its recorded baseline.`
-              : 'No qualified after-hours or recovery signal is available for this period.',
-          },
-          coordinationPressure: {
-            direction: affectedTeams > 0 ? 'increased' : 'stable',
-            areasAffected: [],
-            summary:
-              affectedTeams > 0
-                ? `${affectedTeams} team${affectedTeams === 1 ? '' : 's'} currently require evidence review.`
-                : 'No qualified coordination pattern is currently visible. This does not establish absence of risk.',
-          },
-        },
-
-        significance: {
-          summary:
-            'These team-level patterns identify where worker consultation and work-design review should be prioritised. They do not establish worker health or cause.',
-          riskFactors: [],
-        },
-
-        riskDirection: {
-          overall: report.orgHealth?.bdiTrend || 'stable',
-          trendConfidence:
-            highConfidenceCount >= 2 ? 'high' : sourceSignals.length > 0 ? 'medium' : 'low',
-          explanation:
-            'Direction reflects qualified team-level changes against recorded baselines. Leadership should verify context and review control effectiveness.',
-        },
-      });
-
-      // Generate share token
-      summary.shareToken = crypto.randomBytes(32).toString('hex');
-      summary.shareTokenExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-      await summary.save();
-
-      // Mark milestone
-      await Organization.findByIdAndUpdate(req.user.orgId, {
-        $set: { 'trial.ceoSummaryGenerated': new Date() },
-      });
-    }
+    const { summary } = result;
 
     res.json({
       success: true,
       summary: {
         id: summary._id,
         shareToken: summary.shareToken,
-        shareUrl: `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/ceo-summary/${summary.shareToken}`,
+        shareUrl: buildShareUrl(summary.shareToken),
         periodStart: summary.periodStart,
         periodEnd: summary.periodEnd,
         generatedAt: summary.generatedAt,

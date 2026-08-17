@@ -33,11 +33,12 @@ const ceoSummarySchema = new mongoose.Schema(
       required: true,
     },
 
-    // Who generated this summary
+    // Who generated this summary. Null when the monthly job produced it rather
+    // than a person requesting it.
     generatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     generatedAt: {
       type: Date,

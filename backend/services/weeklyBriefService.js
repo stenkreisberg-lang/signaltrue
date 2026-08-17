@@ -8,6 +8,7 @@ import WorkEvent from '../models/workEvent.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
+import CeoSummary from '../models/ceoSummary.js';
 import WeekContext from '../models/weekContext.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import IntegrationConnection from '../models/integrationConnection.js';
@@ -2062,6 +2063,33 @@ export async function generateWeeklyBrief(orgId) {
     html += `<a href="${appBase}/app/signals?status=Open" style="display:inline-block;margin-left:10px;background:#ffffff;color:#0f172a;border:1px solid #0f172a;padding:10px 26px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Log an action</a>`;
   }
   html += `</div>`;
+
+  // Leadership summary. The person reading this brief has to justify the
+  // programme upwards, so surface the sponsor-ready summary they can forward
+  // rather than leaving it somewhere they would have to know to look.
+  const currentCeoSummary = await CeoSummary.findOne({
+    orgId,
+    shareToken: { $exists: true, $ne: null },
+    shareTokenExpiry: { $gt: new Date() },
+  })
+    .sort({ periodEnd: -1 })
+    .lean();
+
+  if (currentCeoSummary) {
+    const period = new Date(currentCeoSummary.periodEnd).toLocaleDateString('en-GB', {
+      month: 'long',
+      year: 'numeric',
+    });
+    const shareUrl = `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/ceo-summary/${currentCeoSummary.shareToken}`;
+    html += `<div style="${S.card}">`;
+    html += `<h3 style="${S.h3}">For your leadership team</h3>`;
+    html += `<p style="${S.p}">The ${period} executive summary is ready to share — what moved, what it means, and which way risk is heading, without team-level detail.</p>`;
+    html += `<div style="text-align:center; margin-top:14px;">`;
+    html += `<a href="${shareUrl}" style="display:inline-block;background:#ffffff;color:#0f172a;border:1px solid #0f172a;padding:10px 26px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open the executive summary</a>`;
+    html += `</div>`;
+    html += `<p style="${S.pSmall} text-align:center; margin-top:8px;">This link can be forwarded and works without a SignalTrue login.</p>`;
+    html += `</div>`;
+  }
   html += `</div>`;
 
   // ─── 5b. Action follow-through (decision log + measured impact) ───
