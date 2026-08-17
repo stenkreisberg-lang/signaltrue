@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" role="img" aria-label="Nobel Digital">
+  <title>Nobel Digital</title>
+  <text
+    x="0"
+    y="28"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-size="24"
+    letter-spacing="-0.4"
+    fill="#0F172A"
+  ><tspan font-weight="700">Nobel</tspan><tspan font-weight="400"> Digital</tspan></text>
+</svg>

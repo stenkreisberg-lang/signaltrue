@@ -4,11 +4,12 @@
  * Names the organizations measuring work health with SignalTrue, as a
  * continuously scrolling carousel showing three marks at a time.
  *
- * Logos: set `logo` to a file served from /public (e.g. '/logos/cleveron.svg')
- * and the mark renders as an image instead of a wordmark. Every mark is drawn
- * in grayscale at a uniform height, so mixed logos stay visually consistent.
- * Use each company's official brand asset and keep their permission on file —
- * several of them require written approval for non-editorial use.
+ * The files in /public/logos are SignalTrue-drawn typographic wordmarks, not
+ * the customers' official logos — they give the band one consistent voice
+ * without redistributing anyone's trademark artwork. To use a company's real
+ * logo, replace its file with the asset they supply and keep the permission on
+ * record; Cleveron and Tehnopol both require written approval for non-editorial
+ * use. Every mark renders in grayscale at a uniform height either way.
  */
 import { useEffect, useRef } from 'react';
 
@@ -18,11 +19,11 @@ type Customer = {
 };
 
 const customers: Customer[] = [
-  { name: 'Tehnopol' },
-  { name: 'Nobel Digital' },
-  { name: 'Cleveron' },
-  { name: 'Sharewell' },
-  { name: 'Rutwol' },
+  { name: 'Tehnopol', logo: '/logos/tehnopol.svg' },
+  { name: 'Nobel Digital', logo: '/logos/nobel-digital.svg' },
+  { name: 'Cleveron', logo: '/logos/cleveron.svg' },
+  { name: 'Sharewell', logo: '/logos/sharewell.svg' },
+  { name: 'Rutwol', logo: '/logos/rutwol.svg' },
 ];
 
 const CustomerBand = () => {
