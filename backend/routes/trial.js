@@ -18,7 +18,7 @@ import express from 'express';
 import Organization from '../models/organizationModel.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import CeoSummary from '../models/ceoSummary.js';
-import Signal from '../models/Signal.js';
+import Signal from '../models/signal.js';
 import Intervention from '../models/intervention.js';
 import { authenticateToken } from '../middleware/auth.js';
 import crypto from 'crypto';

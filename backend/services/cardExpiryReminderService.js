@@ -7,7 +7,7 @@
 
 import nodemailer from 'nodemailer';
 import Organization from '../models/organizationModel.js';
-import User from '../models/userModel.js';
+import User from '../models/user.js';
 
 // Initialize email transporter (same pattern as other services)
 const emailTransporter =
