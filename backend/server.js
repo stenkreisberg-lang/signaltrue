@@ -79,6 +79,8 @@ import resilienceRoutes from './routes/resilienceRoutes.js';
 import integrationsRoutes from './routes/integrations.js';
 import billingRoutes from './routes/billing.js';
 import stripeWebhookRoutes from './routes/stripe-webhook.js';
+import emailWebhookRoutes from './routes/emailWebhook.js';
+import briefResponseRoutes from './routes/briefResponse.js';
 import adminRoutes from './routes/adminRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import adminExportRoutes from './routes/adminExport.js';
@@ -270,6 +272,9 @@ async function main() {
     app.use('/api/', apiLimiter);
 
     app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRoutes);
+    // Signature verification needs the exact bytes, so this is mounted raw
+    // before the JSON parser too.
+    app.use('/api/webhooks/email', express.raw({ type: 'application/json' }), emailWebhookRoutes);
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
@@ -358,6 +363,7 @@ async function main() {
     app.use('/api/fit-questionnaire', fitQuestionnaireRoutes);
     app.use('/api/team-state', teamStateRoutes);
     app.use('/api/reminders', reminderCronRoutes);
+    app.use('/api/brief-response', briefResponseRoutes);
 
     // --- AI Chat Assistant (public, no auth required) ---
     app.use('/api/chat', chatRoutes);

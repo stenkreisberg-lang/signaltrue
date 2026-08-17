@@ -101,6 +101,28 @@ const ceoSummarySchema = new mongoose.Schema(
     },
 
     // Section 4: What this is (and is not) - Privacy assurance
+    // What was decided and what followed. A status report says what moved; this
+    // is what shows whether the programme is working, so it accumulates into
+    // the case for continuing it.
+    decisionLog: {
+      actionsTaken: { type: Number, default: 0 },
+      actionsCompleted: { type: Number, default: 0 },
+      outcomesMeasured: { type: Number, default: 0 },
+      worked: { type: Number, default: 0 },
+      partiallyWorked: { type: Number, default: 0 },
+      didNotWork: { type: Number, default: 0 },
+      tooEarly: { type: Number, default: 0 },
+      summary: { type: String },
+      entries: [
+        {
+          action: { type: String },
+          status: { type: String },
+          outcome: { type: String },
+          decidedAt: { type: Date },
+        },
+      ],
+    },
+
     privacyStatement: {
       teamLevelOnly: { type: Boolean, default: true },
       minTeamSize: { type: Number, default: 5 },

@@ -9,6 +9,8 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import CeoSummary from '../models/ceoSummary.js';
+import CronLog from '../models/cronLog.js';
+import { buildBriefResponseUrl } from '../routes/briefResponse.js';
 import WeekContext from '../models/weekContext.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import IntegrationConnection from '../models/integrationConnection.js';
@@ -2090,6 +2092,21 @@ export async function generateWeeklyBrief(orgId) {
     html += `<p style="${S.pSmall} text-align:center; margin-top:8px;">This link can be forwarded and works without a SignalTrue login.</p>`;
     html += `</div>`;
   }
+
+  // One-click response. Silence from a reader is ambiguous — nothing worth
+  // acting on, acted on elsewhere, or not read at all — and each needs a
+  // different answer from us. These links resolve that without a login.
+  const weekKey = CronLog.getCurrentWeekKey();
+  const responseLink = (response, label) =>
+    `<a href="${buildBriefResponseUrl(orgId, weekKey, response)}" style="display:inline-block;margin:4px 6px;padding:8px 16px;border:1px solid #cbd5e1;border-radius:8px;color:#0f172a;font-size:13px;font-weight:600;text-decoration:none;">${label}</a>`;
+
+  html += `<div style="${S.card} text-align:center;">`;
+  html += `<p style="${S.pSmall} margin:0 0 10px 0;">Was this week's brief useful?</p>`;
+  html += responseLink('useful', 'Useful');
+  html += responseLink('nothing_to_act_on', 'Nothing to act on');
+  html += responseLink('acted_outside_tool', 'We acted on this already');
+  html += responseLink('not_useful', 'Not useful');
+  html += `</div>`;
   html += `</div>`;
 
   // ─── 5b. Action follow-through (decision log + measured impact) ───
@@ -3030,6 +3047,12 @@ export async function sendWeeklyBrief(orgId) {
         to: recipients,
         subject,
         html,
+        // Tags come back on delivery/open/click webhooks, which is what makes
+        // engagement attributable to an organization.
+        tags: [
+          { name: 'email_type', value: 'weekly-brief' },
+          { name: 'org_id', value: String(orgId) },
+        ],
       });
       if (error) {
         console.error(`[WeeklyBrief] ❌ Resend error:`, JSON.stringify(error));

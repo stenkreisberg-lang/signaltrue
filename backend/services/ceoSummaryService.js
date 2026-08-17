@@ -12,6 +12,7 @@ import Organization from '../models/organizationModel.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import Signal from '../models/signal.js';
 import CeoSummary from '../models/ceoSummary.js';
+import Action from '../models/action.js';
 
 const SHARE_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -24,6 +25,56 @@ function directionFor(signal, inverse = false) {
 
 export function buildShareUrl(shareToken) {
   return `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/ceo-summary/${shareToken}`;
+}
+
+/**
+ * The decisions taken in this period and what came of them.
+ *
+ * Reported cumulatively rather than per period: the value of a track record is
+ * that it grows, and a sponsor cares whether the programme works overall, not
+ * whether one month happened to contain a completed action.
+ */
+export async function buildDecisionLog(orgId, periodEnd) {
+  const actions = await Action.find({ orgId, createdDate: { $lte: periodEnd } })
+    .sort({ createdDate: -1 })
+    .limit(200)
+    .lean();
+
+  const ratingCount = (rating) => actions.filter((a) => a.outcome?.rating === rating).length;
+  const worked = ratingCount('Worked');
+  const partiallyWorked = ratingCount('Partially Worked');
+  const didNotWork = ratingCount('Did Not Work');
+  const tooEarly = ratingCount('Too Early To Tell');
+  const outcomesMeasured = worked + partiallyWorked + didNotWork;
+  const actionsCompleted = actions.filter((a) => a.status === 'Completed').length;
+
+  let summary;
+  if (actions.length === 0) {
+    summary =
+      'No changes have been recorded yet. Once decisions are logged against signals, this section reports what followed each one.';
+  } else if (outcomesMeasured === 0) {
+    summary = `${actions.length} change${actions.length === 1 ? '' : 's'} recorded and awaiting measurement. Outcomes are reported once enough time has passed to compare against the baseline captured when each was logged.`;
+  } else {
+    const effective = worked + partiallyWorked;
+    summary = `${actions.length} change${actions.length === 1 ? '' : 's'} recorded, ${outcomesMeasured} measured against their baselines: ${effective} moved the metric in the intended direction${didNotWork > 0 ? `, ${didNotWork} did not` : ''}.`;
+  }
+
+  return {
+    actionsTaken: actions.length,
+    actionsCompleted,
+    outcomesMeasured,
+    worked,
+    partiallyWorked,
+    didNotWork,
+    tooEarly,
+    summary,
+    entries: actions.slice(0, 10).map((a) => ({
+      action: a.action,
+      status: a.status,
+      outcome: a.outcome?.rating || null,
+      decidedAt: a.createdDate,
+    })),
+  };
 }
 
 /**
@@ -58,12 +109,15 @@ export async function generateCeoSummaryForOrg(orgId, options = {}) {
   const recoveryDirection = directionFor(recoverySignal);
   const highConfidenceCount = sourceSignals.filter((item) => item.confidence === 'High').length;
 
+  const decisionLog = await buildDecisionLog(orgId, report.periodEnd);
+
   const summary = new CeoSummary({
     orgId,
     monthlyReportId: report._id,
     periodStart: report.periodStart,
     periodEnd: report.periodEnd,
     generatedBy,
+    decisionLog,
 
     observations: {
       meetingLoadChange: {
