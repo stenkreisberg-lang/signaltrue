@@ -23,13 +23,32 @@ import {
   getGoogleChatImmediateInsights,
   getOrgVsBenchmarks,
 } from '../services/immediateInsightsService.js';
-import { triggerImmediateSync } from '../services/integrationSyncScheduler.js';
+import {
+  startMicrosoftCompanyBackfill,
+  triggerImmediateSync,
+} from '../services/integrationSyncScheduler.js';
+import { verifyMicrosoftCompanyWideAccess } from '../services/microsoftAdminConsentService.js';
 import {
   getGoogleWorkspacePublicConfig,
   verifyGoogleWorkspaceDelegation,
 } from '../services/googleWorkspaceAdminService.js';
 
 const router = express.Router();
+
+router.post(
+  '/integrations/microsoft/admin-consent/verify',
+  authenticateToken,
+  requireRoles(['it_admin', 'hr_admin', 'org_admin', 'admin', 'master_admin']),
+  async (req, res) => {
+    try {
+      const verification = await verifyMicrosoftCompanyWideAccess(req.user.orgId, req.user.userId);
+      const backfill = startMicrosoftCompanyBackfill(req.user.orgId, 60);
+      return res.json({ verification, backfill });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+);
 
 router.get('/integrations/google-workspace/admin-status', authenticateToken, async (req, res) => {
   const org = await Organization.findById(req.user?.orgId).lean();
@@ -402,6 +421,12 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
             user: organization.integrations.microsoft?.user,
             applicationConsentGrantedAt:
               organization.integrations.microsoft?.applicationConsentGrantedAt,
+            applicationConsentVerifiedAt:
+              organization.integrations.microsoft?.applicationConsentVerifiedAt,
+            applicationConsentLastCheckedAt:
+              organization.integrations.microsoft?.applicationConsentLastCheckedAt,
+            applicationConsentLastError:
+              organization.integrations.microsoft?.applicationConsentLastError,
           }
         : null,
       outlook: connected.outlook
@@ -410,6 +435,12 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
             user: organization.integrations.microsoft?.user,
             applicationConsentGrantedAt:
               organization.integrations.microsoft?.applicationConsentGrantedAt,
+            applicationConsentVerifiedAt:
+              organization.integrations.microsoft?.applicationConsentVerifiedAt,
+            applicationConsentLastCheckedAt:
+              organization.integrations.microsoft?.applicationConsentLastCheckedAt,
+            applicationConsentLastError:
+              organization.integrations.microsoft?.applicationConsentLastError,
           }
         : null,
       jira: connected.jira
@@ -468,6 +499,10 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       microsoftAdminConsent:
         available.outlook && organization.integrations.microsoft?.tenantId
           ? '/integrations/microsoft/admin-consent/start'
+          : null,
+      microsoftAdminVerify:
+        available.outlook && organization.integrations.microsoft?.tenantId
+          ? '/integrations/microsoft/admin-consent/verify'
           : null,
       jira: available.jira
         ? `/integrations/jira/oauth/start?orgSlug=${orgSlug}&orgId=${orgIdStr}`
@@ -1162,13 +1197,14 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
             req.query.tenant || req.query.tenantId || undefined,
         },
       });
-
-      triggerImmediateSync(parsed.orgId, {
-        since: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-      }).catch((error) => {
-        console.error('Microsoft post-admin-consent sync failed:', error.message);
-      });
-      return res.redirect(`${getAppUrl()}/dashboard?connected=microsoft-application`);
+      try {
+        await verifyMicrosoftCompanyWideAccess(parsed.orgId, parsed.userId);
+        startMicrosoftCompanyBackfill(parsed.orgId, 60);
+        return res.redirect(`${getAppUrl()}/dashboard?connected=microsoft-application`);
+      } catch (error) {
+        console.error('Microsoft post-admin-consent verification failed:', error.message);
+        return res.redirect(`${getAppUrl()}/dashboard?error=microsoft-application-verification`);
+      }
     }
 
     if (!orgId && !orgSlug) {

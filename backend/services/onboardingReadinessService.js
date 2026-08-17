@@ -31,7 +31,7 @@ function id(value) {
 function legacyConnection(org, type) {
   const microsoftScope = org.integrations?.microsoft?.scope;
   const microsoftConnected = !!org.integrations?.microsoft?.accessToken;
-  const microsoftConsent = !!org.integrations?.microsoft?.applicationConsentGrantedAt;
+  const microsoftConsent = !!org.integrations?.microsoft?.applicationConsentVerifiedAt;
 
   if (type === 'microsoft-outlook') {
     const connected =
@@ -161,6 +161,8 @@ function nextStep(readiness) {
   if (!readiness.teamsReady) return 'assign_teams';
   if (!readiness.activityReady) return 'waiting_for_activity';
   if (!readiness.mappingReady) return 'map_activity';
+  if (!readiness.contributorCoverageReady) return 'build_team_coverage';
+  if (!readiness.historyReady || !readiness.volumeReady) return 'baseline_forming';
   if (!readiness.reportingReady) return 'build_team_coverage';
   return 'baseline_forming';
 }
@@ -172,27 +174,44 @@ export async function getOrganizationReadiness(orgOrId) {
 
   const orgId = org._id;
   const activeUserQuery = { orgId, accountStatus: { $ne: 'inactive' } };
-  const [connections, teams, users, eventBreakdown, totalEvents, mappedEvents] = await Promise.all([
-    IntegrationConnection.find({ orgId }).lean(),
-    Team.find({ orgId, isActive: { $ne: false } })
-      .select('_id name')
-      .lean(),
-    User.find(activeUserQuery).select('_id source teamId externalIds').lean(),
-    WorkEvent.aggregate([
-      { $match: { orgId: new mongoose.Types.ObjectId(String(orgId)) } },
-      {
-        $group: {
-          _id: '$source',
-          events: { $sum: 1 },
-          mappedUserIds: { $addToSet: '$actorUserId' },
-          firstEventAt: { $min: '$timestamp' },
-          lastEventAt: { $max: '$timestamp' },
+  const readinessStart = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  const [connections, teams, users, eventBreakdown, totalEvents, mappedEvents, contributorIds] =
+    await Promise.all([
+      IntegrationConnection.find({ orgId }).lean(),
+      Team.find({ orgId, isActive: { $ne: false } })
+        .select('_id name')
+        .lean(),
+      User.find(activeUserQuery).select('_id source teamId externalIds').lean(),
+      WorkEvent.aggregate([
+        {
+          $match: {
+            orgId: new mongoose.Types.ObjectId(String(orgId)),
+            timestamp: { $gte: readinessStart },
+          },
         },
-      },
-    ]),
-    WorkEvent.countDocuments({ orgId }),
-    WorkEvent.countDocuments({ orgId, actorUserId: { $ne: null }, teamId: { $ne: null } }),
-  ]);
+        {
+          $group: {
+            _id: '$source',
+            events: { $sum: 1 },
+            mappedUserIds: { $addToSet: '$actorUserId' },
+            firstEventAt: { $min: '$timestamp' },
+            lastEventAt: { $max: '$timestamp' },
+          },
+        },
+      ]),
+      WorkEvent.countDocuments({ orgId, timestamp: { $gte: readinessStart } }),
+      WorkEvent.countDocuments({
+        orgId,
+        timestamp: { $gte: readinessStart },
+        actorUserId: { $ne: null },
+        teamId: { $ne: null },
+      }),
+      WorkEvent.distinct('actorUserId', {
+        orgId,
+        timestamp: { $gte: readinessStart },
+        actorUserId: { $ne: null },
+      }),
+    ]);
 
   const teamById = new Map(teams.map((team) => [id(team), team]));
   const activeUsersByTeam = new Map();
@@ -210,6 +229,7 @@ export async function getOrganizationReadiness(orgOrId) {
   const readyTeamIds = eligibleTeamIds.length
     ? await WorkEvent.distinct('teamId', {
         orgId,
+        timestamp: { $gte: readinessStart },
         teamId: { $in: eligibleTeamIds },
         actorUserId: { $ne: null },
       })
@@ -266,6 +286,8 @@ export async function getOrganizationReadiness(orgOrId) {
   }).length;
   const namedAssignedUsers = users.length - unassignedUsers;
   const mappingCoveragePct = totalEvents > 0 ? Math.round((mappedEvents / totalEvents) * 100) : 0;
+  const contributorCoveragePct =
+    users.length > 0 ? Math.round((contributorIds.length / users.length) * 100) : 0;
   const firstEventAt = eventBreakdown
     .map((row) => row.firstEventAt)
     .filter(Boolean)
@@ -274,6 +296,16 @@ export async function getOrganizationReadiness(orgOrId) {
     .map((row) => row.lastEventAt)
     .filter(Boolean)
     .sort((a, b) => new Date(b) - new Date(a))[0];
+  const historyDays =
+    firstEventAt && lastEventAt
+      ? Math.max(
+          0,
+          Math.floor((new Date(lastEventAt) - new Date(firstEventAt)) / (24 * 60 * 60 * 1000))
+        )
+      : 0;
+  const contributorCoverageReady = contributorCoveragePct >= 60;
+  const historyReady = historyDays >= 21;
+  const volumeReady = totalEvents >= Math.max(50, contributorIds.length * 3);
 
   const readiness = {
     connectedSources,
@@ -285,8 +317,12 @@ export async function getOrganizationReadiness(orgOrId) {
     timezoneReady: !!org.settings?.timezoneConfirmedAt,
     teamsReady: namedAssignedUsers > 0 && eligibleTeams.length > 0,
     activityReady: totalEvents > 0,
-    mappingReady: totalEvents > 0 && mappingCoveragePct >= 40,
-    reportingReady: readyTeamIds.length > 0,
+    mappingReady: totalEvents > 0 && mappingCoveragePct >= 80,
+    contributorCoverageReady,
+    historyReady,
+    volumeReady,
+    reportingReady:
+      readyTeamIds.length > 0 && contributorCoverageReady && historyReady && volumeReady,
   };
   readiness.setupComplete =
     readiness.permissionsReady &&
@@ -317,6 +353,8 @@ export async function getOrganizationReadiness(orgOrId) {
       totalEvents,
       mappedEvents,
       mappingCoveragePct,
+      contributorCoveragePct,
+      historyDays,
       firstEventAt: firstEventAt || null,
       lastEventAt: lastEventAt || null,
     },

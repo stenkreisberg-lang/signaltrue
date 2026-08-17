@@ -68,18 +68,27 @@ describe('canonical onboarding readiness', () => {
     aggregate.mockResolvedValue([
       {
         _id: 'microsoft-outlook',
-        events: 20,
+        events: 60,
         mappedUserIds: Array.from({ length: 5 }, (_, index) => `507f1f77bcf86cd79943902${index}`),
         firstEventAt: new Date('2026-07-01T08:00:00Z'),
         lastEventAt: new Date('2026-07-31T08:00:00Z'),
       },
     ]);
     countDocuments.mockReset();
-    countDocuments.mockResolvedValueOnce(20).mockResolvedValueOnce(20);
-    distinct.mockResolvedValue([teamId]);
+    countDocuments.mockResolvedValueOnce(60).mockResolvedValueOnce(60);
+    distinct
+      .mockResolvedValueOnce(
+        Array.from({ length: 5 }, (_, index) => `507f1f77bcf86cd79943902${index}`)
+      )
+      .mockResolvedValueOnce([teamId]);
 
     const setup = await getOrganizationReadiness(
-      organization({ microsoft: { applicationConsentGrantedAt: new Date() } })
+      organization({
+        microsoft: {
+          applicationConsentGrantedAt: new Date(),
+          applicationConsentVerifiedAt: new Date(),
+        },
+      })
     );
 
     expect(setup.readiness.permissionsReady).toBe(true);
@@ -89,5 +98,36 @@ describe('canonical onboarding readiness', () => {
     expect(setup.sources.find((source) => source.type === 'microsoft-outlook').status).toBe(
       'measuring'
     );
+  });
+
+  test('does not call sparse contributor coverage report-ready', async () => {
+    aggregate.mockResolvedValue([
+      {
+        _id: 'microsoft-outlook',
+        events: 60,
+        mappedUserIds: ['507f1f77bcf86cd799439020'],
+        firstEventAt: new Date('2026-07-01T08:00:00Z'),
+        lastEventAt: new Date('2026-07-31T08:00:00Z'),
+      },
+    ]);
+    countDocuments.mockReset();
+    countDocuments.mockResolvedValueOnce(60).mockResolvedValueOnce(60);
+    distinct.mockReset();
+    distinct.mockResolvedValueOnce(['507f1f77bcf86cd799439020']).mockResolvedValueOnce([teamId]);
+
+    const setup = await getOrganizationReadiness(
+      organization({
+        microsoft: {
+          applicationConsentGrantedAt: new Date(),
+          applicationConsentVerifiedAt: new Date(),
+        },
+      })
+    );
+
+    expect(setup.activity.contributorCoveragePct).toBe(20);
+    expect(setup.readiness.contributorCoverageReady).toBe(false);
+    expect(setup.readiness.reportingReady).toBe(false);
+    expect(setup.readiness.setupComplete).toBe(false);
+    expect(setup.readiness.nextStep).toBe('build_team_coverage');
   });
 });

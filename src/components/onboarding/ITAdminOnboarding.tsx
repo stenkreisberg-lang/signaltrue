@@ -46,6 +46,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
   const [status, setStatus] = useState(initialStatus);
   const [integrations, setIntegrations] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [verifyingMicrosoft, setVerifyingMicrosoft] = useState(false);
+  const [microsoftVerificationError, setMicrosoftVerificationError] = useState('');
 
   useEffect(() => {
     loadIntegrationStatus();
@@ -90,6 +92,21 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
     }
   };
 
+  const verifyMicrosoftCompanyAccess = async () => {
+    setVerifyingMicrosoft(true);
+    setMicrosoftVerificationError('');
+    try {
+      await api.post('/integrations/microsoft/admin-consent/verify');
+      await loadIntegrationStatus();
+    } catch (error: any) {
+      setMicrosoftVerificationError(
+        error.response?.data?.message || 'Microsoft could not verify company-wide access.'
+      );
+    } finally {
+      setVerifyingMicrosoft(false);
+    }
+  };
+
   const { chatConnected, calendarConnected, connectionsAuthorized } = status;
   const authorizationComplete = Boolean(connectionsAuthorized);
   const progress = authorizationComplete
@@ -105,8 +122,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
   // Administrator — surface that step until it has been completed.
   const msConnected = !!(integrations?.connections?.teams || integrations?.connections?.outlook);
   const msConsentGranted = !!(
-    integrations?.details?.teams?.applicationConsentGrantedAt ||
-    integrations?.details?.outlook?.applicationConsentGrantedAt
+    integrations?.details?.teams?.applicationConsentVerifiedAt ||
+    integrations?.details?.outlook?.applicationConsentVerifiedAt
   );
   const needsMsConsent =
     msConnected && !msConsentGranted && !!integrations?.oauth?.microsoftAdminConsent;
@@ -121,6 +138,16 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
       <button style={styles.consentButton} onClick={() => openOAuth('microsoftAdminConsent')}>
         Grant Company-Wide Access
       </button>
+      <button
+        style={{ ...styles.consentButton, marginLeft: 8 }}
+        onClick={verifyMicrosoftCompanyAccess}
+        disabled={verifyingMicrosoft}
+      >
+        {verifyingMicrosoft ? 'Verifying…' : 'Already granted? Verify access'}
+      </button>
+      {microsoftVerificationError && (
+        <p style={{ ...styles.helpText, color: '#B91C1C' }}>{microsoftVerificationError}</p>
+      )}
     </div>
   ) : null;
 

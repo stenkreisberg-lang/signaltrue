@@ -269,7 +269,15 @@ class OrgIntegrationAdapter {
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
-    const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
+    const [totalUsers, organization] = await Promise.all([
+      User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } }),
+      Organization.findById(orgId)
+        .select('integrations.microsoft.applicationConsentVerifiedAt')
+        .lean(),
+    ]);
+    const companyWideVerified = Boolean(
+      organization?.integrations?.microsoft?.applicationConsentVerifiedAt
+    );
     const mappedUsers = new Set(
       workEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
     ).size;
@@ -478,13 +486,15 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       const hasMappedHistory = mappedUserCount > 0;
 
       const setPayload = {
-        status: hasMappedHistory ? 'connected' : 'needs_admin',
+        status: hasMappedHistory || companyWideVerified ? 'connected' : 'needs_admin',
         statusMessage:
           sourceEvents.length === 0 && hasMappedHistory
             ? 'Microsoft metadata is connected; no new events were found in the latest sync'
             : hasMappedHistory
               ? 'Microsoft metadata is syncing and mapped to internal users'
-              : 'Microsoft metadata is syncing, but events are not mapped to internal users',
+              : companyWideVerified
+                ? 'Company-wide Microsoft access is verified; waiting for mapped activity'
+                : 'Microsoft metadata is syncing, but events are not mapped to internal users',
         statusUpdatedAt: new Date(),
         connectedAt: new Date(),
         'sync.lastSyncAt': new Date(),
@@ -493,7 +503,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         'coverage.totalUsers': totalUsers,
         'coverage.mappedUsers': mappedUserCount,
         'coverage.lastCoverageUpdatedAt': new Date(),
-        measurementScope: 'metadata only',
+        measurementScope: companyWideVerified
+          ? 'organization-wide Microsoft metadata'
+          : 'metadata only',
       };
       if (hasMappedHistory) setPayload['sync.lastSuccessfulSyncAt'] = new Date();
       if (sourceEventCount === 0 && sourceEvents.length === 0) {
@@ -698,7 +710,12 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
         const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
         if (appToken) {
-          const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until);
+          const tenantMessages = await this.fetchTenantWideTeamsMessages(
+            appToken,
+            since,
+            until,
+            orgId
+          );
           console.log(
             `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel/chat messages`
           );
@@ -715,11 +732,32 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     return this.fetchDelegatedTeamsMessages(delegatedToken, since, until);
   }
 
-  async fetchTenantWideTeamsMessages(appToken, since, until) {
-    const teams = await fetchGraphCollection(
-      'https://graph.microsoft.com/v1.0/teams?$top=100',
-      appToken
-    );
+  async fetchTenantWideTeamsMessages(appToken, since, until, orgId) {
+    const orgUsers = await User.find({
+      orgId,
+      'externalIds.microsoftUserId': { $exists: true, $ne: null },
+      accountStatus: { $ne: 'inactive' },
+    })
+      .select('externalIds.microsoftUserId')
+      .lean();
+    const teamById = new Map();
+    for (const user of orgUsers) {
+      const microsoftUserId = user.externalIds?.microsoftUserId;
+      if (!microsoftUserId) continue;
+      try {
+        const joinedTeams = await fetchGraphCollection(
+          `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(microsoftUserId)}/joinedTeams?$top=100&$select=id,displayName`,
+          appToken,
+          { maxPages: 10 }
+        );
+        for (const team of joinedTeams) teamById.set(team.id, team);
+      } catch (error) {
+        console.warn(
+          `[Microsoft][AppOnly] Could not list joined teams for one mapped user: ${error.message}`
+        );
+      }
+    }
+    const teams = [...teamById.values()];
     const allMessages = [];
     let successfulTeamReads = 0;
     const filter = encodeURIComponent(

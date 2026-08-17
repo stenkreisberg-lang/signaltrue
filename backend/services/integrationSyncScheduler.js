@@ -16,6 +16,7 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import Organization from '../models/organizationModel.js';
+import { verifyMicrosoftCompanyWideAccess } from './microsoftAdminConsentService.js';
 
 // ============================================================
 // SYNC SCHEDULER
@@ -72,6 +73,80 @@ export function scheduleIntegrationJobs() {
   });
 
   console.log('✅ Integration jobs scheduled');
+
+  setTimeout(() => {
+    reconcilePendingMicrosoftCompanyAccess().catch((error) =>
+      console.error('[Microsoft Consent] Startup reconciliation failed:', error.message)
+    );
+  }, 5_000);
+}
+
+export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
+  const startedAt = new Date();
+  const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+  triggerImmediateSync(orgId, { since, until: new Date() })
+    .then(async (results) => {
+      const microsoft = results.find((result) => result.source === 'microsoft');
+      const success = Boolean(microsoft?.success);
+      const completedAt = new Date();
+      await IntegrationConnection.updateMany(
+        { orgId, integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] } },
+        {
+          $set: {
+            'sync.backfillComplete': success,
+            'sync.backfillCompletedAt': success ? completedAt : null,
+            'sync.backfillProgress': success ? 100 : 0,
+            'sync.lastSyncMessage': success
+              ? `${daysBack}-day company-wide backfill completed`
+              : String(microsoft?.error || 'Microsoft backfill did not complete').slice(0, 500),
+          },
+        }
+      );
+    })
+    .catch(async (error) => {
+      await IntegrationConnection.updateMany(
+        { orgId, integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] } },
+        {
+          $set: {
+            'sync.backfillComplete': false,
+            'sync.backfillProgress': 0,
+            'sync.lastSyncStatus': 'failed',
+            'sync.lastSyncMessage': String(error.message).slice(0, 500),
+          },
+        }
+      ).catch(() => {});
+      console.error('Microsoft company-wide backfill failed:', error.message);
+    });
+  return { startedAt, daysBack };
+}
+
+export async function reconcilePendingMicrosoftCompanyAccess() {
+  const retryBefore = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const organizations = await Organization.find({
+    'integrations.microsoft.accessToken': { $exists: true, $ne: null },
+    'integrations.microsoft.tenantId': { $exists: true, $ne: null },
+    'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false },
+    $or: [
+      { 'integrations.microsoft.applicationConsentLastCheckedAt': { $exists: false } },
+      { 'integrations.microsoft.applicationConsentLastCheckedAt': { $lte: retryBefore } },
+    ],
+  })
+    .select('_id name')
+    .lean();
+
+  for (const organization of organizations) {
+    try {
+      await verifyMicrosoftCompanyWideAccess(organization._id);
+      startMicrosoftCompanyBackfill(organization._id, 60);
+      console.log(`[Microsoft Consent] Verified company-wide access for ${organization.name}`);
+    } catch (error) {
+      console.warn(
+        `[Microsoft Consent] Company-wide access is not verified for ${organization.name}: ${error.message}`
+      );
+    }
+  }
+
+  return { checked: organizations.length };
 }
 
 /**
@@ -333,7 +408,10 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
 
   const connections = await IntegrationConnection.find({
     orgId,
-    status: 'active',
+    status: 'connected',
+    integrationType: {
+      $nin: ['slack', 'microsoft-outlook', 'microsoft-teams', 'google-calendar', 'google-chat'],
+    },
   });
 
   const results = [];
@@ -355,6 +433,9 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
       });
     }
   }
+
+  const coreResults = await syncCoreIntegrations(orgId, since, until);
+  results.push(...coreResults);
 
   // Compute metrics for the full range
   console.log(`[Full Backfill] Computing metrics for ${daysBack} days...`);
@@ -388,7 +469,7 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
 async function getActiveOrgs() {
   // Get orgs with IntegrationConnection entries
   const connectionOrgs = await IntegrationConnection.find({
-    status: 'active',
+    status: 'connected',
   }).distinct('orgId');
 
   // Get orgs with core integrations (Slack, Microsoft, Google) stored directly
@@ -416,7 +497,7 @@ async function getActiveOrgs() {
 export async function getSyncStatus(orgId) {
   const connections = await IntegrationConnection.find({
     orgId,
-    status: 'active',
+    status: 'connected',
   });
 
   return connections.map((conn) => ({

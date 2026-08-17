@@ -36,6 +36,7 @@ function Dashboard() {
   const [confirmProvider, setConfirmProvider] = useState(null);
   const [showImmediateInsights, setShowImmediateInsights] = useState(false);
   const [connectedProvider, setConnectedProvider] = useState(null);
+  const [verifyingMicrosoft, setVerifyingMicrosoft] = useState(false);
 
   const loadIntegrationStatus = useCallback(async () => {
     try {
@@ -160,6 +161,28 @@ function Dashboard() {
       window.location.href = url;
     } else {
       setShowHelp(provider);
+    }
+  };
+
+  const verifyMicrosoftCompanyAccess = async () => {
+    setVerifyingMicrosoft(true);
+    try {
+      await api.post('/integrations/microsoft/admin-consent/verify');
+      setToast({
+        type: 'success',
+        message: 'Company-wide Microsoft access verified. A 60-day backfill has started.',
+      });
+      await loadIntegrationStatus();
+    } catch (verificationError) {
+      setToast({
+        type: 'error',
+        message:
+          verificationError.response?.data?.message ||
+          'Microsoft could not verify company-wide access.',
+      });
+    } finally {
+      setVerifyingMicrosoft(false);
+      setTimeout(() => setToast(null), 8000);
     }
   };
 
@@ -636,15 +659,16 @@ function Dashboard() {
               <div style={styles.cardIcon}>🏢</div>
               <h3 style={styles.cardTitle}>
                 Company-Wide Microsoft Access{' '}
-                {(integrations?.details?.outlook?.applicationConsentGrantedAt ||
-                  integrations?.details?.teams?.applicationConsentGrantedAt) && (
+                {(integrations?.details?.outlook?.applicationConsentVerifiedAt ||
+                  integrations?.details?.teams?.applicationConsentVerifiedAt) && (
                   <span style={styles.badgeConnected}>Granted</span>
                 )}
               </h3>
-              {integrations?.details?.outlook?.applicationConsentGrantedAt ||
-              integrations?.details?.teams?.applicationConsentGrantedAt ? (
+              {integrations?.details?.outlook?.applicationConsentVerifiedAt ||
+              integrations?.details?.teams?.applicationConsentVerifiedAt ? (
                 <p style={styles.cardText}>
-                  SignalTrue analyzes calendars and Teams activity across your whole organization.
+                  Microsoft application permissions were tested successfully. The coverage panel
+                  shows how much company data has completed backfill.
                 </p>
               ) : (
                 <>
@@ -659,6 +683,20 @@ function Dashboard() {
                   >
                     Grant Company-Wide Access
                   </button>
+                  <button
+                    style={{ ...styles.cardButton, marginTop: 8, background: '#E0E7FF' }}
+                    onClick={verifyMicrosoftCompanyAccess}
+                    disabled={verifyingMicrosoft}
+                  >
+                    {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Already granted? Verify'}
+                  </button>
+                  {(integrations?.details?.outlook?.applicationConsentLastError ||
+                    integrations?.details?.teams?.applicationConsentLastError) && (
+                    <p style={{ ...styles.cardText, marginTop: 8, color: '#B91C1C' }}>
+                      {integrations?.details?.outlook?.applicationConsentLastError ||
+                        integrations?.details?.teams?.applicationConsentLastError}
+                    </p>
+                  )}
                 </>
               )}
             </div>

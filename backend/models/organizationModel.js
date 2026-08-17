@@ -113,6 +113,10 @@ const organizationSchema = new mongoose.Schema(
         teamsCount: Number,
         tenantId: String,
         applicationConsentGrantedAt: Date,
+        applicationConsentVerifiedAt: Date,
+        applicationConsentLastCheckedAt: Date,
+        applicationConsentLastError: String,
+        applicationConsentRoles: [String],
         applicationConsentTenantId: String,
         lastPulledAt: Date,
         lastEmployeeSync: Date, // Track when employees were last synced
