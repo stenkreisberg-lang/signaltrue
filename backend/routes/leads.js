@@ -384,15 +384,14 @@ router.post('/', async (req, res) => {
       internalNotificationError = new Error('RESEND_API_KEY is not configured');
     }
 
-    if (source === 'Website demo request' && !lead.internalNotificationSent) {
-      return res.status(502).json({
-        success: false,
-        message:
-          'Your request was saved, but the notification email could not be sent. Please try again.',
-        leadId: lead._id,
-        notificationEmail,
-        error: internalNotificationError?.message,
-      });
+    // The lead is captured once it is stored. A failed notification email is an
+    // internal delivery problem, so it is logged loudly for follow-up but never
+    // shown to the visitor as a failed submission — asking them to submit again
+    // loses the lead we already hold.
+    if (!lead.internalNotificationSent) {
+      console.error(
+        `🚨 LEAD ALERT NOT DELIVERED — follow up manually. leadId=${lead._id} email=${email} source=${source} reason=${internalNotificationError?.message || 'unknown'}`
+      );
     }
 
     res.status(201).json({

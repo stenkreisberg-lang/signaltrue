@@ -583,7 +583,7 @@
               return {};
             });
 
-            if (!response.ok || !result.success || !result.internalNotificationSent) {
+            if (!response.ok || !result.success) {
               errorType = 'http_' + response.status;
               throw new Error(result.message || 'The request could not be sent.');
             }
