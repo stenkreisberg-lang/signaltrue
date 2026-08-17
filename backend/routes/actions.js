@@ -107,6 +107,25 @@ router.post('/', authenticateToken, async (req, res) => {
     actionData.orgId = signal.orgId;
     actionData.teamId = signal.teamId;
 
+    // Adopting one of the signal's recommendations only needs its index: the
+    // wording, expected effect, effort and timeframe come from the signal, so
+    // logging an action is one click rather than a form.
+    if (Number.isInteger(actionData.recommendedActionIndex)) {
+      const recommended = signal.recommendedActions?.[actionData.recommendedActionIndex];
+      if (!recommended) {
+        return res.status(400).json({ message: 'Recommended action not found on this signal' });
+      }
+      actionData.action = actionData.action || recommended.action;
+      actionData.expectedEffect = actionData.expectedEffect || recommended.expectedEffect;
+      actionData.effort = actionData.effort || recommended.effort;
+      actionData.timeframe = actionData.timeframe || recommended.timeframe;
+      delete actionData.recommendedActionIndex;
+    }
+
+    // Whoever logs the action owns it unless they assign it to someone else.
+    if (!actionData.owner) actionData.owner = req.user.userId;
+    if (!actionData.assignedBy) actionData.assignedBy = req.user.userId;
+
     // Capture pre-action baseline if not provided
     if (!actionData.preActionBaseline && signal.deviation) {
       actionData.preActionBaseline = {

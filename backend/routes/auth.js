@@ -344,6 +344,19 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(401).json({ message: 'Incorrect password. Please try again.' });
     }
 
+    // Record the sign-in so return visits are measurable. Written directly so
+    // the password-hashing pre-save hook is not involved, and kept
+    // non-blocking: a failed stats write must never block a valid sign-in.
+    const signedInAt = new Date();
+    const previousLoginAt = user.lastLoginAt || null;
+    User.updateOne(
+      { _id: user._id },
+      {
+        $set: { lastLoginAt: signedInAt, previousLoginAt },
+        $inc: { loginCount: 1 },
+      }
+    ).catch((error) => console.error('[Auth] Failed to record sign-in:', error.message));
+
     const token = jwt.sign(
       {
         userId: user._id,

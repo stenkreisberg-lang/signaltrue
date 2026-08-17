@@ -154,6 +154,21 @@ const userSchema = new mongoose.Schema(
       enum: ['free', 'detection', 'impact_proof'],
       default: 'free',
     },
+
+    // Sign-in activity. Directory-synced employees never sign in, so these stay
+    // unset for them and only describe people who actually use the product.
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+    previousLoginAt: {
+      type: Date,
+      default: null,
+    },
+    loginCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

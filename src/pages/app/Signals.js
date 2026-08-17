@@ -78,6 +78,10 @@ const Signals = () => {
   const [selectedSignal, setSelectedSignal] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [familyScope, setFamilyScope] = useState('org');
+  // Which recommendation is being logged, and the result of the last attempt.
+  const [loggingActionIndex, setLoggingActionIndex] = useState(null);
+  const [loggedActionIndexes, setLoggedActionIndexes] = useState([]);
+  const [logActionError, setLogActionError] = useState(null);
   const [user, setUser] = useState(null);
   const [orgId, setOrgId] = useState(null);
   const [teamId, setTeamId] = useState(null);
@@ -153,9 +157,32 @@ const Signals = () => {
 
       const data = await response.json();
       setSelectedSignal(data.signal);
+      setLoggedActionIndexes([]);
+      setLogActionError(null);
       setShowDetail(true);
     } catch (err) {
       console.error('Error fetching signal details:', err);
+    }
+  };
+
+  // Adopting a recommendation records the action against this signal, which is
+  // what later lets the brief report whether the change moved the metric.
+  const handleLogAction = async (index) => {
+    if (!selectedSignal) return;
+    setLoggingActionIndex(index);
+    setLogActionError(null);
+    try {
+      await api.post('/actions', {
+        signalId: selectedSignal._id,
+        recommendedActionIndex: index,
+        status: 'In Progress',
+      });
+      setLoggedActionIndexes((previous) => [...previous, index]);
+    } catch (err) {
+      console.error('Error logging action:', err);
+      setLogActionError('That action could not be logged. Please try again.');
+    } finally {
+      setLoggingActionIndex(null);
     }
   };
 
@@ -619,9 +646,28 @@ const Signals = () => {
                           Inaction cost: {action.inactionCost}
                         </div>
                       )}
+                      {!action.isInactionOption &&
+                        (loggedActionIndexes.includes(idx) ? (
+                          <div className="mt-3 text-sm font-medium text-emerald-600">
+                            Logged — this team's metrics will be compared against today's baseline.
+                          </div>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            className="mt-3"
+                            disabled={loggingActionIndex !== null}
+                            onClick={() => handleLogAction(idx)}
+                          >
+                            {loggingActionIndex === idx ? 'Logging…' : 'Log this action'}
+                          </Button>
+                        ))}
                     </div>
                   ))}
                 </div>
+                {logActionError && (
+                  <div className="mt-3 text-sm text-rose-600">{logActionError}</div>
+                )}
               </div>
             )}
           </div>

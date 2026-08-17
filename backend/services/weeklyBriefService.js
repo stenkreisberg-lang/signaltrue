@@ -2002,6 +2002,10 @@ export async function generateWeeklyBrief(orgId) {
     html += `</div>`;
   }
 
+  // Whether this brief proposed anything to act on, which decides if inviting
+  // the reader to log an action would lead somewhere.
+  let briefProposedAction = false;
+
   // If AI returned role-based recommendations, use those
   if (
     dataReadinessStatus === 'Ready' &&
@@ -2010,6 +2014,7 @@ export async function generateWeeklyBrief(orgId) {
       aiAnalysis.managerActions?.length ||
       aiAnalysis.leadershipActions?.length)
   ) {
+    briefProposedAction = true;
     const primaryAction =
       aiAnalysis.leadershipActions?.[0] ||
       aiAnalysis.hrActions?.[0] ||
@@ -2036,6 +2041,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `</div>`;
   } else if (recommendations.length > 0) {
     // Fallback: use rule-based recommendations
+    briefProposedAction = true;
     html += `<p style="${S.pSmall}">Based on this week's data patterns.</p>`;
     recommendations.slice(0, 1).forEach((rec, i) => {
       html += `<div style="${S.recBox}">`;
@@ -2046,9 +2052,15 @@ export async function generateWeeklyBrief(orgId) {
     html += `<p style="${S.p}">No specific actions needed this week. Continue monitoring.</p>`;
   }
 
-  // CTA button
+  // CTA buttons. Reading the brief is not the outcome that matters — recording
+  // what was decided is, because only a logged action can be measured against
+  // this week's baseline in a later brief.
+  const appBase = process.env.FRONTEND_URL || 'https://app.signaltrue.ai';
   html += `<div style="text-align:center; margin-top:16px;">`;
-  html += `<a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/latest-brief" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Explore this brief</a>`;
+  html += `<a href="${appBase}/app/latest-brief" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Explore this brief</a>`;
+  if (briefProposedAction) {
+    html += `<a href="${appBase}/app/signals?status=Open" style="display:inline-block;margin-left:10px;background:#ffffff;color:#0f172a;border:1px solid #0f172a;padding:10px 26px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Log an action</a>`;
+  }
   html += `</div>`;
   html += `</div>`;
 
