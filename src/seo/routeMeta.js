@@ -110,6 +110,95 @@ const ROUTE_META = {
     description: 'Terms of service for SignalTrue work-pattern analytics.',
     summary: 'Terms of service for SignalTrue.',
   },
+
+  // Signal pages and the older SEO landing pages. These carry most of the
+  // organic search surface, and without an entry here every one of them serves
+  // the same shell title — which is what search engines had indexed for several
+  // of them.
+  '/signals/meeting-overload': {
+    title: 'Meeting Load Signal | SignalTrue',
+    description:
+      'See when meeting hours or recurring coordination demand rise persistently above a team’s normal pattern, and what may be worth investigating.',
+    summary:
+      'Meeting load shows whether meeting demand is increasing materially relative to the team’s normal pattern. High meeting load does not by itself mean a team has excessive job demands — it is a starting point for investigating delivery expectations, recurring meetings, dependencies and staffing.',
+  },
+  '/signals/recovery-time-collapse': {
+    title: 'Recovery Time Signal | SignalTrue',
+    description:
+      'See when after-hours work and compressed recovery windows become a sustained, team-level pattern rather than an occasional peak.',
+    summary:
+      'Recovery time shows whether the gaps between demands are shrinking and whether pressure periods are extending. A sustained change may warrant investigation into workload, deadlines and staffing.',
+  },
+  '/signals/focus-fragmentation': {
+    title: 'Focus Fragmentation Signal | SignalTrue',
+    description:
+      'See where interruptions and meeting patterns are progressively crowding out the uninterrupted time teams need for planned work.',
+    summary:
+      'Focus fragmentation shows whether uninterrupted working time is being crowded out by meetings and interruptions. A sustained decline provides useful context when investigating workload and work design.',
+  },
+  '/signals/after-hours-drift': {
+    title: 'After-Hours Activity Signal | SignalTrue',
+    description:
+      'See whether work outside normal hours is occasional or becoming a persistent team-level pattern.',
+    summary:
+      'After-hours activity shows whether work is moving into evenings and weekends and whether that pattern persists. It may warrant investigation into workload, deadlines, staffing, time-zone expectations or recovery opportunities.',
+  },
+  '/signals/responsiveness-pressure': {
+    title: 'Response Pressure Signal | SignalTrue',
+    description:
+      'See when response expectations are compressing and interrupt-driven work is displacing planned work.',
+    summary:
+      'Response pressure shows whether expected response intervals are shortening and urgent communication is rising, which can indicate that coordination requirements have changed.',
+  },
+  '/signals/coordination-overhead': {
+    title: 'Coordination Load Signal | SignalTrue',
+    description:
+      'See when teams spend more of their time aligning work than moving decisions forward.',
+    summary:
+      'Coordination load shows whether handoffs, alignment loops and decision paths are growing. Persistent increases may warrant investigation into dependencies, decision processes and team structure.',
+  },
+  '/signals/manager-load': {
+    title: 'Manager Coordination Load Signal | SignalTrue',
+    description:
+      'See where manager coordination patterns are changing — meeting density, decision demand and available focus time.',
+    summary:
+      'Manager coordination load shows team-level changes in manager meeting density, coordination demand and focus-time availability. Persistent increases may warrant investigation into management capacity, spans of control, decision processes or team dependencies.',
+  },
+  '/burnout-early-warning-system': {
+    title: 'Psychosocial Risk Early Evidence for Teams | SignalTrue',
+    description:
+      'Review work conditions between surveys with continuous team-level evidence about meeting load, focus time, after-hours activity and manager coordination.',
+    summary:
+      'Continuous team-level evidence about working conditions between psychosocial risk assessments and surveys. SignalTrue shows observable work-pattern change; it does not diagnose burnout or determine that a psychosocial hazard exists.',
+  },
+  '/employee-engagement-leading-indicators': {
+    title: 'Worker Consultation Indicators for Psychosocial Risk | SignalTrue',
+    description:
+      'Use work-pattern evidence to focus worker consultation on the teams where working conditions have measurably changed.',
+    summary:
+      'Work-pattern data cannot explain why a team is experiencing a change — workers can. SignalTrue helps identify where patterns have changed enough to warrant a closer conversation, and is used alongside worker consultation rather than instead of it.',
+  },
+  '/drift-diagnostic': {
+    title: 'Work-Pattern Diagnostic | SignalTrue',
+    description:
+      'A short diagnostic to see which work-pattern changes are worth investigating in your organisation.',
+    summary:
+      'A short diagnostic covering meeting load, focus time, after-hours activity and manager coordination, to identify which work-pattern changes may be worth investigating.',
+  },
+  '/client-success': {
+    title: 'How a SignalTrue Pilot Works | SignalTrue',
+    description:
+      'How a pilot runs: connect work-pattern metadata, establish baselines, review the first findings and check whether action changed the work.',
+    summary:
+      'How a SignalTrue pilot runs, from connecting work-pattern metadata and establishing team baselines through to reviewing findings and checking whether an intervention changed the observable work pattern.',
+  },
+  '/blog': {
+    title: 'Work Design & Psychosocial Risk Articles | SignalTrue',
+    description:
+      'Articles on job demands, work design, meeting load, focus time, after-hours work and reviewing whether workload interventions are working.',
+    summary:
+      'Articles on job demands and work design, what happens between psychosocial risk assessments, and using operational evidence alongside worker consultation.',
+  },
 };
 
 const DEFAULT_META = ROUTE_META['/'];
