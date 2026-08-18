@@ -119,7 +119,7 @@ const ManagerCoaching: React.FC<Props> = ({ teamId, managerId }) => {
         type: 'warning',
         title: 'After-hours activity elevated',
         message:
-          'Your team has been 34% more active after 6pm compared to baseline. This sustained pattern over 3 weeks may lead to burnout. Consider discussing workload in your next team meeting.',
+          'Your team has been 34% more active after 6pm compared to baseline, and the pattern has persisted for 3 weeks. Worth discussing workload, deadlines and staffing with the team to understand what is driving it.',
         dismissed: false,
       },
       {

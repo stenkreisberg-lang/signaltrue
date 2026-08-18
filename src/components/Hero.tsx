@@ -4,14 +4,18 @@ import DriftAlertCard from './DriftAlertCard';
 import { trackEvent } from '../lib/analytics';
 
 /*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
+ * CATEGORY: WORK-PATTERN EARLY WARNING
  *
- * Behavioral Drift Intelligence detects early systemic strain in organizations
- * by analyzing behavioral metadata from work systems, revealing overload,
- * fragmentation, and execution risk before burnout, disengagement, or attrition occur.
+ * SignalTrue analyses work-pattern metadata from work systems to show persistent
+ * team-level change in meeting load, focus availability, after-hours activity and
+ * coordination demand.
  *
- * Enemy: Lagging people analytics (surveys, reviews, exit interviews, wellbeing scores)
- * Promised Land: Leaders see early truth, act structurally, preserve execution capacity
+ * These are changes in the system of work that may warrant investigation. They do
+ * not establish that a psychosocial hazard exists, and they are not a prediction of
+ * burnout, disengagement or attrition — copy on this page must not imply otherwise.
+ *
+ * Complements: worker consultation and psychosocial risk assessment, which provide
+ * the context that metadata cannot.
  */
 
 const Hero = () => {

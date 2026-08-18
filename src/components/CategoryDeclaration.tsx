@@ -55,9 +55,10 @@ const CategoryDeclaration = () => {
               <div className="w-12 h-12 rounded-xl bg-[#EFF6FF] mx-auto mb-4 flex items-center justify-center">
                 <Eye className="w-6 h-6 text-[#1D4ED8]" />
               </div>
-              <h3 className="font-display font-semibold text-[#0F172A] mb-2">Early detection</h3>
+              <h3 className="font-display font-semibold text-[#0F172A] mb-2">Early visibility</h3>
               <p className="text-sm text-[#475569]">
-                See warning signs before they become burnout, missed execution, or resignations.
+                See persistent changes in how a team works while there is still time to investigate
+                the cause.
               </p>
             </div>
 

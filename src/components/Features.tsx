@@ -8,42 +8,48 @@ import { AlertTriangle, Clock, Hourglass, Zap, Users2, ArrowDownRight } from 'lu
  * Avoid tool-specific wording (Slack-only bias).
  */
 
+/*
+ * "Leads to" states what else changes in the observable working pattern, not
+ * what it does to people. Naming exhaustion, resentment or quiet quitting as
+ * consequences asserts a psychological outcome from calendar metadata, which
+ * this product cannot establish and does not claim.
+ */
 const failureModes = [
   {
     icon: Clock,
-    title: 'Meeting overload',
+    title: 'Meeting load',
     description: 'When decisions turn into recurring meetings instead of resolved outcomes.',
-    leadsTo: 'Slower execution, hidden burnout, decision fatigue',
+    leadsTo: 'Less time available for planned work, rising coordination demand',
   },
   {
     icon: Hourglass,
     title: 'Recovery erosion',
     description: 'When buffer time between demands disappears from calendars and workflows.',
-    leadsTo: 'Accumulated exhaustion, declining quality, quiet quitting',
+    leadsTo: 'Fewer gaps between demands, activity moving outside normal hours',
   },
   {
     icon: AlertTriangle,
     title: 'Coordination strain',
     description: 'When teams spend more time aligning than delivering actual work.',
-    leadsTo: 'Execution bottlenecks, frustrated high performers, attrition risk',
+    leadsTo: 'Longer decision paths, more cross-team dependencies',
   },
   {
     icon: Zap,
     title: 'Response pressure',
     description: 'When expected response times compress beyond sustainable levels.',
-    leadsTo: 'Constant context-switching, shallow work, missed signals',
+    leadsTo: 'Shorter response intervals, more frequent context switching',
   },
   {
     icon: Users2,
     title: 'Load imbalance',
     description: 'When some team members absorb disproportionate coordination burden.',
-    leadsTo: 'Single points of failure, resentment, sudden departures',
+    leadsTo: 'Coordination concentrated in few people, single points of failure',
   },
   {
     icon: ArrowDownRight,
     title: 'Execution drag',
     description: 'When work velocity slows despite stable or increasing effort.',
-    leadsTo: 'Deadline pressure, compensating behaviors, systemic decline',
+    leadsTo: 'Deadline compression, more rework, slower delivery',
   },
 ];
 
@@ -60,8 +66,8 @@ const Features = () => {
             Failure modes of modern work
           </h2>
           <p className="text-muted-foreground">
-            These patterns often precede burnout, attrition, and execution breakdown. SignalTrue
-            detects them at system level before they become crises.
+            Each of these is a change in how work is organised. SignalTrue shows when one persists
+            at team level, so the cause can be investigated while it is still easy to address.
           </p>
         </div>
 

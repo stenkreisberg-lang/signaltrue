@@ -829,7 +829,7 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
   const alerts: string[] = [];
   if (current.metrics.afterHoursActivity > 10) {
     alerts.push(
-      `After-hours activity is high (${current.metrics.afterHoursActivity} events) - potential burnout risk`
+      `After-hours activity is elevated (${current.metrics.afterHoursActivity} events) - may warrant investigation`
     );
   }
   if (current.metrics.meetingHours > 16) {
