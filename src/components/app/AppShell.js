@@ -149,15 +149,20 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             {secondaryLinks.length > 0 && (
               <details className="app-nav-secondary" open={isOnSecondaryPage}>
                 <summary className="app-nav-group app-nav-summary">Settings</summary>
-                {secondaryLinks.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
+                {/* A details element slots everything after the summary into a
+                    single anonymous box, so flex on the details itself does not
+                    reach these links. They need their own container. */}
+                <div className="app-nav-secondary-links">
+                  {secondaryLinks.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+                </div>
               </details>
             )}
           </nav>

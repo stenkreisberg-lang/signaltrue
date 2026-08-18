@@ -601,11 +601,19 @@
   /* Configuration is visited during setup and rarely afterwards, so it is
      folded away by default rather than competing with the week's work. */
   .app-nav-secondary {
-    display: flex;
-    flex-direction: column;
     margin-top: 14px;
     border-top: 1px solid #e2e8f0;
     padding-top: 6px;
+  }
+
+  /* The links need their own stacking context: a details element slots its
+     content into one anonymous box, so flex on the details does not reach
+     them and they would lay out inline. */
+  .app-nav-secondary-links {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
 
   .app-nav-summary {
@@ -1379,6 +1387,26 @@
     .app-nav-link.is-active {
       box-shadow: inset 0 -3px 0 #6366f1;
       background: transparent;
+    }
+
+    /* The sidebar becomes a horizontal strip here, so settings joins the row
+       rather than hanging below it. */
+    .app-nav-secondary {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-top: 0;
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .app-nav-secondary-links {
+      flex-direction: row;
+      gap: 18px;
+    }
+
+    .app-nav-summary {
+      margin: 0;
     }
 
     .app-account {
