@@ -33,6 +33,7 @@ const footerLinks = {
     { label: 'No individual scores', href: '/trust' },
   ],
   Guides: [
+    { label: 'Australia: psychosocial risk', href: '/australia-psychosocial-risk' },
     { label: 'Psychosocial risk indicators', href: '/burnout-early-warning-system' },
     { label: 'Worker consultation indicators', href: '/employee-engagement-leading-indicators' },
     { label: 'Manager capacity', href: '/signals/manager-load' },

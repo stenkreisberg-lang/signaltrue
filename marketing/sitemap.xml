@@ -98,6 +98,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.signaltrue.ai/australia-psychosocial-risk</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://www.signaltrue.ai/about</loc>
     <lastmod>2026-08-16</lastmod>
     <changefreq>monthly</changefreq>
@@ -145,16 +151,66 @@
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
-  <url>
-    <loc>https://www.signaltrue.ai/ai-info-page</loc>
-    <lastmod>2026-08-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
 
   <!-- Published blog posts -->
   <url>
+    <loc>https://www.signaltrue.ai/blog/cooperly-ai-alternatives-8</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/healthy-workplace-reduces-burnout-risk</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/hr-guide-employee-wellbeing-behavioral-intelligence</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/hr-workload-management-guide-prevent-burnout-early</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/identify-workplace-fatigue-indicators-2026</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/organizational-health-best-practices-nordic-baltic-hr</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/role-of-hr-in-remote-work-preventing-burnout-2026</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/team-productivity-preventing-burnout</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/top-workplace-wellbeing-tips-for-hr-managers</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/uniintelligence-ai-alternatives-8</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/why-monitor-employee-behavior-enhance-well-being-2026</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/why-monitor-employee-workload-prevent-burnout-2026</loc>
+    <lastmod>2026-08-18</lastmod>
+  </url>
+  <url>
     <loc>https://www.signaltrue.ai/blog/privacy-in-workforce-analysis-a-practical-guide-for-hr</loc>
+    <lastmod>2026-08-17</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/the-role-of-data-privacy-in-hr-2026-guide</loc>
+    <lastmod>2026-08-17</lastmod>
+  </url>
+  <url>
+    <loc>https://www.signaltrue.ai/blog/what-is-engagement-analysis-for-hr-leaders</loc>
     <lastmod>2026-08-17</lastmod>
   </url>
   <url>
@@ -198,10 +254,6 @@
     <lastmod>2026-08-12</lastmod>
   </url>
   <url>
-    <loc>https://www.signaltrue.ai/blog/the-role-of-data-privacy-in-hr-2026-guide</loc>
-    <lastmod>2026-08-12</lastmod>
-  </url>
-  <url>
     <loc>https://www.signaltrue.ai/blog/types-digital-collaboration-2026-boost-productivity-reduce-burnout</loc>
     <lastmod>2026-08-12</lastmod>
   </url>
@@ -234,10 +286,6 @@
     <lastmod>2026-08-11</lastmod>
   </url>
   <url>
-    <loc>https://www.signaltrue.ai/blog/what-is-engagement-analysis-for-hr-leaders</loc>
-    <lastmod>2026-08-11</lastmod>
-  </url>
-  <url>
     <loc>https://www.signaltrue.ai/blog/effective-collaboration-patterns-in-teams-for-hr-leaders</loc>
     <lastmod>2026-08-10</lastmod>
   </url>
@@ -251,10 +299,6 @@
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/getsignals-ai-alternatives-7</loc>
-    <lastmod>2026-08-10</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/healthy-workplace-reduces-burnout-risk</loc>
     <lastmod>2026-08-10</lastmod>
   </url>
   <url>
@@ -279,14 +323,6 @@
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/team-collaboration-analytics-software-6</loc>
-    <lastmod>2026-08-10</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/team-productivity-preventing-burnout</loc>
-    <lastmod>2026-08-10</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/top-workplace-wellbeing-tips-for-hr-managers</loc>
     <lastmod>2026-08-10</lastmod>
   </url>
   <url>
@@ -327,10 +363,6 @@
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/interpret-team-patterns-to-boost-engagement-early</loc>
-    <lastmod>2026-08-07</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/why-monitor-employee-behavior-enhance-well-being-2026</loc>
     <lastmod>2026-08-07</lastmod>
   </url>
   <url>
@@ -394,19 +426,11 @@
     <lastmod>2026-07-29</lastmod>
   </url>
   <url>
-    <loc>https://www.signaltrue.ai/blog/identify-workplace-fatigue-indicators-2026</loc>
-    <lastmod>2026-07-29</lastmod>
-  </url>
-  <url>
     <loc>https://www.signaltrue.ai/blog/organizational-wellbeing-matters-hr-leaders</loc>
     <lastmod>2026-07-29</lastmod>
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/understanding-workplace-behavioral-patterns-boost-engagement</loc>
-    <lastmod>2026-07-29</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/uniintelligence-ai-alternatives-8</loc>
     <lastmod>2026-07-29</lastmod>
   </url>
   <url>
@@ -419,10 +443,6 @@
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/employee-pulse-data-early-detection-for-hr-success</loc>
-    <lastmod>2026-07-26</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/role-of-hr-in-remote-work-preventing-burnout-2026</loc>
     <lastmod>2026-07-26</lastmod>
   </url>
   <url>
@@ -506,10 +526,6 @@
     <lastmod>2026-07-18</lastmod>
   </url>
   <url>
-    <loc>https://www.signaltrue.ai/blog/organizational-health-best-practices-nordic-baltic-hr</loc>
-    <lastmod>2026-07-18</lastmod>
-  </url>
-  <url>
     <loc>https://www.signaltrue.ai/blog/organizational-health-checklist-nordic-baltic-hr</loc>
     <lastmod>2026-07-18</lastmod>
   </url>
@@ -546,24 +562,12 @@
     <lastmod>2026-07-16</lastmod>
   </url>
   <url>
-    <loc>https://www.signaltrue.ai/blog/hr-workload-management-guide-prevent-burnout-early</loc>
-    <lastmod>2026-07-15</lastmod>
-  </url>
-  <url>
     <loc>https://www.signaltrue.ai/blog/privacy-first-hr-in-the-nordics-build-trust-and-engagement</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/analyzing-workplace-habits-productivity-nordics</loc>
     <lastmod>2026-07-12</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/cooperly-ai-alternatives-8</loc>
-    <lastmod>2026-07-12</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/why-monitor-employee-workload-prevent-burnout-2026</loc>
-    <lastmod>2026-07-11</lastmod>
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/6-steps-to-monthly-team-health-checklist</loc>
@@ -615,10 +619,6 @@
   </url>
   <url>
     <loc>https://www.signaltrue.ai/blog/hr-drives-engagement-prevents-burnout-hybrid-work</loc>
-    <lastmod>2026-07-03</lastmod>
-  </url>
-  <url>
-    <loc>https://www.signaltrue.ai/blog/hr-guide-employee-wellbeing-behavioral-intelligence</loc>
     <lastmod>2026-07-03</lastmod>
   </url>
   <url>

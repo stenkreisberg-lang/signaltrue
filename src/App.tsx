@@ -15,6 +15,7 @@ const Pricing = lazy(() => import('./pages/Pricing'));
 const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
 const About = lazy(() => import('./pages/About'));
 const Trust = lazy(() => import('./pages/Trust'));
+const AustraliaPsychosocialRisk = lazy(() => import('./pages/AustraliaPsychosocialRisk'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
@@ -92,6 +93,16 @@ const App = () => (
                 <Route path="/how-it-works" element={<HowItWorksPage />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/trust" element={<Trust />} />
+                <Route
+                  path="/australia-psychosocial-risk"
+                  element={<AustraliaPsychosocialRisk />}
+                />
+                {/* SEO alias kept as a redirect so the two URLs never compete
+                    for the same content. */}
+                <Route
+                  path="/psychosocial-risk-australia"
+                  element={<Navigate to="/australia-psychosocial-risk" replace />}
+                />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/register" element={<Register />} />

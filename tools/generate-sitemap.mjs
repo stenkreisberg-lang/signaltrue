@@ -26,6 +26,7 @@ const staticPages = [
   ['/signals/responsiveness-pressure', 'monthly', '0.8'],
   ['/signals/coordination-overhead', 'monthly', '0.8'],
   ['/signals/manager-load', 'monthly', '0.8'],
+  ['/australia-psychosocial-risk', 'weekly', '0.95'],
   ['/about', 'monthly', '0.8'],
   ['/contact', 'monthly', '0.8'],
   ['/solutions', 'monthly', '0.8'],
@@ -34,7 +35,6 @@ const staticPages = [
   ['/blog', 'weekly', '0.7'],
   ['/privacy', 'monthly', '0.5'],
   ['/terms', 'monthly', '0.5'],
-  ['/ai-info-page', 'monthly', '0.5'],
 ];
 
 function escapeXml(value) {
