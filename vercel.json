@@ -3,74 +3,340 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "signaltrue.ai" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "signaltrue.ai"
+        }
+      ],
       "destination": "https://www.signaltrue.ai/:path*",
       "permanent": true
     },
-    { "source": "/index.html", "destination": "/", "permanent": true },
-    { "source": "/index", "destination": "/", "permanent": true },
-    { "source": "/index-new.html", "destination": "/", "permanent": true },
-    { "source": "/index-new", "destination": "/", "permanent": true },
-    { "source": "/home.html", "destination": "/", "permanent": true },
-    { "source": "/home", "destination": "/", "permanent": true },
-    { "source": "/home-old.html", "destination": "/", "permanent": true },
-    { "source": "/home-old", "destination": "/", "permanent": true },
-    { "source": "/about.html", "destination": "/about", "permanent": true },
-    { "source": "/about-new.html", "destination": "/about", "permanent": true },
-    { "source": "/about-new", "destination": "/about", "permanent": true },
-    { "source": "/about-old.html", "destination": "/about", "permanent": true },
-    { "source": "/about-old", "destination": "/about", "permanent": true },
-    { "source": "/contact.html", "destination": "/contact", "permanent": true },
-    { "source": "/how-it-works.html", "destination": "/how-it-works", "permanent": true },
-    { "source": "/product.html", "destination": "/product", "permanent": true },
-    { "source": "/product-new.html", "destination": "/product", "permanent": true },
-    { "source": "/product-new", "destination": "/product", "permanent": true },
-    { "source": "/product-old.html", "destination": "/product", "permanent": true },
-    { "source": "/product-old", "destination": "/product", "permanent": true },
-    { "source": "/pricing.html", "destination": "/pricing", "permanent": true },
-    { "source": "/pricing-new.html", "destination": "/pricing", "permanent": true },
-    { "source": "/pricing-new", "destination": "/pricing", "permanent": true },
-    { "source": "/pricing-old.html", "destination": "/pricing", "permanent": true },
-    { "source": "/pricing-old", "destination": "/pricing", "permanent": true },
-    { "source": "/privacy.html", "destination": "/privacy", "permanent": true },
-    { "source": "/sample-report.html", "destination": "/sample-report", "permanent": true },
-    { "source": "/blog/test-post", "destination": "/blog", "permanent": true },
-    { "source": "/marketing/index.html", "destination": "/", "permanent": true },
-    { "source": "/marketing/index", "destination": "/", "permanent": true },
-    { "source": "/marketing/index-old.html", "destination": "/", "permanent": true },
-    { "source": "/marketing/index-old", "destination": "/", "permanent": true },
-    { "source": "/marketing/index-backup.html", "destination": "/", "permanent": true },
-    { "source": "/marketing/index-backup", "destination": "/", "permanent": true },
-    { "source": "/marketing/partials.html", "destination": "/", "permanent": true },
-    { "source": "/marketing/partials", "destination": "/", "permanent": true },
-    { "source": "/marketing/about-old.html", "destination": "/about", "permanent": true },
-    { "source": "/marketing/about-old", "destination": "/about", "permanent": true },
-    { "source": "/marketing/product-old.html", "destination": "/product", "permanent": true },
-    { "source": "/marketing/product-old", "destination": "/product", "permanent": true },
-    { "source": "/marketing/product-backup.html", "destination": "/product", "permanent": true },
-    { "source": "/marketing/product-backup", "destination": "/product", "permanent": true },
-    { "source": "/marketing/pricing-old.html", "destination": "/pricing", "permanent": true },
-    { "source": "/marketing/pricing-old", "destination": "/pricing", "permanent": true },
-    { "source": "/marketing/product.html", "destination": "/product", "permanent": true },
-    { "source": "/marketing/product", "destination": "/product", "permanent": true },
-    { "source": "/marketing/pricing.html", "destination": "/pricing", "permanent": true },
-    { "source": "/marketing/pricing", "destination": "/pricing", "permanent": true },
-    { "source": "/marketing/how-it-works.html", "destination": "/how-it-works", "permanent": true },
-    { "source": "/marketing/how-it-works", "destination": "/how-it-works", "permanent": true },
-    { "source": "/marketing/about.html", "destination": "/about", "permanent": true },
-    { "source": "/marketing/about", "destination": "/about", "permanent": true },
-    { "source": "/marketing/contact.html", "destination": "/contact", "permanent": true },
-    { "source": "/marketing/contact", "destination": "/contact", "permanent": true },
-    { "source": "/marketing/privacy.html", "destination": "/privacy", "permanent": true },
-    { "source": "/marketing/privacy", "destination": "/privacy", "permanent": true },
-    { "source": "/marketing/terms.html", "destination": "/terms", "permanent": true },
-    { "source": "/marketing/terms", "destination": "/terms", "permanent": true },
-    { "source": "/marketing/solutions.html", "destination": "/solutions", "permanent": true },
-    { "source": "/marketing/solutions", "destination": "/solutions", "permanent": true },
-    { "source": "/marketing/resources.html", "destination": "/resources", "permanent": true },
-    { "source": "/marketing/resources", "destination": "/resources", "permanent": true },
-    { "source": "/marketing/ai-info-page.html", "destination": "/ai-info-page", "permanent": true },
-    { "source": "/marketing/ai-info-page", "destination": "/ai-info-page", "permanent": true },
+    {
+      "source": "/psychosocial-risk-australia",
+      "destination": "/australia-psychosocial-risk",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index-new.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index-new",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-old.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/home-old",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/about.html",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/about-new.html",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/about-new",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/about-old.html",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/about-old",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/contact.html",
+      "destination": "/contact",
+      "permanent": true
+    },
+    {
+      "source": "/how-it-works.html",
+      "destination": "/how-it-works",
+      "permanent": true
+    },
+    {
+      "source": "/product.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/product-new.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/product-new",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/product-old.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/product-old",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/pricing.html",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pricing-new.html",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pricing-new",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pricing-old.html",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/pricing-old",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/sample-report.html",
+      "destination": "/sample-report",
+      "permanent": true
+    },
+    {
+      "source": "/blog/test-post",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index-old.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index-old",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index-backup.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/index-backup",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/partials.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/partials",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/about-old.html",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/about-old",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product-old.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product-old",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product-backup.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product-backup",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/pricing-old.html",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/pricing-old",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product.html",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/product",
+      "destination": "/product",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/pricing.html",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/pricing",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/how-it-works.html",
+      "destination": "/how-it-works",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/how-it-works",
+      "destination": "/how-it-works",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/about.html",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/about",
+      "destination": "/about",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/contact.html",
+      "destination": "/contact",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/contact",
+      "destination": "/contact",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/privacy",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/terms.html",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/terms",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/solutions.html",
+      "destination": "/solutions",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/solutions",
+      "destination": "/solutions",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/resources.html",
+      "destination": "/resources",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/resources",
+      "destination": "/resources",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/ai-info-page.html",
+      "destination": "/ai-info-page",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/ai-info-page",
+      "destination": "/ai-info-page",
+      "permanent": true
+    },
     {
       "source": "/marketing/drift-diagnostic.html",
       "destination": "/drift-diagnostic",
@@ -86,9 +352,21 @@
       "destination": "/sample-report",
       "permanent": true
     },
-    { "source": "/marketing/sample-report", "destination": "/sample-report", "permanent": true },
-    { "source": "/marketing/app-privacy.html", "destination": "/app/privacy", "permanent": true },
-    { "source": "/marketing/app-privacy", "destination": "/app/privacy", "permanent": true },
+    {
+      "source": "/marketing/sample-report",
+      "destination": "/sample-report",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/app-privacy.html",
+      "destination": "/app/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/marketing/app-privacy",
+      "destination": "/app/privacy",
+      "permanent": true
+    },
     {
       "source": "/marketing/burnout-early-warning-system.html",
       "destination": "/burnout-early-warning-system",
@@ -181,22 +459,38 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/",
-      "headers": [{ "key": "Link", "value": "<https://www.signaltrue.ai/>; rel=\"canonical\"" }]
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://www.signaltrue.ai/>; rel=\"canonical\""
+        }
+      ]
     },
     {
       "source": "/trust",
       "headers": [
-        { "key": "Link", "value": "<https://www.signaltrue.ai/trust>; rel=\"canonical\"" }
+        {
+          "key": "Link",
+          "value": "<https://www.signaltrue.ai/trust>; rel=\"canonical\""
+        }
       ]
     },
     {
       "source": "/blog",
-      "headers": [{ "key": "Link", "value": "<https://www.signaltrue.ai/blog>; rel=\"canonical\"" }]
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://www.signaltrue.ai/blog>; rel=\"canonical\""
+        }
+      ]
     },
     {
       "source": "/blog/:slug",
@@ -209,7 +503,12 @@
     },
     {
       "source": "/marketing/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=86400"
+        }
+      ]
     }
   ]
 }

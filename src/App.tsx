@@ -97,8 +97,11 @@ const App = () => (
                   path="/australia-psychosocial-risk"
                   element={<AustraliaPsychosocialRisk />}
                 />
-                {/* SEO alias kept as a redirect so the two URLs never compete
-                    for the same content. */}
+                {/* The /psychosocial-risk-australia alias is redirected in
+                    vercel.json, not here: a client-side redirect still answers
+                    200 at the alias, so a crawler would index two URLs for one
+                    page. This route exists only as a fallback if the request
+                    somehow reaches the app. */}
                 <Route
                   path="/psychosocial-risk-australia"
                   element={<Navigate to="/australia-psychosocial-risk" replace />}
