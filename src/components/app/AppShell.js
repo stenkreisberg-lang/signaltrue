@@ -1,42 +1,64 @@
 import React, { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
+/**
+ * Navigation is ordered by the week's actual sequence — read what changed,
+ * look into it, do something about it — rather than by feature area.
+ *
+ * Labels avoid near-duplicates: "Priority Signals" beside "All Signals", or
+ * "Coverage" beside "Data Sources", asks the reader to work out a distinction
+ * instead of pointing somewhere. Configuration is marked secondary and tucked
+ * below, because it is visited during setup and rarely afterwards.
+ */
 const links = [
-  { to: '/app/overview', label: 'Overview', group: 'Today' },
+  { to: '/app/overview', label: 'Overview', group: 'This week' },
   {
     to: '/app/latest-brief',
     label: 'Weekly Brief',
-    group: 'Today',
+    group: 'This week',
     roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
-  {
-    to: '/app/executive-summary',
-    label: 'Executive Brief',
-    group: 'Today',
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
-  },
-  { to: '/app/active-monitoring', label: 'Priority Signals', group: 'Investigate' },
-  { to: '/app/signals', label: 'All Signals', group: 'Investigate' },
-  { to: '/app/actions', label: 'Corrective Actions', group: 'Improve' },
-  { to: '/app/signal-coverage', label: 'Coverage', group: 'Setup & governance' },
-  {
-    to: '/integrations',
-    label: 'Data Sources',
-    group: 'Setup & governance',
-    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
-  },
+  { to: '/app/signals', label: 'Signals', group: 'Act' },
+  { to: '/app/actions', label: 'Actions', group: 'Act' },
+  { to: '/app/active-monitoring', label: 'Risk feed', group: 'Explore' },
   {
     to: '/app/work-network',
     label: 'Work Network',
-    group: 'Investigate',
+    group: 'Explore',
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
   },
-  { to: '/app/employees', label: 'Team Setup', group: 'Setup & governance', adminOnly: true },
-  { to: '/app/privacy', label: 'Data Policy', group: 'Setup & governance' },
+  {
+    to: '/app/executive-summary',
+    label: 'For leadership',
+    group: 'Explore',
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+  },
+  {
+    to: '/app/signal-coverage',
+    label: 'What is measured',
+    group: 'Settings',
+    secondary: true,
+  },
+  {
+    to: '/integrations',
+    label: 'Connections',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
+  },
+  {
+    to: '/app/employees',
+    label: 'People and teams',
+    group: 'Settings',
+    secondary: true,
+    adminOnly: true,
+  },
+  { to: '/app/privacy', label: 'Data policy', group: 'Settings', secondary: true },
   {
     to: '/app/site-analytics',
-    label: 'Site Analytics',
-    group: 'Operations',
+    label: 'Site analytics',
+    group: 'Settings',
+    secondary: true,
     roles: ['master_admin'],
   },
 ];
@@ -59,6 +81,16 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
   const location = useLocation();
   const navigationRef = useRef(null);
   const isImpersonating = Boolean(localStorage.getItem('impersonation_token'));
+
+  const visibleLinks = links.filter(
+    (link) =>
+      (!link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
+      (!link.roles || link.roles.includes(user?.role))
+  );
+  const secondaryLinks = visibleLinks.filter((link) => link.secondary);
+  // Keep the settings group open when the current page lives inside it, so the
+  // active item is never hidden behind a closed disclosure.
+  const isOnSecondaryPage = secondaryLinks.some((link) => location.pathname.startsWith(link.to));
 
   useEffect(() => {
     if (!window.matchMedia('(max-width: 1040px)').matches) return;
@@ -98,15 +130,11 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
             SignalTrue
           </Link>
           <nav ref={navigationRef} className="app-navigation" aria-label="Application navigation">
-            {links
-              .filter(
-                (link) =>
-                  (!link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
-                  (!link.roles || link.roles.includes(user?.role))
-              )
-              .map((link, index, visibleLinks) => (
+            {visibleLinks
+              .filter((link) => !link.secondary)
+              .map((link, index, primaryLinks) => (
                 <React.Fragment key={link.to}>
-                  {(index === 0 || visibleLinks[index - 1]?.group !== link.group) && (
+                  {(index === 0 || primaryLinks[index - 1]?.group !== link.group) && (
                     <span className="app-nav-group">{link.group}</span>
                   )}
                   <NavLink
@@ -117,6 +145,21 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
                   </NavLink>
                 </React.Fragment>
               ))}
+
+            {secondaryLinks.length > 0 && (
+              <details className="app-nav-secondary" open={isOnSecondaryPage}>
+                <summary className="app-nav-group app-nav-summary">Settings</summary>
+                {secondaryLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </details>
+            )}
           </nav>
           <div className="app-account">
             {section && <span className="app-section-pill">{section}</span>}

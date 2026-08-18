@@ -598,6 +598,39 @@
     font-weight: 750;
   }
 
+  /* Configuration is visited during setup and rarely afterwards, so it is
+     folded away by default rather than competing with the week's work. */
+  .app-nav-secondary {
+    display: flex;
+    flex-direction: column;
+    margin-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+  }
+
+  .app-nav-summary {
+    cursor: pointer;
+    list-style: none;
+    margin: 8px 12px 2px;
+  }
+
+  .app-nav-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .app-nav-summary::after {
+    content: ' +';
+    font-weight: 800;
+  }
+
+  .app-nav-secondary[open] .app-nav-summary::after {
+    content: ' −';
+  }
+
+  .app-nav-summary:hover {
+    color: #475569;
+  }
+
   @media (max-width: 640px) {
     .signaltrue-chat-toggle {
       bottom: 12px;

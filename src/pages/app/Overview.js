@@ -9,24 +9,6 @@ import AppShell from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
-const nextSteps = [
-  {
-    title: 'Review Work Network',
-    note: 'Inspect measured cross-team meeting links and connector concentration.',
-    to: '/app/work-network',
-  },
-  {
-    title: 'Check data coverage',
-    note: 'Verify which people, teams, and connectors are represented.',
-    to: '/app/signal-coverage',
-  },
-  {
-    title: 'Track an action',
-    note: 'Record a reversible change and compare the same metric later.',
-    to: '/app/actions',
-  },
-];
-
 export default function Overview() {
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [latestBrief, setLatestBrief] = useState(null);
@@ -65,6 +47,8 @@ export default function Overview() {
 
     load();
   }, []);
+
+  const primaryAction = latestBrief?.actions?.primary?.action ? latestBrief.actions.primary : null;
 
   if (loading) {
     return (
@@ -112,54 +96,79 @@ export default function Overview() {
         setup={calibrationStatus?.setup}
       />
 
+      {/* Lead with this week's finding and the single decision it calls for.
+          A standing description of the method cannot tell anyone what to do
+          today, and it reads the same whether nothing has changed or a team is
+          in trouble. */}
       <div className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
-          <p className="app-dashboard-eyebrow">Workplace risk overview</p>
-          <h1 className="app-dashboard-title">Evidence, consultation and preventive action</h1>
+          <p className="app-dashboard-eyebrow">This week</p>
+          <h1 className="app-dashboard-title">
+            {latestBrief?.status?.label || 'Nothing needs your attention yet'}
+          </h1>
           <p className="app-dashboard-copy">
-            Review the highest-priority team pattern, verify the context with workers and record one
-            proportionate corrective action. SignalTrue does not measure employee health or intent.
+            {latestBrief?.status?.summary ||
+              'Once a full week of activity has been measured, the pattern that most needs review appears here.'}
           </p>
+          {latestBrief && (
+            <Link
+              to="/app/latest-brief"
+              className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white no-underline hover:text-white"
+            >
+              See the evidence
+            </Link>
+          )}
         </div>
-        <div className="app-dashboard-hero-side">
-          <p className="app-dashboard-eyebrow">How to use this</p>
-          <p className="text-sm leading-6 text-slate-700">
-            1. Check coverage. 2. Inspect the baseline. 3. Consult the team. 4. Assign a control. 5.
-            Review the same indicator after 14 days.
-          </p>
-        </div>
+
+        {primaryAction ? (
+          <div className="app-dashboard-hero-side">
+            <p className="app-dashboard-eyebrow">Recommended next step</p>
+            <p className="text-sm font-semibold leading-6 text-slate-900">{primaryAction.action}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-600">
+              {[
+                primaryAction.owner && `Owner: ${primaryAction.owner}`,
+                primaryAction.effort && `${primaryAction.effort} effort`,
+                primaryAction.reviewWindow && `Review in ${primaryAction.reviewWindow}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+            <Link
+              to="/app/signals?status=Open"
+              className="mt-3 inline-block rounded-lg border border-slate-900 px-4 py-2 text-sm font-bold text-slate-900 no-underline"
+            >
+              Log this action
+            </Link>
+          </div>
+        ) : (
+          <div className="app-dashboard-hero-side">
+            <p className="app-dashboard-eyebrow">How this works</p>
+            <p className="text-sm leading-6 text-slate-700">
+              Check what is measured, consult the team about the pattern, record one reversible
+              change, then compare the same indicator after 14 days.
+            </p>
+          </div>
+        )}
       </div>
 
       {latestBrief && (
         <section className="app-dashboard-section">
           <div className="app-panel border-indigo-200">
-            <div className="flex flex-wrap items-start justify-between gap-5">
-              <div className="max-w-3xl">
-                <p className="app-dashboard-eyebrow">Latest weekly brief</p>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {latestBrief.status?.label}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {latestBrief.status?.summary}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                    Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                    User mapping: {latestBrief.coverage?.mappingCoveragePct || 0}%
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                    {latestBrief.reportMode === 'full' ? 'Full report' : 'Setup report'}
-                  </span>
-                </div>
+            {/* The finding itself is in the hero; this panel carries the
+                numbers behind it and how far they can be trusted. */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="app-dashboard-eyebrow">What moved</p>
+              <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
+                  Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
+                  User mapping: {latestBrief.coverage?.mappingCoveragePct || 0}%
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
+                  {latestBrief.reportMode === 'full' ? 'Full report' : 'Setup report'}
+                </span>
               </div>
-              <Link
-                to="/app/latest-brief"
-                className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white no-underline hover:text-white"
-              >
-                Explore evidence and ask AI
-              </Link>
             </div>
             {latestBrief.metrics?.length > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -169,21 +178,47 @@ export default function Overview() {
                       metric.key
                     )
                   )
-                  .map((metric) => (
-                    <div
-                      key={metric.key}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <p className="text-xl font-extrabold text-slate-900">
-                        {!metric.available || metric.current == null
-                          ? 'Not measured'
-                          : `${metric.current}${metric.unit === '%' ? '%' : metric.unit === 'hours' ? 'h' : ''}`}
-                      </p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        {metric.label}
-                      </p>
-                    </div>
-                  ))}
+                  .map((metric) => {
+                    const measured = metric.available && metric.current != null;
+                    const suffix = metric.unit === '%' ? '%' : metric.unit === 'hours' ? 'h' : '';
+                    const value = measured ? `${metric.current}${suffix}` : null;
+                    // A drift product is about movement, so the change against
+                    // baseline is the headline and the level is the detail.
+                    const hasChange = measured && typeof metric.changePct === 'number';
+                    const changeTone =
+                      metric.direction === 'intended'
+                        ? 'text-emerald-700'
+                        : metric.direction === 'adverse'
+                          ? 'text-rose-700'
+                          : 'text-slate-900';
+
+                    return (
+                      <div
+                        key={metric.key}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      >
+                        {hasChange ? (
+                          <p className={`text-xl font-extrabold ${changeTone}`}>
+                            {metric.changePct > 0 ? '+' : ''}
+                            {metric.changePct}%
+                          </p>
+                        ) : (
+                          <p className="text-xl font-extrabold text-slate-900">
+                            {value || 'Not measured'}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+                          {metric.label}
+                        </p>
+                        {hasChange && (
+                          <p className="mt-1 text-xs text-slate-600">
+                            {value} now · baseline{' '}
+                            {metric.baseline != null ? `${metric.baseline}${suffix}` : 'not set'}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>
@@ -203,23 +238,6 @@ export default function Overview() {
           <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
         </section>
       )}
-
-      <section className="app-dashboard-section">
-        <div className="app-section-heading">
-          <div>
-            <h2>Turn evidence into a decision</h2>
-            <p>Each next step keeps the measured data separate from interpretation.</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {nextSteps.map((item) => (
-            <Link key={item.to} to={item.to} className="app-dashboard-card hover:border-teal-400">
-              <span className="app-dashboard-card-value text-lg">{item.title}</span>
-              <span className="app-dashboard-card-note">{item.note}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
     </AppShell>
   );
 }
