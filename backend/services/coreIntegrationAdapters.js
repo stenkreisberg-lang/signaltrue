@@ -463,7 +463,21 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
-    const totalUsers = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
+    const [totalUsers, organization] = await Promise.all([
+      User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } }),
+      Organization.findById(orgId)
+        .select('integrations.microsoft.applicationConsentVerifiedAt')
+        .lean(),
+    ]);
+
+    // Tenant-wide admin consent means the connection is genuinely live even
+    // before any event maps to an internal user. The closure below reads this,
+    // so it has to be resolved here — it was previously only declared in the
+    // other adapter's method, which made every call through this path throw
+    // ReferenceError once it reached the status payload.
+    const companyWideVerified = Boolean(
+      organization?.integrations?.microsoft?.applicationConsentVerifiedAt
+    );
 
     const updateForType = async (integrationType, source) => {
       const sourceEvents = workEvents.filter((event) => event.source === source);
