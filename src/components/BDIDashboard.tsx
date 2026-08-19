@@ -533,7 +533,6 @@ const DrillDownModal: React.FC<{
 const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
   const [data, setData] = useState<TeamStateHistory | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [drillDown, setDrillDown] = useState<DrillDownData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
@@ -554,7 +553,6 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
       } else {
         setData(null);
       }
-      setError(null);
     } catch (err: any) {
       console.error('Error fetching team state:', err);
       // Don't show error, just show no data state

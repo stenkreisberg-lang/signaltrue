@@ -156,6 +156,10 @@ import roiRoutes from './routes/roiRoutes.js';
 import goalRoutes from './routes/goalRoutes.js';
 import bellNotificationRoutes from './routes/bellNotificationRoutes.js';
 import journeyRoutes from './routes/journeyRoutes.js';
+// Control-verification module (Developer Implementation Specification v3.0)
+import controlReviewRoutes from './routes/controlReviews.js';
+import workPatternRoutes from './routes/workPatterns.js';
+import hsDashboardRoutes from './routes/hsDashboard.js';
 
 // --- Middleware Imports ---
 import { authenticateToken } from './middleware/auth.js';
@@ -424,6 +428,13 @@ async function main() {
     app.use('/api/manager-overload', managerOverloadRoutes);
     app.use('/api/work-network', workNetworkRoutes);
     app.use('/api/validation-program', validationProgramRoutes);
+
+    // --- Control Verification (H&S / psychosocial risk) ---
+    // Verifies whether a control changed how work happens, whether the change
+    // lasted, and whether demand migrated elsewhere. Spec v3.0 §5–§21.
+    app.use('/api/control-review', controlReviewRoutes);
+    app.use('/api/work-patterns', workPatternRoutes);
+    app.use('/api/hs', hsDashboardRoutes);
 
     // --- 404 Handler - Must come after all route definitions ---
     app.use(notFoundHandler);

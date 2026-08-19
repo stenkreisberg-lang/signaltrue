@@ -7,7 +7,6 @@ export default function AdminExportPanel() {
 
   useEffect(() => {
     async function fetchUsers() {
-      const token = localStorage.getItem('token');
       const res = await api.get('/admin-export/users');
       setUsers(res.data);
       setLoading(false);

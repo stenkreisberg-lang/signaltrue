@@ -52,6 +52,12 @@ const SeoLanding = lazy(() => import('./pages/SeoLanding'));
 const SampleReport = lazy(() => import('./pages/SampleReport'));
 const ServiceProcess = lazy(() => import('./pages/ServiceProcess'));
 
+// Control-verification module (H&S / psychosocial risk).
+const ControlReviews = lazy(() => import('./pages/app/controlReview/ControlReviews'));
+const ControlReviewDetail = lazy(() => import('./pages/app/controlReview/ControlReviewDetail'));
+const NewControlReview = lazy(() => import('./pages/app/controlReview/NewControlReview'));
+const TrustPack = lazy(() => import('./pages/app/controlReview/TrustPack'));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -141,6 +147,19 @@ const App = () => (
                 />
                 <Route path="/app/risk-feed" element={withAuthentication(<ActiveMonitoring />)} />
                 <Route path="/app/actions" element={withAuthentication(<Actions />)} />
+                <Route
+                  path="/app/control-reviews"
+                  element={withAuthentication(<ControlReviews />)}
+                />
+                <Route
+                  path="/app/control-reviews/new"
+                  element={withAuthentication(<NewControlReview />)}
+                />
+                <Route
+                  path="/app/control-reviews/:caseId"
+                  element={withAuthentication(<ControlReviewDetail />)}
+                />
+                <Route path="/app/trust-pack" element={withAuthentication(<TrustPack />)} />
                 <Route
                   path="/app/executive-summary"
                   element={
