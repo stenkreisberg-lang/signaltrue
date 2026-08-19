@@ -40,6 +40,16 @@ const teamMetricSchema = new mongoose.Schema(
     suppressed: { type: Boolean, default: false, index: true },
     suppressionReason: { type: String, default: '' },
 
+    // Which group this figure actually describes. A team below the minimum is
+    // reported against the group it sits in rather than blanked, so the UI has
+    // to be able to say which (spec §22.1).
+    reportingGroup: {
+      scope: { type: String, enum: ['TEAM', 'PARENT_GROUP', 'ORGANISATION', 'NONE'], default: 'TEAM' },
+      size: { type: Number },
+      aggregatedFrom: { type: String, default: null },
+      note: { type: String, default: '' },
+    },
+
     sources: [{ type: String }],
     algorithmVersion: { type: String, default: ALGORITHM_VERSION },
   },

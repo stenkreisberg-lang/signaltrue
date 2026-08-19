@@ -270,6 +270,12 @@ function InvestigationTab({ data, meta, closed, busy, run }) {
 
       <section className="app-panel">
         <h2>What changed in the work-pattern data?</h2>
+        {data.observations.some((o) => o.status === 'AGGREGATED') && (
+          <div className="cr-alert cr-alert-info">
+            This team is smaller than the reporting minimum, so its figures describe the wider group
+            it sits in. They are shown for context and do not raise a review of this team.
+          </div>
+        )}
         {data.observations.filter((o) => o.status === 'DEVIATION_OBSERVED').length === 0 ? (
           <p className="cr-empty">
             No persistent deviation from this team’s own baseline was recorded. A case can still
