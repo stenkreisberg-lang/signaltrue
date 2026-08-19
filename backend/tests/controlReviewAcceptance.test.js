@@ -20,7 +20,6 @@ import {
   ControlReviewCase,
   ContextEvent,
   WorkingSchedule,
-  ControlIntervention,
   ConsultationRecord,
   TeamWorkPatternMetric,
   SignalObservation,
