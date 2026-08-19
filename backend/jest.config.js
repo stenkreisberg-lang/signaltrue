@@ -25,5 +25,8 @@ export default {
   },
   coverageReporters: ['text', 'lcov', 'html'],
   testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.js'],
+  // Cloud-sync conflict copies ("foo 2.test.js") would otherwise run twice
+  // against stale code and report confusing failures.
+  testPathIgnorePatterns: ['/node_modules/', '\\s\\d+\\.test\\.js$'],
   verbose: true,
 };
