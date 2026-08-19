@@ -20,6 +20,12 @@ const links = [
   },
   { to: '/app/signals', label: 'Signals', group: 'Act' },
   { to: '/app/actions', label: 'Actions', group: 'Act' },
+  {
+    to: '/app/control-reviews',
+    label: 'Control reviews',
+    group: 'Act',
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive', 'manager'],
+  },
   { to: '/app/active-monitoring', label: 'Risk feed', group: 'Explore' },
   {
     to: '/app/work-network',
@@ -54,6 +60,13 @@ const links = [
     adminOnly: true,
   },
   { to: '/app/privacy', label: 'Data policy', group: 'Settings', secondary: true },
+  {
+    to: '/app/trust-pack',
+    label: 'Trust pack',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'it_admin', 'compliance'],
+  },
   {
     to: '/app/site-analytics',
     label: 'Site analytics',
