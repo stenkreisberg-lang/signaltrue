@@ -1392,46 +1392,45 @@ describe('§36.22 — the Trust Deployment Pack gates connector activation', () 
     gatedActor = { userId: user._id, email: user.email, hsRole: 'HS_ADMIN' };
   });
 
-  it('refuses activation while required items are outstanding', async () => {
-    await expect(
-      trustService.acknowledgeAndActivate({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        legalReviewConfirmed: true,
-      })
-    ).rejects.toThrow(/Trust Deployment Pack must be completed/);
-
-    await expect(trustService.assertConnectorsPermitted(gatedTenantId)).rejects.toThrow(
-      /blocked until the Trust Deployment Pack/
-    );
-  });
-
-  it('requires the customer to confirm their own legal review', async () => {
-    for (const item of trustService.TRUST_PACK_CHECKLIST) {
-      await trustService.updateChecklistItem({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        key: item.key,
-        completed: true,
-      });
-    }
-
-    await expect(
-      trustService.acknowledgeAndActivate({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        legalReviewConfirmed: false,
-      })
-    ).rejects.toThrow(/legal adviser/);
-
-    const activated = await trustService.acknowledgeAndActivate({
+  it('does not block activation on an incomplete checklist', async () => {
+    // Whether workers were informed is the customer's duty as controller and is
+    // not verifiable from here, so the pack informs rather than gates (§21).
+    const pack = await trustService.acknowledgeAndActivate({
       tenantId: gatedTenantId,
       actor: gatedActor,
       legalReviewConfirmed: true,
     });
 
-    expect(activated.connectorsActivated).toBe(true);
+    expect(pack.connectorsActivated).toBe(true);
+    expect(pack.outstanding.length).toBeGreaterThan(0);
     await expect(trustService.assertConnectorsPermitted(gatedTenantId)).resolves.toBe(true);
+  });
+
+  it('records what was affirmed and what was outstanding at activation', async () => {
+    const config = await HsDeploymentConfig.findOne({ tenantId: gatedTenantId }).lean();
+    const events = await ControlReviewAuditEvent.find({
+      tenantId: gatedTenantId,
+      action: 'TRUST_PACK_ACKNOWLEDGED',
+    })
+      .sort({ timestamp: -1 })
+      .lean();
+
+    expect(events.length).toBeGreaterThan(0);
+    const [latest] = events;
+
+    // The record is what makes the contractual position demonstrable later.
+    expect(latest.metadata.legalReviewConfirmed).toBe(true);
+    expect(Array.isArray(latest.metadata.outstandingAtActivation)).toBe(true);
+    expect(latest.actorId).toBeTruthy();
+    expect(config.trustPack.acknowledgedAt).toBeTruthy();
+  });
+
+  it('refuses ingestion only for a tenant that never switched connectors on', async () => {
+    const org = await Organization.create({ name: 'Never Activated Org' });
+
+    await expect(trustService.assertConnectorsPermitted(org._id)).rejects.toThrow(
+      /have not been switched on/
+    );
   });
 
   it('§21 — the pack contains the employee explanation, data flow and metadata dictionary', async () => {
