@@ -157,6 +157,13 @@ export async function observeMetric({
   if (currentRow.suppressed) {
     observation.status = 'SUPPRESSED';
     observation.direction = 'FLAT';
+  } else if (currentRow.reportingGroup && currentRow.reportingGroup.scope !== 'TEAM') {
+    // The figure describes the group this team was rolled into, not the team.
+    // Recommending a review of the team on the strength of it would point H&S
+    // at a group too small to report on, and every small team in the
+    // organisation would raise the same finding.
+    observation.status = 'AGGREGATED';
+    observation.direction = 'FLAT';
   } else if (!baseline.available || currentRow.value === null) {
     observation.status = 'INSUFFICIENT_DATA';
     observation.direction = 'FLAT';

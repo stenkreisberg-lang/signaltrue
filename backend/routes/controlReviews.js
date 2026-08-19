@@ -57,7 +57,7 @@ function handle(handler) {
     try {
       await handler(req, res);
     } catch (error) {
-      const status = error.code === 'TRUST_PACK_INCOMPLETE' ? 409 : 400;
+      const status = error.code === 'CONNECTORS_NOT_ACTIVATED' ? 409 : 400;
       res.status(status).json({ error: true, message: error.message, code: error.code });
     }
   };

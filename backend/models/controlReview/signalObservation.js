@@ -51,7 +51,15 @@ const signalObservationSchema = new mongoose.Schema(
     // DEVIATION_OBSERVED is the strongest claim this object may make.
     status: {
       type: String,
-      enum: ['WITHIN_BASELINE', 'DEVIATION_OBSERVED', 'SUPPRESSED', 'INSUFFICIENT_DATA'],
+      enum: [
+        'WITHIN_BASELINE',
+        'DEVIATION_OBSERVED',
+        'SUPPRESSED',
+        'INSUFFICIENT_DATA',
+        // The value is a rolled-up group figure, displayable but not this
+        // team's own signal — so it must never drive a pattern finding.
+        'AGGREGATED',
+      ],
       default: 'WITHIN_BASELINE',
       index: true,
     },

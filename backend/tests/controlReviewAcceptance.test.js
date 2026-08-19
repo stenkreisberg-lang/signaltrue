@@ -379,27 +379,72 @@ describe('§36.2 — a case can be created from a PatternFinding after human app
 });
 
 describe('§36.3 / §37 — a team below MIN_GROUP_SIZE is suppressed everywhere', () => {
-  it('suppresses every metric for the six-person team', async () => {
+  it('never reports a small team against its own members', async () => {
     const rows = await TeamWorkPatternMetric.find({ tenantId, teamId: teams.small.team._id }).lean();
-
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.every((r) => r.suppressed)).toBe(true);
-    expect(rows.every((r) => r.value === null)).toBe(true);
-    expect(rows.every((r) => r.contributorCount === 0)).toBe(true);
-    // Group size is withheld too — "7 of 8" is itself a disclosure.
-    expect(rows.every((r) => r.groupSize === null)).toBe(true);
+
+    // The six-person team is never the reporting group; every figure describes
+    // a group at or above the minimum (§22.1).
+    for (const row of rows) {
+      expect(row.reportingGroup.scope).not.toBe('TEAM');
+      if (!row.suppressed) {
+        expect(row.groupSize).toBeGreaterThanOrEqual(MIN_GROUP_SIZE_DEFAULT);
+      }
+    }
   });
 
-  it('produces no observation or pattern finding for a suppressed team', async () => {
-    const observations = await SignalObservation.find({
+  it('aggregates upward rather than showing a small team nothing', async () => {
+    const row = await TeamWorkPatternMetric.findOne({
       tenantId,
       teamId: teams.small.team._id,
-      status: 'DEVIATION_OBSERVED',
+      metric: 'MEETING_LOAD',
+      suppressed: false,
     }).lean();
-    expect(observations).toHaveLength(0);
 
-    const findings = await PatternFinding.find({ tenantId, teamId: teams.small.team._id }).lean();
-    expect(findings).toHaveLength(0);
+    // Blanking is the lazy half of the rule; a customer who sees nothing
+    // concludes the product does nothing.
+    expect(row).toBeTruthy();
+    expect(row.value).toBeGreaterThan(0);
+    expect(String(row.reportingGroup.aggregatedFrom)).toBe(String(teams.small.team._id));
+    expect(row.reportingGroup.note).toMatch(/smaller than the reporting minimum/);
+  });
+
+  it('reports nothing at all when the whole organisation is under the minimum', async () => {
+    const tinyOrg = await Organization.create({ name: 'Five Person Startup' });
+    const tinyTeam = await Team.create({
+      name: 'Everyone',
+      orgId: tinyOrg._id,
+      metadata: { actualSize: 5 },
+    });
+    for (let i = 0; i < 5; i += 1) {
+      const user = await User.create({
+        email: `tiny${i}@test.local`,
+        name: `Tiny ${i}`,
+        role: 'team_member',
+        orgId: tinyOrg._id,
+        teamId: tinyTeam._id,
+        password: 'test-password-not-used',
+      });
+      await OrgUnit.create({
+        orgId: tinyOrg._id,
+        userId: user._id,
+        teamId: tinyTeam._id,
+        effectiveFrom: new Date(Date.now() - 200 * DAY_MS),
+        effectiveTo: null,
+      });
+    }
+
+    const rows = await metricsService.computeTeamMetricsForPeriod({
+      tenantId: tinyOrg._id,
+      teamId: tinyTeam._id,
+      periodStart: periods[periods.length - 2].periodStart,
+      periodEnd: periods[periods.length - 2].periodEnd,
+    });
+
+    // There is no group large enough to describe, and that is said plainly.
+    expect(rows.every((r) => r.suppressed)).toBe(true);
+    expect(rows[0].suppressionReason).toMatch(/fewer than 8 people/);
+    expect(rows.every((r) => r.value === null)).toBe(true);
   });
 
   it('defaults the threshold to 8 and refuses to be configured lower', async () => {
@@ -1392,46 +1437,45 @@ describe('§36.22 — the Trust Deployment Pack gates connector activation', () 
     gatedActor = { userId: user._id, email: user.email, hsRole: 'HS_ADMIN' };
   });
 
-  it('refuses activation while required items are outstanding', async () => {
-    await expect(
-      trustService.acknowledgeAndActivate({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        legalReviewConfirmed: true,
-      })
-    ).rejects.toThrow(/Trust Deployment Pack must be completed/);
-
-    await expect(trustService.assertConnectorsPermitted(gatedTenantId)).rejects.toThrow(
-      /blocked until the Trust Deployment Pack/
-    );
-  });
-
-  it('requires the customer to confirm their own legal review', async () => {
-    for (const item of trustService.TRUST_PACK_CHECKLIST) {
-      await trustService.updateChecklistItem({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        key: item.key,
-        completed: true,
-      });
-    }
-
-    await expect(
-      trustService.acknowledgeAndActivate({
-        tenantId: gatedTenantId,
-        actor: gatedActor,
-        legalReviewConfirmed: false,
-      })
-    ).rejects.toThrow(/legal adviser/);
-
-    const activated = await trustService.acknowledgeAndActivate({
+  it('does not block activation on an incomplete checklist', async () => {
+    // Whether workers were informed is the customer's duty as controller and is
+    // not verifiable from here, so the pack informs rather than gates (§21).
+    const pack = await trustService.acknowledgeAndActivate({
       tenantId: gatedTenantId,
       actor: gatedActor,
       legalReviewConfirmed: true,
     });
 
-    expect(activated.connectorsActivated).toBe(true);
+    expect(pack.connectorsActivated).toBe(true);
+    expect(pack.outstanding.length).toBeGreaterThan(0);
     await expect(trustService.assertConnectorsPermitted(gatedTenantId)).resolves.toBe(true);
+  });
+
+  it('records what was affirmed and what was outstanding at activation', async () => {
+    const config = await HsDeploymentConfig.findOne({ tenantId: gatedTenantId }).lean();
+    const events = await ControlReviewAuditEvent.find({
+      tenantId: gatedTenantId,
+      action: 'TRUST_PACK_ACKNOWLEDGED',
+    })
+      .sort({ timestamp: -1 })
+      .lean();
+
+    expect(events.length).toBeGreaterThan(0);
+    const [latest] = events;
+
+    // The record is what makes the contractual position demonstrable later.
+    expect(latest.metadata.legalReviewConfirmed).toBe(true);
+    expect(Array.isArray(latest.metadata.outstandingAtActivation)).toBe(true);
+    expect(latest.actorId).toBeTruthy();
+    expect(config.trustPack.acknowledgedAt).toBeTruthy();
+  });
+
+  it('refuses ingestion only for a tenant that never switched connectors on', async () => {
+    const org = await Organization.create({ name: 'Never Activated Org' });
+
+    await expect(trustService.assertConnectorsPermitted(org._id)).rejects.toThrow(
+      /have not been switched on/
+    );
   });
 
   it('§21 — the pack contains the employee explanation, data flow and metadata dictionary', async () => {

@@ -37,7 +37,7 @@ These are enforced in code and covered by tests, not just documented:
 | Expected effects are recorded before review, then frozen | `controlIntervention.js` pre-validate + `updateExpectedEffects` |
 | No causal or diagnostic language | `hsInterpretationService.js` screens every generated line |
 | Completeness is reported, sufficiency is never judged | `reviewCompletenessService.js` — no score, no pass/fail |
-| Connectors cannot activate before the trust pack is done | `trustDeploymentService.assertConnectorsPermitted` |
+| Connectors only ingest once the customer switches them on | `trustDeploymentService.assertConnectorsPermitted` |
 | Every export and material change is audited immutably | `auditEvent.js` refuses updates and deletes |
 
 ## Layout
@@ -69,6 +69,11 @@ GLOBAL  →  UK / US / CA / SG / NZ
   the UI says no pack exists yet.
 - Checkpoints are phrased as *"confirm X was reviewed with your own adviser"*.
   They are design references, never a compliance claim.
+- The pack is preparation material, not a gate. Whether workers were informed is
+  the customer's duty as data controller; it is not verifiable from here, and a
+  self-attested checkbox would buy friction rather than assurance. Activation
+  records what was affirmed and what was outstanding, which is what makes the
+  contractual position demonstrable later.
 - Every pack ships `counselReviewed: false`, and the trust pack page says so on
   screen. A checkpoint list that *looks* authoritative but has not been checked
   is more dangerous than one that admits it is a starting point. Flip a pack to

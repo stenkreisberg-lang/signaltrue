@@ -72,6 +72,7 @@ router.get(
         dataCoverage: row.dataCoverage,
         suppressed: row.suppressed,
         suppressionReason: row.suppressionReason,
+        reportingGroup: row.reportingGroup,
       });
     }
 

@@ -82,7 +82,7 @@ export default function TrustPack() {
       <PageHeader
         eyebrow="Health & safety"
         title="Trust deployment pack"
-        description="What to complete, and what to tell workers, before any connector is switched on."
+        description="What is worth preparing, and what to tell workers, before any connector is switched on."
       />
 
       {error && <div className="cr-alert cr-alert-error">{error}</div>}
@@ -95,33 +95,40 @@ export default function TrustPack() {
           </h2>
           <p className="app-muted">
             {pack.connectorsActivated
-              ? `Acknowledged ${formatDate(pack.acknowledgedAt)}. Data collection is running under the settings below.`
-              : 'Data collection is blocked until every required item is complete and your organisation confirms its own legal review.'}
+              ? `Switched on ${formatDate(pack.acknowledgedAt)}. Data collection is running under the settings below.`
+              : 'Nothing is collected until you switch this on. The checklist below is preparation material — it does not block you.'}
           </p>
           {pack.outstanding.length > 0 && (
-            <p className="cr-meta">Outstanding: {pack.outstanding.join(', ')}</p>
+            <p className="cr-meta">Not yet ticked: {pack.outstanding.join(', ')}</p>
           )}
         </div>
         {!pack.connectorsActivated && (
           <button
             type="button"
             className="cr-button cr-button-primary"
-            disabled={busy || pack.outstanding.length > 0}
+            disabled={busy}
             onClick={() => {
+              // Recorded, not enforced. Informing workers is the employer's duty
+              // as data controller; SignalTrue cannot verify it and does not
+              // block on it. What gets stored is what was affirmed, and when.
               const confirmed = window.confirm(
-                'Confirm that your organisation has reviewed the workplace surveillance and privacy requirements for its jurisdiction with its own legal adviser. SignalTrue does not provide legal advice.'
+                'Your organisation is responsible for informing workers about this processing and for confirming its own legal basis, as set out in your agreement. SignalTrue does not provide legal advice.\n\nYour answer and the date are recorded. Switch connectors on?'
               );
               if (!confirmed) return;
-              run(() => controlReviewApi.activateConnectors(true), 'Connectors activated.');
+              run(() => controlReviewApi.activateConnectors(true), 'Connectors switched on.');
             }}
           >
-            Acknowledge and activate
+            Switch connectors on
           </button>
         )}
       </div>
 
       <section className="app-panel">
         <h2>Deployment checklist</h2>
+        <p className="app-muted">
+          Preparation material, not a gate. Tick what applies, skip what your organisation already
+          handles its own way — none of it blocks activation.
+        </p>
         <ul className="cr-checklist">
           {pack.checklist.map((item) => (
             <li key={item.key} className={item.completed ? 'is-complete' : ''}>

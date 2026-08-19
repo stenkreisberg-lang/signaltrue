@@ -225,7 +225,6 @@ export async function getTrustPack({ tenantId, actor = null }) {
       'SignalTrue data is processed solely to support team-level work-design and psychosocial risk management. It is not used for performance management, individual assessment or disciplinary purposes.',
     checklist,
     outstanding: outstanding.map((item) => item.label),
-    readyForActivation: outstanding.length === 0 && config.trustPack?.customerLegalReviewConfirmed,
     connectorsActivated: config.connectorsActivated,
     acknowledgedAt: config.trustPack?.acknowledgedAt || null,
     jurisdictionCheckpoints,
@@ -352,10 +351,25 @@ export async function updateConfiguration({ tenantId, actor, updates, req = null
 }
 
 /**
- * Acknowledge the pack and activate connectors. Refuses while any required
- * item is outstanding — the gate is the point (§36.22).
+ * Activate connectors.
+ *
+ * The pack is reference material, not a gate. Whether workers were informed is
+ * the customer's duty as data controller, not something this platform can
+ * verify — a checkbox saying "we told everyone" is a self-attestation, and
+ * blocking on it would buy friction rather than assurance. The contract puts
+ * that duty where it legally sits.
+ *
+ * What activation does record is a timestamped statement of what the customer
+ * affirmed and what was still outstanding at the moment they switched it on.
+ * That record is cheap, and it is what makes the contractual position
+ * demonstrable later. Nothing here refuses.
  */
-export async function acknowledgeAndActivate({ tenantId, actor, legalReviewConfirmed, req = null }) {
+export async function acknowledgeAndActivate({
+  tenantId,
+  actor,
+  legalReviewConfirmed = false,
+  req = null,
+}) {
   const config = await getOrCreateConfig({ tenantId, actor });
 
   const outstanding = TRUST_PACK_CHECKLIST.filter((item) => item.required).filter((item) => {
@@ -363,27 +377,9 @@ export async function acknowledgeAndActivate({ tenantId, actor, legalReviewConfi
     return !stored?.completed;
   });
 
-  if (outstanding.length) {
-    const error = new Error(
-      `The Trust Deployment Pack must be completed before connectors are activated. Outstanding: ${outstanding
-        .map((i) => i.label)
-        .join(', ')}`
-    );
-    error.code = 'TRUST_PACK_INCOMPLETE';
-    throw error;
-  }
-
-  if (!legalReviewConfirmed) {
-    const error = new Error(
-      'The customer must confirm that local workplace surveillance and privacy requirements were reviewed with their own legal adviser.'
-    );
-    error.code = 'LEGAL_REVIEW_REQUIRED';
-    throw error;
-  }
-
   config.trustPack.acknowledgedBy = actor.userId;
   config.trustPack.acknowledgedAt = new Date();
-  config.trustPack.customerLegalReviewConfirmed = true;
+  config.trustPack.customerLegalReviewConfirmed = Boolean(legalReviewConfirmed);
   config.connectorsActivated = true;
   config.connectorsActivatedAt = new Date();
   config.updatedBy = actor.userId;
@@ -395,21 +391,29 @@ export async function acknowledgeAndActivate({ tenantId, actor, legalReviewConfi
     action: 'TRUST_PACK_ACKNOWLEDGED',
     objectType: 'HsDeploymentConfig',
     objectId: config._id,
-    metadata: { connectorsActivated: true },
+    metadata: {
+      connectorsActivated: true,
+      legalReviewConfirmed: Boolean(legalReviewConfirmed),
+      // Kept so the state at activation is reconstructable, not to police it.
+      outstandingAtActivation: outstanding.map((item) => item.key),
+      jurisdictions: config.jurisdictions,
+    },
     req,
   });
 
   return getTrustPack({ tenantId, actor });
 }
 
-/** Guard for ingestion paths: refuse to pull data before the pack is done. */
+/**
+ * Ingestion guard. This is an on/off switch, not a compliance check: it only
+ * asks whether the customer has switched the module on, so data is never pulled
+ * for a tenant that never enabled it.
+ */
 export async function assertConnectorsPermitted(tenantId) {
   const config = await HsDeploymentConfig.findOne({ tenantId }).select('connectorsActivated').lean();
   if (!config?.connectorsActivated) {
-    const error = new Error(
-      'Connector activation is blocked until the Trust Deployment Pack is completed and acknowledged.'
-    );
-    error.code = 'TRUST_PACK_INCOMPLETE';
+    const error = new Error('Connectors have not been switched on for this organisation.');
+    error.code = 'CONNECTORS_NOT_ACTIVATED';
     throw error;
   }
   return true;

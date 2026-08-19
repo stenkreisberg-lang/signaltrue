@@ -20,7 +20,8 @@ import {
   workingWindows,
   isWithinSchedule,
 } from './workingScheduleService.js';
-import { resolveMinGroupSize, SUPPRESSION_MESSAGE } from './hsPrivacyService.js';
+import { resolveMinGroupSize, resolveParentTeamId } from './hsPrivacyService.js';
+import Team from '../../models/team.js';
 
 const MEETING_EVENT_TYPES = ['meeting', 'meet_started'];
 const CHAT_EVENT_TYPES = ['message'];
@@ -122,6 +123,84 @@ export async function getTeamMembership({ tenantId, teamId, periodStart, periodE
   return members;
 }
 
+/** Active membership across a set of teams, de-duplicated. */
+export async function getGroupMembership({ tenantId, teamIds, periodStart, periodEnd }) {
+  const units = await OrgUnit.find({
+    orgId: tenantId,
+    teamId: { $in: teamIds },
+    effectiveFrom: { $lt: periodEnd },
+    $or: [{ effectiveTo: null }, { effectiveTo: { $gte: periodStart } }],
+  })
+    .select('userId isManager managerUserId roleLevel teamId')
+    .lean();
+
+  const seen = new Set();
+  const members = [];
+  for (const unit of units) {
+    const key = String(unit.userId);
+    if (!unit.userId || seen.has(key)) continue;
+    seen.add(key);
+    members.push(unit);
+  }
+  return members;
+}
+
+/**
+ * Decide which group a team's numbers may be reported against (spec §22.1:
+ * "suppress output *or aggregate to parent group*").
+ *
+ * Blanking a small team is the lazy half of that rule. A ten-person customer
+ * would open the product and see nothing at all, conclude it does not work, and
+ * never reach the point of value — while learning nothing about their own work
+ * patterns that the privacy rule was protecting.
+ *
+ * So walk outward instead: the team itself if it is large enough, else the
+ * group around its manager, else the whole organisation. The reported figure
+ * always describes a group of at least the minimum size, which is the actual
+ * guarantee. Only an organisation smaller than the minimum has nothing
+ * reportable, and that is stated plainly rather than shown as an empty chart.
+ */
+export async function resolveReportingGroup({
+  tenantId,
+  teamId,
+  periodStart,
+  periodEnd,
+  minGroupSize,
+}) {
+  const own = await getTeamMembership({ tenantId, teamId, periodStart, periodEnd });
+  if (own.length >= minGroupSize) {
+    return { scope: 'TEAM', teamIds: [teamId], members: own, aggregatedFrom: null };
+  }
+
+  const parentTeamId = await resolveParentTeamId({ tenantId, teamId });
+  if (parentTeamId) {
+    const teamIds = [teamId, parentTeamId];
+    const members = await getGroupMembership({ tenantId, teamIds, periodStart, periodEnd });
+    if (members.length >= minGroupSize) {
+      return { scope: 'PARENT_GROUP', teamIds, members, aggregatedFrom: teamId };
+    }
+  }
+
+  const orgTeams = await Team.find({ orgId: tenantId }).select('_id').lean();
+  const orgTeamIds = orgTeams.map((t) => t._id);
+  const orgMembers = await getGroupMembership({
+    tenantId,
+    teamIds: orgTeamIds,
+    periodStart,
+    periodEnd,
+  });
+  if (orgMembers.length >= minGroupSize) {
+    return {
+      scope: 'ORGANISATION',
+      teamIds: orgTeamIds,
+      members: orgMembers,
+      aggregatedFrom: teamId,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Compute every P0 metric for one team over one period.
  *
@@ -137,10 +216,14 @@ export async function computeTeamMetricsForPeriod({
   minGroupSize = null,
 }) {
   const threshold = minGroupSize ?? (await resolveMinGroupSize(tenantId));
-  const members = await getTeamMembership({ tenantId, teamId, periodStart, periodEnd });
-  const memberIds = members.map((m) => m.userId);
-  const managerIds = new Set(members.filter((m) => m.isManager).map((m) => String(m.userId)));
-  const groupSize = members.length;
+
+  const group = await resolveReportingGroup({
+    tenantId,
+    teamId,
+    periodStart,
+    periodEnd,
+    minGroupSize: threshold,
+  });
 
   const base = {
     tenantId,
@@ -148,12 +231,13 @@ export async function computeTeamMetricsForPeriod({
     periodStart,
     periodEnd,
     periodType: 'WEEK',
-    groupSize,
     algorithmVersion: ALGORITHM_VERSION,
   };
 
-  if (groupSize < threshold) {
-    // §22.1 — suppress before any value is computed, not after.
+  if (!group) {
+    // The whole organisation is smaller than the reporting minimum. Nothing can
+    // be reported without describing individuals, so say that rather than
+    // showing an empty chart.
     return P0_METRIC_ORDER.map((metric) => ({
       ...base,
       metric,
@@ -164,10 +248,30 @@ export async function computeTeamMetricsForPeriod({
       dataCoverage: 0,
       dataQuality: 'INSUFFICIENT',
       suppressed: true,
-      suppressionReason: SUPPRESSION_MESSAGE,
+      suppressionReason: `This organisation has fewer than ${threshold} people, so no team-level figure can be reported without describing individuals.`,
+      reportingGroup: { scope: 'NONE', aggregatedFrom: String(teamId) },
       sources: [],
     }));
   }
+
+  const members = group.members;
+  const memberIds = members.map((m) => m.userId);
+  const managerIds = new Set(members.filter((m) => m.isManager).map((m) => String(m.userId)));
+  const groupSize = members.length;
+
+  base.groupSize = groupSize;
+  base.reportingGroup = {
+    scope: group.scope,
+    size: groupSize,
+    aggregatedFrom: group.aggregatedFrom ? String(group.aggregatedFrom) : null,
+    // Read by the UI so a rolled-up number is never mistaken for the team's own.
+    note:
+      group.scope === 'TEAM'
+        ? ''
+        : `This team is smaller than the reporting minimum of ${threshold}, so the figure describes the ${
+            group.scope === 'PARENT_GROUP' ? 'wider group it sits in' : 'whole organisation'
+          }.`,
+  };
 
   const events = await WorkEvent.find({
     orgId: tenantId,
@@ -494,6 +598,8 @@ export default {
   computeTeamMetricsForPeriod,
   persistTeamMetrics,
   getTeamMembership,
+  getGroupMembership,
+  resolveReportingGroup,
   qualityFromCoverage,
   P0_METRIC_ORDER,
 };
