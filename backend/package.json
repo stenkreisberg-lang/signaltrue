@@ -55,6 +55,9 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
+    "@emnapi/wasi-threads": "^1.2.3",
     "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.4.2",
