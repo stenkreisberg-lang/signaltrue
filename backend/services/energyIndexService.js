@@ -1,7 +1,5 @@
 import MetricsDaily from '../models/metricsDaily.js';
-import Team from '../models/team.js';
 import { ENERGY_INDEX_CONFIG, METRIC_LABELS } from '../config/metricLabels.js';
-import { getLatestDCR } from './dcrService.js';
 
 // Use configured weights for Energy Index
 const DEFAULT_WEIGHTS = ENERGY_INDEX_CONFIG.weights;
@@ -22,13 +20,23 @@ export function computeEnergyIndex(
   weights = DEFAULT_WEIGHTS
 ) {
   // Normalize all scores to 0..100
-  const energy = Math.round(
-    weights.resilience * resilienceScore +
-      weights.executionCapacity * executionCapacityScore +
-      weights.decisionSpeed * decisionSpeedScore +
-      weights.structuralHealth * structuralHealthScore +
-      weights.decisionClosureRate * (decisionClosureRateScore || 50) // fallback if DCR not available
-  );
+  const scores = {
+    resilience: resilienceScore,
+    executionCapacity: executionCapacityScore,
+    decisionSpeed: decisionSpeedScore,
+    structuralHealth: structuralHealthScore,
+    decisionClosureRate: decisionClosureRateScore,
+  };
+  let weightedTotal = 0;
+  let availableWeight = 0;
+  for (const [key, score] of Object.entries(scores)) {
+    if (Number.isFinite(score) && weights[key]) {
+      weightedTotal += weights[key] * score;
+      availableWeight += weights[key];
+    }
+  }
+  if (availableWeight === 0) return null;
+  const energy = Math.round(weightedTotal / availableWeight);
   return Math.max(0, Math.min(100, energy));
 }
 
@@ -62,16 +70,6 @@ export async function getExpandedEnergyIndex(team) {
       description: METRIC_LABELS.structuralHealth.description,
     },
   };
-
-  // Get DCR if available
-  const dcr = await getLatestDCR(team.orgId, team._id);
-  if (dcr) {
-    metrics.decisionClosureRate = {
-      label: METRIC_LABELS.decisionClosureRate.label,
-      score: dcr.score,
-      description: METRIC_LABELS.decisionClosureRate.description,
-    };
-  }
 
   // Get top 3 metrics
   const sortedMetrics = Object.entries(metrics)
@@ -120,9 +118,7 @@ export async function updateEnergyIndexForTeam(team) {
     Math.min(100, rows.map((r) => r.messagesCount).reduce((a, b) => a + b, 0) / rows.length)
   );
 
-  // Get Decision Closure Rate
-  const dcr = await getLatestDCR(team.orgId, team._id);
-  const decisionClosureRateScore = dcr ? dcr.score : 50; // fallback to neutral
+  const decisionClosureRateScore = null;
 
   const energy = computeEnergyIndex({
     resilienceScore,

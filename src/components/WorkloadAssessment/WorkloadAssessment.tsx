@@ -51,12 +51,12 @@ export const WorkloadAssessment: React.FC<WorkloadAssessmentProps> = ({ onTrackE
   const [sessionId] = useState(() => generateSessionId());
   const [inputs, setInputs] = useState<AssessmentInputs | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
-  const [wastePercent, setWastePercent] = useState(0.25);
+  const wastePercent = 0.25;
 
   // Track assessment started on mount
   useEffect(() => {
     onTrackEvent?.('assessment_started', { sessionId });
-  }, []);
+  }, [onTrackEvent, sessionId]);
 
   const handleFormSubmit = (formInputs: AssessmentInputs) => {
     setInputs(formInputs);

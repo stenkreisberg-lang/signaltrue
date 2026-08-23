@@ -163,7 +163,7 @@ router.get('/jira/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Jira OAuth: Connected for org', orgId);
@@ -283,7 +283,7 @@ router.get('/asana/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Asana OAuth: Connected for org', orgId);
@@ -417,7 +417,7 @@ router.get('/gmail/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Gmail OAuth: Connected for org', orgId, 'email:', email);
@@ -539,7 +539,7 @@ router.get('/meet/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Meet OAuth: Connected for org', orgId);
@@ -642,7 +642,7 @@ router.get('/notion/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Notion OAuth: Connected for org', orgId);
@@ -758,7 +758,7 @@ router.get('/hubspot/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('HubSpot OAuth: Connected for org', orgId);
@@ -869,7 +869,7 @@ router.get('/pipedrive/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Pipedrive OAuth: Connected for org', orgId);
@@ -984,7 +984,7 @@ router.get('/basecamp/oauth/callback', async (req, res) => {
           measurementScope: 'metadata only',
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     console.log('Basecamp OAuth: Connected for org', orgId);

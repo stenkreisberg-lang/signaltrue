@@ -140,7 +140,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const project = await Project.findOneAndUpdate(projectFilter(req, req.params.id), updates, {
-      new: true,
+      returnDocument: 'after',
     });
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -270,7 +270,7 @@ router.post('/:id/attachments', requireApiKey, async (req, res) => {
     const project = await Project.findOneAndUpdate(
       projectFilter(req, req.params.id),
       { $push: { attachments: attachment } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!project) {

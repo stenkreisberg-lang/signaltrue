@@ -98,7 +98,7 @@ router.post(
                 measurementScope: 'organization-wide metadata via Workspace delegation',
               },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           )
         )
       );
@@ -1294,7 +1294,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
           {
             $set: microsoftFields,
           },
-          { new: true }
+          { returnDocument: 'after' }
         );
       }
 
@@ -1306,7 +1306,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
             $setOnInsert: { name: orgSlug, industry: 'General' },
             $set: microsoftFields,
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
       if (!updatedOrg) {

@@ -342,7 +342,7 @@ async function computeOverloadRisk(teamId, weekStart, metrics, baselines) {
       contributions,
       scoringVersion: SCORING_VERSION,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'overload' });
@@ -384,7 +384,7 @@ async function computeExecutionRisk(teamId, weekStart, metrics, baselines) {
       contributions,
       scoringVersion: SCORING_VERSION,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'execution' });
@@ -420,7 +420,7 @@ async function computeRetentionStrainRisk(teamId, weekStart, history, baselines)
       contributions,
       scoringVersion: SCORING_VERSION,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'retention_strain' });
@@ -576,7 +576,7 @@ async function computeBDI(teamId, orgId, weekStart, metrics, baselines) {
       baseline: bdiBaseline,
       scoringVersion: SCORING_VERSION,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // Update team's bdi field

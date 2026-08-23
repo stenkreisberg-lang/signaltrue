@@ -1,18 +1,16 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
 import ProtectedRoute from './ProtectedRoute';
 import { clearStoredSession, getAuthenticatedContext } from '../utils/authContext';
 
-jest.mock('react-router-dom', () => ({ Navigate: ({ to }) => <div>Navigate to {to}</div> }), {
-  virtual: true,
-});
+vi.mock('react-router-dom', () => ({ Navigate: ({ to }) => <div>Navigate to {to}</div> }));
 
-jest.mock('../utils/authContext', () => ({
+vi.mock('../utils/authContext', () => ({
   SESSION_INVALIDATED_EVENT: 'signaltrue:session-invalidated',
-  clearStoredSession: jest.fn(() => {
+  clearStoredSession: vi.fn(() => {
     ['token', 'user', 'orgId', 'teamId'].forEach((key) => globalThis.localStorage.removeItem(key));
   }),
-  getAuthenticatedContext: jest.fn(),
+  getAuthenticatedContext: vi.fn(),
 }));
 
 function renderProtected() {
@@ -25,7 +23,7 @@ function renderProtected() {
 
 beforeEach(() => {
   localStorage.clear();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test('redirects to login when no token exists', () => {

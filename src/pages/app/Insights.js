@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import TeamStateBadge from '../../components/insights/TeamStateBadge';
@@ -89,16 +89,7 @@ function Insights() {
   const scopeLabel = familyScope === 'team' ? 'This team' : 'The organization';
   const prioritySummary = buildPrioritySummary(families, scopeLabel, gapLine);
 
-  useEffect(() => {
-    if (!teamId) {
-      setError('No team selected. Please select a team first.');
-      setLoading(false);
-      return;
-    }
-    fetchInsights();
-  }, [teamId]);
-
-  const fetchInsights = async () => {
+  const fetchInsights = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -124,7 +115,16 @@ function Insights() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [teamId]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setError('No team selected. Please select a team first.');
+      setLoading(false);
+      return;
+    }
+    fetchInsights();
+  }, [fetchInsights, teamId]);
 
   const handleActivateAction = async (actionId) => {
     try {

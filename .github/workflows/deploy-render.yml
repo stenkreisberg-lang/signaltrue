@@ -22,7 +22,7 @@ jobs:
           node-version: '22'
 
       - name: Install backend deps
-        run: npm --prefix backend ci
+        run: npm --prefix backend ci --no-audit --no-fund
 
       - name: Run backend tests
         run: npm --prefix backend test
@@ -39,7 +39,7 @@ jobs:
       - name: Verify deployed commit
         env:
           EXPECTED_COMMIT: ${{ github.sha }}
-          HEALTH_URL: https://signaltrue-backend.onrender.com/api/health
+          HEALTH_URL: https://signaltrue-backend.onrender.com/api/health/ready
         run: |
           for attempt in {1..36}; do
             response="$(curl --fail --silent --show-error "$HEALTH_URL" || true)"

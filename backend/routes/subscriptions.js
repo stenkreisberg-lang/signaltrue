@@ -7,6 +7,7 @@
 import express from 'express';
 import Organization from '../models/organizationModel.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
+import MonthlyReport from '../models/monthlyReport.js';
 import accessControlService from '../services/accessControlService.js';
 import { PLAN_DEFINITIONS } from '../utils/subscriptionConstants.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -156,9 +157,10 @@ router.put('/upgrade', async (req, res) => {
       if (changes.gained.includes('monthlyReportsLeadership')) {
         // Trigger backfill (implementation depends on report generation service)
         backfillResult = {
-          status: 'queued',
+          status: 'not-scheduled',
           months: backfillMonths,
-          message: `Backfilling ${backfillMonths} months of leadership reports`,
+          available: false,
+          message: 'Historical leadership report backfill is not currently available.',
         };
       }
     }
@@ -237,11 +239,23 @@ router.put('/downgrade', async (req, res) => {
     // Handle leadership report archival if downgrading from leadership
     let archivalResult = null;
     if (changes.lost.includes('monthlyReportsLeadership') && archiveLeadershipReports) {
+      const archivedAt = new Date();
+      const result = await MonthlyReport.updateMany(
+        { orgId: organization._id, accessStatus: { $ne: 'archived' } },
+        {
+          $set: {
+            accessStatus: 'archived',
+            archivedAt,
+            archiveReason: `Plan downgrade from ${currentPlanId} to ${targetPlanId}`,
+          },
+        }
+      );
       archivalResult = {
         status: 'archived',
-        message: 'Leadership reports archived (read-only access for HR)',
+        archivedCount: result.modifiedCount,
+        archivedAt,
+        message: 'Leadership reports archived and retained as read-only records.',
       };
-      // TODO: Implement actual archival logic
     }
 
     res.json({

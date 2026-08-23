@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Shield, Lock, Users, Zap, BarChart3 } from 'lucide-react';
+import { Activity, ArrowRight, Shield, Lock, Zap, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import Navbar from '../components/Navbar';

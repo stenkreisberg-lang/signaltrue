@@ -46,9 +46,6 @@ interface DriftReport {
 
 // Analytics tracking
 const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[DriftReport Analytics] ${eventName}`, data);
-  }
   try {
     fetch(`${API_BASE}/api/analytics/track`, {
       method: 'POST',
@@ -120,14 +117,6 @@ function getSubScoreColor(value: number): string {
   return 'bg-green-500';
 }
 
-function getTrendDirection(values: number[]): 'up' | 'down' | 'stable' {
-  if (values.length < 2) return 'stable';
-  const diff = values[values.length - 1] - values[0];
-  if (diff > 4) return 'up';
-  if (diff < -4) return 'down';
-  return 'stable';
-}
-
 const DriftReportPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [report, setReport] = useState<DriftReport | null>(null);
@@ -163,7 +152,7 @@ const DriftReportPage = () => {
           score: data.report.score.totalScore,
           category: data.report.score.category,
         });
-      } catch (err) {
+      } catch {
         setError('Failed to load report. Please try again.');
       } finally {
         setLoading(false);

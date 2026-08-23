@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Building2,
-  Users,
-  Clock,
-  TrendingUp,
-  ChevronDown,
-  HelpCircle,
-  ArrowRight,
-} from 'lucide-react';
+import { Building2, Clock, TrendingUp, ChevronDown, HelpCircle, ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { AssessmentInputs, CompanyInputs, WorkloadInputs, RetentionInputs } from './types';

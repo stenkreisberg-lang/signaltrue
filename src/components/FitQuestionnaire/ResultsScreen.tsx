@@ -49,7 +49,7 @@ const getTierExplanation = (tier: string) => {
 
 const ResultsScreen = ({
   result,
-  answers,
+  answers: _answers,
   onReset,
   onSubmitEmail,
   onClose,
@@ -118,7 +118,7 @@ const ResultsScreen = ({
     try {
       await onSubmitEmail(email, consent);
       setIsSubmitted(true);
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);

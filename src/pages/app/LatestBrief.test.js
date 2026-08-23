@@ -1,43 +1,39 @@
-/* eslint-env jest */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
 import LatestBrief from './LatestBrief';
 
 const installMatchMedia = () => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
       matches: false,
       media: query,
       onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
     })),
   });
 };
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
-jest.mock(
-  'react-router-dom',
-  () => ({
-    Link: ({ children }) => children,
-    NavLink: ({ children }) => children,
-    useNavigate: () => jest.fn(),
-    useLocation: () => ({ pathname: '/app/latest-brief' }),
-  }),
-  { virtual: true }
-);
-
-jest.mock('../../utils/api', () => ({
-  __esModule: true,
-  default: { get: jest.fn(), post: jest.fn() },
+vi.mock('react-router-dom', () => ({
+  Link: ({ children }) => children,
+  NavLink: ({ children }) => children,
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/app/latest-brief' }),
 }));
 
-jest.mock('../../utils/authContext', () => ({
-  getAuthenticatedContext: jest.fn(),
+vi.mock('../../utils/api', () => ({
+  __esModule: true,
+  default: { get: vi.fn(), post: vi.fn() },
+}));
+
+vi.mock('../../utils/authContext', () => ({
+  getAuthenticatedContext: vi.fn(),
 }));
 
 const brief = {
@@ -100,7 +96,7 @@ const brief = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   installMatchMedia();
   getAuthenticatedContext.mockResolvedValue({
     user: { name: 'Admin', role: 'hr_admin' },

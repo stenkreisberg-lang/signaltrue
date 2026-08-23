@@ -214,16 +214,29 @@ export async function parseHrRosterFile(file) {
   const extension = path.extname(getUploadedFileName(file)).toLowerCase();
   const buffer = await getUploadedFileBuffer(file);
 
-  if (['.xlsx', '.xls', '.csv'].includes(extension)) {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) return [];
-    return XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
-      defval: '',
-      raw: false,
-      blankrows: false,
+  if (extension === '.xlsx') {
+    const { default: readXlsxFile } = await import('read-excel-file/node');
+    const [headers = [], ...rows] = await readXlsxFile(buffer);
+    return rows
+      .filter((row) => row.some((value) => value !== null && value !== ''))
+      .map((row) =>
+        Object.fromEntries(headers.map((header, index) => [String(header || ''), row[index] ?? '']))
+      );
+  }
+
+  if (extension === '.csv') {
+    const { parse } = await import('csv-parse/sync');
+    return parse(buffer, {
+      columns: true,
+      bom: true,
+      skip_empty_lines: true,
+      relax_column_count: true,
+      trim: true,
     });
+  }
+
+  if (extension === '.xls') {
+    throw new Error('Legacy .xls files are not supported. Export the roster as .xlsx or CSV.');
   }
 
   if (extension === '.pdf') {
@@ -237,7 +250,7 @@ export async function parseHrRosterFile(file) {
     }
   }
 
-  throw new Error('Unsupported file type. Upload CSV, XLS, XLSX, or PDF.');
+  throw new Error('Unsupported file type. Upload CSV, XLSX, or PDF.');
 }
 
 export async function importHrRosterRows(orgId, rows, options = {}) {

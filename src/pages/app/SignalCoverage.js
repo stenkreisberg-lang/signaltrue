@@ -29,7 +29,7 @@ export default function SignalCoverage() {
           calibration:
             calibration.status === 'fulfilled' && calibration.value ? calibration.value.data : null,
         });
-      } catch (error) {
+      } catch {
         if (active) setStatus({ loading: false, sources: [], calibration: null });
       }
     };

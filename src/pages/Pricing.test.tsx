@@ -1,26 +1,21 @@
-/* eslint-env jest */
-import { afterEach, beforeEach, expect, jest as mockJest, test } from '@jest/globals';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import Pricing from './Pricing';
 import { clearStoredSession } from '../utils/authContext';
 
-const mockNavigate = mockJest.fn();
+const mockNavigate = vi.fn();
 
-mockJest.mock(
-  'react-router-dom',
-  () => ({
-    Link: ({ children }: { children: ReactNode }) => children,
-    useNavigate: () => mockNavigate,
-  }),
-  { virtual: true }
-);
+vi.mock('react-router-dom', () => ({
+  Link: ({ children }: { children: ReactNode }) => children,
+  useNavigate: () => mockNavigate,
+}));
 
-mockJest.mock('../components/Navbar', () => () => null);
-mockJest.mock('../components/Footer', () => () => null);
-mockJest.mock('../components/PageMeta', () => () => null);
-mockJest.mock('../utils/authContext', () => ({
-  clearStoredSession: mockJest.fn(() => {
+vi.mock('../components/Navbar', () => ({ default: () => null }));
+vi.mock('../components/Footer', () => ({ default: () => null }));
+vi.mock('../components/PageMeta', () => ({ default: () => null }));
+vi.mock('../utils/authContext', () => ({
+  clearStoredSession: vi.fn(() => {
     ['token', 'user', 'orgId', 'teamId'].forEach((key) => globalThis.localStorage.removeItem(key));
   }),
 }));
@@ -42,8 +37,8 @@ function renderPricing() {
 
 beforeEach(() => {
   localStorage.clear();
-  mockJest.clearAllMocks();
-  global.fetch = mockJest.fn((url: RequestInfo | URL) => {
+  vi.clearAllMocks();
+  global.fetch = vi.fn((url: RequestInfo | URL) => {
     if (String(url).includes('/api/analytics/track')) {
       return mockResponse(200, {});
     }
@@ -64,7 +59,7 @@ test('sends an unauthenticated paid-plan visitor to registration', async () => {
 test('recovers from an expired checkout token by clearing it and opening registration', async () => {
   localStorage.setItem('token', 'expired-token');
   localStorage.setItem('user', '{"role":"admin"}');
-  global.fetch = mockJest.fn((url: RequestInfo | URL) => {
+  global.fetch = vi.fn((url: RequestInfo | URL) => {
     if (String(url).includes('/api/analytics/track')) {
       return mockResponse(200, {});
     }

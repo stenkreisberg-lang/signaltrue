@@ -7,6 +7,9 @@
 
 # testing
 /coverage
+/backend/coverage
+/test-results
+/playwright-report
 
 # production
 /build

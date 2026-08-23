@@ -223,7 +223,7 @@ export async function setStatus({ tenantId, caseId, actor, status, req = null })
   const updated = await ControlReviewCase.findOneAndUpdate(
     { _id: caseId, tenantId },
     { $set: { status } },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!updated) throw new Error('Case not found');
 
@@ -281,7 +281,7 @@ export async function recordDecision({
   const updated = await ControlReviewCase.findOneAndUpdate(
     { _id: caseId, tenantId },
     { $set: update },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!updated) throw new Error('Case not found');
 
@@ -318,7 +318,7 @@ export async function recordConsultationNotApplicable({
         'consultationNotApplicable.recordedAt': new Date(),
       },
     },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   await recordAudit({

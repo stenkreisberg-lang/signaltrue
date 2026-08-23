@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../utils/api';
 
 interface Goal {
@@ -42,7 +42,7 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
     try {
       setLoading(true);
       const [goalsRes, summaryRes] = await Promise.all([
@@ -57,13 +57,13 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId]);
 
   useEffect(() => {
     if (orgId) {
       fetchGoals();
     }
-  }, [orgId]);
+  }, [fetchGoals, orgId]);
 
   const getStatusColor = (status: string): string => {
     switch (status) {

@@ -4,13 +4,13 @@
 services:
   - type: web
     name: signaltrue-backend
-    env: node
+    runtime: node
     region: oregon
     plan: starter
     rootDir: backend
-    buildCommand: rm -rf node_modules && npm install
+    buildCommand: npm ci --omit=dev --no-audit --no-fund
     startCommand: node server.js
-    healthCheckPath: /
+    healthCheckPath: /api/health/ready
     envVars:
       - key: NODE_ENV
         value: production
@@ -97,38 +97,3 @@ services:
         sync: false
       - key: INTERNAL_SERVICE_TOKEN
         sync: false
-      # Re-deploy trigger
-
-# NOTE: Weekly email scheduling is now SELF-CONTAINED in the backend server.
-# The weeklyEmailScheduler service handles:
-#   - Primary cron: Monday 8:00 AM UTC
-#   - Watchdog: Hourly check for missed sends
-#   - Startup catch-up: Sends on every server boot if missed
-#   - Deduplication: Logs each send in MongoDB, never double-sends
-# No external cron dependency needed for weekly emails.
-
-# Cron Jobs for automated tasks (kept as backup safety net)
-crons:
-  - name: weekly-reports-safety-net
-    schedule: '0 9 * * 1' # Every Monday at 9:00 AM UTC (backup — server handles this internally)
-    command: |
-      curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-weekly-email" \
-        -H "Content-Type: application/json" \
-        -H "x-report-secret: $REPORT_TRIGGER_SECRET"
-    region: oregon
-
-  - name: weekly-site-analytics-report
-    schedule: '45 7 * * 1' # Every Monday at 7:45 AM UTC (backup — server handles this internally)
-    command: |
-      curl -X POST "https://signaltrue-backend.onrender.com/api/reports/trigger-site-analytics-email" \
-        -H "Content-Type: application/json" \
-        -H "x-report-secret: $REPORT_TRIGGER_SECRET"
-    region: oregon
-
-  - name: daily-reminders
-    schedule: '0 10 * * *' # Every day at 10:00 AM UTC
-    command: |
-      curl -X POST "https://signaltrue-backend.onrender.com/api/reminders/check-followups" \
-        -H "Content-Type: application/json" \
-        -H "x-cron-secret: $CRON_SECRET"
-    region: oregon

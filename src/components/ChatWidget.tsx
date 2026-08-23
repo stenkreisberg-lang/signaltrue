@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Loader2, ExternalLink, BarChart3 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, X, Send, Loader2, BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { getAssessmentSession, AssessmentSession, AssessmentResult } from './WorkloadAssessment';
+import { getAssessmentSession, AssessmentSession } from './WorkloadAssessment';
 
 interface ChatMessage {
   id: string;

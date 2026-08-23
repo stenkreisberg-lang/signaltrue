@@ -68,7 +68,7 @@ router.post(
                 confidence: 'medium',
               },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           )
         );
       }
@@ -88,7 +88,7 @@ router.post(
                 confidence: 'medium',
               },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           )
         );
       }

@@ -57,7 +57,7 @@ export async function runManagerOverloadForOrg(orgId, weekStartStr, opts = {}) {
       await ManagerWeekly.findOneAndUpdate(
         { orgId, managerHash: result.managerHash, weekStart: weekStartStr },
         { $set: result },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
       if (result.suppressed) suppressed++;
       else processed++;

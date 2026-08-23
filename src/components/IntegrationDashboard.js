@@ -607,10 +607,6 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           integration={integrations.find((i) => i.source === showConnectModal)}
           onClose={() => setShowConnectModal(null)}
           onDisconnect={() => disconnectIntegration(showConnectModal)}
-          onSave={() => {
-            fetchIntegrations();
-            setShowConnectModal(null);
-          }}
         />
       )}
     </div>
@@ -618,7 +614,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 }
 
 // Settings Modal Component
-function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, onSave }) {
+function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }) {
   const config = INTEGRATIONS[source];
   const Icon = config?.icon || Link2;
 

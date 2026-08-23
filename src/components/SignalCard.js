@@ -5,7 +5,7 @@ import { Card, Badge, Button } from './UIComponents';
  * SignalCard component
  * Primary UI for displaying signals with severity, confidence, and deviation data
  */
-const SignalCard = ({ signal, onViewDetails, onAssign, onUpdateStatus }) => {
+const SignalCard = ({ signal, onViewDetails, onAssign }) => {
   const {
     _id,
     title,

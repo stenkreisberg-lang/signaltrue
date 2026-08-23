@@ -53,7 +53,7 @@ router.post('/:id/feedback', async (req, res) => {
     const one = await OneOnOne.findByIdAndUpdate(
       req.params.id,
       { $push: { feedback: { authorId: req.user.userId, text } } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     res.json(one);
   } catch (err) {

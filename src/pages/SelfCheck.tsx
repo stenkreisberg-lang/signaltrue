@@ -12,11 +12,6 @@ const API_BASE =
 
 // Analytics tracking function
 const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[SelfCheck Analytics] ${eventName}`, data);
-  }
-
   // Track event - can be connected to analytics provider
   // window.analytics?.track(eventName, data);
 
@@ -56,7 +51,7 @@ const SelfCheck = () => {
       start();
       trackEvent('self_check_started');
     }
-  }, []);
+  }, [hasStarted, start]);
 
   // Track questionnaire completed
   useEffect(() => {

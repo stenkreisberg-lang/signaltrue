@@ -31,6 +31,7 @@ const EhrsSummit2026: React.FC = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Initialize tracking pixels on page load
   useEffect(() => {
@@ -51,6 +52,7 @@ const EhrsSummit2026: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitError('');
 
     try {
       // Track form submission
@@ -60,7 +62,7 @@ const EhrsSummit2026: React.FC = () => {
 
       // Submit to backend CRM with EHRS2026 tag
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-      await fetch(`${apiUrl}/api/leads`, {
+      const response = await fetch(`${apiUrl}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,15 +71,13 @@ const EhrsSummit2026: React.FC = () => {
           tag: 'EHRS2026',
           timestamp: new Date().toISOString(),
         }),
-      }).catch(() => {
-        // Silently fail - still show success to user
-        console.log('Lead submission endpoint not available');
       });
+      if (!response.ok) throw new Error('Unable to submit the form');
 
       setSubmitted(true);
     } catch (error) {
       console.error('Form submission error:', error);
-      setSubmitted(true); // Still show success for UX
+      setSubmitError('We could not submit your details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -469,6 +469,12 @@ const EhrsSummit2026: React.FC = () => {
                 placeholder="Mis on sinu organisatsioonis hetkel suurim väljakutse?"
               />
             </div>
+
+            {submitError && (
+              <p role="alert" className="text-sm font-medium text-red-600">
+                {submitError}
+              </p>
+            )}
 
             {/* Submit Button */}
             <Button

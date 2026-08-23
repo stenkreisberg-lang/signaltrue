@@ -25,7 +25,7 @@ router.patch('/:teamId/drivers', async (req, res) => {
     const update = {};
     if (driverWeights) update.driverWeights = driverWeights;
     if (seasonalityFlags) update.seasonalityFlags = seasonalityFlags;
-    const team = await Team.findOneAndUpdate(teamFilter(req, teamId), update, { new: true });
+    const team = await Team.findOneAndUpdate(teamFilter(req, teamId), update, { returnDocument: 'after' });
     if (!team) return res.status(404).json({ message: 'Team not found' });
     res.json({ message: 'Drivers updated', team });
   } catch (err) {
@@ -163,7 +163,7 @@ router.post('/analyze', async (req, res) => {
 
     // Optionally save to team
     if (teamId) {
-      await Team.findOneAndUpdate(teamFilter(req, teamId), { playbook }, { new: true });
+      await Team.findOneAndUpdate(teamFilter(req, teamId), { playbook }, { returnDocument: 'after' });
     }
 
     res.json({ playbook });

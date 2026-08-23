@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import IntegrationDashboard from '../components/IntegrationDashboard';
 import { Link2, CheckCircle2, XCircle, ArrowLeft, Settings } from 'lucide-react';
@@ -26,6 +26,49 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // Exchange OAuth code for tokens
+  const handleOAuthCallback = useCallback(
+    async (source: string, code: string) => {
+      setLoading(true);
+
+      try {
+        const token = localStorage.getItem('token');
+
+        const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/callback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Connection failed');
+        }
+
+        setCallbackStatus({
+          success: true,
+          source,
+          message: `${formatSourceName(source)} connected successfully!`,
+        });
+
+        // Clear URL params
+        navigate('/integrations', { replace: true });
+      } catch (err) {
+        setCallbackStatus({
+          success: false,
+          source,
+          message: err instanceof Error ? err.message : 'Connection failed',
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [navigate]
+  );
+
   // Handle OAuth callback
   useEffect(() => {
     const code = searchParams.get('code');
@@ -44,47 +87,7 @@ export default function IntegrationsPage() {
     if (code && source) {
       handleOAuthCallback(source, code);
     }
-  }, [searchParams]);
-
-  // Exchange OAuth code for tokens
-  const handleOAuthCallback = async (source: string, code: string) => {
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem('token');
-
-      const res = await fetch(`${API_BASE}/api/integrations-v2/${source}/callback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Connection failed');
-      }
-
-      setCallbackStatus({
-        success: true,
-        source,
-        message: `${formatSourceName(source)} connected successfully!`,
-      });
-
-      // Clear URL params
-      navigate('/integrations', { replace: true });
-    } catch (err) {
-      setCallbackStatus({
-        success: false,
-        source,
-        message: err instanceof Error ? err.message : 'Connection failed',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [handleOAuthCallback, searchParams]);
 
   useEffect(() => {
     getAuthenticatedContext()

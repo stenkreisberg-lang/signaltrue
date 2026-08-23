@@ -75,7 +75,7 @@ export async function computeAndSaveBaseline(orgId, teamId, asOfDate = new Date(
           updatedAt: new Date(),
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
     console.info(
       `[EngagementBaseline] Team ${teamId}: baseline invalid — ` +
@@ -118,7 +118,7 @@ export async function computeAndSaveBaseline(orgId, teamId, asOfDate = new Date(
         updatedAt: new Date(),
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   console.info(

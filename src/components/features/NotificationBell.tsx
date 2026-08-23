@@ -19,7 +19,7 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({
-  userId,
+  userId: _userId,
   onNotificationClick,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);

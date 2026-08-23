@@ -1,10 +1,10 @@
-/* eslint-env jest */
 import { clearStoredSession } from './authContext';
+import { vi } from 'vitest';
 
-jest.mock('./api', () => ({ get: jest.fn() }));
+vi.mock('./api', () => ({ default: { get: vi.fn() } }));
 
 test('clearStoredSession removes all identity and tenant cache values', () => {
-  const invalidated = jest.fn();
+  const invalidated = vi.fn();
   window.addEventListener('signaltrue:session-invalidated', invalidated);
   localStorage.setItem('token', 'expired-token');
   localStorage.setItem('user', '{"role":"admin"}');

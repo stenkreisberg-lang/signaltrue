@@ -44,11 +44,15 @@ const oarScoreSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
+    available: { type: Boolean, default: true },
+    reason: { type: String, default: null },
 
     // Four sub-pillars (each 0-100)
     pillars: {
       execution: {
-        score: { type: Number, min: 0, max: 100, default: 50 },
+        available: { type: Boolean, default: false },
+        reason: { type: String, default: null },
+        score: { type: Number, min: 0, max: 100, default: null },
         components: {
           decisionLatency: { type: Number }, // Lower is better
           focusTime: { type: Number }, // Higher is better
@@ -59,7 +63,9 @@ const oarScoreSchema = new mongoose.Schema(
         trendPct: { type: Number, default: 0 },
       },
       innovation: {
-        score: { type: Number, min: 0, max: 100, default: 50 },
+        available: { type: Boolean, default: false },
+        reason: { type: String, default: null },
+        score: { type: Number, min: 0, max: 100, default: null },
         components: {
           ideaCaptureRate: { type: Number },
           experimentSuccessRate: { type: Number },
@@ -69,7 +75,9 @@ const oarScoreSchema = new mongoose.Schema(
         trendPct: { type: Number, default: 0 },
       },
       wellbeing: {
-        score: { type: Number, min: 0, max: 100, default: 50 },
+        available: { type: Boolean, default: false },
+        reason: { type: String, default: null },
+        score: { type: Number, min: 0, max: 100, default: null },
         components: {
           energyIndex: { type: Number },
           afterHoursRate: { type: Number },
@@ -80,7 +88,9 @@ const oarScoreSchema = new mongoose.Schema(
         trendPct: { type: Number, default: 0 },
       },
       culture: {
-        score: { type: Number, min: 0, max: 100, default: 50 },
+        available: { type: Boolean, default: false },
+        reason: { type: String, default: null },
+        score: { type: Number, min: 0, max: 100, default: null },
         components: {
           collaborationIndex: { type: Number },
           networkBreadth: { type: Number },

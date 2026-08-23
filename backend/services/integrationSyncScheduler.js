@@ -7,7 +7,13 @@
 
 import cron from 'node-cron';
 import { syncAllIntegrations, getAdapter } from './integrationAdapters.js';
-import { syncCoreIntegrations } from './coreIntegrationAdapters.js';
+import {
+  syncCoreIntegrations,
+  SlackAdapter,
+  MicrosoftAdapter,
+  GoogleCalendarAdapter,
+  GoogleChatAdapter,
+} from './coreIntegrationAdapters.js';
 import { computeDailyMetrics, computeWeeklyRollups } from './integrationMetricsService.js';
 import { detectSignals } from './signalGenerationService.js';
 import { bridgeAllOrgSignals } from './signalBridgeService.js';
@@ -336,7 +342,15 @@ export async function triggerManualSync(orgId, integrationType, options = {}) {
 
   console.log(`[Manual Sync] Starting ${integrationType} sync for org ${orgId}`);
 
-  const adapter = getAdapter(integrationType);
+  const coreAdapters = {
+    slack: SlackAdapter,
+    'microsoft-outlook': MicrosoftAdapter,
+    'microsoft-teams': MicrosoftAdapter,
+    'google-calendar': GoogleCalendarAdapter,
+    'google-chat': GoogleChatAdapter,
+  };
+  const CoreAdapter = coreAdapters[integrationType];
+  const adapter = CoreAdapter ? new CoreAdapter() : getAdapter(integrationType);
   const syncResult = await adapter.sync(orgId, since, until);
 
   if (computeMetrics && syncResult.success) {

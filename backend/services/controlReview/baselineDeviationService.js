@@ -195,7 +195,7 @@ export async function observeMetric({
   return SignalObservation.findOneAndUpdate(
     { tenantId, teamId, metric, periodStart: currentRow.periodStart },
     { $set: observation },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 }
 

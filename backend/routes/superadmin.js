@@ -194,7 +194,7 @@ router.patch('/organizations/:id', authenticateToken, requireSuperadmin, async (
     const org = await Organization.findByIdAndUpdate(
       req.params.id,
       { $set: update },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!org) {
@@ -305,7 +305,7 @@ router.put('/users/:id', authenticateToken, requireSuperadmin, async (req, res) 
     const user = await User.findByIdAndUpdate(
       req.params.id,
       orgId === null ? { $unset: { orgId: 1, teamId: 1 }, ...update } : { $set: update },
-      { new: true }
+      { returnDocument: 'after' }
     ).select('name email role orgId teamId');
 
     if (!user) {

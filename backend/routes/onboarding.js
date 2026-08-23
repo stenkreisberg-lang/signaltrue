@@ -198,7 +198,7 @@ router.delete(
     const inv = await Invitation.findOneAndUpdate(
       { _id: req.params.id, orgId: req.user.orgId, acceptedAt: null, revokedAt: null },
       { $set: { revokedAt: new Date(), revokedBy: req.user.userId } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!inv) return res.status(404).json({ message: 'Pending invitation not found' });
     return res.status(204).end();

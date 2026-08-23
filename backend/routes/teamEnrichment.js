@@ -133,7 +133,7 @@ router.put('/report-settings', async (req, res) => {
           'settings.currency': currency,
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
     await Team.updateMany(
       { orgId: req.user.orgId },

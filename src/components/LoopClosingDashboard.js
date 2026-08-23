@@ -6,7 +6,7 @@
  * - 30-Day Work Health Delta Report
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 
 // ============================================
@@ -280,7 +280,6 @@ export function WorkHealthDeltaTile({ teamId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!teamId) return;
@@ -588,7 +587,7 @@ export function CollisionHeatmapTile({ teamId }) {
     );
   }
 
-  const { formattedHeatmap, summary, redZones, focusWindows } = data;
+  const { formattedHeatmap, summary } = data;
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   const getSlotColor = (density) => {
@@ -1310,7 +1309,7 @@ export default function LoopClosingDashboard({
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState(null);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     if (!teamId) {
       setLoading(false);
       return;
@@ -1336,7 +1335,7 @@ export default function LoopClosingDashboard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [teamId, showPhase2]);
 
   // Refresh all integrations and regenerate data
   const handleRefreshAll = async () => {
@@ -1396,7 +1395,7 @@ export default function LoopClosingDashboard({
 
   useEffect(() => {
     fetchDashboard();
-  }, [teamId, showPhase2]);
+  }, [fetchDashboard]);
 
   if (!teamId) {
     return null; // Don't show anything if no team selected

@@ -87,7 +87,7 @@ router.get('/:slug', async (req, res) => {
     const post = await BlogPost.findOneAndUpdate(
       { slug: req.params.slug, status: 'published' },
       { $inc: { viewCount: 1 } },
-      { new: true }
+      { returnDocument: 'after' }
     ).select('-externalProvider.webhookPayload');
 
     if (!post) {
@@ -184,7 +184,7 @@ router.put('/:id', requireApiKey, async (req, res) => {
     }
 
     const post = await BlogPost.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 
@@ -226,7 +226,7 @@ router.put('/external/:provider/:externalId', requireApiKey, async (req, res) =>
         'externalProvider.externalId': externalId,
       },
       updateData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(post);
@@ -324,7 +324,7 @@ router.post('/webhook/contentful', requireApiKey, async (req, res) => {
     const post = await BlogPost.findOneAndUpdate(
       { 'externalProvider.name': 'contentful', 'externalProvider.externalId': sys.id },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(post);
@@ -368,7 +368,7 @@ router.post('/webhook/sanity', requireApiKey, async (req, res) => {
     const post = await BlogPost.findOneAndUpdate(
       { 'externalProvider.name': 'sanity', 'externalProvider.externalId': _id },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(post);
@@ -428,7 +428,7 @@ router.post('/webhook/strapi', requireApiKey, async (req, res) => {
     const post = await BlogPost.findOneAndUpdate(
       { 'externalProvider.name': 'strapi', 'externalProvider.externalId': String(entry.id) },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(post);
@@ -485,7 +485,7 @@ router.post('/webhook/wordpress', requireApiKey, async (req, res) => {
     const post = await BlogPost.findOneAndUpdate(
       { 'externalProvider.name': 'wordpress', 'externalProvider.externalId': String(ID) },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(post);
@@ -551,7 +551,7 @@ router.post('/webhook/ghost', requireApiKey, async (req, res) => {
     const savedPost = await BlogPost.findOneAndUpdate(
       { 'externalProvider.name': 'ghost', 'externalProvider.externalId': entry.id },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     res.json(savedPost);
@@ -650,7 +650,7 @@ router.post('/webhook/babylovegrowth', requireApiKey, async (req, res) => {
         'externalProvider.externalId': String(externalId),
       },
       postData,
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     console.log(

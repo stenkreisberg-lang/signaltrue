@@ -6,23 +6,37 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // Minimal provider adapter. Returns { generate: async ({ prompt, model }) }
 function openaiAdapter() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI is not configured. Set OPENAI_API_KEY to enable AI generation.');
+  }
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return {
     generate: async ({ prompt, model, max_tokens = 400 }) => {
-      const completion = await client.chat.completions.create({
+      const response = await client.responses.create({
         model,
-        messages: [
+        input: [
           { role: 'system', content: 'You synthesize signals into action steps.' },
           { role: 'user', content: prompt },
         ],
-        max_tokens,
+        max_output_tokens: max_tokens,
+        store: false,
       });
-      return completion;
+      return {
+        choices: [{ message: { content: response.output_text } }],
+        usage: {
+          prompt_tokens: response.usage?.input_tokens || 0,
+          completion_tokens: response.usage?.output_tokens || 0,
+          total_tokens: response.usage?.total_tokens || 0,
+        },
+      };
     },
   };
 }
 
 function anthropicAdapter() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('Anthropic is not configured. Set ANTHROPIC_API_KEY to enable AI generation.');
+  }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   return {
     generate: async ({ prompt, model, max_tokens = 400 }) => {
@@ -50,13 +64,7 @@ export default function getProvider() {
   const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
   if (provider === 'openai') return openaiAdapter();
   if (provider === 'anthropic' || provider === 'claude') return anthropicAdapter();
-  // fallback mock
-  return {
-    generate: async ({ prompt }) => ({
-      choices: [{ message: { content: `Mock response for prompt: ${prompt}` } }],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    }),
-  };
+  throw new Error(`Unsupported AI provider: ${provider}`);
 }
 
 /**

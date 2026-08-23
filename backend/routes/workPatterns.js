@@ -278,7 +278,7 @@ router.post(
         personId: null,
       },
       { $set: { ...req.body, tenantId, createdBy: req.user.userId } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     await recordAudit({

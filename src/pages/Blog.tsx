@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Calendar,
   Clock,
-  Tag,
   User,
   ChevronLeft,
   ChevronRight,
@@ -70,12 +69,7 @@ const BlogList = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchPosts();
-    fetchTags();
-  }, [page, selectedTag]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -90,9 +84,9 @@ const BlogList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, selectedTag]);
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/blog/tags`);
       if (response.ok) {
@@ -102,7 +96,12 @@ const BlogList = () => {
     } catch (err) {
       console.error('Failed to fetch tags:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPosts();
+    fetchTags();
+  }, [fetchPosts, fetchTags]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -315,11 +314,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPost();
-  }, [slug]);
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -335,7 +330,11 @@ const BlogPostView = ({ slug }: { slug: string }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

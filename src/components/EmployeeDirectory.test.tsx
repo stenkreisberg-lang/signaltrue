@@ -1,24 +1,23 @@
-import { beforeEach, expect, jest as mockJest, test } from '@jest/globals';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Mock } from 'jest-mock';
+import { beforeEach, expect, test, vi, type Mock } from 'vitest';
 import api from '../utils/api';
 import EmployeeDirectory from './EmployeeDirectory';
 
-mockJest.mock('../utils/api', () => ({
+vi.mock('../utils/api', () => ({
   __esModule: true,
   default: {
-    get: mockJest.fn(),
-    post: mockJest.fn(),
-    put: mockJest.fn(),
-    delete: mockJest.fn(),
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
 const mockedApi = api as unknown as {
-  get: Mock<unknown, [string, ...unknown[]]>;
-  post: Mock<unknown, [string, ...unknown[]]>;
-  put: Mock<unknown, [string, ...unknown[]]>;
-  delete: Mock<unknown, [string, ...unknown[]]>;
+  get: Mock;
+  post: Mock;
+  put: Mock;
+  delete: Mock;
 };
 
 let completeScan: (() => void) | undefined;
@@ -39,7 +38,7 @@ const enrichmentStatus = {
 };
 
 beforeEach(() => {
-  mockJest.clearAllMocks();
+  vi.clearAllMocks();
   completeScan = undefined;
   mockedApi.get.mockImplementation((url: string) => {
     if (url === '/team-members') {
@@ -152,7 +151,7 @@ test('scans the inferred website, applies strong matches, and reports the result
 });
 
 test('deletes an employee profile from the directory row actions', async () => {
-  const confirmSpy = mockJest.spyOn(window, 'confirm').mockReturnValue(true);
+  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
   render(<EmployeeDirectory />);
 

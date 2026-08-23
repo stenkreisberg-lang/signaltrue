@@ -111,7 +111,7 @@ export default function DriftFamilyCard({
   const direction = delta > 3 ? '↑ Rising' : delta < -3 ? '↓ Easing' : '→ Stable';
   const deltaLabel = absDelta > 0 ? `${delta > 0 ? '+' : ''}${delta} pts` : '';
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     if (expanded) {
       setExpanded(false);
     } else {

@@ -84,32 +84,6 @@ export const PlanGate: React.FC<PlanGateProps> = ({ requiredPlan, children, fall
   return hasAccess ? <>{children}</> : <>{fallback}</>;
 };
 
-interface RoleGateProps {
-  allowedRoles: string | string[];
-  children: ReactNode;
-}
-
-/**
- * RoleGate - Conditionally render based on user role
- * Uses AuthContext if available
- */
-export const RoleGate: React.FC<RoleGateProps> = ({ allowedRoles, children }) => {
-  // This would need to integrate with your existing AuthContext
-  // For now, placeholder implementation
-
-  // TODO: Integrate with actual auth context
-  // const { user } = useAuth();
-  // const userRole = user?.role;
-
-  // const allowed = Array.isArray(allowedRoles)
-  //   ? allowedRoles.includes(userRole)
-  //   : allowedRoles === userRole;
-
-  // return allowed ? <>{children}</> : null;
-
-  return <>{children}</>;
-};
-
 interface UpgradePromptProps {
   feature: string;
   title?: string;

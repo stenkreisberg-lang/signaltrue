@@ -24,6 +24,14 @@ const monthlyReportSchema = new mongoose.Schema(
       default: 'setup',
       index: true,
     },
+    accessStatus: {
+      type: String,
+      enum: ['active', 'archived'],
+      default: 'active',
+      index: true,
+    },
+    archivedAt: Date,
+    archiveReason: String,
     dataReadiness: {
       status: {
         type: String,

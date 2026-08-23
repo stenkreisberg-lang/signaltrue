@@ -204,7 +204,7 @@ async function runForTeam(orgId, teamId, weekStartStr, minimumTeamSize) {
         _weeklyMetricsSnapshot: weekly,
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   console.info(

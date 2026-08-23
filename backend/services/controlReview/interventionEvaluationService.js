@@ -219,7 +219,7 @@ export async function evaluateIntervention({ tenantId, interventionId, actor = n
             algorithmVersion: ALGORITHM_VERSION,
           },
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
 
       evaluations.push(doc);

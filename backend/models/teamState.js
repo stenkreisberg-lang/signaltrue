@@ -39,23 +39,8 @@ const teamStateSchema = new mongoose.Schema(
     },
     // Behavioral Intelligence Scores (weekly snapshot)
     intelligenceScores: {
-      attritionRisk: {
-        highRiskCount: { type: Number, default: 0 },
-        criticalRiskCount: { type: Number, default: 0 },
-        avgRiskScore: { type: Number, default: 0 },
-      },
-      managerEffectiveness: { type: Number }, // 0-100 score
-      crisisActive: { type: Boolean, default: false },
-      networkHealth: {
-        siloScore: { type: Number, default: 0 }, // 0-100, higher = worse
-        bottleneckCount: { type: Number, default: 0 },
-        isolatedMemberCount: { type: Number, default: 0 },
-      },
-      successionRisk: {
-        busFactor: { type: Number, default: 100 }, // 0-100, lower = worse
-        criticalRoleCount: { type: Number, default: 0 },
-      },
-      equityScore: { type: Number, default: 100 }, // 0-100, lower = worse
+      available: { type: Boolean, default: false },
+      reason: String,
     },
   },
   {

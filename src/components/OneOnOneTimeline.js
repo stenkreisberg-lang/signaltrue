@@ -8,13 +8,12 @@ export default function OneOnOneTimeline({ teamId, userId }) {
   useEffect(() => {
     const fetchList = async () => {
       try {
-        const token = localStorage.getItem('token');
         let url = `/oneonone?`;
         if (teamId) url += `teamId=${teamId}&`;
         if (userId) url += `userId=${userId}`;
         const res = await api.get(url);
         setList(res.data);
-      } catch (err) {
+      } catch {
         setList([]);
       } finally {
         setLoading(false);

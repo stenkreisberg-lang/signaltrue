@@ -5,6 +5,7 @@ import CategoryKingSignal from '../models/categoryKingSignal.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 import { getOrganizationIntegrationHealth } from '../services/integrationHealthMonitorService.js';
+import { triggerManualSync } from '../services/integrationSyncScheduler.js';
 
 const router = express.Router();
 
@@ -465,7 +466,7 @@ router.post('/signals/:id/acknowledge', authenticateToken, async (req, res) => {
         acknowledgedAt: new Date(),
         acknowledgedBy: req.user.userId,
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!signal) {
@@ -494,7 +495,7 @@ router.post('/signals/:id/dismiss', authenticateToken, async (req, res) => {
         dismissedBy: req.user.userId,
         dismissedReason: reason,
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!signal) {
@@ -539,6 +540,27 @@ router.post('/:type/sync', authenticateToken, async (req, res) => {
   try {
     const { type } = req.params;
     const { orgId } = req.user;
+    const supportedTypes = new Set([
+      'jira',
+      'asana',
+      'gmail',
+      'meet',
+      'notion',
+      'hubspot',
+      'pipedrive',
+      'slack',
+      'microsoft-outlook',
+      'microsoft-teams',
+      'google-calendar',
+      'google-chat',
+    ]);
+
+    if (!supportedTypes.has(type)) {
+      return res.status(501).json({
+        message: `Manual sync is not supported for ${type}.`,
+        status: 'unavailable',
+      });
+    }
 
     const connection = await IntegrationConnection.findOne({
       orgId,
@@ -550,16 +572,44 @@ router.post('/:type/sync', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Integration not connected' });
     }
 
-    // Mark sync as in progress
+    // Mark sync as in progress before handing off the potentially long-running job.
     connection.sync.lastSyncAt = new Date();
     connection.sync.lastSyncStatus = 'in_progress';
     await connection.save();
 
-    // TODO: Trigger actual sync in background
-    // For now, return success
-    res.json({
+    res.status(202).json({
       message: 'Sync initiated',
       status: 'in_progress',
+    });
+
+    setImmediate(async () => {
+      try {
+        const result = await triggerManualSync(orgId, type);
+        const success = Boolean(result?.success);
+        await IntegrationConnection.updateOne(
+          { _id: connection._id },
+          {
+            $set: {
+              'sync.lastSyncStatus': success ? 'success' : 'failed',
+              'sync.lastSuccessfulSyncAt': success ? new Date() : connection.sync.lastSuccessfulSyncAt,
+              'sync.lastSyncMessage': success
+                ? `${result.eventsProcessed || 0} events processed`
+                : String(result?.error || 'Sync failed').slice(0, 500),
+            },
+          }
+        );
+      } catch (error) {
+        console.error('Manual sync background error:', error);
+        await IntegrationConnection.updateOne(
+          { _id: connection._id },
+          {
+            $set: {
+              'sync.lastSyncStatus': 'failed',
+              'sync.lastSyncMessage': String(error.message).slice(0, 500),
+            },
+          }
+        ).catch(() => {});
+      }
     });
   } catch (err) {
     console.error('Manual sync error:', err);
@@ -572,6 +622,7 @@ router.post('/:type/sync', authenticateToken, async (req, res) => {
 // ============================================================
 
 function isIntegrationAvailable(type) {
+  if (type === 'basecamp') return false;
   const envVars = {
     'microsoft-outlook': 'MS_APP_CLIENT_ID',
     'microsoft-teams': 'MS_APP_CLIENT_ID',

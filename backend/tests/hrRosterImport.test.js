@@ -129,4 +129,10 @@ describe('HR roster import', () => {
     ]);
     await expect(fs.access(filePath)).rejects.toThrow();
   });
+
+  test('rejects legacy XLS with a useful conversion instruction', async () => {
+    await expect(
+      parseHrRosterFile({ originalName: 'employees.xls', buffer: Buffer.from('legacy') })
+    ).rejects.toThrow('Export the roster as .xlsx or CSV');
+  });
 });

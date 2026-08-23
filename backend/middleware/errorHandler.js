@@ -30,7 +30,7 @@ export const notFoundHandler = (req, res, next) => {
  * Global error handler middleware
  * Must be the last middleware in the chain
  */
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, req, res, _next) => {
   // Set defaults
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
@@ -45,6 +45,7 @@ export const errorHandler = (err, req, res, next) => {
       method: req.method,
       ip: req.ip,
       userId: req.user?._id,
+      requestId: req.requestId,
     });
   }
 
@@ -56,6 +57,7 @@ export const errorHandler = (err, req, res, next) => {
       status: 'error',
       message: 'Validation failed',
       errors,
+      requestId: req.requestId,
     });
   }
 
@@ -64,6 +66,7 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(400).json({
       status: 'error',
       message: 'Invalid ID format',
+      requestId: req.requestId,
     });
   }
 
@@ -73,6 +76,7 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(409).json({
       status: 'error',
       message: `A record with this ${field} already exists`,
+      requestId: req.requestId,
     });
   }
 
@@ -80,6 +84,7 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(401).json({
       status: 'error',
       message: 'Invalid authentication token',
+      requestId: req.requestId,
     });
   }
 
@@ -87,13 +92,18 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(401).json({
       status: 'error',
       message: 'Authentication token has expired',
+      requestId: req.requestId,
     });
   }
 
   // Send error response
   res.status(err.statusCode).json({
     status: err.status,
-    message: err.message,
+    message:
+      process.env.NODE_ENV === 'production' && err.statusCode >= 500
+        ? 'Internal server error'
+        : err.message,
+    requestId: req.requestId,
     // Include stack trace in development mode only
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });

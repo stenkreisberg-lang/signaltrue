@@ -14,6 +14,7 @@ describe('Error Handling Middleware', () => {
       method: 'GET',
       ip: '127.0.0.1',
       originalUrl: '/api/test',
+      requestId: 'request-test-123',
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -75,6 +76,7 @@ describe('Error Handling Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Something went wrong',
+          requestId: 'request-test-123',
         })
       );
     });

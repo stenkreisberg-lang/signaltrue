@@ -165,6 +165,7 @@ import hsDashboardRoutes from './routes/hsDashboard.js';
 import { authenticateToken } from './middleware/auth.js';
 import auditConsent from './middleware/consentAudit.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import requestContext from './middleware/requestContext.js';
 import {
   applySecurityMiddleware,
   authLimiter,
@@ -246,6 +247,7 @@ async function main() {
     };
     app.use(cors(corsOptions));
     app.set('trust proxy', 1);
+    app.use(requestContext);
 
     // --- Response Compression (gzip) ---
     app.use(
@@ -290,7 +292,27 @@ async function main() {
     // --- API Routes ---
     app.get('/', (req, res) => res.send('SignalTrue backend is running 🚀'));
 
-    // Health check endpoint for monitoring
+    app.get('/api/health/live', (req, res) => {
+      res.json({ status: 'alive', timestamp: new Date().toISOString(), uptime: process.uptime() });
+    });
+
+    app.get('/api/health/ready', async (req, res) => {
+      try {
+        if (mongoose.connection.readyState !== 1) {
+          return res.status(503).json({ status: 'not-ready', database: 'disconnected' });
+        }
+        await mongoose.connection.db.admin().ping();
+        return res.json({
+          status: 'ready',
+          database: 'connected',
+          version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || null,
+        });
+      } catch {
+        return res.status(503).json({ status: 'not-ready', database: 'unavailable' });
+      }
+    });
+
+    // Backward-compatible health summary for monitoring and diagnostics.
     app.get('/api/health', async (req, res) => {
       try {
         const dbState = mongoose.connection.readyState;

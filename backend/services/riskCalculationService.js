@@ -14,13 +14,6 @@ import RiskWeekly from '../models/riskWeekly.js';
 import RiskDriver from '../models/riskDriver.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import Baseline from '../models/baseline.js';
-import Team from '../models/team.js';
-import { getTeamRiskSummary } from './attritionRiskService.js';
-import { calculateManagerEffectiveness } from './managerEffectivenessService.js';
-import { detectTeamCrisis } from './crisisDetectionService.js';
-import { analyzeNetworkHealth } from './networkHealthService.js';
-import { analyzeTeamSuccessionRisk } from './successionRiskService.js';
-import { analyzeTeamEquity } from './equitySignalsService.js';
 
 /**
  * Map metric keys to MetricsDaily fields
@@ -170,7 +163,7 @@ export async function calculateOverloadRisk(teamId, weekStart) {
       confidence,
       explanation: getOverloadExplanation(score, band, drivers),
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // Save drivers
@@ -244,7 +237,7 @@ export async function calculateExecutionRisk(teamId, weekStart) {
       confidence,
       explanation: getExecutionExplanation(score, band, drivers),
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'execution' });
@@ -322,7 +315,7 @@ export async function calculateRetentionStrainRisk(teamId, weekStart) {
       confidence,
       explanation: getRetentionStrainExplanation(score, band, drivers),
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await RiskDriver.deleteMany({ teamId, weekStart, riskType: 'retention_strain' });
@@ -444,7 +437,7 @@ export async function determineTeamState(teamId, weekStart, risks, previousState
       dominantRisk,
       intelligenceScores,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   return teamState;
@@ -454,67 +447,10 @@ export async function determineTeamState(teamId, weekStart, risks, previousState
  * Calculate intelligence scores for weekly snapshot
  */
 async function calculateIntelligenceScores(teamId) {
-  try {
-    const team = await Team.findById(teamId);
-    if (!team) {
-      return getEmptyIntelligenceScores();
-    }
-
-    const [attrition, manager, crisis, network, succession, equity] = await Promise.all([
-      getTeamRiskSummary(teamId).catch(() => null),
-      team.managerId
-        ? calculateManagerEffectiveness(team.managerId, teamId).catch(() => null)
-        : null,
-      detectTeamCrisis(teamId).catch(() => null),
-      analyzeNetworkHealth(teamId).catch(() => null),
-      analyzeTeamSuccessionRisk(teamId).catch(() => null),
-      analyzeTeamEquity(teamId).catch(() => null),
-    ]);
-
-    return {
-      attritionRisk: {
-        highRiskCount: attrition?.highRiskCount || 0,
-        criticalRiskCount: attrition?.criticalRiskCount || 0,
-        avgRiskScore: attrition?.avgRiskScore || 0,
-      },
-      managerEffectiveness: manager?.effectivenessScore || null,
-      crisisActive: crisis?.length > 0 || false,
-      networkHealth: {
-        siloScore: network?.siloScore || 0,
-        bottleneckCount: network?.bottlenecks?.length || 0,
-        isolatedMemberCount: network?.isolatedMembers?.length || 0,
-      },
-      successionRisk: {
-        busFactor: succession?.busFactor || 100,
-        criticalRoleCount: succession?.criticalRoles?.length || 0,
-      },
-      equityScore: equity?.overallEquityScore || 100,
-    };
-  } catch (error) {
-    console.error('Error calculating intelligence scores:', error);
-    return getEmptyIntelligenceScores();
-  }
-}
-
-function getEmptyIntelligenceScores() {
+  void teamId;
   return {
-    attritionRisk: {
-      highRiskCount: 0,
-      criticalRiskCount: 0,
-      avgRiskScore: 0,
-    },
-    managerEffectiveness: null,
-    crisisActive: false,
-    networkHealth: {
-      siloScore: 0,
-      bottleneckCount: 0,
-      isolatedMemberCount: 0,
-    },
-    successionRisk: {
-      busFactor: 100,
-      criticalRoleCount: 0,
-    },
-    equityScore: 100,
+    available: false,
+    reason: 'Legacy individual behavioral intelligence is disabled pending validation.',
   };
 }
 

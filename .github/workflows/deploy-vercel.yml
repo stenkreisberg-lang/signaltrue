@@ -10,13 +10,11 @@ on:
       - 'marketing/**'
       - 'tools/generate-sitemap.mjs'
       - 'tools/write-build-version.mjs'
+      - 'index.html'
+      - 'vite.config.mjs'
       - 'package.json'
       - 'package-lock.json'
-      - 'craco.config.js'
       - 'vercel.json'
-
-env:
-  PUPPETEER_SKIP_DOWNLOAD: 'true'
 
 jobs:
   deploy:

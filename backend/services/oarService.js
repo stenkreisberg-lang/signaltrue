@@ -11,8 +11,13 @@
 import OARScore from '../models/oarScore.js';
 import MetricsDaily from '../models/metricsDaily.js';
 import TeamEnergyIndex from '../models/teamEnergyIndex.js';
-import TeamState from '../models/teamState.js';
 import Team from '../models/team.js';
+
+const finiteValues = (records, key) =>
+  records.map((record) => record?.[key]).filter((value) => Number.isFinite(value));
+
+const average = (values) =>
+  values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 
 /**
  * Normalize a value to 0-100 scale
@@ -52,7 +57,7 @@ function weightedAverage(components, weights) {
     }
   }
 
-  if (totalWeight === 0) return 50; // Default to middle score
+  if (totalWeight === 0) return null;
   return Math.round(sum / totalWeight);
 }
 
@@ -66,39 +71,49 @@ async function calculateExecutionScore(teamIds, startDate, endDate) {
   }).lean();
 
   if (metrics.length === 0) {
-    return { score: 50, components: {}, trend: 'stable', trendPct: 0 };
+    return {
+      available: false,
+      reason: 'No execution metrics are available for this period.',
+      score: null,
+      components: {},
+      trend: 'stable',
+      trendPct: 0,
+    };
   }
 
-  // Aggregate metrics
-  const avgMeetingLoad =
-    metrics.reduce((sum, m) => sum + (m.meetingLoadIndex || 0), 0) / metrics.length;
-  const avgFocusTime =
-    metrics.reduce((sum, m) => sum + (m.focusTimeRatio || 0), 0) / metrics.length;
-  const avgResponseLatency =
-    metrics.reduce((sum, m) => sum + (m.responseLatencyTrend || 0), 0) / metrics.length;
+  const avgMeetingLoad = average(finiteValues(metrics, 'meetingLoadIndex'));
+  const avgFocusTime = average(finiteValues(metrics, 'focusTimeRatio'));
+  const avgResponseLatency = average(finiteValues(metrics, 'responseLatencyTrend'));
 
   const components = {
     meetingLoad: normalize(avgMeetingLoad, 0, 40, true), // 0-40 hrs/week, lower is better
     focusTime: normalize(avgFocusTime, 0, 1, false), // 0-1 ratio, higher is better
-    flowEfficiency: avgFocusTime ? Math.round(avgFocusTime * 100) : 50,
+    flowEfficiency: Number.isFinite(avgFocusTime) ? Math.round(avgFocusTime * 100) : null,
     decisionLatency: normalize(avgResponseLatency, 0, 48, true), // 0-48 hrs, lower is better
   };
 
   const weights = { meetingLoad: 0.3, focusTime: 0.35, flowEfficiency: 0.2, decisionLatency: 0.15 };
   const score = weightedAverage(components, weights);
 
-  return { score, components, trend: 'stable', trendPct: 0 };
+  return {
+    available: score !== null,
+    reason: score === null ? 'No execution components are measurable for this period.' : null,
+    score,
+    components,
+    trend: 'stable',
+    trendPct: 0,
+  };
 }
 
 /**
  * Calculate Innovation pillar score
- * Based on available experiment/idea data, defaults to baseline if not available
+ * Innovation is unavailable until experiment or idea telemetry is connected.
  */
-async function calculateInnovationScore(orgId, teamIds, startDate, endDate) {
-  // For now, return a baseline score
-  // This can be enhanced when innovation tracking is added
+async function calculateInnovationScore(_orgId, _teamIds, _startDate, _endDate) {
   return {
-    score: 50,
+    available: false,
+    reason: 'Innovation telemetry is not connected.',
+    score: null,
     components: {
       ideaCaptureRate: null,
       experimentSuccessRate: null,
@@ -126,29 +141,16 @@ async function calculateWellbeingScore(teamIds, startDate, endDate) {
     date: { $gte: startDate, $lte: endDate },
   }).lean();
 
-  let avgEnergy = 50;
-  if (energyData.length > 0) {
-    avgEnergy = energyData.reduce((sum, e) => sum + (e.energyIndex || 0), 0) / energyData.length;
-  }
-
-  let avgAfterHours = 0;
-  let avgSentiment = 0.5;
-  let avgRecovery = 50;
-
-  if (metrics.length > 0) {
-    avgAfterHours =
-      metrics.reduce((sum, m) => sum + (m.afterHoursActivityRate || 0), 0) / metrics.length;
-    avgSentiment =
-      metrics.reduce((sum, m) => sum + (m.sentimentToneShift || 0.5), 0) / metrics.length;
-    avgRecovery =
-      metrics.reduce((sum, m) => sum + (m.engagementRecoveryIndex || 50), 0) / metrics.length;
-  }
+  const avgEnergy = average(finiteValues(energyData, 'energyIndex'));
+  const avgAfterHours = average(finiteValues(metrics, 'afterHoursActivityRate'));
+  const avgSentiment = average(finiteValues(metrics, 'sentimentToneShift'));
+  const avgRecovery = average(finiteValues(metrics, 'engagementRecoveryIndex'));
 
   const components = {
-    energyIndex: Math.round(avgEnergy),
+    energyIndex: Number.isFinite(avgEnergy) ? Math.round(avgEnergy) : null,
     afterHoursRate: normalize(avgAfterHours, 0, 0.5, true), // 0-50% after hours, lower is better
-    recoveryIndex: Math.round(avgRecovery),
-    sentimentScore: Math.round(avgSentiment * 100), // 0-1 to 0-100
+    recoveryIndex: Number.isFinite(avgRecovery) ? Math.round(avgRecovery) : null,
+    sentimentScore: Number.isFinite(avgSentiment) ? Math.round(avgSentiment * 100) : null,
   };
 
   const weights = {
@@ -159,71 +161,33 @@ async function calculateWellbeingScore(teamIds, startDate, endDate) {
   };
   const score = weightedAverage(components, weights);
 
-  return { score, components, trend: 'stable', trendPct: 0 };
+  return {
+    available: score !== null,
+    reason: score === null ? 'No wellbeing components are measurable for this period.' : null,
+    score,
+    components,
+    trend: 'stable',
+    trendPct: 0,
+  };
 }
 
 /**
  * Calculate Culture pillar score
  */
 async function calculateCultureScore(teamIds, startDate, endDate) {
-  // Get team state data for network health and equity
-  const teamStates = await TeamState.find({
-    teamId: { $in: teamIds },
-    weekStart: { $gte: startDate, $lte: endDate },
-  })
-    .sort({ weekStart: -1 })
-    .lean();
-
-  // Get daily metrics for collaboration
   const metrics = await MetricsDaily.find({
     teamId: { $in: teamIds },
     date: { $gte: startDate, $lte: endDate },
   }).lean();
 
-  let avgNetworkBreadth = 50;
-  let avgEquity = 50;
-
-  if (teamStates.length > 0) {
-    const latestStates = {};
-    teamStates.forEach((ts) => {
-      if (!latestStates[ts.teamId.toString()]) {
-        latestStates[ts.teamId.toString()] = ts;
-      }
-    });
-
-    const stateValues = Object.values(latestStates);
-    avgEquity =
-      stateValues.reduce((sum, s) => sum + (s.intelligenceScores?.equityScore || 50), 0) /
-      stateValues.length;
-
-    // Silo score is inverse (higher = worse), so invert it
-    const avgSilo =
-      stateValues.reduce(
-        (sum, s) => sum + (s.intelligenceScores?.networkHealth?.siloScore || 50),
-        0
-      ) / stateValues.length;
-    avgNetworkBreadth = 100 - avgSilo;
-  }
-
-  let avgCollaboration = 50;
-  let avgResponsiveness = 50;
-
-  if (metrics.length > 0) {
-    avgCollaboration =
-      metrics.reduce((sum, m) => sum + (m.collaborationNetworkBreadth || 50), 0) / metrics.length;
-    avgResponsiveness = normalize(
-      metrics.reduce((sum, m) => sum + (m.responseLatencyTrend || 24), 0) / metrics.length,
-      0,
-      48,
-      true
-    );
-  }
+  const avgCollaboration = average(finiteValues(metrics, 'collaborationNetworkBreadth'));
+  const avgResponseLatency = average(finiteValues(metrics, 'responseLatencyTrend'));
 
   const components = {
-    collaborationIndex: Math.round(avgCollaboration),
-    networkBreadth: Math.round(avgNetworkBreadth),
-    responsiveness: avgResponsiveness,
-    equityScore: Math.round(avgEquity),
+    collaborationIndex: Number.isFinite(avgCollaboration) ? Math.round(avgCollaboration) : null,
+    networkBreadth: null,
+    responsiveness: normalize(avgResponseLatency, 0, 48, true),
+    equityScore: null,
   };
 
   const weights = {
@@ -234,7 +198,14 @@ async function calculateCultureScore(teamIds, startDate, endDate) {
   };
   const score = weightedAverage(components, weights);
 
-  return { score, components, trend: 'stable', trendPct: 0 };
+  return {
+    available: score !== null,
+    reason: score === null ? 'No culture components are measurable for this period.' : null,
+    score,
+    components,
+    trend: 'stable',
+    trendPct: 0,
+  };
 }
 
 /**
@@ -268,13 +239,15 @@ export async function calculateOrgOAR(orgId, options = {}) {
 
   if (teamIds.length === 0) {
     return {
-      score: 50,
-      zone: 'stable',
+      available: false,
+      reason: 'No teams are configured for this organization.',
+      score: null,
+      zone: null,
       pillars: {
-        execution: { score: 50, components: {}, trend: 'stable', trendPct: 0 },
-        innovation: { score: 50, components: {}, trend: 'stable', trendPct: 0 },
-        wellbeing: { score: 50, components: {}, trend: 'stable', trendPct: 0 },
-        culture: { score: 50, components: {}, trend: 'stable', trendPct: 0 },
+        execution: { available: false, score: null, components: {} },
+        innovation: { available: false, score: null, components: {} },
+        wellbeing: { available: false, score: null, components: {} },
+        culture: { available: false, score: null, components: {} },
       },
       dataQuality: 'low',
       metricsAvailable: 0,
@@ -290,12 +263,32 @@ export async function calculateOrgOAR(orgId, options = {}) {
   ]);
 
   // Calculate composite score
-  const compositeScore = Math.round(
-    execution.score * weights.execution +
-      innovation.score * weights.innovation +
-      wellbeing.score * weights.wellbeing +
-      culture.score * weights.culture
+  const compositeScore = weightedAverage(
+    {
+      execution: execution.score,
+      innovation: innovation.score,
+      wellbeing: wellbeing.score,
+      culture: culture.score,
+    },
+    weights
   );
+
+  if (compositeScore === null) {
+    return {
+      available: false,
+      reason: 'No OAR inputs are measurable for this period.',
+      score: null,
+      zone: null,
+      pillars: { execution, innovation, wellbeing, culture },
+      weights,
+      periodLabel,
+      periodStart: startDate,
+      periodEnd: endDate,
+      dataQuality: 'low',
+      metricsAvailable: 0,
+      calculatedAt: new Date(),
+    };
+  }
 
   // Get previous score for trend
   const previousOAR = await OARScore.findOne({
@@ -331,6 +324,8 @@ export async function calculateOrgOAR(orgId, options = {}) {
       periodStart: startDate,
       periodEnd: endDate,
       periodLabel,
+      available: true,
+      reason: null,
       score: compositeScore,
       pillars: {
         execution: { ...execution },
@@ -341,14 +336,14 @@ export async function calculateOrgOAR(orgId, options = {}) {
       weights,
       trend: trend.direction,
       trendPct: trend.pct,
-      previousScore: previousOAR?.score || null,
+      previousScore: previousOAR?.score ?? null,
       zone,
       dataQuality,
       metricsAvailable,
       calculatedAt: new Date(),
       calculationMethod: 'automated',
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   return oarScore;
@@ -381,12 +376,32 @@ export async function calculateTeamOAR(teamId, options = {}) {
   ]);
 
   // Calculate composite score
-  const compositeScore = Math.round(
-    execution.score * weights.execution +
-      innovation.score * weights.innovation +
-      wellbeing.score * weights.wellbeing +
-      culture.score * weights.culture
+  const compositeScore = weightedAverage(
+    {
+      execution: execution.score,
+      innovation: innovation.score,
+      wellbeing: wellbeing.score,
+      culture: culture.score,
+    },
+    weights
   );
+
+  if (compositeScore === null) {
+    return {
+      available: false,
+      reason: 'No OAR inputs are measurable for this period.',
+      score: null,
+      zone: null,
+      pillars: { execution, innovation, wellbeing, culture },
+      weights,
+      periodLabel,
+      periodStart: startDate,
+      periodEnd: endDate,
+      dataQuality: 'low',
+      metricsAvailable: 0,
+      calculatedAt: new Date(),
+    };
+  }
 
   // Get previous score for trend
   const previousOAR = await OARScore.findOne({
@@ -418,6 +433,8 @@ export async function calculateTeamOAR(teamId, options = {}) {
       periodStart: startDate,
       periodEnd: endDate,
       periodLabel,
+      available: true,
+      reason: null,
       score: compositeScore,
       pillars: {
         execution: { ...execution },
@@ -428,14 +445,14 @@ export async function calculateTeamOAR(teamId, options = {}) {
       weights,
       trend: trend.direction,
       trendPct: trend.pct,
-      previousScore: previousOAR?.score || null,
+      previousScore: previousOAR?.score ?? null,
       zone,
       dataQuality,
       metricsAvailable,
       calculatedAt: new Date(),
       calculationMethod: 'automated',
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   return oarScore;

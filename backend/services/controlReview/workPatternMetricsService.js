@@ -585,7 +585,7 @@ export async function persistTeamMetrics({ tenantId, teamId, periods }) {
       const doc = await TeamWorkPatternMetric.findOneAndUpdate(
         { tenantId, teamId, metric: row.metric, periodStart: row.periodStart },
         { $set: row },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
       written.push(doc);
     }

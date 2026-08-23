@@ -176,7 +176,7 @@ router.post(
 
 /**
  * POST /api/employee-sync/hr-roster
- * Upload a CSV/XLS/XLSX/PDF roster exported from HR.
+ * Upload a CSV/XLSX/PDF roster exported from HR.
  * Available to: hr_admin, admin, master_admin
  */
 router.post(

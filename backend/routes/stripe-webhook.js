@@ -6,7 +6,7 @@ const router = express.Router();
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
-  return new Stripe(key, { apiVersion: '2024-06-20' });
+  return new Stripe(key, { apiVersion: '2026-07-29.dahlia', maxNetworkRetries: 2 });
 }
 
 // Important: The server must configure express.raw for this path BEFORE express.json()
@@ -85,7 +85,7 @@ router.post('/stripe/webhook', async (req, res) => {
               },
               $set: update,
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           );
         } catch (e) {
           console.error('Webhook persist error (checkout.session.completed):', e.message);

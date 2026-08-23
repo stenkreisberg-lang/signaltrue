@@ -79,7 +79,7 @@ router.get('/', async (req, res) => {
     await BriefResponse.findOneAndUpdate(
       { orgId: org, weekKey: String(week) },
       { $set: { response: String(response), viaEmail: true } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
   } catch (error) {
     console.error('[BriefResponse] Failed to record:', error.message);

@@ -132,7 +132,7 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
         integrationCoverage: coverage,
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   return doc;

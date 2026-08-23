@@ -8,10 +8,9 @@ export default function DriftAlerts({ teamId }) {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const token = localStorage.getItem('token');
         const res = await api.get(`/drift-events/${teamId}`);
         setEvents(res.data);
-      } catch (err) {
+      } catch {
         setEvents([]);
       } finally {
         setLoading(false);

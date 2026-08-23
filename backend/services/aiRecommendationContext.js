@@ -8,7 +8,97 @@ import Experiment from '../models/experiment.js';
 import Impact from '../models/impact.js';
 import RiskWeekly from '../models/riskWeekly.js';
 import TeamState from '../models/teamState.js';
+import { OpenAI } from 'openai';
 import { getLearnedPatterns } from './learningLoopService.js';
+
+const WEEKLY_RECOMMENDATION_SCHEMA = {
+  type: 'array',
+  minItems: 1,
+  maxItems: 3,
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      title: { type: 'string' },
+      description: { type: 'string' },
+      category: {
+        type: 'string',
+        enum: ['overload', 'execution', 'retention', 'crisis', 'monitoring'],
+      },
+      priority: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
+      expectedImpact: { type: 'string' },
+    },
+    required: ['title', 'description', 'category', 'priority', 'expectedImpact'],
+  },
+};
+
+const MONTHLY_NARRATIVE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    narrative: { type: 'string' },
+    keyRisks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          risk: { type: 'string' },
+          impact: { type: 'string' },
+          costOfInaction: { type: 'string' },
+        },
+        required: ['risk', 'impact', 'costOfInaction'],
+      },
+    },
+    leadershipDecisionsRequired: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          decision: { type: 'string' },
+          rationale: { type: 'string' },
+          urgency: { type: 'string', enum: ['immediate', 'this-quarter', 'strategic'] },
+        },
+        required: ['decision', 'rationale', 'urgency'],
+      },
+    },
+    organizationalTrajectory: {
+      type: 'string',
+      enum: ['positive', 'stable', 'concerning', 'critical'],
+    },
+  },
+  required: [
+    'narrative',
+    'keyRisks',
+    'leadershipDecisionsRequired',
+    'organizationalTrajectory',
+  ],
+};
+
+async function createStructuredResponse({ prompt, name, schema }) {
+  if (!process.env.OPENAI_API_KEY) return null;
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const response = await client.responses.create({
+    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    store: false,
+    instructions:
+      'Use only the supplied aggregate team data. Never identify or infer individual employees. Return the requested structured output.',
+    input: prompt,
+    text: {
+      format: {
+        type: 'json_schema',
+        name,
+        strict: true,
+        schema,
+      },
+    },
+  });
+
+  if (!response.output_text) throw new Error('AI provider returned no structured output');
+  return JSON.parse(response.output_text);
+}
 
 /**
  * Build comprehensive context for AI recommendation generation
@@ -368,7 +458,6 @@ Return JSON array of recommendations:
   }
 ]`;
 
-    // Call OpenAI (placeholder - integrate with actual AI service)
     const recommendations = await callOpenAIForRecommendations(context, 3);
 
     return recommendations;
@@ -492,41 +581,43 @@ OUTPUT FORMAT (JSON):
   "organizationalTrajectory": "positive|stable|concerning|critical"
 }`;
 
-    // Call OpenAI (placeholder - integrate with actual AI service)
     const narrative = await callOpenAIForNarrative(context);
 
     return narrative;
   } catch (error) {
     console.error('Error generating monthly narrative:', error);
     return {
-      narrative: 'Unable to generate narrative at this time.',
+      narrative: 'AI narrative is currently unavailable.',
       keyRisks: [],
       leadershipDecisionsRequired: [],
-      organizationalTrajectory: 'stable',
+      organizationalTrajectory: null,
+      analysisAvailable: false,
     };
   }
 }
 
-/**
- * Placeholder for OpenAI integration
- * TODO: Integrate with actual OpenAI service
- */
-async function callOpenAIForRecommendations(context, _maxRecommendations) {
-  // This should call your existing OpenAI integration
-  // For now, return placeholder
-  console.log('AI Context for Weekly Recommendations:', context);
-  return [];
+async function callOpenAIForRecommendations(context, maxRecommendations) {
+  const recommendations = await createStructuredResponse({
+    prompt: context,
+    name: 'weekly_team_recommendations',
+    schema: WEEKLY_RECOMMENDATION_SCHEMA,
+  });
+  return Array.isArray(recommendations) ? recommendations.slice(0, maxRecommendations) : [];
 }
 
 async function callOpenAIForNarrative(context) {
-  // This should call your existing OpenAI integration
-  // For now, return placeholder
-  console.log('AI Context for Monthly Narrative:', context);
+  const narrative = await createStructuredResponse({
+    prompt: context,
+    name: 'monthly_organizational_narrative',
+    schema: MONTHLY_NARRATIVE_SCHEMA,
+  });
+  if (narrative) return { ...narrative, analysisAvailable: true };
   return {
-    narrative: 'Organizational health analysis pending AI generation.',
+    narrative: 'AI narrative is currently unavailable because the AI provider is not configured.',
     keyRisks: [],
     leadershipDecisionsRequired: [],
-    organizationalTrajectory: 'stable',
+    organizationalTrajectory: null,
+    analysisAvailable: false,
   };
 }
 

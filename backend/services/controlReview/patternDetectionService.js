@@ -169,7 +169,7 @@ export async function evaluateTeamPeriod({ tenantId, teamId, periodStart, actor 
         algorithmVersion: ALGORITHM_VERSION,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 
   if (!existing) {
@@ -205,7 +205,7 @@ export async function dismissFinding({ tenantId, findingId, reason, actor }) {
   const finding = await PatternFinding.findOneAndUpdate(
     { _id: findingId, tenantId },
     { $set: { status: 'DISMISSED', dismissedReason: reason, dismissedBy: actor?.userId || null } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (finding) {

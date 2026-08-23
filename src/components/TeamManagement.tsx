@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 
 interface Team {
@@ -42,11 +42,19 @@ const TeamManagement: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    loadTeams();
+  const selectTeam = useCallback(async (team: Team) => {
+    try {
+      setSelectedTeam(team);
+      setError('');
+      const response = await api.get(`/team-management/${team._id}`);
+      setTeamMembers(response.data.members || []);
+    } catch (err: unknown) {
+      console.error('Error loading team members:', err);
+      setTeamMembers([]);
+    }
   }, []);
 
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/team-management/organization');
@@ -61,20 +69,11 @@ const TeamManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTeam, selectTeam]);
 
-  const selectTeam = async (team: Team) => {
-    try {
-      setSelectedTeam(team);
-      setError(''); // Clear any previous errors
-      const response = await api.get(`/team-management/${team._id}`);
-      setTeamMembers(response.data.members || []);
-    } catch (err: any) {
-      console.error('Error loading team members:', err);
-      // Don't show error to user, just show empty state
-      setTeamMembers([]);
-    }
-  };
+  useEffect(() => {
+    loadTeams();
+  }, [loadTeams]);
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +81,7 @@ const TeamManagement: React.FC = () => {
 
     try {
       setError('');
-      const response = await api.post('/team-management', {
+      await api.post('/team-management', {
         name: newTeamName,
         function: newTeamFunction,
       });

@@ -338,7 +338,7 @@ async function upsertFinding({
         algorithmVersion: ALGORITHM_VERSION,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 }
 
@@ -354,7 +354,7 @@ export async function updateMigrationStatus({
   const finding = await MigrationFinding.findOneAndUpdate(
     { _id: findingId, tenantId },
     { $set: { status, investigationNotes } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (finding) {

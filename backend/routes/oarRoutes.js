@@ -27,6 +27,8 @@ router.get('/org', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       oar: {
+        available: oar.available !== false,
+        reason: oar.reason || null,
         score: oar.score,
         zone: oar.zone,
         trend: oar.trend,
@@ -97,6 +99,8 @@ router.get('/team/:teamId', authenticateToken, async (req, res) => {
       success: true,
       oar: {
         teamId,
+        available: oar.available !== false,
+        reason: oar.reason || null,
         score: oar.score,
         zone: oar.zone,
         trend: oar.trend,
@@ -228,6 +232,8 @@ router.post('/recalculate', authenticateToken, async (req, res) => {
       success: true,
       message: 'OAR recalculated successfully',
       oar: {
+        available: oar.available !== false,
+        reason: oar.reason || null,
         score: oar.score,
         zone: oar.zone,
         calculatedAt: oar.calculatedAt,
@@ -259,6 +265,8 @@ router.get('/widget', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       widget: {
+        available: oar.available !== false,
+        reason: oar.reason || null,
         score: oar.score,
         maxScore: 100,
         zone: oar.zone,

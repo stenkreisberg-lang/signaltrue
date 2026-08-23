@@ -194,18 +194,22 @@ router.get('/auth/google/callback', async (req, res) => {
 
 // Outlook OAuth entry
 router.get('/auth/outlook', (req, res) => {
-  const clientId = process.env.OUTLOOK_CLIENT_ID;
-  const redirectUri = `${getBackendUrl(req)}/api/auth/outlook/callback`;
-  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=offline_access https://outlook.office.com/calendars.read https://outlook.office.com/mail.read https://outlook.office.com/user.read&prompt=select_account`;
-  res.redirect(url);
+  const { token } = req.query;
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized: No token provided in query.' });
+  }
+
+  // Preserve the legacy URL while using the fully implemented, signed-state
+  // Microsoft connector flow.
+  const query = new URLSearchParams({ scope: 'outlook', token: String(token) });
+  return res.redirect(`/api/integrations/microsoft/oauth/start?${query.toString()}`);
 });
 
-router.get('/auth/outlook/callback', async (req, res) => {
-  // TODO: Exchange code for token, store connection
-  // For now, simulate success
-  // Record connection in DB here
-  // ...
-  res.redirect(dashboardRedirect(true));
+router.get('/auth/outlook/callback', (_req, res) => {
+  return res.status(410).json({
+    error: 'LEGACY_OUTLOOK_CALLBACK_DISABLED',
+    message: 'Use /api/integrations/microsoft/oauth/callback for Microsoft authorization.',
+  });
 });
 
 export default router;

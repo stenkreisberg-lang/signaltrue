@@ -43,15 +43,16 @@ interface TrackEventData {
   [key: string]: unknown;
 }
 
+declare global {
+  interface Window {
+    gtag?: (command: 'event', eventName: string, parameters?: Record<string, unknown>) => void;
+  }
+}
+
 /**
  * Track an analytics event
  */
 export function trackEvent(eventName: EventName, data?: TrackEventData): void {
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Analytics] ${eventName}`, data);
-  }
-
   // Send to backend for internal tracking
   try {
     fetch(`${API_BASE}/api/analytics/track`, {
@@ -69,11 +70,7 @@ export function trackEvent(eventName: EventName, data?: TrackEventData): void {
     // Silent fail for tracking
   }
 
-  // TODO: Connect to external analytics providers
-  // Example integrations:
-  // - Segment: window.analytics?.track(eventName, data);
-  // - Mixpanel: window.mixpanel?.track(eventName, data);
-  // - Google Analytics: window.gtag?.('event', eventName, data);
+  window.gtag?.('event', eventName, data);
 }
 
 /**

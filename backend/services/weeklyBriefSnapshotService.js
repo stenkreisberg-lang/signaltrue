@@ -38,7 +38,7 @@ export async function upsertWeeklyBriefSnapshot({
       },
       $setOnInsert: { orgId, periodStart },
     },
-    { new: true, upsert: true, runValidators: true }
+    { returnDocument: 'after', upsert: true, runValidators: true }
   );
 
   return serializeSnapshot(snapshot);

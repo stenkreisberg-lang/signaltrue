@@ -70,7 +70,7 @@ export async function computeDeliveryOutcomes(orgId, teamId, weekStartStr) {
   await OperationalOutcome.findOneAndUpdate(
     { orgId, teamId, weekStart: weekStartStr, family: 'delivery' },
     { $set: record },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
   return record;
 }

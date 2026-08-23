@@ -396,7 +396,7 @@ router.post('/mark-milestone', authenticateToken, async (req, res) => {
     const organization = await Organization.findByIdAndUpdate(
       req.user.orgId,
       { $set: { [updateField]: new Date() } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!organization) {

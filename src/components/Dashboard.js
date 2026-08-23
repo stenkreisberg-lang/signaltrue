@@ -51,7 +51,7 @@ function Dashboard() {
         setToast({ type: 'success', message: 'Connection status updated.' });
         setTimeout(() => setToast(null), 2500);
       }
-    } catch (e) {
+    } catch {
       setToast({ type: 'error', message: 'Could not refresh status.' });
       setTimeout(() => setToast(null), 3000);
     }

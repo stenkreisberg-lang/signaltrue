@@ -8,10 +8,9 @@ export default function PlaybookRecommendations({ teamId }) {
   useEffect(() => {
     const fetchPlaybook = async () => {
       try {
-        const token = localStorage.getItem('token');
         const res = await api.get(`/playbook/${teamId}`);
         setPlaybook(res.data);
-      } catch (err) {
+      } catch {
         setPlaybook([]);
       } finally {
         setLoading(false);

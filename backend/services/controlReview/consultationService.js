@@ -114,7 +114,7 @@ export async function recordFeedbackToWorkers({
         'feedbackBackToWorkers.description': description,
       },
     },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   await recordAudit({

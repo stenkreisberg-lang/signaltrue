@@ -158,7 +158,7 @@ router.put('/studies/:studyKey', requireMasterAdmin, async (req, res) => {
     const study = await ValidationStudy.findOneAndUpdate(
       { studyKey },
       { $set: update },
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, returnDocument: 'after', runValidators: true }
     );
     return res.json({ study });
   } catch (error) {

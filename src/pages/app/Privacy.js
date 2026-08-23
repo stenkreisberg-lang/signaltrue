@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 /**
  * Privacy & Data Use Page
@@ -12,14 +12,7 @@ function Privacy() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch transparency log if admin
-  useEffect(() => {
-    if (activeTab === 'transparency') {
-      fetchTransparencyLog();
-    }
-  }, [activeTab]);
-
-  const fetchTransparencyLog = async () => {
+  const fetchTransparencyLog = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,7 +35,14 @@ function Privacy() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiBase]);
+
+  // Fetch transparency log if admin
+  useEffect(() => {
+    if (activeTab === 'transparency') {
+      fetchTransparencyLog();
+    }
+  }, [activeTab, fetchTransparencyLog]);
 
   return (
     <div

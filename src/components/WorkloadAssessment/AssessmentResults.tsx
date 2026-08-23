@@ -8,7 +8,6 @@ import {
   Info,
   BarChart3,
   Clock,
-  Users,
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -59,7 +58,6 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const riskStyle = RISK_STYLES[result.riskScore.level];
@@ -74,7 +72,6 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
 
     try {
       await onSubmitEmail(email, consent);
-      setEmailSubmitted(true);
       setShowFullBreakdown(true);
       onTrackEvent?.('email_submitted', { riskLevel: result.riskScore.level });
       onTrackEvent?.('cost_viewed', {
@@ -84,7 +81,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         ),
         riskLevel: result.riskScore.level,
       });
-    } catch (err) {
+    } catch {
       setError('Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);

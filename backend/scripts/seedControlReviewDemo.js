@@ -190,7 +190,7 @@ async function main() {
   const org = await Organization.findOneAndUpdate(
     { name: 'Southern Cross Logistics (demo)' },
     { $set: { name: 'Southern Cross Logistics (demo)', isActive: true } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
   const tenantId = org._id;
 
@@ -228,7 +228,7 @@ async function main() {
         password: 'seeded-demo-account-not-for-login',
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 
   const actor = { userId: hsAdmin._id, email: hsAdmin.email, role: 'hr_admin', hsRole: 'HS_ADMIN' };
@@ -237,7 +237,7 @@ async function main() {
     const team = await Team.findOneAndUpdate(
       { name, orgId: tenantId },
       { $set: { name, orgId: tenantId, 'metadata.actualSize': size, 'metadata.function': fn } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     const memberIds = [];
@@ -255,7 +255,7 @@ async function main() {
             password: 'seeded-demo-account-not-for-login',
           },
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
       memberIds.push(user._id);
 
@@ -273,7 +273,7 @@ async function main() {
             effectiveTo: null,
           },
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       );
     }
 
@@ -306,7 +306,7 @@ async function main() {
         createdBy: hsAdmin._id,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 
   const config = await trustService.getOrCreateConfig({ tenantId, actor });
@@ -452,7 +452,7 @@ async function main() {
         createdBy: hsAdmin._id,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 
   // ══ CR journey A: external survey trigger, clean improvement (§31) ══════════

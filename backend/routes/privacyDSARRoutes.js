@@ -141,6 +141,40 @@ router.get('/dsar/:requestId', authenticateToken, async (req, res) => {
   }
 });
 
+// ── GET /api/privacy/dsar/:requestId/export ──────────────────────────────────
+// Owner or org admin: download a completed export as a JSON attachment.
+
+router.get('/dsar/:requestId/export', authenticateToken, async (req, res) => {
+  try {
+    const request = await DSARRequest.findById(req.params.requestId).lean();
+    if (!request) {
+      return res.status(404).json({ error: true, message: 'Request not found', code: 'NOT_FOUND' });
+    }
+
+    const isOwner = request.userId.toString() === String(req.user.userId);
+    const isOrgAdmin = isAdmin(req) && request.orgId?.toString() === req.user.orgId?.toString();
+    if (!isOwner && !isOrgAdmin) {
+      return res.status(403).json({ error: true, message: 'Forbidden', code: 'FORBIDDEN' });
+    }
+    if (request.requestType !== 'export' || request.status !== 'completed') {
+      return res.status(409).json({
+        error: true,
+        message: 'The export is not ready for download.',
+        code: 'EXPORT_NOT_READY',
+      });
+    }
+
+    const exportPackage = await exportUserData(request.userId, { includeData: true });
+    const filename = `signaltrue-data-export-${request._id}.json`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.send(JSON.stringify(exportPackage, null, 2));
+  } catch (err) {
+    console.error('[DSAR export download]', err.message);
+    return res.status(500).json({ error: true, message: 'Unable to build export.' });
+  }
+});
+
 // ── POST /api/privacy/dsar/:requestId/process ─────────────────────────────────
 // Admin: process a pending DSAR request
 
@@ -345,11 +379,16 @@ async function deleteUserData(userId) {
 
 /**
  * Build an export package for a user.
- * In production this should upload to S3/GCS and return a signed URL.
- * Currently returns an inline JSON summary.
+ * Data is generated on demand for the authenticated download endpoint so no
+ * public or long-lived storage URL is required.
  */
-async function exportUserData(userId) {
+async function exportUserData(userId, { includeData = false } = {}) {
   const data = {};
+
+  const user = await User.findById(userId)
+    .select('name email role orgId privacyConsentGivenAt privacyConsentVersion createdAt updatedAt')
+    .lean();
+  data.User = user ? [user] : [];
 
   const collectionsToExport = [
     { model: 'WorkEvent', field: 'userId' },
@@ -366,11 +405,12 @@ async function exportUserData(userId) {
     }
   }
 
-  // TODO: Upload to S3/GCS and return signed URL
-  // For now, return a note that the export is available on request
   return {
-    note: 'Export data prepared. Contact your admin for the download link.',
+    generatedAt: new Date().toISOString(),
+    format: 'application/json',
+    available: true,
     recordCounts: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.length])),
+    ...(includeData ? { data } : {}),
   };
 }
 

@@ -136,7 +136,7 @@ export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null)
               'sync.backfillProgress': 0,
             },
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         )
       )
     );
