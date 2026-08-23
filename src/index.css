@@ -2429,3 +2429,16 @@
     margin-bottom: 18px;
   }
 }
+@layer components {
+  .mc-primary {
+    @apply rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .mc-secondary {
+    @apply rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .mc-link {
+    @apply px-3 py-2.5 text-sm font-bold text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}

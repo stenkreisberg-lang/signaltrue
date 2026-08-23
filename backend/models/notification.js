@@ -40,6 +40,8 @@ const notificationSchema = new mongoose.Schema(
         'crisis', // Crisis alert
         'welcome', // Welcome/onboarding
         'report-ready', // Report/export ready
+        'manager-coaching', // Private weekly manager insight
+        'manager-coaching-review', // Private 14/28-day experiment review
       ],
       index: true,
     },

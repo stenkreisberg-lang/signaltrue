@@ -245,10 +245,10 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
 
   // ── Manager 1:1s ──────────────────────────────────────────────────────────
   const manager1to1Events = meetings.filter(
-    (e) => e.metadata?.isManagerOneOnOne === true || e.metadata?.is1to1 === true
+    (e) => e.metadata?.isManagerOneOnOne === true
   );
   const cancelledManager1to1Events = meetings.filter(
-    (e) => (e.metadata?.isManagerOneOnOne || e.metadata?.is1to1) && e.metadata?.isCancelled
+    (e) => e.metadata?.isManagerOneOnOne === true && e.metadata?.isCancelled
   );
 
   const manager1to1TotalMinutes = sum(

@@ -54,7 +54,7 @@ describe('incomplete pathways fail closed', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(410);
     expect(response.body).toMatchObject({
-      code: 'MANAGER_COACHING_UNAVAILABLE',
+      code: 'MANAGER_COACHING_V1_RETIRED',
       available: false,
     });
   });
@@ -108,9 +108,7 @@ describe('incomplete pathways fail closed', () => {
   });
 
   test('legacy intelligence notification calls never claim delivery', async () => {
-    await expect(notifyAttritionRisk()).resolves.toEqual(
-      INTELLIGENCE_NOTIFICATIONS_UNAVAILABLE
-    );
+    await expect(notifyAttritionRisk()).resolves.toEqual(INTELLIGENCE_NOTIFICATIONS_UNAVAILABLE);
     expect(INTELLIGENCE_NOTIFICATIONS_UNAVAILABLE).toMatchObject({
       available: false,
       delivered: false,

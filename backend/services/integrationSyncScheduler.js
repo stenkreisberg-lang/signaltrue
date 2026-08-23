@@ -18,6 +18,7 @@ import { computeDailyMetrics, computeWeeklyRollups } from './integrationMetricsS
 import { detectSignals } from './signalGenerationService.js';
 import { bridgeAllOrgSignals } from './signalBridgeService.js';
 import { computeDayForOrg } from './engagementDailyAggregationService.js';
+import { classifyManagerOneOnOnesForOrgDay } from './managerOneOnOneClassifier.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
@@ -160,7 +161,9 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
       // that already exists would never be read.
       try {
         const org = await Organization.findById(organization._id)
-          .select('integrations.microsoft.tenantId integrations.microsoft.calendarBackfillStartedAt')
+          .select(
+            'integrations.microsoft.tenantId integrations.microsoft.calendarBackfillStartedAt'
+          )
           .lean();
         if (org?.integrations?.microsoft?.calendarBackfillStartedAt) continue;
 
@@ -279,6 +282,7 @@ async function runDailyEngagementComputation() {
 
   for (const orgId of orgs) {
     try {
+      await classifyManagerOneOnOnesForOrgDay(orgId, yesterday);
       const snapshots = await computeDayForOrg(orgId, yesterday);
       console.log(
         `[Engagement] Org ${orgId}: ${snapshots.length} team snapshots computed for ${yesterday.toISOString().split('T')[0]}`

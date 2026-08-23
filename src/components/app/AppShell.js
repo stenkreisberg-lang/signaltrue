@@ -21,6 +21,12 @@ const links = [
   { to: '/app/signals', label: 'Signals', group: 'Act' },
   { to: '/app/actions', label: 'Actions', group: 'Act' },
   {
+    to: '/app/manager-coaching',
+    label: 'Manager Coach',
+    group: 'Act',
+    roles: ['manager'],
+  },
+  {
     to: '/app/control-reviews',
     label: 'Control reviews',
     group: 'Act',

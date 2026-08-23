@@ -27,6 +27,7 @@ const Insights = lazy(() => import('./pages/app/Insights'));
 const Signals = lazy(() => import('./pages/app/Signals'));
 const ActiveMonitoring = lazy(() => import('./pages/app/ActiveMonitoring'));
 const Actions = lazy(() => import('./pages/app/Actions'));
+const ManagerCoaching = lazy(() => import('./pages/app/ManagerCoaching'));
 const Privacy = lazy(() => import('./pages/app/Privacy'));
 const SignalCoverage = lazy(() => import('./pages/app/SignalCoverage'));
 const Employees = lazy(() => import('./pages/app/Employees'));
@@ -147,6 +148,10 @@ const App = () => (
                 />
                 <Route path="/app/risk-feed" element={withAuthentication(<ActiveMonitoring />)} />
                 <Route path="/app/actions" element={withAuthentication(<Actions />)} />
+                <Route
+                  path="/app/manager-coaching"
+                  element={withAuthentication(<ManagerCoaching />)}
+                />
                 <Route
                   path="/app/control-reviews"
                   element={withAuthentication(<ControlReviews />)}

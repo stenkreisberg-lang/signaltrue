@@ -61,6 +61,16 @@ const interventionSchema = new mongoose.Schema(
       index: true,
     },
 
+    source: {
+      type: String,
+      enum: ['signal', 'manager_coaching', 'control_review'],
+      default: 'signal',
+      index: true,
+    },
+    managerHash: { type: String, index: true },
+    insightId: { type: String, index: true },
+    privateToManager: { type: Boolean, default: false },
+
     // Spec-aligned intervention type (e.g., 'meeting_reset', 'focus_protection', 'boundary_enforcement')
     interventionType: {
       type: String,
@@ -101,6 +111,15 @@ const interventionSchema = new mongoose.Schema(
       type: String,
       enum: ['increase', 'decrease', 'stabilize'],
     },
+    targetMetrics: [
+      {
+        metric: { type: String, required: true },
+        label: String,
+        unit: String,
+        direction: { type: String, enum: ['up', 'down', 'stable'], required: true },
+        _id: false,
+      },
+    ],
 
     // Decision record: who owns the change and why it was selected.
     decision: {
@@ -139,6 +158,21 @@ const interventionSchema = new mongoose.Schema(
       sources: [{ type: String }],
       capturedAt: { type: Date },
     },
+    evidenceSnapshots: [
+      {
+        metric: { type: String, required: true },
+        value: Number,
+        baseline: Number,
+        unit: String,
+        coverage: Number,
+        confidence: { type: String, enum: ['high', 'medium', 'low'] },
+        sources: [String],
+        scoringVersion: String,
+        dataQualityVersion: String,
+        capturedAt: { type: Date, required: true },
+        _id: false,
+      },
+    ],
 
     governance: {
       measurementVersion: { type: String },
@@ -201,6 +235,27 @@ const interventionSchema = new mongoose.Schema(
           enum: ['improved', 'no_material_change', 'worsened', 'insufficient_data'],
         },
         notes: { type: String },
+        result: {
+          type: String,
+          enum: ['improved', 'unchanged', 'worsened', 'mixed', 'insufficient_data'],
+        },
+        metricSnapshots: [
+          {
+            metric: String,
+            value: Number,
+            baselineValue: Number,
+            absoluteChange: Number,
+            percentChange: Number,
+            direction: { type: String, enum: ['up', 'down', 'stable'] },
+            interpretation: {
+              type: String,
+              enum: ['improved', 'unchanged', 'worsened', 'insufficient_data'],
+            },
+            coverage: Number,
+            confidence: { type: String, enum: ['high', 'medium', 'low'] },
+            _id: false,
+          },
+        ],
         acknowledgedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         _id: false,
       },
@@ -283,6 +338,22 @@ const interventionSchema = new mongoose.Schema(
 interventionSchema.index({ teamId: 1, status: 1 });
 interventionSchema.index({ orgId: 1, recheckDate: 1 });
 interventionSchema.index({ recheckDate: 1, status: 1 });
+interventionSchema.index({ orgId: 1, managerHash: 1, createdAt: -1 });
+interventionSchema.index(
+  { orgId: 1, managerHash: 1, insightId: 1 },
+  { unique: true, partialFilterExpression: { source: 'manager_coaching' } }
+);
+
+// Manager-coaching experiments are private by default. Generic intervention,
+// reporting and organization-wide queries must never receive them. The private
+// coaching API opts in explicitly with source='manager_coaching' and separately
+// verifies the authenticated manager identity.
+interventionSchema.pre(/^find/, function () {
+  const filter = this.getFilter();
+  if (filter.source !== 'manager_coaching' && filter.privateToManager === undefined) {
+    this.where({ privateToManager: { $ne: true } });
+  }
+});
 
 // Method: Mark as pending recheck (triggered by cron after 14 days)
 interventionSchema.methods.markForRecheck = async function () {

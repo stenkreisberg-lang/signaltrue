@@ -15,7 +15,11 @@ import { checkExpiredExperiments } from './experimentTrackingService.js';
 import { runWeeklyEngagementStrainJob } from './engagementWeeklyJobService.js';
 import { sendWeeklyEngagementReport } from './engagementWeeklyEmailService.js';
 import { buildCommunicationGraph } from './communicationGraphService.js';
-import { runManagerOverloadForOrg } from './managerOverloadService.js';
+import {
+  ensureManagerCoachingHistoryForOrg,
+  runManagerOverloadForOrg,
+} from './managerOverloadService.js';
+import { createManagerCoachingNotificationsForOrg } from './managerCoachingNotificationService.js';
 
 /**
  * Get the start of the current week (Monday)
@@ -185,6 +189,10 @@ async function runManagerOverloadCycle(weekStart) {
       results.processed += result.processed ?? 0;
       results.suppressed += result.suppressed ?? 0;
       results.errors += result.errors?.length ?? 0;
+      const history = await ensureManagerCoachingHistoryForOrg(orgId, weekStartStr);
+      results.backfilled = (results.backfilled || 0) + history.backfilled;
+      const notifications = await createManagerCoachingNotificationsForOrg(orgId);
+      results.notifications = (results.notifications || 0) + notifications.insightsCreated;
     } catch (err) {
       console.error(`[ManagerOverload] Error processing org ${orgId}:`, err.message);
       results.errors++;

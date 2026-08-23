@@ -24,9 +24,12 @@ import {
   clamp,
 } from '../utils/robustMath.js';
 import { hashPerson } from '../utils/identity.js';
-import { MIN_METRIC_CONTRIBUTORS } from '../utils/privacyGate.js';
+import { MIN_ENGAGEMENT_TEAM_SIZE } from '../utils/privacyGate.js';
+import { classifyManagerOneOnOnes } from './managerOneOnOneClassifier.js';
+import { isAfterHours, resolveSchedule } from './controlReview/workingScheduleService.js';
 
 export const SCORING_VERSION = '3.0.0';
+export const DATA_QUALITY_VERSION = '2.0.0';
 
 // Absolute span bands (2025 norms: avg ~12 reports/manager).
 const SPAN_BANDS = { warn: 10, high: 15, severe: 20 };
@@ -70,6 +73,34 @@ export async function runManagerOverloadForOrg(orgId, weekStartStr, opts = {}) {
 }
 
 /**
+ * Populate a six-week past-only v2 data-quality baseline from retained
+ * WorkEvents. Existing v1 rows are never reused as if they met the new source
+ * coverage and verified 1:1 contract.
+ */
+export async function ensureManagerCoachingHistoryForOrg(orgId, latestWeekStartStr) {
+  const requiredWeeks = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(`${latestWeekStartStr}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() - (index + 1) * 7);
+    return date.toISOString().slice(0, 10);
+  });
+  const existing = new Set(
+    await ManagerWeekly.distinct('weekStart', {
+      orgId,
+      weekStart: { $in: requiredWeeks },
+      dataQualityVersion: DATA_QUALITY_VERSION,
+    })
+  );
+  const results = [];
+  for (const weekStart of requiredWeeks.filter((week) => !existing.has(week))) {
+    results.push({
+      weekStart,
+      ...(await runManagerOverloadForOrg(orgId, weekStart)),
+    });
+  }
+  return { backfilled: results.length, results };
+}
+
+/**
  * Compute (not persist) one manager's weekly record.
  * @returns {Object} ManagerWeekly-shaped object
  */
@@ -105,10 +136,11 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
     role,
     weekStart: weekStartStr,
     scoringVersion: SCORING_VERSION,
+    dataQualityVersion: DATA_QUALITY_VERSION,
   };
 
   // Privacy: never expose a manager whose active group is too small
-  if (span < MIN_METRIC_CONTRIBUTORS) {
+  if (span < MIN_ENGAGEMENT_TEAM_SIZE) {
     return {
       ...base,
       suppressed: true,
@@ -125,27 +157,56 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
     actorUserId: mgr.userId,
     timestamp: { $gte: start, $lt: end },
   })
-    .select('eventType metadata')
+    .select('eventType timestamp metadata')
     .lean();
 
-  const coordinationLoadHours = round1(
-    sum(
-      events
-        .filter((e) => e.eventType === 'meeting')
-        .map((e) => e.metadata?.durationMinutes || 0)
-    ) / 60
+  const calendarEvents = events.filter(
+    (event) => event.eventType === 'meeting' && Number.isFinite(event.metadata?.durationMinutes)
   );
+  const coordinationLoadHours = calendarEvents.length
+    ? round1(sum(calendarEvents.map((event) => event.metadata.durationMinutes)) / 60)
+    : null;
 
+  const oneOnOneClassification = await classifyManagerOneOnOnes({
+    orgId,
+    managerUserId: mgr.userId,
+    reportUserIds,
+    start,
+    end,
+  });
+  const verifiedOneOnOneHashes = new Set(oneOnOneClassification.verifiedHashes);
   const oneOnOneMinutes = sum(
-    events
-      .filter((e) => e.eventType === 'meeting' && e.metadata?.isManagerOneOnOne)
-      .map((e) => e.metadata?.durationMinutes || 0)
+    calendarEvents
+      .filter((event) =>
+        verifiedOneOnOneHashes.has(
+          event.metadata?.meetingInstanceIdHash || event.metadata?.meetingIdHash
+        )
+      )
+      .filter((event) => event.metadata?.isCancelled !== true)
+      .map((event) => event.metadata.durationMinutes)
   );
-  const oneOnOneMinutesPerReport = span > 0 ? round1(oneOnOneMinutes / span) : null;
+  const hasReliableOneOnOneCoverage =
+    oneOnOneClassification.managerMeetingCount > 0 &&
+    (oneOnOneClassification.attributionCoverage ?? 0) >= 0.7;
+  const oneOnOneMinutesPerReport =
+    span > 0 && hasReliableOneOnOneCoverage ? round1(oneOnOneMinutes / span) : null;
 
-  const afterHoursCount = events.filter((e) => e.metadata?.isAfterHours).length;
-  const afterHoursActivityRatio = events.length
-    ? round2(afterHoursCount / events.length)
+  const schedule = await resolveSchedule({
+    tenantId: orgId,
+    teamId: mgr.teamId,
+    personId: mgr.userId,
+    at: start,
+  });
+  const afterHoursEligible = events.filter(
+    (event) => ['meeting', 'message', 'email_sent'].includes(event.eventType) && event.timestamp
+  );
+  const afterHoursCount = afterHoursEligible.filter((event) =>
+    typeof event.metadata?.isAfterHours === 'boolean'
+      ? event.metadata.isAfterHours
+      : isAfterHours(event.timestamp, schedule)
+  ).length;
+  const afterHoursActivityRatio = afterHoursEligible.length
+    ? round2(afterHoursCount / afterHoursEligible.length)
     : null;
 
   const latencies = events
@@ -156,8 +217,7 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
   const responseLatencyP90Min = latencies.length ? round1(percentile(latencies, 90)) : null;
 
   // From ONA graph if supplied (step 4)
-  const decisionConcentration =
-    opts.graph?.decisionConcentrationByManager?.[managerHash] ?? null;
+  const decisionConcentration = opts.graph?.decisionConcentrationByManager?.[managerHash] ?? null;
   const brokerageScore = opts.graph?.brokerageByManager?.[managerHash] ?? null;
 
   // Personal baselines from prior ManagerWeekly history (past-only)
@@ -219,10 +279,33 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
 
   // Drivers (top components, descending risk)
   const drivers = [
-    { key: 'span', score: spanRisk, direction: 'higher_worse', evidence: `span ${span} (band: ${absoluteSpanFlag})` },
-    { key: 'coordinationLoad', score: loadRisk, direction: 'higher_worse', evidence: `${coordinationLoadHours}h coordination` },
-    { key: 'oneOnOneSupport', score: oneOnOneRisk, direction: 'lower_worse', evidence: `${oneOnOneMinutesPerReport ?? 'n/a'} min/report 1:1` },
-    { key: 'decisionConcentration', score: concRisk, direction: 'higher_worse', evidence: decisionConcentration != null ? `${Math.round(decisionConcentration * 100)}% brokerage` : 'n/a' },
+    {
+      key: 'span',
+      score: spanRisk,
+      direction: 'higher_worse',
+      evidence: `span ${span} (band: ${absoluteSpanFlag})`,
+    },
+    {
+      key: 'coordinationLoad',
+      score: loadRisk,
+      direction: 'higher_worse',
+      evidence: `${coordinationLoadHours}h coordination`,
+    },
+    {
+      key: 'oneOnOneSupport',
+      score: oneOnOneRisk,
+      direction: 'lower_worse',
+      evidence: `${oneOnOneMinutesPerReport ?? 'n/a'} min/report 1:1`,
+    },
+    {
+      key: 'decisionConcentration',
+      score: concRisk,
+      direction: 'higher_worse',
+      evidence:
+        decisionConcentration != null
+          ? `${Math.round(decisionConcentration * 100)}% brokerage`
+          : 'n/a',
+    },
   ]
     .filter((d) => typeof d.score === 'number')
     .sort((a, b) => b.score - a.score);
@@ -244,6 +327,9 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
     spanBaselineScaledMad: spanBaseline?.scaledMad ?? null,
     coordinationLoadHours,
     oneOnOneMinutesPerReport,
+    oneOnOneCompletedCount: oneOnOneClassification.completed,
+    oneOnOneCancelledCount: oneOnOneClassification.cancelled,
+    oneOnOneRescheduledCount: oneOnOneClassification.rescheduled,
     responseLatencyP50Min,
     responseLatencyP90Min,
     afterHoursActivityRatio,
@@ -256,6 +342,15 @@ export async function computeManagerWeek(orgId, mgr, weekStartStr, opts = {}) {
     drivers,
     confidence,
     dataCoverageRatio,
+    metricCoverage: {
+      calendar: events.length ? round2(calendarEvents.length / events.length) : null,
+      oneOnOneAttribution: oneOnOneClassification.attributionCoverage,
+      afterHoursClassification: events.length
+        ? round2(afterHoursEligible.length / events.length)
+        : null,
+      responseLatency: events.length ? round2(latencies.length / events.length) : null,
+      graph: decisionConcentration != null || brokerageScore != null ? 1 : 0,
+    },
   };
 }
 
@@ -288,4 +383,10 @@ function round2(v) {
   return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
 }
 
-export default { runManagerOverloadForOrg, computeManagerWeek, SCORING_VERSION };
+export default {
+  runManagerOverloadForOrg,
+  ensureManagerCoachingHistoryForOrg,
+  computeManagerWeek,
+  SCORING_VERSION,
+  DATA_QUALITY_VERSION,
+};

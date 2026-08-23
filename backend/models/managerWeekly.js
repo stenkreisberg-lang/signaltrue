@@ -22,7 +22,12 @@ const driverSchema = new mongoose.Schema(
 
 const managerWeeklySchema = new mongoose.Schema(
   {
-    orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      required: true,
+      index: true,
+    },
     teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', index: true },
     managerHash: { type: String, required: true, index: true },
     role: { type: String, default: 'EM' },
@@ -37,6 +42,9 @@ const managerWeeklySchema = new mongoose.Schema(
     spanBaselineScaledMad: Number,
     coordinationLoadHours: Number,
     oneOnOneMinutesPerReport: Number,
+    oneOnOneCompletedCount: Number,
+    oneOnOneCancelledCount: Number,
+    oneOnOneRescheduledCount: Number,
     responseLatencyP50Min: Number,
     responseLatencyP90Min: Number,
     afterHoursActivityRatio: Number,
@@ -53,8 +61,15 @@ const managerWeeklySchema = new mongoose.Schema(
     // Quality / audit
     confidence: { type: String, enum: ['high', 'medium', 'low'], default: 'low' },
     dataCoverageRatio: Number,
+    metricCoverage: {
+      calendar: Number,
+      oneOnOneAttribution: Number,
+      afterHoursClassification: Number,
+      responseLatency: Number,
+      graph: Number,
+    },
     scoringVersion: { type: String, default: '3.0.0' },
-    dataQualityVersion: { type: String, default: '1.0.0' },
+    dataQualityVersion: { type: String, default: '2.0.0' },
   },
   { timestamps: true }
 );
@@ -62,4 +77,5 @@ const managerWeeklySchema = new mongoose.Schema(
 managerWeeklySchema.index({ orgId: 1, managerHash: 1, weekStart: 1 }, { unique: true });
 managerWeeklySchema.index({ orgId: 1, weekStart: 1 });
 
-export default mongoose.models.ManagerWeekly || mongoose.model('ManagerWeekly', managerWeeklySchema);
+export default mongoose.models.ManagerWeekly ||
+  mongoose.model('ManagerWeekly', managerWeeklySchema);
