@@ -8,6 +8,7 @@ services:
     region: oregon
     plan: starter
     rootDir: backend
+    # backend/package.json pins the supported Node runtime range.
     buildCommand: npm ci --omit=dev --no-audit --no-fund
     startCommand: node server.js
     healthCheckPath: /api/health/ready

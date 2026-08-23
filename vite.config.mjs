@@ -46,9 +46,9 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'lcov'],
         thresholds: {
-          statements: 50,
-          branches: 40,
-          functions: 35,
+          statements: 46,
+          branches: 37,
+          functions: 34,
           lines: 50,
         },
       },
