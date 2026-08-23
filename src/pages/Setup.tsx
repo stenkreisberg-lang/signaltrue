@@ -21,7 +21,7 @@ const Setup = () => {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       const response = await fetch(`${apiUrl}/api/auth/create-master-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

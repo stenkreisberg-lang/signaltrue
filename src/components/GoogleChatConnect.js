@@ -17,7 +17,7 @@ const GoogleChatConnect = ({ integrations }) => {
     const token = localStorage.getItem('token');
     if (token) {
       // Use REACT_APP_API_URL for OAuth redirects (needs full URL, not relative)
-      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       window.location.href = `${backendUrl}/api/integrations/google-chat/oauth/start?token=${token}`;
     } else {
       alert('You must be logged in to connect Google Chat.');

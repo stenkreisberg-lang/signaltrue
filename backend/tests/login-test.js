@@ -2,7 +2,7 @@ import axios from 'axios';
 
 async function testLogin() {
   console.log('--- Starting Login Test ---');
-  const url = 'http://localhost:8080/api/auth/login';
+  const url = 'http://localhost:8081/api/auth/login';
   const payload = {
     email: 'test@test.com',
     password: 'password123',

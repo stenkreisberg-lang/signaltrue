@@ -43,7 +43,7 @@ const Register = () => {
     const fullName = `${formattedFirstName} ${formattedLastName}`;
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,7 +74,7 @@ const Register = () => {
       // If a paid plan was selected, redirect to Stripe Checkout immediately
       if (selectedPlan && selectedPlan !== 'trial') {
         try {
-          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
           const checkoutRes = await fetch(`${apiUrl}/api/billing/create-checkout-session`, {
             method: 'POST',
             headers: {

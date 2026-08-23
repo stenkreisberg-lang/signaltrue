@@ -16,7 +16,7 @@ const CalibrationProgress = ({ orgId }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/calibration/status/${orgId}`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:8081'}/api/calibration/status/${orgId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

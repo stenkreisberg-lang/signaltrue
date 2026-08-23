@@ -23,7 +23,7 @@ const AcceptInvitation = () => {
       setValidating(false);
       return;
     }
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
     fetch(`${apiUrl}/api/onboarding/invitations/${encodeURIComponent(token)}`)
       .then(async (response) => {
         const data = await response.json();
@@ -57,7 +57,7 @@ const AcceptInvitation = () => {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       const response = await fetch(`${apiUrl}/api/onboarding/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

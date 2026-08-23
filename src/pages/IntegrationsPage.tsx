@@ -5,7 +5,7 @@ import { Link2, CheckCircle2, XCircle, ArrowLeft, Settings } from 'lucide-react'
 import AppShell from '../components/app/AppShell';
 import { getAuthenticatedContext } from '../utils/authContext';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 interface CallbackStatus {
   success: boolean;

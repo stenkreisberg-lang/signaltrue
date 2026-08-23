@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Lock, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 interface PaywallStatus {
   isActive: boolean;

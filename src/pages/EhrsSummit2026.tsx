@@ -59,7 +59,7 @@ const EhrsSummit2026: React.FC = () => {
       });
 
       // Submit to backend CRM with EHRS2026 tag
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       await fetch(`${apiUrl}/api/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

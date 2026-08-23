@@ -10,6 +10,7 @@
     "migrate:encrypt-tokens": "node scripts/encrypt-existing-tokens.js",
     "migrate:privacy-floor": "node scripts/enforce-privacy-floor.js",
     "migrate:security": "npm run migrate:privacy-floor && npm run migrate:encrypt-tokens",
+    "smoke-test": "node scripts/smoke-test.js",
     "start": "node server.js",
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",

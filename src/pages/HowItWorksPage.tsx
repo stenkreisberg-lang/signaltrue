@@ -27,7 +27,7 @@ const trackEvent = (eventName: string) => {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
   }
   try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
     fetch(`${apiUrl}/api/analytics/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

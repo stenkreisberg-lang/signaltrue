@@ -2,9 +2,9 @@ import axios from 'axios';
 
 async function testLogin() {
   try {
-    console.log('Attempting to call http://localhost:8080/api/auth/login...');
+    console.log('Attempting to call http://localhost:8081/api/auth/login...');
     const response = await axios.post(
-      'http://localhost:8080/api/auth/login',
+      'http://localhost:8081/api/auth/login',
       {
         email: 'test@test.com',
         password: 'password123',

@@ -147,7 +147,7 @@ const Signals = () => {
   const handleViewDetails = async (signalId) => {
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
       const response = await fetch(`${apiUrl}/api/signals/${signalId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -559,12 +559,62 @@ const Signals = () => {
               </Badge>
             </div>
 
-            {/* Deviation Chart Placeholder */}
+            {/* Direct comparison evidence. Values come from the stored signal;
+                no trend line is invented when history is unavailable. */}
             <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
               <div className="text-sm text-slate-600 mb-2">Pattern shift vs baseline</div>
-              <div className="text-center text-slate-500 py-12">
-                Chart visualization coming soon
-              </div>
+              {Number.isFinite(Number(selectedSignal.deviation?.currentValue)) &&
+              Number.isFinite(Number(selectedSignal.deviation?.baselineValue)) ? (
+                <div
+                  className="space-y-4"
+                  role="img"
+                  aria-label={`${selectedSignal.metricLabel || 'Signal'} is ${selectedSignal.deviation.currentValue} compared with a baseline of ${selectedSignal.deviation.baselineValue}`}
+                >
+                  {[
+                    ['Baseline', Number(selectedSignal.deviation.baselineValue), 'bg-slate-400'],
+                    ['Current', Number(selectedSignal.deviation.currentValue), 'bg-indigo-600'],
+                  ].map(([label, value, color]) => {
+                    const scale = Math.max(
+                      Math.abs(Number(selectedSignal.deviation.currentValue)),
+                      Math.abs(Number(selectedSignal.deviation.baselineValue)),
+                      1
+                    );
+                    const width = Math.max(4, Math.round((Math.abs(value) / scale) * 100));
+                    return (
+                      <div key={label}>
+                        <div className="mb-1 flex items-center justify-between text-sm">
+                          <span className="font-medium text-slate-700">{label}</span>
+                          <span className="font-semibold text-slate-900">{value}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className={`h-full rounded-full ${color}`}
+                            style={{ width: `${width}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-600">
+                    {Number.isFinite(Number(selectedSignal.deviation?.deltaPercent)) && (
+                      <span className="rounded-full bg-white px-2.5 py-1 font-semibold ring-1 ring-slate-200">
+                        {Number(selectedSignal.deviation.deltaPercent) > 0 ? '+' : ''}
+                        {Number(selectedSignal.deviation.deltaPercent).toFixed(1)}% vs baseline
+                      </span>
+                    )}
+                    {Number(selectedSignal.deviation?.sustainedDays) > 0 && (
+                      <span className="rounded-full bg-white px-2.5 py-1 font-semibold ring-1 ring-slate-200">
+                        Sustained {Number(selectedSignal.deviation.sustainedDays)} days
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="py-6 text-sm text-slate-600">
+                  A numeric baseline comparison is not available for this signal. Review the
+                  measured drivers below before choosing an action.
+                </p>
+              )}
             </div>
 
             {selectedSignal.explanation && (

@@ -155,7 +155,7 @@ OPENAI_API_KEY=sk-...
 ```bash
 # Terminal 1: Start backend (from /backend directory)
 npm start
-# Backend runs on http://localhost:8080
+# Backend runs on http://localhost:8081
 
 # Terminal 2: Start frontend (from root directory)
 npm start
@@ -248,7 +248,7 @@ API_KEY=admin-secret
 See [`.env.example`](.env.example).
 
 ```bash
-REACT_APP_API_URL=http://localhost:8080
+REACT_APP_API_URL=http://localhost:8081
 REACT_APP_DEFAULT_MODEL=gpt-3.5-turbo
 ```
 

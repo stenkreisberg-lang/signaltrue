@@ -152,7 +152,7 @@ function Dashboard() {
     const oauth = integrations?.oauth?.[provider];
     if (oauth) {
       // For OAuth redirects, we need the full backend URL (not relative)
-      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       // Ensure oauth path includes /api prefix
       const oauthPath = oauth.startsWith('/api') ? oauth : `/api${oauth}`;
       // Handle URLs that may already have query params

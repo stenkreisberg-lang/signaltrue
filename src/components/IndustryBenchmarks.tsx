@@ -13,7 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 interface BenchmarkMetric {
   metricName: string;

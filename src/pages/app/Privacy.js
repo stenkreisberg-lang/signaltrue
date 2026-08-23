@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
  * Shows: What we track, what we DON'T track, transparency log
  */
 function Privacy() {
-  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8081';
   const [activeTab, setActiveTab] = useState('overview'); // overview | transparency | policy
   const [transparencyLog, setTransparencyLog] = useState([]);
   const [loading, setLoading] = useState(false);

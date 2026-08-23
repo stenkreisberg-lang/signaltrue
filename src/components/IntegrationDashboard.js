@@ -23,7 +23,7 @@ import {
  * and allows connecting new data sources.
  */
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 const CORE_OAUTH_START_PATHS = {
   'microsoft-outlook': '/api/integrations/microsoft/oauth/start?scope=outlook',

@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-// In development, we rely on the 'proxy' setting in package.json to route requests.
-// The base URL can be relative ('/api').
-// In production, REACT_APP_API_URL should be set to the absolute URL of your backend.
+// Prefer an explicit backend origin in every environment. This makes local
+// overrides work even when another project occupies the package.json proxy
+// port. The relative fallback keeps the development proxy available.
+const configuredApiOrigin = process.env.REACT_APP_API_URL?.replace(/\/$/, '');
+
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'development' ? '/api' : `${process.env.REACT_APP_API_URL}/api`,
+  baseURL: configuredApiOrigin ? `${configuredApiOrigin}/api` : '/api',
   timeout: 30000, // 30 second timeout
 });
 
@@ -25,18 +27,26 @@ api.interceptors.request.use(
 // Response interceptor for error handling and token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle 401 - redirect to login
+  async (error) => {
+    // Invalidate stale identity data without forcing public pages to /login.
+    // ProtectedRoute listens for this event and owns protected navigation.
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
-        const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-        if (returnTo.startsWith('/app/')) {
-          sessionStorage.setItem('signaltrue:returnTo', returnTo);
+      localStorage.removeItem('orgId');
+      localStorage.removeItem('teamId');
+      window.dispatchEvent(new Event('signaltrue:session-invalidated'));
+
+      // Public endpoints may accept anonymous requests but reject a stale
+      // bearer token. Retry those requests once after removing the token.
+      if (error.config?.headers?.Authorization && !error.config._retriedWithoutAuth) {
+        error.config._retriedWithoutAuth = true;
+        if (typeof error.config.headers.delete === 'function') {
+          error.config.headers.delete('Authorization');
+        } else {
+          delete error.config.headers.Authorization;
         }
-        window.location.href = '/login';
+        return api.request(error.config);
       }
     }
 

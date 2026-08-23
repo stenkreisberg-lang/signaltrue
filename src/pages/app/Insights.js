@@ -10,7 +10,7 @@ import DriftConfidencePanel from '../../components/drift/DriftConfidencePanel';
 import useDriftFamilies from '../../hooks/useDriftFamilies';
 import { buildFamilyGaps, topGapSummary } from '../../utils/driftGap';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 function getHealthState(families) {
   if (!families?.length) return null;

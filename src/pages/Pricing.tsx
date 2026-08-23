@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { CheckCircle, ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { clearStoredSession } from '../utils/authContext';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -30,7 +31,7 @@ const trackEvent = (eventName: string) => {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
   }
   try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
     fetch(`${apiUrl}/api/analytics/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -166,7 +167,7 @@ const Pricing = () => {
     }
     setLoadingPlan(planKey);
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
       const res = await fetch(`${apiUrl}/api/billing/create-checkout-session`, {
         method: 'POST',
         headers: {
@@ -175,8 +176,19 @@ const Pricing = () => {
         },
         body: JSON.stringify({ plan: planKey }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await res.json()
+        : { message: await res.text() };
+
+      if (res.status === 401) {
+        clearStoredSession();
+        navigate(`/register?plan=${planKey}`);
+        return;
+      }
+
       if (!res.ok) throw new Error(data.message || 'Checkout failed');
+      if (!data.url) throw new Error('Checkout did not return a redirect URL');
       window.location.href = data.url;
     } catch (err: unknown) {
       setCheckoutError(

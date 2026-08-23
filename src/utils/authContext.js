@@ -1,5 +1,13 @@
 import api from './api';
 
+const SESSION_KEYS = ['token', 'user', 'orgId', 'teamId'];
+export const SESSION_INVALIDATED_EVENT = 'signaltrue:session-invalidated';
+
+export function clearStoredSession() {
+  SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+  window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+}
+
 export function normalizeId(value) {
   if (!value) return null;
   if (typeof value === 'object') return String(value._id || value.id || '');

@@ -187,7 +187,7 @@ import Team from './models/team.js';
 import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8081;
 
 async function main() {
   try {
@@ -559,9 +559,8 @@ async function main() {
 
           // The sponsor-facing summary is built from the monthly report, so it
           // is produced here rather than waiting for someone to request it.
-          const { generateCeoSummariesForAllOrgs } = await import(
-            './services/ceoSummaryService.js'
-          );
+          const { generateCeoSummariesForAllOrgs } =
+            await import('./services/ceoSummaryService.js');
           const ceoResults = await generateCeoSummariesForAllOrgs();
           console.log(
             `✅ CEO summaries: ${ceoResults.generated} generated, ${ceoResults.existing} already current, ${ceoResults.skipped} without a monthly report, ${ceoResults.errors} failed`
