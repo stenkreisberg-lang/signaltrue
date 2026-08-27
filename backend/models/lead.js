@@ -20,6 +20,7 @@ const leadSchema = new mongoose.Schema(
 
     organization: {
       type: String,
+      required: true,
       trim: true,
     },
 
@@ -58,6 +59,15 @@ const leadSchema = new mongoose.Schema(
       utmCampaign: { type: String, trim: true, maxlength: 255 },
       utmContent: { type: String, trim: true, maxlength: 255 },
       utmTerm: { type: String, trim: true, maxlength: 255 },
+      anonymousSessionId: { type: String, trim: true, maxlength: 255 },
+    },
+
+    // Client-generated idempotency key. A retry after a lost response returns
+    // the original confirmation instead of storing or emailing a second lead.
+    submissionId: {
+      type: String,
+      trim: true,
+      maxlength: 255,
     },
 
     // Notification status
@@ -86,6 +96,7 @@ const leadSchema = new mongoose.Schema(
 leadSchema.index({ email: 1 });
 leadSchema.index({ source: 1 });
 leadSchema.index({ createdAt: -1 });
+leadSchema.index({ submissionId: 1 }, { unique: true, sparse: true });
 
 const Lead = mongoose.model('Lead', leadSchema);
 

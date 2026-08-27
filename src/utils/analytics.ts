@@ -43,12 +43,6 @@ interface TrackEventData {
   [key: string]: unknown;
 }
 
-declare global {
-  interface Window {
-    gtag?: (command: 'event', eventName: string, parameters?: Record<string, unknown>) => void;
-  }
-}
-
 /**
  * Track an analytics event
  */

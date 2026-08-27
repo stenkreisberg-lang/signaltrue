@@ -1,7 +1,6 @@
 import { ArrowRight, Shield, Lock, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
-import { trackEvent } from '../lib/analytics';
+import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 /*
  * CATEGORY: WORK-PATTERN EARLY WARNING
@@ -19,22 +18,6 @@ import { trackEvent } from '../lib/analytics';
  */
 
 const Hero = () => {
-  const handleRequestDemo = () => {
-    trackEvent('demo_cta_click', {
-      event_category: 'lead_funnel',
-      event_label: 'homepage_hero',
-      cta: 'homepage_hero',
-    });
-  };
-
-  const handleHowItWorks = () => {
-    trackEvent('sample_report_click', {
-      event_category: 'lead_funnel',
-      event_label: 'homepage_hero',
-      cta: 'homepage_hero',
-    });
-  };
-
   return (
     <section className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-hero-gradient">
       {/* Subtle blue tint accents */}
@@ -86,16 +69,17 @@ const Hero = () => {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link to="/contact?intent=demo&cta=homepage_hero" onClick={handleRequestDemo}>
-                <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 text-base font-bold text-white shadow-sm hover:bg-[#1E40AF] sm:w-auto">
-                  Request a workplace risk review <ArrowRight className="h-5 w-5" />
-                </span>
-              </Link>
-              <Link to="/sample-report" onClick={handleHowItWorks}>
-                <span className="inline-flex min-h-12 w-full items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 text-base font-bold text-[#0F172A] hover:border-[#1D4ED8] sm:w-auto">
-                  View sample report
-                </span>
-              </Link>
+              <PrimaryCommercialCTA
+                ctaLocation="homepage_hero"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 text-center text-base font-bold text-white shadow-sm hover:bg-[#1E40AF] sm:w-auto"
+              >
+                Request a 20-minute psychosocial risk visibility review{' '}
+                <ArrowRight className="h-5 w-5 shrink-0" />
+              </PrimaryCommercialCTA>
+              <SampleReportCTA
+                ctaLocation="homepage_hero"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 text-base font-bold text-[#0F172A] hover:border-[#1D4ED8] sm:w-auto"
+              />
             </div>
           </div>
 

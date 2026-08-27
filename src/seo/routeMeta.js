@@ -63,6 +63,13 @@ const ROUTE_META = {
     summary:
       'A sample weekly brief showing meeting hours, focus time, after-hours activity and manager coordination load against the team’s established baseline, with how long each change has persisted and what may warrant investigation.',
   },
+  '/psychosocial-risk-visibility-review': {
+    title: 'What happens between psychosocial risk assessments? | SignalTrue',
+    description:
+      'See how SignalTrue helps WHS leaders identify changing team-level workload and coordination conditions between formal psychosocial risk assessments.',
+    summary:
+      'SignalTrue helps WHS leaders identify changing workload and coordination conditions between formal assessments using team-level, metadata-focused patterns. It does not diagnose individuals, and worker consultation and governance remain the employer’s responsibility.',
+  },
   '/australia-psychosocial-risk': {
     title: 'Psychosocial Risk Work-Pattern Monitoring Australia | SignalTrue',
     description:

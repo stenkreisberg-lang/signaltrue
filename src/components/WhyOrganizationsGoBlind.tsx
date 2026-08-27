@@ -1,4 +1,5 @@
 import { XCircle } from 'lucide-react';
+import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 const laggingIndicators = [
   {
@@ -78,6 +79,16 @@ const WhyOrganizationsGoBlind = () => {
               Identify the pattern, verify the cause with the team, select a proportionate control
               and review the same measure after action.
             </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <PrimaryCommercialCTA
+                ctaLocation="homepage_problem"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-5 py-3 text-sm font-bold text-white hover:bg-[#1E40AF]"
+              />
+              <SampleReportCTA
+                ctaLocation="homepage_problem"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-5 py-3 text-sm font-bold text-[#0F172A]"
+              />
+            </div>
           </div>
         </div>
       </div>

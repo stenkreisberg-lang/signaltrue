@@ -1,7 +1,7 @@
 import { Activity, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { trackEvent } from '../lib/analytics';
+import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -21,22 +21,6 @@ const navItems = [
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleRequestDemo = (cta: string) => {
-    trackEvent('demo_cta_click', {
-      event_category: 'lead_funnel',
-      event_label: cta,
-      cta,
-    });
-  };
-
-  const handleSampleReport = (cta: string) => {
-    trackEvent('sample_report_click', {
-      event_category: 'lead_funnel',
-      event_label: cta,
-      cta,
-    });
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E2E8F0]">
@@ -72,19 +56,18 @@ const Navbar = () => {
                 Sign in
               </span>
             </Link>
-            <Link to="/sample-report" onClick={() => handleSampleReport('navbar_desktop')}>
-              <span className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]">
-                Sample report
-              </span>
-            </Link>
-            <Link
-              to="/contact?intent=demo&cta=navbar_desktop"
-              onClick={() => handleRequestDemo('navbar_desktop')}
+            <SampleReportCTA
+              ctaLocation="navbar_desktop"
+              className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
             >
-              <span className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]">
-                Request a risk review
-              </span>
-            </Link>
+              Sample report
+            </SampleReportCTA>
+            <PrimaryCommercialCTA
+              ctaLocation="navbar_desktop"
+              className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
+            >
+              Request a 20-minute review
+            </PrimaryCommercialCTA>
           </div>
 
           {/* Mobile Menu Button */}
@@ -117,28 +100,24 @@ const Navbar = () => {
                     Sign in
                   </span>
                 </Link>
-                <Link
-                  to="/sample-report"
+                <SampleReportCTA
+                  ctaLocation="navbar_mobile"
+                  className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleSampleReport('navbar_mobile');
                   }}
                 >
-                  <span className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]">
-                    Sample report
-                  </span>
-                </Link>
-                <Link
-                  to="/contact?intent=demo&cta=navbar_mobile"
+                  Sample report
+                </SampleReportCTA>
+                <PrimaryCommercialCTA
+                  ctaLocation="navbar_mobile"
+                  className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleRequestDemo('navbar_mobile');
                   }}
                 >
-                  <span className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-sm font-semibold text-white">
-                    Request a risk review
-                  </span>
-                </Link>
+                  Request a 20-minute review
+                </PrimaryCommercialCTA>
               </div>
             </div>
           </div>

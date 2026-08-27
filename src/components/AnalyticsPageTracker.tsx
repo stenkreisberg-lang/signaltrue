@@ -1,13 +1,23 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { trackPageView } from '../lib/analytics';
+import {
+  captureOriginalAttribution,
+  isCommercialPath,
+  trackCommercialPageView,
+  trackPageView,
+} from '../lib/analytics';
 
 export default function AnalyticsPageTracker() {
   const location = useLocation();
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      trackPageView(`${location.pathname}${location.search}`, document.title);
+      const path = `${location.pathname}${location.search}`;
+      captureOriginalAttribution();
+      trackPageView(path, document.title);
+      if (isCommercialPath(location.pathname)) {
+        trackCommercialPageView(path, document.title);
+      }
     }, 0);
 
     return () => window.clearTimeout(timeout);

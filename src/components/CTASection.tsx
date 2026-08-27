@@ -1,7 +1,6 @@
 import { Button } from '../components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { trackEvent } from '../lib/analytics';
+import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -12,14 +11,6 @@ import { trackEvent } from '../lib/analytics';
  */
 
 const CTASection = () => {
-  const handleRequestDemo = () => {
-    trackEvent('demo_cta_click', {
-      event_category: 'lead_funnel',
-      event_label: 'homepage_final',
-      cta: 'homepage_final',
-    });
-  };
-
   return (
     <section className="py-20 lg:py-24 bg-[#0F172A]">
       <div className="container mx-auto px-6">
@@ -34,12 +25,13 @@ const CTASection = () => {
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild variant="hero" size="xl">
-              <Link to="/contact?intent=demo&cta=homepage_final" onClick={handleRequestDemo}>
-                Request a workplace risk review <ArrowRight className="h-5 w-5" />
-              </Link>
+              <PrimaryCommercialCTA ctaLocation="homepage_final">
+                Request a 20-minute psychosocial risk visibility review{' '}
+                <ArrowRight className="h-5 w-5" />
+              </PrimaryCommercialCTA>
             </Button>
             <Button asChild variant="hero-outline" size="xl">
-              <Link to="/sample-report">View sample report</Link>
+              <SampleReportCTA ctaLocation="homepage_final" />
             </Button>
           </div>
         </div>

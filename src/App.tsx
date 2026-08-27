@@ -52,6 +52,9 @@ const ChatWidget = lazy(() => import('./components/ChatWidget'));
 const SeoLanding = lazy(() => import('./pages/SeoLanding'));
 const SampleReport = lazy(() => import('./pages/SampleReport'));
 const ServiceProcess = lazy(() => import('./pages/ServiceProcess'));
+const PsychosocialRiskVisibilityReview = lazy(
+  () => import('./pages/PsychosocialRiskVisibilityReview')
+);
 
 // Control-verification module (H&S / psychosocial risk).
 const ControlReviews = lazy(() => import('./pages/app/controlReview/ControlReviews'));
@@ -217,6 +220,10 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/demo" element={<Navigate to="/contact" replace />} />
                 <Route path="/sample-report" element={<SampleReport />} />
+                <Route
+                  path="/psychosocial-risk-visibility-review"
+                  element={<PsychosocialRiskVisibilityReview />}
+                />
                 <Route path="/client-success" element={<ServiceProcess />} />
                 <Route path="/burnout-early-warning-system" element={<SeoLanding />} />
                 <Route path="/employee-engagement-leading-indicators" element={<SeoLanding />} />

@@ -1,392 +1,81 @@
-import React, { useState } from 'react';
+import { Calendar, Mail, MessageSquare } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { Mail, MessageSquare, Calendar, Building2, Send, CheckCircle } from 'lucide-react';
-import { trackEvent } from '../lib/analytics';
-import PageMeta from '../components/PageMeta';
-import api from '../utils/api';
-import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import LeadForm from '../components/LeadForm';
+import Navbar from '../components/Navbar';
+import PageMeta from '../components/PageMeta';
 
-const Contact: React.FC = () => {
+export default function Contact() {
   const location = useLocation();
-  const query = new URLSearchParams(location.search);
-  const defaultIntent = query.get('intent') || '';
-  const cta = query.get('cta') || 'direct_contact';
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    role: '',
-    companySize: '',
-    intent: defaultIntent,
-    mainProblem: '',
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formStarted, setFormStarted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setSubmitError('');
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFormStart = () => {
-    if (formStarted) return;
-    setFormStarted(true);
-    trackEvent('form_start', {
-      source_page: window.location.pathname,
-      intent: formData.intent || undefined,
-      form_id: 'demo-request-form',
-      cta,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setSubmitError('');
-
-    trackEvent('demo_form_submit', {
-      source_page: window.location.pathname,
-      intent: formData.intent || undefined,
-      form_id: 'demo-request-form',
-      cta,
-    });
-
-    try {
-      const challenge = [
-        formData.companySize && `Company size: ${formData.companySize}`,
-        formData.intent && `Intent: ${formData.intent}`,
-        formData.mainProblem && `Main problem: ${formData.mainProblem}`,
-      ]
-        .filter(Boolean)
-        .join('\n');
-
-      await api.post('/leads', {
-        name: formData.name,
-        email: formData.email,
-        organization: formData.company,
-        title: formData.role,
-        challenge,
-        source: 'Website demo request',
-        tag: formData.intent || 'demo',
-        attribution: {
-          landingPage: window.location.href,
-          referrer: document.referrer || '',
-          cta,
-          utmSource: query.get('utm_source') || '',
-          utmMedium: query.get('utm_medium') || '',
-          utmCampaign: query.get('utm_campaign') || '',
-          utmContent: query.get('utm_content') || '',
-          utmTerm: query.get('utm_term') || '',
-        },
-        timestamp: new Date().toISOString(),
-      });
-
-      trackEvent('generate_lead', {
-        company_size: formData.companySize || undefined,
-        intent: formData.intent || undefined,
-        problem_area: formData.mainProblem || undefined,
-        source_page: window.location.pathname,
-        form_id: 'demo-request-form',
-        cta,
-      });
-
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Contact form submission failed:', error);
-      const status = (error as { response?: { status?: number } })?.response?.status;
-      trackEvent('demo_form_error', {
-        source_page: window.location.pathname,
-        intent: formData.intent || undefined,
-        form_id: 'demo-request-form',
-        error_type: status ? `http_${status}` : 'network_error',
-      });
-      setSubmitError(
-        'We could not send your request. Please try again or email hello@signaltrue.ai.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const ctaLocation = new URLSearchParams(location.search).get('cta') || 'direct_contact';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="Request a SignalTrue Demo | Workload Risk Review"
-        description="Request a SignalTrue workplace risk review to discuss team-level psychosocial risk evidence, privacy boundaries and a responsible pilot."
+        title="Request a Psychosocial Risk Visibility Review | SignalTrue"
+        description="Request a 20-minute SignalTrue review of gaps between formal psychosocial risk assessments and team-level work-pattern evidence."
         path="/contact"
       />
       <Navbar />
-      {/* Hero Section */}
-      <section className="pt-20 pb-12 bg-hero-gradient relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Review a psychosocial risk concern before it becomes harm or disruption.
+      <main className="pt-20">
+        <section className="border-b border-[#E2E8F0] bg-white py-14 lg:py-16">
+          <div className="container mx-auto px-6 text-center">
+            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              Psychosocial risk visibility review
+            </p>
+            <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold text-[#0F172A] sm:text-5xl">
+              Bring one gap in your current psychosocial-risk process.
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Request a guided review of capacity, coordination, and recovery signals generated from
-              metadata only, without reading employee messages.
+            <p className="mx-auto mt-5 max-w-3xl text-xl leading-8 text-[#475569]">
+              In 20 minutes, we will discuss the process you already use, an example of the
+              conditions SignalTrue can identify, and whether a controlled pilot is justified.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Contact Options */}
-      <section className="py-10">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto mb-10">
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">General inquiries</h3>
-              <p className="text-muted-foreground text-sm mb-3">For general inquiries</p>
-              <a
-                href="mailto:hello@signaltrue.ai"
-                onClick={() => trackEvent('contact_mailto_click', { email_type: 'general' })}
-                className="text-primary hover:underline font-medium"
-              >
-                hello@signaltrue.ai
-              </a>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Product demonstration</h3>
-              <p className="text-muted-foreground text-sm mb-3">See SignalTrue in action</p>
-              <a href="#demo-request-form" className="text-primary hover:underline font-medium">
-                Request a review
-              </a>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Customer support</h3>
-              <p className="text-muted-foreground text-sm mb-3">For existing customers</p>
-              <a
-                href="mailto:support@signaltrue.ai"
-                onClick={() => trackEvent('contact_mailto_click', { email_type: 'support' })}
-                className="text-primary hover:underline font-medium"
-              >
-                support@signaltrue.ai
-              </a>
-            </div>
-          </div>
-
-          {/* Contact Form */}
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-card border border-border rounded-2xl p-8 md:p-10">
-              {submitted ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground mb-3">
-                    Thanks. We received your request.
-                  </h2>
-                  <p className="text-muted-foreground mb-6">
-                    We normally reply within one business day. You can also choose a meeting time
-                    now.
-                  </p>
-                  <a
-                    href="https://calendly.com/sten-kreisberg-signaltrue/30min"
-                    className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+        <section className="py-12 lg:py-16">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto mb-10 grid max-w-5xl gap-5 md:grid-cols-3">
+              {[
+                [Mail, 'General enquiries', 'hello@signaltrue.ai', 'mailto:hello@signaltrue.ai'],
+                [
+                  Calendar,
+                  'Visibility review',
+                  'Use the request form below',
+                  '#commercial-lead-form',
+                ],
+                [
+                  MessageSquare,
+                  'Customer support',
+                  'support@signaltrue.ai',
+                  'mailto:support@signaltrue.ai',
+                ],
+              ].map(([Icon, title, copy, href]) => {
+                const ContactIcon = Icon as typeof Mail;
+                return (
+                  <article
+                    key={String(title)}
+                    className="rounded-2xl border border-[#E2E8F0] bg-white p-6 text-center"
                   >
-                    Choose a time now
-                  </a>
-                </div>
-              ) : (
-                <>
-                  <div className="text-center mb-8">
-                    <p className="text-xs uppercase tracking-widest font-semibold text-primary mb-3">
-                      Workplace risk review
-                    </p>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">
-                      What the 20-minute review covers
-                    </h2>
-                    <ul className="text-muted-foreground text-sm space-y-1 mt-4 text-left max-w-sm mx-auto">
-                      {[
-                        'What SignalTrue detects',
-                        'What data it uses',
-                        'What it does not collect',
-                        'How privacy is protected',
-                        'Whether your risk question is suitable for team-level metadata',
-                        'Required sources, permissions and privacy boundaries',
-                        'Baseline, group-size and coverage requirements',
-                        'The client and SignalTrue responsibilities during a pilot',
-                        'What Health & Safety and the CEO receive',
-                      ].map((item) => (
-                        <li key={item} className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <form
-                    id="demo-request-form"
-                    onSubmit={handleSubmit}
-                    onFocus={handleFormStart}
-                    className="space-y-6"
-                  >
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label
-                          htmlFor="name"
-                          className="block text-sm font-medium text-foreground mb-2"
-                        >
-                          Name *
-                        </label>
-                        <input
-                          type="text"
-                          id="name"
-                          name="name"
-                          required
-                          value={formData.name}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                          placeholder="Jane Smith"
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="email"
-                          className="block text-sm font-medium text-foreground mb-2"
-                        >
-                          Work email *
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          required
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                          placeholder="jane@company.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label
-                          htmlFor="company"
-                          className="block text-sm font-medium text-foreground mb-2"
-                        >
-                          Company
-                        </label>
-                        <div className="relative">
-                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                          <input
-                            type="text"
-                            id="company"
-                            name="company"
-                            required
-                            value={formData.company}
-                            onChange={handleChange}
-                            className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                            placeholder="Acme Inc."
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="role"
-                          className="block text-sm font-medium text-foreground mb-2"
-                        >
-                          Role
-                        </label>
-                        <input
-                          type="text"
-                          id="role"
-                          name="role"
-                          value={formData.role}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                          placeholder="e.g. Health & Safety Manager"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="mainProblem"
-                        className="block text-sm font-medium text-foreground mb-2"
-                      >
-                        Workplace risk concern to review
-                      </label>
-                      <select
-                        id="mainProblem"
-                        name="mainProblem"
-                        value={formData.mainProblem}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-                      >
-                        <option value="">Select a risk concern</option>
-                        <option value="demands">Excessive or sustained demands</option>
-                        <option value="manager-capacity">Manager capacity</option>
-                        <option value="meeting-demand">
-                          Meeting demand and work fragmentation
-                        </option>
-                        <option value="recovery">After-hours work and recovery</option>
-                        <option value="control">
-                          Low control over priorities or response times
-                        </option>
-                        <option value="organizational-change">Organizational change</option>
-                        <option value="not-sure">Not sure yet</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    <ContactIcon className="mx-auto h-6 w-6 text-[#1D4ED8]" aria-hidden="true" />
+                    <h2 className="mt-3 font-bold text-[#0F172A]">{String(title)}</h2>
+                    <a
+                      href={String(href)}
+                      className="mt-2 inline-block text-sm text-[#1D4ED8] hover:underline"
                     >
-                      {loading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5" />
-                          Request my workplace risk review
-                        </>
-                      )}
-                    </button>
-
-                    {submitError && (
-                      <p className="text-sm text-red-600 text-center" role="alert">
-                        {submitError}
-                      </p>
-                    )}
-
-                    <p className="text-xs text-muted-foreground text-center">
-                      We normally respond within one business day and only use this information to
-                      contact you about SignalTrue.
-                    </p>
-                  </form>
-                </>
-              )}
+                      {String(copy)}
+                    </a>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="mx-auto max-w-3xl rounded-3xl border border-[#E2E8F0] bg-white p-7 shadow-sm md:p-10">
+              <LeadForm ctaLocation={ctaLocation} />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
       <Footer />
     </div>
   );
-};
-
-export default Contact;
+}

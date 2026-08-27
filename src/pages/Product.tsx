@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   CheckCircle2,
@@ -13,6 +12,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
+import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 const indicators = [
   [
@@ -94,14 +94,17 @@ export default function Product() {
                 diagnosis
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link to="/contact?intent=demo&cta=product">
-                    Request a risk review <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/sample-report">View the complete sample report</Link>
-                </Button>
+                <PrimaryCommercialCTA
+                  ctaLocation="product_hero"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                >
+                  Request a 20-minute psychosocial risk visibility review{' '}
+                  <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
+                </PrimaryCommercialCTA>
+                <SampleReportCTA
+                  ctaLocation="product_hero"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                />
               </div>
             </div>
           </div>
@@ -130,6 +133,16 @@ export default function Product() {
                     <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
                   </article>
                 ))}
+              </div>
+              <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+                <PrimaryCommercialCTA
+                  ctaLocation="product_problem"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                />
+                <SampleReportCTA
+                  ctaLocation="product_problem"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                />
               </div>
             </div>
           </div>
@@ -174,9 +187,9 @@ export default function Product() {
                   ownership, review timing and privacy boundaries in one fictional example.
                 </p>
                 <Button asChild className="mt-7 bg-white text-[#0F172A] hover:bg-[#E2E8F0]">
-                  <Link to="/sample-report">
+                  <SampleReportCTA ctaLocation="product_sample">
                     Open the sample report <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                  </SampleReportCTA>
                 </Button>
               </div>
               <div className="rounded-2xl border border-[#334155] bg-[#1E293B] p-6">
@@ -205,14 +218,22 @@ export default function Product() {
         <section className="bg-white py-16 text-center">
           <div className="container mx-auto px-6">
             <h2 className="text-3xl font-bold text-[#0F172A]">
-              See how the service works around the product.
+              See whether continuous visibility fits your risk process.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-[#475569]">
-              Review delivery phases, responsibilities, success criteria and the CEO decision brief.
+              Bring one current gap. We will review the evidence boundaries and whether a controlled
+              pilot is justified.
             </p>
-            <Button asChild variant="outline" className="mt-6">
-              <Link to="/client-success">View client success process</Link>
-            </Button>
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <PrimaryCommercialCTA
+                ctaLocation="product_final"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+              />
+              <SampleReportCTA
+                ctaLocation="product_final"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+              />
+            </div>
           </div>
         </section>
       </main>

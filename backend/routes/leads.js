@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import { Resend } from 'resend';
+import rateLimit from 'express-rate-limit';
 import Lead from '../models/lead.js';
 
 const router = express.Router();
@@ -14,7 +15,8 @@ const getResendClient = () => {
 };
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'SignalTrue <notifications@signaltrue.ai>';
-const WEBSITE_DEMO_NOTIFICATION_EMAIL = 'sten.kreisberg@signaltrue.ai';
+const WEBSITE_DEMO_NOTIFICATION_EMAIL =
+  process.env.WEBSITE_LEAD_NOTIFICATION_EMAIL || 'sten.kreisberg@signaltrue.ai';
 const INTERNAL_NOTIFICATION_EMAIL =
   process.env.LEAD_NOTIFICATION_EMAIL ||
   process.env.NOTIFICATION_EMAIL ||
@@ -22,6 +24,42 @@ const INTERNAL_NOTIFICATION_EMAIL =
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://signaltrue.ai';
 const CALENDAR_LINK =
   process.env.CALENDAR_LINK || 'https://calendly.com/sten-kreisberg-signaltrue/30min';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const leadSubmissionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Too many lead requests. Please try again later or email hello@signaltrue.ai.',
+  },
+});
+
+function cleanText(value, maxLength) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+}
+
+export function validateLeadPayload(body = {}) {
+  const values = {
+    name: cleanText(body.name, 160),
+    email: cleanText(body.email, 320).toLowerCase(),
+    organization: cleanText(body.organization, 200),
+    title: cleanText(body.title, 160),
+    challenge: cleanText(body.challenge, 4000),
+    source: cleanText(body.source, 160),
+    tag: cleanText(body.tag, 160),
+    submissionId: cleanText(body.submissionId, 255),
+  };
+  const fieldErrors = {};
+  if (!values.name) fieldErrors.fullName = 'Enter your full name.';
+  if (!values.email) fieldErrors.workEmail = 'Enter your work email.';
+  else if (!EMAIL_PATTERN.test(values.email)) {
+    fieldErrors.workEmail = 'Enter a valid work email address.';
+  }
+  if (!values.organization) fieldErrors.organization = 'Enter your organisation.';
+  if (!values.source) fieldErrors.source = 'Lead source is required.';
+  return { values, fieldErrors };
+}
 
 /**
  * Extract first name from full name
@@ -292,16 +330,37 @@ function generateInternalNotificationHTML(lead) {
  * POST /api/leads
  * Create a new lead and send emails
  */
-router.post('/', async (req, res) => {
+router.post('/', leadSubmissionLimiter, async (req, res) => {
   try {
-    const { name, title, organization, email, challenge, source, tag, timestamp, attribution } =
-      req.body;
-
-    // Validate required fields
-    if (!name || !email || !source) {
+    if (cleanText(req.body.website, 255)) {
       return res.status(400).json({
-        message: 'Missing required fields: name, email, and source are required',
+        message: 'The request could not be accepted. Please try again.',
+        code: 'spam_detected',
       });
+    }
+
+    const { values, fieldErrors } = validateLeadPayload(req.body);
+    if (Object.keys(fieldErrors).length) {
+      return res.status(400).json({
+        message: 'Check the highlighted fields and try again.',
+        fieldErrors,
+      });
+    }
+    const { name, title, organization, email, challenge, source, tag, submissionId } = values;
+    const { timestamp, attribution } = req.body;
+
+    if (submissionId) {
+      const existingLead = await Lead.findOne({ submissionId });
+      if (existingLead) {
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          message: 'Lead was already captured successfully',
+          leadId: existingLead._id,
+          internalNotificationSent: existingLead.internalNotificationSent,
+          calendarLink: CALENDAR_LINK || null,
+        });
+      }
     }
 
     // Create lead record
@@ -313,6 +372,7 @@ router.post('/', async (req, res) => {
       challenge,
       source,
       tag,
+      submissionId: submissionId || undefined,
       attribution:
         attribution && typeof attribution === 'object' && !Array.isArray(attribution)
           ? attribution
@@ -400,9 +460,22 @@ router.post('/', async (req, res) => {
       leadId: lead._id,
       notificationEmail,
       internalNotificationSent: lead.internalNotificationSent,
-      calendarLink: CALENDAR_LINK,
+      calendarLink: CALENDAR_LINK || null,
     });
   } catch (error) {
+    if (error?.code === 11000 && req.body?.submissionId) {
+      const existingLead = await Lead.findOne({ submissionId: req.body.submissionId });
+      if (existingLead) {
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          message: 'Lead was already captured successfully',
+          leadId: existingLead._id,
+          internalNotificationSent: existingLead.internalNotificationSent,
+          calendarLink: CALENDAR_LINK || null,
+        });
+      }
+    }
     console.error('❌ Lead submission error:', error);
     res.status(500).json({ message: error.message || 'Failed to capture lead' });
   }

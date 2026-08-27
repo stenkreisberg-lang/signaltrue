@@ -3,113 +3,125 @@ import { google } from 'googleapis';
 const ANALYTICS_READONLY_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
 const SITE_HOSTNAME = process.env.GA4_SITE_HOSTNAME || 'www.signaltrue.ai';
-const CONVERSION_EVENT_NAMES = new Set([
-  'generate_lead',
-  'demo_request_submitted',
-  'contact_form_submit',
-  'email_submitted',
-  'trial_started',
+export const COMMERCIAL_PAGE_EVENT = 'commercial_page_view';
+export const FUNNEL_EVENT_NAMES = [
+  'commercial_page_view',
+  'sample_report_view',
+  'primary_cta_click',
+  'lead_form_start',
+  'lead_form_error',
+  'lead_form_submit',
+  'lead_confirmed',
+  'booking_link_click',
+];
+const QUALIFIED_LANDING_PATHS = new Set([
+  '/psychosocial-risk-visibility-review',
+  '/product',
+  '/contact',
+  '/sample-report',
 ]);
-const FUNNEL_EVENT_NAMES = [
-  'demo_cta_click',
-  'sample_report_click',
-  'sample_report_request',
-  'form_start',
-  'demo_form_submit',
-  'generate_lead',
-  'demo_request_submitted',
-  'contact_form_submit',
-  'demo_form_error',
+const EXCLUDED_PATH_PREFIXES = [
+  '/app',
+  '/login',
+  '/dashboard',
+  '/register',
+  '/onboarding',
+  '/admin',
+  '/superadmin',
+  '/settings',
+  '/notifications',
+  '/integrations',
+  '/team-analytics',
 ];
 
-function productionHostnameFilter() {
+function exactFilter(fieldName, value) {
   return {
     filter: {
-      fieldName: 'hostName',
-      stringFilter: {
-        matchType: 'EXACT',
-        value: SITE_HOSTNAME,
-        caseSensitive: false,
-      },
+      fieldName,
+      stringFilter: { matchType: 'EXACT', value, caseSensitive: false },
     },
   };
 }
 
-function withProductionHostname(request) {
-  const hostFilter = productionHostnameFilter();
-  if (!request.dimensionFilter) {
-    return { ...request, dimensionFilter: hostFilter };
-  }
-
+function inListFilter(fieldName, values) {
   return {
-    ...request,
-    dimensionFilter: {
-      andGroup: {
-        expressions: [hostFilter, request.dimensionFilter],
-      },
+    filter: {
+      fieldName,
+      inListFilter: { values, caseSensitive: true },
     },
   };
+}
+
+export function buildCommercialReportFilter(eventExpression) {
+  const expressions = [exactFilter('hostName', SITE_HOSTNAME)];
+  if (eventExpression) expressions.push(eventExpression);
+  return { andGroup: { expressions } };
+}
+
+function commercialPageFilter() {
+  return buildCommercialReportFilter(exactFilter('eventName', COMMERCIAL_PAGE_EVENT));
+}
+
+function funnelFilter(eventName) {
+  return buildCommercialReportFilter(
+    eventName ? exactFilter('eventName', eventName) : inListFilter('eventName', FUNNEL_EVENT_NAMES)
+  );
+}
+
+export function isCommercialReportPath(path = '') {
+  const pathname = String(path).split('?')[0].replace(/\/+$/, '') || '/';
+  return !EXCLUDED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 }
 
 function parseServiceAccountJson() {
   const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
   const rawBase64 = process.env.GA4_SERVICE_ACCOUNT_JSON_BASE64;
-
   if (!rawJson && !rawBase64) return null;
 
   const jsonText = rawBase64 ? Buffer.from(rawBase64, 'base64').toString('utf8') : rawJson;
   const credentials = JSON.parse(jsonText);
-
-  if (credentials.private_key) {
+  if (credentials.private_key)
     credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-  }
-
   return credentials;
 }
 
-function getMetric(row, metricHeaders, metricName) {
-  const index = metricHeaders.findIndex((header) => header.name === metricName);
-  if (index === -1) return 0;
-  return Number(row.metricValues?.[index]?.value || 0);
+function getMetric(row, headers, name) {
+  const index = headers.findIndex((header) => header.name === name);
+  return index === -1 ? 0 : Number(row.metricValues?.[index]?.value || 0);
 }
 
-function getDimension(row, dimensionHeaders, dimensionName) {
-  const index = dimensionHeaders.findIndex((header) => header.name === dimensionName);
-  if (index === -1) return '';
-  return row.dimensionValues?.[index]?.value || '';
+function getDimension(row, headers, name) {
+  const index = headers.findIndex((header) => header.name === name);
+  return index === -1 ? '' : row.dimensionValues?.[index]?.value || '';
 }
 
-function formatPercent(value) {
-  if (!Number.isFinite(value)) return 0;
-  return Math.round(value * 1000) / 10;
+function oneDecimalPercent(value) {
+  return Number.isFinite(value) ? Math.round(value * 1000) / 10 : 0;
 }
 
-function formatSeconds(value) {
-  if (!Number.isFinite(value)) return 0;
-  return Math.round(value);
+function rounded(value) {
+  return Number.isFinite(value) ? Math.round(value) : 0;
+}
+
+function rate(numerator, denominator) {
+  return denominator ? Math.round((numerator / denominator) * 1000) / 10 : 0;
 }
 
 async function getAnalyticsClient() {
   const propertyId = process.env.GA4_PROPERTY_ID;
   const credentials = parseServiceAccountJson();
-
   if (!propertyId || !credentials) {
     return {
       configured: false,
-      reason: 'GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON are required.',
+      reason:
+        'GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON (or GA4_SERVICE_ACCOUNT_JSON_BASE64) are required.',
     };
   }
 
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: [ANALYTICS_READONLY_SCOPE],
-  });
-
-  return {
-    configured: true,
-    propertyId,
-    client: await auth.getClient(),
-  };
+  const auth = new google.auth.GoogleAuth({ credentials, scopes: [ANALYTICS_READONLY_SCOPE] });
+  return { configured: true, propertyId, client: await auth.getClient() };
 }
 
 async function runReport(authClient, propertyId, request) {
@@ -118,13 +130,53 @@ async function runReport(authClient, propertyId, request) {
     method: 'POST',
     data: request,
   });
-
   return response.data;
+}
+
+async function runOptionalReport(authClient, propertyId, request, diagnosticKey, diagnostics) {
+  try {
+    return await runReport(authClient, propertyId, request);
+  } catch (error) {
+    diagnostics.push({
+      type: diagnosticKey,
+      message:
+        error?.response?.data?.error?.message || error.message || 'Optional GA4 report failed.',
+    });
+    return { rows: [], metricHeaders: [], dimensionHeaders: [] };
+  }
+}
+
+function metricsFromSummary(report) {
+  const row = report.rows?.[0] || {};
+  const headers = report.metricHeaders || [];
+  const sessions = getMetric(row, headers, 'sessions');
+  const engagementDuration = getMetric(row, headers, 'userEngagementDuration');
+  return {
+    activeUsers: getMetric(row, headers, 'activeUsers'),
+    sessions,
+    views: getMetric(row, headers, 'eventCount'),
+    engagementRate: oneDecimalPercent(getMetric(row, headers, 'engagementRate')),
+    averageEngagementTime: rounded(sessions ? engagementDuration / sessions : 0),
+  };
+}
+
+function mapEvents(report) {
+  const dimensionHeaders = report.dimensionHeaders || [];
+  const metricHeaders = report.metricHeaders || [];
+  const counts = new Map(
+    (report.rows || []).map((row) => [
+      getDimension(row, dimensionHeaders, 'eventName'),
+      getMetric(row, metricHeaders, 'eventCount'),
+    ])
+  );
+  return FUNNEL_EVENT_NAMES.map((eventName) => ({
+    eventName,
+    eventCount: counts.get(eventName) || 0,
+  }));
 }
 
 export async function getGa4Overview(options = {}) {
   const analytics = await getAnalyticsClient();
-
   if (!analytics.configured) {
     return {
       connected: false,
@@ -135,10 +187,7 @@ export async function getGa4Overview(options = {}) {
 
   const { client, propertyId } = analytics;
   const dateRanges = [
-    {
-      startDate: options.startDate || '29daysAgo',
-      endDate: options.endDate || 'today',
-    },
+    { startDate: options.startDate || '29daysAgo', endDate: options.endDate || 'today' },
   ];
   const previousDateRanges = [
     {
@@ -146,178 +195,223 @@ export async function getGa4Overview(options = {}) {
       endDate: options.previousEndDate || '30daysAgo',
     },
   ];
+  const diagnostics = [];
+  const summaryRequest = (ranges) => ({
+    dateRanges: ranges,
+    dimensions: [{ name: 'hostName' }],
+    metrics: [
+      { name: 'activeUsers' },
+      { name: 'sessions' },
+      { name: 'eventCount' },
+      { name: 'engagementRate' },
+      { name: 'userEngagementDuration' },
+    ],
+    dimensionFilter: commercialPageFilter(),
+  });
 
-  const [summary, previousSummary, topPages, trafficSources, daily, keyEvents] = await Promise.all([
-    runReport(
+  const [
+    summary,
+    previousSummary,
+    topPages,
+    sourceMedium,
+    campaigns,
+    landingPages,
+    daily,
+    funnel,
+    ctaLocations,
+    formErrors,
+  ] = await Promise.all([
+    runReport(client, propertyId, summaryRequest(dateRanges)),
+    runReport(client, propertyId, summaryRequest(previousDateRanges)),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [{ name: 'eventCount' }, { name: 'activeUsers' }, { name: 'engagementRate' }],
+      dimensionFilter: commercialPageFilter(),
+      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      limit: 50,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      dimensionFilter: commercialPageFilter(),
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 50,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'sessionCampaignName' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      dimensionFilter: commercialPageFilter(),
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 50,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'landingPagePlusQueryString' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      dimensionFilter: commercialPageFilter(),
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 50,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'date' }],
+      metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'eventCount' }],
+      dimensionFilter: commercialPageFilter(),
+      orderBys: [{ dimension: { dimensionName: 'date' } }],
+      limit: 31,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'eventName' }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: funnelFilter(),
+      limit: 50,
+    }),
+    runOptionalReport(
       client,
       propertyId,
-      withProductionHostname({
+      {
         dateRanges,
-        dimensions: [{ name: 'hostName' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'engagementRate' },
-          { name: 'averageSessionDuration' },
-          { name: 'keyEvents' },
-        ],
-      })
-    ),
-    runReport(
-      client,
-      propertyId,
-      withProductionHostname({
-        dateRanges: previousDateRanges,
-        dimensions: [{ name: 'hostName' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'engagementRate' },
-          { name: 'averageSessionDuration' },
-          { name: 'keyEvents' },
-        ],
-      })
-    ),
-    runReport(
-      client,
-      propertyId,
-      withProductionHostname({
-        dateRanges,
-        dimensions: [{ name: 'pagePath' }, { name: 'hostName' }],
-        metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'engagementRate' }],
-        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-        limit: 10,
-      })
-    ),
-    runReport(
-      client,
-      propertyId,
-      withProductionHostname({
-        dateRanges,
-        dimensions: [{ name: 'sessionDefaultChannelGroup' }, { name: 'hostName' }],
-        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
-        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-        limit: 8,
-      })
-    ),
-    runReport(
-      client,
-      propertyId,
-      withProductionHostname({
-        dateRanges,
-        dimensions: [{ name: 'date' }, { name: 'hostName' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'screenPageViews' },
-          { name: 'keyEvents' },
-        ],
-        orderBys: [{ dimension: { dimensionName: 'date' } }],
-        limit: 31,
-      })
-    ),
-    runReport(
-      client,
-      propertyId,
-      withProductionHostname({
-        dateRanges,
-        dimensions: [{ name: 'eventName' }, { name: 'hostName' }],
-        metrics: [{ name: 'keyEvents' }, { name: 'eventCount' }],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            inListFilter: {
-              values: [...new Set([...FUNNEL_EVENT_NAMES, ...CONVERSION_EVENT_NAMES])],
-              caseSensitive: true,
-            },
-          },
-        },
+        dimensions: [{ name: 'customEvent:cta_location' }],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: funnelFilter('primary_cta_click'),
         orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
-        limit: 50,
-      })
+        limit: 25,
+      },
+      'cta_location_dimension',
+      diagnostics
+    ),
+    runOptionalReport(
+      client,
+      propertyId,
+      {
+        dateRanges,
+        dimensions: [{ name: 'customEvent:error_type' }],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: funnelFilter('lead_form_error'),
+        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+        limit: 25,
+      },
+      'error_type_dimension',
+      diagnostics
     ),
   ]);
 
-  const summaryHeaders = summary.metricHeaders || [];
-  const summaryRow = summary.rows?.[0] || {};
-  const previousHeaders = previousSummary.metricHeaders || [];
-  const previousRow = previousSummary.rows?.[0] || {};
-
-  const currentMetrics = {
-    activeUsers: getMetric(summaryRow, summaryHeaders, 'activeUsers'),
-    sessions: getMetric(summaryRow, summaryHeaders, 'sessions'),
-    views: getMetric(summaryRow, summaryHeaders, 'screenPageViews'),
-    engagementRate: formatPercent(getMetric(summaryRow, summaryHeaders, 'engagementRate')),
-    averageSessionDuration: formatSeconds(
-      getMetric(summaryRow, summaryHeaders, 'averageSessionDuration')
-    ),
-    keyEvents: getMetric(summaryRow, summaryHeaders, 'keyEvents'),
-  };
-
-  const previousMetrics = {
-    activeUsers: getMetric(previousRow, previousHeaders, 'activeUsers'),
-    sessions: getMetric(previousRow, previousHeaders, 'sessions'),
-    views: getMetric(previousRow, previousHeaders, 'screenPageViews'),
-    engagementRate: formatPercent(getMetric(previousRow, previousHeaders, 'engagementRate')),
-    averageSessionDuration: formatSeconds(
-      getMetric(previousRow, previousHeaders, 'averageSessionDuration')
-    ),
-    keyEvents: getMetric(previousRow, previousHeaders, 'keyEvents'),
-  };
-
-  const eventRows = (keyEvents.rows || [])
+  const summaryMetrics = metricsFromSummary(summary);
+  const previousMetrics = metricsFromSummary(previousSummary);
+  const funnelEvents = mapEvents(funnel);
+  const eventCount = (name) =>
+    funnelEvents.find((event) => event.eventName === name)?.eventCount || 0;
+  const sourceMediumRows = (sourceMedium.rows || []).map((row) => ({
+    source: getDimension(row, sourceMedium.dimensionHeaders || [], 'sessionSource') || '(not set)',
+    medium: getDimension(row, sourceMedium.dimensionHeaders || [], 'sessionMedium') || '(not set)',
+    sessions: getMetric(row, sourceMedium.metricHeaders || [], 'sessions'),
+    activeUsers: getMetric(row, sourceMedium.metricHeaders || [], 'activeUsers'),
+  }));
+  const directSessions = sourceMediumRows
+    .filter(
+      (row) =>
+        row.source === '(direct)' ||
+        row.source === '(not set)' ||
+        row.medium === '(none)' ||
+        row.medium === '(not set)'
+    )
+    .reduce((sum, row) => sum + row.sessions, 0);
+  const organicSessions = sourceMediumRows
+    .filter((row) => row.medium.toLowerCase() === 'organic')
+    .reduce((sum, row) => sum + row.sessions, 0);
+  const landingRows = (landingPages.rows || [])
     .map((row) => ({
-      eventName: getDimension(row, keyEvents.dimensionHeaders || [], 'eventName'),
-      keyEvents: getMetric(row, keyEvents.metricHeaders || [], 'keyEvents'),
-      eventCount: getMetric(row, keyEvents.metricHeaders || [], 'eventCount'),
+      path: getDimension(row, landingPages.dimensionHeaders || [], 'landingPagePlusQueryString'),
+      sessions: getMetric(row, landingPages.metricHeaders || [], 'sessions'),
+      activeUsers: getMetric(row, landingPages.metricHeaders || [], 'activeUsers'),
     }))
-    .filter((event) => event.keyEvents > 0 || event.eventCount > 0);
-
-  const conversionEvents = eventRows
-    .filter((event) => CONVERSION_EVENT_NAMES.has(event.eventName))
-    .map((event) => ({
-      ...event,
-      label: event.eventName.replace(/_/g, ' '),
-    }));
+    .filter((row) => isCommercialReportPath(row.path));
+  const qualifiedLandingPageSessions = landingRows
+    .filter((row) => QUALIFIED_LANDING_PATHS.has(row.path.split('?')[0].replace(/\/+$/, '')))
+    .reduce((sum, row) => sum + row.sessions, 0);
 
   return {
     connected: true,
     propertyId,
     hostname: SITE_HOSTNAME,
+    scope: {
+      eventName: COMMERCIAL_PAGE_EVENT,
+      excludedRoutes: EXCLUDED_PATH_PREFIXES,
+      previewAndDevelopmentHostsExcluded: true,
+      internalTrafficRuleDetected: false,
+    },
     dateRange: {
       label: options.label || 'Last 30 days',
       startDate: dateRanges[0].startDate,
       endDate: dateRanges[0].endDate,
     },
-    summary: currentMetrics,
+    summary: {
+      ...summaryMetrics,
+      organicSessions,
+      qualifiedLandingPageSessions,
+      sampleReportViews: eventCount('sample_report_view'),
+    },
     previousSummary: previousMetrics,
-    topPages: (topPages.rows || []).map((row) => ({
-      path: getDimension(row, topPages.dimensionHeaders || [], 'pagePath'),
-      views: getMetric(row, topPages.metricHeaders || [], 'screenPageViews'),
-      activeUsers: getMetric(row, topPages.metricHeaders || [], 'activeUsers'),
-      engagementRate: formatPercent(getMetric(row, topPages.metricHeaders || [], 'engagementRate')),
+    sourceMedium: sourceMediumRows,
+    campaigns: (campaigns.rows || []).map((row) => ({
+      campaign:
+        getDimension(row, campaigns.dimensionHeaders || [], 'sessionCampaignName') || '(not set)',
+      sessions: getMetric(row, campaigns.metricHeaders || [], 'sessions'),
+      activeUsers: getMetric(row, campaigns.metricHeaders || [], 'activeUsers'),
     })),
-    trafficSources: (trafficSources.rows || []).map((row) => ({
-      channel: getDimension(
-        row,
-        trafficSources.dimensionHeaders || [],
-        'sessionDefaultChannelGroup'
-      ),
-      sessions: getMetric(row, trafficSources.metricHeaders || [], 'sessions'),
-      activeUsers: getMetric(row, trafficSources.metricHeaders || [], 'activeUsers'),
-    })),
+    topLandingPages: landingRows.slice(0, 10),
+    topPages: (topPages.rows || [])
+      .map((row) => ({
+        path: getDimension(row, topPages.dimensionHeaders || [], 'pagePath'),
+        views: getMetric(row, topPages.metricHeaders || [], 'eventCount'),
+        activeUsers: getMetric(row, topPages.metricHeaders || [], 'activeUsers'),
+        engagementRate: oneDecimalPercent(
+          getMetric(row, topPages.metricHeaders || [], 'engagementRate')
+        ),
+      }))
+      .filter((row) => isCommercialReportPath(row.path))
+      .slice(0, 10),
     daily: (daily.rows || []).map((row) => ({
       date: getDimension(row, daily.dimensionHeaders || [], 'date'),
       activeUsers: getMetric(row, daily.metricHeaders || [], 'activeUsers'),
       sessions: getMetric(row, daily.metricHeaders || [], 'sessions'),
-      views: getMetric(row, daily.metricHeaders || [], 'screenPageViews'),
-      keyEvents: getMetric(row, daily.metricHeaders || [], 'keyEvents'),
+      views: getMetric(row, daily.metricHeaders || [], 'eventCount'),
     })),
-    keyEvents: eventRows,
-    funnelEvents: eventRows.filter((event) => FUNNEL_EVENT_NAMES.includes(event.eventName)),
-    conversionEvents,
-    conversionEventCount: conversionEvents.reduce((sum, event) => sum + event.eventCount, 0),
+    funnelEvents,
+    funnel: {
+      primaryCtaClicks: eventCount('primary_cta_click'),
+      formStarts: eventCount('lead_form_start'),
+      formErrors: eventCount('lead_form_error'),
+      validSubmissions: eventCount('lead_form_submit'),
+      confirmedLeads: eventCount('lead_confirmed'),
+      bookingLinkClicks: eventCount('booking_link_click'),
+      rates: {
+        pageToCta: rate(eventCount('primary_cta_click'), summaryMetrics.sessions),
+        ctaToFormStart: rate(eventCount('lead_form_start'), eventCount('primary_cta_click')),
+        formStartToSubmit: rate(eventCount('lead_form_submit'), eventCount('lead_form_start')),
+        submitToConfirmed: rate(eventCount('lead_confirmed'), eventCount('lead_form_submit')),
+        confirmedToBooking: rate(eventCount('booking_link_click'), eventCount('lead_confirmed')),
+      },
+    },
+    topCtaLocations: (ctaLocations.rows || []).map((row) => ({
+      location:
+        getDimension(row, ctaLocations.dimensionHeaders || [], 'customEvent:cta_location') ||
+        '(not set)',
+      clicks: getMetric(row, ctaLocations.metricHeaders || [], 'eventCount'),
+    })),
+    formErrorsByType: (formErrors.rows || []).map((row) => ({
+      type:
+        getDimension(row, formErrors.dimensionHeaders || [], 'customEvent:error_type') ||
+        '(not set)',
+      count: getMetric(row, formErrors.metricHeaders || [], 'eventCount'),
+    })),
+    unattributedDirectPercentage: rate(directSessions, summaryMetrics.sessions),
+    diagnostics,
+    conversionEvents: [{ eventName: 'lead_confirmed', eventCount: eventCount('lead_confirmed') }],
+    conversionEventCount: eventCount('lead_confirmed'),
   };
 }

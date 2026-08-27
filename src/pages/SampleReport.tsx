@@ -6,10 +6,12 @@ import {
   Printer,
   ShieldCheck,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
+import { trackFunnelEvent } from '../lib/analytics';
 
 const signals = [
   {
@@ -55,6 +57,14 @@ const steps = [
 ];
 
 export default function SampleReport() {
+  const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (trackedRef.current) return;
+    trackedRef.current = true;
+    trackFunnelEvent('sample_report_view', { cta_location: 'sample_report_page' });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <style>{`
@@ -88,12 +98,13 @@ export default function SampleReport() {
                 diagnosis or a substitute for worker consultation.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  to="/contact?intent=demo&cta=sample_report"
+                <PrimaryCommercialCTA
+                  ctaLocation="sample_report_hero"
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF]"
                 >
-                  Review your use case <ArrowRight className="h-5 w-5" />
-                </Link>
+                  Request a 20-minute psychosocial risk visibility review{' '}
+                  <ArrowRight className="h-5 w-5" />
+                </PrimaryCommercialCTA>
                 <a
                   href="#report"
                   className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"

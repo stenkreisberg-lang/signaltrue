@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader2, BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getAssessmentSession, AssessmentSession } from './WorkloadAssessment';
+import { PrimaryCommercialCTA } from './CommercialCTA';
 
 interface ChatMessage {
   id: string;
@@ -33,10 +34,6 @@ export const ChatWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showLeadCapture, setShowLeadCapture] = useState(false);
-  const [leadEmail, setLeadEmail] = useState('');
-  const [leadSubmitting, setLeadSubmitting] = useState(false);
-  const [leadTriggerQuestion, setLeadTriggerQuestion] = useState('');
-  const [leadTriggerType, setLeadTriggerType] = useState('');
   const [suggestedPrompts, setSuggestedPrompts] = useState<SuggestedPrompt[]>([]);
   const [assessmentSession, setAssessmentSession] = useState<AssessmentSession | null>(null);
   const [trialContext, setTrialContext] = useState<TrialContext | null>(null);
@@ -174,8 +171,6 @@ export const ChatWidget: React.FC = () => {
 
       // Check for lead trigger
       if (data.leadTrigger) {
-        setLeadTriggerQuestion(question.trim());
-        setLeadTriggerType(data.leadTrigger);
         setTimeout(() => setShowLeadCapture(true), 1000);
       }
     } catch (error) {
@@ -198,45 +193,6 @@ export const ChatWidget: React.FC = () => {
 
   const handlePromptClick = (prompt: SuggestedPrompt) => {
     sendMessage(prompt.text);
-  };
-
-  const submitLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leadEmail.trim() || leadSubmitting) return;
-
-    setLeadSubmitting(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/chat/lead`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: leadEmail.trim(),
-          question: leadTriggerQuestion,
-          triggerType: leadTriggerType,
-          sessionId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const confirmMessage: ChatMessage = {
-          id: generateId(),
-          role: 'assistant',
-          content: 'Thank you! We will contact you soon. 📬',
-        };
-        setMessages((prev) => [...prev, confirmMessage]);
-        setShowLeadCapture(false);
-        setLeadEmail('');
-      } else {
-        throw new Error(data.message);
-      }
-    } catch (error) {
-      console.error('Lead capture error:', error);
-    } finally {
-      setLeadSubmitting(false);
-    }
   };
 
   return (
@@ -365,21 +321,15 @@ export const ChatWidget: React.FC = () => {
             {showLeadCapture && (
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                 <p className="text-sm text-gray-700 mb-3">
-                  Would you like us to contact you? Leave your email.
+                  Continue with the short, confirmed visibility-review request form.
                 </p>
-                <form onSubmit={submitLead} className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={leadEmail}
-                    onChange={(e) => setLeadEmail(e.target.value)}
-                    placeholder="email@example.com"
-                    className="flex-1 text-sm"
-                    disabled={leadSubmitting}
-                  />
-                  <Button type="submit" size="sm" disabled={leadSubmitting || !leadEmail.trim()}>
-                    {leadSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
-                  </Button>
-                </form>
+                <PrimaryCommercialCTA
+                  ctaLocation="chat_lead_prompt"
+                  className="flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                  onClick={() => setShowLeadCapture(false)}
+                >
+                  Request a 20-minute review
+                </PrimaryCommercialCTA>
                 <button
                   onClick={() => setShowLeadCapture(false)}
                   className="text-xs text-gray-500 mt-2 hover:text-gray-700"

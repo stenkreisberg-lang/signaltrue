@@ -1,105 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { CheckCircle, ArrowDown, TrendingUp, AlertTriangle } from 'lucide-react';
-
-// Analytics tracking
-const trackEvent = (eventName: string, params?: Record<string, string>) => {
-  // Google Analytics
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', eventName, params);
-  }
-  // Meta Pixel
-  if (typeof window !== 'undefined' && (window as any).fbq) {
-    (window as any).fbq('track', eventName, params);
-  }
-  // LinkedIn Insight Tag
-  if (typeof window !== 'undefined' && (window as any).lintrk) {
-    (window as any).lintrk('track', { conversion_id: eventName });
-  }
-};
+import { ArrowDown, TrendingUp, AlertTriangle } from 'lucide-react';
+import LeadForm from '../components/LeadForm';
 
 const EhrsSummit2026: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    title: '',
-    organization: '',
-    email: '',
-    challenge: '',
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-
-  // Initialize tracking pixels on page load
-  useEffect(() => {
-    trackEvent('EHRS_page_view');
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   const scrollToForm = () => {
     const formSection = document.getElementById('form-section');
     if (formSection) {
       formSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setSubmitError('');
-
-    try {
-      // Track form submission
-      trackEvent('EHRS_form_submit', {
-        organization: formData.organization,
-      });
-
-      // Submit to backend CRM with EHRS2026 tag
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-      const response = await fetch(`${apiUrl}/api/leads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          source: 'EHRS2026',
-          tag: 'EHRS2026',
-          timestamp: new Date().toISOString(),
-        }),
-      });
-      if (!response.ok) throw new Error('Unable to submit the form');
-
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Form submission error:', error);
-      setSubmitError('We could not submit your details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Thank you state
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
-        <div className="max-w-lg text-center">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle className="w-10 h-10 text-emerald-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Täname!</h1>
-          <p className="text-lg text-slate-600 mb-8">Võtame sinuga ühendust 48 tunni jooksul.</p>
-          <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
-            ← Tagasi avalehele
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -378,118 +289,18 @@ const EhrsSummit2026: React.FC = () => {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nimi */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Nimi <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 h-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-                placeholder="Sinu nimi"
-              />
-            </div>
-
-            {/* Ametinimetus */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Ametinimetus <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="text"
-                id="title"
-                name="title"
-                required
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full px-4 py-3 h-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-                placeholder="Nt. HR juht, Personalidirektor"
-              />
-            </div>
-
-            {/* Organisatsioon */}
-            <div>
-              <label
-                htmlFor="organization"
-                className="block text-sm font-medium text-slate-700 mb-1.5"
-              >
-                Organisatsioon <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="text"
-                id="organization"
-                name="organization"
-                required
-                value={formData.organization}
-                onChange={handleChange}
-                className="w-full px-4 py-3 h-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-                placeholder="Ettevõtte nimi"
-              />
-            </div>
-
-            {/* E-post */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                E-post <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 h-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-                placeholder="sinu@ettevote.ee"
-              />
-            </div>
-
-            {/* Peamine väljakutse (Optional) */}
-            <div>
-              <label
-                htmlFor="challenge"
-                className="block text-sm font-medium text-slate-700 mb-1.5"
-              >
-                Peamine väljakutse <span className="text-slate-400 font-normal">(valikuline)</span>
-              </label>
-              <Textarea
-                id="challenge"
-                name="challenge"
-                rows={3}
-                value={formData.challenge}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 resize-none"
-                placeholder="Mis on sinu organisatsioonis hetkel suurim väljakutse?"
-              />
-            </div>
-
-            {submitError && (
-              <p role="alert" className="text-sm font-medium text-red-600">
-                {submitError}
-              </p>
-            )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 h-14 text-lg rounded-lg font-semibold transition-all shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Saadan...' : 'Broneeri strateegiline ülevaade'}
-            </Button>
-          </form>
+          <LeadForm
+            ctaLocation="ehrs_2026_form"
+            source="EHRS2026"
+            tag="EHRS2026"
+            heading="Request the review"
+            intro="Use the same short, confirmed request path as the SignalTrue website. Role and message are optional."
+          />
 
           {/* Privacy Policy Link */}
           <p className="text-center text-sm text-slate-500 mt-6">
             Esitades vormi, nõustud meie{' '}
-            <Link to="/app/privacy" className="text-blue-600 hover:underline">
+            <Link to="/trust" className="text-blue-600 hover:underline">
               privaatsuspoliitikaga
             </Link>
             .
@@ -500,7 +311,7 @@ const EhrsSummit2026: React.FC = () => {
       {/* ===================== MINIMAL FOOTER ===================== */}
       <footer className="bg-slate-50 px-6 py-8 border-t border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <Link to="/app/privacy" className="text-sm text-slate-500 hover:text-slate-700">
+          <Link to="/trust" className="text-sm text-slate-500 hover:text-slate-700">
             Privaatsuspoliitika
           </Link>
         </div>
