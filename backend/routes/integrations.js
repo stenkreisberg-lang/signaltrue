@@ -1152,6 +1152,7 @@ router.get(
       orgId: String(req.user.orgId),
       userId: String(req.user.userId),
       scope: 'application',
+      returnTo: req.query.returnTo === 'integrations' ? '/integrations' : '/dashboard',
       nonce: crypto.randomBytes(8).toString('hex'),
     });
     const url = new URL(`https://login.microsoftonline.com/${tenantId}/adminconsent`);
@@ -1179,12 +1180,13 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     const scopeParam = String(parsed.scope || 'outlook');
 
     if (scopeParam === 'application') {
+      const returnTo = parsed.returnTo === '/integrations' ? '/integrations' : '/dashboard';
       if (req.query.error) {
         console.error(
           'Microsoft admin consent failed:',
           req.query.error_description || req.query.error
         );
-        return res.redirect(`${getAppUrl()}/dashboard?error=microsoft-application-consent`);
+        return res.redirect(`${getAppUrl()}${returnTo}?microsoftConsent=denied`);
       }
       if (String(req.query.admin_consent).toLowerCase() !== 'true' || !parsed.orgId) {
         return res.status(400).send('Microsoft application consent was not granted.');
@@ -1200,10 +1202,10 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       try {
         await verifyMicrosoftCompanyWideAccess(parsed.orgId, parsed.userId);
         startMicrosoftCompanyBackfill(parsed.orgId, 60);
-        return res.redirect(`${getAppUrl()}/dashboard?connected=microsoft-application`);
+        return res.redirect(`${getAppUrl()}${returnTo}?microsoftConsent=verified`);
       } catch (error) {
         console.error('Microsoft post-admin-consent verification failed:', error.message);
-        return res.redirect(`${getAppUrl()}/dashboard?error=microsoft-application-verification`);
+        return res.redirect(`${getAppUrl()}${returnTo}?microsoftConsent=verification-failed`);
       }
     }
 

@@ -129,6 +129,9 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const [showConnectModal, setShowConnectModal] = useState(null);
   const [setup, setSetup] = useState(null);
   const [healthIssues, setHealthIssues] = useState([]);
+  const [microsoftCompanyAccess, setMicrosoftCompanyAccess] = useState(null);
+  const [verifyingMicrosoft, setVerifyingMicrosoft] = useState(false);
+  const [notice, setNotice] = useState(null);
   const [googleWorkspace, setGoogleWorkspace] = useState(null);
   const [googleAdminEmail, setGoogleAdminEmail] = useState('');
   const [verifyingGoogle, setVerifyingGoogle] = useState(false);
@@ -149,6 +152,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       const data = await res.json();
       setSetup(data.setup || null);
       setHealthIssues(data.healthIssues || []);
+      setMicrosoftCompanyAccess(data.microsoftCompanyAccess || null);
       setIntegrations(
         (data.integrations || []).map((integration) => ({
           ...integration,
@@ -200,9 +204,51 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
     }
   };
 
+  const grantMicrosoftCompanyAccess = () => {
+    const token = localStorage.getItem('token');
+    window.location.href = `${API_BASE}/api/integrations/microsoft/admin-consent/start?returnTo=integrations&token=${encodeURIComponent(token || '')}`;
+  };
+
+  const verifyMicrosoftCompanyAccess = async () => {
+    setVerifyingMicrosoft(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/integrations/microsoft/admin-consent/verify`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Microsoft verification failed');
+      setNotice('Microsoft company-wide access is verified. The 60-day backfill has started.');
+      await fetchIntegrations();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifyingMicrosoft(false);
+    }
+  };
+
   useEffect(() => {
     fetchIntegrations();
   }, [fetchIntegrations]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const consent = params.get('microsoftConsent');
+    if (!consent) return;
+    if (consent === 'verified') {
+      setNotice('Microsoft company-wide access is verified. The 60-day backfill has started.');
+    } else if (consent === 'verification-failed') {
+      setError(
+        'Microsoft accepted admin consent, but one or more required permissions are missing.'
+      );
+    } else {
+      setError('Microsoft company-wide consent was not granted.');
+    }
+    window.history.replaceState({}, document.title, '/integrations');
+  }, []);
 
   // Start OAuth flow
   const connectIntegration = async (source) => {
@@ -311,6 +357,11 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           Data source status is temporarily unavailable. {error}
         </div>
       )}
+      {notice && (
+        <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+          {notice}
+        </div>
+      )}
       {healthIssues.length > 0 && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">
           <h3 className="font-semibold text-red-950">Data source attention required</h3>
@@ -341,6 +392,54 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             <span>Activity: {setup.activity?.totalEvents || 0} events</span>
             <span>•</span>
             <span>Report-ready teams: {setup.teams?.ready || 0}</span>
+          </div>
+        </div>
+      )}
+      {microsoftCompanyAccess?.connected && (
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <h3 className="font-semibold text-slate-950">Microsoft company-wide access</h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Outlook and Teams sign-in covers the connected administrator account. A Microsoft
+                tenant administrator must separately grant application permissions for
+                organization-wide calendar and Teams metadata.
+              </p>
+              <p className="mt-2 break-all text-xs text-slate-500">
+                Required application permissions:{' '}
+                {(microsoftCompanyAccess.requiredRoles || []).join(', ')}
+              </p>
+              {microsoftCompanyAccess.lastError && !microsoftCompanyAccess.verifiedAt && (
+                <p className="mt-2 text-xs text-amber-700">{microsoftCompanyAccess.lastError}</p>
+              )}
+            </div>
+            {microsoftCompanyAccess.verifiedAt ? (
+              <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800">
+                Company-wide access verified
+              </div>
+            ) : (
+              <div className="flex min-w-[300px] flex-col gap-2">
+                <button
+                  onClick={grantMicrosoftCompanyAccess}
+                  disabled={!microsoftCompanyAccess.configured}
+                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  Grant company-wide access
+                </button>
+                <button
+                  onClick={verifyMicrosoftCompanyAccess}
+                  disabled={verifyingMicrosoft || !microsoftCompanyAccess.configured}
+                  className="rounded-lg bg-teal-50 px-4 py-2 text-sm font-medium text-teal-800 disabled:opacity-50"
+                >
+                  {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Already granted? Verify'}
+                </button>
+                {!microsoftCompanyAccess.configured && (
+                  <p className="text-xs text-amber-700">
+                    SignalTrue Microsoft application configuration is required first.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

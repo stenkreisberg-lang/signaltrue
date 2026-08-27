@@ -32,6 +32,7 @@ function legacyConnection(org, type) {
   const microsoftScope = org.integrations?.microsoft?.scope;
   const microsoftConnected = !!org.integrations?.microsoft?.accessToken;
   const microsoftConsent = !!org.integrations?.microsoft?.applicationConsentVerifiedAt;
+  const microsoftConsentError = org.integrations?.microsoft?.applicationConsentLastError;
 
   if (type === 'microsoft-outlook') {
     const connected =
@@ -46,7 +47,8 @@ function legacyConnection(org, type) {
         null,
       statusMessage:
         connected && !microsoftConsent
-          ? 'A Microsoft tenant administrator must grant company-wide access.'
+          ? microsoftConsentError ||
+            'A Microsoft tenant administrator must grant company-wide access.'
           : null,
     };
   }
@@ -63,7 +65,8 @@ function legacyConnection(org, type) {
         null,
       statusMessage:
         connected && !microsoftConsent
-          ? 'A Microsoft tenant administrator must grant company-wide access.'
+          ? microsoftConsentError ||
+            'A Microsoft tenant administrator must grant company-wide access.'
           : null,
     };
   }
@@ -133,8 +136,10 @@ function sourceStatus({ connection, fallback, eventCount, mappedUsers, totalUser
   return {
     status,
     statusMessage:
-      connection?.statusMessage ||
-      (fallback.needsAdmin && companyWideScope ? null : fallback.statusMessage) ||
+      (needsAdmin
+        ? fallback.statusMessage || connection?.statusMessage
+        : connection?.statusMessage ||
+          (fallback.needsAdmin && companyWideScope ? null : fallback.statusMessage)) ||
       (status === 'connected' ? 'Authorized; waiting for the first activity sync.' : null),
     connectedAt: fallback.connectedAt || connection?.connectedAt || null,
     lastSync:

@@ -1,4 +1,5 @@
 import express from 'express';
+import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
@@ -6,6 +7,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 import { getOrganizationIntegrationHealth } from '../services/integrationHealthMonitorService.js';
 import { triggerManualSync } from '../services/integrationSyncScheduler.js';
+import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
 
 const router = express.Router();
 
@@ -30,7 +32,12 @@ router.get('/status', authenticateToken, async (req, res) => {
     }
 
     const setup = await getOrganizationReadiness(orgId);
-    const [connections, healthIssues] = await Promise.all([
+    const [organization, connections, healthIssues] = await Promise.all([
+      Organization.findById(orgId)
+        .select(
+          'integrations.microsoft.accessToken integrations.microsoft.tenantId integrations.microsoft.applicationConsentGrantedAt integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentLastCheckedAt integrations.microsoft.applicationConsentLastError integrations.microsoft.applicationConsentRoles'
+        )
+        .lean(),
       IntegrationConnection.find({ orgId }).lean(),
       getOrganizationIntegrationHealth(orgId),
     ]);
@@ -126,11 +133,28 @@ router.get('/status', authenticateToken, async (req, res) => {
       dataQualityScore: calculateDataQualityScore(connections),
     };
 
+    const microsoft = organization?.integrations?.microsoft;
+    const microsoftCompanyAccess = {
+      connected: Boolean(microsoft?.accessToken && microsoft?.tenantId),
+      configured: Boolean(
+        process.env.MS_APP_CLIENT_ID &&
+        process.env.MS_APP_CLIENT_SECRET &&
+        process.env.MS_APP_REDIRECT_URI
+      ),
+      grantedAt: microsoft?.applicationConsentGrantedAt || null,
+      verifiedAt: microsoft?.applicationConsentVerifiedAt || null,
+      lastCheckedAt: microsoft?.applicationConsentLastCheckedAt || null,
+      lastError: microsoft?.applicationConsentLastError || null,
+      grantedRoles: microsoft?.applicationConsentRoles || [],
+      requiredRoles: REQUIRED_MICROSOFT_APPLICATION_ROLES,
+    };
+
     res.json({
       integrations,
       overallCoverage,
       setup,
       healthIssues,
+      microsoftCompanyAccess,
       oauthBaseUrl: '/api/integrations',
     });
   } catch (err) {
