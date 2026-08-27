@@ -24,4 +24,24 @@ describe('integration health monitoring', () => {
       'microsoft-teams:unmapped',
     ]);
   });
+
+  test('reports inaccessible Microsoft mailboxes without including account identities', () => {
+    const issues = evaluateIntegrationHealth({
+      integrationType: 'microsoft-outlook',
+      status: 'connected',
+      sync: { lastSuccessfulSyncAt: new Date() },
+      coverage: {
+        totalUsers: 77,
+        mappedUsers: 53,
+        unavailableUsers: 16,
+        failedUsers: 2,
+      },
+    });
+
+    expect(issues.map((issue) => issue.key)).toEqual([
+      'microsoft-outlook:mailboxes-unavailable',
+      'microsoft-outlook:mailbox-checks-failed',
+    ]);
+    expect(JSON.stringify(issues)).not.toContain('@');
+  });
 });

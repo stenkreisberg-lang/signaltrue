@@ -55,6 +55,22 @@ export function evaluateIntegrationHealth(connection, now = new Date()) {
       message: 'Activity is not mapped to any employee accounts.',
     });
   }
+  if ((connection.coverage?.unavailableUsers || 0) > 0) {
+    issues.push({
+      key: `${source}:mailboxes-unavailable`,
+      source,
+      severity: 'medium',
+      message: `${connection.coverage.unavailableUsers} Microsoft accounts have no accessible Exchange Online mailbox and are excluded from calendar coverage.`,
+    });
+  }
+  if ((connection.coverage?.failedUsers || 0) > 0) {
+    issues.push({
+      key: `${source}:mailbox-checks-failed`,
+      source,
+      severity: 'medium',
+      message: `${connection.coverage.failedUsers} Microsoft mailbox checks failed during the latest synchronization.`,
+    });
+  }
   return issues;
 }
 

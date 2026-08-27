@@ -47,8 +47,18 @@ export async function fetchGraphCollection(
     }
     if (!response.ok) {
       const body = await response.text();
-      const error = new Error(`Microsoft Graph ${response.status}: ${body.slice(0, 300)}`);
+      let graphCode = null;
+      try {
+        const parsed = JSON.parse(body);
+        graphCode = parsed?.error?.code || null;
+      } catch {
+        // A status and a stable provider code are enough for logs and UI state.
+      }
+      const error = new Error(
+        `Microsoft Graph ${response.status}${graphCode ? ` (${graphCode})` : ''}`
+      );
       error.status = response.status;
+      error.graphCode = graphCode;
       throw error;
     }
     const data = await response.json();
@@ -58,9 +68,61 @@ export async function fetchGraphCollection(
   }
 
   if (nextUrl) {
-    console.warn(`[Microsoft] Pagination stopped after ${maxPages} pages for ${initialUrl}`);
+    console.warn(`[Microsoft] Pagination stopped after ${maxPages} pages`);
   }
   return items;
+}
+
+function getMicrosoftTokenRoles(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(String(token).split('.')[1], 'base64url').toString());
+    return Array.isArray(payload.roles) ? payload.roles : [];
+  } catch {
+    return [];
+  }
+}
+
+export function classifyMicrosoftSyncError(error) {
+  const message = String(error?.message || error || 'Microsoft synchronization failed');
+  const providerCode = String(error?.microsoftCode || error?.graphCode || error?.code || '');
+
+  if (/AADSTS700082|refresh token has expired|invalid_grant/i.test(`${providerCode} ${message}`)) {
+    return {
+      kind: 'reauthorization_required',
+      status: 'error',
+      disableSync: true,
+      message: 'Microsoft authorization expired. Reconnect Microsoft to resume synchronization.',
+    };
+  }
+  if (/AADSTS900023|tenant.*invalid|invalid.*tenant/i.test(`${providerCode} ${message}`)) {
+    return {
+      kind: 'invalid_tenant',
+      status: 'error',
+      disableSync: true,
+      message: 'The Microsoft tenant is invalid. Reconnect Microsoft with the correct tenant.',
+    };
+  }
+  if (error?.status === 403 || /Forbidden|Authorization_RequestDenied/i.test(message)) {
+    return {
+      kind: 'admin_consent_required',
+      status: 'needs_admin',
+      disableSync: false,
+      message: 'Microsoft administrator consent is required for this data source.',
+    };
+  }
+  return {
+    kind: 'sync_failed',
+    status: 'error',
+    disableSync: false,
+    message: message.slice(0, 300),
+  };
+}
+
+export function isUnavailableMicrosoftMailboxError(error) {
+  return (
+    error?.status === 404 &&
+    String(error?.graphCode || error?.message || '').includes('MailboxNotEnabledForRESTAPI')
+  );
 }
 
 function hashMetadata(orgId, value) {
@@ -214,11 +276,14 @@ class OrgIntegrationAdapter {
       console.log(`[${this.source}] Fetched ${rawEvents.length} raw events`);
 
       if (rawEvents.length === 0) {
+        await this.updateSyncStatus(orgId, true, 0);
+        await this.updateConnectionCoverage(orgId, []);
         return {
           success: true,
           source: this.source,
           eventsProcessed: 0,
           duration: Date.now() - startTime,
+          details: this.getSyncDetails?.(),
         };
       }
 
@@ -256,11 +321,21 @@ class OrgIntegrationAdapter {
         eventsCreated: upserted,
         eventsUpdated: modified,
         duration: Date.now() - startTime,
+        details: this.getSyncDetails?.(),
       };
     } catch (error) {
-      console.error(`[${this.source}] Sync error for org ${orgId}:`, error.message);
-      await this.updateSyncStatus(orgId, false, 0, error.message);
-      return { success: false, source: this.source, error: error.message };
+      const safeError =
+        this.source === 'microsoft'
+          ? classifyMicrosoftSyncError(error).message
+          : String(error?.message || error).slice(0, 500);
+      console.error(`[${this.source}] Sync error for org ${orgId}:`, safeError);
+      await this.updateSyncStatus(orgId, false, 0, error);
+      return {
+        success: false,
+        source: this.source,
+        error: safeError,
+        details: this.getSyncDetails?.(),
+      };
     }
   }
 
@@ -334,7 +409,9 @@ export class SlackAdapter extends OrgIntegrationAdapter {
       $set: {
         'integrations.slack.sync.lastSync': new Date(),
         'integrations.slack.sync.status': success ? 'success' : 'error',
-        'integrations.slack.sync.error': error,
+        'integrations.slack.sync.error': error
+          ? String(error?.message || error).slice(0, 500)
+          : null,
         'integrations.slack.sync.eventsCount': count,
       },
     });
@@ -350,10 +427,15 @@ export class SlackAdapter extends OrgIntegrationAdapter {
       console.warn('Slack channels fetch failed:', error.message);
       return [];
     });
+    const joinedChannels = channels.filter((channel) => channel.is_member !== false);
+    const skippedChannels = channels.length - joinedChannels.length;
+    if (skippedChannels > 0) {
+      console.info(`[Slack] Skipped ${skippedChannels} channels because the app is not a member`);
+    }
     const oldestTs = Math.floor(since.getTime() / 1000);
     const latestTs = Math.floor(until.getTime() / 1000);
 
-    for (const channel of channels) {
+    for (const channel of joinedChannels) {
       try {
         const messages = await fetchSlackCollection(
           `https://slack.com/api/conversations.history?channel=${channel.id}&oldest=${oldestTs}&latest=${latestTs}&limit=200`,
@@ -408,6 +490,12 @@ export class SlackAdapter extends OrgIntegrationAdapter {
 export class MicrosoftAdapter extends OrgIntegrationAdapter {
   constructor() {
     super('microsoft');
+    this.lastFetchSummary = { sources: {} };
+    this.pendingOutlookCoverage = null;
+  }
+
+  getSyncDetails() {
+    return this.lastFetchSummary;
   }
 
   getIntegrationData(org) {
@@ -432,8 +520,21 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Microsoft token refresh failed: ${error}`);
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        // The stable OAuth error code is preferable to logging the response body.
+      }
+      const description = String(payload?.error_description || '');
+      const error = new Error(
+        /AADSTS700082|expired due to inactivity/i.test(description)
+          ? 'Microsoft authorization expired. Reconnect Microsoft to resume synchronization.'
+          : `Microsoft token refresh failed${payload?.error ? ` (${payload.error})` : ''}`
+      );
+      error.code = payload?.error || null;
+      error.microsoftCode = description.match(/AADSTS\d+/)?.[0] || null;
+      throw error;
     }
 
     const tokens = await response.json();
@@ -452,14 +553,47 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   }
 
   async updateSyncStatus(orgId, success, count, error = null) {
+    const failure = success ? null : classifyMicrosoftSyncError(error);
+    const now = new Date();
+    const setPayload = {
+      'integrations.microsoft.sync.lastRunAt': now,
+      'integrations.microsoft.sync.lastSync': now,
+      'integrations.microsoft.sync.lastStatus': success ? 'ok' : 'error',
+      'integrations.microsoft.sync.error': failure?.message || null,
+      'integrations.microsoft.sync.eventsCount': count,
+    };
+    if (failure?.disableSync) setPayload['integrations.microsoft.sync.enabled'] = false;
     await Organization.findByIdAndUpdate(orgId, {
-      $set: {
-        'integrations.microsoft.sync.lastSync': new Date(),
-        'integrations.microsoft.sync.status': success ? 'success' : 'error',
-        'integrations.microsoft.sync.error': error,
-        'integrations.microsoft.sync.eventsCount': count,
-      },
+      $set: setPayload,
     });
+
+    if (!success && failure) {
+      const org = await Organization.findById(orgId).select('integrations.microsoft.scope').lean();
+      const scope = org?.integrations?.microsoft?.scope || 'outlook';
+      const integrationTypes =
+        scope === 'both'
+          ? ['microsoft-outlook', 'microsoft-teams']
+          : [scope === 'teams' ? 'microsoft-teams' : 'microsoft-outlook'];
+      await Promise.all(
+        integrationTypes.map((integrationType) =>
+          IntegrationConnection.findOneAndUpdate(
+            { orgId, integrationType },
+            {
+              $set: {
+                status: failure.status,
+                statusMessage: failure.message,
+                statusUpdatedAt: now,
+                'sync.lastSyncAt': now,
+                'sync.lastSyncStatus': 'failed',
+                'sync.lastSyncMessage': failure.message,
+                ...(failure.disableSync ? { 'sync.enabled': false } : {}),
+              },
+            },
+            { upsert: true }
+          )
+        )
+      );
+    }
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
@@ -480,6 +614,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     );
 
     const updateForType = async (integrationType, source) => {
+      const sourceKey = source === 'microsoft-outlook' ? 'outlook' : 'teams';
+      const fetchSummary = this.lastFetchSummary?.sources?.[sourceKey];
+      if (!fetchSummary?.attempted) return;
       const sourceEvents = workEvents.filter((event) => event.source === source);
 
       const coverageStart = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000);
@@ -498,33 +635,52 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       ]);
       const mappedUserCount = mappedUsers.length;
       const hasMappedHistory = mappedUserCount > 0;
+      const fetchFailure = fetchSummary.success
+        ? null
+        : classifyMicrosoftSyncError(fetchSummary.error || 'Microsoft source fetch failed');
+      const now = new Date();
 
       const setPayload = {
-        status: hasMappedHistory || companyWideVerified ? 'connected' : 'needs_admin',
+        status: fetchFailure
+          ? fetchFailure.status
+          : hasMappedHistory || companyWideVerified
+            ? 'connected'
+            : 'needs_admin',
         statusMessage:
-          sourceEvents.length === 0 && hasMappedHistory
+          fetchFailure?.message ||
+          (sourceEvents.length === 0 && hasMappedHistory
             ? 'Microsoft metadata is connected; no new events were found in the latest sync'
             : hasMappedHistory
               ? 'Microsoft metadata is syncing and mapped to internal users'
               : companyWideVerified
                 ? 'Company-wide Microsoft access is verified; waiting for mapped activity'
-                : 'Microsoft metadata is syncing, but events are not mapped to internal users',
-        statusUpdatedAt: new Date(),
-        connectedAt: new Date(),
-        'sync.lastSyncAt': new Date(),
-        'sync.lastSyncStatus': hasMappedHistory ? 'success' : 'partial',
+                : 'Microsoft administrator consent is required for organization-wide metadata.'),
+        statusUpdatedAt: now,
+        connectedAt: now,
+        'sync.lastSyncAt': now,
+        'sync.lastSyncStatus': fetchFailure
+          ? 'failed'
+          : hasMappedHistory || fetchSummary.success
+            ? 'success'
+            : 'partial',
         'sync.lastSyncEventsCount': sourceEvents.length,
         'coverage.totalUsers': totalUsers,
         'coverage.mappedUsers': mappedUserCount,
-        'coverage.lastCoverageUpdatedAt': new Date(),
+        'coverage.lastCoverageUpdatedAt': now,
         measurementScope: companyWideVerified
           ? 'organization-wide Microsoft metadata'
           : 'metadata only',
       };
-      if (hasMappedHistory) setPayload['sync.lastSuccessfulSyncAt'] = new Date();
-      if (sourceEventCount === 0 && sourceEvents.length === 0) {
-        setPayload.statusMessage =
-          'Microsoft metadata is connected, but no Teams or Outlook events were found in the coverage window';
+      if (fetchSummary.success) setPayload['sync.lastSuccessfulSyncAt'] = now;
+      if (sourceKey === 'outlook' && fetchSummary.coverage) {
+        setPayload['coverage.availableUsers'] = fetchSummary.coverage.availableUsers;
+        setPayload['coverage.unavailableUsers'] = fetchSummary.coverage.unavailableUsers;
+        setPayload['coverage.failedUsers'] = fetchSummary.coverage.failedUsers;
+      }
+      if (!fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
+        setPayload.statusMessage = companyWideVerified
+          ? `Company-wide Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} access is verified; no activity was found in the coverage window.`
+          : `Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} needs administrator consent for organization-wide coverage.`;
       }
 
       await IntegrationConnection.findOneAndUpdate(
@@ -543,29 +699,71 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   async fetchEvents(orgId, accessToken, since, until) {
     const org = await Organization.findById(orgId).lean();
     const scope = org.integrations?.microsoft?.scope || 'outlook';
+    this.lastFetchSummary = { sources: {} };
+
+    const fetchSource = async (key, fetcher) => {
+      try {
+        const events = await fetcher();
+        this.lastFetchSummary.sources[key] = {
+          attempted: true,
+          success: true,
+          events: events.length,
+          ...(key === 'outlook' && this.pendingOutlookCoverage
+            ? { coverage: this.pendingOutlookCoverage }
+            : {}),
+        };
+        return events;
+      } catch (error) {
+        const failure = classifyMicrosoftSyncError(error);
+        this.lastFetchSummary.sources[key] = {
+          attempted: true,
+          success: false,
+          events: 0,
+          error,
+          errorKind: failure.kind,
+          errorMessage: failure.message,
+        };
+        console.warn(`[Microsoft] ${key} fetch failed: ${failure.message}`);
+        return [];
+      }
+    };
 
     if (scope === 'both') {
-      // Fetch both Outlook calendar events and Teams messages
       const [outlookEvents, teamsMessages] = await Promise.all([
-        this.fetchOutlookEvents(accessToken, since, until, orgId).catch((err) => {
-          console.warn('[Microsoft] Outlook fetch failed:', err.message);
-          return [];
-        }),
-        this.fetchTeamsMessages(accessToken, since, until, orgId).catch((err) => {
-          console.warn('[Microsoft] Teams fetch failed:', err.message);
-          return [];
-        }),
+        fetchSource('outlook', () => this.fetchOutlookEvents(accessToken, since, until, orgId)),
+        fetchSource('teams', () => this.fetchTeamsMessages(accessToken, since, until, orgId)),
       ]);
+      if (
+        !this.lastFetchSummary.sources.outlook.success &&
+        !this.lastFetchSummary.sources.teams.success
+      ) {
+        throw (
+          this.lastFetchSummary.sources.outlook.error || this.lastFetchSummary.sources.teams.error
+        );
+      }
       return [...outlookEvents, ...teamsMessages];
     } else if (scope === 'outlook') {
-      return await this.fetchOutlookEvents(accessToken, since, until, orgId);
+      const events = await fetchSource('outlook', () =>
+        this.fetchOutlookEvents(accessToken, since, until, orgId)
+      );
+      if (!this.lastFetchSummary.sources.outlook.success) {
+        throw this.lastFetchSummary.sources.outlook.error;
+      }
+      return events;
     } else {
-      return await this.fetchTeamsMessages(accessToken, since, until, orgId);
+      const events = await fetchSource('teams', () =>
+        this.fetchTeamsMessages(accessToken, since, until, orgId)
+      );
+      if (!this.lastFetchSummary.sources.teams.success) {
+        throw this.lastFetchSummary.sources.teams.error;
+      }
+      return events;
     }
   }
 
   async fetchOutlookEvents(delegatedToken, since, until, orgId = null) {
     const allEvents = [];
+    this.pendingOutlookCoverage = null;
     const select =
       '$select=id,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,recurrence,seriesMasterId,isCancelled,type&$top=100';
 
@@ -584,18 +782,23 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           console.warn('[Microsoft] No tenantId available for app-only token');
         } else {
           const appToken = await getMicrosoftAppToken(tenantId);
-          if (appToken) {
+          const appRoles = appToken ? getMicrosoftTokenRoles(appToken) : [];
+          if (appToken && appRoles.includes('Calendars.Read')) {
             const orgUsers = await User.find({
               orgId,
               'externalIds.microsoftUserId': { $exists: true, $ne: null },
+              accountStatus: { $ne: 'inactive' },
             })
-              .select('_id email externalIds')
+              .select('_id externalIds')
               .lean();
 
             if (orgUsers.length > 0) {
               console.log(`[Microsoft][AppOnly] Fetching calendars for ${orgUsers.length} users`);
               let successCount = 0;
-              let failCount = 0;
+              let unavailableCount = 0;
+              let permissionDeniedCount = 0;
+              let otherFailureCount = 0;
+              const otherFailureCodes = new Map();
               for (const user of orgUsers) {
                 const msId = user.externalIds?.microsoftUserId;
                 if (!msId) continue;
@@ -607,41 +810,61 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                       ...e,
                       eventSource: 'outlook',
                       _internalUserId: user._id,
-                      _userEmail: user.email,
                     }));
                     allEvents.push(...events);
                     successCount++;
                   } catch (calendarError) {
-                    if (calendarError.status === 403) {
-                      // App permission not yet granted — bail out of the loop early
-                      console.warn(
-                        `[Microsoft][AppOnly] 403 for ${user.email} — Calendars.Read application permission may not be granted yet`
-                      );
-                      failCount++;
-                      if (failCount >= 3) {
+                    if (isUnavailableMicrosoftMailboxError(calendarError)) {
+                      unavailableCount++;
+                    } else if (calendarError.status === 403) {
+                      permissionDeniedCount++;
+                      if (permissionDeniedCount >= 3 && successCount === 0) {
                         console.warn(
                           '[Microsoft][AppOnly] Multiple 403s — app permission not available, switching to attendee expansion'
                         );
                         break;
                       }
                     } else {
-                      console.warn(
-                        `[Microsoft][AppOnly] calendarview failed for ${user.email}: ${calendarError.message}`
-                      );
-                      failCount++;
+                      otherFailureCount++;
+                      const code =
+                        calendarError.graphCode || `HTTP_${calendarError.status || 'unknown'}`;
+                      otherFailureCodes.set(code, (otherFailureCodes.get(code) || 0) + 1);
                     }
                   }
-                } catch (userErr) {
-                  console.warn(`[Microsoft][AppOnly] error for ${user.email}:`, userErr.message);
+                } catch {
+                  otherFailureCount++;
+                  otherFailureCodes.set(
+                    'unexpected',
+                    (otherFailureCodes.get('unexpected') || 0) + 1
+                  );
                 }
+              }
+              console.log(
+                `[Microsoft][AppOnly] Calendar coverage: ${successCount}/${orgUsers.length} accessible, ${unavailableCount} unavailable, ${permissionDeniedCount} permission-denied, ${otherFailureCount} other failures`
+              );
+              if (otherFailureCodes.size > 0) {
+                console.warn(
+                  `[Microsoft][AppOnly] Calendar failure codes: ${[...otherFailureCodes.entries()]
+                    .map(([code, count]) => `${code}=${count}`)
+                    .join(', ')}`
+                );
               }
               if (successCount > 0) {
                 appTokenWorked = true;
+                this.pendingOutlookCoverage = {
+                  availableUsers: successCount,
+                  unavailableUsers: unavailableCount,
+                  failedUsers: permissionDeniedCount + otherFailureCount,
+                };
                 console.log(
                   `[Microsoft][AppOnly] SUCCESS: fetched ${allEvents.length} events from ${successCount}/${orgUsers.length} users`
                 );
               }
             }
+          } else if (appToken) {
+            console.info(
+              '[Microsoft][AppOnly] Calendars.Read application permission is unavailable; using delegated calendar fallback'
+            );
           }
         }
       } catch (appErr) {
@@ -723,7 +946,15 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           .lean();
         const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
         const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
-        if (appToken) {
+        const appRoles = appToken ? getMicrosoftTokenRoles(appToken) : [];
+        const requiredTeamsRoles = [
+          'Team.ReadBasic.All',
+          'Channel.ReadBasic.All',
+          'ChannelMessage.Read.All',
+          'User.Read.All',
+        ];
+        const missingRoles = requiredTeamsRoles.filter((role) => !appRoles.includes(role));
+        if (appToken && missingRoles.length === 0) {
           const tenantMessages = await this.fetchTenantWideTeamsMessages(
             appToken,
             since,
@@ -734,6 +965,10 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel/chat messages`
           );
           return tenantMessages;
+        } else if (appToken) {
+          console.info(
+            `[Microsoft][AppOnly] Tenant-wide Teams access is awaiting ${missingRoles.length} application permissions; using delegated fallback`
+          );
         }
       } catch (error) {
         console.warn(
@@ -1238,7 +1473,9 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
       $set: {
         'integrations.google.sync.lastSync': new Date(),
         'integrations.google.sync.status': success ? 'success' : 'error',
-        'integrations.google.sync.error': error,
+        'integrations.google.sync.error': error
+          ? String(error?.message || error).slice(0, 500)
+          : null,
         'integrations.google.sync.eventsCount': count,
       },
     });
@@ -1264,7 +1501,9 @@ export class GoogleCalendarAdapter extends OrgIntegrationAdapter {
           const userEvents = await this.fetchEvents(orgId, token.token || token, since, until);
           userEvents.forEach((event) => uniqueEvents.set(event.id, event));
         } catch (error) {
-          console.warn(`[Google Calendar] ${user.email} sync skipped: ${error.message}`);
+          console.warn(
+            `[Google Calendar] User ${String(user._id).slice(-6)} sync skipped: ${String(error.message).slice(0, 200)}`
+          );
         }
       }
       return [...uniqueEvents.values()];
@@ -1447,7 +1686,9 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
       $set: {
         'integrations.googleChat.sync.lastSync': new Date(),
         'integrations.googleChat.sync.status': success ? 'success' : 'error',
-        'integrations.googleChat.sync.error': error,
+        'integrations.googleChat.sync.error': error
+          ? String(error?.message || error).slice(0, 500)
+          : null,
         'integrations.googleChat.sync.eventsCount': count,
       },
     });
@@ -1473,7 +1714,9 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
           const messages = await this.fetchEvents(orgId, token.token || token, since, until);
           messages.forEach((message) => uniqueMessages.set(message.name, message));
         } catch (error) {
-          console.warn(`[Google Chat] ${user.email} sync skipped: ${error.message}`);
+          console.warn(
+            `[Google Chat] User ${String(user._id).slice(-6)} sync skipped: ${String(error.message).slice(0, 200)}`
+          );
         }
       }
       return [...uniqueMessages.values()];
@@ -1566,7 +1809,7 @@ export async function syncCoreIntegrations(orgId, since, until) {
   const results = [];
 
   // Slack
-  if (org.integrations?.slack?.accessToken) {
+  if (org.integrations?.slack?.accessToken && org.integrations?.slack?.sync?.enabled !== false) {
     try {
       const adapter = new SlackAdapter();
       const result = await adapter.sync(orgId, since, until);
@@ -1577,7 +1820,10 @@ export async function syncCoreIntegrations(orgId, since, until) {
   }
 
   // Microsoft (Outlook or Teams)
-  if (org.integrations?.microsoft?.accessToken) {
+  if (
+    org.integrations?.microsoft?.accessToken &&
+    org.integrations?.microsoft?.sync?.enabled !== false
+  ) {
     try {
       const adapter = new MicrosoftAdapter();
       const result = await adapter.sync(orgId, since, until);
@@ -1589,8 +1835,9 @@ export async function syncCoreIntegrations(orgId, since, until) {
 
   // Google Calendar
   if (
-    org.integrations?.google?.accessToken ||
-    org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt
+    (org.integrations?.google?.accessToken ||
+      org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) &&
+    org.integrations?.google?.sync?.enabled !== false
   ) {
     try {
       const adapter = new GoogleCalendarAdapter();
@@ -1603,8 +1850,9 @@ export async function syncCoreIntegrations(orgId, since, until) {
 
   // Google Chat
   if (
-    org.integrations?.googleChat?.accessToken ||
-    org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt
+    (org.integrations?.googleChat?.accessToken ||
+      org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) &&
+    org.integrations?.googleChat?.sync?.enabled !== false
   ) {
     try {
       const adapter = new GoogleChatAdapter();

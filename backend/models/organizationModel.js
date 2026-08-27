@@ -139,6 +139,7 @@ const organizationSchema = new mongoose.Schema(
         applicationConsentLastError: String,
         applicationConsentRoles: [String],
         applicationConsentTenantId: String,
+        calendarBackfillStartedAt: Date,
         lastPulledAt: Date,
         lastEmployeeSync: Date, // Track when employees were last synced
         sync: {

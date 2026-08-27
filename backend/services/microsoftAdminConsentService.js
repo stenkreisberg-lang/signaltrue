@@ -115,6 +115,9 @@ export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null)
         'integrations.microsoft.applicationConsentLastError': null,
         'integrations.microsoft.applicationConsentRoles': roles,
         'integrations.microsoft.applicationConsentTenantId': tenantId,
+        'integrations.microsoft.sync.enabled': true,
+        'integrations.microsoft.sync.lastStatus': 'ok',
+        'integrations.microsoft.sync.error': null,
       },
     });
 
@@ -131,6 +134,7 @@ export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null)
               connectedAt: attemptedAt,
               connectedBy: verifiedBy || undefined,
               measurementScope: 'organization-wide Microsoft metadata',
+              'sync.enabled': true,
               'sync.backfillStartedAt': attemptedAt,
               'sync.backfillComplete': false,
               'sync.backfillProgress': 0,

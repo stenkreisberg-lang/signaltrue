@@ -156,6 +156,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           connected: ['connected', 'measuring', 'needs_admin', 'error'].includes(
             integration.status
           ),
+          coverageDetails: integration.coverage || {},
           coverage: integration.coverage?.percent || 0,
           eventCount: integration.coverage?.events || 0,
           signals_enabled: integration.whatWeMeasure?.length || 0,
@@ -523,6 +524,19 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                         <span>Sync error: {integration.sync_error}</span>
                       </div>
                     )}
+
+                    {source === 'microsoft-outlook' &&
+                      (integration.coverageDetails?.unavailable > 0 ||
+                        integration.coverageDetails?.failed > 0) && (
+                        <div className="mb-4 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+                          {integration.coverageDetails.unavailable || 0} Microsoft accounts have no
+                          accessible Exchange Online mailbox
+                          {integration.coverageDetails.failed > 0
+                            ? `; ${integration.coverageDetails.failed} additional mailbox checks failed`
+                            : ''}
+                          . These accounts are excluded from calendar coverage.
+                        </div>
+                      )}
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">

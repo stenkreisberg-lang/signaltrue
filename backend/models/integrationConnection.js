@@ -103,6 +103,9 @@ const integrationConnectionSchema = new mongoose.Schema(
     coverage: {
       totalUsers: { type: Number, default: 0 },
       mappedUsers: { type: Number, default: 0 },
+      availableUsers: { type: Number, default: 0 },
+      unavailableUsers: { type: Number, default: 0 },
+      failedUsers: { type: Number, default: 0 },
       unmappedEmails: [String], // Emails we couldn't match to users
       lastCoverageUpdatedAt: Date,
     },

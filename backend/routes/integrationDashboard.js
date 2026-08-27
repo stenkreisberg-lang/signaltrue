@@ -54,14 +54,22 @@ router.get('/status', authenticateToken, async (req, res) => {
 
     const integrations = integrationTypes.map(({ type, name, category }) => {
       const canonical = setup.sources.find((source) => source.type === type);
+      const conn = connections.find((connection) => connection.integrationType === type);
       if (canonical) {
         return {
           ...canonical,
+          coverage: {
+            ...canonical.coverage,
+            available: conn?.coverage?.availableUsers || 0,
+            unavailable: conn?.coverage?.unavailableUsers || 0,
+            failed: conn?.coverage?.failedUsers || 0,
+          },
+          backfillProgress: conn?.sync?.backfillProgress || 0,
+          backfillComplete: conn?.sync?.backfillComplete || false,
           available: isIntegrationAvailable(type),
           whatWeMeasure: getWhatWeMeasure(type),
         };
       }
-      const conn = connections.find((c) => c.integrationType === type);
 
       // Check if this integration is available (env vars configured)
       const available = isIntegrationAvailable(type);
@@ -95,6 +103,9 @@ router.get('/status', authenticateToken, async (req, res) => {
         coverage: {
           mapped: conn.coverage?.mappedUsers || 0,
           total: conn.coverage?.totalUsers || 0,
+          available: conn.coverage?.availableUsers || 0,
+          unavailable: conn.coverage?.unavailableUsers || 0,
+          failed: conn.coverage?.failedUsers || 0,
           percent:
             conn.coverage?.totalUsers > 0
               ? Math.round((conn.coverage.mappedUsers / conn.coverage.totalUsers) * 100)
@@ -591,7 +602,9 @@ router.post('/:type/sync', authenticateToken, async (req, res) => {
           {
             $set: {
               'sync.lastSyncStatus': success ? 'success' : 'failed',
-              'sync.lastSuccessfulSyncAt': success ? new Date() : connection.sync.lastSuccessfulSyncAt,
+              'sync.lastSuccessfulSyncAt': success
+                ? new Date()
+                : connection.sync.lastSuccessfulSyncAt,
               'sync.lastSyncMessage': success
                 ? `${result.eventsProcessed || 0} events processed`
                 : String(result?.error || 'Sync failed').slice(0, 500),

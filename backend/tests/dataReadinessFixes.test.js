@@ -12,10 +12,14 @@ import {
 import { normalizeDepartmentName, resolveOrgWorkDomain } from '../services/employeeSyncService.js';
 import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
+  classifyMicrosoftSyncError,
   fetchGraphCollection,
   GoogleCalendarAdapter,
   GoogleChatAdapter,
+  isUnavailableMicrosoftMailboxError,
+  MicrosoftAdapter,
   SlackAdapter,
+  syncCoreIntegrations,
 } from '../services/coreIntegrationAdapters.js';
 import {
   getNextWeeklyRun,
@@ -25,6 +29,8 @@ import {
 import { calculateConfidenceScore } from '../services/engagementScoringService.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
+import Organization from '../models/organizationModel.js';
+import IntegrationConnection from '../models/integrationConnection.js';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -339,6 +345,151 @@ describe('Microsoft Graph pagination', () => {
       headers: { Authorization: 'Bearer token' },
       signal: expect.any(Object),
     });
+  });
+
+  test('returns a safe provider code without leaking Graph response details', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () =>
+        JSON.stringify({
+          error: {
+            code: 'MailboxNotEnabledForRESTAPI',
+            message: 'person@example.com is inactive',
+          },
+        }),
+    });
+
+    await expect(
+      fetchGraphCollection('https://graph.microsoft.com/test', 'token')
+    ).rejects.toMatchObject({
+      status: 404,
+      graphCode: 'MailboxNotEnabledForRESTAPI',
+      message: 'Microsoft Graph 404 (MailboxNotEnabledForRESTAPI)',
+    });
+    try {
+      await fetchGraphCollection('https://graph.microsoft.com/test', 'token');
+    } catch (error) {
+      expect(error.message).not.toContain('person@example.com');
+      expect(isUnavailableMicrosoftMailboxError(error)).toBe(true);
+    }
+  });
+});
+
+describe('Microsoft synchronization state', () => {
+  test('classifies expired authorization as a reconnect-required failure', () => {
+    expect(
+      classifyMicrosoftSyncError(new Error('AADSTS700082: refresh token has expired'))
+    ).toEqual(
+      expect.objectContaining({
+        kind: 'reauthorization_required',
+        status: 'error',
+        disableSync: true,
+      })
+    );
+  });
+
+  test('writes canonical successful sync fields', async () => {
+    const update = jest.spyOn(Organization, 'findByIdAndUpdate').mockResolvedValue({});
+    const adapter = new MicrosoftAdapter();
+
+    await adapter.updateSyncStatus('507f1f77bcf86cd799439001', true, 12);
+
+    expect(update).toHaveBeenCalledWith(
+      '507f1f77bcf86cd799439001',
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          'integrations.microsoft.sync.lastStatus': 'ok',
+          'integrations.microsoft.sync.error': null,
+          'integrations.microsoft.sync.eventsCount': 12,
+          'integrations.microsoft.sync.lastRunAt': expect.any(Date),
+          'integrations.microsoft.sync.lastSync': expect.any(Date),
+        }),
+      })
+    );
+  });
+
+  test('pauses an expired connection and records a reconnect action', async () => {
+    jest.spyOn(Organization, 'findByIdAndUpdate').mockResolvedValue({});
+    jest.spyOn(Organization, 'findById').mockReturnValue({
+      select: () => ({ lean: async () => ({ integrations: { microsoft: { scope: 'teams' } } }) }),
+    });
+    const connectionUpdate = jest
+      .spyOn(IntegrationConnection, 'findOneAndUpdate')
+      .mockResolvedValue({});
+    const adapter = new MicrosoftAdapter();
+
+    await adapter.updateSyncStatus(
+      '507f1f77bcf86cd799439001',
+      false,
+      0,
+      new Error('AADSTS700082: refresh token has expired')
+    );
+
+    expect(connectionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ integrationType: 'microsoft-teams' }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          status: 'error',
+          'sync.enabled': false,
+          'sync.lastSyncStatus': 'failed',
+        }),
+      }),
+      { upsert: true }
+    );
+  });
+
+  test('does not schedule a Microsoft adapter after synchronization is disabled', async () => {
+    jest.spyOn(Organization, 'findById').mockReturnValue({
+      lean: async () => ({
+        integrations: {
+          microsoft: {
+            accessToken: 'encrypted-token',
+            sync: { enabled: false },
+          },
+        },
+      }),
+    });
+
+    await expect(
+      syncCoreIntegrations(
+        '507f1f77bcf86cd799439001',
+        new Date('2026-08-27T06:00:00Z'),
+        new Date('2026-08-27T07:00:00Z')
+      )
+    ).resolves.toEqual([]);
+  });
+});
+
+describe('Slack channel access', () => {
+  test('does not request history for channels the app has not joined', async () => {
+    const info = jest.spyOn(console, 'info').mockImplementation(() => {});
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        json: async () => ({
+          ok: true,
+          channels: [
+            { id: 'joined', is_member: true },
+            { id: 'not-joined', is_member: false },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({ ok: true, messages: [] }),
+      });
+
+    const events = await new SlackAdapter().fetchEvents(
+      null,
+      'token',
+      new Date('2026-08-27T06:00:00Z'),
+      new Date('2026-08-27T07:00:00Z')
+    );
+
+    expect(events).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toContain('channel=joined');
+    expect(info).toHaveBeenCalledWith('[Slack] Skipped 1 channels because the app is not a member');
   });
 });
 

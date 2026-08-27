@@ -1267,6 +1267,9 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       const microsoftFields = {
         'integrations.microsoft.scope': effectiveScope,
         'integrations.microsoft.accessToken': encryptString(tokens.access_token),
+        'integrations.microsoft.sync.enabled': true,
+        'integrations.microsoft.sync.lastStatus': 'ok',
+        'integrations.microsoft.sync.error': null,
         'integrations.microsoft.expiry': tokens.expires_in
           ? new Date(Date.now() + tokens.expires_in * 1000)
           : null,
@@ -1312,6 +1315,19 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       if (!updatedOrg) {
         return res.status(404).send('Organization not found for Microsoft authorization.');
       }
+      await IntegrationConnection.updateMany(
+        {
+          orgId: updatedOrg._id,
+          integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+        },
+        {
+          $set: {
+            'sync.enabled': true,
+            'sync.lastSyncMessage':
+              'Microsoft authorization refreshed; synchronization is starting',
+          },
+        }
+      );
 
       // Check if all integrations are complete and notify HR admins
       if (updatedOrg) {

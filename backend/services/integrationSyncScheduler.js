@@ -22,7 +22,7 @@ import { classifyManagerOneOnOnesForOrgDay } from './managerOneOnOneClassifier.j
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
-import Organization from '../models/organizationModel.js';
+import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 import {
   getGrantedApplicationRoles,
   verifyMicrosoftCompanyWideAccess,
@@ -97,20 +97,69 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
   triggerImmediateSync(orgId, { since, until: new Date() })
     .then(async (results) => {
       const microsoft = results.find((result) => result.source === 'microsoft');
-      const success = Boolean(microsoft?.success);
       const completedAt = new Date();
-      await IntegrationConnection.updateMany(
-        { orgId, integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] } },
+      const org = await Organization.findById(orgId)
+        .select('integrations.microsoft.tenantId integrations.microsoft.scope')
+        .lean();
+      const roles = await getGrantedApplicationRoles(org?.integrations?.microsoft?.tenantId);
+      const sourceDefinitions = [
         {
-          $set: {
-            'sync.backfillComplete': success,
-            'sync.backfillCompletedAt': success ? completedAt : null,
-            'sync.backfillProgress': success ? 100 : 0,
-            'sync.lastSyncMessage': success
+          integrationType: 'microsoft-outlook',
+          detailKey: 'outlook',
+          configured: ['outlook', 'both'].includes(org?.integrations?.microsoft?.scope),
+          requiredRoles: ['Calendars.Read'],
+        },
+        {
+          integrationType: 'microsoft-teams',
+          detailKey: 'teams',
+          configured: ['teams', 'both'].includes(org?.integrations?.microsoft?.scope),
+          requiredRoles: [
+            'Team.ReadBasic.All',
+            'Channel.ReadBasic.All',
+            'ChannelMessage.Read.All',
+            'User.Read.All',
+          ],
+        },
+      ];
+
+      await Promise.all(
+        sourceDefinitions
+          .filter((definition) => definition.configured)
+          .map(async (definition) => {
+            const missingRoles = definition.requiredRoles.filter((role) => !roles.includes(role));
+            const detail = microsoft?.details?.sources?.[definition.detailKey];
+            const complete = Boolean(
+              microsoft?.success && detail?.success !== false && missingRoles.length === 0
+            );
+            const message = complete
               ? `${daysBack}-day company-wide backfill completed`
-              : String(microsoft?.error || 'Microsoft backfill did not complete').slice(0, 500),
-          },
-        }
+              : missingRoles.length > 0
+                ? `Backfill requires Microsoft administrator consent for: ${missingRoles.join(', ')}`
+                : String(
+                    detail?.errorMessage ||
+                      microsoft?.error ||
+                      'Microsoft backfill did not complete'
+                  ).slice(0, 500);
+            await IntegrationConnection.findOneAndUpdate(
+              { orgId, integrationType: definition.integrationType },
+              {
+                $set: {
+                  ...(missingRoles.length > 0
+                    ? {
+                        status: 'needs_admin',
+                        statusMessage: message,
+                        statusUpdatedAt: completedAt,
+                      }
+                    : {}),
+                  'sync.backfillComplete': complete,
+                  'sync.backfillCompletedAt': complete ? completedAt : null,
+                  'sync.backfillProgress': complete ? 100 : 0,
+                  'sync.lastSyncMessage': message,
+                },
+              },
+              { upsert: true }
+            );
+          })
       );
     })
     .catch(async (error) => {
@@ -133,8 +182,10 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
 export async function reconcilePendingMicrosoftCompanyAccess() {
   const retryBefore = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const organizations = await Organization.find({
+    ...ACTIVE_ORG_FILTER,
     'integrations.microsoft.accessToken': { $exists: true, $ne: null },
     'integrations.microsoft.tenantId': { $exists: true, $ne: null },
+    'integrations.microsoft.sync.enabled': { $ne: false },
     'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false },
     $or: [
       { 'integrations.microsoft.applicationConsentLastCheckedAt': { $exists: false } },
@@ -523,11 +574,24 @@ async function getActiveOrgs() {
 
   // Get orgs with core integrations (Slack, Microsoft, Google) stored directly
   const coreIntegrationOrgs = await Organization.find({
+    ...ACTIVE_ORG_FILTER,
     $or: [
-      { 'integrations.slack.accessToken': { $exists: true, $ne: null } },
-      { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
-      { 'integrations.google.accessToken': { $exists: true, $ne: null } },
-      { 'integrations.googleChat.accessToken': { $exists: true, $ne: null } },
+      {
+        'integrations.slack.accessToken': { $exists: true, $ne: null },
+        'integrations.slack.sync.enabled': { $ne: false },
+      },
+      {
+        'integrations.microsoft.accessToken': { $exists: true, $ne: null },
+        'integrations.microsoft.sync.enabled': { $ne: false },
+      },
+      {
+        'integrations.google.accessToken': { $exists: true, $ne: null },
+        'integrations.google.sync.enabled': { $ne: false },
+      },
+      {
+        'integrations.googleChat.accessToken': { $exists: true, $ne: null },
+        'integrations.googleChat.sync.enabled': { $ne: false },
+      },
     ],
   }).distinct('_id');
 
@@ -551,16 +615,16 @@ export async function getSyncStatus(orgId) {
 
   return connections.map((conn) => ({
     integration: conn.integrationType,
-    status: conn.sync.status,
+    status: conn.sync.lastSyncStatus,
     lastSync: conn.sync.lastSyncAt,
-    error: conn.sync.error,
+    error: conn.sync.lastSyncStatus === 'failed' ? conn.sync.lastSyncMessage : null,
     coverage: calculateCoverageSync(conn),
   }));
 }
 
 function calculateCoverageSync(connection) {
-  const mapped = (connection.userMappings || []).filter((m) => m.internalUserId).length;
-  const total = (connection.userMappings || []).length;
+  const mapped = Number(connection.coverage?.mappedUsers || 0);
+  const total = Number(connection.coverage?.totalUsers || 0);
   return total > 0 ? Math.round((mapped / total) * 100) : 0;
 }
 
