@@ -50,10 +50,35 @@ test('primary homepage navigation and CTA paths work', async ({ page }) => {
 
   await page.goto('/');
   await page
-    .getByRole('link', { name: /View (?:a )?sample report/i })
+    .getByRole('link', { name: /See a completed review/i })
     .first()
     .click();
   await expect(page).toHaveURL(/\/sample-report$/);
+});
+
+test('verification-led homepage keeps its primary action above the mobile fold', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+
+  const heading = page.getByRole('heading', {
+    name: 'You removed the meetings. Did the workload actually go away?',
+  });
+  await expect(heading).toBeVisible();
+  await expect(page.getByText(/migration when the demand simply moved/i)).toBeVisible();
+  await expect(page.getByText(/improvement was sustained/i)).toBeVisible();
+
+  const lineCount = await heading.evaluate((element) => {
+    const styles = window.getComputedStyle(element);
+    return element.getBoundingClientRect().height / Number.parseFloat(styles.lineHeight);
+  });
+  expect(lineCount).toBeLessThanOrEqual(3.1);
+
+  const primaryAction = page.getByRole('link', { name: /See a completed review/i }).first();
+  const actionBox = await primaryAction.boundingBox();
+  expect(actionBox).not.toBeNull();
+  expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(812);
 });
 
 test('protected routes send signed-out users to login', async ({ page }) => {

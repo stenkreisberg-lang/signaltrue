@@ -46,7 +46,7 @@ const TrustSection = () => {
               </div>
               <h3 className="font-semibold text-foreground mb-2">No emotion inference</h3>
               <p className="text-sm text-muted-foreground">
-                No sentiment analysis, tone detection, or mood tracking.
+                No sentiment analysis, tone observation, or mood tracking.
               </p>
             </div>
 

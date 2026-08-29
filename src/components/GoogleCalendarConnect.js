@@ -58,7 +58,9 @@ const GoogleCalendarConnect = ({ integrations }) => {
         </>
       ) : (
         <>
-          <p style={styles.cardText}>Analyze meeting load and focus time patterns</p>
+          <p style={styles.cardText}>
+            Analyze meeting load and uninterrupted calendar availability patterns
+          </p>
           <button style={styles.cardButton} onClick={handleConnect}>
             Connect Google Calendar
           </button>

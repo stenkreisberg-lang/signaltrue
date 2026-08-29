@@ -29,7 +29,8 @@ export const METRIC_EXPLANATIONS: Record<string, MetricExplanation> = {
       {
         name: 'Overload Risk',
         weight: '33%',
-        description: 'Meeting load, after-hours activity, focus time erosion',
+        description:
+          'Meeting load, after-hours activity, uninterrupted calendar availability erosion',
       },
       {
         name: 'Execution Drag',
@@ -76,12 +77,13 @@ export const METRIC_EXPLANATIONS: Record<string, MetricExplanation> = {
   },
 
   focusTime: {
-    name: 'Focus Time Ratio',
+    name: 'Uninterrupted Calendar Availability Ratio',
     description: 'Hours of uninterrupted work time (2+ hour blocks without meetings) per day.',
-    formula: 'Focus Time = Time blocks ≥2 hours without meetings / Work day hours',
+    formula:
+      'Uninterrupted Calendar Availability = Time blocks ≥2 hours without meetings / Work day hours',
     interpretation: {
       low: '<2 hours/day: Fragmented schedule',
-      medium: '2-4 hours/day: Moderate focus time',
+      medium: '2-4 hours/day: Moderate uninterrupted calendar availability',
       high: '>4 hours/day: Healthy deep work time',
     },
     dataSource: 'Calendar analysis',
@@ -124,9 +126,9 @@ export const METRIC_EXPLANATIONS: Record<string, MetricExplanation> = {
         description: 'Off-hours activity vs baseline',
       },
       {
-        name: 'Focus Time Deviation',
+        name: 'Uninterrupted Calendar Availability Deviation',
         weight: '25%',
-        description: 'Focus time reduction from baseline',
+        description: 'uninterrupted calendar availability reduction from baseline',
       },
     ],
     interpretation: {
@@ -161,7 +163,7 @@ export const METRIC_EXPLANATIONS: Record<string, MetricExplanation> = {
     formula:
       'Retention Strain = 0.40×AvgAttritionRisk + 0.30×NetworkShrinkage + 0.30×SentimentDrop',
     components: [
-      { name: 'Attrition Risk', weight: '40%', description: 'Individual flight risk scores' },
+      { name: 'Attrition Risk', weight: '40%', description: 'Individual attrition estimates' },
       { name: 'Network Shrinkage', weight: '30%', description: 'Collaboration network reduction' },
       { name: 'Sentiment Drop', weight: '30%', description: 'Communication tone changes' },
     ],
@@ -179,7 +181,10 @@ export const METRIC_EXPLANATIONS: Record<string, MetricExplanation> = {
     formula: 'Cost = (Meeting Hours Lost + Execution Delay + Rework Hours) × Avg Hourly Cost',
     components: [
       { name: 'Meeting Hours Lost', description: 'Time spent in meetings above baseline' },
-      { name: 'Execution Delay', description: 'Productivity loss from focus time erosion' },
+      {
+        name: 'Execution Delay',
+        description: 'Productivity loss from uninterrupted calendar availability erosion',
+      },
       { name: 'Rework Hours', description: 'Estimated from after-hours catch-up activity' },
     ],
     interpretation: {

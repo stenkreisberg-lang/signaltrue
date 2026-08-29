@@ -63,6 +63,7 @@ const PsychosocialRiskVisibilityReview = lazy(
 
 // Control-verification module (H&S / psychosocial risk).
 const ControlReviews = lazy(() => import('./pages/app/controlReview/ControlReviews'));
+const ControlReviewFindings = lazy(() => import('./pages/app/controlReview/ControlReviewFindings'));
 const ControlReviewDetail = lazy(() => import('./pages/app/controlReview/ControlReviewDetail'));
 const NewControlReview = lazy(() => import('./pages/app/controlReview/NewControlReview'));
 const TrustPack = lazy(() => import('./pages/app/controlReview/TrustPack'));
@@ -176,6 +177,10 @@ const App = () => (
                 <Route
                   path="/app/control-reviews/new"
                   element={withAuthentication(<NewControlReview />)}
+                />
+                <Route
+                  path="/app/control-reviews/findings"
+                  element={withAuthentication(<ControlReviewFindings />)}
                 />
                 <Route
                   path="/app/control-reviews/:caseId"

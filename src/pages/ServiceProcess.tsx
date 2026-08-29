@@ -83,7 +83,7 @@ export default function ServiceProcess() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-4xl text-center">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">
                 Client success process
               </p>
               <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
@@ -112,7 +112,7 @@ export default function ServiceProcess() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   Delivery sequence
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">Four controlled phases</h2>
@@ -127,7 +127,7 @@ export default function ServiceProcess() {
                     key={phase.title}
                     className="rounded-2xl border border-[#E2E8F0] bg-white p-6"
                   >
-                    <phase.icon className="h-7 w-7 text-[#1D4ED8]" aria-hidden="true" />
+                    <phase.icon className="h-7 w-7 text-brand" aria-hidden="true" />
                     <h3 className="mt-4 text-xl font-bold text-[#0F172A]">{phase.title}</h3>
                     <dl className="mt-5 grid gap-3 text-sm">
                       <div>
@@ -201,7 +201,7 @@ export default function ServiceProcess() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-8 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   Clear ownership
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">Who is responsible for what</h2>

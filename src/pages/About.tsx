@@ -82,17 +82,17 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
               <div>
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                   Why SignalTrue Exists
                 </p>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                   Safer work starts before harm becomes visible.{' '}
-                  <span className="text-[#1D4ED8]">
+                  <span className="text-brand">
                     It starts with better evidence about how work is designed.
                   </span>
                 </h1>
                 <p className="text-lg text-[#334155] max-w-xl mx-auto">
-                  SignalTrue helps workplace health &amp; safety leaders detect changing
+                  SignalTrue helps workplace health &amp; safety leaders observe changing
                   psychosocial risk conditions, consult workers and review preventive controls
                   earlier.
                 </p>
@@ -110,7 +110,7 @@ const About = () => {
         <section className="py-20 lg:py-24 bg-[#F8FAFC] border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                 Product rationale
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold mb-8 text-[#0F172A]">
@@ -124,7 +124,7 @@ const About = () => {
                   All are useful. SignalTrue adds earlier, continuous evidence about changing work
                   conditions.
                 </p>
-                <p className="text-[#0F172A] font-medium border-l-4 border-[#1D4ED8] pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
+                <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
                   The purpose is to target consultation and preventive action—not infer health
                   status or replace a formal risk assessment.
                 </p>
@@ -137,7 +137,7 @@ const About = () => {
         <section className="py-20 lg:py-24 bg-white">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                 Design principles
               </p>
               <h2 className="text-3xl sm:text-4xl font-display font-bold text-[#0F172A]">
@@ -153,7 +153,7 @@ const About = () => {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-[#EFF6FF] mb-6 flex items-center justify-center">
-                    <belief.icon className="w-7 h-7 text-[#1D4ED8]" />
+                    <belief.icon className="w-7 h-7 text-brand" />
                   </div>
                   <h3 className="text-xl font-display font-bold text-[#0F172A] mb-4">
                     {belief.title}
@@ -169,7 +169,7 @@ const About = () => {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   Evidence before claims
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">
@@ -206,13 +206,11 @@ const About = () => {
                   <Link
                     key={title}
                     to={href}
-                    className="rounded-2xl border border-[#E2E8F0] bg-white p-5 hover:border-[#1D4ED8]"
+                    className="rounded-2xl border border-[#E2E8F0] bg-white p-5 hover:border-brand"
                   >
                     <h3 className="font-bold text-[#0F172A]">{title}</h3>
                     <p className="mt-3 text-sm leading-6 text-[#475569]">{copy}</p>
-                    <span className="mt-4 inline-flex text-sm font-bold text-[#1D4ED8]">
-                      Review →
-                    </span>
+                    <span className="mt-4 inline-flex text-sm font-bold text-brand">Review →</span>
                   </Link>
                 ))}
               </div>

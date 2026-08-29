@@ -102,7 +102,7 @@ export const GoalTracker: React.FC<GoalTrackerProps> = ({
       responseLatency: 'Response Latency',
       sentiment: 'Sentiment',
       networkBreadth: 'Network Breadth',
-      focusTime: 'Focus Time',
+      focusTime: 'Uninterrupted Calendar Availability',
       recoveryIndex: 'Recovery Index',
       energyIndex: 'Energy Index',
       oarScore: 'OAR Score',
@@ -505,7 +505,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({ orgId, userId, onClos
   const metrics = [
     { value: 'oarScore', label: 'OAR Score' },
     { value: 'meetingLoad', label: 'Meeting Load' },
-    { value: 'focusTime', label: 'Focus Time' },
+    { value: 'focusTime', label: 'Uninterrupted Calendar Availability' },
     { value: 'recoveryIndex', label: 'Recovery Index' },
     { value: 'energyIndex', label: 'Energy Index' },
     { value: 'sentiment', label: 'Sentiment' },
@@ -550,7 +550,7 @@ const CreateGoalModal: React.FC<CreateGoalModalProps> = ({ orgId, userId, onClos
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Improve team focus time by Q2"
+              placeholder="e.g., Improve team uninterrupted calendar availability by Q2"
               required
             />
           </div>

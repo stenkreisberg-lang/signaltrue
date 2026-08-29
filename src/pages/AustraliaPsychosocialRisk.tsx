@@ -67,7 +67,7 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-24">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-5xl text-center">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">
                 SignalTrue Australia
               </p>
               <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
@@ -75,8 +75,8 @@ export default function AustraliaPsychosocialRisk() {
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-xl leading-8 text-[#475569]">
                 SignalTrue gives WHS and operational leaders continuous, team-level visibility into
-                changing work patterns such as meeting load, focus time, after-hours activity and
-                coordination.
+                changing work patterns such as meeting load, uninterrupted calendar availability,
+                after-hours activity and coordination.
               </p>
               <p className="mx-auto mt-4 max-w-3xl font-semibold text-[#334155]">
                 It does not read message bodies, diagnose workers or score individual productivity.
@@ -111,7 +111,7 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="text-sm font-bold uppercase tracking-wider text-brand">
                   The 364-Day Gap
                 </p>
                 <h2 className="mt-3 text-3xl font-bold text-[#0F172A] sm:text-4xl">
@@ -133,7 +133,7 @@ export default function AustraliaPsychosocialRisk() {
                     key={period}
                     className="rounded-2xl border border-[#E2E8F0] bg-white p-5"
                   >
-                    <p className="text-sm font-bold text-[#1D4ED8]">{period}</p>
+                    <p className="text-sm font-bold text-brand">{period}</p>
                     <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
                     {index < 2 && <ArrowDown className="mt-4 h-4 w-4 text-[#94A3B8] sm:hidden" />}
                   </article>
@@ -146,7 +146,7 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="text-sm font-bold uppercase tracking-wider text-brand">
                 A continuous review layer
               </p>
               <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
@@ -218,7 +218,7 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="text-sm font-bold uppercase tracking-wider text-brand">
                   Example observation
                 </p>
                 <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
@@ -232,7 +232,7 @@ export default function AustraliaPsychosocialRisk() {
               <article className="rounded-3xl border border-[#CBD5E1] bg-[#F8FAFC] p-7 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-bold text-[#1D4ED8]">Work-pattern observation</p>
+                    <p className="text-sm font-bold text-brand">Work-pattern observation</p>
                     <h3 className="mt-1 text-2xl font-bold text-[#0F172A]">After-hours activity</h3>
                   </div>
                   <BarChart3 className="h-7 w-7 text-[#0F766E]" />
@@ -266,7 +266,7 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
             <div className="text-center">
-              <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="text-sm font-bold uppercase tracking-wider text-brand">
                 Control evidence timeline
               </p>
               <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
@@ -280,7 +280,7 @@ export default function AustraliaPsychosocialRisk() {
                   className="grid gap-2 border-b border-[#E2E8F0] p-5 last:border-0 md:grid-cols-[90px_140px_1fr]"
                 >
                   <strong className="text-[#0F172A]">{date}</strong>
-                  <span className="text-sm font-bold text-[#1D4ED8]">{stage}</span>
+                  <span className="text-sm font-bold text-brand">{stage}</span>
                   <span className="text-sm leading-6 text-[#475569]">{copy}</span>
                 </div>
               ))}
@@ -323,7 +323,7 @@ export default function AustraliaPsychosocialRisk() {
                     <p className="mt-3 text-sm leading-6 text-[#475569]">{String(copy)}</p>
                     <Link
                       to={String(href)}
-                      className="mt-5 inline-flex items-center font-semibold text-[#1D4ED8] hover:underline"
+                      className="mt-5 inline-flex items-center font-semibold text-brand hover:underline"
                     >
                       Learn more <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

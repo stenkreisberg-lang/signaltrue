@@ -827,8 +827,9 @@ const EmployeeDirectory: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Report assumptions</h2>
           <p className="text-sm text-gray-600 mt-1 mb-4">
-            Working hours apply to all teams and control local after-hours detection. Cost estimates
-            appear only when you provide a loaded hourly cost; SignalTrue does not invent one.
+            Working hours apply to all teams and control local after-hours observation. Cost
+            estimates appear only when you provide a loaded hourly cost; SignalTrue does not invent
+            one.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <label className="text-sm font-medium text-gray-700 lg:col-span-2">

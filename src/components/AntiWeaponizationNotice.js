@@ -43,8 +43,8 @@ const AntiWeaponizationNotice = ({ variant = 'default' }) => {
         <div className="flex-1">
           <p className={`${config.text} font-semibold mb-1`}>Important: Usage Guidelines</p>
           <p className={`${config.text} text-sm leading-relaxed`}>
-            SignalTrue insights are designed for early detection and system improvement. They should{' '}
-            <strong>not</strong> be used for individual performance evaluation, rankings, or
+            SignalTrue insights are designed for early observation and system improvement. They
+            should <strong>not</strong> be used for individual performance evaluation, rankings, or
             surveillance. All metrics are team-level aggregated.
           </p>
         </div>

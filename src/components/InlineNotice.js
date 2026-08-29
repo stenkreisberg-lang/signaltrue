@@ -13,8 +13,12 @@ export default function InlineNotice({ kind = 'info', title, children, style }) 
 function getStyles(kind) {
   const kinds = {
     info: {
-      base: { background: '#EFF6FF', color: '#1E40AF', border: '1px solid #93C5FD' },
-      strong: { color: '#1E3A8A' },
+      base: {
+        background: 'var(--color-brand-softer)',
+        color: 'var(--color-brand)',
+        border: '1px solid var(--color-brand-soft)',
+      },
+      strong: { color: 'var(--color-brand-dark)' },
     },
     success: {
       base: { background: '#ECFDF5', color: '#065F46', border: '1px solid #6EE7B7' },

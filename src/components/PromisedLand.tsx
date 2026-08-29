@@ -31,7 +31,7 @@ const PromisedLand = () => {
         <div className="max-w-4xl mx-auto">
           {/* Section header */}
           <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+            <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
               What leaders can fix earlier
             </p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#0F172A]">

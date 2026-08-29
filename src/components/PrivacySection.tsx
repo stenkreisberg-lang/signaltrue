@@ -74,7 +74,8 @@ const PrivacySection = () => {
             </div>
             <p className="text-[#334155] max-w-2xl mx-auto">
               Meeting counts. Response time patterns. Calendar density. Focus-time availability.
-              After-hours patterns. Interaction volume. Manager load. Team-level work rhythms.{' '}
+              After-hours patterns. Interaction volume. management capacity. Team-level work
+              rhythms.{' '}
               <strong className="text-[#0F172A]">
                 Metadata only. Never content. Never individuals.
               </strong>

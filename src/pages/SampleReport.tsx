@@ -20,7 +20,7 @@ const signals = [
     current: '18.4h/week',
     baseline: '14.9h/week',
     change: '+23%',
-    confidence: 'High',
+    evidenceQuality: 'Persistent 3 weeks · data quality good',
     interpretation: 'Usable work time has reduced for three consecutive weeks.',
   },
   {
@@ -29,16 +29,16 @@ const signals = [
     current: '12.8%',
     baseline: '7.6%',
     change: '+5.2 pts',
-    confidence: 'Moderate',
+    evidenceQuality: 'Persistent 2 weeks · data quality adequate',
     interpretation: 'Work outside normal hours is above the team baseline.',
   },
   {
     factor: 'Control',
-    indicator: 'Protected focus time',
+    indicator: 'Protected uninterrupted calendar availability',
     current: '6.1h/week',
     baseline: '8.7h/week',
     change: '-30%',
-    confidence: 'High',
+    evidenceQuality: 'Persistent 3 weeks · data quality good',
     interpretation: 'Fewer uninterrupted windows are available for planned work.',
   },
 ];
@@ -53,7 +53,10 @@ const steps = [
     'Trial two protected focus blocks and remove one recurring status meeting for 14 days.',
   ],
   ['Own', 'Health & Safety Manager coordinates; Product Director owns implementation.'],
-  ['Review', 'Re-measure meeting demand, focus time and after-hours activity on 3 June.'],
+  [
+    'Review',
+    'Re-measure meeting demand, uninterrupted calendar availability and after-hours activity on 3 June.',
+  ],
 ];
 
 export default function SampleReport() {
@@ -78,7 +81,7 @@ export default function SampleReport() {
       `}</style>
       <PageMeta
         title="Sample Psychosocial Risk Review | SignalTrue"
-        description="Explore a complete SignalTrue team-level workplace risk report with evidence, confidence, consultation prompts and corrective actions."
+        description="Explore a complete SignalTrue team-level workplace risk report with persistence, data quality, consultation prompts and corrective actions."
         path="/sample-report"
       />
       <Navbar />
@@ -86,7 +89,7 @@ export default function SampleReport() {
         <section className="sample-report-no-print border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-5xl">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">
                 Complete sample report
               </p>
               <h1 className="max-w-4xl text-4xl font-bold leading-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
@@ -100,21 +103,21 @@ export default function SampleReport() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="sample_report_hero"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF]"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
                   Request a 20-minute psychosocial risk visibility review{' '}
                   <ArrowRight className="h-5 w-5" />
                 </PrimaryCommercialCTA>
                 <a
                   href="#report"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 >
                   Read the sample
                 </a>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 >
                   <Printer className="h-4 w-4" aria-hidden="true" /> Print or save PDF
                 </button>
@@ -148,7 +151,7 @@ export default function SampleReport() {
 
               <div className="space-y-10 p-7 lg:p-10">
                 <section>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
                     Executive summary
                   </p>
                   <h2 className="mt-3 text-2xl font-bold text-[#0F172A]">
@@ -164,7 +167,7 @@ export default function SampleReport() {
 
                 <section aria-labelledby="signal-table-title">
                   <div className="mb-5 flex items-center gap-3">
-                    <Database className="h-6 w-6 text-[#1D4ED8]" />
+                    <Database className="h-6 w-6 text-brand" />
                     <h2 id="signal-table-title" className="text-2xl font-bold text-[#0F172A]">
                       Evidence reviewed
                     </h2>
@@ -179,7 +182,7 @@ export default function SampleReport() {
                             'Current',
                             'Baseline',
                             'Change',
-                            'Confidence',
+                            'Persistence and data quality',
                             'What it may mean',
                           ].map((heading) => (
                             <th key={heading} className="px-4 py-3 font-bold">
@@ -194,14 +197,14 @@ export default function SampleReport() {
                             key={signal.indicator}
                             className="border-t border-[#E2E8F0] align-top"
                           >
-                            <td className="px-4 py-4 font-bold text-[#1D4ED8]">{signal.factor}</td>
+                            <td className="px-4 py-4 font-bold text-brand">{signal.factor}</td>
                             <td className="px-4 py-4 font-semibold text-[#0F172A]">
                               {signal.indicator}
                             </td>
                             <td className="px-4 py-4">{signal.current}</td>
                             <td className="px-4 py-4">{signal.baseline}</td>
                             <td className="px-4 py-4 font-bold text-[#B45309]">{signal.change}</td>
-                            <td className="px-4 py-4">{signal.confidence}</td>
+                            <td className="px-4 py-4">{signal.evidenceQuality}</td>
                             <td className="max-w-xs px-4 py-4 text-[#475569]">
                               {signal.interpretation}
                             </td>
@@ -218,7 +221,7 @@ export default function SampleReport() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-xs font-bold uppercase tracking-wide text-[#1D4ED8]">
+                            <p className="text-xs font-bold uppercase tracking-wide text-brand">
                               {signal.factor}
                             </p>
                             <h3 className="mt-1 font-bold text-[#0F172A]">{signal.indicator}</h3>
@@ -237,8 +240,8 @@ export default function SampleReport() {
                             <dd className="mt-1 font-bold">{signal.baseline}</dd>
                           </div>
                           <div>
-                            <dt className="text-xs text-[#64748B]">Confidence</dt>
-                            <dd className="mt-1 font-bold">{signal.confidence}</dd>
+                            <dt className="text-xs text-[#64748B]">Evidence quality</dt>
+                            <dd className="mt-1 font-bold">{signal.evidenceQuality}</dd>
                           </div>
                         </dl>
                         <p className="mt-4 text-sm leading-6 text-[#475569]">
@@ -248,8 +251,8 @@ export default function SampleReport() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs leading-5 text-[#64748B]">
-                    Confidence reflects coverage, baseline maturity and consistency across qualified
-                    periods. It does not express certainty about cause.
+                    Data quality reflects coverage and baseline maturity. Persistence shows how many
+                    qualified periods the change continued. Neither establishes cause.
                   </p>
                 </section>
 
@@ -288,7 +291,7 @@ export default function SampleReport() {
                         className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1D4ED8] text-sm font-bold text-white">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                             {index + 1}
                           </span>
                           <h3 className="font-bold text-[#0F172A]">{title}</h3>
@@ -301,7 +304,7 @@ export default function SampleReport() {
 
                 <section className="grid gap-5 lg:grid-cols-2">
                   <div className="rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-6">
-                    <h2 className="font-bold text-[#1E3A8A]">Worker consultation prompts</h2>
+                    <h2 className="font-bold text-brand-hover">Worker consultation prompts</h2>
                     <ul className="mt-4 space-y-3 text-sm leading-6 text-[#334155]">
                       {[
                         'What changed in the last three weeks?',
@@ -310,7 +313,7 @@ export default function SampleReport() {
                         'What is one low-risk change the team wants to test?',
                       ].map((item) => (
                         <li key={item} className="flex gap-2">
-                          <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-[#1D4ED8]" />
+                          <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" />
                           {item}
                         </li>
                       ))}

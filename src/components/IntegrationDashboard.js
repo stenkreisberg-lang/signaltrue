@@ -707,7 +707,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <li>• Connect Jira or Asana to enable execution metrics</li>
             )}
             {!integrations.find((i) => i.source === 'gmail')?.connected && (
-              <li>• Connect Gmail to detect after-hours patterns</li>
+              <li>• Connect Gmail to observe after-hours patterns</li>
             )}
           </ul>
         </div>

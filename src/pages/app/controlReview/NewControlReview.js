@@ -13,7 +13,7 @@ import { getAuthenticatedContext } from '../../../utils/authContext';
  * Start or import a review (spec §8).
  *
  * The external path is first-class: most real cases arrive from a survey, an
- * worker-representative concern or an audit, not from SignalTrue detection. A
+ * worker-representative concern or an audit, not from SignalTrue observation. A
  * customer who is
  * already further along can record a control immediately after opening.
  */

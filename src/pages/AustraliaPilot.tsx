@@ -60,7 +60,7 @@ export default function AustraliaPilot() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-24">
           <div className="container mx-auto max-w-5xl px-6 text-center">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+            <p className="text-sm font-bold uppercase tracking-wider text-brand">
               Australian pilot
             </p>
             <h1 className="mt-4 text-4xl font-bold text-[#0F172A] sm:text-5xl lg:text-6xl">
@@ -122,7 +122,7 @@ export default function AustraliaPilot() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
             <div className="text-center">
-              <Clock3 className="mx-auto h-8 w-8 text-[#1D4ED8]" />
+              <Clock3 className="mx-auto h-8 w-8 text-brand" />
               <h2 className="mt-4 text-3xl font-bold text-[#0F172A]">How the eight weeks run</h2>
             </div>
             <div className="mt-10 overflow-hidden rounded-2xl border border-[#E2E8F0]">
@@ -132,7 +132,7 @@ export default function AustraliaPilot() {
                   className="grid gap-2 border-b border-[#E2E8F0] p-5 last:border-0 md:grid-cols-[130px_130px_1fr]"
                 >
                   <strong className="text-[#0F172A]">{period}</strong>
-                  <span className="text-sm font-bold text-[#1D4ED8]">{stage}</span>
+                  <span className="text-sm font-bold text-brand">{stage}</span>
                   <span className="text-sm leading-6 text-[#475569]">{copy}</span>
                 </div>
               ))}
@@ -151,7 +151,7 @@ export default function AustraliaPilot() {
               <div>
                 <h2 className="text-3xl font-bold text-[#0F172A]">Pilot output</h2>
                 <div className="mt-6 rounded-2xl border border-[#93C5FD] bg-[#EFF6FF] p-7">
-                  <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                  <p className="text-sm font-bold uppercase tracking-wider text-brand">
                     Final deliverable
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-[#0F172A]">

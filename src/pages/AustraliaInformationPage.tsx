@@ -246,9 +246,7 @@ export default function AustraliaInformationPage() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
-              {page.eyebrow}
-            </p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand">{page.eyebrow}</p>
             <h1 className="mt-4 max-w-4xl text-4xl font-bold text-[#0F172A] sm:text-5xl">
               {page.title}
             </h1>
@@ -288,7 +286,7 @@ export default function AustraliaInformationPage() {
         <section className="border-t border-[#E2E8F0] bg-white py-14">
           <div className="container mx-auto flex max-w-5xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
             <div className="flex max-w-2xl gap-3">
-              <Info className="mt-1 h-5 w-5 shrink-0 text-[#1D4ED8]" />
+              <Info className="mt-1 h-5 w-5 shrink-0 text-brand" />
               <p className="text-sm leading-6 text-[#475569]">
                 Deployment-specific details are confirmed during implementation readiness and take
                 precedence over general website descriptions.

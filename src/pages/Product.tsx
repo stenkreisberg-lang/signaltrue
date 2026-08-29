@@ -78,9 +78,7 @@ export default function Product() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-4xl text-center">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
-                Product
-              </p>
+              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">Product</p>
               <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
                 Observe changing work patterns. Investigate with workers. Review what changed.
               </h1>
@@ -96,14 +94,14 @@ export default function Product() {
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="product_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
                   Request a 20-minute psychosocial risk visibility review{' '}
                   <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
                   ctaLocation="product_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -114,7 +112,7 @@ export default function Product() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   Evidence for investigation
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">
@@ -128,7 +126,7 @@ export default function Product() {
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {indicators.map(([title, copy, Icon]) => (
                   <article key={title} className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
-                    <Icon className="h-6 w-6 text-[#1D4ED8]" aria-hidden="true" />
+                    <Icon className="h-6 w-6 text-brand" aria-hidden="true" />
                     <h3 className="mt-4 text-lg font-bold text-[#0F172A]">{title}</h3>
                     <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
                   </article>
@@ -137,11 +135,11 @@ export default function Product() {
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="product_problem"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 />
                 <SampleReportCTA
                   ctaLocation="product_problem"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -152,7 +150,7 @@ export default function Product() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 text-center">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   One evidence base, three decisions
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">
@@ -162,7 +160,7 @@ export default function Product() {
               <div className="grid gap-5 md:grid-cols-3">
                 {decisionViews.map((view) => (
                   <article key={view.audience} className="rounded-2xl border border-[#E2E8F0] p-6">
-                    <p className="text-sm font-bold text-[#1D4ED8]">{view.audience}</p>
+                    <p className="text-sm font-bold text-brand">{view.audience}</p>
                     <h3 className="mt-3 text-xl font-bold text-[#0F172A]">{view.question}</h3>
                     <p className="mt-3 text-sm leading-6 text-[#475569]">{view.value}</p>
                   </article>
@@ -227,11 +225,11 @@ export default function Product() {
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA
                 ctaLocation="product_final"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
               />
               <SampleReportCTA
                 ctaLocation="product_final"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
               />
             </div>
           </div>

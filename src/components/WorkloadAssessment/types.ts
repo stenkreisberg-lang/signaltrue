@@ -24,7 +24,7 @@ export interface AssessmentInputs {
   retention: RetentionInputs;
 }
 
-// Risk Level based on Workload Risk Index (0-100)
+// Signal Status based on Workload Risk Index (0-100)
 export type RiskLevel = 'low' | 'emerging' | 'high';
 
 export interface WorkloadRiskScore {

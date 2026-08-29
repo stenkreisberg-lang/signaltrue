@@ -3,7 +3,7 @@
  *
  * Kept in one place so the product's vocabulary stays consistent across
  * screens: the module talks about controls, reviews and completeness, never
- * about scores, risk levels or success.
+ * about scores, signal statuses or success.
  */
 
 import api from './api';

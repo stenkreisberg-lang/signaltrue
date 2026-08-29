@@ -82,7 +82,8 @@ const SUBSCORE_META: { key: keyof Subscores; label: string; description: string 
   {
     key: 'focusErosion',
     label: 'Focus availability',
-    description: 'Available focus time, fragmented days, and meeting hours',
+    description:
+      'Available uninterrupted calendar availability, fragmented days, and meeting hours',
   },
   {
     key: 'coordinationFriction',

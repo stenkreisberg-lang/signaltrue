@@ -9,7 +9,7 @@
 const outcomes = [
   {
     title: 'Early signals of coordination overload',
-    description: 'Detect when teams are spending more time coordinating than executing.',
+    description: 'Observe when teams are spending more time coordinating than executing.',
   },
   {
     title: 'Where recovery is disappearing',

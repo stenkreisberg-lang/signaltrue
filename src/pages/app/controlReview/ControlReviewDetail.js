@@ -161,8 +161,8 @@ export default function ControlReviewDetail() {
           <section className="app-panel">
             <h2>Review completeness</h2>
             <p className="app-muted">
-              What is recorded and what is outstanding. Whether the evidence is sufficient is your
-              organisation’s judgement, not SignalTrue’s.
+              What is recorded and what is outstanding. Your organisation decides whether the
+              evidence supports a decision.
             </p>
             <ul className="cr-completeness">
               {data.completeness.components.map((component) => (
@@ -279,7 +279,7 @@ function InvestigationTab({ data, meta, closed, busy, run }) {
         {data.observations.filter((o) => o.status === 'DEVIATION_OBSERVED').length === 0 ? (
           <p className="cr-empty">
             No persistent deviation from this team’s own baseline was recorded. A case can still
-            proceed — SignalTrue detection is one input, not a precondition.
+            proceed — SignalTrue observation is one input, not a precondition.
           </p>
         ) : (
           <table className="cr-table">

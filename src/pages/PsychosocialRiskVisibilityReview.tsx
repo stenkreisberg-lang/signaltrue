@@ -48,7 +48,7 @@ export default function PsychosocialRiskVisibilityReview() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-24">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-5xl text-center">
-              <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <p className="text-sm font-bold uppercase tracking-wider text-brand">
                 What happens between psychosocial risk assessments?
               </p>
               <h1 className="mt-5 text-4xl font-bold leading-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
@@ -62,11 +62,11 @@ export default function PsychosocialRiskVisibilityReview() {
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="visibility_review_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 />
                 <SampleReportCTA
                   ctaLocation="visibility_review_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -76,7 +76,7 @@ export default function PsychosocialRiskVisibilityReview() {
         <section className="py-16 lg:py-20">
           <div className="container mx-auto grid max-w-6xl gap-8 px-6 lg:grid-cols-2">
             <article className="rounded-3xl border border-[#E2E8F0] bg-white p-8">
-              <Eye className="h-7 w-7 text-[#1D4ED8]" aria-hidden="true" />
+              <Eye className="h-7 w-7 text-brand" aria-hidden="true" />
               <h2 className="mt-5 text-3xl font-bold text-[#0F172A]">The visibility gap</h2>
               <p className="mt-4 leading-7 text-[#475569]">
                 Formal assessments provide a point-in-time view. In digital and hybrid
@@ -85,7 +85,7 @@ export default function PsychosocialRiskVisibilityReview() {
               </p>
             </article>
             <article className="rounded-3xl border border-[#E2E8F0] bg-white p-8">
-              <FileText className="h-7 w-7 text-[#1D4ED8]" aria-hidden="true" />
+              <FileText className="h-7 w-7 text-brand" aria-hidden="true" />
               <h2 className="mt-5 text-3xl font-bold text-[#0F172A]">What SignalTrue adds</h2>
               <p className="mt-4 leading-7 text-[#475569]">
                 SignalTrue identifies changes in team-level working patterns between formal
@@ -113,11 +113,11 @@ export default function PsychosocialRiskVisibilityReview() {
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="visibility_review_includes"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-6 py-3 text-center font-bold text-white hover:bg-[#1E40AF]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 />
                 <SampleReportCTA
                   ctaLocation="visibility_review_includes"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] px-6 py-3 font-bold text-[#0F172A] hover:border-[#1D4ED8]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function PsychosocialRiskVisibilityReview() {
           <div className="container mx-auto px-6">
             <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="text-sm font-bold uppercase tracking-wider text-brand">
                   Sample output
                 </p>
                 <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
@@ -163,7 +163,7 @@ export default function PsychosocialRiskVisibilityReview() {
                 </p>
                 <SampleReportCTA
                   ctaLocation="visibility_review_sample"
-                  className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg border border-[#1D4ED8] bg-white px-6 py-3 font-bold text-[#1D4ED8]"
+                  className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg border border-brand bg-white px-6 py-3 font-bold text-brand"
                 />
               </div>
               <article className="rounded-3xl border border-[#CBD5E1] bg-white p-7 shadow-sm">

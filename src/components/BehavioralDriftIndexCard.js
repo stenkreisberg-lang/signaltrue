@@ -157,7 +157,7 @@ const BehavioralDriftIndexCard = ({ bdi, teamId, showDetails = true }) => {
           {/* Interpretation */}
           <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
             {bdi.interpretation ||
-              "Behavioral Drift Index shows whether a team's working patterns are changing compared to their own historical baseline. It detects early coordination and capacity issues before outcomes are affected."}
+              "Behavioral Drift Index shows whether a team's working patterns are changing compared to their own historical baseline. It observes early coordination and capacity issues before outcomes are affected."}
           </div>
 
           {/* View Details Link */}

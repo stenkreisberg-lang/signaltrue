@@ -20,7 +20,7 @@ export default function Contact() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-14 lg:py-16">
           <div className="container mx-auto px-6 text-center">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+            <p className="text-sm font-bold uppercase tracking-wider text-brand">
               Psychosocial risk visibility review
             </p>
             <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold text-[#0F172A] sm:text-5xl">
@@ -57,11 +57,11 @@ export default function Contact() {
                     key={String(title)}
                     className="rounded-2xl border border-[#E2E8F0] bg-white p-6 text-center"
                   >
-                    <ContactIcon className="mx-auto h-6 w-6 text-[#1D4ED8]" aria-hidden="true" />
+                    <ContactIcon className="mx-auto h-6 w-6 text-brand" aria-hidden="true" />
                     <h2 className="mt-3 font-bold text-[#0F172A]">{String(title)}</h2>
                     <a
                       href={String(href)}
-                      className="mt-2 inline-block text-sm text-[#1D4ED8] hover:underline"
+                      className="mt-2 inline-block text-sm text-brand hover:underline"
                     >
                       {String(copy)}
                     </a>

@@ -65,14 +65,14 @@ const steps = [
     title: "Build each team's baseline",
     subtitle: 'Baseline',
     description:
-      'SignalTrue learns the normal rhythm for each team: meeting load, focus availability, after-hours work, response delays, collaboration patterns, and manager load.',
+      'SignalTrue learns the normal rhythm for each team: meeting load, focus availability, after-hours work, response delays, collaboration patterns, and management capacity.',
     note: 'A qualified baseline normally needs 3–4 weeks, sufficient mapped coverage and at least five active people. Some indicators require eight.',
   },
   {
     number: '03',
     icon: AlertTriangle,
-    title: 'Detect pressure changes',
-    subtitle: 'Detect',
+    title: 'Observe pressure changes',
+    subtitle: 'Observe',
     description:
       'SignalTrue flags material changes for investigation only after coverage, baseline maturity and group thresholds pass.',
     examples: [
@@ -121,7 +121,7 @@ const HowItWorksPage = () => {
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
         title="How SignalTrue Works | Metadata-Only Team Signals"
-        description="Learn how SignalTrue connects work tools, builds team baselines, detects workload risk, and recommends actions without reading message content."
+        description="Learn how SignalTrue connects work tools, builds team baselines, observes workload risk, and recommends actions without reading message content."
         path="/how-it-works"
       />
       <Navbar />
@@ -130,17 +130,17 @@ const HowItWorksPage = () => {
         <section className="py-20 bg-white border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                 How it works
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 From work-pattern evidence{' '}
-                <span className="text-[#1D4ED8]">to a reviewed preventive action.</span>
+                <span className="text-brand">to a reviewed preventive action.</span>
               </h1>
               <p className="text-lg text-[#334155] max-w-xl mx-auto mb-8">
-                SignalTrue uses metadata from work tools to detect team-level changes in meetings,
-                focus time, response pressure, recovery patterns, and manager load. No message
-                content. No individual scoring. No surveillance.
+                SignalTrue uses metadata from work tools to observe team-level changes in meetings,
+                uninterrupted calendar availability, response pressure, recovery patterns, and
+                management capacity. No message content. No individual scoring. No surveillance.
               </p>
               <Button asChild variant="hero" size="xl">
                 <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
@@ -156,7 +156,7 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
                   Implementation contract
                 </p>
                 <h2 className="text-3xl font-bold text-[#0F172A]">
@@ -190,7 +190,7 @@ const HowItWorksPage = () => {
               </div>
               <div className="mt-8 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:flex md:items-center md:justify-between md:gap-6">
                 <div>
-                  <h3 className="font-bold text-[#1E3A8A]">
+                  <h3 className="font-bold text-brand-hover">
                     See deliverables, ownership and pilot success criteria
                   </h3>
                   <p className="mt-2 text-sm text-[#475569]">
@@ -217,21 +217,21 @@ const HowItWorksPage = () => {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   {index < steps.length - 1 && (
-                    <div className="absolute left-8 top-20 bottom-0 w-px bg-gradient-to-b from-[#1D4ED8]/30 to-[#E2E8F0]" />
+                    <div className="absolute left-8 top-20 bottom-0 w-px bg-gradient-to-b from-brand/30 to-[#E2E8F0]" />
                   )}
                   <div className="flex-shrink-0">
                     <div className="w-16 h-16 rounded-2xl bg-[#DBEAFE] border border-[#DBEAFE] flex items-center justify-center">
-                      <span className="text-xl font-display font-bold text-[#1E3A8A]">
+                      <span className="text-xl font-display font-bold text-brand-hover">
                         {step.number}
                       </span>
                     </div>
                   </div>
                   <div className="flex-1 pt-2">
-                    <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-2">
+                    <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-2">
                       {step.subtitle}
                     </p>
                     <div className="flex items-center gap-3 mb-3">
-                      <step.icon className="w-6 h-6 text-[#1D4ED8]" />
+                      <step.icon className="w-6 h-6 text-brand" />
                       <h3 className="text-2xl font-display font-bold text-[#0F172A]">
                         {step.title}
                       </h3>
@@ -333,7 +333,7 @@ const HowItWorksPage = () => {
         <section className="py-14 bg-[#EFF6FF] border-b border-[#DBEAFE]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wide mb-3">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wide mb-3">
                 See it for your organization
               </p>
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0F172A] mb-3">

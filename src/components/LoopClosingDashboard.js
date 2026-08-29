@@ -330,7 +330,7 @@ export function WorkHealthDeltaTile({ teamId }) {
   };
 
   const deltaLabels = {
-    focusTime: 'Focus Time',
+    focusTime: 'Uninterrupted Calendar Availability',
     meetingLoad: 'Meeting Load',
     fragmentation: 'Fragmentation',
     afterHours: 'After-Hours',
@@ -814,7 +814,7 @@ export function InterventionSimulatorTile({ teamId }) {
           </h4>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-            {/* Focus Time Change */}
+            {/* Uninterrupted Calendar Availability Change */}
             <div
               style={{
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -823,7 +823,9 @@ export function InterventionSimulatorTile({ teamId }) {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Focus Time</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                Uninterrupted Calendar Availability
+              </div>
               <div
                 style={{
                   fontSize: '18px',
@@ -978,7 +980,7 @@ export function LoadBalanceTile({ teamId }) {
       <div style={tileStyles.header}>
         <div>
           <h3 style={tileStyles.title}>Team Load Balance</h3>
-          <p style={tileStyles.subtitle}>Hidden load concentration detection</p>
+          <p style={tileStyles.subtitle}>Hidden load concentration observation</p>
         </div>
         <span style={{ ...tileStyles.badge, ...state.bg }}>
           {stateLabels[data.balanceState] || data.balanceState}

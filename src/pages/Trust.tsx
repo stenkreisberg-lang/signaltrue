@@ -127,7 +127,7 @@ const Trust = () => {
                 <span className="text-[#0F766E]">It is the foundation.</span>
               </h1>
               <p className="text-lg text-[#334155] max-w-xl mx-auto">
-                SignalTrue is built to detect work-system pressure without reading employee
+                SignalTrue is built to observe work-system pressure without reading employee
                 messages, exposing individual behaviour, or ranking productivity.
               </p>
             </div>
@@ -202,7 +202,7 @@ const Trust = () => {
                   What we never access
                 </h2>
                 <p className="text-lg text-[#475569] max-w-2xl mx-auto">
-                  SignalTrue does not need private content to detect work-system pressure.
+                  SignalTrue does not need private content to observe work-system pressure.
                 </p>
               </div>
 
@@ -268,7 +268,7 @@ const Trust = () => {
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
                   <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
-                    <Lock className="w-6 h-6 text-[#1E3A8A]" />
+                    <Lock className="w-6 h-6 text-brand-hover" />
                   </div>
                   <h3 className="font-semibold text-[#0F172A] mb-2">Encryption</h3>
                   <p className="text-sm text-[#475569]">
@@ -279,7 +279,7 @@ const Trust = () => {
 
                 <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
                   <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
-                    <Users className="w-6 h-6 text-[#1E3A8A]" />
+                    <Users className="w-6 h-6 text-brand-hover" />
                   </div>
                   <h3 className="font-semibold text-[#0F172A] mb-2">Aggregation thresholds</h3>
                   <p className="text-sm text-[#475569]">
@@ -290,7 +290,7 @@ const Trust = () => {
 
                 <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] text-center">
                   <div className="p-3 rounded-xl bg-[#DBEAFE] w-fit mx-auto mb-4">
-                    <Eye className="w-6 h-6 text-[#1E3A8A]" />
+                    <Eye className="w-6 h-6 text-brand-hover" />
                   </div>
                   <h3 className="font-semibold text-[#0F172A] mb-2">Role-based access</h3>
                   <p className="text-sm text-[#475569]">

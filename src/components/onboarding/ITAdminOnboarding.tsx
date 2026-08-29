@@ -279,7 +279,8 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                   <div>
                     <h2 style={styles.stepTitle}>Connect Calendar</h2>
                     <p style={styles.stepDescription}>
-                      Choose Google Calendar or Outlook to track meeting patterns and focus time
+                      Choose Google Calendar or Outlook to track meeting patterns and uninterrupted
+                      calendar availability
                     </p>
                   </div>
                   {calendarConnected && <span style={styles.checkmark}>✓</span>}

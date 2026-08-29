@@ -484,7 +484,7 @@ const SuperadminDashboard: React.FC = () => {
                       onClick={() => handleLoginAsOrgAdmin(org.id, org.name)}
                       style={{
                         ...styles.button,
-                        backgroundColor: '#1D4ED8',
+                        backgroundColor: 'var(--color-brand)',
                         padding: '4px 8px',
                         fontSize: '12px',
                       }}

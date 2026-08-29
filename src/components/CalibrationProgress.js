@@ -147,11 +147,11 @@ const CalibrationProgress = ({ orgId }) => {
               Baseline Calibration Complete
             </h3>
             <p className="text-slate-300 mb-4">
-              Signal Intelligence is now unlocked. You can now detect deviations, view risk signals,
-              and receive decision guidance.
+              Signal Intelligence is now unlocked. You can now observe deviations, view risk
+              signals, and receive decision guidance.
             </p>
             <div className="flex gap-2">
-              <Badge variant="high">Signal Detection Active</Badge>
+              <Badge variant="high">Signal Observation Active</Badge>
               <Badge variant="high">Benchmarking Enabled</Badge>
               <Badge variant="high">Action Tracking Ready</Badge>
             </div>
@@ -241,7 +241,7 @@ const CalibrationProgress = ({ orgId }) => {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            <span>Real-time signal detection for team health deviations</span>
+            <span>Real-time signal observation for team health deviations</span>
           </li>
           <li className="flex items-start gap-2 text-sm text-slate-400">
             <svg

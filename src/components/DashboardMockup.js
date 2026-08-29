@@ -112,7 +112,7 @@ const DashboardMockup = () => {
             <h3
               style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: '0 0 15px 0' }}
             >
-              Focus Time Erosion
+              Uninterrupted Calendar Availability Erosion
             </h3>
 
             <div

@@ -5,8 +5,6 @@ import controlReviewApi, {
   CASE_STATUS_LABELS,
   TRIGGER_LABELS,
   formatDate,
-  formatPercent,
-  metricLabel,
 } from '../../../utils/controlReviewApi';
 import { getAuthenticatedContext } from '../../../utils/authContext';
 
@@ -42,7 +40,6 @@ export default function ControlReviews() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dismissing, setDismissing] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,21 +59,10 @@ export default function ControlReviews() {
     load();
   }, [load]);
 
-  const dismissFinding = async (findingId) => {
-    const reason = window.prompt('Why is no review needed? This is recorded against the finding.');
-    if (!reason) return;
-    setDismissing(findingId);
-    try {
-      await controlReviewApi.dismissFinding(findingId, reason);
-      await load();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Could not dismiss the finding.');
-    } finally {
-      setDismissing(null);
-    }
-  };
-
   const modules = dashboard?.modules || {};
+  const recommendationCount = new Set(
+    dashboard?.reviewRecommendations?.map((finding) => finding.team)
+  ).size;
 
   return (
     <AppShell user={user} section="Control reviews" width="wide">
@@ -101,66 +87,13 @@ export default function ControlReviews() {
       {!loading && dashboard && (
         <>
           {dashboard.reviewRecommendations?.length > 0 && (
-            <section className="app-panel cr-section">
-              <h2>Persistent work-pattern changes</h2>
-              <p className="app-muted">
-                SignalTrue observed these changes against each team’s own baseline. A review may be
-                warranted. Opening a case is your decision, not the system’s.
-              </p>
-
-              {dashboard.reviewRecommendations.map((finding) => (
-                <article key={finding.findingId} className="cr-finding">
-                  <header className="cr-finding-head">
-                    <div>
-                      <h3>{finding.team}</h3>
-                      <p className="cr-meta">
-                        Week of {formatDate(finding.periodStart)} · persistent across{' '}
-                        {finding.persistencePeriods} weekly period
-                        {finding.persistencePeriods === 1 ? '' : 's'} · data quality{' '}
-                        {finding.dataQuality.toLowerCase()}
-                        {finding.basis === 'SEVERE_SINGLE_SIGNAL' && ' · single-signal exception'}
-                      </p>
-                    </div>
-                    <div className="cr-finding-actions">
-                      <button
-                        type="button"
-                        className="cr-button cr-button-primary"
-                        onClick={() =>
-                          navigate(`/app/control-reviews/new?findingId=${finding.findingId}`)
-                        }
-                      >
-                        Open review
-                      </button>
-                      <button
-                        type="button"
-                        className="cr-button"
-                        disabled={dismissing === finding.findingId}
-                        onClick={() => dismissFinding(finding.findingId)}
-                      >
-                        No review needed
-                      </button>
-                    </div>
-                  </header>
-
-                  <ul className="cr-signal-list">
-                    {finding.signals.map((signal) => (
-                      <li key={signal.metric}>
-                        <span className="cr-signal-metric">{metricLabel(signal.metric)}</span>
-                        <span
-                          className={`cr-signal-change ${
-                            signal.direction === 'UP' ? 'is-up' : 'is-down'
-                          }`}
-                        >
-                          {formatPercent(signal.relativeChange)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="cr-summary">{finding.summary}</p>
-                </article>
-              ))}
-            </section>
+            <Link to="/app/control-reviews/findings" className="cr-summary-row">
+              <strong>
+                {recommendationCount} {recommendationCount === 1 ? 'team shows' : 'teams show'} a
+                persistent work-pattern change
+              </strong>
+              <span>Review</span>
+            </Link>
           )}
 
           <div className="cr-modules">

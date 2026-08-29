@@ -667,7 +667,7 @@ const BDIDashboard: React.FC<BDIDashboardProps> = ({ teamId, orgId }) => {
 
     if (type === 'meetings' && current > 15) {
       insights.push('Meeting hours exceed healthy thresholds');
-      insights.push('Team may have limited focus time');
+      insights.push('Team may have limited uninterrupted calendar availability');
       recommendations.push('Audit recurring meetings for consolidation');
       recommendations.push('Consider async alternatives for status updates');
     }

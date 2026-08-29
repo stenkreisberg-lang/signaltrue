@@ -192,7 +192,7 @@ export default function LeadForm({
                 form_id: 'commercial-lead-form',
               })
             }
-            className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF]"
+            className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
           >
             <Calendar className="h-5 w-5" aria-hidden="true" /> Choose a meeting time
           </a>
@@ -202,8 +202,8 @@ export default function LeadForm({
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full rounded-lg border bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:ring-2 focus:ring-[#1D4ED8]/30 ${
-      hasError ? 'border-red-500' : 'border-[#CBD5E1] focus:border-[#1D4ED8]'
+    `w-full rounded-lg border bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:ring-2 focus:ring-brand/30 ${
+      hasError ? 'border-red-500' : 'border-[#CBD5E1] focus:border-brand'
     }`;
 
   return (
@@ -303,7 +303,7 @@ export default function LeadForm({
         <button
           type="submit"
           disabled={submitting}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send className="h-5 w-5" aria-hidden="true" />
           {submitting ? 'Sending…' : submitLabel}

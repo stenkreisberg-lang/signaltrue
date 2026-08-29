@@ -13,7 +13,7 @@ import { clearStoredSession } from '../utils/authContext';
  * Pricing Page (per spec):
  * Purpose: Anchor price to risk avoided, not features.
  *
- * Pricing Philosophy: Pricing reflects the cost of late detection.
+ * Pricing Philosophy: Pricing reflects the cost of delayed visibility.
  * One missed signal often costs more than a year of prevention.
  *
  * Tiers (outcome-first, not feature-first):
@@ -47,33 +47,9 @@ const trackEvent = (eventName: string) => {
 // Pricing tiers per spec
 const tiers = [
   {
-    name: 'Workload Scan',
-    planKey: null,
-    outcome: 'A focused 3–4 week calibration before committing to ongoing use.',
-    description:
-      'Best for small teams or organizations that want a clear picture before buying an always-on system.',
-    price: 'Custom pilot price',
-    period: '',
-    priceNote: 'Scope and one-off fee confirmed before the scan begins.',
-    highlight: false,
-    features: [
-      '3–4 week baseline period',
-      'Team-level work-pattern analysis',
-      'Manager load overview',
-      'Meeting overload findings',
-      'Focus fragmentation findings',
-      'Response pressure findings',
-      'Recovery risk findings',
-      'Executive summary',
-      'Recommended actions',
-      'Follow-up review call',
-    ],
-    cta: 'Request scan',
-  },
-  {
     name: 'Team Signals',
     planKey: 'visibility',
-    outcome: 'Weekly visibility into work-system pressure with practical recommendations.',
+    outcome: 'Start with a structured workload scan, then continue with weekly team visibility.',
     description: 'Best for Health & Safety teams running ongoing team-level risk reviews.',
     price: '€299',
     period: '/month',
@@ -81,8 +57,11 @@ const tiers = [
       'Per organization workspace, per month, excluding VAT. Team scope is confirmed before activation.',
     highlight: false,
     features: [
+      'First-month onboarding scan',
+      '3–4 week baseline period',
+      'Team-level work-pattern analysis',
       'Weekly team reports',
-      'Manager Load Signal',
+      'Management Capacity Signal',
       'Meeting Overload Signal',
       'Focus Fragmentation Signal',
       'Responsiveness Pressure Signal',
@@ -211,16 +190,16 @@ const Pricing = () => {
         <section className="py-20 bg-white border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                 Pricing
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
                 Start with the level of workplace risk evidence{' '}
-                <span className="text-[#1D4ED8]">you need.</span>
+                <span className="text-brand">you need.</span>
               </h1>
               <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-6">
-                Use SignalTrue as a one-time workload scan, a team-level early warning system, or a
-                leadership view across teams.
+                Team Signals begins with a structured onboarding scan, then continues as weekly
+                team-level evidence. Leadership Signals adds a view across teams.
               </p>
               <p className="text-sm text-[#475569]">
                 All plans use metadata only. No message content. No individual productivity scores.
@@ -234,7 +213,7 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto grid lg:grid-cols-[0.85fr_1.15fr] gap-8 items-start">
               <div>
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
                   Who this is for
                 </p>
                 <h2 className="text-3xl font-display font-bold text-[#0F172A] mb-4">
@@ -242,9 +221,9 @@ const Pricing = () => {
                   investigation.
                 </h2>
                 <p className="text-[#475569]">
-                  SignalTrue is strongest for teams where meetings, manager load, response pressure,
-                  and recovery risk are becoming visible in work patterns before they show up in
-                  surveys or turnover.
+                  SignalTrue is strongest for teams where meetings, management capacity, response
+                  pressure and recovery conditions are changing before they show up in surveys or
+                  turnover.
                 </p>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -277,7 +256,7 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-10">
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
                   First 30 days
                 </p>
                 <h2 className="text-3xl font-display font-bold text-[#0F172A]">
@@ -292,7 +271,7 @@ const Pricing = () => {
                   'Assign one proportionate control and schedule its effectiveness review.',
                 ].map((step, index) => (
                   <div key={step} className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
-                    <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center text-sm font-bold mb-4">
+                    <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold mb-4">
                       {index + 1}
                     </div>
                     <p className="text-sm text-[#334155]">{step}</p>
@@ -331,7 +310,7 @@ const Pricing = () => {
                 {checkoutError}
               </div>
             )}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
               {tiers.map((tier, index) => {
                 const isLoading = loadingPlan !== null && loadingPlan === tier.planKey;
                 return (
@@ -339,14 +318,14 @@ const Pricing = () => {
                     key={index}
                     className={`relative rounded-2xl p-8 animate-slide-up bg-white ${
                       tier.highlight
-                        ? 'border-2 border-[#1D4ED8] shadow-[0_20px_40px_rgba(15,23,42,0.08)]'
+                        ? 'border-2 border-brand shadow-[0_20px_40px_rgba(15,23,42,0.08)]'
                         : 'border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.04)]'
                     }`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     {tier.highlight && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span className="px-4 py-1.5 rounded-full bg-[#1D4ED8] text-white text-sm font-medium">
+                        <span className="px-4 py-1.5 rounded-full bg-brand text-white text-sm font-medium">
                           Best starting point
                         </span>
                       </div>
@@ -356,7 +335,7 @@ const Pricing = () => {
                       <h3 className="text-2xl font-display font-bold text-[#0F172A] mb-2">
                         {tier.name}
                       </h3>
-                      <p className="text-base text-[#1D4ED8] font-medium mb-2">{tier.outcome}</p>
+                      <p className="text-base text-brand font-medium mb-2">{tier.outcome}</p>
                       <p className="text-sm text-[#475569]">{tier.description}</p>
                     </div>
 
@@ -457,7 +436,7 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-10">
-                <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-3">
+                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
                   FAQ
                 </p>
                 <h2 className="text-3xl font-display font-bold text-[#0F172A]">

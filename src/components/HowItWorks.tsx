@@ -3,16 +3,16 @@ import { Activity, BarChart2, AlertCircle, TrendingUp } from 'lucide-react';
 /*
  * CATEGORY KING POSITIONING:
  * From drift to decision. Not dashboards.
- * Steps: Detect → Explain → Act → Learn
+ * Steps: Observe → Explain → Act → Learn
  */
 
 const steps = [
   {
     number: '01',
     icon: Activity,
-    title: 'Detect drift',
+    title: 'Observe drift',
     description:
-      "We learn normal work patterns and detect statistically meaningful deviations from each team's own baseline.",
+      "We learn normal work patterns and observe statistically meaningful deviations from each team's own baseline.",
   },
   {
     number: '02',

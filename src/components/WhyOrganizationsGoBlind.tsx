@@ -41,8 +41,8 @@ const WhyOrganizationsGoBlind = () => {
           <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16">
             <p className="text-xl text-muted-foreground">
               Before deadlines slip or people leave, the work pattern changes. Meetings increase.
-              Focus time shrinks. Managers become bottlenecks. Urgent messages become normal. Work
-              moves into evenings.
+              Uninterrupted calendar availability shrinks. Managers become bottlenecks. Urgent
+              messages become normal. Work moves into evenings.
             </p>
             <p className="text-xl text-muted-foreground mt-4">
               Most organizations notice too late because their evidence is periodic, fragmented or
@@ -76,13 +76,13 @@ const WhyOrganizationsGoBlind = () => {
               SignalTrue adds continuous evidence to—not a replacement for—worker consultation.
             </p>
             <p className="text-[#334155] mt-2">
-              Identify the pattern, verify the cause with the team, select a proportionate control
-              and review the same measure after action.
+              Identify the pattern, investigate with the team, select a proportionate control and
+              review the same measure after action.
             </p>
             <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA
                 ctaLocation="homepage_problem"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1D4ED8] px-5 py-3 text-sm font-bold text-white hover:bg-[#1E40AF]"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white hover:bg-brand-hover"
               />
               <SampleReportCTA
                 ctaLocation="homepage_problem"

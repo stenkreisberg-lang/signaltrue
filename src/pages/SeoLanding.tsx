@@ -10,11 +10,11 @@ const signalContent: Record<string, { title: string; description: string; bullet
   'meeting-overload': {
     title: 'Meeting overload signal',
     description:
-      'Detect rising meeting density, recurring meeting load, and coordination pressure before teams lose execution time.',
+      'Observe rising meeting density, recurring meeting load, and coordination pressure before teams lose execution time.',
     bullets: [
       'Meeting hours rising against baseline',
       'Recurring meetings expanding',
-      'Focus time squeezed by coordination',
+      'uninterrupted calendar availability squeezed by coordination',
     ],
   },
   'recovery-time-collapse': {
@@ -60,13 +60,13 @@ const signalContent: Record<string, { title: string; description: string; bullet
     bullets: ['More handoffs', 'More alignment loops', 'Slower decision flow'],
   },
   'manager-load': {
-    title: 'Manager load signal',
+    title: 'management capacity signal',
     description:
       'See when managers are becoming overloaded by meetings, interruptions, and decision bottlenecks.',
     bullets: [
       'Manager meeting load rising',
       'Decision load concentrated',
-      'Protected focus time falling',
+      'Protected uninterrupted calendar availability falling',
     ],
   },
 };
@@ -89,7 +89,7 @@ const pageContent: Record<
       'SignalTrue uses work metadata to show team-level pressure patterns while there is still time to fix workload, coordination, and recovery conditions.',
     metaTitle: 'Psychosocial Risk Early Evidence for Teams | SignalTrue',
     metaDescription:
-      'SignalTrue shows team-level work-condition patterns for meetings, focus time, recovery, response pressure, and manager load without diagnosing burnout.',
+      'SignalTrue shows team-level work-condition patterns for meetings, uninterrupted calendar availability, recovery, response pressure, and management capacity without diagnosing burnout.',
     points: [
       'See sustained work pressure early enough to investigate with direct team context.',
       'Use team-level patterns instead of individual surveillance or sentiment guessing.',
@@ -120,7 +120,7 @@ const pageContent: Record<
       'View the SignalTrue sample report: team-level workload signals, pressure trends, and practical leadership actions without message content.',
     points: [
       'Weekly executive summary for leaders.',
-      'Signal table for manager load, meeting pressure, focus loss, response pressure, and recovery risk.',
+      'Signal table for management capacity, meeting pressure, focus loss, response pressure, and recovery risk.',
       'Recommended actions that reduce system pressure without blaming individuals.',
     ],
   },
@@ -131,7 +131,7 @@ const pageContent: Record<
       'Use SignalTrue to see where overload, coordination drag, and recovery risk are building across teams.',
     metaTitle: 'Work-System Intelligence Solutions | SignalTrue',
     metaDescription:
-      'SignalTrue helps HR, executives, and team leaders detect workload risk, manager overload, and execution drag early.',
+      'SignalTrue helps HR, executives, and team leaders observe workload risk, manager overload, and execution drag early.',
     points: [
       'Health & Safety prioritises team-level psychosocial risk reviews.',
       'Executives see evidence confidence, controls due and barriers requiring decisions.',
@@ -181,7 +181,7 @@ export default function SeoLanding() {
         <section className="bg-white border-b border-[#E2E8F0] py-20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
-              <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
+              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
                 {page.eyebrow}
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-[#0F172A] mb-6">
@@ -218,7 +218,7 @@ export default function SeoLanding() {
             <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.95fr_1.05fr] gap-8 items-start">
               <div className="bg-white border border-[#E2E8F0] rounded-2xl p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <LineChart className="w-6 h-6 text-[#1D4ED8]" />
+                  <LineChart className="w-6 h-6 text-brand" />
                   <h2 className="text-2xl font-display font-bold text-[#0F172A]">
                     What SignalTrue shows
                   </h2>
@@ -253,14 +253,14 @@ export default function SeoLanding() {
                   {
                     icon: CheckCircle,
                     title: 'Action-oriented',
-                    text: 'Every signal connects to practical interventions for meetings, focus, recovery, and manager load.',
+                    text: 'Every signal connects to practical interventions for meetings, focus, recovery, and management capacity.',
                   },
                 ].map((item) => (
                   <div
                     key={item.title}
                     className="bg-white border border-[#E2E8F0] rounded-2xl p-6"
                   >
-                    <item.icon className="w-6 h-6 text-[#1D4ED8] mb-4" />
+                    <item.icon className="w-6 h-6 text-brand mb-4" />
                     <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.title}</h3>
                     <p className="text-sm text-[#475569]">{item.text}</p>
                   </div>

@@ -50,7 +50,7 @@ export const questions: Question[] = [
   },
   {
     id: 6,
-    text: 'How early can you detect burnout risk today?',
+    text: 'How early can you see a persistent work-pattern change today?',
     options: [
       { label: 'Usually too late', value: 'too-late', score: 3 },
       { label: 'Sometimes early', value: 'sometimes-early', score: 2 },

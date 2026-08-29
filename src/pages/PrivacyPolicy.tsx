@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16">
           <div className="container mx-auto max-w-4xl px-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">Version 1.0</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand">Version 1.0</p>
             <h1 className="mt-3 text-4xl font-bold text-[#0F172A] sm:text-5xl">Privacy Policy</h1>
             <p className="mt-5 text-lg text-[#475569]">
               Effective 29 August 2026 · Owner: SignalTrue Privacy
@@ -80,21 +80,18 @@ export default function PrivacyPolicy() {
             ))}
             <p className="text-sm leading-6 text-[#64748B]">
               Australian readers can also review the{' '}
-              <Link className="font-semibold text-[#1D4ED8] hover:underline" to="/au/privacy">
+              <Link className="font-semibold text-brand hover:underline" to="/au/privacy">
                 Australian privacy overview
               </Link>
               ,{' '}
               <Link
-                className="font-semibold text-[#1D4ED8] hover:underline"
+                className="font-semibold text-brand hover:underline"
                 to="/au/worker-transparency"
               >
                 worker transparency guidance
               </Link>{' '}
               and{' '}
-              <Link
-                className="font-semibold text-[#1D4ED8] hover:underline"
-                to="/au/data-residency"
-              >
+              <Link className="font-semibold text-brand hover:underline" to="/au/data-residency">
                 data-residency status
               </Link>
               .

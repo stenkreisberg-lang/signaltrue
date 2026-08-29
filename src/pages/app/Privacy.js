@@ -172,7 +172,7 @@ function Privacy() {
                   'Aggregated activity patterns (team-level only)',
                   'Meeting frequency and duration (metadata only)',
                   'Message volume and response timing (counts only)',
-                  'Work hour patterns (after-hours activity, focus time blocks)',
+                  'Work hour patterns (after-hours activity, uninterrupted calendar availability blocks)',
                 ].map((item, idx) => (
                   <li
                     key={idx}
@@ -694,7 +694,7 @@ function Privacy() {
               {
                 title: 'Data Retention',
                 content:
-                  'Free tier: 7 days. Detection tier: 30 days. Impact Proof tier: 90 days. Data auto-deleted after retention period.',
+                  'Free tier: 7 days. Observation tier: 30 days. Impact Proof tier: 90 days. Data auto-deleted after retention period.',
               },
               {
                 title: 'Your Rights',

@@ -29,7 +29,7 @@ export const colors = {
   // Brand Primary (ONE COLOR FOR PRIMARY CTA)
   primary: '#3b82f6', // Blue - used for main CTAs only
   primaryHover: '#2563eb',
-  primaryActive: '#1d4ed8',
+  primaryActive: 'var(--color-brand-dark)',
 
   // Secondary (neutral actions)
   secondary: '#64748b',

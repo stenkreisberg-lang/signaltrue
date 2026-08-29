@@ -417,7 +417,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: '24px',
     flexShrink: 0,
     borderRadius: '999px',
-    background: '#1d4ed8',
+    background: 'var(--color-brand)',
     color: 'white',
     fontSize: '0.75rem',
     fontWeight: '700',

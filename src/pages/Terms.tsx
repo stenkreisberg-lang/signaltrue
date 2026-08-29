@@ -57,7 +57,7 @@ export default function Terms() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16">
           <div className="container mx-auto max-w-4xl px-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">Version 1.0</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-brand">Version 1.0</p>
             <h1 className="mt-3 text-4xl font-bold text-[#0F172A] sm:text-5xl">
               Responsible Use Terms
             </h1>

@@ -61,10 +61,11 @@ module.exports = {
         },
         /* Named brand tokens — use as bg-brand, text-brand, etc. */
         brand: {
-          DEFAULT: "#1D4ED8",
-          dark: "#1E3A8A",
-          soft: "#DBEAFE",
-          softer: "#EFF6FF",
+          DEFAULT: "hsl(var(--primary))",
+          hover: "hsl(var(--primary-hover))",
+          dark: "hsl(var(--primary-hover))",
+          soft: "var(--color-brand-soft)",
+          softer: "var(--color-brand-softer)",
         },
         surface: {
           DEFAULT: "#FFFFFF",
@@ -99,7 +100,7 @@ module.exports = {
       backgroundImage: {
         'hero-gradient': 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
         'card-gradient': 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
-        'glow': 'radial-gradient(circle, rgba(29, 78, 216, 0.08) 0%, transparent 70%)',
+        'glow': 'radial-gradient(circle, rgba(15, 118, 110, 0.08) 0%, transparent 70%)',
       },
       keyframes: {
         "slide-up": {

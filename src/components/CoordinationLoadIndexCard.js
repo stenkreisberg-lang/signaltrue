@@ -110,7 +110,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
               <div className="flex items-center justify-between border-t border-slate-700 pt-2 mt-2">
                 <span className="text-slate-300 flex items-center gap-2">
                   <span className="text-lg">🎯</span>
-                  Available Focus Time
+                  Available Uninterrupted Calendar Availability
                 </span>
                 <span className="font-semibold text-green-400">
                   {cli.availableFocusTime?.toFixed(1)} hrs

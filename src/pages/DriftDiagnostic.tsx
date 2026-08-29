@@ -27,22 +27,22 @@ const DriftDiagnostic = () => {
                 <span className="text-xs font-medium text-[#334155]">No personal data</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
-                <Shield className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <Shield className="w-3.5 h-3.5 text-brand" />
                 <span className="text-xs font-medium text-[#334155]">Anonymous assessment</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
-                <Activity className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <Activity className="w-3.5 h-3.5 text-brand" />
                 <span className="text-xs font-medium text-[#334155]">7–10 minutes</span>
               </div>
             </div>
 
             {/* Main headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 text-[#0F172A]">
-              Free Behavioral Drift <span className="text-[#1D4ED8]">Diagnostic</span>
+              Free Behavioral Drift <span className="text-brand">Diagnostic</span>
             </h1>
 
             <p className="text-lg sm:text-xl text-[#334155] max-w-2xl mx-auto mb-8 leading-relaxed">
-              Detect coordination drift before it shows up in surveys, exits, or missed results.
+              Observe coordination drift before it shows up in surveys, exits, or missed results.
               This diagnostic flags system-level risk patterns—not individual performance.
             </p>
 
@@ -84,7 +84,7 @@ const DriftDiagnostic = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
                 <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center mb-4">
-                  <BarChart3 className="w-5 h-5 text-[#1D4ED8]" />
+                  <BarChart3 className="w-5 h-5 text-brand" />
                 </div>
                 <h3 className="font-semibold mb-2 text-[#0F172A]">Drift Score (0–100)</h3>
                 <p className="text-sm text-[#475569]">
@@ -95,7 +95,7 @@ const DriftDiagnostic = () => {
 
               <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
                 <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center mb-4">
-                  <Activity className="w-5 h-5 text-[#1D4ED8]" />
+                  <Activity className="w-5 h-5 text-brand" />
                 </div>
                 <h3 className="font-semibold mb-2 text-[#0F172A]">Risk Category</h3>
                 <p className="text-sm text-[#475569]">
@@ -130,7 +130,7 @@ const DriftDiagnostic = () => {
             <div className="space-y-8">
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-[#1E3A8A] font-bold text-sm">1</span>
+                  <span className="text-brand-hover font-bold text-sm">1</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
@@ -146,7 +146,7 @@ const DriftDiagnostic = () => {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-[#1E3A8A] font-bold text-sm">2</span>
+                  <span className="text-brand-hover font-bold text-sm">2</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
@@ -161,7 +161,7 @@ const DriftDiagnostic = () => {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-[#1E3A8A] font-bold text-sm">3</span>
+                  <span className="text-brand-hover font-bold text-sm">3</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">

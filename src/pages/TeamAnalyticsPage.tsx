@@ -96,9 +96,9 @@ const TeamAnalyticsPage = () => {
                 What Teams Absorb <span className="text-gradient">Before They Break</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                SignalTrue shows team-level workload risk from meetings, focus time, after-hours
-                work, manager load, and coordination patterns, without invading privacy or tracking
-                individuals.
+                SignalTrue shows team-level workload risk from meetings, uninterrupted calendar
+                availability, after-hours work, management capacity, and coordination patterns,
+                without invading privacy or tracking individuals.
               </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
                 <Button variant="hero" size="xl">

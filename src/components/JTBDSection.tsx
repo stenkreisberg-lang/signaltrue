@@ -35,13 +35,13 @@ const signals = [
 
 const JTBDSection = () => {
   return (
-    <section id="what-we-detect" className="py-16 lg:py-20 bg-white">
+    <section id="what-we-observe" className="py-16 lg:py-20 bg-white">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
           {/* Section header */}
           <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-[#1D4ED8] uppercase tracking-wider mb-4">
-              What SignalTrue detects
+            <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
+              What SignalTrue observes
             </p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4 text-[#0F172A]">
               Leading indicators for psychosocial risk review.
@@ -62,7 +62,7 @@ const JTBDSection = () => {
                 style={{ animationDelay: `${index * 0.07}s` }}
               >
                 <div className="w-12 h-12 rounded-xl bg-[#EFF6FF] mb-4 flex items-center justify-center">
-                  <signal.icon className="w-6 h-6 text-[#1D4ED8]" />
+                  <signal.icon className="w-6 h-6 text-brand" />
                 </div>
                 <h3 className="font-display font-semibold text-[#0F172A] mb-2">{signal.name}</h3>
                 <p className="text-sm text-[#475569]">{signal.description}</p>

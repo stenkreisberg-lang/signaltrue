@@ -20,7 +20,7 @@ const REPLACEMENT_COSTS = {
 
 /**
  * Calculate Workload Risk Index (0-100)
- * Factors weighted: meeting load, fragmentation, after-hours, focus time loss
+ * Factors weighted: meeting load, fragmentation, after-hours, uninterrupted calendar availability loss
  */
 export function calculateWorkloadRiskScore(inputs: AssessmentInputs): WorkloadRiskScore {
   const { workload } = inputs;
@@ -55,15 +55,15 @@ export function calculateWorkloadRiskScore(inputs: AssessmentInputs): WorkloadRi
     afterHoursScore = 25;
   }
 
-  // Focus Time Loss Score (0-25 points) - derived from meetings + fragmentation
-  // High meetings + high fragmentation = very little focus time
+  // Uninterrupted Calendar Availability Loss Score (0-25 points) - derived from meetings + fragmentation
+  // High meetings + high fragmentation = very little uninterrupted calendar availability
   const focusTimeLossScore = Math.min(25, meetingLoadScore * 0.6 + fragmentationScore * 0.4);
 
   const total = Math.round(
     meetingLoadScore + fragmentationScore + afterHoursScore + focusTimeLossScore
   );
 
-  // Determine risk level
+  // Determine signal status
   let level: RiskLevel;
   if (total <= 33) {
     level = 'low';
@@ -162,7 +162,7 @@ export function generateInsights(inputs: AssessmentInputs, riskScore: WorkloadRi
     );
   } else if (workload.backToBackFrequency === 'medium') {
     insights.push(
-      `Moderate back-to-back meeting patterns suggest some calendar fragmentation affecting focus time.`
+      `Moderate back-to-back meeting patterns suggest some calendar fragmentation affecting uninterrupted calendar availability.`
     );
   }
 
@@ -191,7 +191,7 @@ export function generateInsights(inputs: AssessmentInputs, riskScore: WorkloadRi
     );
   }
 
-  // Risk level summary
+  // signal status summary
   if (riskScore.level === 'high') {
     insights.push(
       `Your Workload Risk Index (${riskScore.total}/100) indicates high risk patterns that often precede burnout and attrition.`

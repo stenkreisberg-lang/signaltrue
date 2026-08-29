@@ -73,8 +73,9 @@ test('recovers from an expired checkout token by clearing it and opening registr
   expect(clearStoredSession).toHaveBeenCalledTimes(1);
 });
 
-test('the workload scan CTA opens the contact flow', async () => {
+test('publishes the entry price and includes the onboarding scan in Team Signals', async () => {
   renderPricing();
-  fireEvent.click(screen.getByRole('button', { name: 'Request scan' }));
-  expect(mockNavigate).toHaveBeenCalledWith('/contact');
+  expect(screen.getByText('€299')).toBeInTheDocument();
+  expect(screen.getByText('First-month onboarding scan')).toBeInTheDocument();
+  expect(screen.queryByText('Custom pilot price')).not.toBeInTheDocument();
 });

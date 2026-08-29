@@ -1,7 +1,7 @@
 import { Activity, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
+import { PrimaryCommercialCTA } from './CommercialCTA';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -31,7 +31,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-[#1D4ED8] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center">
                 <Activity className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -68,26 +68,18 @@ const Navbar = () => {
                 </Link>
                 <Link
                   to="/au/monitoring-gap-audit"
-                  className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
+                  className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover"
                 >
                   Run the audit
                 </Link>
               </>
             ) : (
-              <>
-                <SampleReportCTA
-                  ctaLocation="navbar_desktop"
-                  className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
-                >
-                  Sample report
-                </SampleReportCTA>
-                <PrimaryCommercialCTA
-                  ctaLocation="navbar_desktop"
-                  className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
-                >
-                  Request a 20-minute review
-                </PrimaryCommercialCTA>
-              </>
+              <PrimaryCommercialCTA
+                ctaLocation="navbar_desktop"
+                className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover"
+              >
+                Book a walkthrough
+              </PrimaryCommercialCTA>
             )}
           </div>
 
@@ -96,6 +88,8 @@ const Navbar = () => {
             className="md:hidden p-2 text-[#0F172A]"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -103,7 +97,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-[#E2E8F0] pt-4">
+          <div id="mobile-menu" className="md:hidden mt-4 pb-4 border-t border-[#E2E8F0] pt-4">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
@@ -132,33 +126,22 @@ const Navbar = () => {
                     </Link>
                     <Link
                       to="/au/monitoring-gap-audit"
-                      className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
+                      className="flex w-full items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Run the Monitoring Gap Audit
                     </Link>
                   </>
                 ) : (
-                  <>
-                    <SampleReportCTA
-                      ctaLocation="navbar_mobile"
-                      className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      Sample report
-                    </SampleReportCTA>
-                    <PrimaryCommercialCTA
-                      ctaLocation="navbar_mobile"
-                      className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      Request a 20-minute review
-                    </PrimaryCommercialCTA>
-                  </>
+                  <PrimaryCommercialCTA
+                    ctaLocation="navbar_mobile"
+                    className="flex w-full items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Book a walkthrough
+                  </PrimaryCommercialCTA>
                 )}
               </div>
             </div>

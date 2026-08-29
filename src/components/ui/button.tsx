@@ -18,11 +18,11 @@ const buttonVariants = cva(
         ghost: 'hover:bg-secondary hover:text-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
         // SignalTrue custom variants
-        hero: 'bg-[#1D4ED8] text-white hover:bg-[#1E40AF] hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-0.5',
+        hero: 'bg-brand text-white hover:bg-brand-hover hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-0.5',
         'hero-outline':
-          'border-2 border-[#CBD5E1] bg-white text-[#1E3A8A] hover:bg-[#EFF6FF] hover:border-[#1D4ED8]',
+          'border-2 border-[#CBD5E1] bg-white text-brand-hover hover:bg-brand-softer hover:border-brand',
         nav: 'bg-transparent text-foreground/80 hover:text-foreground hover:bg-transparent font-medium',
-        cta: 'bg-[#1D4ED8] text-white hover:bg-[#1E40AF] shadow-lg shadow-blue-900/15 hover:shadow-xl hover:shadow-blue-900/25',
+        cta: 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-blue-900/15 hover:shadow-xl hover:shadow-blue-900/25',
       },
       size: {
         default: 'h-10 px-4 py-2',

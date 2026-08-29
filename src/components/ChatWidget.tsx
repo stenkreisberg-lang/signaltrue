@@ -235,7 +235,7 @@ export const ChatWidget: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-blue-700">
-                      Risk Level:{' '}
+                      Signal Status:{' '}
                       <span className="font-medium capitalize">
                         {assessmentSession.result.riskScore.level}
                       </span>

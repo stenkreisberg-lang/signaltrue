@@ -22,23 +22,23 @@ const SOCIAL_IMAGE = `${SITE_URL}/social-preview-v2.png`;
  */
 const ROUTE_META = {
   '/': {
-    title: 'Work-Pattern Evidence Between Psychosocial Risk Assessments | SignalTrue',
+    title: 'Verify Whether Workplace Controls Actually Worked | SignalTrue',
     description:
-      'See when work starts changing between psychosocial risk assessments with continuous, team-level evidence—without reading message bodies or scoring individual productivity.',
+      'Compare work before and after a change, check whether improvement was sustained, and investigate possible workload migration with team-level metadata.',
     summary:
-      'SignalTrue gives Health & Safety and operational leaders continuous, team-level visibility into changing work patterns such as meeting load, focus time, after-hours activity and coordination. It does not read message bodies, diagnose workers or score individual productivity.',
+      'SignalTrue compares how work happened before and after a change, checks whether the improvement was sustained, and flags possible migration when demand shifts to another channel, time or team. It does not read message bodies or score individuals.',
   },
   '/product': {
     title: 'Work-Pattern Signals for Psychosocial Risk | SignalTrue',
     description:
-      'Observe persistent changes in meetings, focus time, after-hours activity and coordination, investigate with workers and review what changed after action.',
+      'Observe persistent changes in meetings, uninterrupted calendar availability, after-hours activity and coordination, investigate with workers and review what changed after action.',
     summary:
       'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed — not a diagnosis.',
   },
   '/how-it-works': {
-    title: 'How SignalTrue Detects Persistent Work-Pattern Change',
+    title: 'How SignalTrue Observes Persistent Work-Pattern Change',
     description:
-      'Connect work-pattern metadata, establish each team’s baseline, detect persistent change, investigate with workers and review whether the work actually changed.',
+      'Connect work-pattern metadata, establish each team’s baseline, observe persistent change, investigate with workers and review whether the work actually changed.',
     summary:
       'SignalTrue connects work-pattern metadata, learns each team’s normal rhythm, and looks for material and persistent change rather than reacting to a single busy week. Leaders investigate the cause alongside worker consultation, then review whether the pattern improved.',
   },
@@ -61,7 +61,7 @@ const ROUTE_META = {
     description:
       'See how a weekly work-pattern brief reports magnitude against baseline, how long a change has persisted, and what may be worth investigating.',
     summary:
-      'A sample weekly brief showing meeting hours, focus time, after-hours activity and manager coordination load against the team’s established baseline, with how long each change has persisted and what may warrant investigation.',
+      'A sample weekly brief showing meeting hours, uninterrupted calendar availability, after-hours activity and manager coordination load against the team’s established baseline, with how long each change has persisted and what may warrant investigation.',
   },
   '/psychosocial-risk-visibility-review': {
     title: 'What happens between psychosocial risk assessments? | SignalTrue',
@@ -145,7 +145,7 @@ const ROUTE_META = {
     description:
       'Many organisational problems are visible in working patterns before they are obvious in business outcomes. SignalTrue helps leaders see those changes earlier, without surveillance.',
     summary:
-      'SignalTrue exists to make changes in the system of work visible — meeting structures, workload, focus time, management capacity and working hours — so leaders can investigate problems while they are still easier to address.',
+      'SignalTrue exists to make changes in the system of work visible — meeting structures, workload, uninterrupted calendar availability, management capacity and working hours — so leaders can investigate problems while they are still easier to address.',
   },
   '/pricing': {
     title: 'Pricing | SignalTrue Work-Pattern Early Warning',
@@ -232,7 +232,7 @@ const ROUTE_META = {
   '/signals/manager-load': {
     title: 'Manager Coordination Load Signal | SignalTrue',
     description:
-      'See where manager coordination patterns are changing — meeting density, decision demand and available focus time.',
+      'See where manager coordination patterns are changing — meeting density, decision demand and available uninterrupted calendar availability.',
     summary:
       'Manager coordination load shows team-level changes in manager meeting density, coordination demand and focus-time availability. Persistent increases may warrant investigation into management capacity, spans of control, decision processes or team dependencies.',
   },
@@ -248,7 +248,7 @@ const ROUTE_META = {
     description:
       'A short diagnostic to see which work-pattern changes are worth investigating in your organisation.',
     summary:
-      'A short diagnostic covering meeting load, focus time, after-hours activity and manager coordination, to identify which work-pattern changes may be worth investigating.',
+      'A short diagnostic covering meeting load, uninterrupted calendar availability, after-hours activity and manager coordination, to identify which work-pattern changes may be worth investigating.',
   },
   '/client-success': {
     title: 'How a SignalTrue Pilot Works | SignalTrue',
@@ -260,7 +260,7 @@ const ROUTE_META = {
   '/blog': {
     title: 'Work Design & Psychosocial Risk Articles | SignalTrue',
     description:
-      'Articles on job demands, work design, meeting load, focus time, after-hours work and reviewing whether workload interventions are working.',
+      'Articles on job demands, work design, meeting load, uninterrupted calendar availability, after-hours work and reviewing whether workload interventions are working.',
     summary:
       'Articles on job demands and work design, what happens between psychosocial risk assessments, and using operational evidence alongside worker consultation.',
   },

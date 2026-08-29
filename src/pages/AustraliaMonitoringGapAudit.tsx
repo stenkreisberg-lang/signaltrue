@@ -136,8 +136,8 @@ export default function AustraliaMonitoringGapAudit() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16">
           <div className="container mx-auto max-w-4xl px-6 text-center">
-            <ClipboardCheck className="mx-auto h-10 w-10 text-[#1D4ED8]" />
-            <p className="mt-5 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+            <ClipboardCheck className="mx-auto h-10 w-10 text-brand" />
+            <p className="mt-5 text-sm font-bold uppercase tracking-wider text-brand">
               Australian diagnostic
             </p>
             <h1 className="mt-3 text-4xl font-bold text-[#0F172A] sm:text-5xl">
@@ -170,7 +170,7 @@ export default function AustraliaMonitoringGapAudit() {
                             key={option.label}
                             className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                               selected
-                                ? 'border-[#1D4ED8] bg-[#EFF6FF]'
+                                ? 'border-brand bg-[#EFF6FF]'
                                 : 'border-[#E2E8F0] hover:border-[#93C5FD]'
                             }`}
                           >
@@ -202,7 +202,7 @@ export default function AustraliaMonitoringGapAudit() {
                 )}
                 <button
                   type="submit"
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF]"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
                   View my monitoring result <ArrowRight className="h-5 w-5" />
                 </button>
@@ -215,7 +215,7 @@ export default function AustraliaMonitoringGapAudit() {
                   className="rounded-3xl border border-[#93C5FD] bg-white p-8 shadow-sm outline-none md:p-10"
                 >
                   <CheckCircle2 className="h-9 w-9 text-[#0F766E]" />
-                  <p className="mt-5 text-sm font-bold uppercase tracking-wider text-[#1D4ED8]">
+                  <p className="mt-5 text-sm font-bold uppercase tracking-wider text-brand">
                     Your result
                   </p>
                   <h2 className="mt-2 text-3xl font-bold text-[#0F172A]">{category}</h2>
@@ -227,7 +227,7 @@ export default function AustraliaMonitoringGapAudit() {
                   <button
                     type="button"
                     onClick={resetAudit}
-                    className="mt-6 inline-flex items-center gap-2 font-semibold text-[#1D4ED8] hover:underline"
+                    className="mt-6 inline-flex items-center gap-2 font-semibold text-brand hover:underline"
                   >
                     <RotateCcw className="h-4 w-4" /> Retake the audit
                   </button>

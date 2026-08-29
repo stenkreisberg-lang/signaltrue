@@ -782,7 +782,7 @@ function Dashboard() {
               {showHelp === 'jira' && (
                 <div>
                   <p style={{ marginBottom: 12, color: '#374151' }}>
-                    Jira integration analyzes your project management data to detect execution
+                    Jira integration analyzes your project management data to observe execution
                     friction.
                   </p>
                   <p style={{ fontWeight: 600, marginBottom: 8 }}>📊 Metrics we measure:</p>
@@ -801,7 +801,7 @@ function Dashboard() {
                     </li>
                   </ul>
                   <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
-                    🚨 Signals we detect:
+                    🚨 Signals we observe:
                   </p>
                   <ul style={styles.helpList}>
                     <li>Execution drag — velocity declining despite stable effort</li>
@@ -831,7 +831,7 @@ function Dashboard() {
                     </li>
                   </ul>
                   <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
-                    🚨 Signals we detect:
+                    🚨 Signals we observe:
                   </p>
                   <ul style={styles.helpList}>
                     <li>Load imbalance — uneven task distribution</li>
@@ -862,7 +862,7 @@ function Dashboard() {
                     </li>
                   </ul>
                   <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
-                    🚨 Signals we detect:
+                    🚨 Signals we observe:
                   </p>
                   <ul style={styles.helpList}>
                     <li>Knowledge silos — documentation concentrated in few people</li>
@@ -892,7 +892,7 @@ function Dashboard() {
                     </li>
                   </ul>
                   <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
-                    🚨 Signals we detect:
+                    🚨 Signals we observe:
                   </p>
                   <ul style={styles.helpList}>
                     <li>Sales execution drag — deals stalling in pipeline</li>
@@ -922,7 +922,7 @@ function Dashboard() {
                     </li>
                   </ul>
                   <p style={{ fontWeight: 600, marginBottom: 8, marginTop: 16 }}>
-                    🚨 Signals we detect:
+                    🚨 Signals we observe:
                   </p>
                   <ul style={styles.helpList}>
                     <li>Revenue friction — slowing deal velocity</li>

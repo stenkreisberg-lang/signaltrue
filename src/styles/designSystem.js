@@ -66,7 +66,7 @@ export const typography = {
 export const colors = {
   // Primary palette
   primary: '#2563eb',
-  primaryHover: '#1d4ed8',
+  primaryHover: 'var(--color-brand-dark)',
   primaryActive: '#1e40af',
 
   // Neutral palette
