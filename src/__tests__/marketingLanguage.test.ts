@@ -1,9 +1,26 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { FORBIDDEN_PATTERNS } from '../../backend/services/controlReview/hsInterpretationService.js';
 
 const ADDITIONAL_MARKETING_PATTERNS = [/risk level/i, /manager load/i];
+
+function backendForbiddenPatterns() {
+  const serviceSource = readFileSync(
+    'backend/services/controlReview/hsInterpretationService.js',
+    'utf8'
+  );
+  const patternBlock = serviceSource.match(
+    /export const FORBIDDEN_PATTERNS = \[([\s\S]*?)\];/
+  )?.[1];
+
+  if (!patternBlock) throw new Error('Could not read the backend forbidden-language rules.');
+
+  return patternBlock
+    .split('\n')
+    .map((line) => line.match(/^\s*\/(.+)\/([a-z]*),?\s*$/i))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match) => new RegExp(match[1], match[2]));
+}
 
 function trackedMarketingFiles() {
   return execFileSync(
@@ -19,7 +36,7 @@ function trackedMarketingFiles() {
 describe('marketing language guardrail', () => {
   test('tracked page and component copy respects the backend language rules', () => {
     const violations: string[] = [];
-    const patterns = [...FORBIDDEN_PATTERNS, ...ADDITIONAL_MARKETING_PATTERNS];
+    const patterns = [...backendForbiddenPatterns(), ...ADDITIONAL_MARKETING_PATTERNS];
 
     for (const file of trackedMarketingFiles()) {
       const source = readFileSync(file, 'utf8');
