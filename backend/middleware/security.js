@@ -21,6 +21,11 @@ import helmet from 'helmet';
  * General API rate limiter
  * Prevents DDoS and API abuse
  */
+export function isHealthCheckRequest(req) {
+  const requestPath = String(req.originalUrl || req.url || req.path || '').split('?')[0];
+  return ['/api/health', '/api/health/live', '/api/health/ready'].includes(requestPath);
+}
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per window per IP
@@ -30,10 +35,10 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/api/health';
-  },
+  // Render probes /api/health/ready frequently from a shared address. Counting
+  // those probes can exhaust the general API limit and make a healthy instance
+  // return 429, which Render interprets as a failure and restarts.
+  skip: isHealthCheckRequest,
 });
 
 /**
