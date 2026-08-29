@@ -10,6 +10,7 @@ interface LeadFormProps {
   tag?: string;
   heading?: string;
   intro?: string;
+  submitLabel?: string;
 }
 
 interface LeadFields {
@@ -58,6 +59,7 @@ export default function LeadForm({
   tag = 'psychosocial-risk-visibility-review',
   heading = 'Request your visibility review',
   intro = 'Tell us who should join the 20-minute conversation. We normally reply within one business day.',
+  submitLabel = PRIMARY_CTA_LABEL,
 }: LeadFormProps) {
   const [fields, setFields] = useState(initialFields);
   const [fieldErrors, setFieldErrors] = useState<LeadFieldErrors>({});
@@ -304,7 +306,7 @@ export default function LeadForm({
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-6 py-3 font-bold text-white hover:bg-[#1E40AF] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send className="h-5 w-5" aria-hidden="true" />
-          {submitting ? 'Sending…' : PRIMARY_CTA_LABEL}
+          {submitting ? 'Sending…' : submitLabel}
         </button>
         <p className="text-center text-xs leading-5 text-[#64748B]">
           We use these details only to respond about SignalTrue. Names, email addresses and messages

@@ -14,7 +14,17 @@
     },
     {
       "source": "/psychosocial-risk-australia",
-      "destination": "/australia-psychosocial-risk",
+      "destination": "/au",
+      "permanent": true
+    },
+    {
+      "source": "/australia-psychosocial-risk",
+      "destination": "/au",
+      "permanent": true
+    },
+    {
+      "source": "/burnout-early-warning-system",
+      "destination": "/au/psychosocial-risk-monitoring",
       "permanent": true
     },
     {
@@ -369,12 +379,12 @@
     },
     {
       "source": "/marketing/burnout-early-warning-system.html",
-      "destination": "/burnout-early-warning-system",
+      "destination": "/au/psychosocial-risk-monitoring",
       "permanent": true
     },
     {
       "source": "/marketing/burnout-early-warning-system",
-      "destination": "/burnout-early-warning-system",
+      "destination": "/au/psychosocial-risk-monitoring",
       "permanent": true
     },
     {

@@ -82,12 +82,12 @@ export default function Product() {
                 Product
               </p>
               <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
-                Qualify changing work-design risks. Act with workers. Review what improved.
+                Observe changing work patterns. Investigate with workers. Review what changed.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-xl leading-8 text-[#475569]">
-                SignalTrue turns privacy-safe team metadata into an evidence-led psychosocial risk
+                SignalTrue turns privacy-safe team metadata into an evidence-led review
                 workflow—from baseline and confidence through consultation, control ownership and
-                effectiveness review.
+                subsequent observation.
               </p>
               <p className="mt-4 text-sm font-semibold text-[#475569]">
                 Team-level only · No message content · No individual productivity scores · No

@@ -1,5 +1,5 @@
 import { Activity, Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
@@ -21,6 +21,8 @@ const navItems = [
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isAustralia = pathname === '/au' || pathname.startsWith('/au/');
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E2E8F0]">
@@ -56,18 +58,37 @@ const Navbar = () => {
                 Sign in
               </span>
             </Link>
-            <SampleReportCTA
-              ctaLocation="navbar_desktop"
-              className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
-            >
-              Sample report
-            </SampleReportCTA>
-            <PrimaryCommercialCTA
-              ctaLocation="navbar_desktop"
-              className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
-            >
-              Request a 20-minute review
-            </PrimaryCommercialCTA>
+            {isAustralia ? (
+              <>
+                <Link
+                  to="/au/8-week-pilot"
+                  className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                >
+                  8-week pilot
+                </Link>
+                <Link
+                  to="/au/monitoring-gap-audit"
+                  className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
+                >
+                  Run the audit
+                </Link>
+              </>
+            ) : (
+              <>
+                <SampleReportCTA
+                  ctaLocation="navbar_desktop"
+                  className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                >
+                  Sample report
+                </SampleReportCTA>
+                <PrimaryCommercialCTA
+                  ctaLocation="navbar_desktop"
+                  className="inline-flex h-9 items-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1E40AF]"
+                >
+                  Request a 20-minute review
+                </PrimaryCommercialCTA>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -100,24 +121,45 @@ const Navbar = () => {
                     Sign in
                   </span>
                 </Link>
-                <SampleReportCTA
-                  ctaLocation="navbar_mobile"
-                  className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Sample report
-                </SampleReportCTA>
-                <PrimaryCommercialCTA
-                  ctaLocation="navbar_mobile"
-                  className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Request a 20-minute review
-                </PrimaryCommercialCTA>
+                {isAustralia ? (
+                  <>
+                    <Link
+                      to="/au/8-week-pilot"
+                      className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      View the 8-week pilot
+                    </Link>
+                    <Link
+                      to="/au/monitoring-gap-audit"
+                      className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Run the Monitoring Gap Audit
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <SampleReportCTA
+                      ctaLocation="navbar_mobile"
+                      className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Sample report
+                    </SampleReportCTA>
+                    <PrimaryCommercialCTA
+                      ctaLocation="navbar_mobile"
+                      className="flex w-full items-center justify-center rounded-md bg-[#1D4ED8] px-4 py-3 text-center text-sm font-semibold text-white"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Request a 20-minute review
+                    </PrimaryCommercialCTA>
+                  </>
+                )}
               </div>
             </div>
           </div>

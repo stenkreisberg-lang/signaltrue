@@ -4,6 +4,7 @@ interface PageMetaProps {
   title: string;
   description: string;
   path?: string;
+  lang?: string;
 }
 
 const SITE_URL = 'https://www.signaltrue.ai';
@@ -35,10 +36,11 @@ const upsertCanonical = (href: string) => {
   element.setAttribute('href', href);
 };
 
-export default function PageMeta({ title, description, path }: PageMetaProps) {
+export default function PageMeta({ title, description, path, lang = 'en' }: PageMetaProps) {
   useEffect(() => {
     const canonical = `${SITE_URL}${path || window.location.pathname}`;
 
+    document.documentElement.lang = lang;
     document.title = title;
     upsertMeta('meta[name="description"]', 'content', description);
     upsertMeta('meta[property="og:title"]', 'content', title);
@@ -56,7 +58,7 @@ export default function PageMeta({ title, description, path }: PageMetaProps) {
     upsertMeta('meta[name="twitter:description"]', 'content', description);
     upsertMeta('meta[name="twitter:image"]', 'content', SOCIAL_IMAGE);
     upsertCanonical(canonical);
-  }, [description, path, title]);
+  }, [description, lang, path, title]);
 
   return null;
 }

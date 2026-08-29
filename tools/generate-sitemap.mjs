@@ -7,7 +7,9 @@ const OUTPUT_PATHS = [
   new URL('../public/sitemap.xml', import.meta.url),
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
-const CORE_LAST_MODIFIED = '2026-08-26';
+const CORE_LAST_MODIFIED = '2026-08-29';
+const LEGACY_UNSAFE_TOPIC_PATTERN =
+  /(?:^|[-/])(burnout|productivity|attrition|employee-monitoring|flight-risk)(?:[-/]|$)/i;
 
 const staticPages = [
   ['/', 'weekly', '1.0'],
@@ -18,7 +20,6 @@ const staticPages = [
   ['/sample-report', 'weekly', '0.9'],
   ['/psychosocial-risk-visibility-review', 'weekly', '1.0'],
   ['/client-success', 'monthly', '0.85'],
-  ['/burnout-early-warning-system', 'weekly', '0.95'],
   ['/employee-engagement-leading-indicators', 'weekly', '0.9'],
   ['/signals/meeting-overload', 'monthly', '0.8'],
   ['/signals/recovery-time-collapse', 'monthly', '0.8'],
@@ -27,7 +28,16 @@ const staticPages = [
   ['/signals/responsiveness-pressure', 'monthly', '0.8'],
   ['/signals/coordination-overhead', 'monthly', '0.8'],
   ['/signals/manager-load', 'monthly', '0.8'],
-  ['/australia-psychosocial-risk', 'weekly', '0.95'],
+  ['/au', 'weekly', '1.0'],
+  ['/au/psychosocial-risk-monitoring', 'weekly', '0.95'],
+  ['/au/8-week-pilot', 'weekly', '0.95'],
+  ['/au/monitoring-gap-audit', 'weekly', '1.0'],
+  ['/au/privacy', 'monthly', '0.8'],
+  ['/au/worker-transparency', 'monthly', '0.8'],
+  ['/au/security', 'monthly', '0.8'],
+  ['/au/data-residency', 'monthly', '0.8'],
+  ['/au/trust', 'monthly', '0.8'],
+  ['/au/ai-governance', 'monthly', '0.8'],
   ['/about', 'monthly', '0.8'],
   ['/contact', 'monthly', '0.8'],
   ['/solutions', 'monthly', '0.8'],
@@ -127,7 +137,11 @@ const staticEntries = staticPages.map(([path, changeFrequency, priority]) => ({
 }));
 
 const uniqueBlogEntries = [
-  ...new Map(blogEntries.map((entry) => [entry.url, entry])).values(),
+  ...new Map(
+    blogEntries
+      .filter((entry) => !LEGACY_UNSAFE_TOPIC_PATTERN.test(new URL(entry.url).pathname))
+      .map((entry) => [entry.url, entry])
+  ).values(),
 ].sort((a, b) => b.lastModified.localeCompare(a.lastModified) || a.url.localeCompare(b.url));
 
 const xml = [

@@ -48,18 +48,18 @@ const Hero = () => {
 
             {/* Main headline */}
             <h1 className="mb-5 text-4xl font-bold leading-[1.08] text-[#0F172A] sm:text-5xl lg:text-[3.35rem]">
-              Detect work-related stress risks before they become harm or disruption.
+              See when work starts changing between psychosocial risk assessments.
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg text-[#334155] max-w-lg mb-4 leading-relaxed">
-              SignalTrue gives health &amp; safety managers early, team-level evidence of workload,
-              recovery, meeting and manager-capacity risks in hybrid work.
+              SignalTrue gives health &amp; safety and operational leaders continuous, team-level
+              visibility into changing work patterns such as meeting load, focus time, after-hours
+              activity and coordination.
             </p>
 
             <p className="text-base text-[#334155] max-w-lg mb-4 leading-relaxed">
-              Use it to verify concerns with workers, prioritise preventive controls and review
-              whether conditions improve.
+              It does not read message bodies, diagnose workers or score individual productivity.
             </p>
 
             {/* Trust line */}

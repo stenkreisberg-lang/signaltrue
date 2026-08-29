@@ -16,6 +16,11 @@ const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
 const About = lazy(() => import('./pages/About'));
 const Trust = lazy(() => import('./pages/Trust'));
 const AustraliaPsychosocialRisk = lazy(() => import('./pages/AustraliaPsychosocialRisk'));
+const AustraliaPilot = lazy(() => import('./pages/AustraliaPilot'));
+const AustraliaMonitoringGapAudit = lazy(() => import('./pages/AustraliaMonitoringGapAudit'));
+const AustraliaInformationPage = lazy(() => import('./pages/AustraliaInformationPage'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const Terms = lazy(() => import('./pages/Terms'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
@@ -103,18 +108,27 @@ const App = () => (
                 <Route path="/how-it-works" element={<HowItWorksPage />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/trust" element={<Trust />} />
+                <Route path="/au" element={<AustraliaPsychosocialRisk />} />
+                <Route path="/au/8-week-pilot" element={<AustraliaPilot />} />
+                <Route path="/au/monitoring-gap-audit" element={<AustraliaMonitoringGapAudit />} />
+                {[
+                  '/au/psychosocial-risk-monitoring',
+                  '/au/privacy',
+                  '/au/worker-transparency',
+                  '/au/security',
+                  '/au/data-residency',
+                  '/au/trust',
+                  '/au/ai-governance',
+                ].map((path) => (
+                  <Route key={path} path={path} element={<AustraliaInformationPage />} />
+                ))}
                 <Route
                   path="/australia-psychosocial-risk"
-                  element={<AustraliaPsychosocialRisk />}
+                  element={<Navigate to="/au" replace />}
                 />
-                {/* The /psychosocial-risk-australia alias is redirected in
-                    vercel.json, not here: a client-side redirect still answers
-                    200 at the alias, so a crawler would index two URLs for one
-                    page. This route exists only as a fallback if the request
-                    somehow reaches the app. */}
                 <Route
                   path="/psychosocial-risk-australia"
-                  element={<Navigate to="/australia-psychosocial-risk" replace />}
+                  element={<Navigate to="/au" replace />}
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -225,14 +239,17 @@ const App = () => (
                   element={<PsychosocialRiskVisibilityReview />}
                 />
                 <Route path="/client-success" element={<ServiceProcess />} />
-                <Route path="/burnout-early-warning-system" element={<SeoLanding />} />
+                <Route
+                  path="/burnout-early-warning-system"
+                  element={<Navigate to="/au/psychosocial-risk-monitoring" replace />}
+                />
                 <Route path="/employee-engagement-leading-indicators" element={<SeoLanding />} />
                 <Route path="/solutions" element={<SeoLanding />} />
                 <Route path="/resources" element={<SeoLanding />} />
                 <Route path="/signals/:signalSlug" element={<SeoLanding />} />
-                <Route path="/privacy" element={<Navigate to="/trust" replace />} />
-                <Route path="/terms" element={<Navigate to="/trust" replace />} />
-                <Route path="/ai-info-page" element={<Navigate to="/trust" replace />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/ai-info-page" element={<Navigate to="/au/ai-governance" replace />} />
                 <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />
                 <Route path="/drift-report/:sessionId" element={<DriftReport />} />
                 <Route path="/ehrs-summit-2026" element={<EhrsSummit2026 />} />

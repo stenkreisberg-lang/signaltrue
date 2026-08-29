@@ -23,8 +23,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <PageMeta
-        title="SignalTrue | Early Evidence for Psychosocial Risk Prevention"
-        description="SignalTrue helps health and safety managers identify changing team-level work-design risks, consult workers and review preventive actions."
+        title="SignalTrue | Work-Pattern Evidence Between Psychosocial Risk Assessments"
+        description="See when work starts changing with continuous, team-level evidence—without reading message bodies, diagnosing workers or scoring individual productivity."
         path="/"
       />
       <Navbar />

@@ -38,8 +38,10 @@ function buildHtml(shell, route, meta) {
   const canonical = `${SITE_URL}${route === '/' ? '' : route}`;
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
+  const language = route === '/au' || route.startsWith('/au/') ? 'en-AU' : 'en';
 
   let html = shell;
+  html = html.replace(/<html lang="[^"]*">/, `<html lang="${language}">`);
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`);
   html = upsert(
     html,

@@ -22,16 +22,16 @@ const SOCIAL_IMAGE = `${SITE_URL}/social-preview-v2.png`;
  */
 const ROUTE_META = {
   '/': {
-    title: 'Psychosocial Risk & Work-Pattern Early Warning | SignalTrue',
+    title: 'Work-Pattern Evidence Between Psychosocial Risk Assessments | SignalTrue',
     description:
-      'Continuous, team-level visibility into meeting load, focus time, after-hours work and manager coordination — without reading messages or monitoring individual productivity.',
+      'See when work starts changing between psychosocial risk assessments with continuous, team-level evidence—without reading message bodies or scoring individual productivity.',
     summary:
-      'SignalTrue gives Health & Safety and operational leaders continuous, team-level visibility into changing work patterns: meeting load, focus time, after-hours activity and manager coordination. It uses work-pattern metadata, not message content, and does not score individual productivity.',
+      'SignalTrue gives Health & Safety and operational leaders continuous, team-level visibility into changing work patterns such as meeting load, focus time, after-hours activity and coordination. It does not read message bodies, diagnose workers or score individual productivity.',
   },
   '/product': {
     title: 'Work-Pattern Signals for Psychosocial Risk | SignalTrue',
     description:
-      'See persistent changes in how teams work across meetings, focus time, after-hours activity, manager capacity and collaboration. Team-level metadata, no message content.',
+      'Observe persistent changes in meetings, focus time, after-hours activity and coordination, investigate with workers and review what changed after action.',
     summary:
       'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed — not a diagnosis.',
   },
@@ -70,12 +70,75 @@ const ROUTE_META = {
     summary:
       'SignalTrue helps WHS leaders identify changing workload and coordination conditions between formal assessments using team-level, metadata-focused patterns. It does not diagnose individuals, and worker consultation and governance remain the employer’s responsibility.',
   },
-  '/australia-psychosocial-risk': {
-    title: 'Psychosocial Risk Work-Pattern Monitoring Australia | SignalTrue',
+  '/au': {
+    title: 'Continuous Psychosocial Risk Monitoring Australia | SignalTrue',
     description:
-      'Continuous team-level visibility into meeting load, focus time, after-hours work and manager capacity. Additional evidence for Australian psychosocial risk management without reading employee messages.',
+      'Team-level work-pattern evidence between psychosocial risk assessments. Observe changes without reading message bodies, diagnosing workers or scoring individual productivity.',
     summary:
-      'For Australian Health & Safety teams: continuous team-level visibility into digital work patterns between psychosocial risk assessments. SignalTrue does not determine that a psychosocial hazard exists and does not replace worker consultation or risk assessment.',
+      'For Australian WHS and operational leaders: continuous, team-level visibility into changing work patterns between psychosocial risk assessments. SignalTrue complements worker consultation and risk assessment; it does not replace them.',
+  },
+  '/au/psychosocial-risk-monitoring': {
+    title: 'Psychosocial Risk Monitoring Australia | SignalTrue',
+    description:
+      'Understand how continuous team-level work-pattern evidence supports investigation and control review between formal psychosocial risk assessments.',
+    summary:
+      'SignalTrue observes material and persistent changes in aggregated team work patterns. An observation supports investigation with workers and review of controls; it is not a hazard conclusion, diagnosis or compliance finding.',
+  },
+  '/au/8-week-pilot': {
+    title: '8-Week Australian Psychosocial Control Pilot | SignalTrue',
+    description:
+      'A controlled eight-week pilot to establish team baselines, investigate work-pattern observations with workers and review evidence after a work-design control.',
+    summary:
+      'The Australian pilot confirms readiness, connects selected work systems, establishes a qualified baseline, investigates observations with workers, records a control and produces a final Psychosocial Control Evidence Pack.',
+  },
+  '/au/monitoring-gap-audit': {
+    title: 'Monitoring Gap Audit Australia | SignalTrue',
+    description:
+      'Assess how your organisation monitors and reviews psychosocial controls between formal assessments. The result describes practice maturity, not legal compliance.',
+    summary:
+      'Six questions assess control records, review cadence, evidence between assessments, visibility into changing work conditions, before-and-after comparison and worker consultation.',
+  },
+  '/au/privacy': {
+    title: 'Australian Privacy Overview | SignalTrue',
+    description:
+      'Review SignalTrue’s purpose limitation, work-pattern data boundary, field exclusions, aggregation and deployment-specific privacy configuration.',
+    summary:
+      'SignalTrue uses allowlisted work-pattern metadata for team-level evidence, excludes content and individual productivity ranking, and documents deployment-specific permissions, retention, roles and locations.',
+  },
+  '/au/worker-transparency': {
+    title: 'Worker Transparency Australia | SignalTrue',
+    description:
+      'Plain-language guidance on why SignalTrue is used, which data is processed, who can see outputs, group protections and prohibited uses.',
+    summary:
+      'Workers should understand the purpose, scope, fields, exclusions, access, group protections, retention, locations, limitations and contact points before monitoring starts.',
+  },
+  '/au/security': {
+    title: 'Security Overview Australia | SignalTrue',
+    description:
+      'Security controls for connector access, tenant data, aggregated work-pattern evidence and reports, with deployment-specific evidence available during procurement.',
+    summary:
+      'SignalTrue documents encryption, access control, least privilege, environment separation, monitoring, incident response, retention and deletion for the applicable deployment.',
+  },
+  '/au/data-residency': {
+    title: 'Australian Data Residency Status | SignalTrue',
+    description:
+      'See what must be deployed and verified before SignalTrue makes an Australian data-residency claim for worker telemetry and derived evidence.',
+    summary:
+      'SignalTrue does not yet make a verified Australian data-residency guarantee. Storage, processing, logs, backups, support access, AI and subprocessors must be verified before the claim appears.',
+  },
+  '/au/trust': {
+    title: 'Australian Trust Centre | SignalTrue',
+    description:
+      'Verify SignalTrue’s purpose, connector permissions, data boundary, group protections, access, retention, locations, AI boundaries and limitations.',
+    summary:
+      'The Australian Trust Centre brings together privacy, worker transparency, security, data location, AI governance and responsible-use limitations.',
+  },
+  '/au/ai-governance': {
+    title: 'AI Governance Australia | SignalTrue',
+    description:
+      'How optional AI may support aggregate explanations while excluding person-level telemetry, employment decisions, diagnoses and automated legal conclusions.',
+    summary:
+      'Core SignalTrue metrics are deterministic. Optional AI is limited to aggregate evidence and human-reviewed support, and remains disabled for strict residency deployments unless in-region processing is verified.',
   },
   '/about': {
     title: 'About SignalTrue | Visibility Into the System of Work',
@@ -106,16 +169,18 @@ const ROUTE_META = {
       'Articles on high job demands and digital work patterns, continuous visibility between psychosocial risk assessments, reviewing whether a workload intervention is working, and using operational data alongside worker consultation.',
   },
   '/privacy': {
-    title: 'Privacy | SignalTrue',
+    title: 'Privacy Policy | SignalTrue',
     description:
-      'How SignalTrue handles work-pattern metadata: no message content, team-level aggregation, minimum group sizes and no individual productivity scoring.',
+      'How SignalTrue handles website information and purpose-limited team work-pattern metadata, including fields, purposes, locations, retention and privacy contacts.',
     summary:
-      'SignalTrue analyses work-pattern metadata at team level. No message content, no individual productivity scoring, no employee rankings.',
+      'SignalTrue separates website information from customer-controlled product processing and documents the applicable purpose, allowlisted fields, exclusions, locations, service providers, retention and deletion.',
   },
   '/terms': {
-    title: 'Terms | SignalTrue',
-    description: 'Terms of service for SignalTrue work-pattern analytics.',
-    summary: 'Terms of service for SignalTrue.',
+    title: 'Responsible Use Terms | SignalTrue',
+    description:
+      'Public terms for responsible use of SignalTrue team-level work-pattern evidence, including prohibited individual monitoring and employment-decision uses.',
+    summary:
+      'SignalTrue supports team-level observation, worker-informed investigation and control review. It must not be used for individual productivity ranking, psychological profiling or automated employment decisions.',
   },
 
   // Signal pages and the older SEO landing pages. These carry most of the
@@ -170,13 +235,6 @@ const ROUTE_META = {
       'See where manager coordination patterns are changing — meeting density, decision demand and available focus time.',
     summary:
       'Manager coordination load shows team-level changes in manager meeting density, coordination demand and focus-time availability. Persistent increases may warrant investigation into management capacity, spans of control, decision processes or team dependencies.',
-  },
-  '/burnout-early-warning-system': {
-    title: 'Psychosocial Risk Early Evidence for Teams | SignalTrue',
-    description:
-      'Review work conditions between surveys with continuous team-level evidence about meeting load, focus time, after-hours activity and manager coordination.',
-    summary:
-      'Continuous team-level evidence about working conditions between psychosocial risk assessments and surveys. SignalTrue shows observable work-pattern change; it does not diagnose burnout or determine that a psychosocial hazard exists.',
   },
   '/employee-engagement-leading-indicators': {
     title: 'Worker Consultation Indicators for Psychosocial Risk | SignalTrue',
