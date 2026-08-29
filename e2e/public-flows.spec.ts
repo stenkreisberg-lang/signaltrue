@@ -13,6 +13,17 @@ const publicRoutes = [
   '/blog',
   '/contact',
   '/self-check',
+  '/au',
+  '/au/8-week-pilot',
+  '/au/monitoring-gap-audit',
+  '/au/privacy',
+  '/au/worker-transparency',
+  '/au/security',
+  '/au/data-residency',
+  '/au/trust',
+  '/au/ai-governance',
+  '/privacy',
+  '/terms',
 ] as const;
 
 for (const path of publicRoutes) {
@@ -56,8 +67,23 @@ test('legacy public aliases resolve to canonical pages', async ({ page }) => {
   await page.goto('/demo');
   await expect(page).toHaveURL(/\/contact$/);
 
+  await page.goto('/australia-psychosocial-risk');
+  await expect(page).toHaveURL(/\/au$/);
+
+  await page.goto('/burnout-early-warning-system');
+  await expect(page).toHaveURL(/\/au\/psychosocial-risk-monitoring$/);
+});
+
+test('privacy and terms are standalone public records', async ({ page }) => {
   await page.goto('/privacy');
-  await expect(page).toHaveURL(/\/trust$/);
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole('heading', { name: 'Privacy Policy', exact: true })).toBeVisible();
+
+  await page.goto('/terms');
+  await expect(page).toHaveURL(/\/terms$/);
+  await expect(
+    page.getByRole('heading', { name: 'Responsible Use Terms', exact: true })
+  ).toBeVisible();
 });
 
 test('visibility-review form confirms only after a successful API response', async ({ page }) => {
