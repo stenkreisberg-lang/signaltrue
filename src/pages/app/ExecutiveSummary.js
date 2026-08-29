@@ -76,7 +76,7 @@ export default function ExecutiveSummary() {
   if (loading) {
     return (
       <AppShell user={user} section="Executive brief">
-        <div className="app-panel flex min-h-64 items-center justify-center gap-3 text-sm text-slate-600">
+        <div className="app-panel flex min-h-64 items-center justify-center gap-3 text-caption text-slate-600">
           <RefreshCw className="h-5 w-5 animate-spin" /> Preparing the executive decision brief…
         </div>
       </AppShell>
@@ -118,7 +118,7 @@ export default function ExecutiveSummary() {
             </div>
             <div className="app-dashboard-hero-side">
               <p className="app-dashboard-eyebrow">Executive use</p>
-              <p className="text-sm leading-6 text-slate-700">
+              <p className="text-caption leading-6 text-slate-700">
                 1. Confirm the highest-priority team review. 2. Remove resource or decision
                 barriers. 3. Check overdue controls. 4. Review effectiveness and worker feedback.
               </p>
@@ -172,21 +172,21 @@ export default function ExecutiveSummary() {
                   summary.topRisks.map((risk) => (
                     <article
                       key={risk.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-container border border-slate-200 bg-slate-50 p-4"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <h3 className="font-bold text-slate-900">{risk.title}</h3>
-                          <p className="mt-1 text-sm text-slate-600">{risk.teamName}</p>
+                          <p className="mt-1 text-caption text-slate-600">{risk.teamName}</p>
                         </div>
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-caption font-bold text-amber-800">
                           {risk.severity} · {risk.confidence} confidence
                         </span>
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700">
+                      <p className="mt-3 text-caption leading-6 text-slate-700">
                         {risk.evidenceStatement}
                       </p>
-                      <p className="mt-2 text-xs text-slate-500">
+                      <p className="mt-2 text-caption text-slate-500">
                         Current {risk.currentValue ?? 'not available'} · Baseline{' '}
                         {risk.baselineValue ?? 'not available'} · Change{' '}
                         {risk.deltaPercent == null ? 'not available' : `${risk.deltaPercent}%`}
@@ -194,7 +194,7 @@ export default function ExecutiveSummary() {
                     </article>
                   ))
                 ) : (
-                  <div className="rounded-xl bg-slate-50 p-5 text-sm text-slate-600">
+                  <div className="rounded-container bg-slate-50 p-5 text-caption text-slate-600">
                     No qualified priority evidence is currently visible. This does not establish
                     that psychosocial risk is absent; continue normal consultation and review.
                   </div>
@@ -217,14 +217,14 @@ export default function ExecutiveSummary() {
                   summary.decisionPrompts.map((item) => (
                     <div
                       key={item.title}
-                      className="rounded-xl border border-indigo-200 bg-indigo-50 p-4"
+                      className="rounded-container border border-indigo-200 bg-indigo-50 p-4"
                     >
                       <h3 className="font-bold text-slate-900">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-700">{item.decision}</p>
+                      <p className="mt-2 text-caption leading-6 text-slate-700">{item.decision}</p>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
+                  <div className="rounded-container bg-emerald-50 p-4 text-caption text-emerald-900">
                     No additional executive decision is recorded. Continue reviewing active
                     controls.
                   </div>
@@ -232,7 +232,7 @@ export default function ExecutiveSummary() {
               </div>
               <Link
                 to="/app/actions"
-                className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-indigo-700"
+                className="mt-5 inline-flex items-center gap-2 text-caption font-bold text-indigo-700"
               >
                 Open the control register <ArrowRight className="h-4 w-4" />
               </Link>
@@ -247,7 +247,7 @@ export default function ExecutiveSummary() {
                   <h2>Interpretation limits</h2>
                   <div className="mt-3 grid gap-2">
                     {(summary.limitations || []).map((item) => (
-                      <p key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                      <p key={item} className="flex gap-2 text-caption leading-6 text-slate-700">
                         <CheckCircle2
                           className="mt-1 h-4 w-4 shrink-0 text-emerald-700"
                           aria-hidden="true"

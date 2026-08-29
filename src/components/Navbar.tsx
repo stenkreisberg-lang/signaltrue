@@ -31,11 +31,11 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center">
+              <div className="w-9 h-9 rounded-control bg-brand flex items-center justify-center">
                 <Activity className="w-5 h-5 text-white" />
               </div>
             </div>
-            <span className="text-xl font-display font-bold text-[#0F172A]">SignalTrue</span>
+            <span className="text-lead font-display font-bold text-[#0F172A]">SignalTrue</span>
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -44,7 +44,7 @@ const Navbar = () => {
               <Link
                 key={item.label}
                 to={item.href}
-                className="px-4 py-2 text-sm font-medium text-[#475569] hover:text-[#0F172A] transition-colors"
+                className="px-4 py-2 text-caption font-medium text-[#475569] hover:text-[#0F172A] transition-colors"
               >
                 {item.label}
               </Link>
@@ -54,7 +54,7 @@ const Navbar = () => {
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login">
-              <span className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]">
+              <span className="inline-flex h-9 items-center rounded-control px-3 text-caption font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]">
                 Sign in
               </span>
             </Link>
@@ -62,13 +62,13 @@ const Navbar = () => {
               <>
                 <Link
                   to="/au/8-week-pilot"
-                  className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                  className="inline-flex h-9 items-center rounded-control px-3 text-caption font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
                 >
                   8-week pilot
                 </Link>
                 <Link
                   to="/au/monitoring-gap-audit"
-                  className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover"
+                  className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
                 >
                   Run the audit
                 </Link>
@@ -76,7 +76,7 @@ const Navbar = () => {
             ) : (
               <PrimaryCommercialCTA
                 ctaLocation="navbar_desktop"
-                className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover"
+                className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
               >
                 Book a walkthrough
               </PrimaryCommercialCTA>
@@ -103,7 +103,7 @@ const Navbar = () => {
                 <Link
                   key={item.label}
                   to={item.href}
-                  className="px-4 py-3 text-sm font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#F1F5F9] rounded-lg transition-colors"
+                  className="px-4 py-3 text-caption font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#F1F5F9] rounded-control transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}
@@ -111,7 +111,7 @@ const Navbar = () => {
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <span className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]">
+                  <span className="flex w-full items-center justify-center rounded-control px-4 py-3 text-caption font-semibold text-[#475569]">
                     Sign in
                   </span>
                 </Link>
@@ -119,14 +119,14 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/au/8-week-pilot"
-                      className="flex w-full items-center justify-center rounded-md px-4 py-3 text-sm font-semibold text-[#475569]"
+                      className="flex w-full items-center justify-center rounded-control px-4 py-3 text-caption font-semibold text-[#475569]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       View the 8-week pilot
                     </Link>
                     <Link
                       to="/au/monitoring-gap-audit"
-                      className="flex w-full items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
+                      className="flex w-full items-center justify-center rounded-control bg-brand px-4 py-3 text-center text-caption font-semibold text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Run the Monitoring Gap Audit
@@ -135,7 +135,7 @@ const Navbar = () => {
                 ) : (
                   <PrimaryCommercialCTA
                     ctaLocation="navbar_mobile"
-                    className="flex w-full items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
+                    className="flex w-full items-center justify-center rounded-control bg-brand px-4 py-3 text-center text-caption font-semibold text-white"
                     onClick={() => {
                       setMobileMenuOpen(false);
                     }}

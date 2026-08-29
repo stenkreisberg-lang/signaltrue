@@ -26,10 +26,12 @@ const QuestionStep = ({
       {/* Progress indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-caption font-medium text-muted-foreground">
             Question {currentStep + 1} of {totalSteps}
           </span>
-          <span className="text-sm font-medium text-primary">{Math.round(progressPercent)}%</span>
+          <span className="text-caption font-medium text-primary">
+            {Math.round(progressPercent)}%
+          </span>
         </div>
         <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
           <div
@@ -41,7 +43,7 @@ const QuestionStep = ({
 
       {/* Question */}
       <div key={question.id} className="animate-slide-up">
-        <h3 className="text-2xl font-display font-semibold mb-8 text-foreground text-center">
+        <h3 className="text-lead font-display font-semibold mb-8 text-foreground text-center">
           {question.text}
         </h3>
 
@@ -52,7 +54,7 @@ const QuestionStep = ({
               key={option.value}
               onClick={() => onSelect(option.value, option.score)}
               className={`
-                w-full p-5 rounded-xl border-2 text-left transition-all duration-200
+                w-full p-5 rounded-container border-2 text-left transition-all duration-200
                 hover:scale-[1.02] active:scale-[0.98]
                 animate-slide-up
                 ${
@@ -78,7 +80,7 @@ const QuestionStep = ({
                     <div className="w-2 h-2 bg-white rounded-full animate-scale-in" />
                   )}
                 </div>
-                <span className="text-lg font-medium">{option.label}</span>
+                <span className="text-body font-medium">{option.label}</span>
               </div>
             </button>
           ))}

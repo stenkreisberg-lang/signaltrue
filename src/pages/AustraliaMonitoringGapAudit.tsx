@@ -137,13 +137,13 @@ export default function AustraliaMonitoringGapAudit() {
         <section className="border-b border-[#E2E8F0] bg-white py-16">
           <div className="container mx-auto max-w-4xl px-6 text-center">
             <ClipboardCheck className="mx-auto h-10 w-10 text-brand" />
-            <p className="mt-5 text-sm font-bold uppercase tracking-wider text-brand">
+            <p className="mt-5 text-caption font-bold uppercase tracking-wider text-brand">
               Australian diagnostic
             </p>
-            <h1 className="mt-3 text-4xl font-bold text-[#0F172A] sm:text-5xl">
+            <h1 className="mt-3 text-display font-bold text-[#0F172A] sm:text-display">
               Where is the gap between assessments?
             </h1>
-            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-[#475569]">
+            <p className="mx-auto mt-5 max-w-3xl text-body leading-8 text-[#475569]">
               Six questions about control records, review cadence, evidence and worker consultation.
               The result describes monitoring maturity—not legal compliance.
             </p>
@@ -157,9 +157,9 @@ export default function AustraliaMonitoringGapAudit() {
                 {questions.map((item, index) => (
                   <fieldset
                     key={item.id}
-                    className="rounded-2xl border border-[#E2E8F0] bg-white p-6"
+                    className="rounded-container border border-[#E2E8F0] bg-white p-6"
                   >
-                    <legend className="px-1 text-lg font-bold text-[#0F172A]">
+                    <legend className="px-1 text-body font-bold text-[#0F172A]">
                       {index + 1}. {item.question}
                     </legend>
                     <div className="mt-5 space-y-3">
@@ -168,7 +168,7 @@ export default function AustraliaMonitoringGapAudit() {
                         return (
                           <label
                             key={option.label}
-                            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                            className={`flex cursor-pointer items-start gap-3 rounded-container border p-4 transition ${
                               selected
                                 ? 'border-brand bg-[#EFF6FF]'
                                 : 'border-[#E2E8F0] hover:border-[#93C5FD]'
@@ -185,7 +185,9 @@ export default function AustraliaMonitoringGapAudit() {
                               }}
                               className="mt-1 h-4 w-4"
                             />
-                            <span className="text-sm leading-6 text-[#334155]">{option.label}</span>
+                            <span className="text-caption leading-6 text-[#334155]">
+                              {option.label}
+                            </span>
                           </label>
                         );
                       })}
@@ -195,14 +197,14 @@ export default function AustraliaMonitoringGapAudit() {
                 {error && (
                   <p
                     role="alert"
-                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+                    className="rounded-control border border-red-200 bg-red-50 p-4 text-caption text-red-800"
                   >
                     {error}
                   </p>
                 )}
                 <button
                   type="submit"
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
                   View my monitoring result <ArrowRight className="h-5 w-5" />
                 </button>
@@ -212,15 +214,15 @@ export default function AustraliaMonitoringGapAudit() {
                 <section
                   id="audit-result"
                   tabIndex={-1}
-                  className="rounded-3xl border border-[#93C5FD] bg-white p-8 shadow-sm outline-none md:p-10"
+                  className="rounded-container border border-[#93C5FD] bg-white p-8 shadow-sm outline-none md:p-10"
                 >
-                  <CheckCircle2 className="h-9 w-9 text-[#0F766E]" />
-                  <p className="mt-5 text-sm font-bold uppercase tracking-wider text-brand">
+                  <CheckCircle2 className="h-9 w-9 text-brand" />
+                  <p className="mt-5 text-caption font-bold uppercase tracking-wider text-brand">
                     Your result
                   </p>
-                  <h2 className="mt-2 text-3xl font-bold text-[#0F172A]">{category}</h2>
-                  <p className="mt-5 text-lg leading-8 text-[#475569]">{resultCopy[category]}</p>
-                  <div className="mt-6 rounded-xl bg-[#F8FAFC] p-5 text-sm leading-6 text-[#475569]">
+                  <h2 className="mt-2 text-section font-bold text-[#0F172A]">{category}</h2>
+                  <p className="mt-5 text-body leading-8 text-[#475569]">{resultCopy[category]}</p>
+                  <div className="mt-6 rounded-container bg-[#F8FAFC] p-5 text-caption leading-6 text-[#475569]">
                     This result is based only on your answers. It is not a psychosocial risk
                     assessment, legal opinion, compliance finding or evaluation of worker health.
                   </div>
@@ -233,7 +235,7 @@ export default function AustraliaMonitoringGapAudit() {
                   </button>
                 </section>
 
-                <section className="rounded-3xl border border-[#E2E8F0] bg-white p-7 md:p-10">
+                <section className="rounded-container border border-[#E2E8F0] bg-white p-7 md:p-10">
                   <LeadForm
                     ctaLocation="au_monitoring_gap_result"
                     source="Australia monitoring gap audit"

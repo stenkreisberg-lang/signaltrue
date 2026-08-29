@@ -76,7 +76,7 @@ const CustomerBand = () => {
       <div className="mx-auto max-w-6xl px-4">
         <p
           id="customer-band-label"
-          className="mb-6 text-center text-xs uppercase tracking-[0.12em] text-muted-foreground"
+          className="mb-6 text-center text-caption uppercase tracking-[0.12em] text-muted-foreground"
         >
           Measuring work health at
         </p>

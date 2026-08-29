@@ -190,18 +190,18 @@ const Pricing = () => {
         <section className="py-20 bg-white border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
+              <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-4">
                 Pricing
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
+              <h1 className="text-display sm:text-display lg:text-display font-display font-bold mb-6 text-[#0F172A]">
                 Start with the level of workplace risk evidence{' '}
                 <span className="text-brand">you need.</span>
               </h1>
-              <p className="text-xl text-[#334155] max-w-2xl mx-auto mb-6">
+              <p className="text-lead text-[#334155] max-w-2xl mx-auto mb-6">
                 Team Signals begins with a structured onboarding scan, then continues as weekly
                 team-level evidence. Leadership Signals adds a view across teams.
               </p>
-              <p className="text-sm text-[#475569]">
+              <p className="text-caption text-[#475569]">
                 All plans use metadata only. No message content. No individual productivity scores.
               </p>
             </div>
@@ -213,10 +213,10 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto grid lg:grid-cols-[0.85fr_1.15fr] gap-8 items-start">
               <div>
-                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
+                <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-3">
                   Who this is for
                 </p>
-                <h2 className="text-3xl font-display font-bold text-[#0F172A] mb-4">
+                <h2 className="text-section font-display font-bold text-[#0F172A] mb-4">
                   Best when health &amp; safety leaders have a concern that needs timely, objective
                   investigation.
                 </h2>
@@ -241,9 +241,9 @@ const Pricing = () => {
                     text: 'Use team-level evidence to discuss causes and agree practical controls.',
                   },
                 ].map((item) => (
-                  <div key={item.title} className="rounded-2xl border border-[#E2E8F0] p-5">
+                  <div key={item.title} className="rounded-container border border-[#E2E8F0] p-5">
                     <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.title}</h3>
-                    <p className="text-sm text-[#475569]">{item.text}</p>
+                    <p className="text-caption text-[#475569]">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -256,10 +256,10 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-10">
-                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
+                <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-3">
                   First 30 days
                 </p>
-                <h2 className="text-3xl font-display font-bold text-[#0F172A]">
+                <h2 className="text-section font-display font-bold text-[#0F172A]">
                   What you get before deciding to scale.
                 </h2>
               </div>
@@ -270,11 +270,14 @@ const Pricing = () => {
                   'Review the first qualified risk evidence with workers and managers.',
                   'Assign one proportionate control and schedule its effectiveness review.',
                 ].map((step, index) => (
-                  <div key={step} className="rounded-2xl bg-white border border-[#E2E8F0] p-5">
-                    <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold mb-4">
+                  <div
+                    key={step}
+                    className="rounded-container bg-white border border-[#E2E8F0] p-5"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-caption font-bold mb-4">
                       {index + 1}
                     </div>
-                    <p className="text-sm text-[#334155]">{step}</p>
+                    <p className="text-caption text-[#334155]">{step}</p>
                   </div>
                 ))}
               </div>
@@ -291,11 +294,11 @@ const Pricing = () => {
                 ['Baseline', 'Normally 3–4 qualified weeks'],
                 ['Activation', 'Team scope and sources confirmed first'],
               ].map(([title, copy]) => (
-                <div key={title} className="rounded-xl border border-[#E2E8F0] p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">
+                <div key={title} className="rounded-container border border-[#E2E8F0] p-4">
+                  <p className="text-caption font-bold uppercase tracking-wide text-[#64748B]">
                     {title}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-[#0F172A]">{copy}</p>
+                  <p className="mt-2 text-caption font-semibold text-[#0F172A]">{copy}</p>
                 </div>
               ))}
             </div>
@@ -306,7 +309,7 @@ const Pricing = () => {
         <section className="py-20 lg:py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
             {checkoutError && (
-              <div className="max-w-xl mx-auto mb-8 p-4 rounded-lg bg-[#FEE2E2] border border-[#B91C1C]/20 text-[#B91C1C] text-sm text-center">
+              <div className="max-w-xl mx-auto mb-8 p-4 rounded-control bg-[#FEE2E2] border border-[#B91C1C]/20 text-[#B91C1C] text-caption text-center">
                 {checkoutError}
               </div>
             )}
@@ -316,7 +319,7 @@ const Pricing = () => {
                 return (
                   <div
                     key={index}
-                    className={`relative rounded-2xl p-8 animate-slide-up bg-white ${
+                    className={`relative rounded-container p-8 animate-slide-up bg-white ${
                       tier.highlight
                         ? 'border-2 border-brand shadow-[0_20px_40px_rgba(15,23,42,0.08)]'
                         : 'border border-[#E2E8F0] shadow-[0_8px_24px_rgba(15,23,42,0.04)]'
@@ -325,33 +328,33 @@ const Pricing = () => {
                   >
                     {tier.highlight && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span className="px-4 py-1.5 rounded-full bg-brand text-white text-sm font-medium">
+                        <span className="px-4 py-1.5 rounded-full bg-brand text-white text-caption font-medium">
                           Best starting point
                         </span>
                       </div>
                     )}
 
                     <div className="mb-6">
-                      <h3 className="text-2xl font-display font-bold text-[#0F172A] mb-2">
+                      <h3 className="text-lead font-display font-bold text-[#0F172A] mb-2">
                         {tier.name}
                       </h3>
-                      <p className="text-base text-brand font-medium mb-2">{tier.outcome}</p>
-                      <p className="text-sm text-[#475569]">{tier.description}</p>
+                      <p className="text-body text-brand font-medium mb-2">{tier.outcome}</p>
+                      <p className="text-caption text-[#475569]">{tier.description}</p>
                     </div>
 
                     <div className="mb-6">
-                      <span className="text-4xl font-display font-bold text-[#0F172A]">
+                      <span className="text-display font-display font-bold text-[#0F172A]">
                         {tier.price}
                       </span>
                       <span className="text-[#475569]">{tier.period}</span>
-                      <p className="mt-2 text-xs leading-5 text-[#64748B]">{tier.priceNote}</p>
+                      <p className="mt-2 text-caption leading-5 text-[#64748B]">{tier.priceNote}</p>
                     </div>
 
                     <ul className="space-y-3 mb-8">
                       {tier.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-[#047857] flex-shrink-0" />
-                          <span className="text-sm text-[#334155]">{feature}</span>
+                          <CheckCircle className="w-5 h-5 text-brand flex-shrink-0" />
+                          <span className="text-caption text-[#334155]">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -388,13 +391,13 @@ const Pricing = () => {
         {/* Free Diagnostic nudge */}
         <section className="py-10 bg-white border-t border-[#E2E8F0]">
           <div className="container mx-auto px-6">
-            <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0]">
+            <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-6 p-6 rounded-container bg-brand-softer border border-brand-soft">
               <div className="flex-1 text-center sm:text-left">
-                <p className="text-sm font-semibold text-[#047857] uppercase tracking-wide mb-1">
+                <p className="text-caption font-semibold text-brand uppercase tracking-wide mb-1">
                   Not sure yet?
                 </p>
                 <p className="text-[#0F172A] font-medium">Take the free diagnostic first.</p>
-                <p className="text-sm text-[#334155] mt-1">
+                <p className="text-caption text-[#334155] mt-1">
                   8 questions. 7 minutes. Get your organization's early pressure result before
                   choosing a plan.
                 </p>
@@ -403,7 +406,7 @@ const Pricing = () => {
                 asChild
                 variant="outline"
                 size="sm"
-                className="border-[#047857] text-[#047857] hover:bg-[#D1FAE5] whitespace-nowrap"
+                className="border-brand text-brand hover:bg-brand-soft whitespace-nowrap"
               >
                 <Link to="/drift-diagnostic" className="flex-shrink-0">
                   Free diagnostic →
@@ -417,9 +420,9 @@ const Pricing = () => {
         <section className="py-16 bg-white border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D1FAE5] border border-[#A7F3D0] mb-6">
-                <Shield className="w-4 h-4 text-[#047857]" />
-                <span className="text-sm font-medium text-[#047857]">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-soft border border-brand-soft mb-6">
+                <Shield className="w-4 h-4 text-brand" />
+                <span className="text-caption font-medium text-brand">
                   All plans are team-level by architecture
                 </span>
               </div>
@@ -436,10 +439,10 @@ const Pricing = () => {
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-10">
-                <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-3">
+                <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-3">
                   FAQ
                 </p>
-                <h2 className="text-3xl font-display font-bold text-[#0F172A]">
+                <h2 className="text-section font-display font-bold text-[#0F172A]">
                   Common buying questions.
                 </h2>
               </div>
@@ -462,9 +465,9 @@ const Pricing = () => {
                     a: 'Surveys and worker consultation capture lived experience. SignalTrue adds continuous evidence about changing work conditions between reviews.',
                   },
                 ].map((item) => (
-                  <div key={item.q} className="rounded-2xl border border-[#E2E8F0] p-6">
+                  <div key={item.q} className="rounded-container border border-[#E2E8F0] p-6">
                     <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.q}</h3>
-                    <p className="text-sm text-[#475569]">{item.a}</p>
+                    <p className="text-caption text-[#475569]">{item.a}</p>
                   </div>
                 ))}
               </div>
@@ -476,10 +479,10 @@ const Pricing = () => {
         <section className="py-20 lg:py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
+              <h2 className="text-section sm:text-display font-display font-bold mb-6 text-[#0F172A]">
                 Not sure which plan fits?
               </h2>
-              <p className="text-lg text-[#334155] mb-8 max-w-xl mx-auto">
+              <p className="text-body text-[#334155] mb-8 max-w-xl mx-auto">
                 Start with a workload scan. See where pressure is building, then decide whether
                 SignalTrue should stay on continuously.
               </p>

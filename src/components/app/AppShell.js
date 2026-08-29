@@ -198,14 +198,14 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
       </aside>
       <div className="app-workspace">
         {isImpersonating && (
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-700 px-5 py-2.5 text-caption font-semibold text-white">
             <span>
               Viewing as {localStorage.getItem('impersonation_org') || 'client organization'}.
               Superadmin impersonation is active.
             </span>
             <button
               type="button"
-              className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-amber-800"
+              className="rounded-control bg-white px-3 py-1.5 text-caption font-bold text-amber-800"
               onClick={returnToSuperadmin}
             >
               Return to Superadmin

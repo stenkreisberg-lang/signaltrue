@@ -181,13 +181,13 @@ export default function SeoLanding() {
         <section className="bg-white border-b border-[#E2E8F0] py-20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
-              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
+              <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-4">
                 {page.eyebrow}
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-[#0F172A] mb-6">
+              <h1 className="text-display sm:text-display lg:text-display font-display font-bold text-[#0F172A] mb-6">
                 {page.title}
               </h1>
-              <p className="text-xl text-[#334155] max-w-3xl mb-8">{page.description}</p>
+              <p className="text-lead text-[#334155] max-w-3xl mb-8">{page.description}</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild variant="hero" size="xl">
                   <Link
@@ -216,17 +216,17 @@ export default function SeoLanding() {
         <section className="py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.95fr_1.05fr] gap-8 items-start">
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-8">
+              <div className="bg-white border border-[#E2E8F0] rounded-container p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <LineChart className="w-6 h-6 text-brand" />
-                  <h2 className="text-2xl font-display font-bold text-[#0F172A]">
+                  <h2 className="text-lead font-display font-bold text-[#0F172A]">
                     What SignalTrue shows
                   </h2>
                 </div>
                 <ul className="space-y-4">
                   {page.points.map((point) => (
                     <li key={point} className="flex gap-3 text-[#334155]">
-                      <CheckCircle className="w-5 h-5 text-[#047857] flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 text-brand flex-shrink-0 mt-0.5" />
                       <span>{point}</span>
                     </li>
                   ))}
@@ -258,11 +258,11 @@ export default function SeoLanding() {
                 ].map((item) => (
                   <div
                     key={item.title}
-                    className="bg-white border border-[#E2E8F0] rounded-2xl p-6"
+                    className="bg-white border border-[#E2E8F0] rounded-container p-6"
                   >
                     <item.icon className="w-6 h-6 text-brand mb-4" />
                     <h3 className="font-display font-bold text-[#0F172A] mb-2">{item.title}</h3>
-                    <p className="text-sm text-[#475569]">{item.text}</p>
+                    <p className="text-caption text-[#475569]">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -273,7 +273,7 @@ export default function SeoLanding() {
         <section className="py-16 bg-white border-y border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-3xl font-display font-bold text-[#0F172A] mb-4">
+              <h2 className="text-section font-display font-bold text-[#0F172A] mb-4">
                 Explore the product next
               </h2>
               <p className="text-[#475569] mb-8">

@@ -578,7 +578,7 @@ const EmployeeDirectory: React.FC = () => {
   const statusPill = (label: string, className: string, title?: string) => (
     <span
       title={title}
-      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}
+      className={`inline-flex rounded-full px-2 py-1 text-caption font-semibold ${className}`}
     >
       {label}
     </span>
@@ -622,7 +622,7 @@ const EmployeeDirectory: React.FC = () => {
       invitation: '✉️',
     };
     return (
-      <span className="text-sm text-gray-600">
+      <span className="text-caption text-gray-600">
         {icons[source] || '•'} {source.replace('_', ' ')}
       </span>
     );
@@ -631,7 +631,7 @@ const EmployeeDirectory: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Loading employee directory...</div>
+        <div className="text-body text-gray-600">Loading employee directory...</div>
       </div>
     );
   }
@@ -648,52 +648,52 @@ const EmployeeDirectory: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Employee Directory</h1>
+        <h1 className="text-section font-bold text-gray-900 mb-2">Employee Directory</h1>
         <p className="text-gray-600">Manage synced employees and assign them to teams</p>
       </div>
 
       {/* Success/Error Messages */}
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-control text-green-800">
           {successMessage}
         </div>
       )}
       {errorMessage && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-control text-red-800">
           {errorMessage}
         </div>
       )}
 
       {/* Sync Status Card */}
       {syncStatus && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Sync Status</h2>
+        <div className="bg-white rounded-control shadow p-6 mb-6">
+          <h2 className="text-lead font-semibold mb-4">Sync Status</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             <div>
-              <div className="text-3xl font-bold text-blue-600">{syncStatus.totalUsers}</div>
-              <div className="text-sm text-gray-600">Total Employees</div>
+              <div className="text-section font-bold text-blue-600">{syncStatus.totalUsers}</div>
+              <div className="text-caption text-gray-600">Total Employees</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600">
+              <div className="text-section font-bold text-blue-600">
                 {syncStatus.directorySyncedUsers ?? syncStatus.pendingUsers}
               </div>
-              <div className="text-sm text-gray-600">Directory Synced</div>
+              <div className="text-caption text-gray-600">Directory Synced</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-teal-600">
+              <div className="text-section font-bold text-teal-600">
                 {syncStatus.assignedUsers ?? syncStatus.totalUsers - syncStatus.unassignedUsers}
               </div>
-              <div className="text-sm text-gray-600">Team Assigned</div>
+              <div className="text-caption text-gray-600">Team Assigned</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-section font-bold text-green-600">
                 {syncStatus.measuredUsers ?? 0}
               </div>
-              <div className="text-sm text-gray-600">Measured Activity</div>
+              <div className="text-caption text-gray-600">Measured Activity</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-indigo-600">{syncStatus.activeUsers}</div>
-              <div className="text-sm text-gray-600">Claimed Logins</div>
+              <div className="text-section font-bold text-indigo-600">{syncStatus.activeUsers}</div>
+              <div className="text-caption text-gray-600">Claimed Logins</div>
             </div>
           </div>
 
@@ -701,14 +701,16 @@ const EmployeeDirectory: React.FC = () => {
             <div className="flex flex-wrap gap-4">
               {syncStatus.slackConnected && (
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Slack Integration</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-caption font-medium text-gray-700 mb-1">
+                    Slack Integration
+                  </div>
+                  <div className="text-caption text-gray-500">
                     Last synced: {formatDate(syncStatus.lastSlackSync)}
                   </div>
                   <button
                     onClick={() => handleSync('slack')}
                     disabled={syncing}
-                    className="mt-2 px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 disabled:opacity-50"
+                    className="mt-2 px-3 py-1 bg-purple-600 text-white text-caption rounded hover:bg-purple-700 disabled:opacity-50"
                   >
                     {syncing ? 'Syncing...' : 'Sync Now'}
                   </button>
@@ -717,14 +719,16 @@ const EmployeeDirectory: React.FC = () => {
 
               {syncStatus.googleConnected && (
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Google Workspace</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-caption font-medium text-gray-700 mb-1">
+                    Google Workspace
+                  </div>
+                  <div className="text-caption text-gray-500">
                     Last synced: {formatDate(syncStatus.lastGoogleSync)}
                   </div>
                   <button
                     onClick={() => handleSync('google')}
                     disabled={syncing}
-                    className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+                    className="mt-2 px-3 py-1 bg-blue-600 text-white text-caption rounded hover:bg-blue-700 disabled:opacity-50"
                   >
                     {syncing ? 'Syncing...' : 'Sync Now'}
                   </button>
@@ -733,14 +737,14 @@ const EmployeeDirectory: React.FC = () => {
 
               {syncStatus.microsoftConnected && (
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Microsoft 365</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-caption font-medium text-gray-700 mb-1">Microsoft 365</div>
+                  <div className="text-caption text-gray-500">
                     Last synced: {formatDate(syncStatus.lastMicrosoftSync)}
                   </div>
                   <button
                     onClick={() => handleSync('microsoft')}
                     disabled={syncing}
-                    className="mt-2 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
+                    className="mt-2 px-3 py-1 bg-indigo-600 text-white text-caption rounded hover:bg-indigo-700 disabled:opacity-50"
                   >
                     {syncing ? 'Syncing...' : 'Sync Now'}
                   </button>
@@ -750,7 +754,7 @@ const EmployeeDirectory: React.FC = () => {
               {!syncStatus.slackConnected &&
                 !syncStatus.googleConnected &&
                 !syncStatus.microsoftConnected && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-caption text-gray-600">
                     No integrations connected. Connect Slack, Google, or Microsoft to sync employees
                     automatically.
                   </div>
@@ -760,11 +764,11 @@ const EmployeeDirectory: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6 border border-slate-200">
+      <div className="bg-white rounded-control shadow p-6 mb-6 border border-slate-200">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Employee source controls</h2>
-            <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+            <h2 className="text-lead font-semibold text-gray-900">Employee source controls</h2>
+            <p className="text-caption text-gray-600 mt-1 max-w-3xl">
               Directory entries must have first name, surname, and work email. Bots, rooms,
               resources, and shared mailboxes are blocked from employee lists and team assignment.
             </p>
@@ -772,7 +776,7 @@ const EmployeeDirectory: React.FC = () => {
           <button
             onClick={cleanupInvalidEmployees}
             disabled={cleaningDirectory}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-caption font-medium rounded-control hover:bg-slate-800 disabled:opacity-50"
           >
             <ShieldCheck size={16} aria-hidden="true" />
             {cleaningDirectory ? 'Cleaning...' : 'Clean current list'}
@@ -781,39 +785,39 @@ const EmployeeDirectory: React.FC = () => {
 
         <div className="mt-5 pt-5 border-t border-slate-200">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               HR roster export
               <input
                 type="file"
                 accept=".csv,.xls,.xlsx,.pdf"
                 disabled={importingRoster}
                 onChange={(event) => setRosterFile(event.target.files?.[0] || null)}
-                className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+                className="mt-1 block w-full text-caption text-gray-700 file:mr-4 file:rounded-control file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-caption file:font-medium file:text-blue-700 hover:file:bg-blue-100"
               />
             </label>
             <button
               onClick={importHrRoster}
               disabled={importingRoster || !rosterFile}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-caption font-medium rounded-control hover:bg-blue-700 disabled:opacity-50"
             >
               <Upload size={16} aria-hidden="true" />
               {importingRoster ? 'Importing...' : 'Import roster'}
             </button>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-caption text-gray-500">
             Accepted columns include first name, surname, email, position, team, and department. PDF
             imports work best with selectable table text.
           </p>
 
           {rosterStats && (
-            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <div className="mt-4 rounded-control border border-blue-100 bg-blue-50 px-4 py-3 text-caption text-blue-900">
               <div className="font-medium">
                 {rosterStats.rowsProcessed} rows processed · {rosterStats.created} created ·{' '}
                 {rosterStats.updated} updated · {rosterStats.teamsCreated} teams created ·{' '}
                 {rosterStats.skipped} skipped
               </div>
               {rosterStats.skippedRows.length > 0 && (
-                <div className="mt-2 text-xs text-blue-800">
+                <div className="mt-2 text-caption text-blue-800">
                   First skipped row: #{rosterStats.skippedRows[0].rowNumber},{' '}
                   {rosterStats.skippedRows[0].reason.replace(/_/g, ' ')}
                 </div>
@@ -824,15 +828,15 @@ const EmployeeDirectory: React.FC = () => {
       </div>
 
       {enrichment && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Report assumptions</h2>
-          <p className="text-sm text-gray-600 mt-1 mb-4">
+        <div className="bg-white rounded-control shadow p-6 mb-6">
+          <h2 className="text-lead font-semibold text-gray-900">Report assumptions</h2>
+          <p className="text-caption text-gray-600 mt-1 mb-4">
             Working hours apply to all teams and control local after-hours observation. Cost
             estimates appear only when you provide a loaded hourly cost; SignalTrue does not invent
             one.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <label className="text-sm font-medium text-gray-700 lg:col-span-2">
+            <label className="text-caption font-medium text-gray-700 lg:col-span-2">
               IANA timezone
               <input
                 value={reportSettings.timezone}
@@ -840,10 +844,10 @@ const EmployeeDirectory: React.FC = () => {
                   setReportSettings((current) => ({ ...current, timezone: event.target.value }))
                 }
                 placeholder="Europe/Tallinn"
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-control bg-white text-gray-900"
               />
             </label>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               Workday start
               <input
                 type="time"
@@ -851,10 +855,10 @@ const EmployeeDirectory: React.FC = () => {
                 onChange={(event) =>
                   setReportSettings((current) => ({ ...current, workdayStart: event.target.value }))
                 }
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-control bg-white text-gray-900"
               />
             </label>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               Workday end
               <input
                 type="time"
@@ -862,10 +866,10 @@ const EmployeeDirectory: React.FC = () => {
                 onChange={(event) =>
                   setReportSettings((current) => ({ ...current, workdayEnd: event.target.value }))
                 }
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-control bg-white text-gray-900"
               />
             </label>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               Loaded cost / hour
               <div className="flex mt-1">
                 <input
@@ -900,7 +904,7 @@ const EmployeeDirectory: React.FC = () => {
           <button
             onClick={saveReportSettings}
             disabled={savingReportSettings}
-            className="mt-4 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50"
+            className="mt-4 px-4 py-2 bg-slate-900 text-white text-caption font-medium rounded-control hover:bg-slate-800 disabled:opacity-50"
           >
             {savingReportSettings ? 'Saving...' : 'Save report assumptions'}
           </button>
@@ -909,26 +913,26 @@ const EmployeeDirectory: React.FC = () => {
 
       {/* Public team-structure recovery */}
       {enrichment && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-blue-100">
+        <div className="bg-white rounded-control shadow p-6 mb-6 border border-blue-100">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-lead font-semibold text-gray-900">
                 Recover missing team structure
               </h2>
-              <p className="text-sm text-gray-600 mt-1 max-w-3xl">
+              <p className="text-caption text-gray-600 mt-1 max-w-3xl">
                 SignalTrue uses directory departments first. For remaining unassigned people, it can
                 scan public Team and About pages, match names and roles, and automatically apply
                 high-confidence assignments. It never overwrites an existing named team; uncertain
                 matches stay here for HR review.
               </p>
             </div>
-            <div className="text-sm font-medium text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+            <div className="text-caption font-medium text-orange-700 bg-orange-50 px-3 py-2 rounded-control">
               {enrichment.unassignedCount} unassigned
             </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               Company homepage
               <input
                 type="url"
@@ -936,10 +940,10 @@ const EmployeeDirectory: React.FC = () => {
                 onChange={(event) => setWebsiteUrl(event.target.value)}
                 placeholder="https://company.com"
                 disabled={analyzingWebsite}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-control bg-white text-gray-900"
               />
             </label>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-caption font-medium text-gray-700">
               LinkedIn company page (reference only)
               <input
                 type="url"
@@ -947,18 +951,18 @@ const EmployeeDirectory: React.FC = () => {
                 onChange={(event) => setLinkedinUrl(event.target.value)}
                 placeholder="https://www.linkedin.com/company/..."
                 disabled={analyzingWebsite}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-control bg-white text-gray-900"
               />
             </label>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-caption text-gray-500 mt-2">
             LinkedIn is not crawled. Public website text and anonymous job titles may be processed
             by the configured AI provider; employee emails and message content are not sent.
           </p>
           {enrichmentNotice && (
             <div
               aria-live="polite"
-              className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+              className={`mt-4 rounded-control border px-4 py-3 text-caption ${
                 enrichmentNotice.type === 'error'
                   ? 'border-red-200 bg-red-50 text-red-800'
                   : enrichmentNotice.type === 'success'
@@ -972,7 +976,7 @@ const EmployeeDirectory: React.FC = () => {
           <button
             onClick={analyzeCompanyWebsite}
             disabled={analyzingWebsite}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white text-caption font-medium rounded-control hover:bg-blue-700 disabled:opacity-50"
           >
             {analyzingWebsite
               ? 'Scanning and matching people...'
@@ -980,7 +984,7 @@ const EmployeeDirectory: React.FC = () => {
           </button>
 
           {!enrichmentNotice && enrichment.enrichment?.lastAnalyzedAt && (
-            <p className="mt-3 text-xs text-gray-500">
+            <p className="mt-3 text-caption text-gray-500">
               Last scan {formatDate(enrichment.enrichment.lastAnalyzedAt)}:{' '}
               {enrichment.enrichment.lastPagesScanned || 0} pages,{' '}
               {enrichment.enrichment.lastPeopleFound || 0} public profiles,{' '}
@@ -994,7 +998,7 @@ const EmployeeDirectory: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div>
                   <h3 className="font-semibold text-gray-900">Review suggestions</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-caption text-gray-600">
                     Evidence is directional; approve only assignments you recognize.
                   </p>
                 </div>
@@ -1002,20 +1006,20 @@ const EmployeeDirectory: React.FC = () => {
                   <button
                     onClick={() => reviewTeamSuggestions('reject')}
                     disabled={reviewingSuggestions || selectedSuggestions.size === 0}
-                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-caption rounded-control hover:bg-gray-200 disabled:opacity-50"
                   >
                     Reject selected
                   </button>
                   <button
                     onClick={() => reviewTeamSuggestions('apply')}
                     disabled={reviewingSuggestions || selectedSuggestions.size === 0}
-                    className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    className="px-3 py-2 bg-green-600 text-white text-caption rounded-control hover:bg-green-700 disabled:opacity-50"
                   >
                     Apply selected
                   </button>
                 </div>
               </div>
-              <div className="divide-y border rounded-lg">
+              <div className="divide-y border rounded-control">
                 {enrichment.suggestions.map((suggestion) => (
                   <label
                     key={suggestion._id}
@@ -1034,11 +1038,11 @@ const EmployeeDirectory: React.FC = () => {
                         <span className="font-semibold text-blue-700">
                           {suggestion.suggestedTeamName}
                         </span>
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                        <span className="text-caption bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
                           {suggestion.confidence}% confidence
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-caption text-gray-600 mt-1">
                         {suggestion.userId.profile?.title || 'No job title'} · {suggestion.reason}
                       </p>
                     </div>
@@ -1051,7 +1055,7 @@ const EmployeeDirectory: React.FC = () => {
       )}
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white rounded-control shadow p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[250px]">
             <input
@@ -1059,14 +1063,14 @@ const EmployeeDirectory: React.FC = () => {
               placeholder="Search by name, email, title, or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
             />
           </div>
 
           <div className="flex gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-control text-caption font-medium ${
                 filter === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1076,7 +1080,7 @@ const EmployeeDirectory: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('unassigned')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-control text-caption font-medium ${
                 filter === 'unassigned'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1086,7 +1090,7 @@ const EmployeeDirectory: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('synced')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-control text-caption font-medium ${
                 filter === 'synced'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1096,7 +1100,7 @@ const EmployeeDirectory: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('measured')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-control text-caption font-medium ${
                 filter === 'measured'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1106,7 +1110,7 @@ const EmployeeDirectory: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('claimed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-4 py-2 rounded-control text-caption font-medium ${
                 filter === 'claimed'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1120,19 +1124,19 @@ const EmployeeDirectory: React.FC = () => {
         {/* Bulk Actions */}
         {selectedEmployees.size > 0 && (
           <div className="mt-4 pt-4 border-t flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-caption font-medium text-gray-700">
               {selectedEmployees.size} selected
             </span>
             <button
               onClick={() => setShowBulkAssign(!showBulkAssign)}
-              className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+              className="px-4 py-2 bg-green-600 text-white text-caption rounded hover:bg-green-700"
             >
               Assign to Team
             </button>
             <button
               type="button"
               onClick={handleBulkDelete}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-caption rounded hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={Array.from(selectedEmployees).some((employeeId) =>
                 deletingEmployeeIds.has(employeeId)
               )}
@@ -1142,7 +1146,7 @@ const EmployeeDirectory: React.FC = () => {
             </button>
             <button
               onClick={deselectAll}
-              className="px-4 py-2 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+              className="px-4 py-2 bg-gray-300 text-gray-700 text-caption rounded hover:bg-gray-400"
             >
               Deselect All
             </button>
@@ -1150,8 +1154,8 @@ const EmployeeDirectory: React.FC = () => {
         )}
 
         {showBulkAssign && selectedEmployees.size > 0 && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="mt-4 p-4 bg-gray-50 rounded-control">
+            <label className="block text-caption font-medium text-gray-700 mb-3">
               Assign {selectedEmployees.size} employee(s) to:
             </label>
             <div className="flex flex-wrap gap-2">
@@ -1162,14 +1166,14 @@ const EmployeeDirectory: React.FC = () => {
                     setBulkAssignTeamId(team._id);
                     handleBulkAssign(team._id);
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-control hover:bg-blue-700 transition-colors"
                 >
                   {team.name}
                 </button>
               ))}
               <button
                 onClick={() => setShowBulkAssign(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-control hover:bg-gray-400"
               >
                 Cancel
               </button>
@@ -1177,7 +1181,7 @@ const EmployeeDirectory: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
+        <div className="mt-4 flex justify-between items-center text-caption text-gray-600">
           <span>
             Showing {(currentPage - 1) * pageSize + (visibleEmployees.length ? 1 : 0)}–
             {(currentPage - 1) * pageSize + visibleEmployees.length} of {filteredEmployees.length}{' '}
@@ -1195,7 +1199,7 @@ const EmployeeDirectory: React.FC = () => {
       </div>
 
       {/* Employee List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-control shadow overflow-hidden">
         {filteredEmployees.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             {searchTerm
@@ -1220,28 +1224,28 @@ const EmployeeDirectory: React.FC = () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Title
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Team
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Directory
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Activity
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Login
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Source
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-caption font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -1273,19 +1277,25 @@ const EmployeeDirectory: React.FC = () => {
                           </div>
                         )}
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                          <div className="text-sm text-gray-500">{employee.email}</div>
+                          <div className="text-caption font-medium text-gray-900">
+                            {employee.name}
+                          </div>
+                          <div className="text-caption text-gray-500">{employee.email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">{employee.profile?.title || '—'}</div>
+                      <div className="text-caption text-gray-900">
+                        {employee.profile?.title || '—'}
+                      </div>
                       {employee.profile?.department && (
-                        <div className="text-xs text-gray-500">{employee.profile.department}</div>
+                        <div className="text-caption text-gray-500">
+                          {employee.profile.department}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-caption text-gray-900">
                         {employee.teamName || 'Unassigned'}
                       </div>
                     </td>
@@ -1294,7 +1304,7 @@ const EmployeeDirectory: React.FC = () => {
                       <div className="space-y-1">
                         {getActivityBadge(employee)}
                         {employee.lastMeasuredActivityAt && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-caption text-gray-500">
                             Last {formatDate(employee.lastMeasuredActivityAt)}
                           </div>
                         )}
@@ -1311,7 +1321,7 @@ const EmployeeDirectory: React.FC = () => {
                               e.target.value = '';
                             }
                           }}
-                          className="min-w-[160px] text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                          className="min-w-[160px] text-caption border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                           defaultValue=""
                           disabled={deletingEmployeeIds.has(employee._id)}
                         >
@@ -1344,7 +1354,7 @@ const EmployeeDirectory: React.FC = () => {
         )}
       </div>
       {filteredEmployees.length > pageSize && (
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+        <div className="mt-4 flex items-center justify-between rounded-control border border-slate-200 bg-white px-4 py-3 text-caption">
           <span className="text-slate-600">
             Page {currentPage} of {pageCount}
           </span>

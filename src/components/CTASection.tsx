@@ -15,10 +15,10 @@ const CTASection = () => {
     <section className="py-20 lg:py-24 bg-[#0F172A]">
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-6 text-white">
+          <h2 className="text-section sm:text-display lg:text-display font-display font-bold mb-6 text-white">
             Bring one workplace risk concern.
           </h2>
-          <p className="text-lg text-[#CBD5E1] mb-10 max-w-xl mx-auto">
+          <p className="text-body text-[#CBD5E1] mb-10 max-w-xl mx-auto">
             In 20 minutes, see how SignalTrue can support your psychosocial risk process with
             baseline-aware evidence, worker consultation prompts and measurable corrective actions.
           </p>

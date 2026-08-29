@@ -189,13 +189,13 @@ const TeamAnalytics: React.FC = () => {
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-control transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Team Analytics</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-lead font-bold text-gray-900">Team Analytics</h1>
+            <p className="text-caption text-gray-500">
               Comprehensive view of team performance and health
             </p>
           </div>
@@ -205,35 +205,37 @@ const TeamAnalytics: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Team Signal Status */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-body font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-blue-600" />
             Team Signal Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
-              className={`${getScoreBg(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)} rounded-xl p-6`}
+              className={`${getScoreBg(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)} rounded-container p-6`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Signals Detected</span>
                 <TrendingUp className="w-5 h-5 text-gray-500" />
               </div>
               <div
-                className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}
+                className={`text-display font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}
               >
                 {analytics?.teamHealth.signalsDetected ?? analytics?.teamHealth.energyIndex ?? 0}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Active drift signals requiring attention</p>
+              <p className="text-caption text-gray-600 mt-1">
+                Active drift signals requiring attention
+              </p>
             </div>
 
             <div
-              className={`${getScoreBg(analytics?.teamHealth.driftStatus === 'stable' ? 90 : analytics?.teamHealth.driftStatus === 'worsening' ? 40 : 70)} rounded-xl p-6`}
+              className={`${getScoreBg(analytics?.teamHealth.driftStatus === 'stable' ? 90 : analytics?.teamHealth.driftStatus === 'worsening' ? 40 : 70)} rounded-container p-6`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Drift Status</span>
                 <Users className="w-5 h-5 text-gray-500" />
               </div>
               <div
-                className={`text-2xl font-bold ${analytics?.teamHealth.driftStatus === 'stable' ? 'text-green-600' : analytics?.teamHealth.driftStatus === 'worsening' ? 'text-red-600' : 'text-yellow-600'}`}
+                className={`text-lead font-bold ${analytics?.teamHealth.driftStatus === 'stable' ? 'text-green-600' : analytics?.teamHealth.driftStatus === 'worsening' ? 'text-red-600' : 'text-yellow-600'}`}
               >
                 {analytics?.teamHealth.driftStatus === 'stable'
                   ? 'Stable'
@@ -243,22 +245,22 @@ const TeamAnalytics: React.FC = () => {
                       ? 'Recovering'
                       : 'Stabilizing'}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Overall organizational drift trend</p>
+              <p className="text-caption text-gray-600 mt-1">Overall organizational drift trend</p>
             </div>
 
             <div
-              className={`${getScoreBg(analytics?.teamHealth.executionCapacity || 0)} rounded-xl p-6`}
+              className={`${getScoreBg(analytics?.teamHealth.executionCapacity || 0)} rounded-container p-6`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Execution Capacity</span>
                 <Clock className="w-5 h-5 text-gray-500" />
               </div>
               <div
-                className={`text-4xl font-bold ${getScoreColor(analytics?.teamHealth.executionCapacity || 0)}`}
+                className={`text-display font-bold ${getScoreColor(analytics?.teamHealth.executionCapacity || 0)}`}
               >
                 {analytics?.teamHealth.executionCapacity}%
               </div>
-              <p className="text-sm text-gray-600 mt-1">Capacity to deliver on goals</p>
+              <p className="text-caption text-gray-600 mt-1">Capacity to deliver on goals</p>
             </div>
           </div>
         </section>
@@ -267,11 +269,11 @@ const TeamAnalytics: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Communication Metrics */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-body font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-purple-600" />
               Communication Metrics
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-container border border-gray-200 p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Collaboration Messages (This Week)</span>
@@ -299,11 +301,11 @@ const TeamAnalytics: React.FC = () => {
 
           {/* Meeting Metrics */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-body font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
               Meeting Metrics
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-container border border-gray-200 p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Meeting Hours (Weekly)</span>
@@ -332,16 +334,16 @@ const TeamAnalytics: React.FC = () => {
 
         {/* Risk Indicators */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-body font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
             Risk Indicators
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-container border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Retention Exposure</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(retentionExposure)}`}>
+              <div className={`text-section font-bold ${getRiskColor(retentionExposure)}`}>
                 {retentionExposure}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
@@ -352,11 +354,11 @@ const TeamAnalytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-container border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Recovery Exposure</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(recoveryExposure)}`}>
+              <div className={`text-section font-bold ${getRiskColor(recoveryExposure)}`}>
                 {recoveryExposure}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
@@ -367,11 +369,11 @@ const TeamAnalytics: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-container border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 font-medium">Collaboration Risk</span>
               </div>
-              <div className={`text-3xl font-bold ${getRiskColor(collaborationRisk)}`}>
+              <div className={`text-section font-bold ${getRiskColor(collaborationRisk)}`}>
                 {collaborationRisk}%
               </div>
               <div className="mt-3 bg-gray-200 rounded-full h-2">
@@ -388,13 +390,13 @@ const TeamAnalytics: React.FC = () => {
         <div className="mt-8 flex gap-4">
           <button
             onClick={() => navigate('/app/insights')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 text-white rounded-control hover:bg-blue-700 transition-colors"
           >
             View Detailed Insights
           </button>
           <button
             onClick={() => navigate('/app/risk-feed')}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-control hover:bg-gray-50 transition-colors"
           >
             View Risk Feed
           </button>

@@ -372,7 +372,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '700',
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: '#0f766e',
+    color: 'var(--color-brand)',
   },
   title: {
     fontSize: '2rem',
@@ -469,7 +469,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   optionIcon: {
     fontSize: '0.75rem',
-    color: '#0f766e',
+    color: 'var(--color-brand)',
     background: '#f0fdfa',
     borderRadius: '999px',
     padding: '0.35rem 0.5rem',
@@ -483,7 +483,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   primaryButton: {
     width: '100%',
     padding: '0.75rem 1.5rem',
-    background: '#0f766e',
+    background: 'var(--color-brand)',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -496,8 +496,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: '100%',
     padding: '0.75rem 1.5rem',
     background: 'white',
-    color: '#0f766e',
-    border: '1px solid #0f766e',
+    color: 'var(--color-brand)',
+    border: '1px solid var(--color-brand)',
     borderRadius: '8px',
     fontWeight: '600',
     cursor: 'pointer',
@@ -594,7 +594,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: '1.5',
   },
   link: {
-    color: '#0f766e',
+    color: 'var(--color-brand)',
     textDecoration: 'none',
     fontWeight: '500',
   },

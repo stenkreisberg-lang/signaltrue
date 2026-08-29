@@ -17,14 +17,14 @@ const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
           {/* Section header */}
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-container bg-primary/10 mb-6">
             <ClipboardCheck className="w-8 h-8 text-primary" />
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+          <h2 className="text-section sm:text-display font-display font-bold mb-4">
             Are you seeing people strain early — or only when it's already too late?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-body text-muted-foreground mb-8">
             A short self-check for HR leaders who want earlier clarity, without surveys or extra
             work for teams.
           </p>
@@ -36,7 +36,7 @@ const FitQuestionnaire = ({ onTrackEvent }: FitQuestionnaireProps) => {
             </Button>
           </Link>
 
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-caption text-muted-foreground">
             10 quick questions • Takes about 2 minutes
           </p>
         </div>

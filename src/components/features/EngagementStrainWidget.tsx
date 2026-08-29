@@ -238,7 +238,7 @@ export const EngagementStrainWidget: React.FC<EngagementStrainWidgetProps> = ({
         </div>
         <div style={styles.summaryDivider} />
         <div style={styles.summaryItem}>
-          <span style={{ ...styles.bigNum, color: '#0f766e' }}>{avgReadiness}</span>
+          <span style={{ ...styles.bigNum, color: 'var(--color-brand)' }}>{avgReadiness}</span>
           <span style={styles.summaryLabel}>
             Data readiness
             <br />

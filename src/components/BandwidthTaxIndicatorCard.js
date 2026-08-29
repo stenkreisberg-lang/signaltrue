@@ -7,8 +7,8 @@ import React from 'react';
 const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
   if (!bti) {
     return (
-      <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-        <h2 className="text-xl font-bold text-slate-100 mb-2">Bandwidth Tax Indicator</h2>
+      <div className="bg-slate-800 rounded-control border border-slate-700 p-6">
+        <h2 className="text-lead font-bold text-slate-100 mb-2">Bandwidth Tax Indicator</h2>
         <p className="text-slate-400">No BTI data available.</p>
       </div>
     );
@@ -51,23 +51,23 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
 
   return (
     <div
-      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+      className={`bg-slate-800 rounded-control border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-100">Bandwidth Tax</h2>
-        <span className="text-2xl">{config.icon}</span>
+        <h2 className="text-lead font-bold text-slate-100">Bandwidth Tax</h2>
+        <span className="text-lead">{config.icon}</span>
       </div>
 
       {/* State Badge and Score */}
       <div className="flex items-center gap-4 mb-4">
         <div
-          className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg flex-1`}
+          className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-control flex-1`}
         >
           <div className={`font-semibold ${config.textColor} mb-1`}>{bti.state}</div>
-          <div className="text-xs text-slate-400">{config.description}</div>
+          <div className="text-caption text-slate-400">{config.description}</div>
         </div>
-        <div className="text-3xl font-bold text-slate-100">{bti.bandwidthTaxScore}/100</div>
+        <div className="text-section font-bold text-slate-100">{bti.bandwidthTaxScore}/100</div>
       </div>
 
       {showDetails && (
@@ -75,7 +75,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           {/* Triggers Detected */}
           {bti.triggers && bti.triggers.filter((t) => t.detected).length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Detected Triggers
               </h3>
               <div className="space-y-2">
@@ -84,7 +84,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
                   .map((trigger, i) => (
                     <div
                       key={i}
-                      className={`rounded-lg px-4 py-3 border ${
+                      className={`rounded-control px-4 py-3 border ${
                         trigger.severity === 'high'
                           ? 'bg-red-900/10 border-red-900/30'
                           : trigger.severity === 'medium'
@@ -95,7 +95,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
                       <div className={`font-semibold mb-1 ${severityColors[trigger.severity]}`}>
                         {trigger.name}
                       </div>
-                      <div className="text-xs text-slate-400">{trigger.description}</div>
+                      <div className="text-caption text-slate-400">{trigger.description}</div>
                     </div>
                   ))}
               </div>
@@ -103,14 +103,14 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           )}
 
           {/* Key Metrics */}
-          <div className="mb-4 bg-slate-900/50 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
+          <div className="mb-4 bg-slate-900/50 rounded-control p-4">
+            <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-3">
               Key Metrics
             </h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">💬</span>
+                  <span className="text-body">💬</span>
                   Avg Response Time
                 </span>
                 <span className="font-semibold text-slate-100">
@@ -119,7 +119,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">⏰</span>
+                  <span className="text-body">⏰</span>
                   After-Hours Activity
                 </span>
                 <span
@@ -130,7 +130,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">🎯</span>
+                  <span className="text-body">🎯</span>
                   Avg Focus Block
                 </span>
                 <span
@@ -141,7 +141,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">🔔</span>
+                  <span className="text-body">🔔</span>
                   Interruptions/Day
                 </span>
                 <span
@@ -156,24 +156,24 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           {/* Impact Indicators */}
           {bti.impactIndicators && Object.values(bti.impactIndicators).some((v) => v) && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Impact Risks
               </h3>
               <div className="space-y-2">
                 {bti.impactIndicators.decisionQualityRisk && (
-                  <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-400 text-caption">
                     <span>⚠️</span>
                     <span>Decision Quality at Risk</span>
                   </div>
                 )}
                 {bti.impactIndicators.sustainabilityRisk && (
-                  <div className="flex items-center gap-2 text-orange-400 text-sm">
+                  <div className="flex items-center gap-2 text-orange-400 text-caption">
                     <span>⚠️</span>
                     <span>Sustainability at Risk</span>
                   </div>
                 )}
                 {bti.impactIndicators.burnoutRisk && (
-                  <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <div className="flex items-center gap-2 text-red-400 text-caption">
                     <span>⚠️</span>
                     <span>Capacity Risk Elevated</span>
                   </div>
@@ -185,21 +185,23 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           {/* Recommended Actions */}
           {bti.recommendedActions && bti.recommendedActions.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Recommended Actions
               </h3>
               <div className="space-y-2">
                 {bti.recommendedActions.map((action, i) => (
                   <div
                     key={i}
-                    className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3"
+                    className="bg-blue-900/20 border border-blue-700 rounded-control px-4 py-3"
                   >
                     <div className="font-semibold text-blue-400 mb-1">{action.action}</div>
                     {action.expectedEffect && (
-                      <div className="text-xs text-slate-400 mb-1">{action.expectedEffect}</div>
+                      <div className="text-caption text-slate-400 mb-1">
+                        {action.expectedEffect}
+                      </div>
                     )}
                     {action.reversibility && (
-                      <div className="text-xs text-slate-500">🔄 {action.reversibility}</div>
+                      <div className="text-caption text-slate-500">🔄 {action.reversibility}</div>
                     )}
                   </div>
                 ))}
@@ -208,7 +210,7 @@ const BandwidthTaxIndicatorCard = ({ bti, showDetails = true }) => {
           )}
 
           {/* Interpretation */}
-          <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
+          <div className="text-caption text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
             {bti.interpretation ||
               'Bandwidth Tax reflects how much cognitive capacity is consumed by constant interruptions and urgency. High tax reduces decision quality even when output appears stable.'}
           </div>

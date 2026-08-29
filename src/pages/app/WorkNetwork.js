@@ -36,26 +36,26 @@ function LeadershipQuestions({ questions = [] }) {
     <section>
       <div className="mb-4">
         <p className="app-eyebrow">Leadership questions</p>
-        <h2 className="text-2xl font-bold text-slate-900">What the pattern says</h2>
+        <h2 className="text-lead font-bold text-slate-900">What the pattern says</h2>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         {questions.map((item) => (
           <article key={item.id} className="app-panel">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-bold text-slate-900">{item.question}</h3>
+              <h3 className="text-body font-bold text-slate-900">{item.question}</h3>
               <span
-                className={`rounded-full px-2.5 py-1 text-xs font-bold ${badgeClass(item.severity)}`}
+                className={`rounded-full px-2.5 py-1 text-caption font-bold ${badgeClass(item.severity)}`}
               >
                 {item.status === 'ready' ? 'measured' : item.status.replaceAll('_', ' ')}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-700">{item.answer}</p>
+            <p className="mt-3 text-caption leading-6 text-slate-700">{item.answer}</p>
             {item.sourceBasis && (
-              <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-caption font-semibold text-slate-600">
                 Based on {item.sourceBasis}
               </p>
             )}
-            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+            <ul className="mt-4 space-y-2 text-caption text-slate-600">
               {item.evidence.map((line) => (
                 <li key={line} className="flex gap-2">
                   <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-teal-700" />
@@ -77,19 +77,19 @@ function SourceCoveragePanel({ coverage }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="app-eyebrow">Evidence sources</p>
-          <h2 className="text-2xl font-bold text-slate-900">What is actually measured</h2>
+          <h2 className="text-lead font-bold text-slate-900">What is actually measured</h2>
         </div>
-        <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800">
+        <span className="rounded-full bg-teal-50 px-3 py-1 text-caption font-bold text-teal-800">
           {coverage.basisLabel}
         </span>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {coverage.items.map((item) => (
-          <div key={item.type} className="rounded-lg border border-slate-200 p-4">
+          <div key={item.type} className="rounded-control border border-slate-200 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="font-bold text-slate-900">{item.label}</p>
               <span
-                className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                className={`rounded-full px-2.5 py-1 text-caption font-bold ${
                   item.status === 'measured'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-slate-100 text-slate-600'
@@ -98,17 +98,17 @@ function SourceCoveragePanel({ coverage }) {
                 {item.status === 'measured' ? 'Measured' : 'Not measured'}
               </span>
             </div>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-caption text-slate-600">
               {number(item.mappedEvents)} mapped of {number(item.events)} events
             </p>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-caption text-slate-500">
               {item.sourceLabels?.length ? item.sourceLabels.join(', ') : 'No source in period'}
             </p>
           </div>
         ))}
       </div>
       {coverage.limitations?.length > 0 && (
-        <ul className="mt-4 space-y-1 text-sm text-slate-600">
+        <ul className="mt-4 space-y-1 text-caption text-slate-600">
           {coverage.limitations.map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -125,13 +125,13 @@ function TeamDemandTable({ teams = [] }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="app-eyebrow">Meeting demand</p>
-          <h2 className="text-2xl font-bold text-slate-900">Who sends and absorbs meeting load</h2>
+          <h2 className="text-lead font-bold text-slate-900">Who sends and absorbs meeting load</h2>
         </div>
-        <span className="text-xs text-slate-500">Team-level, privacy-gated</span>
+        <span className="text-caption text-slate-500">Team-level, privacy-gated</span>
       </div>
       <div className="mt-5 overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+        <table className="min-w-full text-left text-caption">
+          <thead className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-3 py-3">Team</th>
               <th className="px-3 py-3">Sends to others</th>
@@ -146,11 +146,13 @@ function TeamDemandTable({ teams = [] }) {
               <tr key={team.id} className="border-b border-slate-100 text-slate-700">
                 <td className="px-3 py-4">
                   <p className="font-semibold text-slate-900">{team.name}</p>
-                  <p className="mt-1 text-xs text-slate-500">{team.memberCount} mapped members</p>
+                  <p className="mt-1 text-caption text-slate-500">
+                    {team.memberCount} mapped members
+                  </p>
                 </td>
                 <td className="px-3 py-4">
                   <p className="font-semibold text-slate-900">{hours(team.sentAttendeeHours)}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-caption text-slate-500">
                     {number(team.sentInviteCount)} invited slots · {trend(team.sentTrendPct)}
                   </p>
                 </td>
@@ -158,7 +160,7 @@ function TeamDemandTable({ teams = [] }) {
                   <p className="font-semibold text-slate-900">
                     {hours(team.receivedAttendeeHours)}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-caption text-slate-500">
                     {number(team.receivedInviteCount)} received slots ·{' '}
                     {trend(team.receivedTrendPct)}
                   </p>
@@ -185,7 +187,7 @@ function TeamDemandTable({ teams = [] }) {
                       <p className="font-semibold text-slate-900">
                         {pct(team.declineRate)} declined
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-caption text-slate-500">
                         {number(team.responseCount)} responses · {pct(team.responseCoverage)}{' '}
                         coverage
                       </p>
@@ -274,7 +276,7 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
                   y1={from.y}
                   x2={to.x}
                   y2={to.y}
-                  stroke={edge.formalConnection ? '#0f766e' : '#d97706'}
+                  stroke={edge.formalConnection ? 'var(--color-brand)' : '#d97706'}
                   strokeWidth={width}
                   strokeLinecap="round"
                   opacity="0.72"
@@ -289,7 +291,7 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
         {visibleNodes.map((node) => {
           const position = positions.get(node.id);
           const load = Math.min(1, node.outsideTeamShare || 0);
-          const fill = load >= 0.6 ? '#0f766e' : load >= 0.3 ? '#0e7490' : '#334155';
+          const fill = load >= 0.6 ? 'var(--color-brand)' : load >= 0.3 ? '#0e7490' : '#334155';
           const shortName = node.name.length > 20 ? `${node.name.slice(0, 18)}...` : node.name;
           return (
             <g key={node.id} transform={`translate(${position.x} ${position.y})`}>
@@ -311,7 +313,7 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
         })}
       </svg>
       {nodes.length > visibleNodes.length && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-caption text-slate-500">
           The map shows the 16 teams with the most measured cross-team activity. All eligible teams
           remain included in the tables and calculations.
         </p>
@@ -322,14 +324,16 @@ function NetworkMap({ nodes, formalEdges, actualEdges, ready }) {
 
 function ReadinessNotice({ readiness }) {
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-      <p className="text-xs font-bold uppercase tracking-wider text-amber-800">Setup required</p>
-      <h2 className="mt-2 text-xl font-bold text-slate-900">Observed network is paused</h2>
-      <p className="mt-2 text-sm text-slate-700">
+    <div className="rounded-container border border-amber-200 bg-amber-50 p-5">
+      <p className="text-caption font-bold uppercase tracking-wider text-amber-800">
+        Setup required
+      </p>
+      <h2 className="mt-2 text-lead font-bold text-slate-900">Observed network is paused</h2>
+      <p className="mt-2 text-caption text-slate-700">
         The formal team structure remains visible, but SignalTrue will not infer working
         relationships or bottlenecks until coverage is reliable.
       </p>
-      <div className="mt-4 flex flex-wrap gap-3 text-sm">
+      <div className="mt-4 flex flex-wrap gap-3 text-caption">
         <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700">
           User mapping {pct(readiness.mappingCoverage)}
         </span>
@@ -341,7 +345,7 @@ function ReadinessNotice({ readiness }) {
         </span>
       </div>
       {readiness.reasons?.length > 0 && (
-        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
+        <ul className="mt-4 list-disc space-y-1 pl-5 text-caption text-slate-700">
           {readiness.reasons.map((reason) => (
             <li key={reason}>{reason}</li>
           ))}
@@ -349,7 +353,7 @@ function ReadinessNotice({ readiness }) {
       )}
       <Link
         to="/app/employees"
-        className="mt-4 inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-amber-800"
+        className="mt-4 inline-flex rounded-control bg-amber-900 px-4 py-2 text-caption font-semibold text-white no-underline hover:bg-amber-800"
       >
         Fix team mapping
       </Link>
@@ -414,12 +418,12 @@ export default function WorkNetwork() {
         title="How work moves between teams"
         description="See which teams create meeting demand, absorb cross-team load, decline invitations, and carry information across departments."
         action={
-          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <label className="flex items-center gap-2 text-caption font-semibold text-slate-700">
             Period
             <select
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+              className="rounded-control border border-slate-300 bg-white px-3 py-2"
             >
               <option value={14}>14 days</option>
               <option value={28}>28 days</option>
@@ -432,7 +436,9 @@ export default function WorkNetwork() {
 
       {loading && <div className="app-panel">Building the team-level work network...</div>}
       {!loading && error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">{error}</div>
+        <div className="rounded-container border border-red-200 bg-red-50 p-5 text-red-800">
+          {error}
+        </div>
       )}
       {!loading && !error && !canView && (
         <div className="app-panel">
@@ -470,17 +476,17 @@ export default function WorkNetwork() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="app-eyebrow">Network evidence</p>
-                <h2 className="text-2xl font-bold text-slate-900">Formal vs. observed links</h2>
-                <p className="mt-2 max-w-3xl text-sm text-slate-600">
+                <h2 className="text-lead font-bold text-slate-900">Formal vs. observed links</h2>
+                <p className="mt-2 max-w-3xl text-caption text-slate-600">
                   Dashed lines are formal cross-team reporting links. Teal lines align with the
                   reporting map. Amber lines are work connections worth reviewing in context.
                 </p>
               </div>
-              <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+              <div className="rounded-control bg-slate-100 px-3 py-2 text-caption font-semibold text-slate-600">
                 {network.period.days}-day window · {readiness.score}/100 data readiness
               </div>
             </div>
-            <div className="mt-5 flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
+            <div className="mt-5 flex flex-wrap gap-4 text-caption font-semibold text-slate-600">
               <span>
                 <span className="mr-2 inline-block w-8 border-t-2 border-dashed border-slate-400" />
                 Formal
@@ -509,20 +515,22 @@ export default function WorkNetwork() {
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <p className="app-eyebrow">Strongest interfaces</p>
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h2 className="text-lead font-bold text-slate-900">
                     Where teams depend on each other
                   </h2>
                 </div>
-                <span className="text-xs text-slate-500">Previous {days} days used for trend</span>
+                <span className="text-caption text-slate-500">
+                  Previous {days} days used for trend
+                </span>
               </div>
               {network.actualEdges.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-600">
+                <p className="mt-4 text-caption text-slate-600">
                   No team-pair link met the five-contributor privacy threshold in this period.
                 </p>
               ) : (
                 <div className="mt-5 overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                  <table className="min-w-full text-left text-caption">
+                    <thead className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
                       <tr>
                         <th className="px-3 py-3">Interface</th>
                         <th className="px-3 py-3">Structure</th>
@@ -553,7 +561,7 @@ export default function WorkNetwork() {
                                   {edge.dominantDirection.fromTeamName} →{' '}
                                   {edge.dominantDirection.toTeamName}
                                 </p>
-                                <p className="mt-1 text-xs text-slate-500">
+                                <p className="mt-1 text-caption text-slate-500">
                                   {pct(edge.dominantDirection.share)} of directed demand
                                 </p>
                               </>
@@ -565,7 +573,7 @@ export default function WorkNetwork() {
                             <p className="font-semibold text-slate-900">
                               {hours(edge.inviteeHours)}
                             </p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-caption text-slate-500">
                               {number(edge.inviteCount)} invited slots
                             </p>
                           </td>
@@ -573,7 +581,7 @@ export default function WorkNetwork() {
                             <p className="font-semibold text-slate-900">
                               {edge.sourceTypes?.length ? edge.sourceTypes.join(' + ') : 'Measured'}
                             </p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-caption text-slate-500">
                               {edge.sourceLabels?.join(', ') || edge.sourceBasis || 'Metadata'}
                             </p>
                           </td>
@@ -592,17 +600,17 @@ export default function WorkNetwork() {
             <section>
               <div className="mb-4">
                 <p className="app-eyebrow">Decision queue</p>
-                <h2 className="text-2xl font-bold text-slate-900">Patterns worth reviewing</h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <h2 className="text-lead font-bold text-slate-900">Patterns worth reviewing</h2>
+                <p className="mt-2 text-caption text-slate-600">
                   Review the pattern, choose one reversible action, and check again after 14 days.
                 </p>
               </div>
               {network.insights.length === 0 ? (
                 <div className="app-panel">
-                  <h3 className="text-lg font-semibold text-slate-900">
+                  <h3 className="text-body font-semibold text-slate-900">
                     No pattern crossed an internal review rule
                   </h3>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="mt-2 text-caption text-slate-600">
                     Measured interfaces do not currently meet the evidence rules for action.
                   </p>
                 </div>
@@ -611,40 +619,42 @@ export default function WorkNetwork() {
                   {network.insights.map((insight) => (
                     <article key={insight.id} className="app-panel">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-lg font-bold text-slate-900">{insight.title}</h3>
+                        <h3 className="text-body font-bold text-slate-900">{insight.title}</h3>
                         <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold ${badgeClass(insight.severity)}`}
+                          className={`rounded-full px-2.5 py-1 text-caption font-bold ${badgeClass(insight.severity)}`}
                         >
                           {insight.severity} review priority
                         </span>
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700">{insight.summary}</p>
-                      <div className="mt-4 rounded-lg bg-slate-50 p-4">
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <p className="mt-3 text-caption leading-6 text-slate-700">
+                        {insight.summary}
+                      </p>
+                      <div className="mt-4 rounded-control bg-slate-50 p-4">
+                        <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
                           Evidence
                         </p>
                         {insight.sourceBasis && (
-                          <p className="mt-2 text-xs font-semibold text-slate-500">
+                          <p className="mt-2 text-caption font-semibold text-slate-500">
                             Based on {insight.sourceBasis}
                           </p>
                         )}
-                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-caption text-slate-700">
                           {insight.evidence.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>
                       </div>
                       <div className="mt-4 border-l-4 border-teal-600 pl-4">
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-800">
+                        <p className="text-caption font-bold uppercase tracking-wider text-teal-800">
                           14-day action
                         </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="mt-1 text-caption font-semibold text-slate-900">
                           {insight.action.action}
                         </p>
-                        <p className="mt-2 text-sm text-slate-600">
+                        <p className="mt-2 text-caption text-slate-600">
                           <strong>Owner:</strong> {insight.action.owner}
                         </p>
-                        <p className="mt-1 text-sm text-slate-600">
+                        <p className="mt-1 text-caption text-slate-600">
                           <strong>Measure:</strong> {insight.action.measure}
                         </p>
                       </div>
@@ -652,7 +662,7 @@ export default function WorkNetwork() {
                         type="button"
                         onClick={() => trackAction(insight)}
                         disabled={Boolean(tracked[insight.id] || insight.tracking)}
-                        className="mt-5 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-default disabled:bg-slate-400"
+                        className="mt-5 rounded-control bg-teal-700 px-4 py-2 text-caption font-semibold text-white hover:bg-teal-800 disabled:cursor-default disabled:bg-slate-400"
                       >
                         {tracked[insight.id] === 'saving'
                           ? 'Adding...'
@@ -672,15 +682,15 @@ export default function WorkNetwork() {
             <section className="app-panel">
               <div>
                 <p className="app-eyebrow">Measured actions</p>
-                <h2 className="text-2xl font-bold text-slate-900">What changed after action</h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <h2 className="text-lead font-bold text-slate-900">What changed after action</h2>
+                <p className="mt-2 text-caption text-slate-600">
                   Due actions are rechecked daily against the same privacy-gated metric used at the
                   start.
                 </p>
               </div>
               <div className="mt-5 overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                <table className="min-w-full text-left text-caption">
+                  <thead className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
                     <tr>
                       <th className="px-3 py-3">Action</th>
                       <th className="px-3 py-3">Status</th>
@@ -696,7 +706,9 @@ export default function WorkNetwork() {
                         <tr key={action.id} className="border-b border-slate-100 text-slate-700">
                           <td className="px-3 py-4">
                             <p className="font-semibold text-slate-900">{action.title}</p>
-                            <p className="mt-1 text-xs text-slate-500">Owner: {action.owner}</p>
+                            <p className="mt-1 text-caption text-slate-500">
+                              Owner: {action.owner}
+                            </p>
                           </td>
                           <td className="px-3 py-4 capitalize">
                             {action.recheckStatus === 'privacy_suppressed'
@@ -732,7 +744,7 @@ export default function WorkNetwork() {
             </section>
           )}
 
-          <section className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+          <section className="rounded-container border border-slate-200 bg-slate-50 p-5 text-caption text-slate-600">
             <strong className="text-slate-900">Privacy and interpretation:</strong>{' '}
             {network.privacy.note} Team-pair metrics require at least{' '}
             {network.privacy.minimumContributors} contributors. A line means observed coordination,

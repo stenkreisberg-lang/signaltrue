@@ -15,7 +15,7 @@ export const Button = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-medium rounded-control transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
     primary: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500',
@@ -25,9 +25,9 @@ export const Button = ({
   };
 
   const sizes = {
-    small: 'px-3 py-1.5 text-sm',
-    medium: 'px-4 py-2 text-base',
-    large: 'px-6 py-3 text-lg',
+    small: 'px-3 py-1.5 text-caption',
+    medium: 'px-4 py-2 text-body',
+    large: 'px-6 py-3 text-body',
   };
 
   return (
@@ -47,7 +47,7 @@ export const Button = ({
  * Card component with consistent styling
  */
 export const Card = ({ children, className = '', padding = 'normal', ...props }) => {
-  const baseStyles = 'bg-slate-800 rounded-lg border border-slate-700';
+  const baseStyles = 'bg-slate-800 rounded-control border border-slate-700';
 
   const paddings = {
     none: '',
@@ -73,7 +73,7 @@ export const Badge = ({
   icon = null,
   className = '',
 }) => {
-  const baseStyles = 'inline-flex items-center gap-1 font-medium rounded-md';
+  const baseStyles = 'inline-flex items-center gap-1 font-medium rounded-control';
 
   const variants = {
     // Severity badges
@@ -98,9 +98,9 @@ export const Badge = ({
   };
 
   const sizes = {
-    small: 'px-2 py-0.5 text-xs',
-    medium: 'px-2.5 py-1 text-sm',
-    large: 'px-3 py-1.5 text-base',
+    small: 'px-2 py-0.5 text-caption',
+    medium: 'px-2.5 py-1 text-caption',
+    large: 'px-3 py-1.5 text-body',
   };
 
   return (
@@ -133,8 +133,8 @@ export const ProgressBar = ({
     <div className={className}>
       {label && (
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-slate-300">{label}</span>
-          {showPercentage && <span className="text-sm text-slate-400">{progress}%</span>}
+          <span className="text-caption font-medium text-slate-300">{label}</span>
+          {showPercentage && <span className="text-caption text-slate-400">{progress}%</span>}
         </div>
       )}
       <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -154,7 +154,7 @@ export const EmptyState = ({ icon = null, title, description, action = null, cla
   return (
     <div className={`text-center py-12 ${className}`}>
       {icon && <div className="flex justify-center mb-4 text-slate-500">{icon}</div>}
-      <h3 className="text-lg font-semibold text-slate-200 mb-2">{title}</h3>
+      <h3 className="text-body font-semibold text-slate-200 mb-2">{title}</h3>
       <p className="text-slate-400 mb-6 max-w-md mx-auto">{description}</p>
       {action}
     </div>
@@ -223,11 +223,11 @@ export const Modal = ({
       {/* Modal */}
       <div className="flex items-center justify-center min-h-screen p-4">
         <div
-          className={`relative bg-slate-800 rounded-lg border border-slate-700 shadow-2xl w-full ${sizes[size]} ${className}`}
+          className={`relative bg-slate-800 rounded-control border border-slate-700 shadow-2xl w-full ${sizes[size]} ${className}`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-            <h2 className="text-xl font-semibold text-slate-100">{title}</h2>
+            <h2 className="text-lead font-semibold text-slate-100">{title}</h2>
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-200 transition-colors"

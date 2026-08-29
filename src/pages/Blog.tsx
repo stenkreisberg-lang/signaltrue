@@ -118,14 +118,14 @@ const BlogList = () => {
         <div className="absolute inset-0 bg-glow opacity-20" />
         <div className="container mx-auto px-6 relative">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+            <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
               SignalTrue Blog
             </p>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
+            <h1 className="text-display sm:text-display lg:text-display font-display font-bold mb-6">
               Early warning ideas for leaders who want{' '}
               <span className="text-gradient">work to stay sustainable.</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="text-body text-muted-foreground max-w-xl mx-auto">
               Practical thinking on psychosocial risk, workload pressure, worker consultation,
               corrective controls, and sustainable execution.
             </p>
@@ -138,13 +138,15 @@ const BlogList = () => {
         <section className="py-6 border-b border-border/50">
           <div className="container mx-auto px-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground mr-2">Filter by:</span>
+              <span className="text-caption font-medium text-muted-foreground mr-2">
+                Filter by:
+              </span>
               <button
                 onClick={() => {
                   setSelectedTag(null);
                   setPage(1);
                 }}
-                className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                className={`px-3 py-1.5 text-caption rounded-full transition-colors ${
                   !selectedTag
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -159,7 +161,7 @@ const BlogList = () => {
                     setSelectedTag(tag);
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                  className={`px-3 py-1.5 text-caption rounded-full transition-colors ${
                     selectedTag === tag
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -180,7 +182,7 @@ const BlogList = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[16/10] bg-secondary rounded-xl mb-4" />
+                  <div className="aspect-[16/10] bg-secondary rounded-container mb-4" />
                   <div className="h-4 bg-secondary rounded w-1/4 mb-3" />
                   <div className="h-6 bg-secondary rounded w-3/4 mb-2" />
                   <div className="h-4 bg-secondary rounded w-full mb-2" />
@@ -198,7 +200,7 @@ const BlogList = () => {
           ) : posts.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-muted-foreground mb-2">No blog posts yet.</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Check back soon for insights on organizational health.
               </p>
             </div>
@@ -214,7 +216,7 @@ const BlogList = () => {
                   >
                     <article className="h-full flex flex-col">
                       {/* Featured Image */}
-                      <div className="aspect-[16/10] rounded-xl overflow-hidden bg-secondary mb-4">
+                      <div className="aspect-[16/10] rounded-container overflow-hidden bg-secondary mb-4">
                         {post.featuredImage?.url ? (
                           <img
                             src={post.featuredImage.url}
@@ -223,7 +225,7 @@ const BlogList = () => {
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                            <span className="text-4xl font-display font-bold text-primary/40">
+                            <span className="text-display font-display font-bold text-primary/40">
                               ST
                             </span>
                           </div>
@@ -231,7 +233,7 @@ const BlogList = () => {
                       </div>
 
                       {/* Meta */}
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                      <div className="flex items-center gap-3 text-caption text-muted-foreground mb-3">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           {formatDate(post.publishedAt)}
@@ -245,13 +247,13 @@ const BlogList = () => {
                       </div>
 
                       {/* Title */}
-                      <h2 className="text-xl font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                      <h2 className="text-lead font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
                         {post.title}
                       </h2>
 
                       {/* Excerpt */}
                       {post.excerpt && (
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-grow">
+                        <p className="text-caption text-muted-foreground line-clamp-3 mb-4 flex-grow">
                           {post.excerpt}
                         </p>
                       )}
@@ -262,7 +264,7 @@ const BlogList = () => {
                           {post.tags.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 text-xs bg-secondary text-muted-foreground rounded"
+                              className="px-2 py-0.5 text-caption bg-secondary text-muted-foreground rounded"
                             >
                               {tag}
                             </span>
@@ -286,7 +288,7 @@ const BlogList = () => {
                     <ChevronLeft className="w-4 h-4" />
                     Previous
                   </Button>
-                  <span className="px-4 text-sm text-muted-foreground">
+                  <span className="px-4 text-caption text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
                   <Button
@@ -352,7 +354,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
             <div className="h-4 bg-secondary rounded w-1/4 mb-6" />
             <div className="h-10 bg-secondary rounded w-3/4 mb-4" />
             <div className="h-4 bg-secondary rounded w-1/3 mb-8" />
-            <div className="aspect-[16/9] bg-secondary rounded-xl mb-8" />
+            <div className="aspect-[16/9] bg-secondary rounded-container mb-8" />
             <div className="space-y-4">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="h-4 bg-secondary rounded" />
@@ -369,7 +371,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-2xl font-display font-bold mb-4">{error || 'Post not found'}</h1>
+            <h1 className="text-lead font-display font-bold mb-4">{error || 'Post not found'}</h1>
             <Link to="/blog">
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -389,7 +391,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           {/* Back Link */}
           <Link
             to="/blog"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="inline-flex items-center text-caption text-muted-foreground hover:text-foreground mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Blog
@@ -404,7 +406,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                   <Link
                     key={tag}
                     to={`/blog?tag=${encodeURIComponent(tag)}`}
-                    className="px-2.5 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+                    className="px-2.5 py-1 text-caption font-medium bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
                   >
                     {tag}
                   </Link>
@@ -413,12 +415,12 @@ const BlogPostView = ({ slug }: { slug: string }) => {
             )}
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground mb-6">
+            <h1 className="text-section sm:text-display lg:text-display font-display font-bold text-foreground mb-6">
               {post.title}
             </h1>
 
             {/* Meta */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
               <div className="flex items-center gap-2">
                 {post.author.avatar ? (
                   <img
@@ -449,7 +451,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           {/* Featured Image */}
           {post.featuredImage?.url && (
             <figure className="mb-10">
-              <div className="aspect-[16/9] rounded-xl overflow-hidden">
+              <div className="aspect-[16/9] rounded-container overflow-hidden">
                 <img
                   src={post.featuredImage.url}
                   alt={post.featuredImage.alt || post.title}
@@ -457,7 +459,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                 />
               </div>
               {post.featuredImage.caption && (
-                <figcaption className="text-sm text-muted-foreground text-center mt-3">
+                <figcaption className="text-caption text-muted-foreground text-center mt-3">
                   {post.featuredImage.caption}
                 </figcaption>
               )}
@@ -469,8 +471,8 @@ const BlogPostView = ({ slug }: { slug: string }) => {
             className="prose prose-lg dark:prose-invert max-w-none
               prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground
               prose-h1:hidden
-              prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-              prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+              prose-h2:text-lead prose-h2:mt-10 prose-h2:mb-4
+              prose-h3:text-lead prose-h3:mt-8 prose-h3:mb-3
               prose-p:text-foreground/80 prose-p:leading-relaxed
               prose-strong:text-foreground
               prose-a:text-primary prose-a:no-underline hover:prose-a:underline
@@ -479,7 +481,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
               prose-pre:bg-secondary prose-pre:border prose-pre:border-border
               prose-li:text-foreground/80
               prose-th:text-foreground prose-td:text-foreground/80
-              prose-img:rounded-xl
+              prose-img:rounded-container
               [&>p:first-of-type>img]:hidden"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
@@ -488,7 +490,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           <footer className="mt-12 pt-8 border-t border-border">
             {/* Author Bio */}
             {post.author.bio && (
-              <div className="flex items-start gap-4 p-6 bg-secondary/50 rounded-xl mb-8">
+              <div className="flex items-start gap-4 p-6 bg-secondary/50 rounded-container mb-8">
                 {post.author.avatar ? (
                   <img
                     src={post.author.avatar}
@@ -504,7 +506,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                   <p className="font-display font-semibold text-foreground mb-1">
                     {post.author.name}
                   </p>
-                  <p className="text-sm text-muted-foreground">{post.author.bio}</p>
+                  <p className="text-caption text-muted-foreground">{post.author.bio}</p>
                 </div>
               </div>
             )}

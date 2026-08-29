@@ -32,17 +32,17 @@ const AntiWeaponizationNotice = ({ variant = 'default' }) => {
 
   return (
     <div
-      className={`${config.bg} border ${config.border} rounded-lg p-4 mb-6 ${
+      className={`${config.bg} border ${config.border} rounded-control p-4 mb-6 ${
         isSticky ? 'sticky top-0 z-50 shadow-lg backdrop-blur-sm bg-opacity-95' : ''
       }`}
       role="alert"
       aria-live="polite"
     >
       <div className="flex items-start gap-3">
-        <span className="text-2xl flex-shrink-0">{config.icon}</span>
+        <span className="text-lead flex-shrink-0">{config.icon}</span>
         <div className="flex-1">
           <p className={`${config.text} font-semibold mb-1`}>Important: Usage Guidelines</p>
-          <p className={`${config.text} text-sm leading-relaxed`}>
+          <p className={`${config.text} text-caption leading-relaxed`}>
             SignalTrue insights are designed for early observation and system improvement. They
             should <strong>not</strong> be used for individual performance evaluation, rankings, or
             surveillance. All metrics are team-level aggregated.

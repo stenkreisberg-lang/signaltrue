@@ -126,7 +126,7 @@ export default function DriftFamilyCard({
 
   return (
     <div
-      className={`relative p-5 rounded-xl border ${sev.ring} ${sev.bg} cursor-pointer transition-all hover:shadow-card`}
+      className={`relative p-5 rounded-container border ${sev.ring} ${sev.bg} cursor-pointer transition-all hover:shadow-card`}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -134,7 +134,7 @@ export default function DriftFamilyCard({
     >
       {/* row 1: name + severity pill */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">{familyName}</h3>
+        <h3 className="text-caption font-semibold">{familyName}</h3>
         <span className={`text-[11px] font-bold uppercase tracking-wider ${sev.text}`}>
           {sev.label}
         </span>
@@ -142,7 +142,7 @@ export default function DriftFamilyCard({
 
       {/* row 2: big score + scale bar */}
       <div className="flex items-end gap-3 mb-3">
-        <span className={`text-4xl font-extrabold leading-none ${sev.text}`}>{score}</span>
+        <span className={`text-display font-extrabold leading-none ${sev.text}`}>{score}</span>
         <div className="flex-1 pb-1.5">
           <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
             <div
@@ -161,7 +161,9 @@ export default function DriftFamilyCard({
       <div className="flex items-center justify-between mb-2">
         <Sparkline trend={trend} hex={sev.hex} />
         <div className="flex flex-col items-end ml-2">
-          <span className={`text-xs font-medium ${sev.text} whitespace-nowrap`}>{direction}</span>
+          <span className={`text-caption font-medium ${sev.text} whitespace-nowrap`}>
+            {direction}
+          </span>
           {deltaLabel && (
             <span
               className={`text-[11px] font-semibold whitespace-nowrap ${delta > 0 ? 'text-red-400' : 'text-emerald-400'}`}
@@ -173,11 +175,11 @@ export default function DriftFamilyCard({
       </div>
 
       {/* row 4: one-line description */}
-      <p className="text-xs text-muted-foreground leading-snug">{description}</p>
+      <p className="text-caption text-muted-foreground leading-snug">{description}</p>
 
       {/* gap badge (always visible when present) */}
       {gapLabel && (
-        <div className="mt-2 rounded-lg bg-teal-50 border border-teal-100 px-2.5 py-1 text-[11px] text-teal-800">
+        <div className="mt-2 rounded-control bg-teal-50 border border-teal-100 px-2.5 py-1 text-[11px] text-teal-800">
           {gapLabel}
         </div>
       )}
@@ -186,12 +188,12 @@ export default function DriftFamilyCard({
       {expanded && (
         <div className="mt-3 pt-3 border-t border-border/40 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
           {topSignalTitle && (
-            <div className="text-xs">
+            <div className="text-caption">
               <span className="font-medium">Top pattern:</span> {topSignalTitle}
             </div>
           )}
           {actionPrompt && (
-            <div className="text-xs rounded-lg border border-teal-100 bg-teal-50 px-2.5 py-1.5 text-teal-800">
+            <div className="text-caption rounded-control border border-teal-100 bg-teal-50 px-2.5 py-1.5 text-teal-800">
               <span className="font-semibold">Recommended:</span> {actionPrompt}
             </div>
           )}
@@ -202,7 +204,7 @@ export default function DriftFamilyCard({
           )}
           <button
             onClick={handleViewSignals}
-            className={`w-full mt-1 text-xs font-medium py-1.5 rounded-lg border border-current/20 ${sev.text} hover:bg-slate-50 transition-colors`}
+            className={`w-full mt-1 text-caption font-medium py-1.5 rounded-control border border-current/20 ${sev.text} hover:bg-slate-50 transition-colors`}
           >
             View {familyName} signals →
           </button>

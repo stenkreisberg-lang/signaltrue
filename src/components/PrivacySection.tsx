@@ -32,19 +32,19 @@ const privacyConstraints = [
 
 const PrivacySection = () => {
   return (
-    <section id="privacy" className="py-16 lg:py-20 bg-[#ECFDF5] border-y border-[#A7F3D0]">
+    <section id="privacy" className="py-16 lg:py-20 bg-brand-softer border-y border-brand-soft">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
           {/* Section header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#A7F3D0] mb-6">
-              <Lock className="w-4 h-4 text-[#047857]" />
-              <span className="text-sm font-medium text-[#047857]">Privacy by design</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-brand-soft mb-6">
+              <Lock className="w-4 h-4 text-brand" />
+              <span className="text-caption font-medium text-brand">Privacy by design</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold mb-4 text-[#064E3B]">
+            <h2 className="text-section font-display font-bold mb-4 text-[#0F172A]">
               Patterns, not people.
             </h2>
-            <p className="text-lg text-[#047857] max-w-2xl mx-auto">
+            <p className="text-body text-brand max-w-2xl mx-auto">
               SignalTrue is designed to show team pressure without exposing private conversations or
               individual productivity.
             </p>
@@ -55,21 +55,21 @@ const PrivacySection = () => {
             {privacyConstraints.map((item, index) => (
               <div
                 key={index}
-                className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center"
+                className="p-6 rounded-container bg-white border border-brand-soft text-center"
               >
-                <div className="w-12 h-12 rounded-xl bg-[#D1FAE5] mx-auto mb-4 flex items-center justify-center">
-                  <item.icon className="w-6 h-6 text-[#047857]" />
+                <div className="w-12 h-12 rounded-container bg-brand-soft mx-auto mb-4 flex items-center justify-center">
+                  <item.icon className="w-6 h-6 text-brand" />
                 </div>
                 <h3 className="font-display font-semibold text-[#0F172A] mb-2">{item.title}</h3>
-                <p className="text-sm text-[#475569]">{item.description}</p>
+                <p className="text-caption text-[#475569]">{item.description}</p>
               </div>
             ))}
           </div>
 
           {/* Trust statement */}
-          <div className="p-6 lg:p-8 rounded-2xl bg-white border border-[#A7F3D0] text-center">
+          <div className="p-6 lg:p-8 rounded-container bg-white border border-brand-soft text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Eye className="w-6 h-6 text-[#047857]" />
+              <Eye className="w-6 h-6 text-brand" />
               <span className="font-display font-semibold text-[#0F172A]">What we analyze</span>
             </div>
             <p className="text-[#334155] max-w-2xl mx-auto">

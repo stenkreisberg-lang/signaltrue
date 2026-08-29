@@ -105,14 +105,14 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => navigate(-1)}
                 aria-label="Go back"
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
               <div>
-                <h1 className="text-xl font-bold text-slate-900">Data sources</h1>
-                <p className="text-sm text-slate-600">
+                <h1 className="text-lead font-bold text-slate-900">Data sources</h1>
+                <p className="text-caption text-slate-600">
                   Connect metadata sources for privacy-protected organizational signals
                 </p>
               </div>
@@ -121,7 +121,7 @@ export default function IntegrationsPage() {
             <button
               onClick={() => navigate('/dashboard')}
               aria-label="Return to dashboard"
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition-colors"
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -156,7 +156,7 @@ export default function IntegrationsPage() {
         {/* Loading Overlay */}
         {loading && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-8 flex flex-col items-center">
+            <div className="bg-white rounded-control p-8 flex flex-col items-center">
               <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-700 rounded-full animate-spin" />
               <p className="mt-4 text-gray-600">Connecting integration...</p>
             </div>
@@ -174,12 +174,12 @@ export default function IntegrationsPage() {
             {/* Setup guidance */}
             <div className="lg:col-span-1">
               <div className="sticky top-8">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                <h2 className="text-body font-semibold text-slate-900 mb-4">
                   Setup responsibilities
                 </h2>
-                <div className="p-5 bg-white border border-slate-200 rounded-xl">
+                <div className="p-5 bg-white border border-slate-200 rounded-container">
                   <h3 className="font-medium text-slate-900 mb-2">Establish qualified coverage</h3>
-                  <ol className="space-y-2 text-sm text-slate-600">
+                  <ol className="space-y-2 text-caption text-slate-600">
                     <li className="flex items-start gap-2">
                       <span className="font-bold">1.</span>
                       IT approves the minimum required read-only sources
@@ -203,9 +203,9 @@ export default function IntegrationsPage() {
           </div>
 
           {/* Privacy Notice */}
-          <div className="mt-12 p-6 bg-teal-50 border border-teal-100 rounded-xl">
+          <div className="mt-12 p-6 bg-teal-50 border border-teal-100 rounded-container">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-control bg-white flex items-center justify-center flex-shrink-0">
                 <Link2 className="w-5 h-5 text-teal-700" />
               </div>
               <div>
@@ -216,19 +216,19 @@ export default function IntegrationsPage() {
                   personally identifiable information. All data is encrypted in transit and at rest.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                  <span className="px-3 py-1 bg-white rounded-full text-caption font-medium text-gray-600">
                     ✓ No email content
                   </span>
-                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                  <span className="px-3 py-1 bg-white rounded-full text-caption font-medium text-gray-600">
                     ✓ No document text
                   </span>
-                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                  <span className="px-3 py-1 bg-white rounded-full text-caption font-medium text-gray-600">
                     ✓ No chat messages
                   </span>
-                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                  <span className="px-3 py-1 bg-white rounded-full text-caption font-medium text-gray-600">
                     ✓ Encrypted tokens
                   </span>
-                  <span className="px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-600">
+                  <span className="px-3 py-1 bg-white rounded-full text-caption font-medium text-gray-600">
                     ✓ GDPR compliant
                   </span>
                 </div>

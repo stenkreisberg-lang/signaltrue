@@ -214,11 +214,11 @@ export const ChatWidget: React.FC = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 hidden w-96 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:flex">
+        <div className="fixed bottom-24 right-6 z-50 hidden w-96 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-container border border-gray-200 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:flex">
           {/* Header */}
           <div className="bg-blue-600 px-4 py-4 text-white">
-            <h3 className="font-semibold text-lg">Ask SignalTrue</h3>
-            <p className="text-blue-100 text-sm">Answers based on SignalTrue documentation</p>
+            <h3 className="font-semibold text-body">Ask SignalTrue</h3>
+            <p className="text-blue-100 text-caption">Answers based on SignalTrue documentation</p>
           </div>
 
           {/* Messages Area */}
@@ -227,14 +227,14 @@ export const ChatWidget: React.FC = () => {
               <div className="space-y-4">
                 {/* Assessment Context Banner */}
                 {assessmentSession?.completed && assessmentSession.result && (
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="bg-blue-50 rounded-control p-3 border border-blue-200">
                     <div className="flex items-center gap-2 mb-2">
                       <BarChart3 className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-900">
+                      <span className="text-caption font-medium text-blue-900">
                         Assessment Completed
                       </span>
                     </div>
-                    <p className="text-xs text-blue-700">
+                    <p className="text-caption text-blue-700">
                       Signal Status:{' '}
                       <span className="font-medium capitalize">
                         {assessmentSession.result.riskScore.level}
@@ -242,13 +242,13 @@ export const ChatWidget: React.FC = () => {
                       {' • '}
                       Score: {assessmentSession.result.riskScore.total}/100
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">
+                    <p className="text-caption text-blue-600 mt-1">
                       I can explain your results or answer questions about them.
                     </p>
                   </div>
                 )}
 
-                <p className="text-gray-600 text-sm text-center">
+                <p className="text-gray-600 text-caption text-center">
                   Hi! I can answer questions about SignalTrue's product, privacy, and pilot process.
                   {assessmentSession?.completed &&
                     ' I also have context from your assessment results.'}
@@ -257,19 +257,19 @@ export const ChatWidget: React.FC = () => {
                 {/* Suggested Prompts */}
                 {suggestedPrompts.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-gray-500 text-center">Quick questions:</p>
+                    <p className="text-caption text-gray-500 text-center">Quick questions:</p>
                     {/* Assessment-specific prompts if completed */}
                     {assessmentSession?.completed && (
                       <>
                         <button
                           onClick={() => sendMessage('How did you calculate my cost exposure?')}
-                          className="w-full text-left px-3 py-2 text-sm bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
+                          className="w-full text-left px-3 py-2 text-caption bg-blue-50 rounded-control border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
                         >
                           How did you calculate my cost exposure?
                         </button>
                         <button
                           onClick={() => sendMessage('What would SignalTrue measure differently?')}
-                          className="w-full text-left px-3 py-2 text-sm bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
+                          className="w-full text-left px-3 py-2 text-caption bg-blue-50 rounded-control border border-blue-200 hover:border-blue-400 hover:bg-blue-100 transition-colors"
                         >
                           What would SignalTrue measure differently?
                         </button>
@@ -281,7 +281,7 @@ export const ChatWidget: React.FC = () => {
                         <button
                           key={idx}
                           onClick={() => handlePromptClick(prompt)}
-                          className="w-full text-left px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                          className="w-full text-left px-3 py-2 text-caption bg-white rounded-control border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
                         >
                           {prompt.text}
                         </button>
@@ -296,13 +296,13 @@ export const ChatWidget: React.FC = () => {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2 ${
+                    className={`max-w-[85%] rounded-container px-4 py-2 ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white rounded-br-md'
                         : 'bg-white text-gray-800 rounded-bl-md border border-gray-200 shadow-sm'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-caption whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))
@@ -311,7 +311,7 @@ export const ChatWidget: React.FC = () => {
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 border border-gray-200 shadow-sm">
+                <div className="bg-white rounded-container rounded-bl-md px-4 py-3 border border-gray-200 shadow-sm">
                   <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                 </div>
               </div>
@@ -319,20 +319,20 @@ export const ChatWidget: React.FC = () => {
 
             {/* Lead Capture Form */}
             {showLeadCapture && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-gray-700 mb-3">
+              <div className="bg-blue-50 rounded-control p-4 border border-blue-200">
+                <p className="text-caption text-gray-700 mb-3">
                   Continue with the short, confirmed visibility-review request form.
                 </p>
                 <PrimaryCommercialCTA
                   ctaLocation="chat_lead_prompt"
-                  className="flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                  className="flex w-full items-center justify-center rounded-control bg-blue-600 px-3 py-2 text-center text-caption font-semibold text-white hover:bg-blue-700"
                   onClick={() => setShowLeadCapture(false)}
                 >
                   Request a 20-minute review
                 </PrimaryCommercialCTA>
                 <button
                   onClick={() => setShowLeadCapture(false)}
-                  className="text-xs text-gray-500 mt-2 hover:text-gray-700"
+                  className="text-caption text-gray-500 mt-2 hover:text-gray-700"
                 >
                   No, thanks
                 </button>
@@ -372,7 +372,7 @@ export const ChatWidget: React.FC = () => {
 
           {/* Privacy Notice */}
           <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-caption text-gray-500 text-center">
               This chat doesn't store personal data or learn from conversations.
             </p>
           </div>

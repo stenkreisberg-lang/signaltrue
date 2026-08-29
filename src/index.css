@@ -1,4 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: 'Inter Variable';
+  src: url('/fonts/inter/inter-latin-ext-opsz-normal.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter Variable';
+  src: url('/fonts/inter/inter-latin-opsz-normal.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Source Serif 4 Variable';
+  src: url('/fonts/source-serif-4/source-serif-4-latin-ext-opsz-normal.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Source Serif 4 Variable';
+  src: url('/fonts/source-serif-4/source-serif-4-latin-opsz-normal.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @tailwind base;
 @tailwind components;
@@ -19,8 +63,8 @@
     --popover-foreground: 222 47% 11%;
 
     /* Primary - SignalTrue Teal */
-    --primary: 173 80% 27%; /* #0F766E */
-    --primary-hover: 173 80% 21%; /* #0B5C56 */
+    --primary: 172.05 79.83% 23.33%; /* #0C6B5F */
+    --primary-hover: 171.78 80.22% 17.84%; /* #095248 */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
     /* Secondary - Soft surface */
@@ -30,8 +74,8 @@
     --muted: 210 40% 96%; /* #F1F5F9 */
     --muted-foreground: 215 20% 35%; /* #475569 */
 
-    --accent: 166 76% 97%; /* #F0FDFA */
-    --accent-foreground: 173 80% 27%; /* #0F766E */
+    --accent: 160 26% 96%; /* #F3F8F7 */
+    --accent-foreground: var(--primary);
 
     --destructive: 0 72% 42%; /* #B91C1C */
     --destructive-foreground: 0 0% 100%;
@@ -45,13 +89,13 @@
     /* Alert colors */
     --warning: 28 76% 31%; /* #92400E */
     --warning-foreground: 48 97% 89%; /* #FEF3C7 */
-    --success: 161 94% 24%; /* #047857 */
-    --success-foreground: 152 76% 91%; /* #D1FAE5 */
+    --success: var(--primary); /* Brand-aligned success */
+    --success-foreground: 165 25% 93%;
 
     /* Sidebar */
     --sidebar-background: 210 40% 98%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 173 80% 27%;
+    --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 215 25% 27%;
@@ -76,20 +120,25 @@
     --color-text-inverse: #ffffff;
 
     /* Brand */
-    --color-brand: #0f766e;
-    --color-brand-dark: #115e59;
-    --color-brand-soft: #ccfbf1;
-    --color-brand-softer: #f0fdfa;
+    --color-brand: #0c6b5f;
+    --color-brand-dark: #095248;
+    --color-brand-soft: #e8f2f0;
+    --color-brand-softer: #f3f8f7;
 
     /* Status */
-    --color-success: #047857;
-    --color-success-bg: #d1fae5;
+    --color-success: var(--color-brand);
+    --color-success-bg: var(--color-brand-soft);
     --color-warning: #92400e;
     --color-warning-bg: #fef3c7;
     --color-danger: #b91c1c;
     --color-danger-bg: #fee2e2;
     --color-critical: #be123c;
     --color-critical-bg: #ffe4e6;
+
+    /* Direction communicates movement, not a judgement about a team. */
+    --dir-more: #8a5a18;
+    --dir-less: var(--color-brand);
+    --dir-flat: #5f6b68;
 
     /* Dark sections */
     --color-dark: #0f172a;
@@ -99,10 +148,10 @@
     /* Gradients */
     --gradient-hero: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     --gradient-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    --gradient-accent: linear-gradient(135deg, #0f766e 0%, #0e7490 100%);
+    --gradient-accent: linear-gradient(135deg, #0c6b5f 0%, #095248 100%);
     --gradient-glow: radial-gradient(
       ellipse at center,
-      rgba(15, 118, 110, 0.08) 0%,
+      rgba(12, 107, 95, 0.08) 0%,
       transparent 70%
     );
 
@@ -122,31 +171,31 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: 'ss01', 'ss02', 'cv01';
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.65;
     color: var(--color-text-secondary);
   }
 
   h1 {
     @apply font-display tracking-tight;
-    font-size: clamp(40px, 5vw, 64px);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    color: var(--color-text);
-  }
-
-  h2 {
-    @apply font-display tracking-tight;
-    font-size: clamp(30px, 3vw, 44px);
+    font-size: 40px;
     line-height: 1.12;
     letter-spacing: -0.02em;
     color: var(--color-text);
   }
 
+  h2 {
+    @apply font-display tracking-tight;
+    font-size: 26px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
   h3 {
     @apply font-display tracking-tight;
-    font-size: 22px;
-    line-height: 1.25;
+    font-size: 20px;
+    line-height: 1.5;
     color: var(--color-text);
   }
 
@@ -221,7 +270,7 @@
   .card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: 14px;
     padding: 24px;
     box-shadow: var(--shadow-card);
   }
@@ -234,7 +283,7 @@
   .signal-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: 14px;
     padding: 28px;
   }
 
@@ -243,8 +292,8 @@
   }
 
   .signal-card p {
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 16px;
+    line-height: 1.65;
     color: var(--color-text-muted);
   }
 
@@ -377,7 +426,7 @@
   .privacy-box {
     background: #ecfdf5;
     border: 1px solid #a7f3d0;
-    color: #064e3b;
+    color: #095248;
   }
 
   .privacy-band {
@@ -388,7 +437,7 @@
   .privacy-summary-card {
     background: #ecfdf5;
     border: 1px solid #a7f3d0;
-    color: #064e3b;
+    color: #095248;
   }
 
   /* ── Ethics section (dark island) ── */
@@ -718,7 +767,7 @@
 
   .app-privacy-bar a {
     margin-left: auto;
-    color: #0f766e;
+    color: #0c6b5f;
     font-weight: 600;
     text-decoration: none;
   }
@@ -733,7 +782,7 @@
 
   .app-eyebrow {
     margin: 0 0 8px;
-    color: #0f766e;
+    color: #0c6b5f;
     font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -902,7 +951,7 @@
     background: #ffffff;
     border-radius: 14px;
     padding: 20px;
-    color: #0f766e;
+    color: #0c6b5f;
   }
 
   .app-metric strong {
@@ -979,7 +1028,7 @@
   }
 
   .status-ok {
-    color: #047857;
+    color: #0c6b5f;
     background: #ecfdf5;
   }
 
@@ -1017,8 +1066,8 @@
   }
 
   .action-primary-button {
-    border: 1px solid #0f766e;
-    background: #0f766e;
+    border: 1px solid #0c6b5f;
+    background: #0c6b5f;
     color: #ffffff;
     padding: 8px 13px;
     white-space: nowrap;
@@ -1053,7 +1102,7 @@
     grid-template-rows: auto auto;
     column-gap: 9px;
     padding: 17px 18px;
-    color: #0f766e;
+    color: #0c6b5f;
     border-right: 1px solid #e2e8f0;
   }
 
@@ -1101,7 +1150,7 @@
   .action-start-form {
     margin-bottom: 26px;
     border: 1px solid #99f6e4;
-    border-left: 4px solid #0f766e;
+    border-left: 4px solid #0c6b5f;
     border-radius: 8px;
     background: #ffffff;
     padding: 20px;
@@ -1244,7 +1293,7 @@
 
   .action-status.status-completed {
     background: #d1fae5;
-    color: #047857;
+    color: #0c6b5f;
   }
 
   .action-meta {
@@ -1345,7 +1394,7 @@
 
   .app-shell .text-emerald-300,
   .app-shell .text-emerald-400 {
-    color: #047857 !important;
+    color: #0c6b5f !important;
   }
 
   @media (max-width: 1040px) {
@@ -2140,7 +2189,7 @@
   }
 
   .cr-table .is-down {
-    color: #0f766e;
+    color: #0c6b5f;
   }
 
   .cr-star {

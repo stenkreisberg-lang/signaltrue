@@ -130,14 +130,14 @@ const HowItWorksPage = () => {
         <section className="py-20 bg-white border-b border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
+              <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-4">
                 How it works
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6 text-[#0F172A]">
+              <h1 className="text-display sm:text-display lg:text-display font-display font-bold mb-6 text-[#0F172A]">
                 From work-pattern evidence{' '}
                 <span className="text-brand">to a reviewed preventive action.</span>
               </h1>
-              <p className="text-lg text-[#334155] max-w-xl mx-auto mb-8">
+              <p className="text-body text-[#334155] max-w-xl mx-auto mb-8">
                 SignalTrue uses metadata from work tools to observe team-level changes in meetings,
                 uninterrupted calendar availability, response pressure, recovery patterns, and
                 management capacity. No message content. No individual scoring. No surveillance.
@@ -156,10 +156,10 @@ const HowItWorksPage = () => {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
+                <p className="mb-3 text-caption font-bold uppercase tracking-wider text-brand">
                   Implementation contract
                 </p>
-                <h2 className="text-3xl font-bold text-[#0F172A]">
+                <h2 className="text-section font-bold text-[#0F172A]">
                   Everyone knows what must be true before a signal is used.
                 </h2>
               </div>
@@ -182,18 +182,21 @@ const HowItWorksPage = () => {
                     'Workers verify context; an operational owner implements and reviews the control.',
                   ],
                 ].map(([title, copy]) => (
-                  <div key={title} className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
+                  <div
+                    key={title}
+                    className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5"
+                  >
                     <h3 className="font-bold text-[#0F172A]">{title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-[#475569]">{copy}</p>
+                    <p className="mt-3 text-caption leading-6 text-[#475569]">{copy}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-8 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:flex md:items-center md:justify-between md:gap-6">
+              <div className="mt-8 rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:flex md:items-center md:justify-between md:gap-6">
                 <div>
                   <h3 className="font-bold text-brand-hover">
                     See deliverables, ownership and pilot success criteria
                   </h3>
-                  <p className="mt-2 text-sm text-[#475569]">
+                  <p className="mt-2 text-caption text-[#475569]">
                     The client success process covers the complete journey from scope to executive
                     review.
                   </p>
@@ -220,48 +223,50 @@ const HowItWorksPage = () => {
                     <div className="absolute left-8 top-20 bottom-0 w-px bg-gradient-to-b from-brand/30 to-[#E2E8F0]" />
                   )}
                   <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-2xl bg-[#DBEAFE] border border-[#DBEAFE] flex items-center justify-center">
-                      <span className="text-xl font-display font-bold text-brand-hover">
+                    <div className="w-16 h-16 rounded-container bg-[#DBEAFE] border border-[#DBEAFE] flex items-center justify-center">
+                      <span className="text-lead font-display font-bold text-brand-hover">
                         {step.number}
                       </span>
                     </div>
                   </div>
                   <div className="flex-1 pt-2">
-                    <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-2">
+                    <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-2">
                       {step.subtitle}
                     </p>
                     <div className="flex items-center gap-3 mb-3">
                       <step.icon className="w-6 h-6 text-brand" />
-                      <h3 className="text-2xl font-display font-bold text-[#0F172A]">
+                      <h3 className="text-lead font-display font-bold text-[#0F172A]">
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-lg text-[#334155] mb-4">{step.description}</p>
+                    <p className="text-body text-[#334155] mb-4">{step.description}</p>
                     {step.privacyNote && (
-                      <p className="text-sm text-[#047857] mb-4 font-medium">{step.privacyNote}</p>
+                      <p className="text-caption text-brand mb-4 font-medium">{step.privacyNote}</p>
                     )}
-                    {step.note && <p className="text-sm text-[#475569] italic mb-4">{step.note}</p>}
-                    <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0]">
+                    {step.note && (
+                      <p className="text-caption text-[#475569] italic mb-4">{step.note}</p>
+                    )}
+                    <div className="p-6 rounded-container bg-white border border-[#E2E8F0]">
                       {step.details && (
                         <div className="grid sm:grid-cols-2 gap-3">
                           {step.details.map((detail, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4 text-[#047857] flex-shrink-0" />
-                              <span className="text-sm text-[#334155]">{detail}</span>
+                              <CheckCircle className="w-4 h-4 text-brand flex-shrink-0" />
+                              <span className="text-caption text-[#334155]">{detail}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       {step.examples && (
                         <div className="space-y-3">
-                          <p className="text-sm font-medium text-[#475569] mb-3">
+                          <p className="text-caption font-medium text-[#475569] mb-3">
                             Signals detected:
                           </p>
                           <div className="grid sm:grid-cols-2 gap-3">
                             {step.examples.map((example, i) => (
                               <div key={i} className="flex items-center gap-2">
                                 <AlertTriangle className="w-4 h-4 text-[#92400E] flex-shrink-0" />
-                                <span className="text-sm text-[#334155]">{example}</span>
+                                <span className="text-caption text-[#334155]">{example}</span>
                               </div>
                             ))}
                           </div>
@@ -276,51 +281,51 @@ const HowItWorksPage = () => {
         </section>
 
         {/* Privacy Reinforcement */}
-        <section className="py-20 bg-[#ECFDF5] border-y border-[#A7F3D0]">
+        <section className="py-20 bg-brand-softer border-y border-brand-soft">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#A7F3D0] mb-6">
-                  <Shield className="w-4 h-4 text-[#047857]" />
-                  <span className="text-sm font-medium text-[#047857]">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-brand-soft mb-6">
+                  <Shield className="w-4 h-4 text-brand" />
+                  <span className="text-caption font-medium text-brand">
                     Privacy by architecture
                   </span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4 text-[#064E3B]">
+                <h2 className="text-section sm:text-display font-display font-bold mb-4 text-brand-hover">
                   What the evidence cannot tell you
                 </h2>
               </div>
               <div className="grid md:grid-cols-3 gap-6">
-                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
-                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                <div className="p-6 rounded-container bg-white border border-brand-soft text-center">
+                  <div className="w-12 h-12 rounded-container bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
                     <Activity className="w-6 h-6 text-[#B91C1C]" />
                   </div>
                   <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Message Reading
                   </h3>
-                  <p className="text-sm text-[#475569]">
+                  <p className="text-caption text-[#475569]">
                     We never access email content, chat messages, or document text.
                   </p>
                 </div>
-                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
-                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                <div className="p-6 rounded-container bg-white border border-brand-soft text-center">
+                  <div className="w-12 h-12 rounded-container bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
                     <Users className="w-6 h-6 text-[#B91C1C]" />
                   </div>
                   <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Individual Scoring
                   </h3>
-                  <p className="text-sm text-[#475569]">
+                  <p className="text-caption text-[#475569]">
                     No performance ratings, productivity scores, or individual profiles.
                   </p>
                 </div>
-                <div className="p-6 rounded-2xl bg-white border border-[#A7F3D0] text-center">
-                  <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
+                <div className="p-6 rounded-container bg-white border border-brand-soft text-center">
+                  <div className="w-12 h-12 rounded-container bg-[#FEE2E2] mx-auto mb-4 flex items-center justify-center">
                     <Clock className="w-6 h-6 text-[#B91C1C]" />
                   </div>
                   <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                     No Surveillance
                   </h3>
-                  <p className="text-sm text-[#475569]">
+                  <p className="text-caption text-[#475569]">
                     We don't track individuals or monitor private activity. Ever.
                   </p>
                 </div>
@@ -333,10 +338,10 @@ const HowItWorksPage = () => {
         <section className="py-14 bg-[#EFF6FF] border-b border-[#DBEAFE]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-brand uppercase tracking-wide mb-3">
+              <p className="text-caption font-semibold text-brand uppercase tracking-wide mb-3">
                 See it for your organization
               </p>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0F172A] mb-3">
+              <h2 className="text-lead sm:text-section font-display font-bold text-[#0F172A] mb-3">
                 Which psychosocial risk concern should you investigate first?
               </h2>
               <p className="text-[#334155] mb-8 max-w-xl mx-auto">
@@ -355,7 +360,7 @@ const HowItWorksPage = () => {
                   </Link>
                 </Button>
               </div>
-              <p className="text-xs text-[#475569] mt-4">
+              <p className="text-caption text-[#475569] mt-4">
                 No personal data. No message content. Anonymous result.
               </p>
             </div>
@@ -366,7 +371,7 @@ const HowItWorksPage = () => {
         <section className="py-20 lg:py-24 bg-white border-t border-[#E2E8F0]">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6 text-[#0F172A]">
+              <h2 className="text-section sm:text-display font-display font-bold mb-6 text-[#0F172A]">
                 See how work patterns become early warning signals.
               </h2>
               <Button asChild variant="hero" size="xl">

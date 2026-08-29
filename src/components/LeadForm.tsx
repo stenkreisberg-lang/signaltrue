@@ -177,7 +177,7 @@ export default function LeadForm({
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <CheckCircle2 className="h-8 w-8 text-emerald-700" aria-hidden="true" />
         </div>
-        <h2 className="text-2xl font-bold text-[#0F172A]">Thanks. We received your request.</h2>
+        <h2 className="text-lead font-bold text-[#0F172A]">Thanks. We received your request.</h2>
         <p className="mx-auto mt-3 max-w-xl text-[#475569]">
           Your details have been confirmed. We normally reply within one business day.
         </p>
@@ -192,7 +192,7 @@ export default function LeadForm({
                 form_id: 'commercial-lead-form',
               })
             }
-            className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
+            className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
           >
             <Calendar className="h-5 w-5" aria-hidden="true" /> Choose a meeting time
           </a>
@@ -202,14 +202,14 @@ export default function LeadForm({
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full rounded-lg border bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:ring-2 focus:ring-brand/30 ${
+    `w-full rounded-control border bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:ring-2 focus:ring-brand/30 ${
       hasError ? 'border-red-500' : 'border-[#CBD5E1] focus:border-brand'
     }`;
 
   return (
     <div>
       <div className="mb-8 text-center">
-        <h2 className="text-2xl font-bold text-[#0F172A]">{heading}</h2>
+        <h2 className="text-lead font-bold text-[#0F172A]">{heading}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-[#475569]">{intro}</p>
       </div>
       <form id="commercial-lead-form" onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -294,7 +294,7 @@ export default function LeadForm({
         </div>
         {submitError && (
           <div
-            className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="rounded-control border border-red-200 bg-red-50 p-4 text-caption text-red-800"
             role="alert"
           >
             {submitError}
@@ -303,12 +303,12 @@ export default function LeadForm({
         <button
           type="submit"
           disabled={submitting}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send className="h-5 w-5" aria-hidden="true" />
           {submitting ? 'Sending…' : submitLabel}
         </button>
-        <p className="text-center text-xs leading-5 text-[#64748B]">
+        <p className="text-center text-caption leading-5 text-[#64748B]">
           We use these details only to respond about SignalTrue. Names, email addresses and messages
           are never sent to analytics.
         </p>
@@ -332,12 +332,12 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-2 block text-sm font-semibold text-[#0F172A]">
+      <label htmlFor={htmlFor} className="mb-2 block text-caption font-semibold text-[#0F172A]">
         {label} {required && <span aria-hidden="true">*</span>}
       </label>
       {children}
       {error && (
-        <p id={`${htmlFor}-error`} className="mt-1.5 text-sm text-red-700" role="alert">
+        <p id={`${htmlFor}-error`} className="mt-1.5 text-caption text-red-700" role="alert">
           {error}
         </p>
       )}

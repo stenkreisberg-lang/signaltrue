@@ -7,8 +7,8 @@ import React from 'react';
 const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
   if (!cli) {
     return (
-      <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-        <h2 className="text-xl font-bold text-slate-100 mb-2">Coordination Load Index</h2>
+      <div className="bg-slate-800 rounded-control border border-slate-700 p-6">
+        <h2 className="text-lead font-bold text-slate-100 mb-2">Coordination Load Index</h2>
         <p className="text-slate-400">No CLI data available.</p>
       </div>
     );
@@ -53,36 +53,36 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
 
   return (
     <div
-      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+      className={`bg-slate-800 rounded-control border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-100">Coordination Load Index</h2>
-        <span className="text-2xl">{config.icon}</span>
+        <h2 className="text-lead font-bold text-slate-100">Coordination Load Index</h2>
+        <span className="text-lead">{config.icon}</span>
       </div>
 
       {/* State Badge and Load Percentage */}
       <div className="flex items-center gap-4 mb-4">
         <div
-          className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg flex-1`}
+          className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-control flex-1`}
         >
           <div className={`font-semibold ${config.textColor} mb-1`}>{cli.state}</div>
-          <div className="text-xs text-slate-400">{config.description}</div>
+          <div className="text-caption text-slate-400">{config.description}</div>
         </div>
-        <div className="text-3xl font-bold text-slate-100">{cli.coordinationLoad}%</div>
+        <div className="text-section font-bold text-slate-100">{cli.coordinationLoad}%</div>
       </div>
 
       {showDetails && (
         <>
           {/* Time Breakdown */}
-          <div className="mb-4 bg-slate-900/50 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
+          <div className="mb-4 bg-slate-900/50 rounded-control p-4">
+            <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-3">
               Time Breakdown
             </h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">📅</span>
+                  <span className="text-body">📅</span>
                   Meeting Time
                 </span>
                 <span className="font-semibold text-slate-100">
@@ -91,7 +91,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">⏰</span>
+                  <span className="text-body">⏰</span>
                   Back-to-Back
                 </span>
                 <span className="font-semibold text-slate-100">
@@ -100,7 +100,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">🤝</span>
+                  <span className="text-body">🤝</span>
                   Cross-Team Sync
                 </span>
                 <span className="font-semibold text-slate-100">
@@ -109,7 +109,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
               </div>
               <div className="flex items-center justify-between border-t border-slate-700 pt-2 mt-2">
                 <span className="text-slate-300 flex items-center gap-2">
-                  <span className="text-lg">🎯</span>
+                  <span className="text-body">🎯</span>
                   Available Uninterrupted Calendar Availability
                 </span>
                 <span className="font-semibold text-green-400">
@@ -122,7 +122,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
           {/* Drivers */}
           {cli.drivers && cli.drivers.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 What's Driving Coordination Load
               </h3>
               <div className="space-y-2">
@@ -132,7 +132,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
                     className="flex items-center justify-between bg-slate-900/30 rounded px-3 py-2"
                   >
                     <span className="text-slate-300">{driver.name}</span>
-                    <span className="text-slate-400 text-sm">{driver.change}</span>
+                    <span className="text-slate-400 text-caption">{driver.change}</span>
                   </div>
                 ))}
               </div>
@@ -141,8 +141,8 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
 
           {/* Baseline Deviation */}
           {cli.baseline && cli.deviation && (
-            <div className="mb-4 bg-slate-900/30 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
+            <div className="mb-4 bg-slate-900/30 rounded-control p-3">
+              <div className="flex items-center justify-between text-caption">
                 <span className="text-slate-400">Change from baseline:</span>
                 <span
                   className={`font-semibold ${
@@ -165,21 +165,25 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
           {/* Recommended Actions */}
           {cli.recommendedActions && cli.recommendedActions.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Recommended Actions
               </h3>
               <div className="space-y-2">
                 {cli.recommendedActions.map((action, i) => (
                   <div
                     key={i}
-                    className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-3"
+                    className="bg-blue-900/20 border border-blue-700 rounded-control px-4 py-3"
                   >
                     <div className="font-semibold text-blue-400 mb-1">{action.action}</div>
                     {action.expectedEffect && (
-                      <div className="text-xs text-slate-400 mb-1">{action.expectedEffect}</div>
+                      <div className="text-caption text-slate-400 mb-1">
+                        {action.expectedEffect}
+                      </div>
                     )}
                     {action.timebound && (
-                      <div className="text-xs text-slate-500">Timeframe: {action.timebound}</div>
+                      <div className="text-caption text-slate-500">
+                        Timeframe: {action.timebound}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -188,7 +192,7 @@ const CoordinationLoadIndexCard = ({ cli, showDetails = true }) => {
           )}
 
           {/* Interpretation */}
-          <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
+          <div className="text-caption text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
             {cli.interpretation ||
               'Coordination Load shows how much time teams spend aligning work versus executing it. High coordination load often indicates unclear ownership or decision structure.'}
           </div>

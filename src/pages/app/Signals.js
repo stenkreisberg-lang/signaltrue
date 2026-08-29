@@ -234,14 +234,14 @@ const Signals = () => {
       <div>
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold text-slate-900">Work Signals</h1>
+            <h1 className="text-section font-bold text-slate-900">Work Signals</h1>
             {(() => {
               if (!insightsReady) return null;
               const health = getOrgHealthState(families);
               if (!health) return null;
               return (
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ring-2 ${health.color} ${health.textColor} ${health.ring}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption font-semibold ring-2 ${health.color} ${health.textColor} ${health.ring}`}
                 >
                   {health.label}
                 </span>
@@ -255,20 +255,20 @@ const Signals = () => {
             <p className="text-[11px] text-slate-500 mt-1">{formatLastUpdated()}</p>
           )}
           {familyFilter && (
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-100">
-              <span className="text-sm text-teal-800">
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-control bg-teal-50 border border-teal-100">
+              <span className="text-caption text-teal-800">
                 Showing signals for: <strong>{familyFilter}</strong>
               </span>
               <button
                 onClick={() => setSearchParams({})}
-                className="text-xs text-teal-700 hover:text-teal-900 underline"
+                className="text-caption text-teal-700 hover:text-teal-900 underline"
               >
                 Clear filter
               </button>
             </div>
           )}
           {displayPolicy?.hiddenLowConfidenceCount > 0 && (
-            <p className="text-xs text-amber-300/80 mt-1">
+            <p className="text-caption text-amber-300/80 mt-1">
               {displayPolicy.hiddenLowConfidenceCount} low-confidence signal
               {displayPolicy.hiddenLowConfidenceCount === 1 ? '' : 's'} hidden until data quality
               improves.
@@ -276,7 +276,7 @@ const Signals = () => {
           )}
         </div>
         {error && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-6 rounded-control border border-amber-200 bg-amber-50 px-4 py-3 text-caption text-amber-800">
             Signal data is temporarily unavailable. Please retry after checking your data
             connections.
           </div>
@@ -287,7 +287,7 @@ const Signals = () => {
             {[1, 2, 3, 4].map((key) => (
               <div
                 key={key}
-                className="h-44 rounded-2xl border border-slate-200 bg-white animate-pulse"
+                className="h-44 rounded-container border border-slate-200 bg-white animate-pulse"
               />
             ))}
           </div>
@@ -295,7 +295,7 @@ const Signals = () => {
 
         {insightsReady && teamId && (
           <div className="mb-4 flex items-center gap-3">
-            <span className="text-sm text-slate-600">Compare scope:</span>
+            <span className="text-caption text-slate-600">Compare scope:</span>
             <Button
               variant={familyScope === 'org' ? 'primary' : 'ghost'}
               size="small"
@@ -319,22 +319,26 @@ const Signals = () => {
               <Card className="border-teal-200 bg-teal-50/60">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
-                    <div className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+                    <div className="text-caption font-semibold uppercase tracking-wide text-teal-700">
                       Top priority this week
                     </div>
-                    <div className="text-2xl font-semibold text-slate-900">
+                    <div className="text-lead font-semibold text-slate-900">
                       {prioritySummary.familyName}
                     </div>
                     <div className="text-slate-700">{prioritySummary.summary}</div>
-                    <div className="text-sm text-slate-600">{prioritySummary.detail}</div>
-                    <div className="text-sm text-teal-700">{prioritySummary.recommendation}</div>
+                    <div className="text-caption text-slate-600">{prioritySummary.detail}</div>
+                    <div className="text-caption text-teal-700">
+                      {prioritySummary.recommendation}
+                    </div>
                     {prioritySummary.gapLine && (
-                      <div className="text-sm font-medium text-indigo-300">
+                      <div className="text-caption font-medium text-indigo-300">
                         {prioritySummary.gapLine}
                       </div>
                     )}
                     {prioritySummary.comparison && (
-                      <div className="text-xs text-slate-500">{prioritySummary.comparison}</div>
+                      <div className="text-caption text-slate-500">
+                        {prioritySummary.comparison}
+                      </div>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -352,7 +356,7 @@ const Signals = () => {
             )}
 
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">
+              <h2 className="text-lead font-semibold text-slate-900 mb-4">
                 Structural drift summary
               </h2>
 
@@ -362,12 +366,12 @@ const Signals = () => {
                     <div className="text-slate-900 font-semibold">
                       Structural drift summary not ready yet
                     </div>
-                    <div className="text-sm text-slate-600">
+                    <div className="text-caption text-slate-600">
                       We need enough visible, confidence-qualified signals before showing
                       family-level drift. This usually improves as baselines mature and coverage
                       increases.
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-caption text-slate-500">
                       Tip: keep integrations connected and revisit after more team activity is
                       captured.
                     </div>
@@ -561,8 +565,8 @@ const Signals = () => {
 
             {/* Direct comparison evidence. Values come from the stored signal;
                 no trend line is invented when history is unavailable. */}
-            <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
-              <div className="text-sm text-slate-600 mb-2">Pattern shift vs baseline</div>
+            <div className="bg-slate-50 rounded-control p-6 border border-slate-200">
+              <div className="text-caption text-slate-600 mb-2">Pattern shift vs baseline</div>
               {Number.isFinite(Number(selectedSignal.deviation?.currentValue)) &&
               Number.isFinite(Number(selectedSignal.deviation?.baselineValue)) ? (
                 <div
@@ -582,7 +586,7 @@ const Signals = () => {
                     const width = Math.max(4, Math.round((Math.abs(value) / scale) * 100));
                     return (
                       <div key={label}>
-                        <div className="mb-1 flex items-center justify-between text-sm">
+                        <div className="mb-1 flex items-center justify-between text-caption">
                           <span className="font-medium text-slate-700">{label}</span>
                           <span className="font-semibold text-slate-900">{value}</span>
                         </div>
@@ -595,7 +599,7 @@ const Signals = () => {
                       </div>
                     );
                   })}
-                  <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-600">
+                  <div className="flex flex-wrap gap-2 pt-1 text-caption text-slate-600">
                     {Number.isFinite(Number(selectedSignal.deviation?.deltaPercent)) && (
                       <span className="rounded-full bg-white px-2.5 py-1 font-semibold ring-1 ring-slate-200">
                         {Number(selectedSignal.deviation.deltaPercent) > 0 ? '+' : ''}
@@ -610,7 +614,7 @@ const Signals = () => {
                   </div>
                 </div>
               ) : (
-                <p className="py-6 text-sm text-slate-600">
+                <p className="py-6 text-caption text-slate-600">
                   A numeric baseline comparison is not available for this signal. Review the
                   measured drivers below before choosing an action.
                 </p>
@@ -618,35 +622,42 @@ const Signals = () => {
             </div>
 
             {selectedSignal.explanation && (
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <div className="text-sm font-semibold text-slate-200 mb-2">
+              <div className="bg-slate-50 rounded-control p-4 border border-slate-200">
+                <div className="text-caption font-semibold text-slate-200 mb-2">
                   Why this signal is showing up
                 </div>
-                <div className="text-sm text-slate-600">{selectedSignal.explanation}</div>
+                <div className="text-caption text-slate-600">{selectedSignal.explanation}</div>
               </div>
             )}
 
             {selectedSignal.limitationNote && (
-              <div className="bg-amber-950/20 rounded-lg p-4 border border-amber-800/50">
-                <div className="text-sm font-semibold text-amber-200 mb-2">Interpretation note</div>
-                <div className="text-sm text-amber-100/80">{selectedSignal.limitationNote}</div>
+              <div className="bg-amber-950/20 rounded-control p-4 border border-amber-800/50">
+                <div className="text-caption font-semibold text-amber-200 mb-2">
+                  Interpretation note
+                </div>
+                <div className="text-caption text-amber-100/80">
+                  {selectedSignal.limitationNote}
+                </div>
               </div>
             )}
 
             {/* Drivers */}
             {selectedSignal.drivers && selectedSignal.drivers.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">What changed</h3>
+                <h3 className="text-body font-semibold text-slate-900 mb-3">What changed</h3>
                 <div className="space-y-2">
                   {selectedSignal.drivers.map((driver, idx) => (
-                    <div key={idx} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <div
+                      key={idx}
+                      className="bg-slate-50 rounded-control p-4 border border-slate-200"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-medium text-slate-200">{driver.name}</div>
-                          <div className="text-sm text-slate-600">{driver.change}</div>
+                          <div className="text-caption text-slate-600">{driver.change}</div>
                         </div>
                         {driver.contribution && (
-                          <div className="text-sm font-semibold text-emerald-400">
+                          <div className="text-caption font-semibold text-emerald-400">
                             {driver.contribution}%
                           </div>
                         )}
@@ -660,8 +671,8 @@ const Signals = () => {
             {/* Consequence */}
             {selectedSignal.consequence?.statement && (
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">Why it matters</h3>
-                <div className="bg-orange-900/20 border border-orange-700 rounded-lg p-4">
+                <h3 className="text-body font-semibold text-slate-900 mb-3">Why it matters</h3>
+                <div className="bg-orange-900/20 border border-orange-700 rounded-control p-4">
                   <p className="text-slate-700 italic">
                     "{selectedSignal.whatItMeans || selectedSignal.consequence.statement}"
                   </p>
@@ -672,12 +683,15 @@ const Signals = () => {
             {/* Recommended Actions */}
             {selectedSignal.recommendedActions && selectedSignal.recommendedActions.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                <h3 className="text-body font-semibold text-slate-900 mb-3">
                   Recommended next actions
                 </h3>
                 <div className="space-y-3">
                   {selectedSignal.recommendedActions.map((action, idx) => (
-                    <div key={idx} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <div
+                      key={idx}
+                      className="bg-slate-50 rounded-control p-4 border border-slate-200"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-medium text-slate-200">{action.action}</div>
                         {action.effort && (
@@ -687,18 +701,18 @@ const Signals = () => {
                         )}
                       </div>
                       {action.expectedEffect && (
-                        <div className="text-sm text-slate-600 mb-2">
+                        <div className="text-caption text-slate-600 mb-2">
                           Expected: {action.expectedEffect}
                         </div>
                       )}
                       {action.isInactionOption && action.inactionCost && (
-                        <div className="text-sm text-orange-400">
+                        <div className="text-caption text-orange-400">
                           Inaction cost: {action.inactionCost}
                         </div>
                       )}
                       {!action.isInactionOption &&
                         (loggedActionIndexes.includes(idx) ? (
-                          <div className="mt-3 text-sm font-medium text-emerald-600">
+                          <div className="mt-3 text-caption font-medium text-emerald-600">
                             Logged — this team's metrics will be compared against today's baseline.
                           </div>
                         ) : (
@@ -716,7 +730,7 @@ const Signals = () => {
                   ))}
                 </div>
                 {logActionError && (
-                  <div className="mt-3 text-sm text-rose-600">{logActionError}</div>
+                  <div className="mt-3 text-caption text-rose-600">{logActionError}</div>
                 )}
               </div>
             )}

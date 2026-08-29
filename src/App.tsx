@@ -96,7 +96,7 @@ const App = () => (
                   role="status"
                   aria-live="polite"
                 >
-                  <div className="rounded-xl border border-[#E2E8F0] bg-white px-6 py-4 text-sm font-semibold text-[#475569] shadow-sm">
+                  <div className="rounded-container border border-[#E2E8F0] bg-white px-6 py-4 text-caption font-semibold text-[#475569] shadow-sm">
                     Loading SignalTrue…
                   </div>
                 </div>

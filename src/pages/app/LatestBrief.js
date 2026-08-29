@@ -92,7 +92,7 @@ function StatusBadge({ children, tone = 'neutral' }) {
   };
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${tones[tone]}`}
+      className={`inline-flex rounded-full border px-2.5 py-1 text-caption font-bold ${tones[tone]}`}
     >
       {children}
     </span>
@@ -129,14 +129,14 @@ function MetricCard({ metric }) {
 function ActionCard({ action, fallbackTitle = 'Recommended action' }) {
   if (!action) return null;
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
-      <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
+    <div className="rounded-container border border-indigo-200 bg-indigo-50/60 p-4">
+      <p className="text-caption font-extrabold uppercase tracking-wider text-indigo-700">
         {action.title || fallbackTitle}
       </p>
-      <p className="mt-2 text-sm font-bold leading-6 text-slate-900">
+      <p className="mt-2 text-caption font-bold leading-6 text-slate-900">
         {action.action || action.detail}
       </p>
-      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+      <div className="mt-3 flex flex-wrap gap-2 text-caption text-slate-600">
         {action.owner && <StatusBadge>{action.owner}</StatusBadge>}
         {action.effort && <StatusBadge>{action.effort} effort</StatusBadge>}
         {action.reviewWindow && (
@@ -144,7 +144,7 @@ function ActionCard({ action, fallbackTitle = 'Recommended action' }) {
         )}
       </div>
       {action.measure && (
-        <p className="mt-3 text-xs leading-5 text-slate-600">
+        <p className="mt-3 text-caption leading-5 text-slate-600">
           <strong>Measure:</strong> {action.measure}
         </p>
       )}
@@ -153,7 +153,9 @@ function ActionCard({ action, fallbackTitle = 'Recommended action' }) {
 }
 
 function EmptyState({ children }) {
-  return <div className="rounded-xl bg-slate-50 p-5 text-sm text-slate-600">{children}</div>;
+  return (
+    <div className="rounded-container bg-slate-50 p-5 text-caption text-slate-600">{children}</div>
+  );
 }
 
 function AskBrief({ questions, onAsk, asking, answer, error }) {
@@ -168,7 +170,7 @@ function AskBrief({ questions, onAsk, asking, answer, error }) {
   return (
     <section className="app-panel border-indigo-200" id="ask-ai">
       <div className="flex items-start gap-3">
-        <div className="rounded-xl bg-indigo-100 p-2.5 text-indigo-700">
+        <div className="rounded-container bg-indigo-100 p-2.5 text-indigo-700">
           <Bot className="h-5 w-5" />
         </div>
         <div>
@@ -185,7 +187,7 @@ function AskBrief({ questions, onAsk, asking, answer, error }) {
           <button
             key={item}
             type="button"
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-800"
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-caption font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-800"
             onClick={() => setQuestion(item)}
           >
             {item}
@@ -203,42 +205,42 @@ function AskBrief({ questions, onAsk, asking, answer, error }) {
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={500}
           placeholder="For example: what should we verify before acting?"
-          className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="min-w-0 flex-1 rounded-control border border-slate-300 bg-white px-4 py-3 text-caption outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
         />
         <button
           type="submit"
           disabled={asking || question.trim().length < 4}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-control bg-slate-900 px-4 py-3 text-caption font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {asking ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           Ask
         </button>
       </form>
 
-      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 text-caption text-red-700">{error}</p>}
 
       {answer && (
-        <div className="mt-5 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="mt-5 rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-bold text-slate-900">Report-grounded answer</h3>
+            <h3 className="text-body font-bold text-slate-900">Report-grounded answer</h3>
             <StatusBadge tone={answer.source === 'ai' ? 'info' : 'neutral'}>
               {answer.source === 'ai' ? 'AI interpretation' : 'Rule-based fallback'}
             </StatusBadge>
           </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+          <p className="mt-3 whitespace-pre-wrap text-caption leading-7 text-slate-700">
             {answer.answer}
           </p>
 
           {answer.evidence?.length > 0 && (
             <div className="mt-4">
-              <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              <p className="text-caption font-extrabold uppercase tracking-wider text-slate-500">
                 Evidence used
               </p>
               <div className="mt-2 grid gap-2 md:grid-cols-2">
                 {answer.evidence.map((item, index) => (
                   <div
                     key={`${item.label}-${index}`}
-                    className="rounded-lg bg-slate-50 p-3 text-xs"
+                    className="rounded-control bg-slate-50 p-3 text-caption"
                   >
                     <strong className="text-slate-900">{item.label}</strong>
                     <p className="mt-1 text-slate-600">
@@ -261,9 +263,9 @@ function AskBrief({ questions, onAsk, asking, answer, error }) {
           )}
 
           {answer.caveats?.length > 0 && (
-            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <div className="mt-4 rounded-control border border-amber-200 bg-amber-50 p-3">
               {answer.caveats.map((item) => (
-                <p key={item} className="text-xs leading-5 text-amber-900">
+                <p key={item} className="text-caption leading-5 text-amber-900">
                   {item}
                 </p>
               ))}
@@ -376,7 +378,7 @@ export default function LatestBrief() {
   if (error && !brief) {
     return (
       <div className="min-h-screen bg-slate-100 p-8">
-        <div className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-white p-6 text-red-800">
+        <div className="mx-auto max-w-3xl rounded-container border border-red-200 bg-white p-6 text-red-800">
           Unable to load the latest weekly brief. {error}
         </div>
       </div>
@@ -399,7 +401,7 @@ export default function LatestBrief() {
               type="button"
               onClick={refresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-control border border-slate-300 bg-white px-4 py-2.5 text-caption font-bold text-slate-700 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh measured data
@@ -409,13 +411,13 @@ export default function LatestBrief() {
       />
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="mb-4 rounded-control border border-red-200 bg-red-50 p-3 text-caption text-red-800">
           {error}
         </div>
       )}
 
       {brief.freshness?.userCountChanged && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="mb-4 rounded-control border border-amber-200 bg-amber-50 p-4 text-caption text-amber-950">
           <strong>Directory changed since this brief was generated.</strong> This snapshot was based
           on {brief.freshness.snapshotTotalUsers} active users; the current directory has{' '}
           {brief.freshness.currentTotalUsers}. Refresh measured data to regenerate the brief from
@@ -437,17 +439,17 @@ export default function LatestBrief() {
           <h1 className="app-dashboard-title mt-4">{brief.orgName}</h1>
           <p className="app-dashboard-copy">{brief.status?.summary}</p>
           {brief.status?.escalationAction && (
-            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+            <p className="mt-4 rounded-control border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
               <strong>Escalation rule:</strong> {brief.status.escalationAction}
             </p>
           )}
         </div>
         <div className="app-dashboard-hero-side">
           <p className="app-dashboard-eyebrow">Report scope</p>
-          <p className="text-sm font-bold text-slate-900">
+          <p className="text-caption font-bold text-slate-900">
             {formatDate(brief.periodStart)} to {formatDate(brief.periodEnd)}
           </p>
-          <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+          <div className="mt-4 space-y-3 text-caption leading-6 text-slate-600">
             <p>
               <strong>{brief.status?.baselineWeeks || 0} weeks</strong> of organization-specific
               history available.
@@ -566,9 +568,9 @@ export default function LatestBrief() {
                   brief.observations.map((item, index) => (
                     <div
                       key={`${item.text}-${index}`}
-                      className="rounded-xl border border-slate-200 p-4"
+                      className="rounded-container border border-slate-200 p-4"
                     >
-                      <p className="text-sm leading-6 text-slate-700">{item.text}</p>
+                      <p className="text-caption leading-6 text-slate-700">{item.text}</p>
                       <div className="mt-2">
                         <StatusBadge tone={item.type === 'data_quality' ? 'review' : 'neutral'}>
                           Evidence grade: {item.evidenceGrade}
@@ -593,7 +595,7 @@ export default function LatestBrief() {
                   brief.risks.map((risk) => (
                     <div
                       key={risk}
-                      className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-sm leading-6 text-amber-950"
+                      className="rounded-container border border-amber-200 bg-amber-50/70 p-4 text-caption leading-6 text-amber-950"
                     >
                       {risk}
                     </div>
@@ -602,12 +604,12 @@ export default function LatestBrief() {
                   <EmptyState>No elevated review implication is present in this brief.</EmptyState>
                 )}
                 {brief.costEstimate && (
-                  <div className="rounded-xl border border-slate-200 p-4">
+                  <div className="rounded-container border border-slate-200 p-4">
                     <p className="font-bold text-slate-900">
                       Estimated coordination cost above baseline:{' '}
                       {brief.costEstimate.formattedWeeklyCost}
                     </p>
-                    <p className="mt-2 text-xs leading-5 text-slate-600">
+                    <p className="mt-2 text-caption leading-5 text-slate-600">
                       Uses the client-configured hourly cost and measured participant-hours above
                       this organization’s baseline. Directional estimate only.
                     </p>
@@ -659,9 +661,9 @@ export default function LatestBrief() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[760px] border-collapse text-left text-caption">
               <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
                   <th className="py-3 pr-4">Metric</th>
                   <th className="px-4 py-3">Current</th>
                   <th className="px-4 py-3">Prior</th>
@@ -676,7 +678,7 @@ export default function LatestBrief() {
                     <td className="py-4 pr-4">
                       <strong className="text-slate-900">{metric.label}</strong>
                       {metric.note && (
-                        <p className="mt-1 max-w-xs text-xs text-slate-500">{metric.note}</p>
+                        <p className="mt-1 max-w-xs text-caption text-slate-500">{metric.note}</p>
                       )}
                     </td>
                     <td className="px-4 py-4 font-bold text-slate-900">
@@ -690,7 +692,7 @@ export default function LatestBrief() {
                         ? 'Not available'
                         : formatMetricValue(metric, metric.baseline)}
                     </td>
-                    <td className="px-4 py-4 text-xs">
+                    <td className="px-4 py-4 text-caption">
                       <Direction metric={metric} />
                     </td>
                     <td className="pl-4 py-4">
@@ -713,32 +715,32 @@ export default function LatestBrief() {
             </p>
             <div className="space-y-3">
               {(brief.workPattern?.teams || []).map((team) => (
-                <div key={team.teamId} className="rounded-xl border border-slate-200 p-4">
+                <div key={team.teamId} className="rounded-container border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-bold text-slate-900">{team.teamName}</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-caption text-slate-500">
                         {team.activePeople} active mapped people
                       </p>
                     </div>
                     <StatusBadge tone={statusTone(team.state)}>{team.state}</StatusBadge>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-slate-50 p-3">
-                      <p className="text-xl font-extrabold text-slate-900">
+                    <div className="rounded-control bg-slate-50 p-3">
+                      <p className="text-lead font-extrabold text-slate-900">
                         {team.deviationIndex}/100
                       </p>
-                      <p className="text-xs text-slate-500">Deviation index</p>
+                      <p className="text-caption text-slate-500">Deviation index</p>
                     </div>
-                    <div className="rounded-lg bg-slate-50 p-3">
-                      <p className="text-xl font-extrabold text-slate-900">
+                    <div className="rounded-control bg-slate-50 p-3">
+                      <p className="text-lead font-extrabold text-slate-900">
                         {team.dataReadiness}/100
                       </p>
-                      <p className="text-xs text-slate-500">Data readiness</p>
+                      <p className="text-caption text-slate-500">Data readiness</p>
                     </div>
                   </div>
                   {team.drivers?.length > 0 && (
-                    <div className="mt-3 text-xs leading-5 text-slate-600">
+                    <div className="mt-3 text-caption leading-5 text-slate-600">
                       <strong>Top drivers:</strong>{' '}
                       {team.drivers
                         .map((driver) => `${driver.label} (${driver.score}/100)`)
@@ -749,7 +751,7 @@ export default function LatestBrief() {
               ))}
             </div>
             {brief.workPattern?.limitation && (
-              <p className="mt-4 text-xs leading-5 text-slate-500">
+              <p className="mt-4 text-caption leading-5 text-slate-500">
                 {brief.workPattern.limitation}
               </p>
             )}
@@ -764,22 +766,22 @@ export default function LatestBrief() {
               {brief.signals.map((signal, index) => (
                 <div
                   key={`${signal.type}-${index}`}
-                  className="rounded-xl border border-slate-200 p-4"
+                  className="rounded-container border border-slate-200 p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-bold text-slate-900">{signal.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-caption text-slate-500">
                         {signal.family} · {signal.teamName}
                       </p>
                     </div>
                     <StatusBadge tone="review">{signal.severity}</StatusBadge>
                   </div>
                   {signal.evidence && (
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{signal.evidence}</p>
+                    <p className="mt-3 text-caption leading-6 text-slate-600">{signal.evidence}</p>
                   )}
                   {signal.action && (
-                    <p className="mt-3 text-xs leading-5 text-slate-700">
+                    <p className="mt-3 text-caption leading-5 text-slate-700">
                       <strong>Suggested check:</strong> {signal.action}
                     </p>
                   )}
@@ -798,12 +800,12 @@ export default function LatestBrief() {
               A falsifiable directional rule, automatically checked next week.
             </p>
             {brief.prediction?.current && (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+              <div className="rounded-container border border-blue-200 bg-blue-50 p-4 text-caption leading-6 text-blue-950">
                 <strong>This week:</strong> {brief.prediction.current.statement}
               </div>
             )}
             {brief.prediction?.lastGraded && (
-              <div className="mt-3 rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700">
+              <div className="mt-3 rounded-container border border-slate-200 p-4 text-caption leading-6 text-slate-700">
                 <strong>Last graded:</strong> {brief.prediction.lastGraded.statement}
                 <p className="mt-2">
                   Observed value: {brief.prediction.lastGraded.actualValue ?? 'not available'} ·{' '}
@@ -811,7 +813,9 @@ export default function LatestBrief() {
                 </p>
               </div>
             )}
-            <p className="mt-3 text-xs leading-5 text-slate-500">{brief.prediction?.limitation}</p>
+            <p className="mt-3 text-caption leading-5 text-slate-500">
+              {brief.prediction?.limitation}
+            </p>
           </section>
 
           <section className="app-panel">
@@ -824,7 +828,7 @@ export default function LatestBrief() {
                 brief.actionOutcomes.map((item, index) => (
                   <div
                     key={`${item.title}-${index}`}
-                    className="rounded-xl border border-slate-200 p-4"
+                    className="rounded-container border border-slate-200 p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-bold text-slate-900">{item.title}</p>
@@ -832,12 +836,12 @@ export default function LatestBrief() {
                         {item.status}
                       </StatusBadge>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
+                    <p className="mt-2 text-caption text-slate-500">
                       Started {formatDate(item.startedAt)}
                       {item.teamName ? ` · ${item.teamName}` : ''}
                     </p>
                     {item.outcome && (
-                      <p className="mt-3 text-sm text-slate-700">
+                      <p className="mt-3 text-caption text-slate-700">
                         Measured change: {item.outcome.percentChange > 0 ? '+' : ''}
                         {item.outcome.percentChange}% ·{' '}
                         {item.outcome.improved
@@ -873,7 +877,7 @@ export default function LatestBrief() {
           <select
             value={contextTag}
             onChange={(event) => setContextTag(event.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+            className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
           >
             {CONTEXT_OPTIONS.map(([value, label]) => (
               <option key={value} value={value}>
@@ -886,12 +890,12 @@ export default function LatestBrief() {
             onChange={(event) => setContextDescription(event.target.value)}
             maxLength={300}
             placeholder="Optional factual note, such as product launch on Thursday"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm"
+            className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
           />
           <button
             type="submit"
             disabled={savingContext}
-            className="rounded-lg bg-violet-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="rounded-control bg-violet-700 px-4 py-2.5 text-caption font-bold text-white disabled:opacity-50"
           >
             {savingContext ? 'Saving...' : 'Add context'}
           </button>
@@ -919,27 +923,27 @@ export default function LatestBrief() {
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-2xl font-extrabold text-slate-900">
+          <div className="rounded-container bg-slate-50 p-4">
+            <p className="text-lead font-extrabold text-slate-900">
               {brief.coverage?.mappingCoveragePct}%
             </p>
-            <p className="text-xs text-slate-500">Activity attributed</p>
+            <p className="text-caption text-slate-500">Activity attributed</p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-2xl font-extrabold text-slate-900">
+          <div className="rounded-container bg-slate-50 p-4">
+            <p className="text-lead font-extrabold text-slate-900">
               {brief.coverage?.teamCoveragePct}%
             </p>
-            <p className="text-xs text-slate-500">Eligible teams ready</p>
+            <p className="text-caption text-slate-500">Eligible teams ready</p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-2xl font-extrabold text-slate-900">{brief.coverage?.mappedUsers}</p>
-            <p className="text-xs text-slate-500">
+          <div className="rounded-container bg-slate-50 p-4">
+            <p className="text-lead font-extrabold text-slate-900">{brief.coverage?.mappedUsers}</p>
+            <p className="text-caption text-slate-500">
               of {brief.coverage?.totalUsers} users represented
             </p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-2xl font-extrabold text-slate-900">{brief.coverage?.readyTeams}</p>
-            <p className="text-xs text-slate-500">
+          <div className="rounded-container bg-slate-50 p-4">
+            <p className="text-lead font-extrabold text-slate-900">{brief.coverage?.readyTeams}</p>
+            <p className="text-caption text-slate-500">
               of {brief.coverage?.eligibleTeams} eligible teams ready
             </p>
           </div>
@@ -948,14 +952,14 @@ export default function LatestBrief() {
         {brief.integrations?.length > 0 && (
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {brief.integrations.map((integration) => (
-              <div key={integration.type} className="rounded-xl border border-slate-200 p-4">
+              <div key={integration.type} className="rounded-container border border-slate-200 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-bold text-slate-900">{integration.type}</p>
                   <StatusBadge tone={integration.status === 'connected' ? 'good' : 'review'}>
                     {integration.status}
                   </StatusBadge>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-caption text-slate-500">
                   Coverage: {integration.mappedUsers ?? 'not available'}/
                   {integration.totalUsers ?? 'not available'} · Last sync:{' '}
                   {formatDate(integration.lastSyncAt)}

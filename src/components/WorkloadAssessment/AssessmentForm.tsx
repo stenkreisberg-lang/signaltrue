@@ -60,14 +60,14 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Company Inputs Section */}
-      <div className="bg-card rounded-2xl border border-border/50 p-6">
+      <div className="bg-card rounded-container border border-border/50 p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-container bg-primary/10 flex items-center justify-center">
             <Building2 className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h3 className="font-display font-semibold text-foreground">About your organization</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               Estimates are fine – no validation shaming here
             </p>
           </div>
@@ -76,7 +76,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
         <div className="grid md:grid-cols-2 gap-6">
           {/* Team Size */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Team size
               <span className="text-muted-foreground font-normal ml-2">(number)</span>
             </label>
@@ -93,7 +93,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
 
           {/* Average Salary */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Average annual salary (estimate is fine)
             </label>
             {!customSalary ? (
@@ -108,7 +108,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                       setCompany({ ...company, averageSalary: value });
                     }
                   }}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground appearance-none cursor-pointer"
+                  className="w-full h-10 px-3 rounded-control border border-input bg-background text-foreground appearance-none cursor-pointer"
                 >
                   {SALARY_BANDS.map((band) => (
                     <option key={band.value} value={band.value}>
@@ -148,7 +148,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+              className="flex items-center gap-2 text-caption text-primary hover:text-primary/80 transition-colors"
             >
               <HelpCircle className="w-4 h-4" />
               {showAdvanced ? 'Hide' : 'Show'} overhead multiplier
@@ -157,8 +157,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               />
             </button>
             {showAdvanced && (
-              <div className="mt-4 p-4 rounded-lg bg-secondary/30">
-                <label className="block text-sm font-medium text-foreground mb-2">
+              <div className="mt-4 p-4 rounded-control bg-secondary/30">
+                <label className="block text-caption font-medium text-foreground mb-2">
                   Benefits & overhead multiplier
                   <span className="text-muted-foreground font-normal ml-2">(default: 1.3x)</span>
                 </label>
@@ -176,7 +176,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   }
                   className="w-32"
                 />
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-caption text-muted-foreground mt-2">
                   Used to estimate real cost of work time. You can adjust this.
                 </p>
               </div>
@@ -186,21 +186,23 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
       </div>
 
       {/* Workload & Collaboration Inputs */}
-      <div className="bg-card rounded-2xl border border-border/50 p-6">
+      <div className="bg-card rounded-container border border-border/50 p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-container bg-accent/10 flex items-center justify-center">
             <Clock className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h3 className="font-display font-semibold text-foreground">Collaboration & workload</h3>
-            <p className="text-sm text-muted-foreground">Your best estimate of current patterns</p>
+            <p className="text-caption text-muted-foreground">
+              Your best estimate of current patterns
+            </p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Meeting Hours */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Average meeting hours per person per week
             </label>
             <Input
@@ -214,14 +216,14 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               className="w-full"
               placeholder="e.g., 10"
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-caption text-muted-foreground mt-1">
               Industry average: 10-15 hours/week for knowledge workers
             </p>
           </div>
 
           {/* Back-to-Back Frequency */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               How often do people have back-to-back meetings?
             </label>
             <div className="flex gap-2">
@@ -230,7 +232,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   key={freq}
                   type="button"
                   onClick={() => setWorkload({ ...workload, backToBackFrequency: freq })}
-                  className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-control border text-caption font-medium transition-colors ${
                     workload.backToBackFrequency === freq
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-background border-border text-foreground hover:bg-secondary/50'
@@ -244,7 +246,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
 
           {/* After-Hours Work */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               After-hours work per person per week (hours)
             </label>
             <Input
@@ -263,14 +265,14 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
       </div>
 
       {/* Retention Risk Inputs */}
-      <div className="bg-card rounded-2xl border border-border/50 p-6">
+      <div className="bg-card rounded-container border border-border/50 p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-container bg-warning/10 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-warning" />
           </div>
           <div>
             <h3 className="font-display font-semibold text-foreground">Retention risk</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               These are estimates. SignalTrue replaces assumptions with real signals once connected.
             </p>
           </div>
@@ -279,7 +281,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
         <div className="grid md:grid-cols-2 gap-6">
           {/* Attrition Rate */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Estimated regrettable attrition % (annual)
             </label>
             <div className="flex items-center gap-2">
@@ -295,12 +297,12 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
               />
               <span className="text-muted-foreground">%</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Default: 10%</p>
+            <p className="text-caption text-muted-foreground mt-1">Default: 10%</p>
           </div>
 
           {/* Role Type */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Primary role type affected
             </label>
             <div className="space-y-2">
@@ -318,8 +320,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   }
                   className="w-4 h-4 text-primary"
                 />
-                <span className="text-sm text-foreground">Professional / Technical</span>
-                <span className="text-xs text-muted-foreground">(80%)</span>
+                <span className="text-caption text-foreground">Professional / Technical</span>
+                <span className="text-caption text-muted-foreground">(80%)</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -335,8 +337,8 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   }
                   className="w-4 h-4 text-primary"
                 />
-                <span className="text-sm text-foreground">Manager / Lead</span>
-                <span className="text-xs text-muted-foreground">(200%)</span>
+                <span className="text-caption text-foreground">Manager / Lead</span>
+                <span className="text-caption text-muted-foreground">(200%)</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -348,7 +350,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                   }
                   className="w-4 h-4 text-primary"
                 />
-                <span className="text-sm text-foreground">Custom %</span>
+                <span className="text-caption text-foreground">Custom %</span>
                 {retention.roleType === 'custom' && (
                   <div className="flex items-center gap-1">
                     <Input
@@ -364,7 +366,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                       }
                       className="w-20 h-8"
                     />
-                    <span className="text-xs text-muted-foreground">%</span>
+                    <span className="text-caption text-muted-foreground">%</span>
                   </div>
                 )}
               </label>
@@ -373,7 +375,7 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
 
           {/* Meeting Waste Adjustment */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-caption font-medium text-foreground mb-2">
               Estimated % of meeting time wasted
               <span className="text-muted-foreground font-normal ml-2">(default: 25%)</span>
             </label>
@@ -384,13 +386,13 @@ export const AssessmentForm: React.FC<AssessmentFormProps> = ({ onSubmit, onTrac
                 max="50"
                 value={meetingWastePercent}
                 onChange={(e) => setMeetingWastePercent(parseInt(e.target.value))}
-                className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                className="flex-1 h-2 bg-secondary rounded-control appearance-none cursor-pointer accent-primary"
               />
-              <span className="text-sm font-medium text-foreground w-12">
+              <span className="text-caption font-medium text-foreground w-12">
                 {meetingWastePercent}%
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-caption text-muted-foreground mt-1">
               Research suggests 25-40% of meeting time may not add value
             </p>
           </div>

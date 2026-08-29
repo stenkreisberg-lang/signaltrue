@@ -58,32 +58,32 @@ const Setup = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <div className="w-10 h-10 rounded-control bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Activity className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="text-2xl font-display font-bold">SignalTrue</span>
+          <span className="text-lead font-display font-bold">SignalTrue</span>
         </Link>
 
         {/* Setup Form */}
-        <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">Master Admin Setup</h1>
+        <div className="bg-card border border-border rounded-control p-8 shadow-lg">
+          <h1 className="text-lead font-bold mb-2">Master Admin Setup</h1>
           <p className="text-muted-foreground mb-6">Create the master admin account</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-control text-destructive text-caption">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-md text-green-500 text-sm">
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-control text-green-500 text-caption">
               {success}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-caption font-medium mb-2">Full Name</label>
               <Input
                 type="text"
                 value={name}
@@ -95,7 +95,7 @@ const Setup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label className="block text-caption font-medium mb-2">Email</label>
               <Input
                 type="email"
                 value={email}
@@ -107,7 +107,7 @@ const Setup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+              <label className="block text-caption font-medium mb-2">Password</label>
               <Input
                 type="password"
                 value={password}
@@ -119,7 +119,7 @@ const Setup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Secret Key</label>
+              <label className="block text-caption font-medium mb-2">Secret Key</label>
               <Input
                 type="password"
                 value={secretKey}
@@ -128,7 +128,7 @@ const Setup = () => {
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-caption text-muted-foreground mt-1">
                 Enter the setup secret configured by your administrator.
               </p>
             </div>
@@ -138,7 +138,7 @@ const Setup = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 text-center text-caption text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in

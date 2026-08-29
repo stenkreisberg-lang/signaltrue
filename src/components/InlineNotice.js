@@ -22,7 +22,7 @@ function getStyles(kind) {
     },
     success: {
       base: { background: '#ECFDF5', color: '#065F46', border: '1px solid #6EE7B7' },
-      strong: { color: '#064E3B' },
+      strong: { color: 'var(--color-brand-dark)' },
     },
     warning: {
       base: { background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' },

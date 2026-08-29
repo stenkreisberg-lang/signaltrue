@@ -92,7 +92,7 @@ const SignalCard = ({ signal, onViewDetails, onAssign }) => {
       <div className="flex items-start gap-4">
         {/* Severity indicator */}
         <div
-          className={`flex-shrink-0 p-3 rounded-lg ${
+          className={`flex-shrink-0 p-3 rounded-control ${
             severity === 'Critical'
               ? 'bg-red-900/30 text-red-400'
               : severity === 'Risk'
@@ -108,8 +108,8 @@ const SignalCard = ({ signal, onViewDetails, onAssign }) => {
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-3">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-slate-100 mb-2">{title}</h3>
-              <div className="text-sm text-slate-400 mb-2">
+              <h3 className="text-body font-semibold text-slate-100 mb-2">{title}</h3>
+              <div className="text-caption text-slate-400 mb-2">
                 {familyLabel}
                 {metricLabel ? ` • ${metricLabel}` : ''}
               </div>
@@ -136,17 +136,17 @@ const SignalCard = ({ signal, onViewDetails, onAssign }) => {
               </div>
             </div>
 
-            {teamId?.name && <div className="text-sm text-slate-400">{teamId.name}</div>}
+            {teamId?.name && <div className="text-caption text-slate-400">{teamId.name}</div>}
           </div>
 
           {/* Deviation info */}
           {deviation && (
-            <div className="mb-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-              <div className="text-sm text-slate-400 mb-3">
+            <div className="mb-3 p-3 bg-slate-900/50 rounded-control border border-slate-700">
+              <div className="text-caption text-slate-400 mb-3">
                 {businessDescription ||
                   'This signal is shown because the pattern has moved meaningfully away from baseline.'}
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-caption">
                 <div>
                   <div className="text-slate-500 mb-1">Current</div>
                   <div className="text-slate-200 font-semibold">
@@ -174,14 +174,14 @@ const SignalCard = ({ signal, onViewDetails, onAssign }) => {
 
           {/* Consequence */}
           {(whatItMeans || consequence?.statement) && (
-            <div className="mb-3 text-sm text-slate-400 italic">
+            <div className="mb-3 text-caption text-slate-400 italic">
               "{whatItMeans || consequence.statement}"
             </div>
           )}
 
           {/* Time to impact */}
           {timeToImpact?.estimate && (
-            <div className="mb-3 text-sm">
+            <div className="mb-3 text-caption">
               <span className="text-slate-500">Impact timeframe: </span>
               <span className="text-orange-400 font-medium">{timeToImpact.estimate}</span>
             </div>
@@ -189,7 +189,7 @@ const SignalCard = ({ signal, onViewDetails, onAssign }) => {
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-3 border-t border-slate-700">
-            <div className="flex items-center gap-3 text-sm text-slate-400">
+            <div className="flex items-center gap-3 text-caption text-slate-400">
               {owner ? (
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

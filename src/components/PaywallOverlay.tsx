@@ -105,23 +105,23 @@ export const PaywallOverlay: React.FC<PaywallOverlayProps> = ({
 
           {lockedFeature && (
             <>
-              <h3 className="text-lg font-display font-semibold text-foreground mb-2">
+              <h3 className="text-body font-display font-semibold text-foreground mb-2">
                 {lockedFeature.label}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">{lockedFeature.description}</p>
+              <p className="text-caption text-muted-foreground mb-4">{lockedFeature.description}</p>
             </>
           )}
 
           {status.cta && (
             <>
-              <p className="text-sm font-medium text-foreground mb-4">{status.cta.headline}</p>
+              <p className="text-caption font-medium text-foreground mb-4">{status.cta.headline}</p>
               <Link to={status.cta.link}>
                 <Button variant="hero" size="lg">
                   {status.cta.buttonText}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <p className="text-xs text-muted-foreground mt-3">{status.cta.subtext}</p>
+              <p className="text-caption text-muted-foreground mt-3">{status.cta.subtext}</p>
             </>
           )}
         </div>
@@ -176,13 +176,13 @@ export const PaywallBanner: React.FC<PaywallBannerProps> = ({ className = '' }) 
   }
 
   return (
-    <div className={`bg-warning/10 border border-warning/30 rounded-xl p-6 ${className}`}>
+    <div className={`bg-warning/10 border border-warning/30 rounded-container p-6 ${className}`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-semibold text-foreground mb-1">{status.cta.headline}</h3>
-            <p className="text-sm text-muted-foreground">{status.cta.subtext}</p>
+            <p className="text-caption text-muted-foreground">{status.cta.subtext}</p>
           </div>
         </div>
 
@@ -197,12 +197,12 @@ export const PaywallBanner: React.FC<PaywallBannerProps> = ({ className = '' }) 
       {/* Locked features list */}
       {status.locked.length > 0 && (
         <div className="mt-4 pt-4 border-t border-warning/20">
-          <p className="text-xs text-muted-foreground mb-2">Features requiring upgrade:</p>
+          <p className="text-caption text-muted-foreground mb-2">Features requiring upgrade:</p>
           <div className="flex flex-wrap gap-2">
             {status.locked.map((feature) => (
               <span
                 key={feature.feature}
-                className="text-xs px-2 py-1 rounded-full bg-muted/50 text-muted-foreground"
+                className="text-caption px-2 py-1 rounded-full bg-muted/50 text-muted-foreground"
               >
                 {feature.label}
               </span>
@@ -252,15 +252,17 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
   if (!status?.isActive) return null;
 
   return (
-    <div className={`bg-card rounded-xl border border-border/50 p-6 ${className}`}>
+    <div className={`bg-card rounded-container border border-border/50 p-6 ${className}`}>
       <h3 className="font-display font-semibold text-foreground mb-4">Your access level</h3>
 
       {/* Accessible features */}
       <div className="mb-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Available</p>
+        <p className="text-caption text-muted-foreground uppercase tracking-wider mb-2">
+          Available
+        </p>
         <div className="space-y-2">
           {status.accessible.map((feature) => (
-            <div key={feature} className="flex items-center gap-2 text-sm">
+            <div key={feature} className="flex items-center gap-2 text-caption">
               <CheckCircle className="w-4 h-4 text-success" />
               <span className="text-foreground capitalize">{feature.replace(/_/g, ' ')}</span>
             </div>
@@ -270,18 +272,18 @@ export const PaywallCard: React.FC<PaywallCardProps> = ({ className = '' }) => {
 
       {/* Locked features */}
       <div className="mb-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+        <p className="text-caption text-muted-foreground uppercase tracking-wider mb-2">
           Requires upgrade
         </p>
         <div className="space-y-2">
           {status.locked.slice(0, 3).map((feature) => (
-            <div key={feature.feature} className="flex items-center gap-2 text-sm">
+            <div key={feature.feature} className="flex items-center gap-2 text-caption">
               <Lock className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">{feature.label}</span>
             </div>
           ))}
           {status.locked.length > 3 && (
-            <p className="text-xs text-muted-foreground pl-6">
+            <p className="text-caption text-muted-foreground pl-6">
               +{status.locked.length - 3} more features
             </p>
           )}

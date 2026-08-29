@@ -31,10 +31,10 @@ const PromisedLand = () => {
         <div className="max-w-4xl mx-auto">
           {/* Section header */}
           <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-brand uppercase tracking-wider mb-4">
+            <p className="text-caption font-semibold text-brand uppercase tracking-wider mb-4">
               What leaders can fix earlier
             </p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#0F172A]">
+            <h2 className="text-section sm:text-display lg:text-display font-display font-bold text-[#0F172A]">
               Turn evidence into preventive action.
             </h2>
           </div>
@@ -44,18 +44,18 @@ const PromisedLand = () => {
             {outcomes.map((outcome, index) => (
               <div
                 key={index}
-                className="p-6 rounded-2xl bg-white border border-[#E2E8F0] animate-slide-up shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
+                className="p-6 rounded-container bg-white border border-[#E2E8F0] animate-slide-up shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-2 rounded-lg bg-[#D1FAE5] flex-shrink-0">
-                    <CheckCircle className="w-5 h-5 text-[#047857]" />
+                  <div className="p-2 rounded-control bg-brand-soft flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-brand" />
                   </div>
                   <div>
                     <h3 className="font-display font-semibold text-[#0F172A] mb-2">
                       {outcome.title}
                     </h3>
-                    <p className="text-sm text-[#475569]">{outcome.description}</p>
+                    <p className="text-caption text-[#475569]">{outcome.description}</p>
                   </div>
                 </div>
               </div>
@@ -64,7 +64,7 @@ const PromisedLand = () => {
 
           {/* Summary */}
           <div className="mt-12 text-center">
-            <p className="text-xl text-[#0F172A] font-medium">
+            <p className="text-lead text-[#0F172A] font-medium">
               A signal starts a health &amp; safety conversation. It never replaces worker
               consultation, professional judgement or a formal risk assessment.
             </p>

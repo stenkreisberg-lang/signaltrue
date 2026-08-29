@@ -7,8 +7,8 @@ import React from 'react';
 const CapacityStatusCard = ({ capacity, showDetails = true }) => {
   if (!capacity) {
     return (
-      <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">
-        <h2 className="text-xl font-bold text-slate-100 mb-2">Capacity Status</h2>
+      <div className="bg-slate-800 rounded-control border border-slate-700 p-6">
+        <h2 className="text-lead font-bold text-slate-100 mb-2">Capacity Status</h2>
         <p className="text-slate-400">No capacity data available.</p>
       </div>
     );
@@ -50,26 +50,26 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
 
   return (
     <div
-      className={`bg-slate-800 rounded-lg border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
+      className={`bg-slate-800 rounded-control border ${config.borderColor} p-6 transition-all hover:border-opacity-80`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-100">Capacity Status</h2>
-        <span className="text-2xl">{config.icon}</span>
+        <h2 className="text-lead font-bold text-slate-100">Capacity Status</h2>
+        <span className="text-lead">{config.icon}</span>
       </div>
 
       {/* Status Badge and Score */}
       <div className="flex items-center gap-4 mb-4">
-        <div className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-lg`}>
+        <div className={`${config.bgColor} ${config.borderColor} border px-4 py-2 rounded-control`}>
           <span className={`font-semibold ${config.textColor}`}>{capacity.status}</span>
         </div>
-        <div className="text-3xl font-bold text-slate-100">{capacity.capacityScore}/100</div>
-        {capacity.deviation && <div className={`text-lg ${trend.color}`}>{trend.icon}</div>}
+        <div className="text-section font-bold text-slate-100">{capacity.capacityScore}/100</div>
+        {capacity.deviation && <div className={`text-body ${trend.color}`}>{trend.icon}</div>}
       </div>
 
       {/* ONE-SENTENCE EXPLANATION (CRITICAL - ALWAYS SHOW) */}
       {capacity.explanation && (
-        <div className="bg-slate-900/50 rounded-lg p-3 mb-4">
+        <div className="bg-slate-900/50 rounded-control p-3 mb-4">
           <p className="text-slate-200 leading-relaxed">{capacity.explanation}</p>
         </div>
       )}
@@ -79,7 +79,7 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
           {/* Drivers (CRITICAL - ALWAYS SHOW) */}
           {capacity.drivers && capacity.drivers.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Capacity Drivers
               </h3>
               <div className="space-y-2">
@@ -93,7 +93,7 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{driver.icon}</span>
+                      <span className="text-lead">{driver.icon}</span>
                       <span className="text-slate-300">{driver.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -114,8 +114,8 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
 
           {/* Baseline Deviation */}
           {capacity.baseline && capacity.deviation && (
-            <div className="mb-4 bg-slate-900/30 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
+            <div className="mb-4 bg-slate-900/30 rounded-control p-3">
+              <div className="flex items-center justify-between text-caption">
                 <span className="text-slate-400">Change from baseline:</span>
                 <span
                   className={`font-semibold ${
@@ -132,18 +132,20 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
           {/* Recommended Actions */}
           {capacity.recommendedActions && capacity.recommendedActions.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+              <h3 className="text-caption font-semibold text-slate-400 uppercase tracking-wide mb-2">
                 Recommended Actions
               </h3>
               <div className="space-y-2">
                 {capacity.recommendedActions.map((action, i) => (
                   <div
                     key={i}
-                    className="bg-blue-900/20 border border-blue-700 rounded-lg px-4 py-2"
+                    className="bg-blue-900/20 border border-blue-700 rounded-control px-4 py-2"
                   >
-                    <div className="font-semibold text-blue-400 text-sm">{action.action}</div>
+                    <div className="font-semibold text-blue-400 text-caption">{action.action}</div>
                     {action.expectedEffect && (
-                      <div className="text-xs text-slate-400 mt-1">{action.expectedEffect}</div>
+                      <div className="text-caption text-slate-400 mt-1">
+                        {action.expectedEffect}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -157,7 +159,7 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
               {capacity.warnings.map((warning, i) => (
                 <div
                   key={i}
-                  className={`rounded-lg px-3 py-2 mb-2 ${
+                  className={`rounded-control px-3 py-2 mb-2 ${
                     warning.severity === 'critical'
                       ? 'bg-red-900/20 border border-red-700 text-red-400'
                       : warning.severity === 'warning'
@@ -165,14 +167,14 @@ const CapacityStatusCard = ({ capacity, showDetails = true }) => {
                         : 'bg-blue-900/20 border border-blue-700 text-blue-400'
                   }`}
                 >
-                  <span className="text-sm">{warning.message}</span>
+                  <span className="text-caption">{warning.message}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* Interpretation */}
-          <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
+          <div className="text-caption text-slate-500 leading-relaxed border-t border-slate-700 pt-3">
             {capacity.interpretation ||
               "Capacity reflects the team's ability to sustain current workload without long-term strain. Changes are driven by observable working patterns, not self-reported sentiment."}
           </div>

@@ -23,25 +23,27 @@ const DriftDiagnostic = () => {
             {/* Trust badges */}
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
-                <Lock className="w-3.5 h-3.5 text-[#047857]" />
-                <span className="text-xs font-medium text-[#334155]">No personal data</span>
+                <Lock className="w-3.5 h-3.5 text-brand" />
+                <span className="text-caption font-medium text-[#334155]">No personal data</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Shield className="w-3.5 h-3.5 text-brand" />
-                <span className="text-xs font-medium text-[#334155]">Anonymous assessment</span>
+                <span className="text-caption font-medium text-[#334155]">
+                  Anonymous assessment
+                </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Activity className="w-3.5 h-3.5 text-brand" />
-                <span className="text-xs font-medium text-[#334155]">7–10 minutes</span>
+                <span className="text-caption font-medium text-[#334155]">7–10 minutes</span>
               </div>
             </div>
 
             {/* Main headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 text-[#0F172A]">
+            <h1 className="text-display sm:text-display lg:text-display font-display font-bold leading-tight mb-6 text-[#0F172A]">
               Free Behavioral Drift <span className="text-brand">Diagnostic</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-[#334155] max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-body sm:text-lead text-[#334155] max-w-2xl mx-auto mb-8 leading-relaxed">
               Observe coordination drift before it shows up in surveys, exits, or missed results.
               This diagnostic flags system-level risk patterns—not individual performance.
             </p>
@@ -61,7 +63,7 @@ const DriftDiagnostic = () => {
               </Link>
             </div>
 
-            <p className="text-sm text-[#475569] max-w-lg mx-auto">
+            <p className="text-caption text-[#475569] max-w-lg mx-auto">
               No personal data. No message content. This diagnostic is about system patterns—not
               surveillance.
             </p>
@@ -73,7 +75,7 @@ const DriftDiagnostic = () => {
       <section className="py-20 bg-[#F8FAFC] border-b border-[#E2E8F0]">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-display font-bold text-center mb-4 text-[#0F172A]">
+            <h2 className="text-section font-display font-bold text-center mb-4 text-[#0F172A]">
               What You'll Learn
             </h2>
             <p className="text-[#475569] text-center mb-12 max-w-2xl mx-auto">
@@ -82,34 +84,34 @@ const DriftDiagnostic = () => {
             </p>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center mb-4">
+              <div className="p-6 rounded-container bg-white border border-[#E2E8F0] shadow-sm">
+                <div className="w-10 h-10 rounded-container bg-[#EFF6FF] flex items-center justify-center mb-4">
                   <BarChart3 className="w-5 h-5 text-brand" />
                 </div>
                 <h3 className="font-semibold mb-2 text-[#0F172A]">Drift Score (0–100)</h3>
-                <p className="text-sm text-[#475569]">
+                <p className="text-caption text-[#475569]">
                   A quantified risk profile based on meeting load, response pressure, and recovery
                   gaps.
                 </p>
               </div>
 
-              <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center mb-4">
+              <div className="p-6 rounded-container bg-white border border-[#E2E8F0] shadow-sm">
+                <div className="w-10 h-10 rounded-container bg-[#EFF6FF] flex items-center justify-center mb-4">
                   <Activity className="w-5 h-5 text-brand" />
                 </div>
                 <h3 className="font-semibold mb-2 text-[#0F172A]">Risk Category</h3>
-                <p className="text-sm text-[#475569]">
+                <p className="text-caption text-[#475569]">
                   Stable, Early Drift, Active Drift, or Critical Drift—with context on what each
                   means.
                 </p>
               </div>
 
-              <div className="p-6 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] flex items-center justify-center mb-4">
+              <div className="p-6 rounded-container bg-white border border-[#E2E8F0] shadow-sm">
+                <div className="w-10 h-10 rounded-container bg-[#FEF3C7] flex items-center justify-center mb-4">
                   <Zap className="w-5 h-5 text-[#92400E]" />
                 </div>
                 <h3 className="font-semibold mb-2 text-[#0F172A]">Key Findings</h3>
-                <p className="text-sm text-[#475569]">
+                <p className="text-caption text-[#475569]">
                   Specific patterns driving your score—meeting pressure, focus fragmentation,
                   urgency culture.
                 </p>
@@ -123,14 +125,14 @@ const DriftDiagnostic = () => {
       <section className="py-20 bg-white border-b border-[#E2E8F0]">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-display font-bold text-center mb-12 text-[#0F172A]">
+            <h2 className="text-section font-display font-bold text-center mb-12 text-[#0F172A]">
               Why This Matters
             </h2>
 
             <div className="space-y-8">
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-brand-hover font-bold text-sm">1</span>
+                  <span className="text-brand-hover font-bold text-caption">1</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
@@ -146,7 +148,7 @@ const DriftDiagnostic = () => {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-brand-hover font-bold text-sm">2</span>
+                  <span className="text-brand-hover font-bold text-caption">2</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
@@ -161,7 +163,7 @@ const DriftDiagnostic = () => {
 
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <span className="text-brand-hover font-bold text-sm">3</span>
+                  <span className="text-brand-hover font-bold text-caption">3</span>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-[#0F172A]">
@@ -183,7 +185,7 @@ const DriftDiagnostic = () => {
       <section className="py-20 bg-[#0F172A]">
         <div className="container mx-auto px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-display font-bold mb-4 text-white">
+            <h2 className="text-section font-display font-bold mb-4 text-white">
               Ready to see your drift profile?
             </h2>
             <p className="text-[#CBD5E1] mb-8">
@@ -197,7 +199,7 @@ const DriftDiagnostic = () => {
               </Button>
             </a>
 
-            <p className="text-sm text-[#94A3B8] mt-6">
+            <p className="text-caption text-[#94A3B8] mt-6">
               Prefer zero integrations? Start with the diagnostic first. If you want to validate
               with real behavioral signals, SignalTrue can run a 3–4 week baseline calibration.
             </p>

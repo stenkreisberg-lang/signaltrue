@@ -98,7 +98,7 @@ export const ROIDashboardBanner: React.FC<ROIDashboardBannerProps> = ({ orgId, o
           display: flex;
           align-items: center;
           gap: 16px;
-          background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+          background: linear-gradient(135deg, #065f46 0%, var(--color-brand) 100%);
           border: 1px solid #10b981;
           border-radius: 12px;
           padding: 16px 24px;

@@ -48,7 +48,7 @@ function ProtectedRoute({ children }) {
   if (sessionState === 'checking') {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-600"
+        className="flex min-h-screen items-center justify-center bg-slate-50 text-caption font-semibold text-slate-600"
         role="status"
         aria-live="polite"
       >

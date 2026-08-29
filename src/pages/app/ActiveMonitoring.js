@@ -422,7 +422,7 @@ const styles = {
     width: '40px',
     height: '40px',
     border: '4px solid #e2e8f0',
-    borderTop: '4px solid #0f766e',
+    borderTop: '4px solid var(--color-brand)',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
@@ -451,7 +451,7 @@ const styles = {
     marginBottom: '1.5rem',
   },
   retryButton: {
-    background: '#0f766e',
+    background: 'var(--color-brand)',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
@@ -499,10 +499,10 @@ const styles = {
     transition: 'color 0.2s',
   },
   navLinkActive: {
-    color: '#0f766e',
+    color: 'var(--color-brand)',
     fontSize: '0.875rem',
     fontWeight: 600,
-    borderBottom: '2px solid #0f766e',
+    borderBottom: '2px solid var(--color-brand)',
     paddingBottom: '2px',
   },
   userMenu: {
@@ -552,7 +552,7 @@ const styles = {
     maxWidth: '600px',
   },
   viewAllLink: {
-    color: '#0f766e',
+    color: 'var(--color-brand)',
     textDecoration: 'none',
     fontSize: '1rem',
     fontWeight: 600,
@@ -571,7 +571,7 @@ const styles = {
     padding: '0.35rem 0.8rem',
     borderRadius: '999px',
     background: '#ecfdf5',
-    color: '#047857',
+    color: 'var(--color-brand)',
     marginBottom: '1rem',
   },
   emptyTitle: {
@@ -590,7 +590,7 @@ const styles = {
   },
   emptyButton: {
     display: 'inline-block',
-    background: '#0f766e',
+    background: 'var(--color-brand)',
     color: 'white',
     textDecoration: 'none',
     borderRadius: '8px',

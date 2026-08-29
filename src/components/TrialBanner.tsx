@@ -108,7 +108,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
   const iconStyle = ICON_STYLES[status.banner.type] || ICON_STYLES.info;
 
   return (
-    <div className={`border rounded-lg p-4 ${bannerStyle} ${className}`}>
+    <div className={`border rounded-control p-4 ${bannerStyle} ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className={`flex-shrink-0 mt-0.5 ${iconStyle}`}>
@@ -116,14 +116,14 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-semibold text-sm">{status.banner.title}</h4>
+              <h4 className="font-semibold text-caption">{status.banner.title}</h4>
               {status.isActive && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-background/50 text-muted-foreground">
+                <span className="text-caption px-2 py-0.5 rounded-full bg-background/50 text-muted-foreground">
                   Day {status.currentDay} of 30
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{status.banner.message}</p>
+            <p className="text-caption text-muted-foreground">{status.banner.message}</p>
             {status.banner.ctaText && status.banner.ctaLink && (
               <Link to={status.banner.ctaLink}>
                 <Button variant="link" size="sm" className="h-auto p-0 mt-2">
@@ -139,8 +139,8 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ className = '', onDism
         {status.isActive && status.daysRemaining > 0 && (
           <div className="flex items-center gap-2">
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-muted-foreground">Trial ends in</p>
-              <p className="text-sm font-semibold">{status.daysRemaining} days</p>
+              <p className="text-caption text-muted-foreground">Trial ends in</p>
+              <p className="text-caption font-semibold">{status.daysRemaining} days</p>
             </div>
             <button
               onClick={handleDismiss}
@@ -204,7 +204,7 @@ export const TrialBadge: React.FC = () => {
   return (
     <Link
       to="/pricing"
-      className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+      className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-caption font-medium hover:bg-primary/20 transition-colors"
     >
       <Clock className="w-3 h-3" />
       <span>{status.daysRemaining}d left</span>

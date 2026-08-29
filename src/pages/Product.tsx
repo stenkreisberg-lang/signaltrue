@@ -78,30 +78,32 @@ export default function Product() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-4xl text-center">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">Product</p>
-              <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
+              <p className="mb-4 text-caption font-bold uppercase tracking-wider text-brand">
+                Product
+              </p>
+              <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
                 Observe changing work patterns. Investigate with workers. Review what changed.
               </h1>
-              <p className="mx-auto mt-6 max-w-3xl text-xl leading-8 text-[#475569]">
+              <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue turns privacy-safe team metadata into an evidence-led review
                 workflow—from baseline and confidence through consultation, control ownership and
                 subsequent observation.
               </p>
-              <p className="mt-4 text-sm font-semibold text-[#475569]">
+              <p className="mt-4 text-caption font-semibold text-[#475569]">
                 Team-level only · No message content · No individual productivity scores · No
                 diagnosis
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="product_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
+                  className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
                   Request a 20-minute psychosocial risk visibility review{' '}
                   <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
                   ctaLocation="product_hero"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
+                  className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -112,10 +114,10 @@ export default function Product() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
+                <p className="mb-3 text-caption font-bold uppercase tracking-wider text-brand">
                   Evidence for investigation
                 </p>
-                <h2 className="text-3xl font-bold text-[#0F172A]">
+                <h2 className="text-section font-bold text-[#0F172A]">
                   Six team-level indicator families
                 </h2>
                 <p className="mt-3 text-[#475569]">
@@ -125,21 +127,24 @@ export default function Product() {
               </div>
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {indicators.map(([title, copy, Icon]) => (
-                  <article key={title} className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+                  <article
+                    key={title}
+                    className="rounded-container border border-[#E2E8F0] bg-white p-6"
+                  >
                     <Icon className="h-6 w-6 text-brand" aria-hidden="true" />
-                    <h3 className="mt-4 text-lg font-bold text-[#0F172A]">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
+                    <h3 className="mt-4 text-body font-bold text-[#0F172A]">{title}</h3>
+                    <p className="mt-2 text-caption leading-6 text-[#475569]">{copy}</p>
                   </article>
                 ))}
               </div>
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
                   ctaLocation="product_problem"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
+                  className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 />
                 <SampleReportCTA
                   ctaLocation="product_problem"
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
+                  className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 />
               </div>
             </div>
@@ -150,19 +155,22 @@ export default function Product() {
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 text-center">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wider text-brand">
+                <p className="mb-3 text-caption font-bold uppercase tracking-wider text-brand">
                   One evidence base, three decisions
                 </p>
-                <h2 className="text-3xl font-bold text-[#0F172A]">
+                <h2 className="text-section font-bold text-[#0F172A]">
                   Useful at every level without becoming an employee score
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-3">
                 {decisionViews.map((view) => (
-                  <article key={view.audience} className="rounded-2xl border border-[#E2E8F0] p-6">
-                    <p className="text-sm font-bold text-brand">{view.audience}</p>
-                    <h3 className="mt-3 text-xl font-bold text-[#0F172A]">{view.question}</h3>
-                    <p className="mt-3 text-sm leading-6 text-[#475569]">{view.value}</p>
+                  <article
+                    key={view.audience}
+                    className="rounded-container border border-[#E2E8F0] p-6"
+                  >
+                    <p className="text-caption font-bold text-brand">{view.audience}</p>
+                    <h3 className="mt-3 text-lead font-bold text-[#0F172A]">{view.question}</h3>
+                    <p className="mt-3 text-caption leading-6 text-[#475569]">{view.value}</p>
                   </article>
                 ))}
               </div>
@@ -174,10 +182,10 @@ export default function Product() {
           <div className="container mx-auto px-6">
             <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-[#93C5FD]">
+                <p className="text-caption font-bold uppercase tracking-wider text-[#93C5FD]">
                   Complete sample report
                 </p>
-                <h2 className="mt-3 text-3xl font-bold">
+                <h2 className="mt-3 text-section font-bold">
                   Inspect the complete evidence-to-action record.
                 </h2>
                 <p className="mt-4 max-w-2xl leading-7 text-[#CBD5E1]">
@@ -190,7 +198,7 @@ export default function Product() {
                   </SampleReportCTA>
                 </Button>
               </div>
-              <div className="rounded-2xl border border-[#334155] bg-[#1E293B] p-6">
+              <div className="rounded-container border border-[#334155] bg-[#1E293B] p-6">
                 {[
                   'Measured evidence stays separate from interpretation.',
                   'Worker consultation is recorded before a control decision.',
@@ -205,7 +213,7 @@ export default function Product() {
                       className="mt-0.5 h-5 w-5 shrink-0 text-[#34D399]"
                       aria-hidden="true"
                     />
-                    <span className="text-sm leading-6 text-[#E2E8F0]">{item}</span>
+                    <span className="text-caption leading-6 text-[#E2E8F0]">{item}</span>
                   </div>
                 ))}
               </div>
@@ -215,7 +223,7 @@ export default function Product() {
 
         <section className="bg-white py-16 text-center">
           <div className="container mx-auto px-6">
-            <h2 className="text-3xl font-bold text-[#0F172A]">
+            <h2 className="text-section font-bold text-[#0F172A]">
               See whether continuous visibility fits your risk process.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-[#475569]">
@@ -225,11 +233,11 @@ export default function Product() {
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA
                 ctaLocation="product_final"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
+                className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
               />
               <SampleReportCTA
                 ctaLocation="product_final"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
+                className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
               />
             </div>
           </div>

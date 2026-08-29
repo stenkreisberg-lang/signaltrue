@@ -185,7 +185,7 @@ function Insights() {
           <p className="text-red-600 font-medium">{error}</p>
           <button
             onClick={fetchInsights}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-control hover:bg-blue-700"
           >
             Retry
           </button>
@@ -200,8 +200,10 @@ function Insights() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Insights Available Yet</h2>
+          <div className="bg-white rounded-control shadow p-8 text-center">
+            <h2 className="text-lead font-semibold text-gray-900 mb-2">
+              No Insights Available Yet
+            </h2>
             <p className="text-gray-600">
               Insights will be generated once we have sufficient team data and baselines. Check back
               after a few weeks of activity.
@@ -218,13 +220,13 @@ function Insights() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Team Insights</h1>
+            <h1 className="text-section font-bold text-gray-900">Team Insights</h1>
             {(() => {
               const health = getHealthState(families);
               if (!health) return null;
               return (
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ring-2 ${health.color} ${health.textColor} ${health.ring}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption font-semibold ring-2 ${health.color} ${health.textColor} ${health.ring}`}
                 >
                   {health.label}
                 </span>
@@ -247,7 +249,7 @@ function Insights() {
               {[1, 2, 3, 4].map((key) => (
                 <div
                   key={key}
-                  className="h-40 rounded-2xl border border-gray-200 bg-white animate-pulse"
+                  className="h-40 rounded-container border border-gray-200 bg-white animate-pulse"
                 />
               ))}
             </div>
@@ -256,16 +258,16 @@ function Insights() {
 
         {teamId && (
           <div className="mb-4 flex items-center gap-3">
-            <span className="text-sm text-gray-500">Compare scope:</span>
+            <span className="text-caption text-gray-500">Compare scope:</span>
             <button
               onClick={() => setFamilyScope('team')}
-              className={`px-3 py-1.5 rounded-md text-sm ${familyScope === 'team' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+              className={`px-3 py-1.5 rounded-control text-caption ${familyScope === 'team' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
             >
               This Team
             </button>
             <button
               onClick={() => setFamilyScope('org')}
-              className={`px-3 py-1.5 rounded-md text-sm ${familyScope === 'org' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+              className={`px-3 py-1.5 rounded-control text-caption ${familyScope === 'org' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
             >
               Organization
             </button>
@@ -275,31 +277,31 @@ function Insights() {
         {families.length > 0 && (
           <section className="mb-8">
             {prioritySummary && (
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white mb-6 shadow-sm">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-container p-6 text-white mb-6 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
-                    <div className="text-xs uppercase tracking-[0.2em] text-blue-100">
+                    <div className="text-caption uppercase tracking-[0.2em] text-blue-100">
                       Top priority this week
                     </div>
-                    <h2 className="text-2xl font-semibold">{prioritySummary.familyName}</h2>
+                    <h2 className="text-lead font-semibold">{prioritySummary.familyName}</h2>
                     <p className="text-blue-50">{prioritySummary.summary}</p>
-                    <p className="text-sm text-blue-100">{prioritySummary.detail}</p>
-                    <p className="text-sm font-medium text-white/95">
+                    <p className="text-caption text-blue-100">{prioritySummary.detail}</p>
+                    <p className="text-caption font-medium text-white/95">
                       {prioritySummary.recommendation}
                     </p>
                     {prioritySummary.gapLine && (
-                      <p className="text-sm font-medium text-indigo-200">
+                      <p className="text-caption font-medium text-indigo-200">
                         {prioritySummary.gapLine}
                       </p>
                     )}
                     {prioritySummary.comparison && (
-                      <p className="text-xs text-blue-100/90">{prioritySummary.comparison}</p>
+                      <p className="text-caption text-blue-100/90">{prioritySummary.comparison}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handleCopySummary}
-                      className="px-3 py-2 rounded-md text-sm font-medium bg-white text-blue-700 hover:bg-blue-50"
+                      className="px-3 py-2 rounded-control text-caption font-medium bg-white text-blue-700 hover:bg-blue-50"
                     >
                       Copy summary
                     </button>
@@ -308,7 +310,7 @@ function Insights() {
               </div>
             )}
 
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Structural Drift Summary</h2>
+            <h2 className="text-body font-semibold text-gray-900 mb-4">Structural Drift Summary</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
               {families.map((family) => (
                 <DriftFamilyCard
@@ -341,15 +343,15 @@ function Insights() {
 
         {!familiesLoading && families.length === 0 && (
           <section className="mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-white rounded-control shadow-sm p-6 border border-gray-200">
+              <h2 className="text-body font-semibold text-gray-900 mb-2">
                 Structural drift summary not ready yet
               </h2>
               <p className="text-gray-600 mb-2">
                 We only show family-level drift when there is enough reliable data to make the view
                 useful and safe to interpret.
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-caption text-gray-500">
                 As more activity is captured and data readiness improves, you’ll see which internal
                 model family moved most. The model does not establish overload, cohesion, or cause.
               </p>
@@ -359,15 +361,15 @@ function Insights() {
 
         {/* Team State Section */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Current State</h2>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-body font-semibold text-gray-900 mb-4">Current State</h2>
+          <div className="bg-white rounded-control shadow-sm p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <TeamStateBadge state={teamState.state} confidence={teamState.confidence} />
                 <p className="mt-3 text-gray-700 leading-relaxed">{teamState.summaryText}</p>
               </div>
             </div>
-            <div className="text-sm text-gray-500 mt-4">
+            <div className="text-caption text-gray-500 mt-4">
               Week of {new Date(teamState.weekStart).toLocaleDateString()}
             </div>
           </div>
@@ -376,7 +378,7 @@ function Insights() {
         {/* Active Experiment Section */}
         {experiment && (
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Experiment</h2>
+            <h2 className="text-body font-semibold text-gray-900 mb-4">Active Experiment</h2>
             <ExperimentCard experiment={experiment} />
           </section>
         )}
@@ -384,7 +386,7 @@ function Insights() {
         {/* Recommended Action Section */}
         {action && !experiment && (
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-body font-semibold text-gray-900 mb-4">
               {action.status === 'suggested' ? 'Recommended Action' : 'Active Action'}
             </h2>
             <ActionCard
@@ -397,14 +399,14 @@ function Insights() {
 
         {/* Risk Signals Section */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-body font-semibold text-gray-900 mb-4">
             Review Signals (internal models)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {risks && risks.length > 0 ? (
               risks.map((risk) => <RiskCard key={risk.riskType} risk={risk} />)
             ) : (
-              <div className="col-span-3 bg-white rounded-lg shadow-sm p-8 text-center">
+              <div className="col-span-3 bg-white rounded-control shadow-sm p-8 text-center">
                 <p className="text-gray-600">No review-signal data available</p>
               </div>
             )}

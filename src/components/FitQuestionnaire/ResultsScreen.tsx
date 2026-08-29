@@ -129,11 +129,13 @@ const ResultsScreen = ({
   if (isSubmitted) {
     return (
       <div className="w-full max-w-2xl mx-auto animate-slide-up text-center">
-        <div className="bg-success/10 rounded-2xl border border-success/30 p-8">
+        <div className="bg-success/10 rounded-container border border-success/30 p-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/20 mb-6">
             <CheckCircle className="w-8 h-8 text-success" />
           </div>
-          <h3 className="text-2xl font-display font-bold text-foreground mb-3">Check your inbox</h3>
+          <h3 className="text-lead font-display font-bold text-foreground mb-3">
+            Check your inbox
+          </h3>
           <p className="text-muted-foreground mb-6">
             We've sent your detailed results to <strong>{email}</strong>
           </p>
@@ -149,8 +151,8 @@ const ResultsScreen = ({
   if (showEmailForm) {
     return (
       <div className="w-full max-w-2xl mx-auto animate-slide-up">
-        <div className="bg-card rounded-2xl border border-border/50 p-8">
-          <h3 className="text-2xl font-display font-bold text-foreground mb-3 text-center">
+        <div className="bg-card rounded-container border border-border/50 p-8">
+          <h3 className="text-lead font-display font-bold text-foreground mb-3 text-center">
             Want a detailed breakdown of what this means for your teams?
           </h3>
           <p className="text-muted-foreground text-center mb-8">
@@ -170,12 +172,12 @@ const ResultsScreen = ({
                   placeholder="Your work email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-border/50 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  className="w-full pl-12 pr-4 py-4 rounded-container border border-border/50 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   autoFocus
                 />
               </div>
               {error && (
-                <p className="mt-2 text-sm text-destructive flex items-center gap-1">
+                <p className="mt-2 text-caption text-destructive flex items-center gap-1">
                   <XCircle className="w-4 h-4" />
                   {error}
                 </p>
@@ -191,7 +193,10 @@ const ResultsScreen = ({
                 onChange={(e) => setConsent(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/50"
               />
-              <label htmlFor="consent" className="text-sm text-muted-foreground leading-relaxed">
+              <label
+                htmlFor="consent"
+                className="text-caption text-muted-foreground leading-relaxed"
+              >
                 I agree to receive my results and relevant insights from SignalTrue.
               </label>
             </div>
@@ -219,7 +224,7 @@ const ResultsScreen = ({
 
           <button
             onClick={() => setShowEmailForm(false)}
-            className="mt-6 w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-6 w-full text-center text-caption text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Back to results
           </button>
@@ -233,7 +238,7 @@ const ResultsScreen = ({
     <div className="w-full max-w-2xl mx-auto animate-slide-up">
       {/* Result card with emotional headline */}
       <div
-        className={`rounded-2xl border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}
+        className={`rounded-container border-2 ${styles.borderColor} bg-gradient-to-br ${styles.gradient} p-8 text-center mb-8`}
       >
         <div
           className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${styles.bgColor} mb-6`}
@@ -242,7 +247,7 @@ const ResultsScreen = ({
         </div>
 
         {/* Emotional headline - not score-focused */}
-        <h3 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-4 leading-tight">
+        <h3 className="text-lead sm:text-section font-display font-bold text-foreground mb-4 leading-tight">
           {getTierHeadline(result.tier)}
         </h3>
 
@@ -267,7 +272,7 @@ const ResultsScreen = ({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={onReset}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            className="text-caption text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
           >
             <RotateCcw className="w-4 h-4" />
             Take again
@@ -275,7 +280,7 @@ const ResultsScreen = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-caption text-muted-foreground hover:text-foreground transition-colors"
             >
               Close
             </button>

@@ -37,7 +37,7 @@ function RiskCard({ risk }) {
 
   return (
     <div
-      className={`rounded-lg border-2 ${config.borderColor} ${config.bgColor} p-5 transition-all hover:shadow-md`}
+      className={`rounded-control border-2 ${config.borderColor} ${config.bgColor} p-5 transition-all hover:shadow-md`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -45,18 +45,18 @@ function RiskCard({ risk }) {
           <h3 className="font-semibold text-gray-900">{riskName}</h3>
           <div className="flex items-center gap-2 mt-1">
             <div className={`w-2 h-2 rounded-full ${config.dotColor}`}></div>
-            <span className={`text-sm font-medium ${config.textColor}`}>{config.label}</span>
+            <span className={`text-caption font-medium ${config.textColor}`}>{config.label}</span>
           </div>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${config.textColor}`}>{Math.round(risk.score)}</div>
-          <div className="text-xs text-gray-500">{risk.confidence}% conf.</div>
+          <div className={`text-lead font-bold ${config.textColor}`}>{Math.round(risk.score)}</div>
+          <div className="text-caption text-gray-500">{risk.confidence}% conf.</div>
         </div>
       </div>
 
       {/* Explanation */}
       {risk.explanationText && (
-        <p className="text-sm text-gray-700 mb-3 leading-relaxed">{risk.explanationText}</p>
+        <p className="text-caption text-gray-700 mb-3 leading-relaxed">{risk.explanationText}</p>
       )}
 
       {/* Drivers Toggle */}
@@ -64,7 +64,7 @@ function RiskCard({ risk }) {
         <div className="mt-3 pt-3 border-t border-gray-200">
           <button
             onClick={() => setShowDrivers(!showDrivers)}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            className="text-caption text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
           >
             <span>{showDrivers ? '▼' : '▶'}</span>
             <span>
@@ -77,7 +77,7 @@ function RiskCard({ risk }) {
               {risk.drivers
                 .sort((a, b) => b.contributionWeight - a.contributionWeight)
                 .map((driver, idx) => (
-                  <div key={idx} className="text-sm">
+                  <div key={idx} className="text-caption">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-gray-700 font-medium">
                         {driver.metricKey.replace(/_/g, ' ')}
@@ -87,7 +87,7 @@ function RiskCard({ risk }) {
                       </span>
                     </div>
                     {driver.explanationText && (
-                      <p className="text-gray-600 text-xs ml-2">{driver.explanationText}</p>
+                      <p className="text-gray-600 text-caption ml-2">{driver.explanationText}</p>
                     )}
                   </div>
                 ))}

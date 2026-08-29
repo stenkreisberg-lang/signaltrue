@@ -108,15 +108,15 @@ const Register = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <div className="w-10 h-10 rounded-control bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Activity className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="text-2xl font-display font-bold">SignalTrue</span>
+          <span className="text-lead font-display font-bold">SignalTrue</span>
         </Link>
 
         {/* Register Form */}
-        <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">Create your SignalTrue account</h1>
+        <div className="bg-card border border-border rounded-control p-8 shadow-lg">
+          <h1 className="text-lead font-bold mb-2">Create your SignalTrue account</h1>
           <p className="text-muted-foreground mb-6">
             Set up the organization responsible for the workplace risk review.
             {selectedPlan && planLabels[selectedPlan] && (
@@ -127,7 +127,7 @@ const Register = () => {
           </p>
 
           {error && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-control text-destructive text-caption">
               {error}
             </div>
           )}
@@ -135,7 +135,10 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="register-first-name" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="register-first-name"
+                  className="block text-caption font-medium mb-2"
+                >
                   First name
                 </label>
                 <Input
@@ -151,7 +154,7 @@ const Register = () => {
                 />
               </div>
               <div>
-                <label htmlFor="register-last-name" className="block text-sm font-medium mb-2">
+                <label htmlFor="register-last-name" className="block text-caption font-medium mb-2">
                   Last name
                 </label>
                 <Input
@@ -169,7 +172,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="register-email" className="block text-sm font-medium mb-2">
+              <label htmlFor="register-email" className="block text-caption font-medium mb-2">
                 Work email
               </label>
               <Input
@@ -186,7 +189,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="register-company" className="block text-sm font-medium mb-2">
+              <label htmlFor="register-company" className="block text-caption font-medium mb-2">
                 Organization
               </label>
               <Input
@@ -203,7 +206,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="register-password" className="block text-sm font-medium mb-2">
+              <label htmlFor="register-password" className="block text-caption font-medium mb-2">
                 Password
               </label>
               <Input
@@ -220,7 +223,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="register-timezone" className="block text-sm font-medium mb-2">
+              <label htmlFor="register-timezone" className="block text-caption font-medium mb-2">
                 Primary workplace time zone
               </label>
               <Input
@@ -233,7 +236,7 @@ const Register = () => {
                 required
                 disabled={loading}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-caption text-muted-foreground">
                 Used to identify after-hours activity accurately. We detected this automatically;
                 change it if your main team works elsewhere.
               </p>
@@ -244,7 +247,7 @@ const Register = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 text-center text-caption text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in

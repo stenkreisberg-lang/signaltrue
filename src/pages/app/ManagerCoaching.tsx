@@ -221,7 +221,7 @@ export default function ManagerCoaching() {
     return (
       <AppShell user={user} section="Manager Coach">
         <div className="app-panel flex min-h-64 items-center justify-center" role="status">
-          <span className="text-sm font-semibold text-slate-600">
+          <span className="text-caption font-semibold text-slate-600">
             Preparing your private weekly coaching…
           </span>
         </div>
@@ -287,7 +287,7 @@ export default function ManagerCoaching() {
       />
 
       {error && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="mb-5 rounded-container border border-red-200 bg-red-50 p-4 text-caption text-red-800">
           {error}
         </div>
       )}
@@ -307,22 +307,22 @@ export default function ManagerCoaching() {
         />
       ) : (
         <div className="space-y-5">
-          <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 to-slate-900 p-6 text-white shadow-sm md:p-8">
+          <section className="rounded-container border border-indigo-200 bg-gradient-to-br from-indigo-950 to-slate-900 p-6 text-white shadow-sm md:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">
+              <p className="text-caption font-bold uppercase tracking-[0.18em] text-indigo-200">
                 One thing worth looking at
               </p>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold capitalize">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-caption font-semibold capitalize">
                 {insight.confidence} confidence
               </span>
             </div>
-            <h2 className="mt-5 max-w-3xl text-2xl font-bold leading-tight md:text-3xl">
+            <h2 className="mt-5 max-w-3xl text-lead font-bold leading-tight md:text-section">
               {insight.title}
             </h2>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-indigo-100">
+            <p className="mt-4 max-w-3xl text-body leading-7 text-indigo-100">
               {insight.statement}
             </p>
-            <p className="mt-4 text-sm text-indigo-200">
+            <p className="mt-4 text-caption text-indigo-200">
               Observed for {insight.persistenceWeeks} week
               {insight.persistenceWeeks === 1 ? '' : 's'}.
             </p>
@@ -340,12 +340,14 @@ export default function ManagerCoaching() {
           <section className="grid gap-5 lg:grid-cols-2">
             <div className="app-panel">
               <p className="app-eyebrow">What the data can and cannot say</p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">{coaching?.data?.limitation}</p>
+              <p className="mt-3 text-caption leading-6 text-slate-700">
+                {coaching?.data?.limitation}
+              </p>
               <EvidenceDetails metric={insight.trigger} />
             </div>
             <div className="app-panel border-amber-200 bg-amber-50/40">
               <p className="app-eyebrow">A useful question</p>
-              <p className="mt-3 text-lg font-semibold leading-7 text-slate-900">
+              <p className="mt-3 text-body font-semibold leading-7 text-slate-900">
                 {insight.question}
               </p>
             </div>
@@ -353,16 +355,16 @@ export default function ManagerCoaching() {
 
           <section className="app-panel border-emerald-200">
             <p className="app-eyebrow">Try this for two weeks</p>
-            <h3 className="mt-3 text-xl font-bold text-slate-950">{insight.experiment.title}</h3>
+            <h3 className="mt-3 text-lead font-bold text-slate-950">{insight.experiment.title}</h3>
             <div className="mt-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              <p className="text-caption font-bold uppercase tracking-wide text-slate-500">
                 We will measure
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {insight.experiment.targetMetrics.map((target) => (
                   <span
                     key={target.metric}
-                    className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
+                    className="rounded-full bg-emerald-50 px-3 py-1.5 text-caption font-semibold text-emerald-800"
                   >
                     {humanize(target.metric)} · {target.direction}
                   </span>
@@ -406,7 +408,7 @@ export default function ManagerCoaching() {
         onFeedback={sendFeedback}
         busy={busy}
       />
-      <p className="mt-6 text-xs leading-5 text-slate-500">
+      <p className="mt-6 text-caption leading-5 text-slate-500">
         Your coaching questions, dismissals and experiments are private to your manager workspace.
         SignalTrue does not use them to rank performance.
       </p>
@@ -443,14 +445,14 @@ function ReadinessChecklist({ requirements }: { requirements: ReadinessRequireme
       {items.map(([label, complete, detail]) => (
         <div
           key={label}
-          className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3"
+          className="flex items-start gap-3 rounded-container border border-slate-200 bg-white p-3"
         >
           <span className={`mt-0.5 font-bold ${complete ? 'text-emerald-600' : 'text-slate-400'}`}>
             {complete ? '✓' : '○'}
           </span>
           <div>
-            <p className="text-sm font-semibold text-slate-900">{label}</p>
-            <p className="text-xs text-slate-500">{detail || 'Not available'}</p>
+            <p className="text-caption font-semibold text-slate-900">{label}</p>
+            <p className="text-caption text-slate-500">{detail || 'Not available'}</p>
           </div>
         </div>
       ))}
@@ -466,12 +468,12 @@ function MetricSection({ title, metrics }: { title: string; metrics: Metric[] })
       <p className="app-eyebrow">{title}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {available.map((metric) => (
-          <div key={metric.key} className="rounded-xl border border-slate-200 p-4">
-            <p className="text-xs font-semibold text-slate-500">{metric.label}</p>
-            <p className="mt-2 text-lg font-bold text-slate-950">
+          <div key={metric.key} className="rounded-container border border-slate-200 p-4">
+            <p className="text-caption font-semibold text-slate-500">{metric.label}</p>
+            <p className="mt-2 text-body font-bold text-slate-950">
               {formatMetric(metric.value, metric.unit)}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-caption text-slate-500">
               {metric.baseline == null
                 ? 'Baseline building'
                 : `${formatDelta(metric.deltaPercent)} from your baseline`}
@@ -485,11 +487,11 @@ function MetricSection({ title, metrics }: { title: string; metrics: Metric[] })
 
 function EvidenceDetails({ metric }: { metric: Metric }) {
   return (
-    <details className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
-      <summary className="cursor-pointer text-sm font-bold text-slate-900">
+    <details className="mt-5 rounded-container border border-slate-200 bg-white p-4">
+      <summary className="cursor-pointer text-caption font-bold text-slate-900">
         Why am I seeing this?
       </summary>
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
+      <dl className="mt-4 grid grid-cols-2 gap-3 text-caption">
         <Evidence label="Current" value={formatMetric(metric.value, metric.unit)} />
         <Evidence label="Personal baseline" value={formatMetric(metric.baseline, metric.unit)} />
         <Evidence
@@ -526,16 +528,16 @@ function ActiveExperiment({
     Math.floor((Date.now() - new Date(experiment.startDate).getTime()) / 86400000)
   );
   return (
-    <section className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-      <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+    <section className="mb-5 rounded-container border border-emerald-200 bg-emerald-50 p-5">
+      <p className="text-caption font-bold uppercase tracking-wide text-emerald-700">
         Active experiment · day {elapsed}
       </p>
-      <h2 className="mt-2 text-lg font-bold text-slate-950">{experiment.title}</h2>
+      <h2 className="mt-2 text-body font-bold text-slate-950">{experiment.title}</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {experiment.targetMetrics.map((target) => (
           <span
             key={target.metric}
-            className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+            className="rounded-full bg-white px-3 py-1 text-caption font-semibold text-slate-700"
           >
             {target.label || humanize(target.metric)}
           </span>
@@ -566,19 +568,19 @@ function ExperimentHistory({
           <article key={experiment._id} className="py-4 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-950">{experiment.title}</h3>
-                <p className="mt-1 text-xs text-slate-500">
+                <h3 className="text-caption font-bold text-slate-950">{experiment.title}</h3>
+                <p className="mt-1 text-caption text-slate-500">
                   Started {new Date(experiment.startDate).toLocaleDateString()} ·{' '}
                   {experiment.status}
                 </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-caption font-semibold capitalize text-slate-600">
                 {latestResult(experiment)}
               </span>
             </div>
             <ReviewButtons experiment={experiment} onReview={onReview} busy={busy} />
             {experiment.reviews?.some((review) => review.measuredAt) && (
-              <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+              <div className="mt-3 flex items-center gap-3 text-caption text-slate-500">
                 <span>Was this useful?</span>
                 <button
                   className="font-bold text-emerald-700"
@@ -648,8 +650,8 @@ function StatePanel({
 }) {
   return (
     <section className="app-panel">
-      <h1 className="text-xl font-bold text-slate-950">{title}</h1>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
+      <h1 className="text-lead font-bold text-slate-950">{title}</h1>
+      <p className="mt-2 max-w-3xl text-caption leading-6 text-slate-600">{description}</p>
       {children}
       {action && <div className="mt-5">{action}</div>}
     </section>

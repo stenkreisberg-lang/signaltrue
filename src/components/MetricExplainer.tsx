@@ -316,12 +316,12 @@ const MetricExplainer: React.FC<Props> = ({
       {isOpen && (
         <div
           ref={tooltipRef}
-          className="fixed z-50 w-80 max-h-96 overflow-y-auto bg-slate-800 border border-slate-600 rounded-xl shadow-2xl"
+          className="fixed z-50 w-80 max-h-96 overflow-y-auto bg-slate-800 border border-slate-600 rounded-container shadow-2xl"
           style={{ top: tooltipPosition.top, left: tooltipPosition.left }}
         >
           {/* Header */}
           <div className="sticky top-0 bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-100 text-sm">{explanation.name}</h3>
+            <h3 className="font-semibold text-slate-100 text-caption">{explanation.name}</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="text-slate-400 hover:text-slate-200"
@@ -333,23 +333,23 @@ const MetricExplainer: React.FC<Props> = ({
           {/* Content */}
           <div className="p-4 space-y-4">
             {/* Description */}
-            <p className="text-sm text-slate-300 leading-relaxed">{explanation.description}</p>
+            <p className="text-caption text-slate-300 leading-relaxed">{explanation.description}</p>
 
             {/* Formula */}
             {explanation.formula && (
-              <div className="p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-xs text-slate-400 mb-1">Formula</p>
-                <code className="text-xs text-green-400 font-mono">{explanation.formula}</code>
+              <div className="p-3 bg-slate-900/50 rounded-control">
+                <p className="text-caption text-slate-400 mb-1">Formula</p>
+                <code className="text-caption text-green-400 font-mono">{explanation.formula}</code>
               </div>
             )}
 
             {/* Components */}
             {explanation.components && explanation.components.length > 0 && (
               <div>
-                <p className="text-xs text-slate-400 mb-2">Components</p>
+                <p className="text-caption text-slate-400 mb-2">Components</p>
                 <div className="space-y-2">
                   {explanation.components.map((comp, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs">
+                    <div key={i} className="flex items-start gap-2 text-caption">
                       {comp.weight && (
                         <span className="px-1.5 py-0.5 bg-primary/20 text-primary rounded">
                           {comp.weight}
@@ -368,8 +368,8 @@ const MetricExplainer: React.FC<Props> = ({
             {/* Interpretation */}
             {explanation.interpretation && (
               <div>
-                <p className="text-xs text-slate-400 mb-2">Interpretation</p>
-                <div className="space-y-1 text-xs">
+                <p className="text-caption text-slate-400 mb-2">Interpretation</p>
+                <div className="space-y-1 text-caption">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-slate-300">{explanation.interpretation.low}</span>
@@ -389,7 +389,9 @@ const MetricExplainer: React.FC<Props> = ({
             {/* Data Source */}
             {explanation.dataSource && (
               <div className="pt-2 border-t border-slate-700">
-                <p className="text-xs text-slate-500">📊 Data source: {explanation.dataSource}</p>
+                <p className="text-caption text-slate-500">
+                  📊 Data source: {explanation.dataSource}
+                </p>
               </div>
             )}
           </div>

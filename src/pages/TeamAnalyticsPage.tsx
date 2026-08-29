@@ -89,13 +89,13 @@ const TeamAnalyticsPage = () => {
           <div className="absolute inset-0 bg-glow opacity-20" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+              <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
                 Team Analytics
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-6">
+              <h1 className="text-display sm:text-display lg:text-display font-display font-bold mb-6">
                 What Teams Absorb <span className="text-gradient">Before They Break</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+              <p className="text-body text-muted-foreground max-w-xl mx-auto mb-8">
                 SignalTrue shows team-level workload risk from meetings, uninterrupted calendar
                 availability, after-hours work, management capacity, and coordination patterns,
                 without invading privacy or tracking individuals.
@@ -117,22 +117,22 @@ const TeamAnalyticsPage = () => {
               {analyticsPatterns.map((pattern, index) => (
                 <div
                   key={index}
-                  className="p-8 lg:p-10 rounded-2xl bg-card border border-border/50 animate-slide-up"
+                  className="p-8 lg:p-10 rounded-container bg-card border border-border/50 animate-slide-up"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="flex items-start gap-6">
-                    <div className="p-4 rounded-2xl bg-primary/10 flex-shrink-0">
+                    <div className="p-4 rounded-container bg-primary/10 flex-shrink-0">
                       <pattern.icon className="w-8 h-8 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-2xl font-display font-bold text-foreground mb-2">
+                      <h3 className="text-lead font-display font-bold text-foreground mb-2">
                         {pattern.title}
                       </h3>
-                      <p className="text-lg text-muted-foreground mb-6">{pattern.description}</p>
+                      <p className="text-body text-muted-foreground mb-6">{pattern.description}</p>
 
                       <div className="grid md:grid-cols-2 gap-8">
                         <div>
-                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                          <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
                             What we observe
                           </p>
                           <ul className="space-y-2">
@@ -145,7 +145,7 @@ const TeamAnalyticsPage = () => {
                           </ul>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+                          <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
                             Why it matters
                           </p>
                           <p className="text-muted-foreground">{pattern.whyItMatters}</p>
@@ -163,14 +163,14 @@ const TeamAnalyticsPage = () => {
         <section className="py-20 bg-secondary/20">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-section sm:text-display font-display font-bold mb-6">
                 Patterns, Not Surveillance
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+              <p className="text-body text-muted-foreground max-w-2xl mx-auto mb-8">
                 SignalTrue explains patterns at the team and system level. We never surface
                 individual names, read message content, or score productivity.
               </p>
-              <div className="inline-flex items-center gap-4 p-4 rounded-xl bg-success/10 border border-success/20">
+              <div className="inline-flex items-center gap-4 p-4 rounded-container bg-success/10 border border-success/20">
                 <span className="text-success font-medium">
                   Privacy is enforced by architecture, not policy.
                 </span>
@@ -184,10 +184,10 @@ const TeamAnalyticsPage = () => {
           <div className="absolute inset-0 bg-glow opacity-30" />
           <div className="container mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-display font-bold mb-6">
+              <h2 className="text-section sm:text-display font-display font-bold mb-6">
                 See These Signals Early
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-body text-muted-foreground mb-8 max-w-xl mx-auto">
                 Request a preview to see what team workload risk looks like in your organization.
               </p>
               <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>

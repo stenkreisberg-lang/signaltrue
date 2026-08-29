@@ -120,10 +120,10 @@ const SelfCheck = () => {
       {/* Minimal header - logo and close only, no nav */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center border-b border-border/50">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <div className="w-8 h-8 rounded-control bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Activity className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="text-lg font-display font-semibold text-foreground">SignalTrue</span>
+          <span className="text-body font-display font-semibold text-foreground">SignalTrue</span>
         </Link>
         <button
           onClick={handleClose}

@@ -131,13 +131,13 @@ export default function SiteAnalytics() {
       </div>
 
       {status === 'loading' && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
+        <div className="rounded-container border border-slate-200 bg-white p-6 text-slate-600">
           Loading analytics overview...
         </div>
       )}
 
       {status === 'error' && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
+        <div className="rounded-container border border-amber-200 bg-amber-50 p-6 text-amber-900">
           {error}
         </div>
       )}
@@ -166,7 +166,7 @@ export default function SiteAnalytics() {
             </div>
           </div>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+          <section className="rounded-container border border-slate-200 bg-white p-6 mb-8">
             <div className="app-section-heading">
               <div>
                 <h2>Lead funnel</h2>
@@ -175,16 +175,16 @@ export default function SiteAnalytics() {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {(ga4.funnelEvents || []).map((event) => (
-                <div key={event.eventName} className="rounded-lg bg-slate-50 px-4 py-3">
-                  <div className="text-sm font-semibold text-slate-900">
+                <div key={event.eventName} className="rounded-control bg-slate-50 px-4 py-3">
+                  <div className="text-caption font-semibold text-slate-900">
                     {formatEventName(event.eventName)}
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">{event.eventCount}</div>
-                  <div className="text-xs text-slate-500">GA4 event count</div>
+                  <div className="text-lead font-bold text-slate-900 mt-1">{event.eventCount}</div>
+                  <div className="text-caption text-slate-500">GA4 event count</div>
                 </div>
               ))}
               {(ga4.funnelEvents || []).length === 0 && (
-                <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <div className="rounded-control bg-slate-50 px-4 py-3 text-caption text-slate-600">
                   No lead-funnel actions recorded in the selected GA4 window yet.
                 </div>
               )}
@@ -192,7 +192,7 @@ export default function SiteAnalytics() {
           </section>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 mb-8">
-            <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <section className="rounded-container border border-slate-200 bg-white p-6">
               <div className="app-section-heading">
                 <div>
                   <h2>Traffic trend</h2>
@@ -207,14 +207,19 @@ export default function SiteAnalytics() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Line type="monotone" dataKey="sessions" stroke="#2563eb" strokeWidth={2} />
-                    <Line type="monotone" dataKey="views" stroke="#0f766e" strokeWidth={2} />
+                    <Line
+                      type="monotone"
+                      dataKey="views"
+                      stroke="var(--color-brand)"
+                      strokeWidth={2}
+                    />
                     <Line type="monotone" dataKey="activeUsers" stroke="#d97706" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <section className="rounded-container border border-slate-200 bg-white p-6">
               <div className="app-section-heading">
                 <div>
                   <h2>Traffic sources</h2>
@@ -225,17 +230,19 @@ export default function SiteAnalytics() {
                 {(ga4.trafficSources || []).map((source) => (
                   <div
                     key={source.channel}
-                    className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3"
+                    className="flex items-center justify-between rounded-control bg-slate-50 px-4 py-3"
                   >
-                    <span className="text-sm font-semibold text-slate-800">{source.channel}</span>
-                    <span className="text-sm text-slate-600">{source.sessions} sessions</span>
+                    <span className="text-caption font-semibold text-slate-800">
+                      {source.channel}
+                    </span>
+                    <span className="text-caption text-slate-600">{source.sessions} sessions</span>
                   </div>
                 ))}
               </div>
             </section>
           </div>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+          <section className="rounded-container border border-slate-200 bg-white p-6 mb-8">
             <div className="app-section-heading">
               <div>
                 <h2>Top pages</h2>
@@ -243,8 +250,8 @@ export default function SiteAnalytics() {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-slate-500">
+              <table className="w-full text-left text-caption">
+                <thead className="text-caption uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="py-2 pr-4">Page</th>
                     <th className="py-2 pr-4">Views</th>
@@ -271,20 +278,20 @@ export default function SiteAnalytics() {
       )}
 
       {!ga4?.connected && status === 'ready' && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 mb-8">
+        <div className="rounded-container border border-amber-200 bg-amber-50 p-6 text-amber-900 mb-8">
           GA4 reporting is not connected yet. {ga4?.reason || ga4?.message}
         </div>
       )}
 
       {status === 'ready' && (
         <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6">
-          <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <section className="rounded-container border border-slate-200 bg-white p-6">
             <div className="app-section-heading">
               <div>
                 <h2>Internal events</h2>
                 <p>Most common events recorded by the internal tracker.</p>
               </div>
-              <div className="text-right text-xs text-slate-500">
+              <div className="text-right text-caption text-slate-500">
                 {totalEvents} events · {pageViews} page views · {conversions} conversions
               </div>
             </div>
@@ -307,7 +314,7 @@ export default function SiteAnalytics() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <section className="rounded-container border border-slate-200 bg-white p-6">
             <div className="app-section-heading">
               <div>
                 <h2>Recent activity</h2>
@@ -316,24 +323,27 @@ export default function SiteAnalytics() {
             </div>
             <div className="space-y-3">
               {recentEvents.map((event) => (
-                <div key={event._id} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div
+                  key={event._id}
+                  className="rounded-control border border-slate-100 bg-slate-50 p-3"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="text-sm text-slate-900">
+                    <strong className="text-caption text-slate-900">
                       {formatEventName(event.eventName)}
                     </strong>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-caption text-slate-500">
                       {new Date(event.createdAt).toLocaleString()}
                     </span>
                   </div>
                   {event.payload && (
-                    <pre className="mt-2 max-h-20 overflow-auto text-xs text-slate-600">
+                    <pre className="mt-2 max-h-20 overflow-auto text-caption text-slate-600">
                       {JSON.stringify(event.payload, null, 2)}
                     </pre>
                   )}
                 </div>
               ))}
               {recentEvents.length === 0 && (
-                <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="rounded-control border border-slate-100 bg-slate-50 p-4 text-caption text-slate-600">
                   No recent events yet. Activity will appear after visitors trigger tracked actions.
                 </div>
               )}

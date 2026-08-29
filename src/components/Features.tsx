@@ -59,10 +59,10 @@ const Features = () => {
       <div className="container mx-auto px-6">
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
+          <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
             Signals
           </p>
-          <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
+          <h2 className="text-section sm:text-display font-display font-bold mb-4">
             Failure modes of modern work
           </h2>
           <p className="text-muted-foreground">
@@ -76,18 +76,18 @@ const Features = () => {
           {failureModes.map((mode, index) => (
             <div
               key={index}
-              className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-card animate-slide-up"
+              className="group p-6 rounded-container bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-card animate-slide-up"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <div className="p-3 rounded-xl bg-primary/10 w-fit mb-4 group-hover:bg-primary/20 transition-colors">
+              <div className="p-3 rounded-container bg-primary/10 w-fit mb-4 group-hover:bg-primary/20 transition-colors">
                 <mode.icon className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-display font-semibold mb-2 text-foreground">
+              <h3 className="text-body font-display font-semibold mb-2 text-foreground">
                 {mode.title}
               </h3>
               <p className="text-muted-foreground leading-relaxed mb-4">{mode.description}</p>
               <div className="pt-3 border-t border-border/50">
-                <p className="text-sm">
+                <p className="text-caption">
                   <span className="text-warning font-medium">Leads to: </span>
                   <span className="text-muted-foreground">{mode.leadsTo}</span>
                 </p>

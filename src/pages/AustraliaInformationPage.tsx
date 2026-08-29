@@ -246,13 +246,15 @@ export default function AustraliaInformationPage() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-brand">{page.eyebrow}</p>
-            <h1 className="mt-4 max-w-4xl text-4xl font-bold text-[#0F172A] sm:text-5xl">
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              {page.eyebrow}
+            </p>
+            <h1 className="mt-4 max-w-4xl text-display font-bold text-[#0F172A] sm:text-display">
               {page.title}
             </h1>
-            <p className="mt-6 max-w-3xl text-xl leading-8 text-[#475569]">{page.description}</p>
+            <p className="mt-6 max-w-3xl text-lead leading-8 text-[#475569]">{page.description}</p>
             {page.status && (
-              <div className="mt-8 flex max-w-4xl gap-3 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+              <div className="mt-8 flex max-w-4xl gap-3 rounded-container border border-amber-200 bg-amber-50 p-5 text-caption leading-6 text-amber-950">
                 <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                 <p>{page.status}</p>
               </div>
@@ -265,15 +267,15 @@ export default function AustraliaInformationPage() {
             {page.sections.map((section) => (
               <article
                 key={section.title}
-                className="rounded-2xl border border-[#E2E8F0] bg-white p-7 md:p-8"
+                className="rounded-container border border-[#E2E8F0] bg-white p-7 md:p-8"
               >
-                <h2 className="text-2xl font-bold text-[#0F172A]">{section.title}</h2>
+                <h2 className="text-lead font-bold text-[#0F172A]">{section.title}</h2>
                 {section.copy && <p className="mt-4 leading-7 text-[#475569]">{section.copy}</p>}
                 {section.bullets && (
                   <ul className="mt-5 space-y-3">
                     {section.bullets.map((item) => (
-                      <li key={item} className="flex gap-3 text-sm leading-6 text-[#334155]">
-                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-[#0F766E]" /> {item}
+                      <li key={item} className="flex gap-3 text-caption leading-6 text-[#334155]">
+                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" /> {item}
                       </li>
                     ))}
                   </ul>
@@ -287,7 +289,7 @@ export default function AustraliaInformationPage() {
           <div className="container mx-auto flex max-w-5xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
             <div className="flex max-w-2xl gap-3">
               <Info className="mt-1 h-5 w-5 shrink-0 text-brand" />
-              <p className="text-sm leading-6 text-[#475569]">
+              <p className="text-caption leading-6 text-[#475569]">
                 Deployment-specific details are confirmed during implementation readiness and take
                 precedence over general website descriptions.
               </p>

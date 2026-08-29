@@ -67,13 +67,13 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-24">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-5xl text-center">
-              <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">
+              <p className="mb-4 text-caption font-bold uppercase tracking-wider text-brand">
                 SignalTrue Australia
               </p>
-              <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">
+              <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
                 See when work starts changing between psychosocial risk assessments.
               </h1>
-              <p className="mx-auto mt-6 max-w-3xl text-xl leading-8 text-[#475569]">
+              <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue gives WHS and operational leaders continuous, team-level visibility into
                 changing work patterns such as meeting load, uninterrupted calendar availability,
                 after-hours activity and coordination.
@@ -91,7 +91,7 @@ export default function AustraliaPsychosocialRisk() {
                   <Link to="/au/8-week-pilot">View the 8-Week Australian Pilot</Link>
                 </Button>
               </div>
-              <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[#475569]">
+              <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-caption text-[#475569]">
                 {[
                   'Team-level evidence',
                   'No individual productivity scores',
@@ -99,7 +99,7 @@ export default function AustraliaPsychosocialRisk() {
                   'Worker transparency',
                 ].map((item) => (
                   <span key={item} className="inline-flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#0F766E]" /> {item}
+                    <CheckCircle2 className="h-4 w-4 text-brand" /> {item}
                   </span>
                 ))}
               </div>
@@ -111,10 +111,10 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-brand">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
                   The 364-Day Gap
                 </p>
-                <h2 className="mt-3 text-3xl font-bold text-[#0F172A] sm:text-4xl">
+                <h2 className="mt-3 text-section font-bold text-[#0F172A] sm:text-display">
                   The assessment is a snapshot. Work keeps changing.
                 </h2>
                 <p className="mt-5 leading-7 text-[#475569]">
@@ -131,10 +131,10 @@ export default function AustraliaPsychosocialRisk() {
                 ].map(([period, copy], index) => (
                   <article
                     key={period}
-                    className="rounded-2xl border border-[#E2E8F0] bg-white p-5"
+                    className="rounded-container border border-[#E2E8F0] bg-white p-5"
                   >
-                    <p className="text-sm font-bold text-brand">{period}</p>
-                    <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
+                    <p className="text-caption font-bold text-brand">{period}</p>
+                    <p className="mt-2 text-caption leading-6 text-[#475569]">{copy}</p>
                     {index < 2 && <ArrowDown className="mt-4 h-4 w-4 text-[#94A3B8] sm:hidden" />}
                   </article>
                 ))}
@@ -146,10 +146,10 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-bold uppercase tracking-wider text-brand">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
                 A continuous review layer
               </p>
-              <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
+              <h2 className="mt-3 text-section font-bold text-[#0F172A]">
                 Observation starts a conversation. It is not a conclusion.
               </h2>
             </div>
@@ -157,19 +157,19 @@ export default function AustraliaPsychosocialRisk() {
               {reviewCycle.map(([title, copy], index) => (
                 <article
                   key={title}
-                  className={`rounded-2xl border p-5 ${
+                  className={`rounded-container border p-5 ${
                     index === 1 || index === 4
                       ? 'border-[#93C5FD] bg-[#EFF6FF]'
                       : 'border-[#E2E8F0] bg-[#F8FAFC]'
                   }`}
                 >
-                  <p className="text-xs font-bold text-[#64748B]">0{index + 1}</p>
+                  <p className="text-caption font-bold text-[#64748B]">0{index + 1}</p>
                   <h3 className="mt-2 font-bold text-[#0F172A]">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#475569]">{copy}</p>
+                  <p className="mt-2 text-caption leading-6 text-[#475569]">{copy}</p>
                 </article>
               ))}
             </div>
-            <p className="mt-6 text-center text-sm text-[#64748B]">
+            <p className="mt-6 text-center text-caption text-[#64748B]">
               SignalTrue primarily supports the Observe and Review stages. The organisation remains
               responsible for investigation, consultation and WHS decisions.
             </p>
@@ -180,35 +180,37 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-8 lg:grid-cols-2">
               <div>
-                <h2 className="text-3xl font-bold text-[#0F172A]">SignalTrue can show</h2>
+                <h2 className="text-section font-bold text-[#0F172A]">SignalTrue can show</h2>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   {observable.map(({ icon: Icon, label }) => (
                     <div
                       key={label}
-                      className="flex gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4"
+                      className="flex gap-3 rounded-container border border-[#E2E8F0] bg-white p-4"
                     >
-                      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#0F766E]" />
-                      <span className="text-sm text-[#334155]">{label}</span>
+                      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+                      <span className="text-caption text-[#334155]">{label}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-[#0F172A]">SignalTrue cannot determine</h2>
+                <h2 className="text-section font-bold text-[#0F172A]">
+                  SignalTrue cannot determine
+                </h2>
                 <div className="mt-6 space-y-3">
                   {cannotTell.map((item) => (
                     <div
                       key={item}
-                      className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4"
+                      className="flex gap-3 rounded-container border border-amber-200 bg-amber-50 p-4"
                     >
                       <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-                      <span className="text-sm text-amber-950">{item}</span>
+                      <span className="text-caption text-amber-950">{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <p className="mt-8 rounded-xl bg-[#0F172A] p-5 text-center font-semibold text-white">
+            <p className="mt-8 rounded-container bg-[#0F172A] p-5 text-center font-semibold text-white">
               Work-pattern data is evidence for investigation and consultation, not a diagnosis.
             </p>
           </div>
@@ -218,10 +220,10 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-brand">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
                   Example observation
                 </p>
-                <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
+                <h2 className="mt-3 text-section font-bold text-[#0F172A]">
                   Evidence with its limits visible
                 </h2>
                 <p className="mt-4 leading-7 text-[#475569]">
@@ -229,31 +231,33 @@ export default function AustraliaPsychosocialRisk() {
                   data coverage, limitations and questions worth investigating.
                 </p>
               </div>
-              <article className="rounded-3xl border border-[#CBD5E1] bg-[#F8FAFC] p-7 shadow-sm">
+              <article className="rounded-container border border-[#CBD5E1] bg-[#F8FAFC] p-7 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-bold text-brand">Work-pattern observation</p>
-                    <h3 className="mt-1 text-2xl font-bold text-[#0F172A]">After-hours activity</h3>
+                    <p className="text-caption font-bold text-brand">Work-pattern observation</p>
+                    <h3 className="mt-1 text-lead font-bold text-[#0F172A]">
+                      After-hours activity
+                    </h3>
                   </div>
-                  <BarChart3 className="h-7 w-7 text-[#0F766E]" />
+                  <BarChart3 className="h-7 w-7 text-brand" />
                 </div>
-                <p className="mt-5 text-lg font-semibold text-[#0F172A]">
+                <p className="mt-5 text-body font-semibold text-[#0F172A]">
                   Activity outside configured working hours was 26% above this team’s established
                   baseline over the last three weeks.
                 </p>
-                <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-lg bg-white p-3">
+                <div className="mt-5 grid grid-cols-2 gap-3 text-caption">
+                  <div className="rounded-control bg-white p-3">
                     <strong>42</strong>
                     <br />
                     active workers
                   </div>
-                  <div className="rounded-lg bg-white p-3">
+                  <div className="rounded-control bg-white p-3">
                     <strong>91%</strong>
                     <br />
                     data coverage
                   </div>
                 </div>
-                <div className="mt-5 border-t border-[#CBD5E1] pt-5 text-sm leading-6 text-[#475569]">
+                <div className="mt-5 border-t border-[#CBD5E1] pt-5 text-caption leading-6 text-[#475569]">
                   <strong className="text-[#0F172A]">What this does not mean:</strong> this
                   observation does not establish that workers are overworked or experiencing
                   psychosocial harm.
@@ -266,26 +270,26 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
             <div className="text-center">
-              <p className="text-sm font-bold uppercase tracking-wider text-brand">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
                 Control evidence timeline
               </p>
-              <h2 className="mt-3 text-3xl font-bold text-[#0F172A]">
+              <h2 className="mt-3 text-section font-bold text-[#0F172A]">
                 Connect an observation to what the organisation did next.
               </h2>
             </div>
-            <div className="mt-10 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
+            <div className="mt-10 overflow-hidden rounded-container border border-[#E2E8F0] bg-white">
               {evidenceTimeline.map(([date, stage, copy]) => (
                 <div
                   key={`${date}-${stage}`}
                   className="grid gap-2 border-b border-[#E2E8F0] p-5 last:border-0 md:grid-cols-[90px_140px_1fr]"
                 >
                   <strong className="text-[#0F172A]">{date}</strong>
-                  <span className="text-sm font-bold text-brand">{stage}</span>
-                  <span className="text-sm leading-6 text-[#475569]">{copy}</span>
+                  <span className="text-caption font-bold text-brand">{stage}</span>
+                  <span className="text-caption leading-6 text-[#475569]">{copy}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-center text-sm text-[#64748B]">
+            <p className="mt-5 text-center text-caption text-[#64748B]">
               A subsequent change can support review, but it does not by itself prove causation or
               legal effectiveness.
             </p>
@@ -317,10 +321,13 @@ export default function AustraliaPsychosocialRisk() {
               ].map(([Icon, title, copy, href]) => {
                 const CardIcon = Icon as typeof ShieldCheck;
                 return (
-                  <article key={String(title)} className="rounded-2xl border border-[#E2E8F0] p-6">
-                    <CardIcon className="h-6 w-6 text-[#0F766E]" />
-                    <h2 className="mt-4 text-xl font-bold text-[#0F172A]">{String(title)}</h2>
-                    <p className="mt-3 text-sm leading-6 text-[#475569]">{String(copy)}</p>
+                  <article
+                    key={String(title)}
+                    className="rounded-container border border-[#E2E8F0] p-6"
+                  >
+                    <CardIcon className="h-6 w-6 text-brand" />
+                    <h2 className="mt-4 text-lead font-bold text-[#0F172A]">{String(title)}</h2>
+                    <p className="mt-3 text-caption leading-6 text-[#475569]">{String(copy)}</p>
                     <Link
                       to={String(href)}
                       className="mt-5 inline-flex items-center font-semibold text-brand hover:underline"
@@ -336,8 +343,10 @@ export default function AustraliaPsychosocialRisk() {
 
         <section className="py-16 lg:py-20">
           <div className="container mx-auto max-w-3xl px-6 text-center">
-            <h2 className="text-3xl font-bold text-[#0F172A]">Start with the monitoring gap.</h2>
-            <p className="mt-5 text-lg text-[#475569]">
+            <h2 className="text-section font-bold text-[#0F172A]">
+              Start with the monitoring gap.
+            </h2>
+            <p className="mt-5 text-body text-[#475569]">
               Assess how your organisation currently reviews psychosocial controls between formal
               assessments, then decide whether a controlled pilot is justified.
             </p>

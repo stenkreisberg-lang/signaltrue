@@ -353,19 +353,19 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-container border border-amber-200 bg-amber-50 px-4 py-3 text-caption text-amber-800">
           Data source status is temporarily unavailable. {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+        <div className="rounded-container border border-teal-200 bg-teal-50 px-4 py-3 text-caption text-teal-800">
           {notice}
         </div>
       )}
       {healthIssues.length > 0 && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+        <div className="rounded-container border border-red-200 bg-red-50 p-5">
           <h3 className="font-semibold text-red-950">Data source attention required</h3>
-          <ul className="mt-2 space-y-1 text-sm text-red-900">
+          <ul className="mt-2 space-y-1 text-caption text-red-900">
             {healthIssues.map((issue) => (
               <li key={issue.key}>
                 • {issue.source}: {issue.message}
@@ -375,9 +375,9 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         </div>
       )}
       {setup && !setup.readiness?.setupComplete && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+        <div className="rounded-container border border-amber-200 bg-amber-50 p-5">
           <h3 className="font-semibold text-amber-950">Complete data readiness</h3>
-          <p className="mt-1 text-sm text-amber-900">
+          <p className="mt-1 text-caption text-amber-900">
             {needsAdminCount > 0
               ? `${needsAdminCount} source${needsAdminCount === 1 ? '' : 's'} still require administrator consent.`
               : connectedCount === 0
@@ -386,7 +386,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   ? 'Sources are authorized, but no activity events have arrived yet.'
                   : 'Activity is arriving. Finish employee mapping, timezone confirmation, and team setup before reports are released.'}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-amber-900">
+          <div className="mt-3 flex flex-wrap gap-2 text-caption text-amber-900">
             <span>Directory: {setup.directory?.directorySyncedUsers || 0} synced</span>
             <span>•</span>
             <span>Activity: {setup.activity?.totalEvents || 0} events</span>
@@ -396,25 +396,27 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         </div>
       )}
       {microsoftCompanyAccess?.connected && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <h3 className="font-semibold text-slate-950">Microsoft company-wide access</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-caption text-slate-600">
                 Outlook and Teams sign-in covers the connected administrator account. A Microsoft
                 tenant administrator must separately grant application permissions for
                 organization-wide calendar and Teams metadata.
               </p>
-              <p className="mt-2 break-all text-xs text-slate-500">
+              <p className="mt-2 break-all text-caption text-slate-500">
                 Required application permissions:{' '}
                 {(microsoftCompanyAccess.requiredRoles || []).join(', ')}
               </p>
               {microsoftCompanyAccess.lastError && !microsoftCompanyAccess.verifiedAt && (
-                <p className="mt-2 text-xs text-amber-700">{microsoftCompanyAccess.lastError}</p>
+                <p className="mt-2 text-caption text-amber-700">
+                  {microsoftCompanyAccess.lastError}
+                </p>
               )}
             </div>
             {microsoftCompanyAccess.verifiedAt ? (
-              <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800">
+              <div className="rounded-control bg-teal-50 px-3 py-2 text-caption font-medium text-teal-800">
                 Company-wide access verified
               </div>
             ) : (
@@ -422,19 +424,19 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                 <button
                   onClick={grantMicrosoftCompanyAccess}
                   disabled={!microsoftCompanyAccess.configured}
-                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
                 >
                   Grant company-wide access
                 </button>
                 <button
                   onClick={verifyMicrosoftCompanyAccess}
                   disabled={verifyingMicrosoft || !microsoftCompanyAccess.configured}
-                  className="rounded-lg bg-teal-50 px-4 py-2 text-sm font-medium text-teal-800 disabled:opacity-50"
+                  className="rounded-control bg-teal-50 px-4 py-2 text-caption font-medium text-teal-800 disabled:opacity-50"
                 >
                   {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Already granted? Verify'}
                 </button>
                 {!microsoftCompanyAccess.configured && (
-                  <p className="text-xs text-amber-700">
+                  <p className="text-caption text-amber-700">
                     SignalTrue Microsoft application configuration is required first.
                   </p>
                 )}
@@ -444,26 +446,26 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         </div>
       )}
       {googleWorkspace && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <h3 className="font-semibold text-slate-950">Google Workspace company-wide access</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-caption text-slate-600">
                 A normal Google sign-in only covers one user. A Workspace administrator must add
                 SignalTrue under Security → API controls → Domain-wide delegation, then verify it
                 here.
               </p>
               {googleWorkspace.serviceAccountClientId && (
-                <p className="mt-2 text-xs text-slate-600">
+                <p className="mt-2 text-caption text-slate-600">
                   Client ID: <code>{googleWorkspace.serviceAccountClientId}</code>
                 </p>
               )}
-              <p className="mt-1 break-all text-xs text-slate-500">
+              <p className="mt-1 break-all text-caption text-slate-500">
                 Scopes: {(googleWorkspace.requiredScopes || []).join(', ')}
               </p>
             </div>
             {googleWorkspace.verifiedAt ? (
-              <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-medium text-teal-800">
+              <div className="rounded-control bg-teal-50 px-3 py-2 text-caption font-medium text-teal-800">
                 Company-wide access verified
               </div>
             ) : (
@@ -473,17 +475,17 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   value={googleAdminEmail}
                   onChange={(event) => setGoogleAdminEmail(event.target.value)}
                   placeholder="workspace-admin@company.com"
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="rounded-control border border-slate-300 px-3 py-2 text-caption"
                 />
                 <button
                   onClick={verifyGoogleWorkspace}
                   disabled={verifyingGoogle || !googleWorkspace.serviceAccountConfigured}
-                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
                 >
                   {verifyingGoogle ? 'Verifying…' : 'Verify company-wide access'}
                 </button>
                 {!googleWorkspace.serviceAccountConfigured && (
-                  <p className="text-xs text-amber-700">
+                  <p className="text-caption text-amber-700">
                     SignalTrue service account configuration is required first.
                   </p>
                 )}
@@ -494,40 +496,40 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       )}
       {/* Header Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="bg-white p-4 rounded-control border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-control bg-teal-50 flex items-center justify-center">
               <Link2 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{connectedCount}</p>
-              <p className="text-sm text-gray-500">Authorized sources</p>
+              <p className="text-lead font-bold text-gray-900">{connectedCount}</p>
+              <p className="text-caption text-gray-500">Authorized sources</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="bg-white p-4 rounded-control border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-control bg-teal-50 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{dataQuality}%</p>
-              <p className="text-sm text-gray-500">Data Quality</p>
+              <p className="text-lead font-bold text-gray-900">{dataQuality}%</p>
+              <p className="text-caption text-gray-500">Data Quality</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="bg-white p-4 rounded-control border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-control bg-teal-50 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-lead font-bold text-gray-900">
                 {integrations.reduce((sum, i) => sum + (i.signals_enabled || 0), 0)}
               </p>
-              <p className="text-sm text-gray-500">Signals Enabled</p>
+              <p className="text-caption text-gray-500">Signals Enabled</p>
             </div>
           </div>
         </div>
@@ -544,7 +546,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           return (
             <div
               key={source}
-              className={`bg-white rounded-xl border ${
+              className={`bg-white rounded-container border ${
                 connected ? 'border-teal-200' : 'border-gray-200'
               } overflow-hidden`}
             >
@@ -552,13 +554,13 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <div className="px-4 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-lg ${config.color} flex items-center justify-center`}
+                    className={`w-8 h-8 rounded-control ${config.color} flex items-center justify-center`}
                   >
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{config.name}</h3>
-                    <p className="text-xs text-gray-500">{config.description}</p>
+                    <p className="text-caption text-gray-500">{config.description}</p>
                   </div>
                 </div>
 
@@ -576,7 +578,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                 {connected ? (
                   <>
                     <div
-                      className={`mb-4 rounded-lg px-3 py-2 text-xs ${
+                      className={`mb-4 rounded-control px-3 py-2 text-caption ${
                         needsAdmin
                           ? 'bg-amber-50 text-amber-800'
                           : integration.status === 'measuring'
@@ -594,7 +596,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                     {/* Status */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div>
-                        <p className="text-xs text-gray-500">Coverage</p>
+                        <p className="text-caption text-gray-500">Coverage</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div
@@ -602,15 +604,15 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                               style={{ width: `${integration.coverage || 0}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-gray-700">
+                          <span className="text-caption font-medium text-gray-700">
                             {integration.coverage || 0}%
                           </span>
                         </div>
                       </div>
 
                       <div>
-                        <p className="text-xs text-gray-500">Last Sync</p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-caption text-gray-500">Last Sync</p>
+                        <p className="text-caption text-gray-700">
                           {integration.last_sync ? formatTimeAgo(integration.last_sync) : 'Never'}
                         </p>
                       </div>
@@ -618,7 +620,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
                     {/* Sync Status */}
                     {integration.sync_status === 'error' && (
-                      <div className="mb-4 p-2 bg-red-50 rounded-lg flex items-center gap-2 text-xs text-red-700">
+                      <div className="mb-4 p-2 bg-red-50 rounded-control flex items-center gap-2 text-caption text-red-700">
                         <AlertTriangle className="w-3 h-3" />
                         <span>Sync error: {integration.sync_error}</span>
                       </div>
@@ -627,7 +629,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                     {source === 'microsoft-outlook' &&
                       (integration.coverageDetails?.unavailable > 0 ||
                         integration.coverageDetails?.failed > 0) && (
-                        <div className="mb-4 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+                        <div className="mb-4 rounded-control bg-amber-50 p-2 text-caption text-amber-800">
                           {integration.coverageDetails.unavailable || 0} Microsoft accounts have no
                           accessible Exchange Online mailbox
                           {integration.coverageDetails.failed > 0
@@ -642,7 +644,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                       <button
                         onClick={() => triggerSync(source)}
                         disabled={syncing[source]}
-                        className="flex-1 px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 px-3 py-2 text-caption font-medium text-teal-700 bg-teal-50 rounded-control hover:bg-teal-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <RefreshCw className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`} />
                         {syncing[source] ? 'Syncing...' : 'Sync Now'}
@@ -650,7 +652,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
                       <button
                         onClick={() => setShowConnectModal(source)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition-colors"
                       >
                         <Settings className="w-4 h-4" />
                       </button>
@@ -660,12 +662,12 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   <>
                     {/* Signals that would be enabled */}
                     <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">Enables these signals:</p>
+                      <p className="text-caption text-gray-500 mb-2">Enables these signals:</p>
                       <div className="flex flex-wrap gap-1">
                         {config.signals.map((signal, i) => (
                           <span
                             key={i}
-                            className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                            className="px-2 py-1 text-caption bg-gray-100 text-gray-600 rounded"
                           >
                             {signal}
                           </span>
@@ -676,7 +678,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                     {/* Connect Button */}
                     <button
                       onClick={() => connectIntegration(source)}
-                      className="w-full px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors flex items-center justify-center gap-2"
+                      className="w-full px-4 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors flex items-center justify-center gap-2"
                     >
                       <Link2 className="w-4 h-4" />
                       Connect {config.name}
@@ -691,12 +693,12 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
       {/* Data Quality Tips */}
       {dataQuality < 70 && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+        <div className="bg-slate-50 border border-slate-200 rounded-container p-5">
           <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             Improve Your Data Quality
           </h4>
-          <ul className="space-y-2 text-sm text-slate-600">
+          <ul className="space-y-2 text-caption text-slate-600">
             {connectedCount < 3 && (
               <li>• Connect more integrations to enable comprehensive signals</li>
             )}
@@ -733,26 +735,26 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+      <div className="bg-white rounded-control shadow-xl w-full max-w-md mx-4">
         {/* Header */}
         <div
           className={`px-6 py-4 ${config?.color || 'bg-gray-500'} bg-opacity-10 flex items-center gap-3`}
         >
           <div
-            className={`w-10 h-10 rounded-lg ${config?.color || 'bg-gray-500'} flex items-center justify-center`}
+            className={`w-10 h-10 rounded-control ${config?.color || 'bg-gray-500'} flex items-center justify-center`}
           >
             <Icon className="w-5 h-5 text-white" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{config?.name || source} Settings</h3>
-            <p className="text-sm text-gray-500">Manage integration connection</p>
+            <p className="text-caption text-gray-500">Manage integration connection</p>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-caption font-medium text-gray-700 mb-1">
               Connection Status
             </label>
             <div className="flex items-center gap-2">
@@ -773,7 +775,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
           {integration?.connected && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-caption font-medium text-gray-700 mb-1">
                   User Coverage
                 </label>
                 <div className="flex items-center gap-3">
@@ -783,18 +785,20 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
                       style={{ width: `${integration.coverage || 0}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-caption font-medium text-gray-700">
                     {integration.coverage || 0}%
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-caption text-gray-500 mt-1">
                   {integration.mapped_users || 0} of {integration.total_users || 0} users mapped
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Sync</label>
-                <p className="text-sm text-gray-600">
+                <label className="block text-caption font-medium text-gray-700 mb-1">
+                  Last Sync
+                </label>
+                <p className="text-caption text-gray-600">
                   {integration.last_sync
                     ? new Date(integration.last_sync).toLocaleString()
                     : 'Never'}
@@ -809,7 +813,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
           {integration?.connected ? (
             <button
               onClick={onDisconnect}
-              className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-caption font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-control transition-colors"
             >
               Disconnect
             </button>
@@ -819,7 +823,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
 
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-caption font-medium text-gray-700 bg-white border border-gray-300 rounded-control hover:bg-gray-50 transition-colors"
           >
             Close
           </button>

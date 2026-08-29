@@ -174,23 +174,23 @@ const ScoreGauge: React.FC<{
         : 'text-slate-400';
 
   return (
-    <div className={`rounded-lg border p-6 ${cfg.border} ${cfg.bg}`}>
+    <div className={`rounded-control border p-6 ${cfg.border} ${cfg.bg}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+          <p className="text-caption text-slate-400 uppercase tracking-wide mb-1">
             Work-pattern deviation index
           </p>
           <div className="flex items-end gap-3">
-            <span className={`text-5xl font-bold tabular-nums ${cfg.color}`}>{score}</span>
-            <span className="text-slate-500 text-lg mb-1">/100</span>
+            <span className={`text-display font-bold tabular-nums ${cfg.color}`}>{score}</span>
+            <span className="text-slate-500 text-body mb-1">/100</span>
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span
-              className={`text-sm font-medium px-2.5 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.color}`}
+              className={`text-caption font-medium px-2.5 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.color}`}
             >
               {cfg.label}
             </span>
-            <span className={`flex items-center gap-1 text-sm ${trendColor}`}>
+            <span className={`flex items-center gap-1 text-caption ${trendColor}`}>
               <TrendIcon className="w-4 h-4" />
               {trend}
             </span>
@@ -228,11 +228,11 @@ const ScoreGauge: React.FC<{
 
       {/* Data readiness */}
       <div className="mt-4 pt-4 border-t border-slate-700/50">
-        <div className="flex justify-between text-xs text-slate-400 mb-1">
+        <div className="flex justify-between text-caption text-slate-400 mb-1">
           <span>Data readiness: {confidenceLabel}</span>
           <span>{confidenceScore}/100</span>
         </div>
-        <p className="mt-2 text-xs leading-5 text-slate-500">
+        <p className="mt-2 text-caption leading-5 text-slate-500">
           Internal descriptive model, not a probability, diagnosis, engagement survey, attrition
           prediction, or performance score.
         </p>
@@ -248,8 +248,8 @@ const SubscoreBar: React.FC<{ label: string; score: number | null; description: 
 }) => (
   <div className="group">
     <div className="flex items-center justify-between mb-1">
-      <span className="text-sm text-slate-300">{label}</span>
-      <span className="text-sm font-semibold tabular-nums text-slate-400">
+      <span className="text-caption text-slate-300">{label}</span>
+      <span className="text-caption font-semibold tabular-nums text-slate-400">
         {score == null ? 'Unavailable' : score}
       </span>
     </div>
@@ -259,7 +259,7 @@ const SubscoreBar: React.FC<{ label: string; score: number | null; description: 
         style={{ width: `${score ?? 0}%` }}
       />
     </div>
-    <p className="text-xs text-slate-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <p className="text-caption text-slate-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
       {description}
     </p>
   </div>
@@ -275,7 +275,7 @@ const PatternCard: React.FC<{ pattern: Pattern }> = ({ pattern }) => {
         : 'text-amber-400 border-amber-700 bg-amber-900/20';
 
   return (
-    <div className={`rounded-lg border p-4 ${severityColor}`}>
+    <div className={`rounded-control border p-4 ${severityColor}`}>
       <button
         className="w-full text-left flex items-start justify-between gap-2"
         onClick={() => setExpanded((v) => !v)}
@@ -283,8 +283,8 @@ const PatternCard: React.FC<{ pattern: Pattern }> = ({ pattern }) => {
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium">{pattern.title}</p>
-            <p className="text-xs opacity-70 mt-0.5">{pattern.severity} severity</p>
+            <p className="text-caption font-medium">{pattern.title}</p>
+            <p className="text-caption opacity-70 mt-0.5">{pattern.severity} severity</p>
           </div>
         </div>
         {expanded ? (
@@ -296,11 +296,11 @@ const PatternCard: React.FC<{ pattern: Pattern }> = ({ pattern }) => {
 
       {expanded && (
         <div className="mt-3 space-y-2">
-          <p className="text-xs opacity-80">{pattern.interpretation}</p>
+          <p className="text-caption opacity-80">{pattern.interpretation}</p>
           {pattern.evidence.length > 0 && (
             <ul className="space-y-1">
               {pattern.evidence.map((ev, i) => (
-                <li key={i} className="text-xs opacity-70 flex gap-2">
+                <li key={i} className="text-caption opacity-70 flex gap-2">
                   <span className="shrink-0">·</span>
                   <span>{ev}</span>
                 </li>
@@ -316,18 +316,18 @@ const PatternCard: React.FC<{ pattern: Pattern }> = ({ pattern }) => {
 const ActionCard: React.FC<{ action: RecommendedAction }> = ({ action }) => {
   const cfg = PRIORITY_CONFIG[action.priority] ?? PRIORITY_CONFIG.medium;
   return (
-    <div className={`rounded-lg border p-4 ${cfg.bg}`}>
+    <div className={`rounded-control border p-4 ${cfg.bg}`}>
       <div className="flex items-start gap-3">
         <Zap className={`w-4 h-4 shrink-0 mt-0.5 ${cfg.color}`} />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium text-slate-100">{action.title}</p>
-            <span className={`text-xs px-1.5 py-0.5 rounded border ${cfg.bg} ${cfg.color}`}>
+            <p className="text-caption font-medium text-slate-100">{action.title}</p>
+            <span className={`text-caption px-1.5 py-0.5 rounded border ${cfg.bg} ${cfg.color}`}>
               {cfg.label}
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">{action.description}</p>
-          <p className="text-xs text-slate-600 mt-1 italic">{action.trigger}</p>
+          <p className="text-caption text-slate-400 mt-1">{action.description}</p>
+          <p className="text-caption text-slate-600 mt-1 italic">{action.trigger}</p>
         </div>
       </div>
     </div>
@@ -338,12 +338,12 @@ const AlertBanner: React.FC<{ alert: Alert }> = ({ alert }) => {
   const cfg =
     SEVERITY_CONFIG[alert.severity as keyof typeof SEVERITY_CONFIG] ?? SEVERITY_CONFIG.info;
   return (
-    <div className={`rounded-lg border p-3 ${cfg.bg}`}>
+    <div className={`rounded-control border p-3 ${cfg.bg}`}>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${cfg.color}`} />
         <div>
-          <p className={`text-sm font-medium ${cfg.color}`}>{alert.title}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{alert.message}</p>
+          <p className={`text-caption font-medium ${cfg.color}`}>{alert.title}</p>
+          <p className="text-caption text-slate-400 mt-0.5">{alert.message}</p>
         </div>
       </div>
     </div>
@@ -370,7 +370,7 @@ const TrendSparkline: React.FC<{
 
   return (
     <div>
-      <p className="text-xs text-slate-500 mb-2">12-week trend</p>
+      <p className="text-caption text-slate-500 mb-2">12-week trend</p>
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
         {/* Risk bands */}
         <rect
@@ -432,7 +432,7 @@ const TrendSparkline: React.FC<{
           );
         })}
       </svg>
-      <div className="flex justify-between text-xs text-slate-600 mt-1">
+      <div className="flex justify-between text-caption text-slate-600 mt-1">
         <span>{formatDate(history[0].weekStart)}</span>
         <span>{formatDate(history[history.length - 1].weekStart)}</span>
       </div>
@@ -460,8 +460,8 @@ const OrgStrainListing: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold">Work-pattern deviation</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-lead font-semibold">Work-pattern deviation</h1>
+            <p className="text-caption text-slate-400 mt-1">
               All teams · internal descriptive model, not a validated risk probability
             </p>
           </div>
@@ -475,7 +475,7 @@ const OrgStrainListing: React.FC = () => {
         </div>
 
         {error && (
-          <div className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-3 mb-4">
+          <div className="text-caption text-red-400 bg-red-900/20 border border-red-800 rounded p-3 mb-4">
             {error}
           </div>
         )}
@@ -483,12 +483,12 @@ const OrgStrainListing: React.FC = () => {
         {loading && !teams.length && (
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-5 h-5 animate-spin text-slate-500" />
-            <span className="ml-2 text-sm text-slate-500">Loading...</span>
+            <span className="ml-2 text-caption text-slate-500">Loading...</span>
           </div>
         )}
 
         {!loading && !error && !teams.length && (
-          <div className="py-16 text-center text-sm text-slate-500">
+          <div className="py-16 text-center text-caption text-slate-500">
             No work-pattern model data yet. Run the weekly scoring job to generate reports.
           </div>
         )}
@@ -500,7 +500,7 @@ const OrgStrainListing: React.FC = () => {
               <button
                 key={String(team.teamId)}
                 onClick={() => navigate(`/app/engagement-strain/${team.teamId}`)}
-                className="w-full text-left bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-lg p-4 transition-colors group"
+                className="w-full text-left bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-control p-4 transition-colors group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
@@ -511,13 +511,13 @@ const OrgStrainListing: React.FC = () => {
                       {team.teamName ?? team.teamId}
                     </span>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.color} shrink-0`}
+                      className={`text-caption px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.border} ${cfg.color} shrink-0`}
                     >
                       {cfg.label}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-lg font-bold tabular-nums ${cfg.color}`}>
+                    <span className={`text-body font-bold tabular-nums ${cfg.color}`}>
                       {team.engagementStrainRisk}
                     </span>
                     <ChevronLeft className="w-4 h-4 text-slate-600 group-hover:text-slate-400 rotate-180 transition-colors" />
@@ -530,7 +530,7 @@ const OrgStrainListing: React.FC = () => {
                   />
                 </div>
                 {team.topDrivers?.[0] && (
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-caption text-slate-500">
                     Top driver: {formatDriverName(team.topDrivers[0].driver)}
                   </p>
                 )}
@@ -569,11 +569,11 @@ const EngagementStrainTeamDetail: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 mb-4"
+            className="flex items-center gap-1 text-caption text-slate-400 hover:text-slate-200 mb-4"
           >
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
-          <div className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-4">
+          <div className="text-caption text-red-400 bg-red-900/20 border border-red-800 rounded p-4">
             {error}
           </div>
         </div>
@@ -602,7 +602,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Back nav */}
         <button
           onClick={() => navigate('/app/engagement-strain')}
-          className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+          className="flex items-center gap-1 text-caption text-slate-400 hover:text-slate-200 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           All teams
@@ -611,8 +611,8 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Page header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-100">{detail.teamName ?? teamId}</h1>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <h1 className="text-lead font-semibold text-slate-100">{detail.teamName ?? teamId}</h1>
+            <p className="text-caption text-slate-400 mt-0.5">
               Week of {formatDate(detail.weekStart)} · {detail.activePeopleCount} active people
             </p>
           </div>
@@ -637,7 +637,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Urgent actions */}
         {urgentActions.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
+            <p className="text-caption font-semibold text-red-400 uppercase tracking-wide flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5" /> Urgent Actions Required
             </p>
             {urgentActions.map((a) => (
@@ -655,15 +655,15 @@ const EngagementStrainTeamDetail: React.FC = () => {
             confidenceLabel={detail.confidenceLabel}
             confidenceScore={detail.confidenceScore}
           />
-          <div className="bg-slate-800 rounded-lg border border-slate-700 p-4 flex flex-col justify-center">
+          <div className="bg-slate-800 rounded-control border border-slate-700 p-4 flex flex-col justify-center">
             <TrendSparkline history={history} />
           </div>
         </div>
 
         {/* Subscores */}
         {detail.subscores && (
-          <div className="bg-slate-800 rounded-lg border border-slate-700 p-5">
-            <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800 rounded-control border border-slate-700 p-5">
+            <h2 className="text-caption font-semibold text-slate-300 mb-4 flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Subscore Breakdown
             </h2>
@@ -677,7 +677,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
                 />
               ))}
             </div>
-            <p className="text-xs text-slate-600 mt-4">
+            <p className="text-caption text-slate-600 mt-4">
               Hover a bar to see what metrics contribute to each dimension.
             </p>
           </div>
@@ -685,33 +685,35 @@ const EngagementStrainTeamDetail: React.FC = () => {
 
         {/* Top drivers */}
         {detail.topDrivers?.length > 0 && (
-          <div className="bg-slate-800 rounded-lg border border-slate-700 p-5">
-            <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+          <div className="bg-slate-800 rounded-control border border-slate-700 p-5">
+            <h2 className="text-caption font-semibold text-slate-300 mb-4 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               Top modeled drivers
             </h2>
             <div className="space-y-3">
               {detail.topDrivers.map((d, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <span className="text-xs text-slate-600 font-mono tabular-nums pt-0.5 w-4 shrink-0">
+                  <span className="text-caption text-slate-600 font-mono tabular-nums pt-0.5 w-4 shrink-0">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-200">{formatDriverName(d.driver)}</span>
+                      <span className="text-caption text-slate-200">
+                        {formatDriverName(d.driver)}
+                      </span>
                       <span
-                        className={`text-xs font-semibold tabular-nums ${d.score >= 70 ? 'text-red-400' : d.score >= 50 ? 'text-orange-400' : 'text-amber-400'}`}
+                        className={`text-caption font-semibold tabular-nums ${d.score >= 70 ? 'text-red-400' : d.score >= 50 ? 'text-orange-400' : 'text-amber-400'}`}
                       >
                         {d.score}
                       </span>
                       {d.changeVsBaseline && (
-                        <span className="text-xs text-slate-400">
+                        <span className="text-caption text-slate-400">
                           {d.changeVsBaseline} vs baseline
                         </span>
                       )}
                     </div>
                     {d.explanation && (
-                      <p className="text-xs text-slate-500 mt-0.5">{d.explanation}</p>
+                      <p className="text-caption text-slate-500 mt-0.5">{d.explanation}</p>
                     )}
                   </div>
                 </div>
@@ -723,7 +725,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Detected patterns */}
         {detail.patterns?.length > 0 && (
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <h2 className="text-caption font-semibold text-slate-300 flex items-center gap-2">
               <Eye className="w-4 h-4" />
               Detected Patterns
             </h2>
@@ -736,7 +738,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Recommended actions */}
         {regularActions.length > 0 && (
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <h2 className="text-caption font-semibold text-slate-300 flex items-center gap-2">
               <Zap className="w-4 h-4" />
               Recommended Actions
             </h2>
@@ -749,7 +751,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
         {/* Other alerts */}
         {otherAlerts.length > 0 && (
           <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <h2 className="text-caption font-semibold text-slate-300 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
               Active Alerts
             </h2>
@@ -761,7 +763,7 @@ const EngagementStrainTeamDetail: React.FC = () => {
 
         {/* Privacy footer */}
         <div className="border-t border-slate-800 pt-4">
-          <p className="text-xs text-slate-600 text-center">
+          <p className="text-caption text-slate-600 text-center">
             All insights are derived from team-aggregate metadata only. No individual is identified,
             scored, or monitored. Minimum team size: 8. Per-metric minimum contributors: 5.
           </p>

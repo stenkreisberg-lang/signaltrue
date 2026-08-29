@@ -55,7 +55,7 @@ export default function Overview() {
       <AppShell user={user} section="Overview">
         <div className="app-panel flex min-h-64 items-center justify-center">
           <Spinner size="large" />
-          <span className="ml-3 text-sm text-slate-600">
+          <span className="ml-3 text-caption text-slate-600">
             Preparing the workplace risk overview…
           </span>
         </div>
@@ -68,17 +68,17 @@ export default function Overview() {
       <AppShell user={user} section="Overview">
         <Card>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lead font-bold text-slate-900">
               The overview is temporarily unavailable
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-caption text-slate-600">
               Your saved evidence has not been changed. Check Data Sources and Coverage, or try
               again shortly.
             </p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white"
+              className="mt-5 rounded-control bg-slate-900 px-4 py-2 text-caption font-bold text-white"
             >
               Try again
             </button>
@@ -113,7 +113,7 @@ export default function Overview() {
           {latestBrief && (
             <Link
               to="/app/latest-brief"
-              className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white no-underline hover:text-white"
+              className="mt-4 inline-block rounded-control bg-slate-900 px-4 py-2.5 text-caption font-bold text-white no-underline hover:text-white"
             >
               See the evidence
             </Link>
@@ -123,8 +123,10 @@ export default function Overview() {
         {primaryAction ? (
           <div className="app-dashboard-hero-side">
             <p className="app-dashboard-eyebrow">Recommended next step</p>
-            <p className="text-sm font-semibold leading-6 text-slate-900">{primaryAction.action}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-600">
+            <p className="text-caption font-semibold leading-6 text-slate-900">
+              {primaryAction.action}
+            </p>
+            <p className="mt-2 text-caption leading-5 text-slate-600">
               {[
                 primaryAction.owner && `Owner: ${primaryAction.owner}`,
                 primaryAction.effort && `${primaryAction.effort} effort`,
@@ -135,7 +137,7 @@ export default function Overview() {
             </p>
             <Link
               to="/app/signals?status=Open"
-              className="mt-3 inline-block rounded-lg border border-slate-900 px-4 py-2 text-sm font-bold text-slate-900 no-underline"
+              className="mt-3 inline-block rounded-control border border-slate-900 px-4 py-2 text-caption font-bold text-slate-900 no-underline"
             >
               Log this action
             </Link>
@@ -143,7 +145,7 @@ export default function Overview() {
         ) : (
           <div className="app-dashboard-hero-side">
             <p className="app-dashboard-eyebrow">How this works</p>
-            <p className="text-sm leading-6 text-slate-700">
+            <p className="text-caption leading-6 text-slate-700">
               Check what is measured, consult the team about the pattern, record one reversible
               change, then compare the same indicator after 14 days.
             </p>
@@ -158,7 +160,7 @@ export default function Overview() {
                 numbers behind it and how far they can be trusted. */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="app-dashboard-eyebrow">What moved</p>
-              <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+              <div className="flex flex-wrap gap-2 text-caption text-slate-500">
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
                   Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
                 </span>
@@ -195,23 +197,23 @@ export default function Overview() {
                     return (
                       <div
                         key={metric.key}
-                        className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                        className="rounded-container border border-slate-200 bg-slate-50 p-4"
                       >
                         {hasChange ? (
-                          <p className={`text-xl font-extrabold ${changeTone}`}>
+                          <p className={`text-lead font-extrabold ${changeTone}`}>
                             {metric.changePct > 0 ? '+' : ''}
                             {metric.changePct}%
                           </p>
                         ) : (
-                          <p className="text-xl font-extrabold text-slate-900">
+                          <p className="text-lead font-extrabold text-slate-900">
                             {value || 'Not measured'}
                           </p>
                         )}
-                        <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <p className="mt-1 text-caption font-bold uppercase tracking-wide text-slate-500">
                           {metric.label}
                         </p>
                         {hasChange && (
-                          <p className="mt-1 text-xs text-slate-600">
+                          <p className="mt-1 text-caption text-slate-600">
                             {value} now · baseline{' '}
                             {metric.baseline != null ? `${metric.baseline}${suffix}` : 'not set'}
                           </p>

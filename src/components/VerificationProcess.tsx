@@ -28,13 +28,13 @@ const VerificationProcess = () => (
     <div className="container mx-auto px-6">
       <div className="mx-auto max-w-5xl">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <p className="mb-4 text-sm font-bold uppercase tracking-wider text-brand">
+          <p className="mb-4 text-caption font-bold uppercase tracking-wider text-brand">
             How verification works
           </p>
-          <h2 className="mb-4 text-3xl font-bold text-[#0F172A] sm:text-4xl lg:text-5xl">
+          <h2 className="mb-4 text-section font-bold text-[#0F172A]">
             Compare the change, then check whether it held.
           </h2>
-          <p className="text-lg text-[#475569]">
+          <p className="text-body text-[#475569]">
             A control review keeps four periods distinct so an initial improvement is not mistaken
             for a durable result.
           </p>
@@ -42,9 +42,12 @@ const VerificationProcess = () => (
 
         <ol className="grid gap-4 md:grid-cols-4">
           {windows.map((window, index) => (
-            <li key={window.label} className="relative rounded-2xl border border-[#E2E8F0] p-5">
+            <li
+              key={window.label}
+              className="relative rounded-container border border-[#E2E8F0] p-5"
+            >
               <div className="mb-5 flex items-center justify-between">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-softer">
+                <div className="flex h-11 w-11 items-center justify-center rounded-container bg-brand-softer">
                   <window.icon className="h-5 w-5 text-brand" aria-hidden="true" />
                 </div>
                 {index < windows.length - 1 && (
@@ -54,10 +57,10 @@ const VerificationProcess = () => (
                   />
                 )}
               </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-brand">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
                 {index + 1}. {window.label}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-[#475569]">{window.detail}</p>
+              <p className="mt-2 text-caption text-[#475569]">{window.detail}</p>
             </li>
           ))}
         </ol>

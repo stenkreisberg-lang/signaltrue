@@ -84,17 +84,17 @@ const TeamStrainRow: React.FC<{ team: TeamStrainSummary; onClick: () => void }> 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left group hover:bg-slate-50 rounded-lg p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+      className="w-full text-left group hover:bg-slate-50 rounded-control p-3 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
     >
       <div className="flex items-center justify-between gap-3">
         {/* Team name + risk state badge */}
         <div className="flex items-center gap-2 min-w-0">
           {riskIcon(team.riskState)}
-          <span className="text-sm font-medium text-slate-900 truncate">
+          <span className="text-caption font-medium text-slate-900 truncate">
             {team.teamName ?? team.teamId}
           </span>
           <span
-            className={`text-xs px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color} shrink-0`}
+            className={`text-caption px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color} shrink-0`}
           >
             {cfg.label}
           </span>
@@ -103,8 +103,8 @@ const TeamStrainRow: React.FC<{ team: TeamStrainSummary; onClick: () => void }> 
         {/* Score + trend */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="text-right">
-            <span className={`text-sm font-semibold tabular-nums ${cfg.color}`}>{score}</span>
-            <span className="text-xs text-slate-500 ml-0.5">/100</span>
+            <span className={`text-caption font-semibold tabular-nums ${cfg.color}`}>{score}</span>
+            <span className="text-caption text-slate-500 ml-0.5">/100</span>
           </div>
           {TREND_ICON[team.trend] ?? TREND_ICON.stable}
           <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-700 transition-colors" />
@@ -121,7 +121,7 @@ const TeamStrainRow: React.FC<{ team: TeamStrainSummary; onClick: () => void }> 
 
       {/* Top driver hint */}
       {team.topDrivers?.[0] && (
-        <p className="mt-1.5 text-xs text-slate-500 truncate">
+        <p className="mt-1.5 text-caption text-slate-500 truncate">
           Top driver: {formatDriverName(team.topDrivers[0].driver)}
           {team.topDrivers[0].score != null && ` (${team.topDrivers[0].score})`}
         </p>
@@ -147,7 +147,7 @@ const OrgSummaryBar: React.FC<{ teams: TeamStrainSummary[] }> = ({ teams }) => {
   const healthy = counts.healthy ?? 0;
 
   return (
-    <div className="flex items-center gap-3 text-xs text-slate-600 mb-4">
+    <div className="flex items-center gap-3 text-caption text-slate-600 mb-4">
       {critical > 0 && (
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
@@ -218,15 +218,15 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
   ).length;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+    <div className="bg-white rounded-container border border-slate-200 p-6 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-1">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-1">
             Descriptive work-pattern model
           </p>
-          <h2 className="text-xl font-bold text-slate-900">Work-pattern deviation</h2>
-          <p className="text-xs text-slate-600 mt-0.5">
+          <h2 className="text-lead font-bold text-slate-900">Work-pattern deviation</h2>
+          <p className="text-caption text-slate-600 mt-0.5">
             Internal index from recovery, focus, responsiveness, and collaboration metadata. Not an
             engagement measure or probability.
           </p>
@@ -243,7 +243,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
 
       {/* Error state */}
       {error && (
-        <div className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-3">
+        <div className="mt-3 text-caption text-amber-800 bg-amber-50 border border-amber-200 rounded p-3">
           {error}
         </div>
       )}
@@ -252,16 +252,18 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
       {loading && !teams.length && (
         <div className="mt-6 flex items-center justify-center py-8">
           <RefreshCw className="w-5 h-5 animate-spin text-slate-500" />
-          <span className="ml-2 text-sm text-slate-500">Loading...</span>
+          <span className="ml-2 text-caption text-slate-500">Loading...</span>
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && !teams.length && (
-        <div className="mt-6 py-8 text-center text-sm text-slate-500">
+        <div className="mt-6 py-8 text-center text-caption text-slate-500">
           No work-pattern model data yet.
           <br />
-          <span className="text-xs">Run the weekly scoring job to generate the first report.</span>
+          <span className="text-caption">
+            Run the weekly scoring job to generate the first report.
+          </span>
         </div>
       )}
 
@@ -269,20 +271,20 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
       {teams.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 mb-5">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-2xl font-bold text-slate-900">{avgStrain}/100</div>
+            <div className="rounded-control border border-slate-200 bg-slate-50 p-4">
+              <div className="text-lead font-bold text-slate-900">{avgStrain}/100</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
                 Avg deviation index
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-2xl font-bold text-slate-900">{avgReadiness}/100</div>
+            <div className="rounded-control border border-slate-200 bg-slate-50 p-4">
+              <div className="text-lead font-bold text-slate-900">{avgReadiness}/100</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
                 Data readiness
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-2xl font-bold text-slate-900">{teamsInStrain}</div>
+            <div className="rounded-control border border-slate-200 bg-slate-50 p-4">
+              <div className="text-lead font-bold text-slate-900">{teamsInStrain}</div>
               <div className="mt-1 text-[11px] uppercase tracking-wider font-bold text-slate-500">
                 Teams above review band
               </div>
@@ -304,7 +306,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
           {sorted.length > initialLimit && (
             <button
               onClick={() => setShowAll((v) => !v)}
-              className="mt-3 w-full text-xs text-slate-600 hover:text-teal-700 py-2 hover:bg-slate-50 rounded transition-colors"
+              className="mt-3 w-full text-caption text-slate-600 hover:text-teal-700 py-2 hover:bg-slate-50 rounded transition-colors"
             >
               {showAll ? 'Show fewer teams' : `Show all ${sorted.length} teams`}
             </button>
@@ -312,7 +314,7 @@ const EngagementStrainDashboard: React.FC<EngagementStrainDashboardProps> = ({
 
           <button
             onClick={() => navigate('/app/engagement-strain')}
-            className="mt-3 w-full text-xs text-teal-700 hover:text-teal-800 py-2 border border-teal-200 hover:border-teal-300 rounded transition-colors"
+            className="mt-3 w-full text-caption text-teal-700 hover:text-teal-800 py-2 border border-teal-200 hover:border-teal-300 rounded transition-colors"
           >
             View work-pattern detail
           </button>

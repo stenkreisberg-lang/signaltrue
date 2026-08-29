@@ -185,7 +185,7 @@ const DriftReportPage = () => {
         <div className="container mx-auto px-6 pt-32 pb-20">
           <div className="max-w-lg mx-auto text-center">
             <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-            <h1 className="text-3xl font-display font-bold mb-4">Report Not Unlocked</h1>
+            <h1 className="text-section font-display font-bold mb-4">Report Not Unlocked</h1>
             <p className="text-muted-foreground mb-8">
               This report requires email verification. Please complete the diagnostic and enter your
               email to unlock your results.
@@ -210,7 +210,7 @@ const DriftReportPage = () => {
         <div className="container mx-auto px-6 pt-32 pb-20">
           <div className="max-w-lg mx-auto text-center">
             <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-6" />
-            <h1 className="text-3xl font-display font-bold mb-4">Error Loading Report</h1>
+            <h1 className="text-section font-display font-bold mb-4">Error Loading Report</h1>
             <p className="text-muted-foreground mb-8">{error || 'Report not found'}</p>
             <a href="/drift/run.html">
               <Button variant="hero" size="lg">
@@ -310,28 +310,30 @@ const DriftReportPage = () => {
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <Activity className="w-6 h-6 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-caption font-medium text-muted-foreground">
                 Behavioral Drift Report
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl font-display font-bold mb-4">Your Drift Profile</h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
+            <h1 className="text-display sm:text-display font-display font-bold mb-4">
+              Your Drift Profile
+            </h1>
+            <p className="text-body text-muted-foreground mb-8 max-w-2xl">
               This is a directional risk profile based on your answers. It flags system-level
               coordination strain patterns that often show up before surveys and exit interviews.
             </p>
 
             {/* Main Score Cards */}
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
-                <div className="text-5xl font-bold mb-2">{score.totalScore}</div>
+              <div className="p-6 rounded-container bg-secondary/30 border border-border/50">
+                <div className="text-display font-bold mb-2">{score.totalScore}</div>
                 <div className="text-muted-foreground">Drift Score (0-100)</div>
               </div>
 
-              <div className={`p-6 rounded-2xl border ${categoryStyle.bgColor}`}>
+              <div className={`p-6 rounded-container border ${categoryStyle.bgColor}`}>
                 <div className={`flex items-center gap-3 mb-2 ${categoryStyle.color}`}>
                   {categoryStyle.icon}
-                  <span className="text-3xl font-bold">{score.category}</span>
+                  <span className="text-section font-bold">{score.category}</span>
                 </div>
                 <div className="text-muted-foreground">Risk Category</div>
               </div>
@@ -343,7 +345,7 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50 bg-secondary/5">
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Structural Drift Summary</h2>
+            <h2 className="text-lead font-display font-bold mb-6">Structural Drift Summary</h2>
             <div className="grid md:grid-cols-3 gap-4">
               {familyCards.map((family) => (
                 <DriftFamilyCard
@@ -364,16 +366,16 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Key Findings</h2>
+            <h2 className="text-lead font-display font-bold mb-6">Key Findings</h2>
 
             <div className="space-y-4">
               {score.findings.map((finding, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-4 p-4 rounded-xl bg-secondary/20 border border-border/50"
+                  className="flex items-start gap-4 p-4 rounded-container bg-secondary/20 border border-border/50"
                 >
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-primary text-sm font-bold">{index + 1}</span>
+                    <span className="text-primary text-caption font-bold">{index + 1}</span>
                   </div>
                   <p className="text-foreground">{finding}</p>
                 </div>
@@ -386,7 +388,7 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Confidence & Coverage</h2>
+            <h2 className="text-lead font-display font-bold mb-6">Confidence & Coverage</h2>
             <DriftConfidencePanel
               headline="This report is directional and useful for deciding whether to validate with real metadata-based baseline monitoring."
               items={coverageItems}
@@ -399,13 +401,16 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50 bg-secondary/5">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Detailed Breakdown</h2>
+            <h2 className="text-lead font-display font-bold mb-6">Detailed Breakdown</h2>
 
             <div className="space-y-4">
               {Object.entries(score.subScores).map(([key, value]) => {
                 const { label, icon } = getSubScoreLabel(key);
                 return (
-                  <div key={key} className="p-4 rounded-xl bg-secondary/20 border border-border/50">
+                  <div
+                    key={key}
+                    className="p-4 rounded-container bg-secondary/20 border border-border/50"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <span className="text-muted-foreground">{icon}</span>
@@ -431,9 +436,9 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">What This Means</h2>
+            <h2 className="text-lead font-display font-bold mb-6">What This Means</h2>
 
-            <div className="p-6 rounded-2xl bg-secondary/20 border border-border/50 space-y-4">
+            <div className="p-6 rounded-container bg-secondary/20 border border-border/50 space-y-4">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-muted-foreground">
@@ -468,13 +473,13 @@ const DriftReportPage = () => {
       <section className="py-12 border-b border-border/50 bg-secondary/5">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Recommended Next Steps</h2>
+            <h2 className="text-lead font-display font-bold mb-6">Recommended Next Steps</h2>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
+              <div className="p-6 rounded-container bg-primary/5 border border-primary/20">
                 <Users className="w-8 h-8 text-primary mb-4" />
                 <h3 className="font-semibold mb-2">Validate with Real Data</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-caption text-muted-foreground mb-4">
                   Run a 30-day baseline calibration with SignalTrue to see these patterns in your
                   actual team behavior—metadata only, no surveillance.
                 </p>
@@ -486,10 +491,10 @@ const DriftReportPage = () => {
                 </Link>
               </div>
 
-              <div className="p-6 rounded-2xl bg-secondary/30 border border-border/50">
+              <div className="p-6 rounded-container bg-secondary/30 border border-border/50">
                 <Calendar className="w-8 h-8 text-accent mb-4" />
                 <h3 className="font-semibold mb-2">Get Expert Guidance</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-caption text-muted-foreground mb-4">
                   Book a 15-minute walkthrough of your report and what actions typically work at
                   this stage.
                 </p>
@@ -513,7 +518,7 @@ const DriftReportPage = () => {
       <section className="py-20">
         <div className="container mx-auto px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-display font-bold mb-4">
+            <h2 className="text-section font-display font-bold mb-4">
               Ready to see this with real behavioral signals?
             </h2>
             <p className="text-muted-foreground mb-8">
@@ -529,7 +534,7 @@ const DriftReportPage = () => {
             </Link>
 
             {/* Privacy reminder */}
-            <div className="flex items-center justify-center gap-4 mt-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-4 mt-8 text-caption text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4" />
                 <span>No message content</span>

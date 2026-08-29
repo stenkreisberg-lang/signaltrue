@@ -51,12 +51,12 @@ const Footer = () => {
           {/* Brand column */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-lg bg-[#0F766E] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-control bg-brand flex items-center justify-center">
                 <Activity className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-display font-bold text-white">SignalTrue</span>
+              <span className="text-lead font-display font-bold text-white">SignalTrue</span>
             </Link>
-            <p className="text-[#CBD5E1] text-sm leading-relaxed max-w-sm mb-6">
+            <p className="text-[#CBD5E1] text-caption max-w-sm mb-6">
               Early team-level evidence for workplace health, safety and work-design prevention.
             </p>
             <div className="flex items-center gap-4">
@@ -64,7 +64,7 @@ const Footer = () => {
                 href="https://twitter.com/signaltrue"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-[#1E293B] hover:bg-[#334155] transition-colors"
+                className="p-2 rounded-control bg-[#1E293B] hover:bg-[#334155] transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-4 h-4 text-[#94A3B8]" />
@@ -73,7 +73,7 @@ const Footer = () => {
                 href="https://linkedin.com/company/signaltrue"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-[#1E293B] hover:bg-[#334155] transition-colors"
+                className="p-2 rounded-control bg-[#1E293B] hover:bg-[#334155] transition-colors"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-4 h-4 text-[#94A3B8]" />
@@ -90,7 +90,7 @@ const Footer = () => {
                   <li key={link.label}>
                     <Link
                       to={link.href}
-                      className="text-sm text-[#CBD5E1] hover:text-white transition-colors"
+                      className="text-caption text-[#CBD5E1] hover:text-white transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -103,10 +103,10 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-caption text-[#94A3B8]">
             © 2026 SignalTrue. Evidence for prevention—not employee monitoring.
           </p>
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-caption text-[#94A3B8]">
             Signals support consultation; they do not diagnose.
           </p>
         </div>
