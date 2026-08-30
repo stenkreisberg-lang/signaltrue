@@ -1,4 +1,4 @@
-import { Activity, Linkedin, Twitter } from 'lucide-react';
+import { Activity, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /*
@@ -60,15 +60,6 @@ const Footer = () => {
               Early team-level evidence for workplace health, safety and work-design prevention.
             </p>
             <div className="flex items-center gap-4">
-              <a
-                href="https://twitter.com/signaltrue"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-control bg-[#1E293B] hover:bg-[#334155] transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4 text-[#94A3B8]" />
-              </a>
               <a
                 href="https://linkedin.com/company/signaltrue"
                 target="_blank"
