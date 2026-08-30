@@ -1,9 +1,9 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import CustomerBand from '../components/CustomerBand';
 import WhyOrganizationsGoBlind from '../components/WhyOrganizationsGoBlind';
 import VerificationProcess from '../components/VerificationProcess';
 import WorkloadMigrationSection from '../components/WorkloadMigrationSection';
-import PilotEvidenceSection from '../components/PilotEvidenceSection';
 import PrivacySection from '../components/PrivacySection';
 import SampleReportSection from '../components/SampleReportSection';
 import Footer from '../components/Footer';
@@ -20,10 +20,10 @@ const Index = () => {
       <Navbar />
       <main>
         <Hero />
+        <CustomerBand />
         <WhyOrganizationsGoBlind />
         <VerificationProcess />
         <WorkloadMigrationSection />
-        <PilotEvidenceSection />
         <PrivacySection />
         <SampleReportSection />
       </main>

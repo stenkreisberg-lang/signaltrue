@@ -179,7 +179,7 @@ const DashboardMockup = () => {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   style={{
-                    backgroundColor: '#059669',
+                    backgroundColor: '#0C6B5F',
                     color: 'white',
                     border: 'none',
                     padding: '8px 16px',
