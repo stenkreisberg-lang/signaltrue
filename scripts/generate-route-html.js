@@ -27,6 +27,10 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+function escapeJsonForHtml(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 /** Replace a tag's content if present, otherwise insert it before </head>. */
 function upsert(html, pattern, replacement) {
   return pattern.test(html)
@@ -38,7 +42,9 @@ function buildHtml(shell, route, meta) {
   const canonical = `${SITE_URL}${route === '/' ? '' : route}`;
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
-  const language = route === '/au' || route.startsWith('/au/') ? 'en-AU' : 'en';
+  const language = meta.lang || (route === '/au' || route.startsWith('/au/') ? 'en-AU' : 'en');
+  const socialImage = meta.socialImage || SOCIAL_IMAGE;
+  const socialImageAlt = meta.socialImageAlt || 'SignalTrue — Early evidence for safer work';
 
   let html = shell;
   html = html.replace(/<html lang="[^"]*">/, `<html lang="${language}">`);
@@ -58,8 +64,9 @@ function buildHtml(shell, route, meta) {
     ['og:title', title],
     ['og:description', description],
     ['og:url', canonical],
-    ['og:type', 'website'],
-    ['og:image', SOCIAL_IMAGE],
+    ['og:type', meta.type || 'website'],
+    ['og:image', socialImage],
+    ['og:image:alt', socialImageAlt],
   ];
   for (const [property, content] of social) {
     html = upsert(
@@ -73,13 +80,63 @@ function buildHtml(shell, route, meta) {
     ['twitter:card', 'summary_large_image'],
     ['twitter:title', title],
     ['twitter:description', description],
-    ['twitter:image', SOCIAL_IMAGE],
+    ['twitter:image', socialImage],
   ];
   for (const [name, content] of twitter) {
     html = upsert(
       html,
       new RegExp(`<meta name="${name}" content="[^"]*"\\s*/?>`),
       `<meta name="${name}" content="${content}" />`
+    );
+  }
+
+  if (meta.type === 'article') {
+    html = upsert(
+      html,
+      /<meta property="article:published_time" content="[^"]*"\s*\/?>/,
+      `<meta property="article:published_time" content="${escapeHtml(meta.publishedAt)}" />`
+    );
+
+    const graph = [
+      {
+        '@type': 'BlogPosting',
+        '@id': `${canonical}#article`,
+        headline: meta.headline || meta.title,
+        description: meta.description,
+        image: socialImage,
+        datePublished: meta.publishedAt,
+        dateModified: meta.publishedAt,
+        inLanguage: language,
+        keywords: meta.keywords,
+        author: { '@type': 'Organization', name: 'SignalTrue' },
+        publisher: {
+          '@type': 'Organization',
+          name: 'SignalTrue',
+          url: SITE_URL,
+        },
+        mainEntityOfPage: canonical,
+      },
+    ];
+
+    if (meta.faqs?.length) {
+      graph.push({
+        '@type': 'FAQPage',
+        '@id': `${canonical}#faq`,
+        mainEntity: meta.faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+        })),
+      });
+    }
+
+    const structuredData = escapeJsonForHtml({
+      '@context': 'https://schema.org',
+      '@graph': graph,
+    });
+    html = html.replace(
+      '</head>',
+      `    <script type="application/ld+json">${structuredData}</script>\n  </head>`
     );
   }
 

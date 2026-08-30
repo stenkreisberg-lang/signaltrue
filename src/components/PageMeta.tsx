@@ -5,6 +5,9 @@ interface PageMetaProps {
   description: string;
   path?: string;
   lang?: string;
+  socialImage?: string;
+  socialImageAlt?: string;
+  type?: 'website' | 'article';
 }
 
 const SITE_URL = 'https://www.signaltrue.ai';
@@ -36,7 +39,15 @@ const upsertCanonical = (href: string) => {
   element.setAttribute('href', href);
 };
 
-export default function PageMeta({ title, description, path, lang = 'en' }: PageMetaProps) {
+export default function PageMeta({
+  title,
+  description,
+  path,
+  lang = 'en',
+  socialImage = SOCIAL_IMAGE,
+  socialImageAlt = 'SignalTrue — Early evidence for safer work',
+  type = 'website',
+}: PageMetaProps) {
   useEffect(() => {
     const canonical = `${SITE_URL}${path || window.location.pathname}`;
 
@@ -46,19 +57,15 @@ export default function PageMeta({ title, description, path, lang = 'en' }: Page
     upsertMeta('meta[property="og:title"]', 'content', title);
     upsertMeta('meta[property="og:description"]', 'content', description);
     upsertMeta('meta[property="og:url"]', 'content', canonical);
-    upsertMeta('meta[property="og:type"]', 'content', 'website');
-    upsertMeta('meta[property="og:image"]', 'content', SOCIAL_IMAGE);
-    upsertMeta(
-      'meta[property="og:image:alt"]',
-      'content',
-      'SignalTrue — Early evidence for safer work'
-    );
+    upsertMeta('meta[property="og:type"]', 'content', type);
+    upsertMeta('meta[property="og:image"]', 'content', socialImage);
+    upsertMeta('meta[property="og:image:alt"]', 'content', socialImageAlt);
     upsertMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     upsertMeta('meta[name="twitter:title"]', 'content', title);
     upsertMeta('meta[name="twitter:description"]', 'content', description);
-    upsertMeta('meta[name="twitter:image"]', 'content', SOCIAL_IMAGE);
+    upsertMeta('meta[name="twitter:image"]', 'content', socialImage);
     upsertCanonical(canonical);
-  }, [description, lang, path, title]);
+  }, [description, lang, path, socialImage, socialImageAlt, title, type]);
 
   return null;
 }

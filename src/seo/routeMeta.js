@@ -264,6 +264,51 @@ const ROUTE_META = {
     summary:
       'Articles on job demands and work design, what happens between psychosocial risk assessments, and using operational evidence alongside worker consultation.',
   },
+  '/blog/unreasonable-workload-psychosocial-hazard-australia': {
+    title: 'Unreasonable Workload: Psychosocial Hazard in Australia',
+    headline: 'Unreasonable workload is a psychosocial hazard.',
+    description:
+      'Unreasonable workload can become a psychosocial hazard when it is frequent, prolonged or severe. Learn what Australian employers should monitor before complaints arrive.',
+    lang: 'en-AU',
+    summary:
+      'Australian workplaces can miss unreasonable workload when it becomes culturally normal. This article explains high job demands, after-hours work, early exposure indicators and how to review whether a psychosocial control actually worked.',
+    type: 'article',
+    socialImage: `${SITE_URL}/images/blog/unreasonable-workload-australia/team-workload-discussion.jpg`,
+    socialImageAlt:
+      'Australian office team discussing workload and work design in a glass meeting room',
+    publishedAt: '2026-08-30T05:30:00.000Z',
+    keywords: [
+      'unreasonable workload psychosocial hazard',
+      'psychosocial hazards Australia',
+      'high job demands',
+      'workload risk assessment',
+      'right to disconnect',
+      'psychosocial risk monitoring',
+      'after-hours work',
+    ],
+    faqs: [
+      {
+        question: 'Is unreasonable workload a psychosocial hazard in Australia?',
+        answer:
+          'Yes. High job demands, including having too much to do in too little time, can be a psychosocial hazard when exposure is severe, prolonged or frequent. The precise legal requirements depend on the relevant jurisdiction.',
+      },
+      {
+        question: 'How should an employer assess workload risk?',
+        answer:
+          'Employers should consult workers, observe work, review available records and consider the duration, frequency and severity of exposure together with related hazards such as low job control and poor support.',
+      },
+      {
+        question: 'Does the right to disconnect mean employers cannot contact staff after hours?',
+        answer:
+          'No. The right concerns an employee’s ability to refuse to monitor, read or respond outside working hours unless that refusal is unreasonable.',
+      },
+      {
+        question: 'Can digital work data be used to monitor psychosocial risk?',
+        answer:
+          'Team-level digital work-pattern data can support risk identification and control review, but it should support consultation and human judgement rather than individual surveillance or automated diagnosis.',
+      },
+    ],
+  },
 };
 
 const DEFAULT_META = ROUTE_META['/'];

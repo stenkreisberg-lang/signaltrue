@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
+import { editorialBlogPostBySlug, editorialBlogPosts } from '../content/editorialBlogPosts';
 import {
   ArrowLeft,
   ArrowRight,
@@ -47,6 +48,12 @@ interface BlogPost {
   featured: boolean;
   createdAt: string;
   updatedAt: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    canonicalUrl?: string;
+    ogImage?: string;
+  };
 }
 
 interface BlogResponse {
@@ -77,10 +84,29 @@ const BlogList = () => {
       const response = await fetch(`${API_URL}/api/blog?page=${page}&limit=9${tagParam}`);
       if (!response.ok) throw new Error('Failed to fetch posts');
       const data: BlogResponse = await response.json();
-      setPosts(data.posts);
-      setTotalPages(data.pagination.pages);
+      const apiPosts = data.posts.filter(
+        (post) => !editorialBlogPosts.some((editorialPost) => editorialPost.slug === post.slug)
+      );
+      const matchingEditorialPosts = editorialBlogPosts.filter(
+        (post) => !selectedTag || post.tags.includes(selectedTag)
+      );
+      setPosts(page === 1 ? [...matchingEditorialPosts, ...apiPosts] : apiPosts);
+      setTotalPages(
+        Math.max(1, Math.ceil((data.pagination.total + matchingEditorialPosts.length) / 9))
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const matchingEditorialPosts = editorialBlogPosts.filter(
+        (post) => !selectedTag || post.tags.includes(selectedTag)
+      );
+      setPosts(page === 1 ? matchingEditorialPosts : []);
+      setTotalPages(1);
+      setError(
+        matchingEditorialPosts.length > 0
+          ? null
+          : err instanceof Error
+            ? err.message
+            : 'An error occurred'
+      );
     } finally {
       setLoading(false);
     }
@@ -91,7 +117,8 @@ const BlogList = () => {
       const response = await fetch(`${API_URL}/api/blog/tags`);
       if (response.ok) {
         const data = await response.json();
-        setTags(data.tags || []);
+        const editorialTags = editorialBlogPosts.flatMap((post) => post.tags);
+        setTags([...new Set([...(data.tags || []), ...editorialTags])].sort());
       }
     } catch (err) {
       console.error('Failed to fetch tags:', err);
@@ -312,11 +339,19 @@ const BlogList = () => {
 
 // Single Blog Post Component
 const BlogPostView = ({ slug }: { slug: string }) => {
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  const editorialPost = editorialBlogPostBySlug(slug);
+  const [post, setPost] = useState<BlogPost | null>(editorialPost || null);
+  const [loading, setLoading] = useState(!editorialPost);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPost = useCallback(async () => {
+    if (editorialPost) {
+      setPost(editorialPost);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -332,7 +367,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [editorialPost, slug]);
 
   useEffect(() => {
     fetchPost();
@@ -534,13 +569,23 @@ const BlogPostView = ({ slug }: { slug: string }) => {
 // Main Blog Page Component
 const Blog = () => {
   const { slug } = useParams<{ slug?: string }>();
+  const editorialPost = editorialBlogPostBySlug(slug);
+  const title =
+    editorialPost?.seo.metaTitle || 'SignalTrue Blog | Workload Risk and Burnout Prevention';
+  const description =
+    editorialPost?.seo.metaDescription ||
+    'Practical guidance on psychosocial risk evidence, manager capacity, worker consultation and team-level work-design prevention.';
 
   return (
     <div className="min-h-screen bg-background">
       <PageMeta
-        title="SignalTrue Blog | Workload Risk and Burnout Prevention"
-        description="Practical guidance on psychosocial risk evidence, manager capacity, worker consultation and team-level work-design prevention."
+        title={title}
+        description={description}
         path={slug ? `/blog/${slug}` : '/blog'}
+        lang={editorialPost ? 'en-AU' : 'en'}
+        socialImage={editorialPost?.seo.ogImage}
+        socialImageAlt={editorialPost?.featuredImage.alt}
+        type={editorialPost ? 'article' : 'website'}
       />
       <Navbar />
       <main className="pt-20">{slug ? <BlogPostView slug={slug} /> : <BlogList />}</main>

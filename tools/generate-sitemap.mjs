@@ -8,6 +8,12 @@ const OUTPUT_PATHS = [
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
 const CORE_LAST_MODIFIED = '2026-08-29';
+const STATIC_BLOG_ENTRIES = [
+  {
+    url: `${SITE_URL}/blog/unreasonable-workload-psychosocial-hazard-australia`,
+    lastModified: '2026-08-30',
+  },
+];
 const LEGACY_UNSAFE_TOPIC_PATTERN =
   /(?:^|[-/])(burnout|productivity|attrition|employee-monitoring|flight-risk)(?:[-/]|$)/i;
 
@@ -138,7 +144,7 @@ const staticEntries = staticPages.map(([path, changeFrequency, priority]) => ({
 
 const uniqueBlogEntries = [
   ...new Map(
-    blogEntries
+    [...STATIC_BLOG_ENTRIES, ...blogEntries]
       .filter((entry) => !LEGACY_UNSAFE_TOPIC_PATTERN.test(new URL(entry.url).pathname))
       .map((entry) => [entry.url, entry])
   ).values(),
