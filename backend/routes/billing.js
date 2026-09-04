@@ -1,6 +1,7 @@
 import express from 'express';
 import Stripe from 'stripe';
 import { authenticateToken } from '../middleware/auth.js';
+import Analytics from '../models/analytics.js';
 
 const router = express.Router();
 
@@ -105,6 +106,16 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
       success_url: `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/dashboard?payment=success`,
       cancel_url: `${process.env.FRONTEND_URL || 'https://signaltrue.ai'}/pricing?payment=cancelled`,
     });
+
+    Analytics.create({
+      eventName: 'checkout_started',
+      payload: {
+        plan: String(plan),
+        organizationId: req.user.orgId?.toString() || '',
+        checkoutSessionId: session.id,
+        timestamp: new Date().toISOString(),
+      },
+    }).catch((error) => console.error('Checkout analytics error:', error.message));
 
     return res.json({ url: session.url, sessionId: session.id });
   } catch (err) {

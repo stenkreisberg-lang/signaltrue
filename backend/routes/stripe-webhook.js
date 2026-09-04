@@ -1,5 +1,6 @@
 import express from 'express';
 import Stripe from 'stripe';
+import Analytics from '../models/analytics.js';
 
 const router = express.Router();
 
@@ -86,6 +87,25 @@ router.post('/stripe/webhook', async (req, res) => {
               $set: update,
             },
             { upsert: true, returnDocument: 'after' }
+          );
+          await Analytics.updateOne(
+            {
+              eventName: 'subscription_started',
+              'payload.checkoutSessionId': session.id,
+            },
+            {
+              $setOnInsert: {
+                eventName: 'subscription_started',
+                payload: {
+                  plan: rawPlan || normalizedPlan,
+                  organizationId: orgId,
+                  checkoutSessionId: session.id,
+                  subscriptionId,
+                  timestamp: new Date().toISOString(),
+                },
+              },
+            },
+            { upsert: true }
           );
         } catch (e) {
           console.error('Webhook persist error (checkout.session.completed):', e.message);

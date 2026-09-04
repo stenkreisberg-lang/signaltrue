@@ -1,10 +1,24 @@
 import { describe, expect, test } from '@jest/globals';
-import { buildCommercialReportFilter, isCommercialReportPath } from '../services/ga4Service.js';
+import {
+  boundedShare,
+  buildCommercialReportFilter,
+  isCommercialReportPath,
+  normalizeAcquisitionRows,
+} from '../services/ga4Service.js';
 import {
   generateSiteAnalyticsEmailHtml,
   inferCommercialRecommendations,
 } from '../services/siteAnalyticsEmailService.js';
 import { validateLeadPayload } from '../routes/leads.js';
+import { isGenuinePublicCommercialEvent } from '../routes/analytics.js';
+
+function analyticsRequest(headers = {}) {
+  return {
+    get(name) {
+      return headers[name.toLowerCase()] || '';
+    },
+  };
+}
 
 describe('commercial measurement integrity', () => {
   test.each(['/app', '/app/overview', '/login', '/dashboard', '/superadmin'])(
@@ -13,8 +27,66 @@ describe('commercial measurement integrity', () => {
   );
 
   test('uses an exact production host in the GA4 commercial filter', () => {
-    expect(JSON.stringify(buildCommercialReportFilter())).toContain('www.signaltrue.ai');
-    expect(JSON.stringify(buildCommercialReportFilter())).toContain('EXACT');
+    const filter = JSON.stringify(buildCommercialReportFilter());
+    expect(filter).toContain('www.signaltrue.ai');
+    expect(filter).toContain('EXACT');
+    expect(filter).toContain('production[_ -]?smoke');
+    expect(filter).toContain('sessionMedium');
+  });
+
+  test('server-side collection rejects preview, private and automated commercial events', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const productionRequest = analyticsRequest({
+        origin: 'https://www.signaltrue.ai',
+        'user-agent': 'Chrome',
+      });
+      expect(
+        isGenuinePublicCommercialEvent(productionRequest, 'page_view', {
+          page_path: '/product',
+        })
+      ).toBe(true);
+      expect(
+        isGenuinePublicCommercialEvent(
+          analyticsRequest({ origin: 'https://preview.signaltrue.ai', 'user-agent': 'Chrome' }),
+          'page_view',
+          { page_path: '/product' }
+        )
+      ).toBe(false);
+      expect(
+        isGenuinePublicCommercialEvent(productionRequest, 'lead_form_start', {
+          page_path: '/app/overview',
+        })
+      ).toBe(false);
+      expect(
+        isGenuinePublicCommercialEvent(productionRequest, 'primary_cta_click', {
+          page_path: '/?utm_source=production_smoke&utm_medium=qa',
+        })
+      ).toBe(false);
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  test('normalises acquisition aliases and aggregates each source/medium pair once', () => {
+    expect(
+      normalizeAcquisitionRows([
+        { source: '(direct)', medium: '(none)', sessions: 4, activeUsers: 3 },
+        { source: 'direct', medium: '(not set)', sessions: 2, activeUsers: 2 },
+        { source: '(not set)', medium: '(not set)', sessions: 1, activeUsers: 1 },
+        { source: 'WWW.Google.COM', medium: 'Organic Search', sessions: 5, activeUsers: 4 },
+      ])
+    ).toEqual([
+      { source: '(direct)', medium: '(none)', sessions: 7, activeUsers: 6 },
+      { source: 'google', medium: 'organic', sessions: 5, activeUsers: 4 },
+    ]);
+  });
+
+  test('never reports a share above 100 percent', () => {
+    expect(boundedShare(9, 8)).toBe(100);
+    expect(boundedShare(4, 8)).toBe(50);
   });
 
   test('requires the three confirmed-lead identity fields server-side', () => {

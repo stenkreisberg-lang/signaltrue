@@ -98,7 +98,7 @@ export default function Product() {
                   ctaLocation="product_hero"
                   className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
-                  Request a 20-minute psychosocial risk visibility review{' '}
+                  Book a 20-minute visibility review{' '}
                   <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA

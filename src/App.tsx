@@ -237,7 +237,7 @@ const App = () => (
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/demo" element={<Navigate to="/contact" replace />} />
+                <Route path="/demo" element={<Navigate to="/contact?intent=demo" replace />} />
                 <Route path="/sample-report" element={<SampleReport />} />
                 <Route
                   path="/psychosocial-risk-visibility-review"
@@ -253,6 +253,7 @@ const App = () => (
                 <Route path="/resources" element={<SeoLanding />} />
                 <Route path="/signals/:signalSlug" element={<SeoLanding />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/ai-info-page" element={<Navigate to="/au/ai-governance" replace />} />
                 <Route path="/drift-diagnostic" element={<DriftDiagnostic />} />

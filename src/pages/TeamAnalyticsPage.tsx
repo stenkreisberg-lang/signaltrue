@@ -1,8 +1,8 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
-import { Link } from 'react-router-dom';
 import { ArrowRight, Zap, Focus, TrendingDown } from 'lucide-react';
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -19,16 +19,6 @@ import { ArrowRight, Zap, Focus, TrendingDown } from 'lucide-react';
  *
  * Explain patterns, not charts.
  */
-
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (
-    typeof window !== 'undefined' &&
-    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
-  ) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
-  }
-};
 
 // Team analytics sections per spec
 const analyticsPatterns = [
@@ -100,12 +90,12 @@ const TeamAnalyticsPage = () => {
                 availability, after-hours work, management capacity, and coordination patterns,
                 without invading privacy or tracking individuals.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
-                <Button variant="hero" size="xl">
+              <Button asChild variant="hero" size="xl">
+                <PrimaryCommercialCTA ctaLocation="team_analytics_hero">
                   See These Signals Early
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </PrimaryCommercialCTA>
+              </Button>
             </div>
           </div>
         </section>
@@ -190,12 +180,12 @@ const TeamAnalyticsPage = () => {
               <p className="text-body text-muted-foreground mb-8 max-w-xl mx-auto">
                 Request a preview to see what team workload risk looks like in your organization.
               </p>
-              <Link to="/contact" onClick={() => trackEvent('early_signal_preview_requested')}>
-                <Button variant="hero" size="xl">
+              <Button asChild variant="hero" size="xl">
+                <PrimaryCommercialCTA ctaLocation="team_analytics_final">
                   Request Early Signal Preview
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+                </PrimaryCommercialCTA>
+              </Button>
             </div>
           </div>
         </section>

@@ -7,7 +7,7 @@ const SampleReportSection = () => (
       <div className="mx-auto grid max-w-5xl items-center gap-10 rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-6 sm:p-10 lg:grid-cols-2">
         <div>
           <p className="mb-4 text-caption font-bold uppercase tracking-wider text-brand">
-            Completed review
+            Fictional completed review
           </p>
           <h2 className="mb-4 text-section font-bold text-[#0F172A]">
             See the evidence behind a human decision.
@@ -20,7 +20,7 @@ const SampleReportSection = () => (
             ctaLocation="homepage_report_section"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
           >
-            See a completed review <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            View the fictional sample review <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </SampleReportCTA>
         </div>
 

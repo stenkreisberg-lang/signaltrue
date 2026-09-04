@@ -1,11 +1,11 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
-import CustomerBand from '../components/CustomerBand';
 import WhyOrganizationsGoBlind from '../components/WhyOrganizationsGoBlind';
 import VerificationProcess from '../components/VerificationProcess';
 import WorkloadMigrationSection from '../components/WorkloadMigrationSection';
 import PrivacySection from '../components/PrivacySection';
 import SampleReportSection from '../components/SampleReportSection';
+import CTASection from '../components/CTASection';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 
@@ -20,12 +20,12 @@ const Index = () => {
       <Navbar />
       <main>
         <Hero />
-        <CustomerBand />
         <WhyOrganizationsGoBlind />
         <VerificationProcess />
         <WorkloadMigrationSection />
         <PrivacySection />
         <SampleReportSection />
+        <CTASection />
       </main>
       <Footer />
     </div>

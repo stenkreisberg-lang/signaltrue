@@ -17,7 +17,6 @@ const footerLinks = {
     { label: 'Pricing', href: '/pricing' },
     { label: 'Sample report', href: '/sample-report' },
     { label: 'Client success process', href: '/client-success' },
-    { label: 'Request an evidence review', href: '/contact' },
   ],
   Company: [
     { label: 'About', href: '/about' },

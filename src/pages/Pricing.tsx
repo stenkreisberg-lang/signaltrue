@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
-import { CheckCircle, ArrowRight, Shield, Loader2 } from 'lucide-react';
-import { clearStoredSession } from '../utils/authContext';
+import { CheckCircle, ArrowRight, Shield } from 'lucide-react';
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
+import { trackFunnelEvent } from '../lib/analytics';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -21,28 +21,6 @@ import { clearStoredSession } from '../utils/authContext';
  * - Prevention: Trend tracking + alerts
  * - Resilience: Executive summaries + intervention guidance
  */
-
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (
-    typeof window !== 'undefined' &&
-    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
-  ) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
-  }
-  try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-    fetch(`${apiUrl}/api/analytics/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => {
-      /* Silently fail for analytics */
-    });
-  } catch {
-    /* Silently fail for analytics */
-  }
-};
 
 // Pricing tiers per spec
 const tiers = [
@@ -71,7 +49,7 @@ const tiers = [
       'Metadata-only reporting',
       'Team-level privacy rules',
     ],
-    cta: 'Request a risk review',
+    cta: 'Discuss Team Signals',
   },
   {
     name: 'Leadership Signals',
@@ -95,7 +73,7 @@ const tiers = [
       'Leadership review notes',
       'Board-ready summary',
     ],
-    cta: 'Request a risk review',
+    cta: 'Discuss Leadership Signals',
   },
   {
     name: 'Enterprise',
@@ -123,60 +101,6 @@ const tiers = [
 ];
 
 const Pricing = () => {
-  const navigate = useNavigate();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  /**
-   * Handles plan selection:
-   * - Logged-in users  → call checkout API → redirect to Stripe
-   * - Unauthenticated  → /register?plan=<planKey> (Register will trigger checkout after signup)
-   * - Resilience (custom) → /contact
-   */
-  const handleCheckout = async (planKey: string | null) => {
-    if (!planKey) {
-      navigate('/contact');
-      return;
-    }
-    setCheckoutError(null);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate(`/register?plan=${planKey}`);
-      return;
-    }
-    setLoadingPlan(planKey);
-    try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-      const res = await fetch(`${apiUrl}/api/billing/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ plan: planKey }),
-      });
-      const contentType = res.headers.get('content-type') || '';
-      const data = contentType.includes('application/json')
-        ? await res.json()
-        : { message: await res.text() };
-
-      if (res.status === 401) {
-        clearStoredSession();
-        navigate(`/register?plan=${planKey}`);
-        return;
-      }
-
-      if (!res.ok) throw new Error(data.message || 'Checkout failed');
-      if (!data.url) throw new Error('Checkout did not return a redirect URL');
-      window.location.href = data.url;
-    } catch (err: unknown) {
-      setCheckoutError(
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.'
-      );
-      setLoadingPlan(null);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
@@ -308,14 +232,10 @@ const Pricing = () => {
         {/* Pricing Cards */}
         <section className="py-20 lg:py-24 bg-[#F8FAFC]">
           <div className="container mx-auto px-6">
-            {checkoutError && (
-              <div className="max-w-xl mx-auto mb-8 p-4 rounded-control bg-[#FEE2E2] border border-[#B91C1C]/20 text-[#B91C1C] text-caption text-center">
-                {checkoutError}
-              </div>
-            )}
             <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
               {tiers.map((tier, index) => {
-                const isLoading = loadingPlan !== null && loadingPlan === tier.planKey;
+                const plan = tier.planKey || 'enterprise';
+                const ctaLocation = `pricing_${plan}`;
                 return (
                   <div
                     key={index}
@@ -360,26 +280,24 @@ const Pricing = () => {
                     </ul>
 
                     <Button
+                      asChild
                       variant={tier.highlight ? 'cta' : 'outline'}
                       className="w-full"
                       size="lg"
-                      disabled={loadingPlan !== null}
-                      onClick={() => {
-                        trackEvent('pricing_cta_clicked');
-                        handleCheckout(tier.planKey);
-                      }}
                     >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Redirecting to checkout…
-                        </>
-                      ) : (
-                        <>
-                          {tier.cta}
-                          {tier.highlight && <ArrowRight className="w-4 h-4 ml-2" />}
-                        </>
-                      )}
+                      <PrimaryCommercialCTA
+                        ctaLocation={ctaLocation}
+                        queryParams={{ plan, intent: 'pricing' }}
+                        onClick={() =>
+                          trackFunnelEvent('pricing_plan_click', {
+                            cta_location: ctaLocation,
+                            plan,
+                          })
+                        }
+                      >
+                        {tier.cta}
+                        {tier.highlight && <ArrowRight className="w-4 h-4 ml-2" />}
+                      </PrimaryCommercialCTA>
                     </Button>
                   </div>
                 );
@@ -487,10 +405,10 @@ const Pricing = () => {
                 SignalTrue should stay on continuously.
               </p>
               <Button asChild variant="hero" size="xl">
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Request a risk review
+                <PrimaryCommercialCTA ctaLocation="pricing_final">
+                  Book a 20-minute visibility review
                   <ArrowRight className="w-5 h-5" />
-                </Link>
+                </PrimaryCommercialCTA>
               </Button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
 
 const weeks = [
   [
@@ -75,9 +76,12 @@ export default function AustraliaPilot() {
                 <Link to="/au/monitoring-gap-audit">Run the Monitoring Gap Audit</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link to="/contact?intent=au-pilot&cta=au_pilot_hero">
+                <PrimaryCommercialCTA
+                  ctaLocation="au_pilot_hero"
+                  queryParams={{ intent: 'au-pilot' }}
+                >
                   Discuss pilot readiness <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                </PrimaryCommercialCTA>
               </Button>
             </div>
           </div>
@@ -194,6 +198,45 @@ export default function AustraliaPilot() {
           </div>
         </section>
 
+        <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
+          <div className="container mx-auto max-w-5xl px-6">
+            <div className="grid items-start gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+              <div>
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  Commercial scope
+                </p>
+                <h2 className="mt-3 text-section font-bold text-[#0F172A]">
+                  A fixed pilot fee is confirmed before work starts.
+                </h2>
+                <p className="mt-4 leading-7 text-[#475569]">
+                  SignalTrue does not publish an invented starting price. The written proposal
+                  states the complete eight-week fee, inclusions, assumptions and any customer-side
+                  costs.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  ['Workplace scope', 'Number of work groups and accountable owners in the pilot.'],
+                  [
+                    'Data sources',
+                    'Approved calendar or collaboration systems and implementation effort.',
+                  ],
+                  ['Governance', 'Required security, privacy, consultation and deployment review.'],
+                  [
+                    'Deliverables',
+                    'Evidence-pack format, review meetings and support requirements.',
+                  ],
+                ].map(([title, copy]) => (
+                  <article key={title} className="rounded-container border border-[#E2E8F0] p-5">
+                    <h3 className="font-bold text-[#0F172A]">{title}</h3>
+                    <p className="mt-2 text-caption leading-6 text-[#475569]">{copy}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="py-16 lg:py-20">
           <div className="container mx-auto max-w-3xl px-6 text-center">
             <h2 className="text-section font-bold text-[#0F172A]">
@@ -205,9 +248,12 @@ export default function AustraliaPilot() {
               and decisions about controls.
             </p>
             <Button asChild size="lg" className="mt-8">
-              <Link to="/contact?intent=au-pilot&cta=au_pilot_final">
+              <PrimaryCommercialCTA
+                ctaLocation="au_pilot_final"
+                queryParams={{ intent: 'au-pilot' }}
+              >
                 Discuss an Australian pilot <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              </PrimaryCommercialCTA>
             </Button>
           </div>
         </section>

@@ -41,18 +41,18 @@ const Hero = () => {
             </p>
 
             <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <SampleReportCTA
+              <PrimaryCommercialCTA
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                See a completed review <ArrowRight className="h-5 w-5 shrink-0" />
-              </SampleReportCTA>
-              <PrimaryCommercialCTA
-                ctaLocation="homepage_hero"
-                className="inline-flex min-h-12 items-center px-1 text-caption font-bold text-brand hover:text-brand-hover hover:underline"
-              >
-                Book a 20-minute walkthrough
+                Book a 20-minute visibility review <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
+              <SampleReportCTA
+                ctaLocation="homepage_hero"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 text-caption font-bold text-[#0F172A] hover:border-brand sm:w-auto"
+              >
+                View the fictional sample review
+              </SampleReportCTA>
             </div>
           </div>
 

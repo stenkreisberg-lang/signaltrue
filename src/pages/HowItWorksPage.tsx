@@ -17,28 +17,7 @@ import {
   Activity,
   Users,
 } from 'lucide-react';
-
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (
-    typeof window !== 'undefined' &&
-    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
-  ) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
-  }
-  try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-    fetch(`${apiUrl}/api/analytics/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString() }),
-    }).catch(() => {
-      /* Silently fail for analytics */
-    });
-  } catch {
-    /* Silently fail for analytics */
-  }
-};
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
 
 // 4 Steps per brief
 const steps = [
@@ -105,10 +84,6 @@ const HowItWorksPage = () => {
   const location = useLocation();
 
   useEffect(() => {
-    trackEvent('how_it_works_viewed');
-  }, []);
-
-  useEffect(() => {
     if (location.hash) {
       setTimeout(() => {
         const element = document.getElementById(location.hash.slice(1));
@@ -143,10 +118,10 @@ const HowItWorksPage = () => {
                 management capacity. No message content. No individual scoring. No surveillance.
               </p>
               <Button asChild variant="hero" size="xl">
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Request a risk review
+                <PrimaryCommercialCTA ctaLocation="how_it_works_hero">
+                  Book a 20-minute visibility review
                   <ArrowRight className="w-5 h-5" />
-                </Link>
+                </PrimaryCommercialCTA>
               </Button>
             </div>
           </div>
@@ -355,13 +330,14 @@ const HowItWorksPage = () => {
                   </Link>
                 </Button>
                 <Button asChild variant="hero-outline" size="lg">
-                  <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                    Request a workplace risk review
-                  </Link>
+                  <PrimaryCommercialCTA ctaLocation="how_it_works_diagnostic">
+                    Book a 20-minute visibility review
+                  </PrimaryCommercialCTA>
                 </Button>
               </div>
               <p className="text-caption text-[#475569] mt-4">
-                No personal data. No message content. Anonymous result.
+                No employee data. No message content. Work email requested only to unlock the
+                report.
               </p>
             </div>
           </div>
@@ -375,10 +351,10 @@ const HowItWorksPage = () => {
                 See how work patterns become early warning signals.
               </h2>
               <Button asChild variant="hero" size="xl">
-                <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                  Request a risk review
+                <PrimaryCommercialCTA ctaLocation="how_it_works_final">
+                  Book a 20-minute visibility review
                   <ArrowRight className="w-5 h-5" />
-                </Link>
+                </PrimaryCommercialCTA>
               </Button>
             </div>
           </div>

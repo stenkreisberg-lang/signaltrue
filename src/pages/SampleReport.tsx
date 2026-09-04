@@ -105,8 +105,7 @@ export default function SampleReport() {
                   ctaLocation="sample_report_hero"
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
-                  Request a 20-minute psychosocial risk visibility review{' '}
-                  <ArrowRight className="h-5 w-5" />
+                  Book a 20-minute visibility review <ArrowRight className="h-5 w-5" />
                 </PrimaryCommercialCTA>
                 <a
                   href="#report"
@@ -116,7 +115,12 @@ export default function SampleReport() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    trackFunnelEvent('sample_report_print', {
+                      cta_location: 'sample_report_hero',
+                    });
+                    window.print();
+                  }}
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
                 >
                   <Printer className="h-4 w-4" aria-hidden="true" /> Print or save PDF
@@ -334,6 +338,29 @@ export default function SampleReport() {
               </div>
             </div>
           </article>
+        </section>
+
+        <section className="sample-report-no-print border-t border-[#E2E8F0] bg-white py-16 lg:py-20">
+          <div className="container mx-auto px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                Apply the same review discipline to your workplace
+              </p>
+              <h2 className="mt-4 text-section font-bold text-[#0F172A] sm:text-display">
+                Bring one gap in your current psychosocial-risk process.
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl text-body leading-7 text-[#475569]">
+                In 20 minutes, we will discuss the evidence you already use, where visibility may be
+                missing between formal assessments, and whether a controlled pilot is justified.
+              </p>
+              <PrimaryCommercialCTA
+                ctaLocation="sample_report_bottom"
+                className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
+              >
+                Book a 20-minute visibility review <ArrowRight className="h-5 w-5" />
+              </PrimaryCommercialCTA>
+            </div>
+          </div>
         </section>
       </main>
       <Footer />

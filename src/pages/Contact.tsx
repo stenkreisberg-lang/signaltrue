@@ -1,19 +1,44 @@
 import { Calendar, Mail, MessageSquare } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import LeadForm from '../components/LeadForm';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 
+const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'au-pilot']);
+
+export function normalizeContactIntent(value: string | null) {
+  const normalized = (value || 'demo').split('?')[0].trim().toLowerCase();
+  return ALLOWED_INTENTS.has(normalized) ? normalized : 'demo';
+}
+
 export default function Contact() {
   const location = useLocation();
-  const ctaLocation = new URLSearchParams(location.search).get('cta') || 'direct_contact';
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const rawIntent = searchParams.get('intent');
+  const intent = normalizeContactIntent(rawIntent);
+  const routeState = location.state as { signaltrueCtaLocation?: string } | null;
+  const ctaLocation =
+    routeState?.signaltrueCtaLocation || searchParams.get('cta') || 'direct_contact';
+  const plan = searchParams.get('plan') || undefined;
+
+  useEffect(() => {
+    if (!rawIntent || rawIntent === intent) return;
+    const canonicalParams = new URLSearchParams(location.search);
+    canonicalParams.set('intent', intent);
+    navigate(
+      { pathname: '/contact', search: `?${canonicalParams.toString()}` },
+      { replace: true, state: location.state }
+    );
+  }, [intent, location.search, location.state, navigate, rawIntent]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="Request a Psychosocial Risk Visibility Review | SignalTrue"
-        description="Request a 20-minute SignalTrue review of gaps between formal psychosocial risk assessments and team-level work-pattern evidence."
+        title="Contact SignalTrue | Sales, Privacy and Support"
+        description="Contact SignalTrue for general enquiries, customer support, privacy questions or a 20-minute psychosocial risk visibility review."
         path="/contact"
       />
       <Navbar />
@@ -21,14 +46,14 @@ export default function Contact() {
         <section className="border-b border-[#E2E8F0] bg-white py-14 lg:py-16">
           <div className="container mx-auto px-6 text-center">
             <p className="text-caption font-bold uppercase tracking-wider text-brand">
-              Psychosocial risk visibility review
+              Contact SignalTrue
             </p>
             <h1 className="mx-auto mt-4 max-w-4xl text-display font-bold text-[#0F172A] sm:text-display">
-              Bring one gap in your current psychosocial-risk process.
+              Start with the right conversation.
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-lead leading-8 text-[#475569]">
-              In 20 minutes, we will discuss the process you already use, an example of the
-              conditions SignalTrue can identify, and whether a controlled pilot is justified.
+              Use the request form for a commercial conversation, or contact the relevant team
+              directly for general, privacy, or customer-support questions.
             </p>
           </div>
         </section>
@@ -69,8 +94,16 @@ export default function Contact() {
                 );
               })}
             </div>
-            <div className="mx-auto max-w-3xl rounded-container border border-[#E2E8F0] bg-white p-7 shadow-sm md:p-10">
-              <LeadForm ctaLocation={ctaLocation} />
+            <div
+              id="visibility-review"
+              className="mx-auto max-w-3xl rounded-container border border-[#E2E8F0] bg-white p-7 shadow-sm md:p-10"
+            >
+              <LeadForm
+                ctaLocation={ctaLocation}
+                intent={intent}
+                plan={plan}
+                formVersion="contact_p0_v1"
+              />
             </div>
           </div>
         </section>

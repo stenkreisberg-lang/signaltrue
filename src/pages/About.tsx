@@ -4,6 +4,7 @@ import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
+import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 /*
  * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
@@ -22,16 +23,6 @@ import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
  * Founding Insight: Explain why existing tools fail leaders.
  * No bios first. Belief first.
  */
-
-// Analytics tracking
-const trackEvent = (eventName: string) => {
-  if (
-    typeof window !== 'undefined' &&
-    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag
-  ) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', eventName);
-  }
-};
 
 // Belief system per spec - 5 beliefs
 const beliefs = [
@@ -260,13 +251,15 @@ const About = () => {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild variant="hero-outline" size="xl">
-                  <Link to="/sample-report">View sample report</Link>
+                  <SampleReportCTA ctaLocation="about_final">
+                    View the fictional sample
+                  </SampleReportCTA>
                 </Button>
                 <Button asChild variant="hero" size="xl">
-                  <Link to="/contact" onClick={() => trackEvent('demo_cta_click')}>
-                    Request a risk review
+                  <PrimaryCommercialCTA ctaLocation="about_final">
+                    Book a 20-minute visibility review
                     <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  </PrimaryCommercialCTA>
                 </Button>
               </div>
             </div>

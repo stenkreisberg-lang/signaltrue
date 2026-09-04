@@ -50,7 +50,7 @@ test('primary homepage navigation and CTA paths work', async ({ page }) => {
 
   await page.goto('/');
   await page
-    .getByRole('link', { name: /See a completed review/i })
+    .getByRole('link', { name: /View the fictional sample review/i })
     .first()
     .click();
   await expect(page).toHaveURL(/\/sample-report$/);
@@ -75,7 +75,9 @@ test('verification-led homepage keeps its primary action above the mobile fold',
   });
   expect(lineCount).toBeLessThanOrEqual(3.1);
 
-  const primaryAction = page.getByRole('link', { name: /See a completed review/i }).first();
+  const primaryAction = page
+    .getByRole('link', { name: /Book a 20-minute visibility review/i })
+    .first();
   const actionBox = await primaryAction.boundingBox();
   expect(actionBox).not.toBeNull();
   expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(812);
@@ -90,7 +92,7 @@ test('protected routes send signed-out users to login', async ({ page }) => {
 
 test('legacy public aliases resolve to canonical pages', async ({ page }) => {
   await page.goto('/demo');
-  await expect(page).toHaveURL(/\/contact$/);
+  await expect(page).toHaveURL(/\/contact\?intent=demo$/);
 
   await page.goto('/australia-psychosocial-risk');
   await expect(page).toHaveURL(/\/au$/);
@@ -127,7 +129,9 @@ test('visibility-review form confirms only after a successful API response', asy
       contentType: 'application/json',
       body: JSON.stringify({
         success: true,
+        confirmed: true,
         leadId: 'e2e-lead',
+        internalNotificationSent: true,
         calendarLink: 'https://calendar.example/test',
       }),
     });
@@ -136,10 +140,10 @@ test('visibility-review form confirms only after a successful API response', asy
   await page.goto(
     '/psychosocial-risk-visibility-review?utm_source=partner&utm_medium=email&utm_campaign=visibility-review'
   );
-  await page.getByLabel('Full name').fill('Synthetic Test User');
+  await page.getByLabel('Name').fill('Synthetic Test User');
   await page.getByLabel('Work email').fill('synthetic@test.example');
-  await page.getByLabel('Organisation').fill('Synthetic Test Organisation');
-  await page.getByRole('button', { name: /Request a 20-minute psychosocial risk/i }).click();
+  await page.getByLabel('Company').fill('Synthetic Test Organisation');
+  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
   await expect(page.getByTestId('lead-confirmation')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Choose a meeting time' })).toBeVisible();
 });
@@ -156,11 +160,11 @@ test('visibility-review form preserves values and exposes a server failure', asy
     })
   );
   await page.goto('/psychosocial-risk-visibility-review');
-  await page.getByLabel('Full name').fill('Synthetic Failure User');
+  await page.getByLabel('Name').fill('Synthetic Failure User');
   await page.getByLabel('Work email').fill('synthetic@test.example');
-  await page.getByLabel('Organisation').fill('Synthetic Test Organisation');
-  await page.getByRole('button', { name: /Request a 20-minute psychosocial risk/i }).click();
+  await page.getByLabel('Company').fill('Synthetic Test Organisation');
+  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
 
   await expect(page.getByRole('alert')).toContainText('Synthetic server failure');
-  await expect(page.getByLabel('Full name')).toHaveValue('Synthetic Failure User');
+  await expect(page.getByLabel('Name')).toHaveValue('Synthetic Failure User');
 });

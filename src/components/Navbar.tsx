@@ -78,7 +78,7 @@ const Navbar = () => {
                 ctaLocation="navbar_desktop"
                 className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
               >
-                Book a walkthrough
+                Book a 20-minute visibility review
               </PrimaryCommercialCTA>
             )}
           </div>
@@ -140,7 +140,7 @@ const Navbar = () => {
                       setMobileMenuOpen(false);
                     }}
                   >
-                    Book a walkthrough
+                    Book a 20-minute visibility review
                   </PrimaryCommercialCTA>
                 )}
               </div>

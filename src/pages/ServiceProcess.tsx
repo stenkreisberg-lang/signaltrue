@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,6 +11,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
+import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 const phases = [
   {
@@ -96,12 +96,17 @@ export default function ServiceProcess() {
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg">
-                  <Link to="/contact?intent=pilot&cta=client_success">
+                  <PrimaryCommercialCTA
+                    ctaLocation="client_success"
+                    queryParams={{ intent: 'pilot' }}
+                  >
                     Request a scoped pilot <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                  </PrimaryCommercialCTA>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/sample-report">View the evidence record</Link>
+                  <SampleReportCTA ctaLocation="client_success">
+                    View the evidence record
+                  </SampleReportCTA>
                 </Button>
               </div>
             </div>

@@ -3,7 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
-import leadsRoutes from '../routes/leads.js';
+import leadsRoutes, { sendLeadEmails } from '../routes/leads.js';
 import Lead from '../models/lead.js';
 
 let mongoServer;
@@ -44,7 +44,11 @@ const validLead = {
 describe('lead submission API', () => {
   test('stores and confirms a valid lead with attribution', async () => {
     const response = await request(app).post('/api/leads').send(validLead).expect(201);
-    expect(response.body).toMatchObject({ success: true, internalNotificationSent: false });
+    expect(response.body).toMatchObject({
+      success: true,
+      confirmed: true,
+      internalNotificationSent: false,
+    });
     const stored = await Lead.findById(response.body.leadId).lean();
     expect(stored).toMatchObject({
       name: 'Jane Smith',
@@ -83,5 +87,36 @@ describe('lead submission API', () => {
       .send({ ...validLead, submissionId: 'spam-test', website: 'https://spam.example' })
       .expect(400);
     expect(await Lead.countDocuments({ submissionId: 'spam-test' })).toBe(0);
+  });
+
+  test('sends the internal notification and visitor confirmation through the email provider', async () => {
+    const lead = {
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      organization: 'Example Ltd',
+      title: '',
+      challenge: '',
+      source: 'Website demo request',
+      attribution: {},
+      internalNotificationSent: false,
+      clientEmailSent: false,
+    };
+    const sent = [];
+    const resend = {
+      emails: {
+        send: async (message) => {
+          sent.push(message);
+          return { data: { id: `email-${sent.length}` } };
+        },
+      },
+    };
+
+    const result = await sendLeadEmails(lead, resend);
+
+    expect(result.internalNotificationError).toBeNull();
+    expect(sent).toHaveLength(2);
+    expect(sent[0].subject).toMatch(/New SignalTrue demo request/);
+    expect(sent[1]).toMatchObject({ to: 'jane@example.com' });
+    expect(lead).toMatchObject({ internalNotificationSent: true, clientEmailSent: true });
   });
 });

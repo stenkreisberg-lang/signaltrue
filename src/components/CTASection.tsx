@@ -26,12 +26,13 @@ const CTASection = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild variant="hero" size="xl">
               <PrimaryCommercialCTA ctaLocation="homepage_final">
-                Request a 20-minute psychosocial risk visibility review{' '}
-                <ArrowRight className="h-5 w-5" />
+                Book a 20-minute visibility review <ArrowRight className="h-5 w-5" />
               </PrimaryCommercialCTA>
             </Button>
             <Button asChild variant="hero-outline" size="xl">
-              <SampleReportCTA ctaLocation="homepage_final" />
+              <SampleReportCTA ctaLocation="homepage_final">
+                View the fictional sample
+              </SampleReportCTA>
             </Button>
           </div>
         </div>

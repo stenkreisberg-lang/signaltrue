@@ -1,15 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-32VLC15W5G');
-    gtag('event', 'sample_report_view', { event_category: 'conversion', event_label: 'sample_report_page' });
-  </script>
+  <script defer src="/static-analytics.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sample Weekly Report — SignalTrue</title>
@@ -535,7 +527,7 @@
   <h1>This is what lands in your inbox<br><span style="color: var(--accent);">every Monday morning.</span></h1>
   <p>A real SignalTrue weekly leadership risk report. See exactly what your team would receive, act on, and close with — before you book a single call.</p>
   <div class="hero-actions">
-    <a href="/contact" class="btn-demo" onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'sample_report_hero'});">
+    <a href="/contact" class="btn-demo">
       ↗ See it live for your data — Book demo
     </a>
     <button class="btn-pdf" onclick="window.print()">
@@ -790,7 +782,7 @@
       <div class="lock-icon">🔒</div>
       <h4>Full Organisational Breakdown</h4>
       <p>See all eligible teams, department-level evidence, driver breakdowns, and manager-capacity patterns.</p>
-      <a href="/contact" class="btn-unlock" onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'sample_report_lock_overlay'});">
+      <a href="/contact" class="btn-unlock">
         Unlock for your organisation →
       </a>
     </div>
@@ -845,7 +837,7 @@
       <div class="lock-icon">🔒</div>
       <h4>Driver Review</h4>
       <p>See which measured conditions moved together, then validate the explanation with team context. Metadata association is not proof of cause.</p>
-      <a href="/contact" class="btn-unlock" onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'sample_report_causal_lock'});">
+      <a href="/contact" class="btn-unlock">
         See your measured drivers →
       </a>
     </div>
@@ -899,7 +891,7 @@
     <h3>Ready to see this for <em>your</em> team?</h3>
     <p>Every number above is generated automatically from calendar and collaboration signals — no surveys, no analyst, no manual work. Just signal, every Monday morning.</p>
     <div class="cta-actions">
-      <a href="/contact" class="btn-demo" onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'sample_report_bottom_cta'});">
+      <a href="/contact" class="btn-demo">
         ↗ Book a 30-min demo
       </a>
       <a href="/pricing" class="btn-pdf" style="border-radius:8px;">View pricing →</a>

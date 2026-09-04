@@ -3,9 +3,16 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ArrowDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import LeadForm from '../components/LeadForm';
+import PageMeta from '../components/PageMeta';
+import { trackFunnelEvent } from '../lib/analytics';
 
 const EhrsSummit2026: React.FC = () => {
   const scrollToForm = () => {
+    trackFunnelEvent('primary_cta_click', {
+      cta_location: 'ehrs_2026_hero',
+      cta_destination: '#form-section',
+      intent: 'demo',
+    });
     const formSection = document.getElementById('form-section');
     if (formSection) {
       formSection.scrollIntoView({ behavior: 'smooth' });
@@ -14,6 +21,12 @@ const EhrsSummit2026: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <PageMeta
+        title="SignalTrue at EHRS Summit 2026"
+        description="Request a short SignalTrue strategic review after EHRS Summit 2026."
+        path="/ehrs-summit-2026"
+        lang="et"
+      />
       {/* ===================== HERO SECTION ===================== */}
       <section className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24">
@@ -296,7 +309,9 @@ const EhrsSummit2026: React.FC = () => {
             source="EHRS2026"
             tag="EHRS2026"
             heading="Request the review"
-            intro="Use the same short, confirmed request path as the SignalTrue website. Role and message are optional."
+            intro="Use the same short, confirmed request path as the SignalTrue website."
+            intent="demo"
+            formVersion="ehrs_2026_p0_v1"
           />
 
           {/* Privacy Policy Link */}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PageMeta from '../components/PageMeta';
 
 /**
  * DriftDiagnostic - Landing page for the free behavioral drift diagnostic
@@ -11,6 +12,11 @@ import Footer from '../components/Footer';
 const DriftDiagnostic = () => {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Free work-pattern drift diagnostic | SignalTrue"
+        description="Complete a short diagnostic for system-level coordination and workload patterns."
+        path="/drift-diagnostic"
+      />
       <Navbar />
 
       {/* Hero Section */}
@@ -24,13 +30,11 @@ const DriftDiagnostic = () => {
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Lock className="w-3.5 h-3.5 text-brand" />
-                <span className="text-caption font-medium text-[#334155]">No personal data</span>
+                <span className="text-caption font-medium text-[#334155]">No employee data</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Shield className="w-3.5 h-3.5 text-brand" />
-                <span className="text-caption font-medium text-[#334155]">
-                  Anonymous assessment
-                </span>
+                <span className="text-caption font-medium text-[#334155]">Anonymous questions</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E2E8F0] shadow-sm">
                 <Activity className="w-3.5 h-3.5 text-brand" />
@@ -64,8 +68,8 @@ const DriftDiagnostic = () => {
             </div>
 
             <p className="text-caption text-[#475569] max-w-lg mx-auto">
-              No personal data. No message content. This diagnostic is about system patterns—not
-              surveillance.
+              No employee data or message content. A work email is requested only if you choose to
+              unlock the full report.
             </p>
           </div>
         </div>

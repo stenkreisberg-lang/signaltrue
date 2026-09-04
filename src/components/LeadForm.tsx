@@ -11,14 +11,15 @@ interface LeadFormProps {
   heading?: string;
   intro?: string;
   submitLabel?: string;
+  plan?: string;
+  intent?: string;
+  formVersion?: string;
 }
 
 interface LeadFields {
   fullName: string;
   workEmail: string;
   organization: string;
-  role: string;
-  message: string;
   website: string;
 }
 
@@ -28,8 +29,6 @@ const initialFields: LeadFields = {
   fullName: '',
   workEmail: '',
   organization: '',
-  role: '',
-  message: '',
   website: '',
 };
 
@@ -60,6 +59,9 @@ export default function LeadForm({
   heading = 'Request your visibility review',
   intro = 'Tell us who should join the 20-minute conversation. We normally reply within one business day.',
   submitLabel = PRIMARY_CTA_LABEL,
+  plan,
+  intent = 'demo',
+  formVersion = 'commercial_p0_v1',
 }: LeadFormProps) {
   const [fields, setFields] = useState(initialFields);
   const [fieldErrors, setFieldErrors] = useState<LeadFieldErrors>({});
@@ -69,8 +71,11 @@ export default function LeadForm({
   const [calendarLink, setCalendarLink] = useState('');
   const startedRef = useRef(false);
   const confirmedEventRef = useRef(false);
+  const submissionInFlightRef = useRef(false);
+  const lastValidationErrorRef = useRef('');
   const submissionIdRef = useRef(createSubmissionId());
   const attribution = useMemo(() => getOriginalAttribution(), []);
+  const planAnalyticsParam = plan ? { plan } : {};
 
   const startForm = () => {
     if (startedRef.current) return;
@@ -78,49 +83,57 @@ export default function LeadForm({
     trackFunnelEvent('lead_form_start', {
       cta_location: ctaLocation,
       form_id: 'commercial-lead-form',
+      intent,
+      form_version: formVersion,
+      ...planAnalyticsParam,
     });
   };
 
   const setField = (name: keyof LeadFields, value: string) => {
     startForm();
     setSubmitError('');
+    lastValidationErrorRef.current = '';
     setFields((current) => ({ ...current, [name]: value }));
     setFieldErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (submitting || confirmed) return;
+    if (submissionInFlightRef.current || submitting || confirmed) return;
     startForm();
 
     const errors = validateLeadFields(fields);
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
-      trackFunnelEvent('lead_form_error', {
-        cta_location: ctaLocation,
-        form_id: 'commercial-lead-form',
-        error_type: 'validation',
-        error_fields: Object.keys(errors).join(','),
-      });
+      const errorFields = Object.keys(errors).join(',');
+      if (lastValidationErrorRef.current !== errorFields) {
+        lastValidationErrorRef.current = errorFields;
+        trackFunnelEvent('lead_form_error', {
+          cta_location: ctaLocation,
+          form_id: 'commercial-lead-form',
+          error_type: 'validation',
+          error_fields: errorFields,
+          intent,
+          form_version: formVersion,
+          ...planAnalyticsParam,
+        });
+      }
       return;
     }
 
+    submissionInFlightRef.current = true;
     setSubmitting(true);
     setSubmitError('');
-    trackFunnelEvent('lead_form_submit', {
-      cta_location: ctaLocation,
-      form_id: 'commercial-lead-form',
-    });
 
     try {
       const response = await api.post('/leads', {
         name: fields.fullName.trim(),
         email: fields.workEmail.trim(),
         organization: fields.organization.trim(),
-        title: fields.role.trim(),
-        challenge: fields.message.trim(),
+        title: '',
+        challenge: '',
         source,
-        tag,
+        tag: plan ? `${tag}:${plan}` : tag,
         website: fields.website,
         submissionId: submissionIdRef.current,
         attribution: {
@@ -137,7 +150,16 @@ export default function LeadForm({
         timestamp: new Date().toISOString(),
       });
 
-      if (!response.data?.success) throw new Error('The server did not confirm the request.');
+      if (!response.data?.success || !response.data?.confirmed || !response.data?.leadId) {
+        throw new Error('The server did not confirm the request.');
+      }
+      trackFunnelEvent('lead_submit_success', {
+        cta_location: ctaLocation,
+        form_id: 'commercial-lead-form',
+        intent,
+        form_version: formVersion,
+        ...planAnalyticsParam,
+      });
       setCalendarLink(response.data.calendarLink || '');
       setConfirmed(true);
       if (!confirmedEventRef.current) {
@@ -145,6 +167,9 @@ export default function LeadForm({
         trackFunnelEvent('lead_confirmed', {
           cta_location: ctaLocation,
           form_id: 'commercial-lead-form',
+          intent,
+          form_version: formVersion,
+          ...planAnalyticsParam,
         });
       }
     } catch (error) {
@@ -161,12 +186,16 @@ export default function LeadForm({
         cta_location: ctaLocation,
         form_id: 'commercial-lead-form',
         error_type: errorType,
+        intent,
+        form_version: formVersion,
+        ...planAnalyticsParam,
       });
       setSubmitError(
         failure.response?.data?.message ||
           'We could not send your request. Your entries are still here—please try again or email hello@signaltrue.ai.'
       );
     } finally {
+      submissionInFlightRef.current = false;
       setSubmitting(false);
     }
   };
@@ -190,6 +219,8 @@ export default function LeadForm({
               trackFunnelEvent('booking_link_click', {
                 cta_location: 'lead_confirmation',
                 form_id: 'commercial-lead-form',
+                intent,
+                form_version: formVersion,
               })
             }
             className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
@@ -213,35 +244,21 @@ export default function LeadForm({
         <p className="mx-auto mt-3 max-w-2xl text-[#475569]">{intro}</p>
       </div>
       <form id="commercial-lead-form" onSubmit={handleSubmit} noValidate className="space-y-5">
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Full name" required error={fieldErrors.fullName} htmlFor="lead-full-name">
-            <input
-              id="lead-full-name"
-              name="fullName"
-              autoComplete="name"
-              value={fields.fullName}
-              onChange={(event) => setField('fullName', event.target.value)}
-              aria-invalid={Boolean(fieldErrors.fullName)}
-              aria-describedby={fieldErrors.fullName ? 'lead-full-name-error' : undefined}
-              className={inputClass(Boolean(fieldErrors.fullName))}
-            />
-          </Field>
-          <Field label="Work email" required error={fieldErrors.workEmail} htmlFor="lead-email">
-            <input
-              id="lead-email"
-              name="workEmail"
-              type="email"
-              autoComplete="email"
-              value={fields.workEmail}
-              onChange={(event) => setField('workEmail', event.target.value)}
-              aria-invalid={Boolean(fieldErrors.workEmail)}
-              aria-describedby={fieldErrors.workEmail ? 'lead-email-error' : undefined}
-              className={inputClass(Boolean(fieldErrors.workEmail))}
-            />
-          </Field>
-        </div>
+        <Field label="Work email" required error={fieldErrors.workEmail} htmlFor="lead-email">
+          <input
+            id="lead-email"
+            name="workEmail"
+            type="email"
+            autoComplete="email"
+            value={fields.workEmail}
+            onChange={(event) => setField('workEmail', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.workEmail)}
+            aria-describedby={fieldErrors.workEmail ? 'lead-email-error' : undefined}
+            className={inputClass(Boolean(fieldErrors.workEmail))}
+          />
+        </Field>
         <Field
-          label="Organisation"
+          label="Company"
           required
           error={fieldErrors.organization}
           htmlFor="lead-organization"
@@ -257,25 +274,16 @@ export default function LeadForm({
             className={inputClass(Boolean(fieldErrors.organization))}
           />
         </Field>
-        <Field label="Role" error={fieldErrors.role} htmlFor="lead-role">
+        <Field label="Name" required error={fieldErrors.fullName} htmlFor="lead-full-name">
           <input
-            id="lead-role"
-            name="role"
-            autoComplete="organization-title"
-            value={fields.role}
-            onChange={(event) => setField('role', event.target.value)}
-            className={inputClass(Boolean(fieldErrors.role))}
-          />
-        </Field>
-        <Field label="Message" error={fieldErrors.message} htmlFor="lead-message">
-          <textarea
-            id="lead-message"
-            name="message"
-            rows={4}
-            value={fields.message}
-            onChange={(event) => setField('message', event.target.value)}
-            className={inputClass(Boolean(fieldErrors.message))}
-            placeholder="Optional context for the review"
+            id="lead-full-name"
+            name="fullName"
+            autoComplete="name"
+            value={fields.fullName}
+            onChange={(event) => setField('fullName', event.target.value)}
+            aria-invalid={Boolean(fieldErrors.fullName)}
+            aria-describedby={fieldErrors.fullName ? 'lead-full-name-error' : undefined}
+            className={inputClass(Boolean(fieldErrors.fullName))}
           />
         </Field>
         <div
@@ -309,8 +317,8 @@ export default function LeadForm({
           {submitting ? 'Sending…' : submitLabel}
         </button>
         <p className="text-center text-caption leading-5 text-[#64748B]">
-          We use these details only to respond about SignalTrue. Names, email addresses and messages
-          are never sent to analytics.
+          We use these details only to respond about SignalTrue. Names, email addresses and company
+          details are never sent to analytics.
         </p>
       </form>
     </div>

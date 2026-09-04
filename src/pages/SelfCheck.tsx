@@ -5,27 +5,12 @@ import { useQuestionnaire } from '../components/FitQuestionnaire/useQuestionnair
 import QuestionStep from '../components/FitQuestionnaire/QuestionStep';
 import ResultsScreen from '../components/FitQuestionnaire/ResultsScreen';
 import { QuestionnaireSubmission } from '../components/FitQuestionnaire/types';
+import { trackFunnelEvent } from '../lib/analytics';
+import PageMeta from '../components/PageMeta';
 
 // API base URL - use proxy in dev, full URL in production
 const API_BASE =
   process.env.NODE_ENV === 'production' ? 'https://signaltrue-backend.onrender.com' : '';
-
-// Analytics tracking function
-const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
-  // Track event - can be connected to analytics provider
-  // window.analytics?.track(eventName, data);
-
-  // Also send to backend for internal tracking
-  try {
-    fetch(`${API_BASE}/api/fit-questionnaire/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, data, timestamp: new Date().toISOString() }),
-    }).catch(() => {}); // Silent fail for tracking
-  } catch {
-    // Silent fail for tracking
-  }
-};
 
 const SelfCheck = () => {
   const navigate = useNavigate();
@@ -46,17 +31,18 @@ const SelfCheck = () => {
 
   // Auto-start questionnaire on mount and track page view
   useEffect(() => {
-    trackEvent('self_check_viewed');
+    trackFunnelEvent('self_check_viewed', { cta_location: 'self_check' });
     if (!hasStarted) {
       start();
-      trackEvent('self_check_started');
+      trackFunnelEvent('self_check_started', { cta_location: 'self_check' });
     }
   }, [hasStarted, start]);
 
   // Track questionnaire completed
   useEffect(() => {
     if (isComplete && result) {
-      trackEvent('self_check_completed', {
+      trackFunnelEvent('self_check_completed', {
+        cta_location: 'self_check',
         score: result.score,
         tier: result.tier,
       });
@@ -100,7 +86,8 @@ const SelfCheck = () => {
       }
 
       // Track email submission
-      trackEvent('self_check_email_submitted', {
+      trackFunnelEvent('self_check_lead_confirmed', {
+        cta_location: 'self_check',
         score: result.score,
         tier: result.tier,
         consentGiven: consent,
@@ -112,11 +99,16 @@ const SelfCheck = () => {
   const handleReset = useCallback(() => {
     reset();
     start();
-    trackEvent('self_check_started');
+    trackFunnelEvent('self_check_started', { cta_location: 'self_check_reset' });
   }, [reset, start]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background min-h-screen">
+      <PageMeta
+        title="Work-pattern self-check | SignalTrue"
+        description="Complete a short SignalTrue work-pattern self-check."
+        path="/self-check"
+      />
       {/* Minimal header - logo and close only, no nav */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center border-b border-border/50">
         <Link to="/" className="flex items-center gap-2">

@@ -18,6 +18,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DriftFamilyCard from '../components/drift/DriftFamilyCard';
 import DriftConfidencePanel from '../components/drift/DriftConfidencePanel';
+import { trackFunnelEvent } from '../lib/analytics';
 
 // API base URL
 const API_BASE =
@@ -43,19 +44,6 @@ interface DriftReport {
   createdAt: string;
   unlockedAt: string;
 }
-
-// Analytics tracking
-const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
-  try {
-    fetch(`${API_BASE}/api/analytics/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, data, timestamp: new Date().toISOString() }),
-    }).catch(() => {});
-  } catch {
-    // Silent fail
-  }
-};
 
 // Get category styling
 function getCategoryStyle(category: string): {
@@ -147,8 +135,8 @@ const DriftReportPage = () => {
         }
 
         setReport(data.report);
-        trackEvent('drift_report_view', {
-          sessionId,
+        trackFunnelEvent('drift_report_view', {
+          diagnostic_session_id: sessionId,
           score: data.report.score.totalScore,
           category: data.report.score.category,
         });
@@ -163,8 +151,11 @@ const DriftReportPage = () => {
   }, [sessionId]);
 
   // Handle baseline calibration CTA click
-  const handleBaselineCTA = () => {
-    trackEvent('drift_cta_baseline_calibration', { sessionId });
+  const handleBaselineCTA = (ctaLocation: string) => {
+    trackFunnelEvent('drift_report_cta_click', {
+      diagnostic_session_id: sessionId,
+      cta_location: ctaLocation,
+    });
   };
 
   if (loading) {
@@ -483,7 +474,7 @@ const DriftReportPage = () => {
                   Run a 30-day baseline calibration with SignalTrue to see these patterns in your
                   actual team behavior—metadata only, no surveillance.
                 </p>
-                <Link to="/product" onClick={handleBaselineCTA}>
+                <Link to="/product" onClick={() => handleBaselineCTA('drift_report_next_step')}>
                   <Button variant="outline" size="sm">
                     Start Baseline Calibration
                     <ArrowRight className="w-4 h-4" />
@@ -502,6 +493,12 @@ const DriftReportPage = () => {
                   href="https://calendly.com/signaltrue/drift-review"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackFunnelEvent('booking_link_click', {
+                      diagnostic_session_id: sessionId,
+                      cta_location: 'drift_report_guidance',
+                    })
+                  }
                 >
                   <Button variant="outline" size="sm">
                     Book a Call
@@ -526,7 +523,7 @@ const DriftReportPage = () => {
               no surveillance. See drift signals with confidence scores and trend direction.
             </p>
 
-            <Link to="/product" onClick={handleBaselineCTA}>
+            <Link to="/product" onClick={() => handleBaselineCTA('drift_report_final')}>
               <Button variant="hero" size="xl">
                 Start Baseline Calibration
                 <ArrowRight className="w-5 h-5" />

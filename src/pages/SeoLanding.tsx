@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
-import { trackEvent } from '../lib/analytics';
+import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 const signalContent: Record<string, { title: string; description: string; bullets: string[] }> = {
   'meeting-overload': {
@@ -168,6 +168,7 @@ export default function SeoLanding() {
         points: signal.bullets,
       }
     : pageContent[location.pathname] || pageContent['/resources'];
+  const ctaLocation = `seo_landing${location.pathname.replace(/[^a-z0-9]+/gi, '_')}`;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -190,23 +191,15 @@ export default function SeoLanding() {
               <p className="text-lead text-[#334155] max-w-3xl mb-8">{page.description}</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild variant="hero" size="xl">
-                  <Link
-                    to="/contact"
-                    onClick={() => trackEvent('demo_cta_click', { source_page: location.pathname })}
-                  >
-                    Request a risk review
+                  <PrimaryCommercialCTA ctaLocation={ctaLocation}>
+                    Book a 20-minute visibility review
                     <ArrowRight className="w-5 h-5" />
-                  </Link>
+                  </PrimaryCommercialCTA>
                 </Button>
                 <Button asChild variant="hero-outline" size="xl">
-                  <Link
-                    to="/sample-report"
-                    onClick={() =>
-                      trackEvent('sample_report_click', { source_page: location.pathname })
-                    }
-                  >
-                    View sample report
-                  </Link>
+                  <SampleReportCTA ctaLocation={ctaLocation}>
+                    View the fictional sample
+                  </SampleReportCTA>
                 </Button>
               </div>
             </div>

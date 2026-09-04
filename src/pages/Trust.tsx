@@ -3,6 +3,9 @@ import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
+import { PrimaryCommercialCTA } from '../components/CommercialCTA';
+import { trackFunnelEvent } from '../lib/analytics';
+import securityOverviewUrl from '../../output/pdf/signaltrue-security-privacy-overview.pdf?url';
 import {
   Shield,
   Lock,
@@ -335,11 +338,28 @@ const Trust = () => {
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button asChild>
-                  <Link to="/contact?intent=security-review&cta=trust">
-                    Request the security review pack
-                  </Link>
+                  <a
+                    href={securityOverviewUrl}
+                    download="signaltrue-security-privacy-overview.pdf"
+                    onClick={() =>
+                      trackFunnelEvent('trust_overview_download', {
+                        cta_location: 'trust_procurement',
+                        cta_destination: '/security-privacy-overview.pdf',
+                      })
+                    }
+                  >
+                    Download the public security overview
+                  </a>
                 </Button>
                 <Button asChild variant="outline">
+                  <PrimaryCommercialCTA
+                    ctaLocation="trust_security_review"
+                    queryParams={{ intent: 'security-review' }}
+                  >
+                    Request a deployment-specific review
+                  </PrimaryCommercialCTA>
+                </Button>
+                <Button asChild variant="ghost">
                   <Link to="/client-success">See the client success process</Link>
                 </Button>
               </div>

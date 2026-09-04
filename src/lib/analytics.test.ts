@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import {
   captureOriginalAttribution,
+  isAutomatedAnalyticsTraffic,
   isCommercialPath,
+  normalizeAcquisition,
   safeAnalyticsPath,
   sanitizeAnalyticsParams,
+  shouldCollectAnalytics,
 } from './analytics';
 
 describe('commercial analytics boundaries', () => {
@@ -26,6 +29,27 @@ describe('commercial analytics boundaries', () => {
     expect(second.originalLandingPage).toContain('utm_campaign=review');
   });
 
+  test('normalises acquisition values already stored by an older release', () => {
+    window.sessionStorage.setItem(
+      'signaltrue:commercial-attribution:v1',
+      JSON.stringify({
+        originalLandingPage: '/',
+        referrer: '',
+        source: 'direct',
+        medium: '(not set)',
+        campaign: '',
+        content: '',
+        term: '',
+        anonymousSessionId: 'legacy-session',
+      })
+    );
+
+    expect(captureOriginalAttribution()).toMatchObject({
+      source: '(direct)',
+      medium: '(none)',
+    });
+  });
+
   test.each([
     '/app',
     '/app/overview',
@@ -43,10 +67,44 @@ describe('commercial analytics boundaries', () => {
     expect(isCommercialPath('/psychosocial-risk-visibility-review')).toBe(true);
   });
 
+  test('allows collection only on the exact public production host', () => {
+    expect(shouldCollectAnalytics('www.signaltrue.ai', '/product', '', 'Chrome', false)).toBe(true);
+    expect(shouldCollectAnalytics('signaltrue.ai', '/product', '', 'Chrome', false)).toBe(false);
+    expect(shouldCollectAnalytics('preview.signaltrue.ai', '/product', '', 'Chrome', false)).toBe(
+      false
+    );
+    expect(shouldCollectAnalytics('www.signaltrue.ai', '/login', '', 'Chrome', false)).toBe(false);
+  });
+
+  test('excludes automated QA, smoke and debug traffic', () => {
+    expect(
+      isAutomatedAnalyticsTraffic('?utm_source=production_smoke&utm_medium=qa', 'Chrome', false)
+    ).toBe(true);
+    expect(isAutomatedAnalyticsTraffic('?debug_mode=1', 'Chrome', false)).toBe(true);
+    expect(isAutomatedAnalyticsTraffic('', 'HeadlessChrome', false)).toBe(true);
+    expect(isAutomatedAnalyticsTraffic('', 'Chrome', true)).toBe(true);
+  });
+
+  test('normalises direct and acquisition aliases', () => {
+    expect(normalizeAcquisition('direct', '(not set)')).toEqual({
+      source: '(direct)',
+      medium: '(none)',
+    });
+    expect(normalizeAcquisition('(not set)', '(not set)')).toEqual({
+      source: '(direct)',
+      medium: '(none)',
+    });
+    expect(normalizeAcquisition('WWW.Google.COM', 'Organic Search')).toEqual({
+      source: 'google',
+      medium: 'organic',
+    });
+  });
+
   test('removes personal and free-text fields from analytics payloads', () => {
     expect(
       sanitizeAnalyticsParams({
         page_path: '/contact',
+        page_title: 'Contact SignalTrue',
         cta_location: 'hero',
         full_name: 'Jane Smith',
         work_email: 'jane@example.com',
@@ -54,7 +112,11 @@ describe('commercial analytics boundaries', () => {
         message: 'Private context',
         role: 'Manager',
       })
-    ).toEqual({ page_path: '/contact', cta_location: 'hero' });
+    ).toEqual({
+      page_path: '/contact',
+      page_title: 'Contact SignalTrue',
+      cta_location: 'hero',
+    });
   });
 
   test('strips unknown query parameters from analytics paths', () => {

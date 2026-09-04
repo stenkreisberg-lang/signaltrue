@@ -1,8 +1,8 @@
 # Commercial measurement configuration
 
-The public funnel is scoped to `www.signaltrue.ai` in production and to public routes only. The
-authenticated product keeps its normal `page_view` events, but it does not emit
-`commercial_page_view` or commercial funnel events.
+The public funnel is scoped to the exact production host `www.signaltrue.ai` and to public routes
+only. Preview hosts, localhost, automation/debug sessions and authenticated/private routes do not
+load GA4 or emit commercial funnel events.
 
 ## Required backend configuration
 
@@ -24,20 +24,34 @@ origin.
 
 ## GA4 administration
 
-Mark `lead_confirmed` as a key event. Do not mark form starts, CTA clicks or valid submissions as
-leads.
+`lead_confirmed` is the authoritative lead key event. It is emitted only after the backend has
+persisted or idempotently recovered a valid lead. Do not mark form starts, CTA clicks or accepted
+client-side submissions as lead key events.
 
 Create event-scoped custom dimensions for:
 
 - `cta_location`
 - `error_type`
+- `intent`
+- `form_version`
 
-The core report still sends if either custom dimension has not been registered, but its relevant
-diagnostic table will be empty and the report will identify the missing configuration.
+Run `npm --prefix backend run ga4:configure-commercial` with the GA4 Admin credentials configured
+to make the stream setting, custom dimensions and key event idempotent. The script also reports
+conflicting key events and missing active data filters.
 
-No existing internal-traffic identifier or rule is present in this repository. Configure the
-organisation's office/VPN ranges as GA4 internal traffic and activate the GA4 internal-traffic data
-filter before relying on the weekly report as an external-only count.
+SPA page views are manual. The frontend initializes gtag with `send_page_view: false`, and GA4's
+enhanced-measurement option "Page changes based on browser history events" must remain disabled.
+Each public route emits one `page_view` after its title metadata has updated, with one
+`page_title`, `page_location` and `page_path` value.
+
+The commercial report applies the same exact-host, public-path and automation exclusions to every
+query. Source/medium values are canonicalized before aggregation; `(direct) / (none)`, case and
+known aliases therefore cannot produce separate rows. All shares and funnel rates use comparable
+numerators and denominators and are bounded to 0–100%.
+
+GA4 has an active Developer Traffic exclusion. The Internal Traffic exclusion remains in Testing
+until the organisation's current office/VPN IP ranges are verified in the Google tag's internal
+traffic rule. Activate it only after that verification; GA4 data filters are not retroactive.
 
 ## Lead confirmation semantics
 
@@ -46,4 +60,5 @@ is retained on the lead but an email-provider failure does not discard or duplic
 The client uses an idempotency key so retrying after a lost response returns the original successful
 record.
 
-Analytics events never include form names, email addresses, organisations, roles or message text.
+Analytics events never include entered names, email addresses, company values, roles or message
+text. `error_type` is a fixed taxonomy and never contains validation messages or field values.

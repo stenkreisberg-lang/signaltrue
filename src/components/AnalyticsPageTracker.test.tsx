@@ -9,8 +9,8 @@ vi.mock('../lib/analytics', async () => {
   return {
     ...actual,
     captureOriginalAttribution: vi.fn(),
+    disableAnalyticsCollection: vi.fn(),
     trackPageView: vi.fn(),
-    trackCommercialPageView: vi.fn(),
   };
 });
 
@@ -32,11 +32,11 @@ test('tracks the initial commercial load and an SPA route change', async () => {
   );
 
   await vi.waitFor(() =>
-    expect(analytics.trackCommercialPageView).toHaveBeenCalledWith('/', expect.any(String))
+    expect(analytics.trackPageView).toHaveBeenCalledWith('/', expect.any(String))
   );
   fireEvent.click(screen.getByRole('button', { name: 'Product' }));
   await vi.waitFor(() =>
-    expect(analytics.trackCommercialPageView).toHaveBeenCalledWith('/product', expect.any(String))
+    expect(analytics.trackPageView).toHaveBeenCalledWith('/product', expect.any(String))
   );
   expect(analytics.trackPageView).toHaveBeenCalledTimes(2);
 });
@@ -47,6 +47,6 @@ test('does not put authenticated navigation in the commercial scope', async () =
       <AnalyticsPageTracker />
     </MemoryRouter>
   );
-  await vi.waitFor(() => expect(analytics.trackPageView).toHaveBeenCalled());
-  expect(analytics.trackCommercialPageView).not.toHaveBeenCalled();
+  await vi.waitFor(() => expect(analytics.disableAnalyticsCollection).toHaveBeenCalledOnce());
+  expect(analytics.trackPageView).not.toHaveBeenCalled();
 });

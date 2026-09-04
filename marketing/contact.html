@@ -4,16 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f8fafc" />
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-32VLC15W5G"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-32VLC15W5G');
-    </script>
+    <script defer src="/static-analytics.js"></script>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.ico" />
@@ -316,7 +307,7 @@
         </nav>
         <div class="cta">
           <a class="btn" href="/login">Login</a>
-          <a class="btn btn-primary" href="#demo-request-form" onclick="gtag('event','demo_cta_click',{event_category:'lead_funnel',event_label:'contact_header'});">Book a 20-minute review</a>
+          <a class="btn btn-primary" href="#demo-request-form">Book a 20-minute review</a>
         </div>
       </div>
     </header>
@@ -369,51 +360,19 @@
               <form class="demo-form" id="demo-request-form">
                 <div class="demo-form-grid">
                   <label>
-                    Name
-                    <input name="name" type="text" autocomplete="name" required />
-                  </label>
-                  <label>
                     Work email
                     <input name="email" type="email" autocomplete="email" required />
                   </label>
-                </div>
-                <div class="demo-form-grid">
                   <label>
                     Company
                     <input name="organization" type="text" autocomplete="organization" required />
                   </label>
-                  <label>
-                    Role
-                    <input name="title" type="text" autocomplete="organization-title" />
-                  </label>
                 </div>
                 <label>
-                  Company size
-                  <select name="companySize">
-                    <option value="">Select company size</option>
-                    <option value="under-50">Under 50</option>
-                    <option value="50-150">50 to 150</option>
-                    <option value="151-500">151 to 500</option>
-                    <option value="501-2500">501 to 2,500</option>
-                    <option value="2500+">2,500+</option>
-                  </select>
+                  Name
+                  <input name="name" type="text" autocomplete="name" required />
                 </label>
-                <label>
-                  What would help most?
-                  <select name="intent">
-                    <option value="demo">Book a guided demo</option>
-                    <option value="workload-scan">Discuss a workload scan</option>
-                    <option value="sample-report">Send me the sample report</option>
-                    <option value="pricing">Discuss pricing</option>
-                  </select>
-                </label>
-                <label>
-                  What would you like to understand?
-                  <textarea
-                    name="challenge"
-                    placeholder="For example: manager load, meeting pressure, focus fragmentation, or after-hours spillover"
-                  ></textarea>
-                </label>
+                <input name="intent" type="hidden" value="demo" />
                 <button class="btn btn-primary" id="demo-submit" type="submit">
                   Book my review
                 </button>
@@ -432,7 +391,6 @@
               <a
                 class="btn"
                 href="/sample-report"
-                onclick="gtag('event','sample_report_click',{event_category:'lead_funnel',event_label:'contact_sample_report'});"
                 >View sample report</a
               >
             </article>
@@ -442,7 +400,6 @@
               <a
                 class="btn"
                 href="mailto:hello@signaltrue.ai?subject=SignalTrue%20workload%20scan"
-                onclick="gtag('event','demo_cta_click',{event_category:'conversion',event_label:'contact_workload_scan'});"
                 >Discuss workload scan</a
               >
             </article>
@@ -451,7 +408,6 @@
               <p>For partnerships, press, procurement, or product questions.</p>
               <a
                 href="mailto:hello@signaltrue.ai"
-                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'general'});"
                 >hello@signaltrue.ai</a
               >
             </article>
@@ -460,7 +416,6 @@
               <p>Already using SignalTrue? Reach the support team directly.</p>
               <a
                 href="mailto:support@signaltrue.ai"
-                onclick="gtag('event','contact_mailto_click',{event_category:'conversion',event_label:'support'});"
                 >support@signaltrue.ai</a
               >
             </article>
@@ -505,7 +460,18 @@
             : 'https://signaltrue-backend.onrender.com';
         const query = new URLSearchParams(window.location.search);
         const intentField = demoForm.elements.namedItem('intent');
-        const requestedIntent = query.get('intent');
+        const requestedIntentCandidate = (query.get('intent') || 'demo').split('?')[0] || 'demo';
+        const requestedIntent = [
+          'demo',
+          'pilot',
+          'pricing',
+          'security-review',
+          'au-pilot',
+          'workload-scan',
+          'sample-report',
+        ].includes(requestedIntentCandidate)
+          ? requestedIntentCandidate
+          : 'demo';
         const attribution = {
           landingPage: window.location.href,
           referrer: document.referrer || '',
@@ -517,31 +483,47 @@
           utmTerm: query.get('utm_term') || '',
         };
         let formStarted = false;
+        let validationErrorTracked = false;
+        let submissionConfirmed = false;
+        const submissionId =
+          window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : 'website-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 
-        if (
-          requestedIntent &&
-          intentField &&
-          Array.from(intentField.options).some(function (option) {
-            return option.value === requestedIntent;
-          })
-        ) {
-          intentField.value = requestedIntent;
-        }
+        intentField.value = requestedIntent;
 
         demoForm.addEventListener('focusin', function () {
           if (formStarted) return;
           formStarted = true;
-          gtag('event', 'form_start', {
-            event_category: 'lead_funnel',
-            event_label: 'website_demo_request',
-            form_id: 'demo-request-form',
-            form_name: 'Website demo request',
-            cta: attribution.cta || 'direct_contact',
+          window.signaltrueTrack('lead_form_start', {
+            cta_location: attribution.cta || 'direct_contact',
+            intent: requestedIntent,
+            form_version: 'short-v1',
           });
+        });
+
+        demoForm.addEventListener(
+          'invalid',
+          function () {
+            if (validationErrorTracked) return;
+            validationErrorTracked = true;
+            window.signaltrueTrack('lead_form_error', {
+              cta_location: attribution.cta || 'direct_contact',
+              error_type: 'validation',
+              intent: requestedIntent,
+              form_version: 'short-v1',
+            });
+          },
+          true
+        );
+
+        demoForm.addEventListener('input', function () {
+          validationErrorTracked = false;
         });
 
         demoForm.addEventListener('submit', async function (event) {
           event.preventDefault();
+          if (demoSubmit.disabled || submissionConfirmed) return;
           demoSubmit.disabled = true;
           demoSubmit.textContent = 'Sending...';
           demoStatus.className = 'form-status';
@@ -549,16 +531,7 @@
 
           const formData = new FormData(demoForm);
           const intent = String(formData.get('intent') || 'demo');
-          const challenge = String(formData.get('challenge') || '').trim();
-          const companySize = String(formData.get('companySize') || '').trim();
           let errorType = 'network_error';
-
-          gtag('event', 'demo_form_submit', {
-            event_category: 'lead_funnel',
-            form_id: 'demo-request-form',
-            intent: intent,
-            cta: attribution.cta || 'direct_contact',
-          });
 
           try {
             const response = await fetch(apiBase + '/api/leads', {
@@ -568,12 +541,11 @@
                 name: String(formData.get('name') || '').trim(),
                 email: String(formData.get('email') || '').trim(),
                 organization: String(formData.get('organization') || '').trim(),
-                title: String(formData.get('title') || '').trim(),
-                challenge: ['Company size: ' + (companySize || 'Not provided'), 'Intent: ' + intent, challenge]
-                  .filter(Boolean)
-                  .join('\n'),
+                title: '',
+                challenge: '',
                 source: 'Website demo request',
                 tag: intent,
+                submissionId: submissionId,
                 attribution: attribution,
                 timestamp: new Date().toISOString(),
               }),
@@ -583,29 +555,45 @@
               return {};
             });
 
-            if (!response.ok || !result.success) {
+            if (!response.ok || !result.success || !result.confirmed || !result.leadId) {
               errorType = 'http_' + response.status;
               throw new Error(result.message || 'The request could not be sent.');
             }
 
-            gtag('event', 'generate_lead', {
-              event_category: 'lead_funnel',
-              event_label: intent,
-              form_id: 'demo-request-form',
+            submissionConfirmed = true;
+            window.signaltrueTrack('lead_submit_success', {
+              cta_location: attribution.cta || 'direct_contact',
               intent: intent,
-              cta: attribution.cta || 'direct_contact',
+              form_version: 'short-v1',
             });
-            demoForm.reset();
+            window.signaltrueTrack('lead_confirmed', {
+              cta_location: attribution.cta || 'direct_contact',
+              intent: intent,
+              form_version: 'short-v1',
+            });
             demoStatus.className = 'form-status is-success';
-            demoStatus.innerHTML =
-              'Thanks. Your request was sent successfully. <a href="https://calendly.com/sten-kreisberg-signaltrue/30min">Choose a time now</a>.';
+            demoStatus.textContent = 'Thanks. Your request was sent successfully. ';
+            if (result.calendarLink) {
+              const bookingLink = document.createElement('a');
+              bookingLink.href = result.calendarLink;
+              bookingLink.textContent = 'Choose a time now';
+              bookingLink.addEventListener('click', function () {
+                window.signaltrueTrack('booking_link_click', {
+                  cta_location: 'lead_confirmation',
+                  intent: intent,
+                  form_version: 'short-v1',
+                });
+              });
+              demoStatus.appendChild(bookingLink);
+              demoStatus.appendChild(document.createTextNode('.'));
+            }
             demoSubmit.textContent = 'Request sent';
           } catch (error) {
-            gtag('event', 'demo_form_error', {
-              event_category: 'lead_funnel',
-              form_id: 'demo-request-form',
+            window.signaltrueTrack('lead_form_error', {
+              cta_location: attribution.cta || 'direct_contact',
               intent: intent,
               error_type: errorType,
+              form_version: 'short-v1',
             });
             demoStatus.className = 'form-status is-error';
             demoStatus.textContent =

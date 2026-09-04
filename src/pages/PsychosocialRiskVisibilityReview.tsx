@@ -25,8 +25,17 @@ const privacyBoundaries = [
 
 export default function PsychosocialRiskVisibilityReview() {
   const location = useLocation();
-  const formCtaLocation =
-    new URLSearchParams(location.search).get('cta') || 'visibility_review_direct';
+  const searchParams = new URLSearchParams(location.search);
+  const formCtaLocation = searchParams.get('cta') || 'visibility_review_direct';
+  const requestedPlan = searchParams.get('plan');
+  const plan = ['visibility', 'interpretation', 'enterprise'].includes(requestedPlan || '')
+    ? requestedPlan || undefined
+    : undefined;
+  const planNames: Record<string, string> = {
+    visibility: 'Team Signals',
+    interpretation: 'Leadership Signals',
+    enterprise: 'Enterprise',
+  };
 
   useEffect(() => {
     if (location.hash !== '#request-review') return;
@@ -199,7 +208,16 @@ export default function PsychosocialRiskVisibilityReview() {
         <section id="request-review" className="border-t border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto px-6">
             <div className="mx-auto max-w-3xl rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-7 md:p-10">
-              <LeadForm ctaLocation={formCtaLocation} />
+              <LeadForm
+                ctaLocation={formCtaLocation}
+                plan={plan}
+                heading={plan ? `Discuss ${planNames[plan]}` : undefined}
+                intro={
+                  plan
+                    ? 'Tell us who should join the 20-minute scope review. We will confirm the workplace, team, data-source and governance requirements before any account or payment step.'
+                    : undefined
+                }
+              />
             </div>
           </div>
         </section>

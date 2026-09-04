@@ -326,6 +326,56 @@ function generateInternalNotificationHTML(lead) {
 `;
 }
 
+export async function sendLeadEmails(lead, resend = getResendClient()) {
+  const notificationEmail = getInternalNotificationEmail(lead.source);
+  let internalNotificationError = null;
+
+  if (!resend) {
+    return {
+      notificationEmail,
+      internalNotificationError: new Error('RESEND_API_KEY is not configured'),
+    };
+  }
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: notificationEmail,
+      subject:
+        lead.source === 'Website demo request'
+          ? `New SignalTrue demo request: ${lead.name} (${lead.organization || 'Unknown org'})`
+          : `New SignalTrue lead: ${lead.name} (${lead.organization || 'Unknown org'}) - ${lead.source}`,
+      html: generateInternalNotificationHTML(lead),
+    });
+    if (result.error) {
+      throw new Error(result.error.message || 'Resend rejected the internal notification');
+    }
+    lead.internalNotificationSent = true;
+  } catch (error) {
+    internalNotificationError = error;
+  }
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: lead.email,
+      subject:
+        lead.source === 'Website demo request'
+          ? 'We received your SignalTrue demo request'
+          : 'Täname registreerimise eest – SignalTrue',
+      html: generateClientEmailHTML(lead),
+    });
+    if (result.error) {
+      throw new Error(result.error.message || 'Resend rejected the visitor confirmation');
+    }
+    lead.clientEmailSent = true;
+  } catch (error) {
+    console.error('❌ Failed to send client email:', error);
+  }
+
+  return { notificationEmail, internalNotificationError };
+}
+
 /**
  * POST /api/leads
  * Create a new lead and send emails
@@ -354,6 +404,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
       if (existingLead) {
         return res.status(200).json({
           success: true,
+          confirmed: true,
           duplicate: true,
           message: 'Lead was already captured successfully',
           leadId: existingLead._id,
@@ -364,6 +415,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
     }
 
     // Create lead record
+    const submittedAt = timestamp ? new Date(timestamp) : new Date();
     const lead = new Lead({
       name,
       title,
@@ -377,72 +429,15 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
         attribution && typeof attribution === 'object' && !Array.isArray(attribution)
           ? attribution
           : undefined,
-      submittedAt: timestamp ? new Date(timestamp) : new Date(),
+      submittedAt: Number.isNaN(submittedAt.getTime()) ? new Date() : submittedAt,
     });
 
     await lead.save();
     console.log(`✅ Lead saved: ${email} from ${source}`);
 
     // Send emails
-    const resend = getResendClient();
-    const notificationEmail = getInternalNotificationEmail(source);
-    let internalNotificationError = null;
-
-    if (resend) {
-      // 1. Send the internal alert. Website demo requests are successful only after this is accepted.
-      try {
-        const result = await resend.emails.send({
-          from: FROM_EMAIL,
-          to: notificationEmail,
-          subject:
-            source === 'Website demo request'
-              ? `New SignalTrue demo request: ${name} (${organization || 'Unknown org'})`
-              : `New SignalTrue lead: ${name} (${organization || 'Unknown org'}) - ${source}`,
-          html: generateInternalNotificationHTML(lead),
-        });
-
-        if (result.error) {
-          throw new Error(result.error.message || 'Resend rejected the internal notification');
-        }
-
-        lead.internalNotificationSent = true;
-        console.log(`✅ Internal notification sent to: ${notificationEmail}`);
-      } catch (emailError) {
-        internalNotificationError = emailError;
-        console.error(
-          `❌ Failed to send internal notification to ${notificationEmail}:`,
-          emailError
-        );
-      }
-
-      // 2. Send the visitor a confirmation email without blocking the lead alert.
-      try {
-        const result = await resend.emails.send({
-          from: FROM_EMAIL,
-          to: email,
-          subject:
-            source === 'Website demo request'
-              ? 'We received your SignalTrue demo request'
-              : 'Täname registreerimise eest – SignalTrue',
-          html: generateClientEmailHTML(lead),
-        });
-
-        if (result.error) {
-          throw new Error(result.error.message || 'Resend rejected the visitor confirmation');
-        }
-
-        lead.clientEmailSent = true;
-        console.log(`✅ Client email sent to: ${email}`);
-      } catch (emailError) {
-        console.error('❌ Failed to send client email:', emailError);
-      }
-
-      // Update lead with email status
-      await lead.save();
-    } else {
-      console.warn('⚠️ RESEND_API_KEY not configured – emails not sent');
-      internalNotificationError = new Error('RESEND_API_KEY is not configured');
-    }
+    const { internalNotificationError } = await sendLeadEmails(lead);
+    await lead.save();
 
     // The lead is captured once it is stored. A failed notification email is an
     // internal delivery problem, so it is logged loudly for follow-up but never
@@ -456,9 +451,9 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
 
     res.status(201).json({
       success: true,
+      confirmed: true,
       message: 'Lead captured successfully',
       leadId: lead._id,
-      notificationEmail,
       internalNotificationSent: lead.internalNotificationSent,
       calendarLink: CALENDAR_LINK || null,
     });
@@ -468,6 +463,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
       if (existingLead) {
         return res.status(200).json({
           success: true,
+          confirmed: true,
           duplicate: true,
           message: 'Lead was already captured successfully',
           leadId: existingLead._id,

@@ -1,6 +1,6 @@
 import express from 'express';
 import Analytics from '../models/analytics.js';
-import { getGa4Overview } from '../services/ga4Service.js';
+import { FUNNEL_EVENT_NAMES, getGa4Overview } from '../services/ga4Service.js';
 
 import Project from '../models/project.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
@@ -9,6 +9,12 @@ import { analyticsWriteLimiter } from '../middleware/security.js';
 const router = express.Router();
 const MAX_ANALYTICS_PAYLOAD_BYTES = 8 * 1024;
 const EVENT_NAME_PATTERN = /^[A-Za-z0-9_.:-]{1,64}$/;
+const COMMERCIAL_HOSTNAME = 'www.signaltrue.ai';
+const COMMERCIAL_EVENTS = new Set(['page_view', ...FUNNEL_EVENT_NAMES]);
+const PRIVATE_PATH_PATTERN =
+  /^\/(?:app|dashboard|login|forgot-password|register|onboarding|admin|superadmin|settings|notifications|integrations|team-analytics|ceo-summary|drift-report)(?:\/|$)/i;
+const AUTOMATION_MARKER_PATTERN =
+  /^(?:production[_ -]?smoke|qa|quality[_ -]?assurance|automated[_ -]?qa|e2e|playwright|puppeteer|test)$/i;
 
 function validateAnalyticsEvent(eventName, payload) {
   if (!EVENT_NAME_PATTERN.test(eventName)) return 'Invalid analytics event name';
@@ -22,6 +28,40 @@ function validateAnalyticsEvent(eventName, payload) {
     return 'Analytics payload is too large';
   }
   return null;
+}
+
+export function isGenuinePublicCommercialEvent(req, eventName, data = {}) {
+  if (process.env.NODE_ENV !== 'production' || !COMMERCIAL_EVENTS.has(eventName)) return true;
+
+  let origin;
+  try {
+    origin = new URL(req.get('origin') || req.get('referer') || '');
+  } catch {
+    return false;
+  }
+  if (origin.hostname.toLowerCase() !== COMMERCIAL_HOSTNAME) return false;
+
+  const rawPath = String(data.page_path || origin.pathname || '/');
+  let url;
+  try {
+    url = new URL(rawPath, `https://${COMMERCIAL_HOSTNAME}`);
+  } catch {
+    return false;
+  }
+  if (PRIVATE_PATH_PATTERN.test(url.pathname)) return false;
+
+  const automated = ['utm_source', 'utm_medium', 'utm_campaign'].some((key) =>
+    AUTOMATION_MARKER_PATTERN.test(url.searchParams.get(key) || '')
+  );
+  const debug = ['1', 'true', 'yes'].includes(
+    (url.searchParams.get('debug_mode') || '').toLowerCase()
+  );
+  const userAgent = req.get('user-agent') || '';
+  return (
+    !automated &&
+    !debug &&
+    !/(?:bot|crawler|spider|headlesschrome|lighthouse|playwright|puppeteer)/i.test(userAgent)
+  );
 }
 
 // Defined events for SignalTrue Trial, Conversion & CEO Escalation Flow
@@ -38,6 +78,7 @@ const DEFINED_EVENTS = [
   'trial_phase_changed',
   'paywall_shown',
   'pricing_page_viewed',
+  ...FUNNEL_EVENT_NAMES,
 ];
 
 // POST - Record an analytics event
@@ -67,6 +108,9 @@ router.post('/track', analyticsWriteLimiter, async (req, res) => {
     }
     const validationError = validateAnalyticsEvent(event, data);
     if (validationError) return res.status(400).json({ message: validationError });
+    if (!isGenuinePublicCommercialEvent(req, event, data)) {
+      return res.status(202).json({ success: true, ignored: true });
+    }
 
     const doc = new Analytics({
       eventName: event,
@@ -94,12 +138,20 @@ router.get('/events', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/funnel', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const funnelEvents = [
-      'assessment_started',
-      'assessment_completed',
-      'email_submitted',
-      'monthly_report_viewed',
-      'ceo_summary_generated',
-      'upgrade_cta_clicked',
+      'page_view',
+      'sample_report_click',
+      'sample_report_view',
+      'trust_overview_download',
+      'primary_cta_click',
+      'pricing_plan_click',
+      'lead_form_start',
+      'lead_submit_success',
+      'lead_confirmed',
+      'diagnostic_started',
+      'diagnostic_completed',
+      'diagnostic_lead_confirmed',
+      'checkout_started',
+      'subscription_started',
     ];
 
     const counts = await Analytics.aggregate([
