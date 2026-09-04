@@ -11,9 +11,10 @@ notification handoff and production-like browser tests. No visual redesign was p
 
 The frontend and backend implementation is deployed. The required GA4 custom definitions, key
 event, developer filter and single-SPA-page-view setting were updated in the live GA4 property.
-The Internal Traffic filter remains in Testing until SignalTrue's current office/VPN IP ranges are
-verified. Historical GA4 data is not rewritten; 4 September 2026 is enforced as the clean reporting
-boundary and pre-boundary comparisons are disabled by default.
+The Internal Traffic filter remains in Testing. A live inspection found that the Google tag has no
+internal-traffic rules, so there are no saved office/VPN ranges to verify and activating the filter
+would provide false confidence. Historical GA4 data is not rewritten; 4 September 2026 is enforced
+as the clean reporting boundary and pre-boundary comparisons are disabled by default.
 
 ## Issues found and changes made
 
@@ -136,7 +137,8 @@ lead remains confirmed and is logged for operational recovery instead of being d
 - Obsolete lead key events: unmarked.
 - Enhanced measurement, browser-history page changes: disabled.
 - Developer Traffic data filter: Exclude / Active.
-- Internal Traffic data filter: Exclude / Testing (requires verified IP ranges before activation).
+- Internal Traffic data filter: Exclude / Testing. The linked Google tag reports `No rules yet`, so
+  activation is intentionally blocked until authoritative office/VPN CIDRs are supplied and saved.
 
 ## Automated coverage and verification
 
@@ -161,10 +163,13 @@ Verification performed in this workspace:
 
 ## Production release verification
 
+- The coordinated follow-up release `11efdcbbb228d005a5b8c4c6eb35cdd1f8a9ed24` is live on both
+  production surfaces; both build-version endpoints returned that commit and backend health
+  reported the database connected.
 - Frontend deployed from `755efd17dac892a59bef97d8c17ed3e0c7c2a9c7` and verified through the
-  production build-version endpoint.
+  production build-version endpoint for the initial smoke-tested release.
 - Backend deployed from `84348aa275641566a742e375c1d1c00894e0e853`; production health reported
-  ready with the database connected.
+  ready with the database connected for the initial smoke-tested release.
 - Production smoke run `20260904-060512Z` reached the canonical contact page, preserved the
   three-field form contract, exercised validation, persisted lead
   `6a9a5fd7f562eb4adea8e496`, recovered that same lead idempotently, showed confirmation and the
@@ -176,6 +181,7 @@ Verification performed in this workspace:
 
 ## Remaining live-admin safeguard
 
-The existing Internal Traffic filter must remain in Testing until SignalTrue's current office/VPN
-CIDRs are verified against the Google tag's internal-traffic rule. Activating an incorrect range
-would irreversibly exclude genuine future traffic. All other production checks above are complete.
+The existing Internal Traffic filter must remain in Testing until SignalTrue supplies its current,
+authoritative office/VPN CIDRs. Those ranges then need to be added to the currently empty Google-tag
+rule list and verified before activation. Activating an incorrect range would irreversibly exclude
+genuine future traffic. All other production checks above are complete.

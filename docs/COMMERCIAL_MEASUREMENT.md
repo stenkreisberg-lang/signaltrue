@@ -56,9 +56,10 @@ the clean release boundary of 4 September 2026 and does not calculate a pre-boun
 An explicit comparison is allowed only when both previous-range dates are supplied and are known to
 be clean.
 
-GA4 has an active Developer Traffic exclusion. The Internal Traffic exclusion remains in Testing
-until the organisation's current office/VPN IP ranges are verified in the Google tag's internal
-traffic rule. Activate it only after that verification; GA4 data filters are not retroactive.
+GA4 has an active Developer Traffic exclusion. A live audit on 4 September 2026 found no Google-tag
+internal-traffic rules, so the Internal Traffic exclusion remains in Testing. Supply the
+organisation's authoritative office/VPN CIDRs, add and verify them in the rule, and only then
+activate the filter; GA4 data filters are not retroactive.
 
 ## Lead confirmation semantics
 
