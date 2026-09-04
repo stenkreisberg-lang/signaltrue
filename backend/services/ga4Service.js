@@ -5,6 +5,8 @@ const DATA_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
 const ADMIN_API_BASE = 'https://analyticsadmin.googleapis.com/v1beta';
 const ADMIN_ALPHA_API_BASE = 'https://analyticsadmin.googleapis.com/v1alpha';
 const SITE_HOSTNAME = process.env.GA4_SITE_HOSTNAME || 'www.signaltrue.ai';
+export const CLEAN_REPORTING_START_DATE =
+  process.env.GA4_CLEAN_REPORTING_START_DATE || '2026-09-04';
 export const COMMERCIAL_PAGE_EVENT = 'page_view';
 export const FUNNEL_EVENT_NAMES = [
   'commercial_page_view',
@@ -206,6 +208,21 @@ export function normalizeAcquisitionRows(rows = []) {
   return [...grouped.values()].sort((left, right) => right.sessions - left.sessions);
 }
 
+export function getCommercialDateRanges(options = {}) {
+  const current = {
+    startDate: options.startDate || CLEAN_REPORTING_START_DATE,
+    endDate: options.endDate || 'today',
+  };
+  const previous =
+    options.previousStartDate && options.previousEndDate
+      ? {
+          startDate: options.previousStartDate,
+          endDate: options.previousEndDate,
+        }
+      : null;
+  return { current: [current], previous: previous ? [previous] : null };
+}
+
 async function getAnalyticsClient() {
   const propertyId = process.env.GA4_PROPERTY_ID;
   const credentials = parseServiceAccountJson();
@@ -344,15 +361,7 @@ export async function getGa4Overview(options = {}) {
   }
 
   const { client, propertyId } = analytics;
-  const dateRanges = [
-    { startDate: options.startDate || '29daysAgo', endDate: options.endDate || 'today' },
-  ];
-  const previousDateRanges = [
-    {
-      startDate: options.previousStartDate || '59daysAgo',
-      endDate: options.previousEndDate || '30daysAgo',
-    },
-  ];
+  const { current: dateRanges, previous: previousDateRanges } = getCommercialDateRanges(options);
   const diagnostics = [];
   const summaryRequest = (ranges) => ({
     dateRanges: ranges,
@@ -385,7 +394,9 @@ export async function getGa4Overview(options = {}) {
     pageViewAutomationStatus,
   ] = await Promise.all([
     runReport(client, propertyId, summaryRequest(dateRanges)),
-    runReport(client, propertyId, summaryRequest(previousDateRanges)),
+    previousDateRanges
+      ? runReport(client, propertyId, summaryRequest(previousDateRanges))
+      : Promise.resolve({ rows: [], metricHeaders: [], dimensionHeaders: [] }),
     runReport(client, propertyId, {
       dateRanges,
       dimensions: [{ name: 'pagePath' }],
@@ -588,12 +599,14 @@ export async function getGa4Overview(options = {}) {
       internalTrafficRuleDetected: dataFilterStatus.internalTraffic,
       developerTrafficFilterDetected: dataFilterStatus.developerTraffic,
       browserHistoryPageViewsEnabled: pageViewAutomationStatus.browserHistoryPageViewsEnabled,
+      cleanReportingStartDate: CLEAN_REPORTING_START_DATE,
+      historicalComparisonAvailable: Boolean(previousDateRanges),
       singlePageViewModeVerified:
         pageViewAutomationStatus.checked &&
         pageViewAutomationStatus.browserHistoryPageViewsEnabled === false,
     },
     dateRange: {
-      label: options.label || 'Last 30 days',
+      label: options.label || `Since ${CLEAN_REPORTING_START_DATE}`,
       startDate: dateRanges[0].startDate,
       endDate: dateRanges[0].endDate,
     },

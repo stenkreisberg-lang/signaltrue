@@ -2,6 +2,8 @@ import { describe, expect, test } from '@jest/globals';
 import {
   boundedShare,
   buildCommercialReportFilter,
+  CLEAN_REPORTING_START_DATE,
+  getCommercialDateRanges,
   isCommercialReportPath,
   normalizeAcquisitionRows,
 } from '../services/ga4Service.js';
@@ -87,6 +89,24 @@ describe('commercial measurement integrity', () => {
   test('never reports a share above 100 percent', () => {
     expect(boundedShare(9, 8)).toBe(100);
     expect(boundedShare(4, 8)).toBe(50);
+  });
+
+  test('uses the clean deployment boundary and never compares against contaminated history', () => {
+    expect(getCommercialDateRanges()).toEqual({
+      current: [{ startDate: CLEAN_REPORTING_START_DATE, endDate: 'today' }],
+      previous: null,
+    });
+    expect(
+      getCommercialDateRanges({
+        startDate: '2026-09-10',
+        endDate: '2026-09-20',
+        previousStartDate: '2026-09-04',
+        previousEndDate: '2026-09-09',
+      })
+    ).toEqual({
+      current: [{ startDate: '2026-09-10', endDate: '2026-09-20' }],
+      previous: [{ startDate: '2026-09-04', endDate: '2026-09-09' }],
+    });
   });
 
   test('requires the three confirmed-lead identity fields server-side', () => {

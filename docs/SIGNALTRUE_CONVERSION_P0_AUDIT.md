@@ -9,11 +9,11 @@ notification handoff and production-like browser tests. No visual redesign was p
 
 ## Executive status
 
-The implementation and local verification are complete. The required GA4 custom definitions, key
+The frontend and backend implementation is deployed. The required GA4 custom definitions, key
 event, developer filter and single-SPA-page-view setting were updated in the live GA4 property.
-The application code in this workspace has **not been deployed**. The Internal Traffic filter is
-still in Testing until SignalTrue's current office/VPN IP ranges are verified. Historical GA4 data
-is not rewritten by these changes.
+The Internal Traffic filter remains in Testing until SignalTrue's current office/VPN IP ranges are
+verified. Historical GA4 data is not rewritten; 4 September 2026 is enforced as the clean reporting
+boundary and pre-boundary comparisons are disabled by default.
 
 ## Issues found and changes made
 
@@ -159,15 +159,23 @@ Verification performed in this workspace:
 | Production build | passed |
 | Full Playwright suite | 72 passed (desktop + mobile) |
 
-## Production completion checklist
+## Production release verification
 
-The site must not be called production-fixed until all of the following are complete:
+- Frontend deployed from `755efd17dac892a59bef97d8c17ed3e0c7c2a9c7` and verified through the
+  production build-version endpoint.
+- Backend deployed from `84348aa275641566a742e375c1d1c00894e0e853`; production health reported
+  ready with the database connected.
+- Production smoke run `20260904-060512Z` reached the canonical contact page, preserved the
+  three-field form contract, exercised validation, persisted lead
+  `6a9a5fd7f562eb4adea8e496`, recovered that same lead idempotently, showed confirmation and the
+  booking option, and emitted zero GA/internal-analytics requests from the tagged automated session.
+- The email provider accepted both messages. The internal lead notification and visitor
+  confirmation were subsequently verified as delivered in the SignalTrue mailbox.
+- The repeatable production smoke runner is `tools/production-funnel-smoke.mjs`; it requires an
+  explicitly supplied internal `SMOKE_EMAIL` and does not contain a committed recipient address.
 
-1. Deploy the reviewed frontend and backend changes together.
-2. Verify the deployment has `REACT_APP_API_URL`, `MONGO_URI`, `RESEND_API_KEY`, `EMAIL_FROM`,
-   `WEBSITE_LEAD_NOTIFICATION_EMAIL` and the optional `CALENDAR_LINK` correctly configured.
-3. Run one tagged production smoke test and verify it is absent from commercial GA reporting while
-   the database record, notification email, visitor confirmation and booking option succeed.
-4. Verify SignalTrue's office/VPN IP ranges, then activate the existing Internal Traffic filter.
-5. Annotate the GA4 change/deployment date; use that date as the clean-reporting boundary because
-   GA4 filters and source normalization do not repair historical rows.
+## Remaining live-admin safeguard
+
+The existing Internal Traffic filter must remain in Testing until SignalTrue's current office/VPN
+CIDRs are verified against the Google tag's internal-traffic rule. Activating an incorrect range
+would irreversibly exclude genuine future traffic. All other production checks above are complete.

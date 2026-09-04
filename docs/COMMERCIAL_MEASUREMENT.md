@@ -16,6 +16,8 @@ load GA4 or emit commercial funnel events.
 - `GA4_SERVICE_ACCOUNT_JSON` or `GA4_SERVICE_ACCOUNT_JSON_BASE64`: service-account credentials with
   read access to the GA4 property.
 - `GA4_SITE_HOSTNAME`: keep as `www.signaltrue.ai` for production commercial reporting.
+- `GA4_CLEAN_REPORTING_START_DATE`: optional override for the clean reporting boundary; defaults to
+  `2026-09-04`.
 - `SITE_ANALYTICS_REPORT_EMAIL`: weekly report recipient.
 - `SITE_ANALYTICS_FROM_EMAIL`: verified weekly report sender.
 
@@ -48,6 +50,11 @@ The commercial report applies the same exact-host, public-path and automation ex
 query. Source/medium values are canonicalized before aggregation; `(direct) / (none)`, case and
 known aliases therefore cannot produce separate rows. All shares and funnel rates use comparable
 numerators and denominators and are bounded to 0–100%.
+
+Historical contaminated GA4 rows remain immutable. The production overview therefore defaults to
+the clean release boundary of 4 September 2026 and does not calculate a pre-boundary comparison.
+An explicit comparison is allowed only when both previous-range dates are supplied and are known to
+be clean.
 
 GA4 has an active Developer Traffic exclusion. The Internal Traffic exclusion remains in Testing
 until the organisation's current office/VPN IP ranges are verified in the Google tag's internal
