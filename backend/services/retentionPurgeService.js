@@ -58,9 +58,12 @@ export async function purgeOrgData(orgId) {
   try {
     const WorkEvent = mongoose.models.WorkEvent;
     if (WorkEvent) {
+      // WorkEvent stores the event time in `timestamp`. Querying a non-existent
+      // `occurredAt` field silently leaves expired raw events behind and breaks
+      // the configured retention promise.
       const result = await WorkEvent.deleteMany({
         orgId,
-        occurredAt: { $lt: cutoff(policy.rawEventRetentionDays) },
+        timestamp: { $lt: cutoff(policy.rawEventRetentionDays) },
       });
       summary.WorkEvent = result.deletedCount;
     }
