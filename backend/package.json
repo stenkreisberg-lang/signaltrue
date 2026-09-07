@@ -14,6 +14,8 @@
     "migrate:privacy-floor": "node scripts/enforce-privacy-floor.js",
     "migrate:security": "npm run migrate:privacy-floor && npm run migrate:encrypt-tokens",
     "ga4:configure-commercial": "node scripts/configure-ga4-commercial.js",
+    "ga4:verify-commercial": "node scripts/configure-ga4-commercial.js --verify",
+    "reports:generate-reliability-examples": "node scripts/generate-reliability-examples.js",
     "smoke-test": "node scripts/smoke-test.js",
     "start": "node server.js",
     "lint": "eslint . --ext .js",
