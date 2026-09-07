@@ -20,6 +20,12 @@ load GA4 or emit commercial funnel events.
   `2026-09-04`.
 - `SITE_ANALYTICS_REPORT_EMAIL`: weekly report recipient.
 - `SITE_ANALYTICS_FROM_EMAIL`: verified weekly report sender.
+- `SEARCH_CONSOLE_SITE_URL`: configured domain property such as `sc-domain:signaltrue.ai`, or the
+  exact URL-prefix property.
+- `SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON` or
+  `SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON_BASE64`: optional separate read-only Search Console
+  credential. If omitted, the GA4 service account is reused and must be granted access to the
+  configured Search Console property.
 
 `REACT_APP_API_URL` remains required in the frontend deployment and must point to the backend
 origin.
@@ -41,6 +47,10 @@ Run `npm --prefix backend run ga4:configure-commercial` with the GA4 Admin crede
 to make the stream setting, custom dimensions and key event idempotent. The script also reports
 conflicting key events and missing active data filters.
 
+Run `npm --prefix backend run ga4:verify-commercial` for a read-only, JSON-formatted verification.
+Inspection failures are reported as `unknown`; the command exits non-zero only for a configuration
+that it can definitively establish is broken.
+
 SPA page views are manual. The frontend initializes gtag with `send_page_view: false`, and GA4's
 enhanced-measurement option "Page changes based on browser history events" must remain disabled.
 Each public route emits one `page_view` after its title metadata has updated, with one
@@ -51,6 +61,11 @@ query. Source/medium values are canonicalized before aggregation; `(direct) / (n
 known aliases therefore cannot produce separate rows. All shares and funnel rates use comparable
 numerators and denominators and are bounded to 0–100%.
 
+Automated production funnel checks use the fixed non-commercial marker
+`utm_source=production_smoke&utm_medium=qa&utm_campaign=conversion_e2e`. The browser suppresses
+analytics collection for that session, and the GA4 report excludes the source, medium, and campaign
+defensively. UTM values must never contain names, email addresses, or free-form form values.
+
 Historical contaminated GA4 rows remain immutable. The production overview therefore defaults to
 the clean release boundary of 4 September 2026 and does not calculate a pre-boundary comparison.
 An explicit comparison is allowed only when both previous-range dates are supplied and are known to
@@ -60,6 +75,10 @@ GA4 has an active Developer Traffic exclusion. A live audit on 4 September 2026 
 internal-traffic rules, so the Internal Traffic exclusion remains in Testing. Supply the
 organisation's authoritative office/VPN CIDRs, add and verify them in the rule, and only then
 activate the filter; GA4 data filters are not retroactive.
+
+The commercial email queries finalized Search Console data through a period ending three days
+before the report date. Search impressions and clicks remain separate from GA4 session and funnel
+denominators.
 
 ## Lead confirmation semantics
 

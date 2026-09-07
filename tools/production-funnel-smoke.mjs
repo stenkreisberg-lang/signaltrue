@@ -32,9 +32,12 @@ page.on('request', (request) => {
 });
 
 try {
-  await page.goto(`${siteUrl}/?utm_source=production_smoke&utm_medium=qa`, {
-    waitUntil: 'networkidle',
-  });
+  await page.goto(
+    `${siteUrl}/?utm_source=production_smoke&utm_medium=qa&utm_campaign=conversion_e2e`,
+    {
+      waitUntil: 'networkidle',
+    }
+  );
 
   const primaryCta = page.locator('[data-primary-cta="true"]:visible').first();
   assert(

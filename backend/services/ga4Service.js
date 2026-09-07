@@ -7,6 +7,11 @@ const ADMIN_ALPHA_API_BASE = 'https://analyticsadmin.googleapis.com/v1alpha';
 const SITE_HOSTNAME = process.env.GA4_SITE_HOSTNAME || 'www.signaltrue.ai';
 export const CLEAN_REPORTING_START_DATE =
   process.env.GA4_CLEAN_REPORTING_START_DATE || '2026-09-04';
+export const CONFIGURATION_STATES = Object.freeze({
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  UNKNOWN: 'unknown',
+});
 export const COMMERCIAL_PAGE_EVENT = 'page_view';
 export const FUNNEL_EVENT_NAMES = [
   'commercial_page_view',
@@ -61,7 +66,7 @@ const EXCLUDED_PATH_PREFIXES = [
 ];
 const EXCLUDED_PATH_REGEXP = `^(?:${EXCLUDED_PATH_PREFIXES.map((path) => path.replace('/', '\\/')).join('|')})(?:/|$)`;
 const AUTOMATION_MARKER_REGEXP =
-  '^(?:production[_ -]?smoke|qa|quality[_ -]?assurance|automated[_ -]?qa|e2e|playwright|puppeteer|test)$';
+  '^(?:production[_ -]?smoke|qa|quality[_ -]?assurance|automated[_ -]?qa|conversion[_ -]?e2e|e2e|playwright|puppeteer|test)$';
 
 function exactFilter(fieldName, value) {
   return {
@@ -100,6 +105,7 @@ export function buildCommercialReportFilter(eventExpression) {
     excludeFilter(regexpFilter('pagePath', EXCLUDED_PATH_REGEXP)),
     excludeFilter(regexpFilter('sessionSource', AUTOMATION_MARKER_REGEXP)),
     excludeFilter(regexpFilter('sessionMedium', AUTOMATION_MARKER_REGEXP)),
+    excludeFilter(regexpFilter('sessionCampaignName', AUTOMATION_MARKER_REGEXP)),
   ];
   if (eventExpression) expressions.push(eventExpression);
   return { andGroup: { expressions } };
@@ -208,19 +214,145 @@ export function normalizeAcquisitionRows(rows = []) {
   return [...grouped.values()].sort((left, right) => right.sessions - left.sessions);
 }
 
-export function getCommercialDateRanges(options = {}) {
-  const current = {
-    startDate: options.startDate || CLEAN_REPORTING_START_DATE,
-    endDate: options.endDate || 'today',
+function isoDate(value, fallback = new Date()) {
+  if (!value || value === 'today') return fallback.toISOString().slice(0, 10);
+  const text = value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(Date.parse(`${text}T00:00:00Z`))) {
+    throw new TypeError(`Expected an ISO calendar date, received "${text}".`);
+  }
+  return text;
+}
+
+function shiftDate(value, days) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function inclusiveDays(startDate, endDate) {
+  return (
+    Math.floor(
+      (Date.parse(`${endDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`)) / 86400000
+    ) + 1
+  );
+}
+
+function humanDate(value) {
+  const [year, month, day] = String(value).split('-').map(Number);
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return `${day} ${months[month - 1]} ${year}`;
+}
+
+/**
+ * Product reporting guardrail, not a GA4 retention rule. A partial clean period may be
+ * reported, but comparison is withheld until two adjacent complete seven-day periods exist.
+ */
+export function getCleanComparisonDateRanges(
+  referenceDate = new Date(),
+  cleanReportingStartDate = process.env.GA4_CLEAN_REPORTING_START_DATE || CLEAN_REPORTING_START_DATE
+) {
+  const cleanStartDate = isoDate(cleanReportingStartDate);
+  const endDate = isoDate(referenceDate);
+  if (endDate < cleanStartDate) {
+    return {
+      current: null,
+      previous: null,
+      comparisonAvailable: false,
+      cleanStartDate,
+      reason: `No clean production data is available before ${humanDate(cleanStartDate)}.`,
+    };
+  }
+
+  const cleanDays = inclusiveDays(cleanStartDate, endDate);
+  if (cleanDays < 14) {
+    return {
+      current: { startDate: cleanStartDate, endDate },
+      previous: null,
+      comparisonAvailable: false,
+      cleanStartDate,
+      reason: `Clean production data since ${humanDate(cleanStartDate)}. No valid prior clean comparison is available yet.`,
+    };
+  }
+
+  return {
+    current: { startDate: shiftDate(endDate, -6), endDate },
+    previous: { startDate: shiftDate(endDate, -13), endDate: shiftDate(endDate, -7) },
+    comparisonAvailable: true,
+    cleanStartDate,
+    reason: null,
   };
-  const previous =
-    options.previousStartDate && options.previousEndDate
-      ? {
-          startDate: options.previousStartDate,
-          endDate: options.previousEndDate,
-        }
-      : null;
-  return { current: [current], previous: previous ? [previous] : null };
+}
+
+export function getCommercialDateRanges(options = {}) {
+  const cleanStartDate = isoDate(
+    options.cleanReportingStartDate ||
+      process.env.GA4_CLEAN_REPORTING_START_DATE ||
+      CLEAN_REPORTING_START_DATE
+  );
+  const explicitCurrent = options.startDate || options.endDate;
+  if (!explicitCurrent) {
+    const ranges = getCleanComparisonDateRanges(
+      options.referenceDate || new Date(),
+      cleanStartDate
+    );
+    return {
+      ...ranges,
+      current: ranges.current ? [ranges.current] : null,
+      previous: ranges.previous ? [ranges.previous] : null,
+    };
+  }
+
+  const requestedStart = isoDate(options.startDate || cleanStartDate);
+  const requestedEnd = isoDate(options.endDate || options.referenceDate || new Date());
+  const currentWasClipped = requestedStart < cleanStartDate;
+  const currentStart = currentWasClipped ? cleanStartDate : requestedStart;
+  if (requestedEnd < cleanStartDate || requestedEnd < currentStart) {
+    return {
+      current: null,
+      previous: null,
+      comparisonAvailable: false,
+      cleanStartDate,
+      reason: `No clean production data is available in the requested range.`,
+    };
+  }
+
+  const current = { startDate: currentStart, endDate: requestedEnd };
+  let previous = null;
+  if (options.previousStartDate && options.previousEndDate && !currentWasClipped) {
+    const candidate = {
+      startDate: isoDate(options.previousStartDate),
+      endDate: isoDate(options.previousEndDate),
+    };
+    const bothClean = candidate.startDate >= cleanStartDate && candidate.endDate >= cleanStartDate;
+    const currentDays = inclusiveDays(current.startDate, current.endDate);
+    const previousDays = inclusiveDays(candidate.startDate, candidate.endDate);
+    const equivalent =
+      shiftDate(candidate.endDate, 1) === current.startDate && previousDays === currentDays;
+    if (bothClean && equivalent && currentDays === 7 && previousDays === 7) previous = candidate;
+  }
+
+  return {
+    current: [current],
+    previous: previous ? [previous] : null,
+    comparisonAvailable: Boolean(previous),
+    cleanStartDate,
+    reason: previous
+      ? null
+      : `Clean production data since ${humanDate(cleanStartDate)}. No valid prior clean comparison is available yet.`,
+  };
 }
 
 async function getAnalyticsClient() {
@@ -247,32 +379,52 @@ async function runReport(authClient, propertyId, request) {
   return response.data;
 }
 
-async function getDataFilterStatus(authClient, propertyId, diagnostics) {
+function configurationState(state, reason = null) {
+  return { state, reason };
+}
+
+function errorMessage(error, fallback) {
+  return error?.response?.data?.error?.message || error?.message || fallback;
+}
+
+function isAdminPermissionError(error) {
+  const status = Number(error?.response?.status || error?.response?.data?.error?.code || 0);
+  return status === 401 || status === 403;
+}
+
+export async function getDataFilterStatus(authClient, propertyId, diagnostics = []) {
   try {
     const response = await authClient.request({
       url: `${ADMIN_API_BASE}/properties/${propertyId}/dataFilters?pageSize=200`,
       method: 'GET',
     });
     const filters = response.data?.dataFilters || [];
-    const isActive = (type) =>
-      filters.some((filter) => filter.filterType === type && filter.state === 'ACTIVE');
+    const stateFor = (type) =>
+      configurationState(
+        filters.some((filter) => filter.filterType === type && filter.state === 'ACTIVE')
+          ? CONFIGURATION_STATES.ACTIVE
+          : CONFIGURATION_STATES.INACTIVE
+      );
     return {
-      internalTraffic: isActive('INTERNAL_TRAFFIC'),
-      developerTraffic: isActive('DEVELOPER_TRAFFIC'),
+      internalTraffic: stateFor('INTERNAL_TRAFFIC'),
+      developerTraffic: stateFor('DEVELOPER_TRAFFIC'),
     };
   } catch (error) {
+    const message = errorMessage(error, 'Could not inspect GA4 data filters.');
     diagnostics.push({
-      type: 'ga4_data_filter_status',
-      message:
-        error?.response?.data?.error?.message ||
-        error.message ||
-        'Could not inspect GA4 data filters.',
+      type: 'ga4_admin_permission_error',
+      message: isAdminPermissionError(error)
+        ? `Could not inspect GA4 data filters because GA4 Admin access failed: ${message}`
+        : `Could not inspect GA4 data filters: ${message}`,
     });
-    return { internalTraffic: false, developerTraffic: false };
+    return {
+      internalTraffic: configurationState(CONFIGURATION_STATES.UNKNOWN, message),
+      developerTraffic: configurationState(CONFIGURATION_STATES.UNKNOWN, message),
+    };
   }
 }
 
-async function getPageViewAutomationStatus(authClient, propertyId, diagnostics) {
+export async function getPageViewAutomationStatus(authClient, propertyId, diagnostics = []) {
   try {
     const streamsResponse = await authClient.request({
       url: `${ADMIN_API_BASE}/properties/${propertyId}/dataStreams?pageSize=200`,
@@ -292,32 +444,52 @@ async function getPageViewAutomationStatus(authClient, propertyId, diagnostics) 
       url: `${ADMIN_ALPHA_API_BASE}/${stream.name}/enhancedMeasurementSettings`,
       method: 'GET',
     });
-    return {
-      checked: true,
-      browserHistoryPageViewsEnabled: Boolean(settingsResponse.data?.pageChangesEnabled),
-    };
+    const enabled = Boolean(settingsResponse.data?.pageChangesEnabled);
+    return configurationState(
+      enabled ? CONFIGURATION_STATES.ACTIVE : CONFIGURATION_STATES.INACTIVE,
+      null
+    );
   } catch (error) {
+    const message = errorMessage(
+      error,
+      'Could not inspect enhanced-measurement page-view settings.'
+    );
     diagnostics.push({
-      type: 'ga4_page_view_automation_status',
-      message:
-        error?.response?.data?.error?.message ||
-        error.message ||
-        'Could not inspect enhanced-measurement page-view settings.',
+      type: isAdminPermissionError(error)
+        ? 'ga4_admin_permission_error'
+        : 'ga4_page_view_automation_unknown',
+      message: isAdminPermissionError(error)
+        ? `Could not inspect browser-history page-view automation because GA4 Admin access failed: ${message}`
+        : message,
     });
-    return { checked: false, browserHistoryPageViewsEnabled: null };
+    return configurationState(CONFIGURATION_STATES.UNKNOWN, message);
   }
 }
 
 async function runOptionalReport(authClient, propertyId, request, diagnosticKey, diagnostics) {
   try {
-    return await runReport(authClient, propertyId, request);
+    return {
+      report: await runReport(authClient, propertyId, request),
+      availability: configurationState(CONFIGURATION_STATES.ACTIVE),
+    };
   } catch (error) {
+    const message = errorMessage(error, 'Optional GA4 report failed.');
+    const status = Number(error?.response?.status || error?.response?.data?.error?.code || 0);
+    const confirmedMissing =
+      status === 400 &&
+      /(?:custom dimension|not a valid dimension|invalid.*dimension)/i.test(message);
     diagnostics.push({
       type: diagnosticKey,
-      message:
-        error?.response?.data?.error?.message || error.message || 'Optional GA4 report failed.',
+      state: confirmedMissing ? CONFIGURATION_STATES.INACTIVE : CONFIGURATION_STATES.UNKNOWN,
+      message,
     });
-    return { rows: [], metricHeaders: [], dimensionHeaders: [] };
+    return {
+      report: { rows: [], metricHeaders: [], dimensionHeaders: [] },
+      availability: configurationState(
+        confirmedMissing ? CONFIGURATION_STATES.INACTIVE : CONFIGURATION_STATES.UNKNOWN,
+        message
+      ),
+    };
   }
 }
 
@@ -361,7 +533,20 @@ export async function getGa4Overview(options = {}) {
   }
 
   const { client, propertyId } = analytics;
-  const { current: dateRanges, previous: previousDateRanges } = getCommercialDateRanges(options);
+  const rangeSelection = getCommercialDateRanges(options);
+  const { current: dateRanges, previous: previousDateRanges } = rangeSelection;
+  if (!dateRanges) {
+    return {
+      connected: true,
+      propertyId,
+      hostname: SITE_HOSTNAME,
+      unavailable: true,
+      reason: rangeSelection.reason,
+      diagnostics: [
+        { type: 'ga4_clean_reporting_range_unavailable', message: rangeSelection.reason },
+      ],
+    };
+  }
   const diagnostics = [];
   const summaryRequest = (ranges) => ({
     dateRanges: ranges,
@@ -385,11 +570,11 @@ export async function getGa4Overview(options = {}) {
     landingPages,
     daily,
     funnel,
-    ctaLocations,
-    leadCtaLocations,
-    formErrors,
-    intentDimension,
-    formVersionDimension,
+    ctaLocationResult,
+    leadCtaLocationResult,
+    formErrorResult,
+    intentDimensionResult,
+    formVersionDimensionResult,
     dataFilterStatus,
     pageViewAutomationStatus,
   ] = await Promise.all([
@@ -517,25 +702,41 @@ export async function getGa4Overview(options = {}) {
   ]);
 
   // The optional reports above are intentionally queried to surface missing GA4 registrations.
-  void intentDimension;
-  void formVersionDimension;
-  if (!dataFilterStatus.internalTraffic) {
+  const ctaLocations = ctaLocationResult.report;
+  const leadCtaLocations = leadCtaLocationResult.report;
+  const formErrors = formErrorResult.report;
+  if (dataFilterStatus.internalTraffic.state === CONFIGURATION_STATES.INACTIVE) {
     diagnostics.push({
-      type: 'ga4_internal_traffic_filter',
+      type: 'ga4_internal_traffic_filter_inactive',
       message: 'No active GA4 internal-traffic data filter was detected.',
     });
-  }
-  if (!dataFilterStatus.developerTraffic) {
+  } else if (dataFilterStatus.internalTraffic.state === CONFIGURATION_STATES.UNKNOWN) {
     diagnostics.push({
-      type: 'ga4_developer_traffic_filter',
-      message: 'No active GA4 developer-traffic data filter was detected.',
+      type: 'ga4_internal_traffic_filter_unknown',
+      message: `Could not determine internal-traffic filter state: ${dataFilterStatus.internalTraffic.reason}`,
     });
   }
-  if (pageViewAutomationStatus.browserHistoryPageViewsEnabled) {
+  if (dataFilterStatus.developerTraffic.state === CONFIGURATION_STATES.INACTIVE) {
+    diagnostics.push({
+      type: 'ga4_developer_traffic_filter_inactive',
+      message: 'No active GA4 developer-traffic data filter was detected.',
+    });
+  } else if (dataFilterStatus.developerTraffic.state === CONFIGURATION_STATES.UNKNOWN) {
+    diagnostics.push({
+      type: 'ga4_developer_traffic_filter_unknown',
+      message: `Could not determine developer-traffic filter state: ${dataFilterStatus.developerTraffic.reason}`,
+    });
+  }
+  if (pageViewAutomationStatus.state === CONFIGURATION_STATES.ACTIVE) {
     diagnostics.push({
       type: 'ga4_duplicate_page_view_risk',
       message:
         'Enhanced-measurement browser-history page views are enabled while the site sends manual SPA page views.',
+    });
+  } else if (pageViewAutomationStatus.state === CONFIGURATION_STATES.UNKNOWN) {
+    diagnostics.push({
+      type: 'ga4_page_view_automation_unknown',
+      message: `Could not determine browser-history page-view automation state: ${pageViewAutomationStatus.reason}`,
     });
   }
 
@@ -596,19 +797,41 @@ export async function getGa4Overview(options = {}) {
       eventName: COMMERCIAL_PAGE_EVENT,
       excludedRoutes: EXCLUDED_PATH_PREFIXES,
       previewAndDevelopmentHostsExcluded: true,
-      internalTrafficRuleDetected: dataFilterStatus.internalTraffic,
-      developerTrafficFilterDetected: dataFilterStatus.developerTraffic,
-      browserHistoryPageViewsEnabled: pageViewAutomationStatus.browserHistoryPageViewsEnabled,
-      cleanReportingStartDate: CLEAN_REPORTING_START_DATE,
-      historicalComparisonAvailable: Boolean(previousDateRanges),
-      singlePageViewModeVerified:
-        pageViewAutomationStatus.checked &&
-        pageViewAutomationStatus.browserHistoryPageViewsEnabled === false,
+      internalTrafficFilter: dataFilterStatus.internalTraffic,
+      developerTrafficFilter: dataFilterStatus.developerTraffic,
+      browserHistoryPageViewAutomation: pageViewAutomationStatus,
+      customDimensions: {
+        cta_location: ctaLocationResult.availability,
+        error_type: formErrorResult.availability,
+        intent: intentDimensionResult.availability,
+        form_version: formVersionDimensionResult.availability,
+      },
+      // Boolean aliases are retained for existing API consumers.
+      internalTrafficRuleDetected:
+        dataFilterStatus.internalTraffic.state === CONFIGURATION_STATES.ACTIVE,
+      developerTrafficFilterDetected:
+        dataFilterStatus.developerTraffic.state === CONFIGURATION_STATES.ACTIVE,
+      browserHistoryPageViewsEnabled:
+        pageViewAutomationStatus.state === CONFIGURATION_STATES.UNKNOWN
+          ? null
+          : pageViewAutomationStatus.state === CONFIGURATION_STATES.ACTIVE,
+      cleanReportingStartDate: rangeSelection.cleanStartDate,
+      historicalComparisonAvailable: rangeSelection.comparisonAvailable,
+      comparisonReason: rangeSelection.reason,
+      singlePageViewModeVerified: pageViewAutomationStatus.state === CONFIGURATION_STATES.INACTIVE,
     },
     dateRange: {
-      label: options.label || `Since ${CLEAN_REPORTING_START_DATE}`,
+      label:
+        options.label ||
+        (rangeSelection.comparisonAvailable
+          ? `${dateRanges[0].startDate} to ${dateRanges[0].endDate} compared with the preceding clean seven days`
+          : rangeSelection.reason),
       startDate: dateRanges[0].startDate,
       endDate: dateRanges[0].endDate,
+      previousStartDate: previousDateRanges?.[0]?.startDate || null,
+      previousEndDate: previousDateRanges?.[0]?.endDate || null,
+      comparisonAvailable: rangeSelection.comparisonAvailable,
+      comparisonReason: rangeSelection.reason,
     },
     summary: {
       ...summaryMetrics,
