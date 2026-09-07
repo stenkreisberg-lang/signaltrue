@@ -50,6 +50,7 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       targetMetric,
       targetMetricLabel,
       targetDirection,
+      successCriterion,
       ownerRole,
       ownerName,
       decisionRationale,
@@ -127,6 +128,9 @@ router.post('/', authenticateToken, requireTier('detection'), async (req, res) =
       targetMetric: targetMetric || configuredTarget?.metricKey,
       targetMetricLabel: targetMetricLabel || configuredTarget?.metricLabel,
       targetDirection: targetDirection || configuredTarget?.direction,
+      baselineValue: resolvedMetricBefore,
+      expectedDirection: targetDirection || configuredTarget?.direction,
+      successCriterion,
       decision: {
         ownerName: ownerName?.trim(),
         ownerRole: ownerRole || 'Team lead',

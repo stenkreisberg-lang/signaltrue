@@ -155,6 +155,28 @@ describe('full report mode', () => {
     const { org, teamA, catchAll } = seeded;
     // 8/10 users mapped and the only eligible named team is ready → full report
     await seedMeetingEvents(org, teamA, seeded.users, 8);
+    await WorkEvent.insertMany(
+      seeded.users.slice(0, 8).flatMap((user, userIndex) => [
+        {
+          orgId: org._id,
+          source: 'microsoft-outlook',
+          eventType: 'meeting',
+          actorUserId: user._id,
+          teamId: teamA._id,
+          timestamp: daysAgo(2),
+          externalId: `test-outlook-extra-${org._id}-${userIndex}`,
+        },
+        ...[1, 2, 3, 4].map((day) => ({
+          orgId: org._id,
+          source: 'microsoft-teams',
+          eventType: 'message',
+          actorUserId: user._id,
+          teamId: teamA._id,
+          timestamp: daysAgo(day),
+          externalId: `test-teams-${org._id}-${userIndex}-${day}`,
+        })),
+      ])
+    );
 
     // Org-level metrics: heavy meeting load (200h org total / 8 people = 25h/person),
     // after-hours collapsed to 0 vs a 20% historical average
@@ -198,7 +220,7 @@ describe('full report mode', () => {
     return seeded;
   }
 
-  test('renders insight-first structure with prediction, appendix, tenure and cost', async () => {
+  test('renders insight-first structure while hiding an ungraded forecast', async () => {
     const { org } = await seedFullOrg();
     const html = await generateWeeklyBrief(org._id);
 
@@ -206,8 +228,8 @@ describe('full report mode', () => {
     expect(html).toContain('Week-over-week comparison');
     expect(html).toContain('Appendix — Data readiness'); // admin detail demoted
     expect(html).toContain('Baselines built on'); // tenure line
-    expect(html).toContain('Forecast rule check');
-    expect(html).toContain("This week's call");
+    expect(html).not.toContain('Forecast rule check');
+    expect(html).not.toContain("This week's call");
     expect(html).toContain('Estimated coordination cost above your baseline');
     expect(html).toContain('Was this week unusual?'); // annotation loop
 
@@ -216,6 +238,7 @@ describe('full report mode', () => {
     expect(snapshot.payload.metrics.length).toBeGreaterThan(5);
     expect(snapshot.payload.trend.length).toBeGreaterThan(1);
     expect(snapshot.payload.status.summary).toBeTruthy();
+    expect(snapshot.payload.prediction.displayTier).toBe('hidden');
 
     // A prediction was persisted for grading next week
     const predictions = await BriefPrediction.find({ orgId: org._id });
@@ -230,8 +253,8 @@ describe('full report mode', () => {
     // After-hours collapsed 20% → 0%: must be flagged as a data problem…
     expect(html).toContain('Data quality');
     expect(html).toContain('data capture issue');
-    // …and the snapshot tile shows a gap, not a healthy 0%
-    expect(html).toContain('data gap');
+    // …and the snapshot tile shows insufficient data, not a healthy 0%
+    expect(html).toContain('Insufficient data');
   });
 
   test('never scores catch-all buckets like "Unassigned"', async () => {
@@ -248,7 +271,7 @@ describe('full report mode', () => {
     expect(engagementSection).not.toContain('Unassigned');
   });
 
-  test('grades last week’s prediction and reports the track record', async () => {
+  test('grades last week’s prediction but hides a track record below six grades', async () => {
     const { org } = await seedFullOrg();
     await BriefPrediction.create({
       orgId: org._id,
@@ -262,10 +285,150 @@ describe('full report mode', () => {
 
     const html = await generateWeeklyBrief(org._id);
 
-    expect(html).toContain("Last week's rule said");
-    expect(html).toContain('Rule track record');
+    expect(html).not.toContain("Last week's rule said");
+    expect(html).not.toContain('Rule track record');
     const graded = await BriefPrediction.findOne({ orgId: org._id, 'outcome.evaluated': true });
     expect(graded).not.toBeNull();
     expect(graded.outcome.held).toBe(true); // 24 meetings ≤ 500
+  });
+});
+
+describe('metric-level regression fixtures', () => {
+  async function seedLargeOrg() {
+    const org = await Organization.create({ name: 'Anonymized Fixture', industry: 'Other' });
+    const team = await Team.create({ name: 'Operations', orgId: org._id });
+    const users = await User.insertMany(
+      Array.from({ length: 59 }, (_, index) => ({
+        email: `fixture-${index}@test.invalid`,
+        name: `Fixture User ${index}`,
+        orgId: org._id,
+        teamId: team._id,
+        role: 'team_member',
+        accountStatus: 'pending',
+      }))
+    );
+    return { org, team, users };
+  }
+
+  async function seedLargeCoverageEvents(org, team, users, messagingUsers = 3) {
+    const calendarEvents = users.slice(0, 47).map((user, index) => ({
+      orgId: org._id,
+      source: 'microsoft-outlook',
+      eventType: 'meeting',
+      actorUserId: user._id,
+      teamId: team._id,
+      timestamp: daysAgo(2),
+      externalId: `fixture-calendar-${org._id}-${index}`,
+    }));
+    const messageEvents = users.slice(0, messagingUsers).map((user, index) => ({
+      orgId: org._id,
+      source: 'microsoft-teams',
+      eventType: 'message',
+      actorUserId: user._id,
+      teamId: team._id,
+      timestamp: daysAgo(1),
+      externalId: `fixture-message-${org._id}-${index}`,
+    }));
+    await WorkEvent.insertMany([...calendarEvents, ...messageEvents]);
+  }
+
+  test('3/59 messaging coverage shows counts but cannot change organization status', async () => {
+    const { org, team, users } = await seedLargeOrg();
+    await seedLargeCoverageEvents(org, team, users, 3);
+    await IntegrationMetricsDaily.create({
+      orgId: org._id,
+      date: daysAgo(2),
+      meetingInstanceCount7d: 47,
+      meetingDurationTotalHours7d: 94,
+      messageCount7d: 3,
+      afterHoursMessageCount: 2,
+      afterHoursMessageRatio: 2 / 3,
+      focusTimeAvailabilityHours: 470,
+    });
+
+    const html = await generateWeeklyBrief(org._id);
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+    const afterHours = snapshot.payload.metrics.find((metric) => metric.key === 'after_hours');
+
+    expect(afterHours.readiness).toMatchObject({
+      mappedUsers: 3,
+      totalUsers: 59,
+      readiness: 'blocked',
+      eligibleForStatus: false,
+    });
+    expect(afterHours.display).toContain('2 of 3 observed messages');
+    expect(afterHours.current).toBeNull();
+    expect(snapshot.payload.status.deterioratingMetrics).not.toContain('afterHoursRatio');
+    expect(snapshot.payload.actions.primary?.actionability).not.toBe('intervention');
+    expect(html).toContain('2 of 3');
+    expect(html).toContain('3/59 people');
+    expect(html).toContain('Insufficient data');
+    expect(html).not.toContain('67% Out-of-Hours Work');
+  });
+
+  test('a one-week 190% meeting-hours rise produces a diagnostic question only', async () => {
+    const { org, team, users } = await seedLargeOrg();
+    await seedLargeCoverageEvents(org, team, users, 0);
+    await IntegrationMetricsDaily.insertMany([
+      {
+        orgId: org._id,
+        date: daysAgo(2),
+        meetingInstanceCount7d: 47,
+        meetingDurationTotalHours7d: 290,
+        focusTimeAvailabilityHours: 470,
+      },
+      {
+        orgId: org._id,
+        date: daysAgo(9),
+        meetingInstanceCount7d: 47,
+        meetingDurationTotalHours7d: 100,
+        focusTimeAvailabilityHours: 470,
+      },
+    ]);
+
+    const html = await generateWeeklyBrief(org._id);
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+
+    expect(snapshot.payload.actions.primary).toMatchObject({
+      actionability: 'diagnostic_question',
+      evidenceGrade: 'Low',
+      effort: 'Low',
+      affectedMetric: 'Meeting participant-hours per person',
+    });
+    expect(snapshot.payload.actions.primary.action).toMatch(/Was this caused|moved this week/i);
+    expect(html).not.toContain('High effort');
+    expect(html).toContain('<strong>Observation:</strong>');
+    expect(html).toContain('<strong>Interpretation:</strong>');
+    expect(html).toContain('<strong>Alternative explanation:</strong>');
+    expect(html).toContain('<strong>Diagnostic question:</strong>');
+  });
+
+  test('a stable Low-evidence week explicitly recommends no action', async () => {
+    const { org, team, users } = await seedLargeOrg();
+    await seedLargeCoverageEvents(org, team, users, 0);
+    await IntegrationMetricsDaily.insertMany([
+      {
+        orgId: org._id,
+        date: daysAgo(2),
+        meetingInstanceCount7d: 47,
+        meetingDurationTotalHours7d: 100,
+        focusTimeAvailabilityHours: 470,
+      },
+      {
+        orgId: org._id,
+        date: daysAgo(9),
+        meetingInstanceCount7d: 47,
+        meetingDurationTotalHours7d: 100,
+        focusTimeAvailabilityHours: 470,
+      },
+    ]);
+
+    const html = await generateWeeklyBrief(org._id);
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+
+    expect(snapshot.payload.status).toMatchObject({ label: 'Stable', evidenceGrade: 'Low' });
+    expect(snapshot.payload.actions.primary).toBeNull();
+    expect(html).toContain('No action recommended this week.');
+    expect(html).toContain('No measured pattern currently justifies intervention.');
   });
 });

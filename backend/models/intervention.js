@@ -111,6 +111,12 @@ const interventionSchema = new mongoose.Schema(
       type: String,
       enum: ['increase', 'decrease', 'stabilize'],
     },
+    baselineValue: { type: Number },
+    expectedDirection: {
+      type: String,
+      enum: ['increase', 'decrease', 'stabilize'],
+    },
+    successCriterion: { type: String },
     targetMetrics: [
       {
         metric: { type: String, required: true },
@@ -344,6 +350,17 @@ interventionSchema.index(
   { unique: true, partialFilterExpression: { source: 'manager_coaching' } }
 );
 
+interventionSchema.pre('validate', function () {
+  if (this.baselineValue == null) {
+    this.baselineValue = this.evidenceSnapshot?.value ?? this.outcomeDelta?.metricBefore;
+  }
+  if (!this.expectedDirection) this.expectedDirection = this.targetDirection;
+  if (!this.reviewDate) this.reviewDate = this.recheckDate;
+  if (!this.successCriterion && this.targetMetricLabel && this.expectedDirection) {
+    this.successCriterion = `${this.targetMetricLabel} shows a material ${this.expectedDirection} from the recorded baseline with sufficient post-action data.`;
+  }
+});
+
 // Manager-coaching experiments are private by default. Generic intervention,
 // reporting and organization-wide queries must never receive them. The private
 // coaching API opts in explicitly with source='manager_coaching' and separately
@@ -372,7 +389,7 @@ interventionSchema.methods.computeOutcome = async function (currentMetricValue) 
   const absoluteChange = after - before;
   const percentChange = before === 0 ? null : (absoluteChange / Math.abs(before)) * 100;
 
-  const direction = this.targetDirection || 'decrease';
+  const direction = this.expectedDirection || this.targetDirection || 'decrease';
   const improved =
     direction === 'increase'
       ? absoluteChange > 0

@@ -59,6 +59,29 @@ describe('measurement governance', () => {
 });
 
 describe('intervention reviews', () => {
+  test('persists a baseline, expected direction, review date and success criterion', async () => {
+    const intervention = new Intervention({
+      orgId: objectIds.org,
+      teamId: objectIds.team,
+      createdBy: objectIds.user,
+      signalType: 'meeting_load_drift',
+      title: 'Shorten recurring status meetings',
+      targetMetric: 'meetingLoadIndex',
+      targetMetricLabel: 'Meeting load index',
+      targetDirection: 'decrease',
+      startDate: new Date('2026-07-01T00:00:00Z'),
+      recheckDate: new Date('2026-07-15T00:00:00Z'),
+      outcomeDelta: { metricBefore: 40 },
+    });
+
+    await intervention.validate();
+
+    expect(intervention.baselineValue).toBe(40);
+    expect(intervention.expectedDirection).toBe('decrease');
+    expect(intervention.reviewDate.toISOString()).toBe('2026-07-15T00:00:00.000Z');
+    expect(intervention.successCriterion).toContain('sufficient post-action data');
+  });
+
   test('records direction-aware observed change without making a causal claim', async () => {
     const intervention = new Intervention({
       orgId: objectIds.org,

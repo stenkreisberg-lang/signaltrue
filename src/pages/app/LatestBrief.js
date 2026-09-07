@@ -49,10 +49,13 @@ function formatDate(value) {
   );
 }
 
-function formatMetricValue(metric, value = metric?.current) {
-  if (!metric?.available || value == null) return 'Not measured';
-  const formatted = Number(value).toLocaleString(undefined, {
-    maximumFractionDigits: Number.isInteger(Number(value)) ? 0 : 1,
+function formatMetricValue(metric, value) {
+  const isCurrent = arguments.length < 2;
+  const resolvedValue = isCurrent ? metric?.current : value;
+  if (isCurrent && metric?.display) return metric.display;
+  if (!metric?.available || resolvedValue == null) return 'Not measured';
+  const formatted = Number(resolvedValue).toLocaleString(undefined, {
+    maximumFractionDigits: Number.isInteger(Number(resolvedValue)) ? 0 : 1,
   });
   if (metric.unit === '%') return `${formatted}%`;
   if (metric.unit === 'hours') return `${formatted}h`;
@@ -122,6 +125,12 @@ function MetricCard({ metric }) {
           Six-week baseline: {formatMetricValue(metric, metric.baseline)}
         </span>
       )}
+      {metric.readiness && (
+        <span className="app-dashboard-card-note">
+          <strong>{String(metric.readiness.readiness).replace(/_/g, ' ')}</strong> ·{' '}
+          {metric.readiness.mappedUsers}/{metric.readiness.totalUsers} people represented
+        </span>
+      )}
     </div>
   );
 }
@@ -146,6 +155,22 @@ function ActionCard({ action, fallbackTitle = 'Recommended action' }) {
       {action.measure && (
         <p className="mt-3 text-caption leading-5 text-slate-600">
           <strong>Measure:</strong> {action.measure}
+        </p>
+      )}
+      {action.observedProblem && (
+        <p className="mt-3 text-caption leading-5 text-slate-600">
+          <strong>Observed problem:</strong> {action.observedProblem}
+        </p>
+      )}
+      {action.evidenceGrade && action.affectedMetric && (
+        <p className="mt-2 text-caption leading-5 text-slate-600">
+          <strong>Evidence:</strong> {action.evidenceGrade} · <strong>Metric:</strong>{' '}
+          {action.affectedMetric}
+        </p>
+      )}
+      {action.successCondition && (
+        <p className="mt-2 text-caption leading-5 text-slate-600">
+          <strong>Success condition:</strong> {action.successCondition}
         </p>
       )}
     </div>
@@ -534,7 +559,7 @@ export default function LatestBrief() {
                       yAxisId="index"
                       type="monotone"
                       dataKey="afterHoursPct"
-                      name="Out-of-hours %"
+                      name="After-hours messaging %"
                       stroke="#d97706"
                       strokeWidth={2}
                       connectNulls
@@ -576,6 +601,26 @@ export default function LatestBrief() {
                           Evidence grade: {item.evidenceGrade}
                         </StatusBadge>
                       </div>
+                      {item.interpretation && (
+                        <p className="mt-3 text-caption leading-6 text-slate-700">
+                          <strong>Interpretation:</strong> {item.interpretation}
+                        </p>
+                      )}
+                      {item.alternativeExplanation && (
+                        <p className="mt-2 text-caption leading-6 text-slate-500">
+                          <strong>Alternative explanation:</strong> {item.alternativeExplanation}
+                        </p>
+                      )}
+                      {item.recommendedNextStep && (
+                        <p className="mt-2 text-caption leading-6 text-slate-700">
+                          <strong>
+                            {item.actionability === 'diagnostic_question'
+                              ? 'Diagnostic question:'
+                              : 'Next step:'}
+                          </strong>{' '}
+                          {item.recommendedNextStep}
+                        </p>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -638,7 +683,10 @@ export default function LatestBrief() {
                 ))}
             </div>
             {!brief.actions?.primary && allRoleActions.length === 0 && (
-              <EmptyState>No specific action is recommended this week.</EmptyState>
+              <EmptyState>
+                No action recommended this week. Continue monitoring. No measured pattern currently
+                justifies intervention.
+              </EmptyState>
             )}
           </section>
         </>
@@ -679,6 +727,13 @@ export default function LatestBrief() {
                       <strong className="text-slate-900">{metric.label}</strong>
                       {metric.note && (
                         <p className="mt-1 max-w-xs text-caption text-slate-500">{metric.note}</p>
+                      )}
+                      {metric.readiness && (
+                        <p className="mt-1 max-w-xs text-caption text-slate-500">
+                          {String(metric.readiness.readiness).replace(/_/g, ' ')} ·{' '}
+                          {metric.readiness.mappedUsers}/{metric.readiness.totalUsers} people
+                          represented · {metric.readiness.eventCount} observations
+                        </p>
                       )}
                     </td>
                     <td className="px-4 py-4 font-bold text-slate-900">
@@ -792,31 +847,38 @@ export default function LatestBrief() {
         </div>
       )}
 
-      {(brief.prediction || brief.actionOutcomes?.length > 0) && (
+      {((brief.prediction && brief.prediction.displayTier !== 'hidden') ||
+        brief.actionOutcomes?.length > 0) && (
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          <section className="app-panel">
-            <h2>Forecast rule track record</h2>
-            <p className="app-muted">
-              A falsifiable directional rule, automatically checked next week.
-            </p>
-            {brief.prediction?.current && (
-              <div className="rounded-container border border-blue-200 bg-blue-50 p-4 text-caption leading-6 text-blue-950">
-                <strong>This week:</strong> {brief.prediction.current.statement}
-              </div>
-            )}
-            {brief.prediction?.lastGraded && (
-              <div className="mt-3 rounded-container border border-slate-200 p-4 text-caption leading-6 text-slate-700">
-                <strong>Last graded:</strong> {brief.prediction.lastGraded.statement}
-                <p className="mt-2">
-                  Observed value: {brief.prediction.lastGraded.actualValue ?? 'not available'} ·{' '}
-                  {brief.prediction.lastGraded.matched ? 'Rule matched' : 'Rule did not match'}
-                </p>
-              </div>
-            )}
-            <p className="mt-3 text-caption leading-5 text-slate-500">
-              {brief.prediction?.limitation}
-            </p>
-          </section>
+          {brief.prediction?.displayTier !== 'hidden' && (
+            <section className="app-panel">
+              <h2>
+                {brief.prediction?.displayTier === 'main_report'
+                  ? 'Forecast rule track record'
+                  : 'Experimental appendix — forecast rule track record'}
+              </h2>
+              <p className="app-muted">
+                An experimental directional rule, automatically checked next week.
+              </p>
+              {brief.prediction?.current && (
+                <div className="rounded-container border border-blue-200 bg-blue-50 p-4 text-caption leading-6 text-blue-950">
+                  <strong>This week:</strong> {brief.prediction.current.statement}
+                </div>
+              )}
+              {brief.prediction?.lastGraded && (
+                <div className="mt-3 rounded-container border border-slate-200 p-4 text-caption leading-6 text-slate-700">
+                  <strong>Last graded:</strong> {brief.prediction.lastGraded.statement}
+                  <p className="mt-2">
+                    Observed value: {brief.prediction.lastGraded.actualValue ?? 'not available'} ·{' '}
+                    {brief.prediction.lastGraded.matched ? 'Rule matched' : 'Rule did not match'}
+                  </p>
+                </div>
+              )}
+              <p className="mt-3 text-caption leading-5 text-slate-500">
+                {brief.prediction?.limitation}
+              </p>
+            </section>
+          )}
 
           <section className="app-panel">
             <h2>Action follow-through</h2>
@@ -833,21 +895,21 @@ export default function LatestBrief() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-bold text-slate-900">{item.title}</p>
                       <StatusBadge tone={item.outcome?.improved ? 'good' : 'neutral'}>
-                        {item.status}
+                        {item.outcome?.result || item.status}
                       </StatusBadge>
                     </div>
                     <p className="mt-2 text-caption text-slate-500">
                       Started {formatDate(item.startedAt)}
                       {item.teamName ? ` · ${item.teamName}` : ''}
                     </p>
-                    {item.outcome && (
+                    {item.outcome?.percentChange != null && (
                       <p className="mt-3 text-caption text-slate-700">
                         Measured change: {item.outcome.percentChange > 0 ? '+' : ''}
-                        {item.outcome.percentChange}% ·{' '}
-                        {item.outcome.improved
-                          ? 'Moved in intended direction'
-                          : 'No improvement confirmed'}
+                        {item.outcome.percentChange}% · {item.outcome.result}
                       </p>
+                    )}
+                    {item.outcome?.summary && (
+                      <p className="mt-2 text-caption text-slate-600">{item.outcome.summary}</p>
                     )}
                   </div>
                 ))

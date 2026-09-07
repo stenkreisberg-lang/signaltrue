@@ -21,6 +21,13 @@ import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
 import { upsertWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
+import {
+  ACTIONABILITY,
+  determineActionability,
+  determineMetricReadiness,
+  getForecastDisplayTier,
+  validateWeeklyBriefConsistency,
+} from './weeklyBriefEvidenceService.js';
 
 // ─── Signal type presentation (same as in signals.js) ───
 const SIGNAL_TYPE_PRESENTATION = {
@@ -322,6 +329,11 @@ function metricRow({
   available = true,
   measurementType = 'derived',
   note,
+  readiness = null,
+  numerator = null,
+  denominator = null,
+  display = null,
+  statusKey = null,
 }) {
   const safeCurrent = available ? roundValue(current, decimals) : null;
   const safePrevious = available ? roundValue(previous, decimals) : null;
@@ -349,6 +361,11 @@ function metricRow({
     higherIsBetter,
     measurementType,
     note,
+    readiness,
+    numerator,
+    denominator,
+    display,
+    statusKey,
   };
 }
 
@@ -377,6 +394,14 @@ function serializeTeamReadiness(item) {
 
 async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payload }) {
   try {
+    const validated = validateWeeklyBriefConsistency(payload);
+    if (!validated.valid) {
+      console.error('[WeeklyBrief] Consistency diagnostics', JSON.stringify(validated.diagnostics));
+    }
+    validated.brief.dataQuality = {
+      ...(validated.brief.dataQuality || {}),
+      consistencyDiagnostics: validated.diagnostics,
+    };
     await upsertWeeklyBriefSnapshot({
       orgId: org._id,
       orgName: org.name,
@@ -384,7 +409,7 @@ async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payloa
       periodEnd,
       reportMode,
       generatedAt: periodEnd,
-      payload,
+      payload: validated.brief,
     });
   } catch (error) {
     console.error('[WeeklyBrief] Failed to persist dashboard snapshot:', error.message);
@@ -446,7 +471,7 @@ export function detectDataAnomalies({
     anomalies.push({
       kind: 'after_hours_collapse',
       metric: 'afterHours',
-      text: `Out-of-hours activity reads 0% this week against a 6-week average of ${Math.round(sixWeekAvg.afterHoursRatio * 100)}%. A drop to exactly zero is almost certainly a data capture issue — do not read this as a healthy improvement.`,
+      text: `After-hours messaging reads 0% this week against a 6-week average of ${Math.round(sixWeekAvg.afterHoursRatio * 100)}%. A drop to exactly zero is almost certainly a data capture issue — do not read this as a healthy improvement.`,
     });
     suspectMetrics.add('afterHours');
   }
@@ -482,7 +507,7 @@ const PREDICTION_METRIC_LABELS = {
   meetings: 'meeting count',
   messages: 'team messages',
   meetingHours: 'meeting hours per person',
-  afterHoursRatioPct: 'out-of-hours work %',
+  afterHoursRatioPct: 'after-hours messaging share',
   focusTimeAvailability: 'uninterrupted time (hrs)',
 };
 
@@ -658,7 +683,13 @@ export async function generateWeeklyBrief(orgId) {
   ] = await Promise.all([
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
-      { $group: { _id: { source: '$source', eventType: '$eventType' }, count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { source: '$source', eventType: '$eventType' },
+          count: { $sum: 1 },
+          mappedActors: { $addToSet: '$actorUserId' },
+        },
+      },
     ]),
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: lastWeekStart, $lt: thisWeekStart } } },
@@ -730,7 +761,7 @@ export async function generateWeeklyBrief(orgId) {
         .limit(10)
         .lean(),
       // Predictions made in earlier briefs (most recent first) — for grading + track record
-      BriefPrediction.find({ orgId: org._id }).sort({ weekStart: -1 }).limit(9).lean(),
+      BriefPrediction.find({ orgId: org._id }).sort({ weekStart: -1 }).limit(30).lean(),
       // Oldest metric record → how many weeks of baseline history exist
       IntegrationMetricsDaily.findOne({ orgId: org._id }).sort({ date: 1 }).select('date').lean(),
       // Mapping coverage last week — to detect coverage regression
@@ -856,6 +887,82 @@ export async function generateWeeklyBrief(orgId) {
     slack: getCount(sixWeekEvents, 'slack', 'message') / 6,
     gchat: getCount(sixWeekEvents, 'google-chat', 'message') / 6,
   };
+
+  const representedUsersFor = (eventType, sources) =>
+    new Set(
+      twEvents
+        .filter(
+          (row) => row._id.eventType === eventType && (!sources || sources.includes(row._id.source))
+        )
+        .flatMap((row) => row.mappedActors || [])
+        .filter(Boolean)
+        .map(String)
+    ).size;
+  const calendarSources = ['microsoft-outlook', 'google-calendar'];
+  const messagingSources = ['microsoft-teams', 'slack', 'google-chat'];
+  const calendarMappedUsers = representedUsersFor('meeting', calendarSources);
+  const messagingMappedUsers = representedUsersFor('message', messagingSources);
+  const calendarEventCount = twEvents
+    .filter((row) => row._id.eventType === 'meeting' && calendarSources.includes(row._id.source))
+    .reduce((sum, row) => sum + row.count, 0);
+  const messagingEventCount = twEvents
+    .filter((row) => row._id.eventType === 'message' && messagingSources.includes(row._id.source))
+    .reduce((sum, row) => sum + row.count, 0);
+  const readinessFor = (metric, source, mappedUsers, eventCount) =>
+    determineMetricReadiness({ metric, source, mappedUsers, totalUsers, eventCount });
+  const metricReadiness = {
+    meetings: readinessFor('meetings', 'calendar', calendarMappedUsers, calendarEventCount),
+    meeting_hours: readinessFor(
+      'meeting_participant_hours',
+      'calendar',
+      calendarMappedUsers,
+      calendarEventCount
+    ),
+    back_to_back: readinessFor(
+      'consecutive_meetings',
+      'calendar',
+      calendarMappedUsers,
+      calendarEventCount
+    ),
+    after_hours: readinessFor(
+      'after_hours_messaging',
+      'collaboration-messages',
+      messagingMappedUsers,
+      messagingEventCount
+    ),
+    messages: readinessFor(
+      'message_volume',
+      'collaboration-messages',
+      messagingMappedUsers,
+      messagingEventCount
+    ),
+    focus_time: readinessFor(
+      'uninterrupted_focus_time',
+      'calendar',
+      calendarMappedUsers,
+      calendarEventCount
+    ),
+    fragmentation: readinessFor(
+      'schedule_fragmentation',
+      'calendar',
+      calendarMappedUsers,
+      calendarEventCount
+    ),
+    recurring_load: readinessFor(
+      'recurring_meeting_load',
+      'calendar',
+      calendarMappedUsers,
+      calendarEventCount
+    ),
+  };
+  const isMetricBlocked = (key) =>
+    ['blocked', 'blocked_low_volume'].includes(metricReadiness[key]?.readiness);
+  const isMetricEligible = (key) => Boolean(metricReadiness[key]?.eligibleForStatus);
+  const workPatternMetricKeys = ['meeting_hours', 'focus_time', 'after_hours', 'messages'];
+  const eligibleEngagementSnapshot = workPatternMetricKeys.every(isMetricEligible)
+    ? engagementSnapshot
+    : null;
+  const eligibleEngagementTeams = eligibleEngagementSnapshot ? engagementStrainByTeam : [];
 
   const twOrgMetricsArr = chooseLatestMetricRecords(twMetricsArr);
   const lwOrgMetricsArr = chooseLatestMetricRecords(lwMetricsArr);
@@ -1001,6 +1108,12 @@ export async function generateWeeklyBrief(orgId) {
     calendarFragmentation: avgField(lwOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(lwOrgMetricsArr, 'recurringMeetingBurden'),
   };
+  const twAfterHoursMessageCount = Math.round(
+    avgField(twOrgMetricsArr, 'afterHoursMessageCount') || 0
+  );
+  const twObservedMessageCount = Math.round(
+    avgField(twOrgMetricsArr, 'messageCount7d') || twMessages || 0
+  );
 
   // ─── 6-week baseline averages (per-person) ───
   const sixWeekAvg = {
@@ -1076,11 +1189,23 @@ export async function generateWeeklyBrief(orgId) {
     lastWeekMappedActors.length > 0 &&
     mappedActorCount.length < lastWeekMappedActors.length * 0.8;
 
+  const predictionReadinessKey = {
+    meetings: 'meetings',
+    messages: 'messages',
+    meetingHours: 'meeting_hours',
+    afterHoursRatioPct: 'after_hours',
+    focusTimeAvailability: 'focus_time',
+  };
+
   // ─── Grade last week's prediction (self-grading track record) ───
   const gradingCtx = { tw, twMeetings, twMessages };
   let gradedPrediction = null;
   const ungraded = priorPredictions.find(
-    (p) => !p.outcome?.evaluated && new Date(p.weekStart) < thisWeekStart
+    (prediction) =>
+      !prediction.outcome?.evaluated &&
+      new Date(prediction.weekStart) < thisWeekStart &&
+      (!predictionReadinessKey[prediction.metric] ||
+        isMetricEligible(predictionReadinessKey[prediction.metric]))
   );
   if (ungraded) {
     const actual = predictionMetricValue(ungraded.metric, gradingCtx);
@@ -1111,8 +1236,9 @@ export async function generateWeeklyBrief(orgId) {
   const evaluatedPredictions = [
     ...(gradedPrediction ? [gradedPrediction] : []),
     ...priorPredictions.filter((p) => p.outcome?.evaluated),
-  ].slice(0, 8);
+  ].slice(0, 26);
   const predictionsHeld = evaluatedPredictions.filter((p) => p.outcome.held).length;
+  const forecastQuality = getForecastDisplayTier(evaluatedPredictions.length, predictionsHeld);
 
   // Cost is shown only when the client supplied a loaded hourly cost. The
   // comparison uses the organization's own baseline, not an invented benchmark.
@@ -1122,6 +1248,7 @@ export async function generateWeeklyBrief(orgId) {
   let costEstimate = null;
   if (
     dataReadinessStatus === 'Ready' &&
+    isMetricEligible('meeting_hours') &&
     hourlyCost > 0 &&
     sixWeekAvg.meetingHours > 0 &&
     tw.meetingHours > sixWeekAvg.meetingHours * 1.15 &&
@@ -1363,7 +1490,7 @@ export async function generateWeeklyBrief(orgId) {
   // Meeting analysis
   // Track meeting trend so downstream checks can avoid contradictory advice
   let meetDeltaPct = 0;
-  if (twMeetings > 0 || lwMeetings > 0) {
+  if (!isMetricBlocked('meetings') && (twMeetings > 0 || lwMeetings > 0)) {
     meetDeltaPct = lwMeetings > 0 ? ((twMeetings - lwMeetings) / lwMeetings) * 100 : 0;
     const aboveSixWeek = sixWeekAvg.meetings > 0 && twMeetings > sixWeekAvg.meetings * 1.15;
     if (meetDeltaPct > 15) {
@@ -1390,7 +1517,7 @@ export async function generateWeeklyBrief(orgId) {
   // Meeting duration + back-to-back
   // Only flag meeting-load issues when meetings are NOT already trending down (avoid contradictory advice)
   const meetingsTrending = meetDeltaPct; // positive = up, negative = down
-  if (tw.meetingHours > 0) {
+  if (!isMetricBlocked('meeting_hours') && tw.meetingHours > 0) {
     const hoursPerDay = tw.meetingHours / 5;
     const meetingHoursAboveBaseline =
       sixWeekAvg.meetingHours > 0 && tw.meetingHours > sixWeekAvg.meetingHours * 1.15;
@@ -1420,7 +1547,7 @@ export async function generateWeeklyBrief(orgId) {
       });
     }
   }
-  if (tw.backToBack > 5) {
+  if (!isMetricBlocked('back_to_back') && tw.backToBack > 5) {
     const b2bDelta =
       lw.backToBack > 0 ? ((tw.backToBack - lw.backToBack) / lw.backToBack) * 100 : 100;
     const conf = obsConfidence([tw.backToBack > 8, b2bDelta > 20, tw.afterHoursRatio > 0.2]);
@@ -1440,7 +1567,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Messaging analysis
-  if (twMessages > 0 || lwMessages > 0) {
+  if (!isMetricBlocked('messages') && (twMessages > 0 || lwMessages > 0)) {
     const msgDelta = lwMessages > 0 ? ((twMessages - lwMessages) / lwMessages) * 100 : 0;
     if (msgDelta > 25) {
       const conf = obsConfidence([msgDelta > 40, twMeetings >= lwMeetings]);
@@ -1468,8 +1595,12 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // After-hours analysis
-  if (tw.afterHoursMsg > 0 || tw.afterHoursEmail > 0.15) {
-    const totalAfterHours = tw.afterHoursMsg;
+  if (
+    !isMetricBlocked('after_hours') &&
+    twObservedMessageCount > 0 &&
+    (twAfterHoursMessageCount > 0 || tw.afterHoursEmail > 0.15)
+  ) {
+    const totalAfterHours = twAfterHoursMessageCount;
     const afterHoursRatioPct = Math.round((tw.afterHoursRatio || 0) * 100);
     if (afterHoursRatioPct >= 30) {
       const conf = obsConfidence([
@@ -1478,18 +1609,18 @@ export async function generateWeeklyBrief(orgId) {
         tw.meetingHours > 15,
       ]);
       observations.push({
-        text: `${afterHoursRatioPct}% of team messages were sent outside the configured working schedule. ${totalAfterHours > 0 ? `That's ${Math.round(totalAfterHours)} out-of-hours messages this week.` : ''}`,
+        text: `${totalAfterHours} of ${twObservedMessageCount} observed messages occurred outside configured working hours (${afterHoursRatioPct}%). Coverage: ${metricReadiness.after_hours.mappedUsers} of ${totalUsers} employees.`,
         confidence: conf,
       });
       risks.push(
-        'Out-of-hours activity is above SignalTrue’s review threshold. This describes schedule spillover, not its cause; confirm deadlines, time zones, and working agreements.'
+        'After-hours messaging is above SignalTrue’s review threshold. This describes message timing, not work duration or its cause; confirm deadlines, time zones, and working agreements.'
       );
       recommendations.push(
         'Implement "quiet hours" in Teams/Slack (e.g., schedule send for next morning). Leadership should model boundary-setting by not sending after 6pm.'
       );
     } else if (afterHoursRatioPct >= 15) {
       observations.push({
-        text: `Out-of-hours messaging is at ${afterHoursRatioPct}%, below the escalation threshold but available for trend monitoring.`,
+        text: `${totalAfterHours} of ${twObservedMessageCount} observed messages occurred outside configured working hours (${afterHoursRatioPct}%). The result remains a directional messaging observation.`,
         confidence: 'Low',
       });
     }
@@ -1507,7 +1638,11 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Focus time analysis (new metric)
-  if (tw.focusTimeAvailability != null && tw.focusTimeAvailability > 0) {
+  if (
+    !isMetricBlocked('focus_time') &&
+    tw.focusTimeAvailability != null &&
+    tw.focusTimeAvailability > 0
+  ) {
     const focusPerDay = tw.focusTimeAvailability / 5;
     if (
       sixWeekAvg.focusTimeAvailability > 0 &&
@@ -1529,7 +1664,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Calendar fragmentation (new metric)
-  if (tw.calendarFragmentation > 60) {
+  if (!isMetricBlocked('fragmentation') && tw.calendarFragmentation > 60) {
     const conf = obsConfidence([
       tw.calendarFragmentation > 75,
       tw.backToBack > 5,
@@ -1541,10 +1676,37 @@ export async function generateWeeklyBrief(orgId) {
     });
   }
 
-  // Signals analysis
-  if (twSignals.length > 0) {
-    const criticalSignals = twSignals.filter((s) => s.severity === 'Critical');
-    const riskSignals = twSignals.filter((s) => s.severity === 'Risk');
+  const signalReadinessKey = (signalType) =>
+    ({
+      'meeting-load-spike': 'meeting_hours',
+      'after-hours-creep': 'after_hours',
+      'focus-erosion': 'focus_time',
+      'recovery-deficit': 'after_hours',
+      'context-switching': 'fragmentation',
+      'meeting-exclusion': 'meetings',
+      'message-volume-drop': 'messages',
+      boundary_erosion: 'after_hours',
+      recovery_collapse: 'after_hours',
+      meeting_fatigue: 'meeting_hours',
+      cognitive_overload: 'fragmentation',
+      overcommitment_risk: 'meeting_hours',
+      systemic_overload: 'meeting_hours',
+      async_breakdown: 'messages',
+      passive_disengagement: 'messages',
+    })[signalType] || null;
+  const eligibleTwSignals = twSignals.filter((signal) => {
+    const key = signalReadinessKey(signal.signalType);
+    return !key || isMetricEligible(key);
+  });
+  const eligibleTwCKSignals = twCKSignals.filter((signal) => {
+    const key = signalReadinessKey(signal.signalType);
+    return !key || isMetricEligible(key);
+  });
+
+  // Signals analysis. Any signal backed by a blocked metric is excluded from alerts and status.
+  if (eligibleTwSignals.length > 0) {
+    const criticalSignals = eligibleTwSignals.filter((s) => s.severity === 'Critical');
+    const riskSignals = eligibleTwSignals.filter((s) => s.severity === 'Risk');
 
     if (criticalSignals.length > 0) {
       const signalNames = criticalSignals.map((s) => {
@@ -1579,7 +1741,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // CK Signals analysis
-  const highCK = twCKSignals.filter((s) => s.severity >= 65);
+  const highCK = eligibleTwCKSignals.filter((s) => s.severity >= 65);
   if (highCK.length > 0) {
     for (const ck of highCK.sort((a, b) => b.severity - a.severity).slice(0, 3)) {
       const label = CK_SIGNAL_LABELS[ck.signalType] || {};
@@ -1594,12 +1756,16 @@ export async function generateWeeklyBrief(orgId) {
 
   // Determine overall health verdict — uses escalation service (5-level)
   const critCount =
-    twSignals.filter((s) => s.severity === 'Critical').length +
-    twCKSignals.filter((s) => s.severity >= 80).length;
+    eligibleTwSignals.filter((s) => s.severity === 'Critical').length +
+    eligibleTwCKSignals.filter((s) => s.severity >= 80).length;
   const riskCount =
-    twSignals.filter((s) => s.severity === 'Risk').length +
-    twCKSignals.filter((s) => s.severity >= 65 && s.severity < 80).length;
-  const driftingTeams = teamBDIData.filter((t) =>
+    eligibleTwSignals.filter((s) => s.severity === 'Risk').length +
+    eligibleTwCKSignals.filter((s) => s.severity >= 65 && s.severity < 80).length;
+  const statusEligibleTeamBDIData =
+    Object.values(metricReadiness).filter((item) => item.eligibleForStatus).length >= 4
+      ? teamBDIData
+      : [];
+  const driftingTeams = statusEligibleTeamBDIData.filter((t) =>
     ['Early Drift', 'Developing Drift', 'Critical Drift'].includes(t.bdi.driftState)
   );
 
@@ -1627,42 +1793,67 @@ export async function generateWeeklyBrief(orgId) {
       calendarFragmentation: avgField(recs, 'calendarFragmentationScore'),
     }));
 
-  // Build org-level escalation status
-  const orgStatus = calculateTeamStatus({
-    currentMetrics: {
-      meetingHours: tw.meetingHours,
-      backToBack: tw.backToBack,
-      afterHoursRatio: tw.afterHoursRatio,
-      focusTimeAvailability: tw.focusTimeAvailability,
-      calendarFragmentation: tw.calendarFragmentation,
-      recurringBurden: tw.recurringBurden,
-      asyncVolume: tw.messages,
-    },
-    previousMetrics: {
-      meetingHours: lw.meetingHours,
-      backToBack: lw.backToBack,
-      afterHoursRatio: lw.afterHoursRatio,
-      focusTimeAvailability: lw.focusTimeAvailability,
-      calendarFragmentation: lw.calendarFragmentation,
-      recurringBurden: lw.recurringBurden,
-      asyncVolume: lw.messages,
-    },
-    weeklyHistory: [{ ...tw }, ...weeklyHistoryNewestFirst], // current week first, then history
-    baseline: {},
-    contextTags,
-    bdiData:
-      driftingTeams.length > 0
-        ? driftingTeams.sort((a, b) => b.bdi.driftScore - a.bdi.driftScore)[0].bdi
-        : null,
-  });
+  // Build organization status from eligible metrics only. Blocked and directional-only
+  // metrics remain visible with their readiness, but cannot move the headline status.
+  const statusReadinessKey = {
+    meetingHours: 'meeting_hours',
+    backToBack: 'back_to_back',
+    afterHoursRatio: 'after_hours',
+    focusTimeAvailability: 'focus_time',
+    calendarFragmentation: 'fragmentation',
+    recurringBurden: 'recurring_load',
+    asyncVolume: 'messages',
+  };
+  const statusValue = (statusKey, value) =>
+    isMetricEligible(statusReadinessKey[statusKey]) ? value : null;
+  const eligibleMetricKeys = Object.entries(statusReadinessKey)
+    .filter(([, readinessKey]) => isMetricEligible(readinessKey))
+    .map(([statusKey]) => statusKey);
+  const blockedMetricKeys = Object.entries(statusReadinessKey)
+    .filter(([, readinessKey]) => !isMetricEligible(readinessKey))
+    .map(([statusKey]) => statusKey);
+  const statusMetrics = (values) =>
+    Object.fromEntries(
+      Object.entries(statusReadinessKey).map(([statusKey]) => [
+        statusKey,
+        statusValue(statusKey, values[statusKey]),
+      ])
+    );
+  const orgStatus =
+    eligibleMetricKeys.length === 0
+      ? {
+          status: 'Insufficient data',
+          confidence: 'Low',
+          reason: 'No eligible metric has enough coverage and event volume for status assessment.',
+          deterioratingMetrics: [],
+          weeksPersisted: 0,
+          escalationAction: null,
+          notifyLevel: 'report_only',
+        }
+      : calculateTeamStatus({
+          currentMetrics: statusMetrics(tw),
+          previousMetrics: statusMetrics(lw),
+          weeklyHistory: [{ ...statusMetrics(tw) }, ...weeklyHistoryNewestFirst.map(statusMetrics)],
+          baseline: {},
+          contextTags,
+          bdiData:
+            driftingTeams.length > 0
+              ? driftingTeams.sort((a, b) => b.bdi.driftScore - a.bdi.driftScore)[0].bdi
+              : null,
+        });
+  orgStatus.eligibleMetrics = eligibleMetricKeys.length;
+  orgStatus.blockedMetrics = blockedMetricKeys.length;
+  orgStatus.eligibleMetricKeys = eligibleMetricKeys;
+  orgStatus.blockedMetricKeys = blockedMetricKeys;
 
-  const verdictText =
+  let verdictText =
     dataReadinessStatus === 'Ready' ? orgStatus.status : 'Data mapping needs attention';
-  const verdictConfidence = dataReadinessStatus === 'Ready' ? orgStatus.confidence : 'Low';
-  const verdictSummary =
+  let verdictConfidence = dataReadinessStatus === 'Ready' ? orgStatus.confidence : 'Low';
+  let verdictSummary =
     dataReadinessStatus === 'Ready'
       ? orgStatus.reason
       : `SignalTrue is receiving workplace metadata, but ${mappedActorEventCount}/${totalActivityEvents} activity events are mapped to users and ${readyTeamCount}/${eligibleTeamReadiness.length} eligible teams are ready this week. Modeled work-pattern conclusions are unavailable until attribution and team readiness improve.`;
+  let displayEscalationAction = orgStatus.escalationAction;
 
   // If no observations were generated but we have data, add a neutral one
   if (observations.length === 0 && twTotal > 0) {
@@ -1670,9 +1861,6 @@ export async function generateWeeklyBrief(orgId) {
       text: `Overall work activity is stable with ${twTotal} events tracked across ${connectedSources.length} data source(s). No significant changes detected week-over-week.`,
       confidence: 'Low',
     });
-    recommendations.push(
-      'Continue monitoring. Stable weeks are a good time to invest in process improvement or address small friction points before they grow.'
-    );
   }
 
   // ─── AI Analysis Layer ───
@@ -1690,6 +1878,11 @@ export async function generateWeeklyBrief(orgId) {
     employeeCount,
     connectedUserCount, // how many users have calendar data — AI uses this for context
     coveragePct, // % of org with data — AI can flag low coverage
+    metricReadiness,
+    afterHoursCounts: {
+      numerator: twAfterHoursMessageCount,
+      denominator: twObservedMessageCount,
+    },
     tw,
     lw,
     sixWeekAvg, // per-person figures (matches "Workload detail" table rows)
@@ -1701,11 +1894,11 @@ export async function generateWeeklyBrief(orgId) {
     lwMeetings,
     twMessages,
     lwMessages,
-    twSignals,
+    twSignals: eligibleTwSignals,
     lwSignals,
-    twCKSignals,
+    twCKSignals: eligibleTwCKSignals,
     lwCKSignals,
-    teamBDIData,
+    teamBDIData: statusEligibleTeamBDIData,
     observations: observations.map((o) => (typeof o === 'string' ? o : o.text)),
     risks,
     connectedSources,
@@ -1724,6 +1917,7 @@ export async function generateWeeklyBrief(orgId) {
     const afterHoursPct = Math.round((tw.afterHoursRatio || 0) * 100);
     let candidate = null;
     if (
+      isMetricEligible('meeting_hours') &&
       sixWeekAvg.meetingHours > 0 &&
       tw.meetingHours > sixWeekAvg.meetingHours * 1.15 &&
       tw.meetingHours >= lw.meetingHours * 0.95
@@ -1737,15 +1931,24 @@ export async function generateWeeklyBrief(orgId) {
         baselineValue: Math.round(tw.meetingHours * 10) / 10,
         statement: `If nothing changes, meeting hours will stay above ${threshold}h per person next week (currently ${fmtNum(tw.meetingHours, 1)}h, ~${fmtNum(mhPerDay, 1)}h/day).`,
       };
-    } else if (!suspectMetrics.has('afterHours') && afterHoursPct >= 20) {
+    } else if (
+      isMetricEligible('after_hours') &&
+      !suspectMetrics.has('afterHours') &&
+      afterHoursPct >= 20
+    ) {
       candidate = {
         metric: 'afterHoursRatioPct',
         comparator: 'gte',
         threshold: 15,
         baselineValue: afterHoursPct,
-        statement: `Out-of-hours work (${afterHoursPct}%) will remain above 15% next week unless workload structure changes.`,
+        statement: `After-hours messaging (${afterHoursPct}%) will remain above 15% next week unless the measured pattern changes.`,
       };
-    } else if (twMeetings > 0 && lwMeetings > 0 && twMeetings < lwMeetings * 0.85) {
+    } else if (
+      isMetricEligible('meetings') &&
+      twMeetings > 0 &&
+      lwMeetings > 0 &&
+      twMeetings < lwMeetings * 0.85
+    ) {
       // Downward trend → predict it holds (falsifiable stability call)
       const threshold = Math.round(lwMeetings * 1.0);
       candidate = {
@@ -1755,7 +1958,7 @@ export async function generateWeeklyBrief(orgId) {
         baselineValue: twMeetings,
         statement: `The drop in meeting volume will hold: next week's meeting count stays at or below ${threshold} (this week: ${twMeetings}).`,
       };
-    } else if (twMeetings > 0) {
+    } else if (isMetricEligible('meetings') && twMeetings > 0) {
       // Stability call — still falsifiable
       const threshold = Math.round(twMeetings * 1.25);
       candidate = {
@@ -1778,6 +1981,168 @@ export async function generateWeeklyBrief(orgId) {
         console.error('[WeeklyBrief] Failed to save prediction:', err.message);
         newPrediction = candidate; // still render it even if persistence failed
       }
+    }
+  }
+
+  const actionMetric = {
+    meetingHours: {
+      readinessKey: 'meeting_hours',
+      label: 'Meeting participant-hours per person',
+      measure: 'meeting participant-hours per person',
+      question:
+        'Meeting participant-hours moved this week. Was this caused by a project milestone, or has recurring coordination load changed?',
+      experiment:
+        'For the next two weeks, remove or shorten one recurring meeting from the affected team.',
+      success:
+        'Meeting participant-hours per person return toward baseline without increased after-hours messaging.',
+    },
+    backToBack: {
+      readinessKey: 'back_to_back',
+      label: 'Consecutive meeting blocks',
+      measure: 'consecutive meeting blocks per person',
+      question:
+        'Consecutive meeting blocks increased. Was this a planned review cycle, or did calendar spacing change?',
+      experiment:
+        'For the next two weeks, add a ten-minute buffer to one recurring meeting sequence.',
+      success: 'Consecutive meeting blocks per person return toward baseline.',
+    },
+    afterHoursRatio: {
+      readinessKey: 'after_hours',
+      label: 'After-hours messaging',
+      measure: 'after-hours message count and share, with represented-user coverage',
+      question:
+        'After-hours messaging changed. Do time zones, a deadline, or working agreements explain the observed timing?',
+      experiment:
+        'For the next two weeks, test scheduled-send guidance for the affected team after configured working hours.',
+      success:
+        'After-hours message count returns toward baseline without a rise in unresolved coordination load.',
+    },
+    focusTimeAvailability: {
+      readinessKey: 'focus_time',
+      label: 'Uninterrupted calendar availability',
+      measure: 'uninterrupted calendar availability per person',
+      question:
+        'Uninterrupted calendar availability declined. Was this a temporary planning cycle, or did meeting distribution change?',
+      experiment:
+        'For the next two weeks, protect one two-hour no-meeting block for the affected team.',
+      success: 'Uninterrupted calendar availability per person returns toward baseline.',
+    },
+    calendarFragmentation: {
+      readinessKey: 'fragmentation',
+      label: 'Schedule fragmentation',
+      measure: 'schedule fragmentation index',
+      question:
+        'Schedule fragmentation increased. Which meeting pattern spread the day into shorter gaps?',
+      experiment:
+        'For the next two weeks, cluster one recurring meeting sequence into a single time block.',
+      success: 'The schedule fragmentation index returns toward baseline.',
+    },
+    recurringBurden: {
+      readinessKey: 'recurring_load',
+      label: 'Recurring meeting load',
+      measure: 'recurring meeting load share',
+      question:
+        'Recurring meeting load increased. Which newly recurring commitment explains the change?',
+      experiment:
+        'For the next two weeks, remove or shorten one recurring meeting from the affected team.',
+      success: 'Recurring meeting load share returns toward baseline.',
+    },
+    asyncVolume: {
+      readinessKey: 'messages',
+      label: 'Message volume',
+      measure: 'observed message count with represented-user coverage',
+      question:
+        'Observed message volume changed. Did work move channels, did coverage change, or did coordination demand change?',
+      experiment: 'For the next two weeks, test one agreed asynchronous update cadence.',
+      success:
+        'Message volume returns toward baseline without increased meeting participant-hours.',
+    },
+  };
+  const affectedStatusKey = orgStatus.deterioratingMetrics?.[0] || null;
+  const affected = actionMetric[affectedStatusKey] || null;
+  const actionability = determineActionability({
+    evidence: orgStatus.confidence,
+    readiness: affected ? metricReadiness[affected.readinessKey]?.readiness : 'blocked',
+    persistence: orgStatus.weeksPersisted,
+    severity: orgStatus.status,
+  });
+  const observedProblem = observations.find((item) => !item.text?.startsWith('⚠️'))?.text || null;
+  let gatedPrimaryAction = null;
+  if (affected && actionability !== ACTIONABILITY.NO_ACTION && observedProblem) {
+    const diagnostic = actionability === ACTIONABILITY.DIAGNOSTIC_QUESTION;
+    gatedPrimaryAction = {
+      observedProblem,
+      evidenceGrade: orgStatus.confidence,
+      affectedMetric: affected.label,
+      action: diagnostic ? affected.question : affected.experiment,
+      owner: 'Team lead',
+      effort: diagnostic ? 'Low' : actionability === ACTIONABILITY.INTERVENTION ? 'Medium' : 'Low',
+      reviewWindow: diagnostic ? '7 days' : '14 days',
+      measure: affected.measure,
+      successCondition: diagnostic
+        ? 'The cause is documented and the next brief has adequate data to decide whether an experiment is justified.'
+        : affected.success,
+      actionability,
+    };
+  }
+  const evidenceSignals = observations.map((item, index) => ({
+    observation: item.text || String(item),
+    evidence: {
+      grade: item.confidence || 'Low',
+      metric: index === 0 ? affected?.label || null : null,
+      readiness: index === 0 && affected ? metricReadiness[affected.readinessKey] : null,
+    },
+    interpretation:
+      risks[index] || 'The observation does not by itself establish a cause or outcome.',
+    alternativeExplanation:
+      'A launch, planning cycle, leave pattern, time-zone mix, channel change, or temporary project review may explain the movement.',
+    actionability: index === 0 ? actionability : ACTIONABILITY.DIAGNOSTIC_QUESTION,
+    recommendedNextStep:
+      index === 0 && gatedPrimaryAction
+        ? gatedPrimaryAction.action
+        : 'Ask what changed before adjusting policy or workload.',
+  }));
+  const preRenderValidation = validateWeeklyBriefConsistency({
+    status: {
+      label: verdictText,
+      evidenceGrade: verdictConfidence,
+      deterioratingMetrics: orgStatus.deterioratingMetrics,
+    },
+    metrics: [
+      {
+        key: 'after_hours',
+        statusKey: 'afterHoursRatio',
+        unit: '%',
+        current:
+          twObservedMessageCount > 0 && !isMetricBlocked('after_hours')
+            ? Math.round((tw.afterHoursRatio || 0) * 100)
+            : null,
+        numerator: twAfterHoursMessageCount,
+        denominator: twObservedMessageCount,
+        available: twObservedMessageCount > 0 && !isMetricBlocked('after_hours'),
+        readiness: metricReadiness.after_hours,
+      },
+    ],
+    actions: { primary: gatedPrimaryAction },
+    signals: [
+      ...eligibleTwSignals.map((signal) => ({ severity: signal.severity })),
+      ...eligibleTwCKSignals.map((signal) => ({ severity: signal.severity })),
+    ],
+  });
+  if (!preRenderValidation.valid) {
+    console.error(
+      '[WeeklyBrief] Pre-render consistency diagnostics',
+      JSON.stringify(preRenderValidation.diagnostics)
+    );
+    gatedPrimaryAction = preRenderValidation.brief.actions.primary;
+    if (preRenderValidation.brief.status?.label !== verdictText) {
+      verdictText = preRenderValidation.brief.status.label;
+      verdictConfidence = preRenderValidation.brief.status.evidenceGrade || 'Low';
+      verdictSummary = preRenderValidation.brief.status.reason || verdictSummary;
+      displayEscalationAction = null;
+    }
+    if (preRenderValidation.brief.metrics[0]?.available === false) {
+      suspectMetrics.add('afterHours');
     }
   }
 
@@ -1830,8 +2195,8 @@ export async function generateWeeklyBrief(orgId) {
   html += `</p>`;
   html += `</div>`;
   html += `<p style="${S.p} margin:0;color:#0f172a;font-size:15px;">${verdictSummary}</p>`;
-  if (orgStatus.escalationAction && orgStatus.status !== STATUS_LEVELS.STABLE) {
-    html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>Escalation:</strong> ${orgStatus.escalationAction}</p>`;
+  if (displayEscalationAction && verdictText !== STATUS_LEVELS.STABLE) {
+    html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>Escalation:</strong> ${displayEscalationAction}</p>`;
   }
   // Baseline tenure — comparisons against your own history get sharper every week
   html += `<p style="${S.pSmall} margin:8px 0 0 0;">Baselines built on <strong>${weeksOfHistory} week${weeksOfHistory === 1 ? '' : 's'}</strong> of your organization's history${weeksOfHistory < 6 ? ' — still calibrating; trend conclusions strengthen after 6 weeks' : ''}.</p>`;
@@ -1845,33 +2210,47 @@ export async function generateWeeklyBrief(orgId) {
     {
       label: 'Meetings',
       value: twMeetings,
-      change: pctChangeLabel(twMeetings, lwMeetings),
+      change: isMetricBlocked('meetings')
+        ? 'Insufficient data'
+        : pctChangeLabel(twMeetings, lwMeetings),
+      readiness: `${metricReadiness.meetings.mappedUsers}/${totalUsers} people represented`,
       color: twMeetings > lwMeetings ? '#ef4444' : '#10b981',
     },
     {
-      label: 'Meeting Hours',
-      value: `${fmtNum(tw.meetingHours, 1)}h`,
-      change: pctChangeLabel(tw.meetingHours, lw.meetingHours),
+      label: 'Meeting participant-hours',
+      value: isMetricBlocked('meeting_hours')
+        ? 'Insufficient data'
+        : `${fmtNum(tw.meetingHours, 1)}h`,
+      change: isMetricBlocked('meeting_hours')
+        ? 'Insufficient data'
+        : pctChangeLabel(tw.meetingHours, lw.meetingHours),
+      readiness: `${metricReadiness.meeting_hours.mappedUsers}/${totalUsers} people represented`,
       color: tw.meetingHours > lw.meetingHours ? '#ef4444' : '#10b981',
     },
-    suspectMetrics.has('afterHours')
+    suspectMetrics.has('afterHours') || isMetricBlocked('after_hours')
       ? {
-          label: 'Out-of-Hours Work',
-          value: '—',
-          change: 'data gap',
+          label: 'After-hours messaging',
+          value: twObservedMessageCount === 0 ? 'No usable observations' : 'Insufficient data',
+          change:
+            twObservedMessageCount === 0
+              ? `${metricReadiness.after_hours.mappedUsers}/${totalUsers} people represented`
+              : `${twAfterHoursMessageCount} of ${twObservedMessageCount} messages · ${metricReadiness.after_hours.mappedUsers}/${totalUsers} people`,
+          readiness: metricReadiness.after_hours.reason,
           color: '#f59e0b',
         }
       : {
-          label: 'Out-of-Hours Work',
-          value: `${Math.round((tw.afterHoursRatio || 0) * 100)}%`,
-          change: pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio),
+          label: 'After-hours messaging',
+          value: `${twAfterHoursMessageCount} of ${twObservedMessageCount}`,
+          change: `${Math.round((tw.afterHoursRatio || 0) * 100)}% outside configured hours · ${pctChangeLabel(tw.afterHoursRatio, lw.afterHoursRatio)}`,
+          readiness: `${metricReadiness.after_hours.mappedUsers}/${totalUsers} people represented`,
           color: tw.afterHoursRatio > lw.afterHoursRatio ? '#ef4444' : '#10b981',
         },
-    suspectMetrics.has('focusTime')
+    suspectMetrics.has('focusTime') || isMetricBlocked('focus_time')
       ? {
           label: 'Uninterrupted Time',
-          value: '—',
-          change: 'not measured',
+          value: 'Insufficient data',
+          change: metricReadiness.focus_time.reason,
+          readiness: `${metricReadiness.focus_time.mappedUsers}/${totalUsers} people represented`,
           color: '#9ca3af',
         }
       : {
@@ -1881,11 +2260,12 @@ export async function generateWeeklyBrief(orgId) {
             tw.focusTimeAvailability && lw.focusTimeAvailability
               ? pctChangeLabel(tw.focusTimeAvailability, lw.focusTimeAvailability)
               : '—',
+          readiness: `${metricReadiness.focus_time.mappedUsers}/${totalUsers} people represented`,
           color: tw.focusTimeAvailability < lw.focusTimeAvailability ? '#ef4444' : '#10b981',
         },
     {
       label: 'Active Alerts',
-      value: `${twSignals.length + twCKSignals.length}`,
+      value: `${eligibleTwSignals.length + eligibleTwCKSignals.length}`,
       change:
         critCount > 0
           ? `${critCount} strong review`
@@ -1893,6 +2273,7 @@ export async function generateWeeklyBrief(orgId) {
             ? `${riskCount} elevated review`
             : 'No review rule fired',
       color: critCount > 0 ? '#ef4444' : '#6b7280',
+      readiness: `${blockedMetricKeys.length} blocked metric(s) excluded`,
     },
   ];
 
@@ -1901,6 +2282,7 @@ export async function generateWeeklyBrief(orgId) {
       <div style="font-size:21px;font-weight:750;color:#0f172a;letter-spacing:-.2px;">${m.value}</div>
       <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">${m.label}</div>
       <div style="font-size:11px;color:${m.color};font-weight:700;margin-top:4px;">${m.change}</div>
+      ${m.readiness ? `<div style="font-size:10px;color:#64748b;margin-top:4px;">${m.readiness}</div>` : ''}
     </div>`;
   }
   html += `</div>`;
@@ -1912,23 +2294,23 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 2b. Work-pattern model snapshot ───
   html += `<div style="padding:20px 34px;border-bottom:1px solid #e2e8f0;background:#ffffff;">`;
   html += `<h3 style="${S.h3} margin:0 0 12px 0;">Work-pattern deviation model</h3>`;
-  if (engagementSnapshot) {
+  if (eligibleEngagementSnapshot) {
     const engagementColor =
-      engagementSnapshot.avgStrainRisk >= 70
+      eligibleEngagementSnapshot.avgStrainRisk >= 70
         ? '#dc2626'
-        : engagementSnapshot.avgStrainRisk >= 50
+        : eligibleEngagementSnapshot.avgStrainRisk >= 50
           ? '#f59e0b'
-          : engagementSnapshot.avgStrainRisk >= 30
+          : eligibleEngagementSnapshot.avgStrainRisk >= 30
             ? '#2563eb'
             : '#16a34a';
     html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:${engagementColor};">${engagementSnapshot.avgStrainRisk}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Deviation index (model)</div></div>`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.avgDataReadiness}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Data readiness</div></div>`;
-    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${engagementSnapshot.strainedTeams}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Teams above review band</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:${engagementColor};">${eligibleEngagementSnapshot.avgStrainRisk}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Deviation index (model)</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${eligibleEngagementSnapshot.avgDataReadiness}/100</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Data readiness</div></div>`;
+    html += `<div style="flex:1;min-width:130px;padding:13px 15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><div style="font-size:21px;font-weight:750;color:#0f172a;">${eligibleEngagementSnapshot.strainedTeams}</div><div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-top:6px;">Teams above review band</div></div>`;
     html += `</div>`;
     const driverText =
-      engagementSnapshot.drivers.length > 0
-        ? ` Main modeled drivers: ${engagementSnapshot.drivers
+      eligibleEngagementSnapshot.drivers.length > 0
+        ? ` Main modeled drivers: ${eligibleEngagementSnapshot.drivers
             .map((driver) => `${engagementDriverLabel(driver.driver)} (${driver.score}/100)`)
             .join(', ')}.`
         : '';
@@ -1954,19 +2336,23 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 3. What Changed This Week (top 3 observations) ───
   html += `<div style="${S.card}">`;
   html += `<h3 style="${S.h3} margin-top:0;">What changed</h3>`;
-  const topObs = observations.slice(0, 3);
+  const topObs = evidenceSignals.slice(0, 3);
   if (topObs.length > 0) {
     for (const obs of topObs) {
-      const isWarning = obs.text.startsWith('⚠️');
+      const isWarning = obs.observation.startsWith('⚠️');
+      const evidenceGrade = obs.evidence?.grade || 'Low';
       const confColor =
-        obs.confidence === 'High' ? '#10b981' : obs.confidence === 'Medium' ? '#f59e0b' : '#9ca3af';
+        evidenceGrade === 'High' ? '#10b981' : evidenceGrade === 'Medium' ? '#f59e0b' : '#9ca3af';
       html += `<div style="padding:12px 14px;margin-bottom:8px;background:${isWarning ? '#fef2f2' : '#f8fafc'};border-radius:10px;border:1px solid ${isWarning ? '#fecaca' : '#e2e8f0'};">`;
-      html += `<p style="${S.p} margin:0;">${obs.text}</p>`;
-      html += `<p style="margin:4px 0 0 0; font-size:11px;"><span style="${S.badge(confColor + '20', confColor)}">Evidence grade: ${obs.confidence}</span></p>`;
+      html += `<p style="${S.p} margin:0;"><strong>Observation:</strong> ${obs.observation}</p>`;
+      html += `<p style="${S.pSmall} margin:6px 0 0 0;"><strong>Interpretation:</strong> ${obs.interpretation}</p>`;
+      html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>Alternative explanation:</strong> ${obs.alternativeExplanation}</p>`;
+      html += `<p style="${S.pSmall} margin:4px 0 0 0;"><strong>${obs.actionability === ACTIONABILITY.DIAGNOSTIC_QUESTION ? 'Diagnostic question' : 'Next step'}:</strong> ${obs.recommendedNextStep}</p>`;
+      html += `<p style="margin:4px 0 0 0; font-size:11px;"><span style="${S.badge(confColor + '20', confColor)}">Evidence grade: ${evidenceGrade}</span></p>`;
       html += `</div>`;
     }
-    if (observations.length > 3) {
-      html += `<p style="${S.pSmall}">+ ${observations.length - 3} more observations — see full details on your SignalTrue dashboard.</p>`;
+    if (evidenceSignals.length > 3) {
+      html += `<p style="${S.pSmall}">+ ${evidenceSignals.length - 3} more observations — see full details on your SignalTrue dashboard.</p>`;
     }
   } else {
     html += `<p style="${S.p}">No significant changes detected this week.</p>`;
@@ -2009,50 +2395,25 @@ export async function generateWeeklyBrief(orgId) {
   // the reader to log an action would lead somewhere.
   let briefProposedAction = false;
 
-  // If AI returned role-based recommendations, use those
-  if (
-    dataReadinessStatus === 'Ready' &&
-    aiAnalysis &&
-    (aiAnalysis.hrActions?.length ||
-      aiAnalysis.managerActions?.length ||
-      aiAnalysis.leadershipActions?.length)
-  ) {
+  if (gatedPrimaryAction) {
     briefProposedAction = true;
-    const primaryAction =
-      aiAnalysis.leadershipActions?.[0] ||
-      aiAnalysis.hrActions?.[0] ||
-      aiAnalysis.managerActions?.[0];
-    const owner =
-      aiAnalysis.leadershipActions?.[0] === primaryAction
-        ? 'Leadership'
-        : aiAnalysis.hrActions?.[0] === primaryAction
-          ? 'HR'
-          : 'Team lead';
     const effortColor =
-      primaryAction.effort === 'Low'
+      gatedPrimaryAction.effort === 'Low'
         ? '#10b981'
-        : primaryAction.effort === 'Medium'
+        : gatedPrimaryAction.effort === 'Medium'
           ? '#f59e0b'
           : '#ef4444';
     html += `<h4 style="${S.h4}">Decision for this week</h4>`;
     html += `<div style="${S.recBox} border-left:3px solid #6366f1;">`;
-    html += `<p style="${S.p} margin:0 0 5px 0;"><strong>${primaryAction.action}</strong></p>`;
-    html += `<p style="${S.pSmall} margin:0;"><strong>Owner:</strong> ${owner} · <strong>Review:</strong> ${primaryAction.reviewWindow || 'next weekly brief'} · <span style="${S.badge(effortColor + '20', effortColor)}">${primaryAction.effort || 'Medium'} effort</span></p>`;
-    if (primaryAction.expectedOutcome) {
-      html += `<p style="${S.pSmall} margin:5px 0 0 0;"><strong>Measure:</strong> ${primaryAction.expectedOutcome}</p>`;
-    }
+    html += `<p style="${S.pSmall} margin:0 0 5px 0;"><strong>Observed problem:</strong> ${gatedPrimaryAction.observedProblem}</p>`;
+    html += `<p style="${S.p} margin:0 0 5px 0;"><strong>${gatedPrimaryAction.action}</strong></p>`;
+    html += `<p style="${S.pSmall} margin:0;"><strong>Evidence:</strong> ${gatedPrimaryAction.evidenceGrade} · <strong>Metric:</strong> ${gatedPrimaryAction.affectedMetric} · <strong>Owner:</strong> ${gatedPrimaryAction.owner} · <strong>Review:</strong> ${gatedPrimaryAction.reviewWindow} · <span style="${S.badge(effortColor + '20', effortColor)}">${gatedPrimaryAction.effort} effort</span></p>`;
+    html += `<p style="${S.pSmall} margin:5px 0 0 0;"><strong>Measure:</strong> ${gatedPrimaryAction.measure}</p>`;
+    html += `<p style="${S.pSmall} margin:5px 0 0 0;"><strong>Success condition:</strong> ${gatedPrimaryAction.successCondition}</p>`;
     html += `</div>`;
-  } else if (recommendations.length > 0) {
-    // Fallback: use rule-based recommendations
-    briefProposedAction = true;
-    html += `<p style="${S.pSmall}">Based on this week's data patterns.</p>`;
-    recommendations.slice(0, 1).forEach((rec, i) => {
-      html += `<div style="${S.recBox}">`;
-      html += `<p style="${S.p} margin:0;"><strong>${i + 1}.</strong> ${rec}</p>`;
-      html += `</div>`;
-    });
   } else {
-    html += `<p style="${S.p}">No specific actions needed this week. Continue monitoring.</p>`;
+    html += `<p style="${S.p}"><strong>No action recommended this week.</strong></p>`;
+    html += `<p style="${S.pSmall}">Continue monitoring. No measured pattern currently justifies intervention.</p>`;
   }
 
   // CTA buttons. Reading the brief is not the outcome that matters — recording
@@ -2125,17 +2486,41 @@ export async function generateWeeklyBrief(orgId) {
       const d = iv.outcomeDelta;
       const good = d.improved;
       const arrow = d.percentChange > 0 ? '+' : '';
+      const reviewInterpretation = iv.reviews?.at(-1)?.interpretation;
       html += `<div style="${S.recBox} border-left:3px solid ${good ? '#10b981' : '#f59e0b'};">`;
       html += `<p style="${S.p} margin:0 0 4px 0;"><strong>${iv.title || iv.actionTaken || iv.interventionType || 'Action'}</strong>${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''}</p>`;
-      html += `<p style="${S.pSmall} margin:0;">Started ${new Date(iv.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · Measured after 14 days: <strong style="color:${good ? '#16a34a' : '#d97706'};">${arrow}${d.percentChange}%</strong> ${good ? '— improvement confirmed' : '— no improvement yet; consider adjusting or extending'}</p>`;
+      const material = d.percentChange != null && Math.abs(d.percentChange) >= 5;
+      const outcomeLabel =
+        reviewInterpretation === 'insufficient_data'
+          ? 'Insufficient post-action data'
+          : reviewInterpretation === 'no_material_change'
+            ? 'No material change'
+            : reviewInterpretation === 'improved'
+              ? 'Improved'
+              : reviewInterpretation === 'worsened'
+                ? 'Worsened'
+                : !material
+                  ? 'No material change'
+                  : good
+                    ? 'Improved'
+                    : 'Worsened';
+      const measuredValue =
+        outcomeLabel === 'Insufficient post-action data'
+          ? outcomeLabel
+          : d.percentChange == null
+            ? `${d.metricBefore} → ${d.metricAfter} · ${outcomeLabel}`
+            : `${arrow}${d.percentChange}% · ${outcomeLabel}`;
+      html += `<p style="${S.pSmall} margin:0;">Started ${new Date(iv.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · 14-day review: <strong style="color:${good ? '#16a34a' : '#d97706'};">${measuredValue}</strong></p>`;
+      html += `<p style="${S.pSmall} margin:4px 0 0 0;">${outcomeLabel === 'Insufficient post-action data' ? 'There is not enough post-action evidence to assess movement.' : `The measured pattern ${outcomeLabel === 'Improved' ? 'improved' : outcomeLabel === 'Worsened' ? 'worsened' : 'showed no material change'} after the action.`} This timing does not establish causality.</p>`;
       if (iv.outcomeSummary)
         html += `<p style="${S.pSmall} margin:4px 0 0 0;">${iv.outcomeSummary}</p>`;
       html += `</div>`;
     }
     for (const iv of activeInterventions.slice(0, 2)) {
       const daysIn = Math.round((now - new Date(iv.startDate)) / (24 * 60 * 60 * 1000));
+      const reviewDue = new Date(iv.reviewDate || iv.recheckDate || 0) <= now;
       html += `<div style="${S.recBox}">`;
-      html += `<p style="${S.p} margin:0;"><strong>In progress:</strong> ${iv.title || iv.actionTaken || iv.interventionType}${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''} — day ${daysIn} of 14. Effect measurement ${daysIn >= 14 ? 'is due — check the dashboard' : `runs automatically on day 14`}.</p>`;
+      html += `<p style="${S.p} margin:0;"><strong>${reviewDue ? 'Insufficient post-action data:' : 'In progress:'}</strong> ${iv.title || iv.actionTaken || iv.interventionType}${iv.teamId?.name ? ` · ${iv.teamId.name}` : ''} — day ${daysIn} of 14. ${reviewDue ? 'The review date has passed without a measured outcome.' : 'The first review runs on day 14.'}</p>`;
       html += `</div>`;
     }
     html += `</div>`;
@@ -2143,14 +2528,17 @@ export async function generateWeeklyBrief(orgId) {
     // Nudge: the loop only works if decisions get logged
     html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
     html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Close the loop</h3>`;
-    html += `<p style="${S.p} margin:0;">When you act on a recommendation, log it as an action on the dashboard. SignalTrue then measures the before/after effect over 14 days and reports it here — so every future brief shows what worked, not just what's wrong.</p>`;
+    html += `<p style="${S.p} margin:0;">When you act on a recommendation, log it as an action on the dashboard. SignalTrue then measures the before/after pattern over 14 days and reports what changed without claiming causality.</p>`;
     html += `</div>`;
   }
 
   // ─── 5c. Experimental forecast rule — graded last week + new call for next week ───
-  if (gradedPrediction || evaluatedPredictions.length > 0 || newPrediction) {
+  if (
+    forecastQuality.displayTier !== 'hidden' &&
+    (gradedPrediction || evaluatedPredictions.length > 0 || newPrediction)
+  ) {
     html += `<div style="${S.card} border-left:4px solid #0ea5e9;">`;
-    html += `<h3 style="${S.h3} margin-top:0;">Forecast rule check</h3>`;
+    html += `<h3 style="${S.h3} margin-top:0;">${forecastQuality.displayTier === 'main_report' ? 'Forecast rule check' : 'Experimental appendix — forecast rule check'}</h3>`;
     html += `<p style="${S.pSmall}">Experimental directional rule, not a probability or validated outcome prediction.</p>`;
     if (gradedPrediction) {
       const o = gradedPrediction.outcome;
@@ -2160,7 +2548,7 @@ export async function generateWeeklyBrief(orgId) {
       html += `</div>`;
     }
     if (evaluatedPredictions.length > 0) {
-      html += `<p style="${S.pSmall} margin:6px 0;">Rule track record: <strong>${predictionsHeld} of ${evaluatedPredictions.length}</strong> directional calls matched over the last ${evaluatedPredictions.length} graded week(s).</p>`;
+      html += `<p style="${S.pSmall} margin:6px 0;">Rule track record: <strong>${predictionsHeld} of ${evaluatedPredictions.length}</strong> directional calls matched (${forecastQuality.accuracy}%) over the last ${evaluatedPredictions.length} graded week(s).</p>`;
     }
     if (newPrediction) {
       html += `<div style="padding:10px 14px;background:#f0f9ff;border-radius:8px;border-left:3px solid #0ea5e9;">`;
@@ -2177,8 +2565,8 @@ export async function generateWeeklyBrief(orgId) {
     lw,
     sixWeekAvg,
     orgStatus,
-    teamBDIData,
-    twSignals,
+    teamBDIData: statusEligibleTeamBDIData,
+    twSignals: eligibleTwSignals,
   });
   if (managerPrompts.length > 0) {
     html += `<div style="${S.card} border-left:4px solid #8b5cf6;">`;
@@ -2296,22 +2684,19 @@ export async function generateWeeklyBrief(orgId) {
       minDelta: 0.1,
       lowVolumeThreshold: 0.5,
     });
-    addTableRow(
-      'Out-of-hours messages',
-      sixWeekAvg.afterHoursMsg,
-      lw.afterHoursMsg,
-      tw.afterHoursMsg,
-      true,
-      1,
-      { minBase: 1, minDelta: 0.5, lowVolumeThreshold: 1 }
-    );
-    addTableRow(
-      'Out-of-hours work %',
-      Math.round((sixWeekAvg.afterHoursRatio || 0) * 100),
-      Math.round((lw.afterHoursRatio || 0) * 100),
-      Math.round((tw.afterHoursRatio || 0) * 100),
-      true
-    );
+    const afterHoursDisplay =
+      twObservedMessageCount === 0
+        ? 'No usable messaging observations this week'
+        : isMetricBlocked('after_hours')
+          ? `${twAfterHoursMessageCount} of ${twObservedMessageCount} observed messages`
+          : `${twAfterHoursMessageCount} of ${twObservedMessageCount} (${Math.round((tw.afterHoursRatio || 0) * 100)}%)`;
+    html += `<tr>`;
+    html += `<td style="${S.td}">After-hours messaging</td>`;
+    html += `<td style="${S.tdR}; color:#9ca3af;">${isMetricBlocked('after_hours') ? 'Not comparable' : `${Math.round((sixWeekAvg.afterHoursRatio || 0) * 100)}%`}</td>`;
+    html += `<td style="${S.tdR}">${isMetricBlocked('after_hours') ? 'Not comparable' : `${Math.round((lw.afterHoursRatio || 0) * 100)}%`}</td>`;
+    html += `<td style="${S.tdBold}">${afterHoursDisplay}</td>`;
+    html += `<td style="${S.tdR}; color:${isMetricBlocked('after_hours') ? '#d97706' : '#64748b'}; font-weight:700;">${isMetricBlocked('after_hours') ? 'Insufficient data' : pctChangeLabelSafe(tw.afterHoursRatio, lw.afterHoursRatio)}<br><span style="font-weight:400;">Coverage: ${metricReadiness.after_hours.mappedUsers} of ${totalUsers} people</span></td>`;
+    html += `</tr>`;
     addTableRow(
       'Uninterrupted time (hrs)',
       sixWeekAvg.focusTimeAvailability,
@@ -2349,12 +2734,12 @@ export async function generateWeeklyBrief(orgId) {
   html += `</div>`;
 
   // ─── 9. Active Drift Signals (compact) ───
-  if (twSignals.length > 0 || twCKSignals.length > 0) {
+  if (eligibleTwSignals.length > 0 || eligibleTwCKSignals.length > 0) {
     html += `<div style="${S.card}">`;
     html += `<h3 style="${S.h3} margin-top:0;">Active drift signals</h3>`;
 
     const familyMap = {};
-    for (const sig of twSignals) {
+    for (const sig of eligibleTwSignals) {
       const pres = SIGNAL_TYPE_PRESENTATION[sig.signalType] || {};
       const family = pres.family || 'General';
       if (!familyMap[family]) familyMap[family] = [];
@@ -2407,7 +2792,7 @@ export async function generateWeeklyBrief(orgId) {
     }
 
     const lwSignalCount = lwSignals.length + lwCKSignals.length;
-    const twSignalCount = twSignals.length + twCKSignals.length;
+    const twSignalCount = eligibleTwSignals.length + eligibleTwCKSignals.length;
     if (lwSignalCount > 0 || twSignalCount > 0) {
       html += `<p style="${S.pSmall}">Signal count: last week ${lwSignalCount} → this week ${twSignalCount} (${pct(twSignalCount, lwSignalCount)})</p>`;
     }
@@ -2416,11 +2801,11 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── 10. Team Health (BDI) ───
-  if (teamBDIData.length > 0) {
+  if (statusEligibleTeamBDIData.length > 0) {
     html += `<div style="${S.card}">`;
     html += `<h3 style="${S.h3} margin-top:0;">Team health status</h3>`;
 
-    for (const { teamName, bdi, prevBDI } of teamBDIData) {
+    for (const { teamName, bdi, prevBDI } of statusEligibleTeamBDIData) {
       const stateColor =
         bdi.driftState === 'Critical Drift'
           ? '#ef4444'
@@ -2461,7 +2846,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // ─── 11. Team-level engagement detail ───
-  if (engagementStrainByTeam.length === 0) {
+  if (eligibleEngagementTeams.length === 0) {
     html += `<div style="${S.card} border-left:4px solid #d1d5db;">`;
     html += `<h3 style="${S.h3} margin-top:0; color:#475569;">Engagement level</h3>`;
     html += `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px;">`;
@@ -2478,7 +2863,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `</div>`;
   }
 
-  if (engagementStrainByTeam.length > 0) {
+  if (eligibleEngagementTeams.length > 0) {
     const DRIVER_LABELS = {
       recovery_debt: 'Outside-schedule activity',
       focus_erosion: 'Focus availability',
@@ -2510,7 +2895,7 @@ export async function generateWeeklyBrief(orgId) {
 
     // Worst-case state across teams
     const stateOrder = ['healthy', 'watch', 'strain', 'critical'];
-    const worstState = engagementStrainByTeam.reduce(
+    const worstState = eligibleEngagementTeams.reduce(
       (worst, t) =>
         stateOrder.indexOf(t.riskState) > stateOrder.indexOf(worst) ? t.riskState : worst,
       'healthy'
@@ -2536,7 +2921,7 @@ export async function generateWeeklyBrief(orgId) {
     // Per-team blocks — "what this means" is rendered ONCE per risk state below,
     // not cloned under every team (identical boilerplate reads as templated noise).
     const renderedStates = new Set();
-    for (const t of engagementStrainByTeam.slice(0, 3)) {
+    for (const t of eligibleEngagementTeams.slice(0, 3)) {
       const tc = riskStateColor(t.riskState);
       html += `<div style="${S.cardAlert(tc)} margin-bottom:12px;">`;
       html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">`;
@@ -2669,36 +3054,12 @@ export async function generateWeeklyBrief(orgId) {
 
   html += `</div>`;
 
-  const normalizeAction = (action, owner) =>
-    action
-      ? {
-          action: action.action || action.title || String(action),
-          owner,
-          effort: action.effort || 'Medium',
-          measure: action.expectedOutcome || action.expectedImpact || null,
-          reviewWindow: action.reviewWindow || '14 days',
-        }
-      : null;
   const roleBasedActions = {
-    leadership: (aiAnalysis?.leadershipActions || []).map((item) =>
-      normalizeAction(item, 'Leadership')
-    ),
-    hr: (aiAnalysis?.hrActions || []).map((item) => normalizeAction(item, 'HR')),
-    manager: (aiAnalysis?.managerActions || []).map((item) => normalizeAction(item, 'Team lead')),
+    leadership: [],
+    hr: [],
+    manager: gatedPrimaryAction ? [gatedPrimaryAction] : [],
   };
-  const primaryAction =
-    roleBasedActions.leadership[0] ||
-    roleBasedActions.hr[0] ||
-    roleBasedActions.manager[0] ||
-    (recommendations[0]
-      ? {
-          action: recommendations[0],
-          owner: 'HR / Team lead',
-          effort: 'Medium',
-          measure: 'Review the related direct metric against the same baseline.',
-          reviewWindow: '14 days',
-        }
-      : null);
+  const primaryAction = gatedPrimaryAction;
 
   const metrics = [
     metricRow({
@@ -2709,8 +3070,12 @@ export async function generateWeeklyBrief(orgId) {
       baseline: sixWeekRawAvg.meetings,
       unit: 'meetings',
       decimals: 0,
+      available: !isMetricBlocked('meetings'),
       measurementType: 'observed',
       note: 'Deduplicated calendar meeting instances.',
+      readiness: metricReadiness.meetings,
+      display: isMetricBlocked('meetings') ? `${twMeetings} observed; insufficient data` : null,
+      statusKey: 'meetings',
     }),
     metricRow({
       key: 'meeting_hours',
@@ -2719,8 +3084,12 @@ export async function generateWeeklyBrief(orgId) {
       previous: lw.meetingHours,
       baseline: sixWeekAvg.meetingHours,
       unit: 'hours',
+      available: !isMetricBlocked('meeting_hours'),
       measurementType: 'derived',
       note: 'Participant-hours divided by connected users.',
+      readiness: metricReadiness.meeting_hours,
+      display: isMetricBlocked('meeting_hours') ? 'Insufficient data' : null,
+      statusKey: 'meetingHours',
     }),
     metricRow({
       key: 'back_to_back',
@@ -2730,7 +3099,11 @@ export async function generateWeeklyBrief(orgId) {
       baseline: sixWeekAvg.backToBack,
       unit: 'blocks per person',
       decimals: 0,
+      available: !isMetricBlocked('back_to_back'),
       measurementType: 'derived',
+      readiness: metricReadiness.back_to_back,
+      display: isMetricBlocked('back_to_back') ? 'Insufficient data' : null,
+      statusKey: 'backToBack',
     }),
     metricRow({
       key: 'messages',
@@ -2741,21 +3114,37 @@ export async function generateWeeklyBrief(orgId) {
       unit: 'messages',
       decimals: 0,
       higherIsBetter: true,
-      available: !suspectMetrics.has('messages'),
+      available: !suspectMetrics.has('messages') && !isMetricBlocked('messages'),
       measurementType: 'observed',
       note: 'Volume is contextual and is not a performance measure.',
+      readiness: metricReadiness.messages,
+      display: isMetricBlocked('messages') ? `${twMessages} observed; insufficient data` : null,
+      statusKey: 'asyncVolume',
     }),
     metricRow({
       key: 'after_hours',
-      label: 'Out-of-hours work',
+      label: 'After-hours messaging',
       current: (tw.afterHoursRatio || 0) * 100,
       previous: (lw.afterHoursRatio || 0) * 100,
       baseline: (sixWeekAvg.afterHoursRatio || 0) * 100,
       unit: '%',
       decimals: 0,
-      available: !suspectMetrics.has('afterHours'),
+      available:
+        !suspectMetrics.has('afterHours') &&
+        !isMetricBlocked('after_hours') &&
+        twObservedMessageCount > 0,
       measurementType: 'derived',
-      note: 'Share of measured activity outside the configured work schedule.',
+      note: 'Share of observed message metadata outside the configured work schedule.',
+      readiness: metricReadiness.after_hours,
+      numerator: twAfterHoursMessageCount,
+      denominator: twObservedMessageCount,
+      display:
+        twObservedMessageCount === 0
+          ? 'No usable messaging observations this week.'
+          : isMetricBlocked('after_hours')
+            ? `${twAfterHoursMessageCount} of ${twObservedMessageCount} observed messages; insufficient data`
+            : null,
+      statusKey: 'afterHoursRatio',
     }),
     metricRow({
       key: 'focus_time',
@@ -2765,9 +3154,12 @@ export async function generateWeeklyBrief(orgId) {
       baseline: sixWeekAvg.focusTimeAvailability,
       unit: 'hours',
       higherIsBetter: true,
-      available: !suspectMetrics.has('focusTime'),
+      available: !suspectMetrics.has('focusTime') && !isMetricBlocked('focus_time'),
       measurementType: 'derived',
       note: 'Calendar availability proxy, not measured output quality.',
+      readiness: metricReadiness.focus_time,
+      display: isMetricBlocked('focus_time') ? 'Insufficient data' : null,
+      statusKey: 'focusTimeAvailability',
     }),
     metricRow({
       key: 'fragmentation',
@@ -2779,6 +3171,10 @@ export async function generateWeeklyBrief(orgId) {
       decimals: 0,
       measurementType: 'internal_index',
       note: 'Internal descriptive index based on the distribution of calendar gaps.',
+      available: !isMetricBlocked('fragmentation'),
+      readiness: metricReadiness.fragmentation,
+      display: isMetricBlocked('fragmentation') ? 'Insufficient data' : null,
+      statusKey: 'calendarFragmentation',
     }),
     metricRow({
       key: 'recurring_load',
@@ -2788,12 +3184,16 @@ export async function generateWeeklyBrief(orgId) {
       baseline: (sixWeekAvg.recurringBurden || 0) * 100,
       unit: '%',
       decimals: 0,
+      available: !isMetricBlocked('recurring_load'),
       measurementType: 'derived',
+      readiness: metricReadiness.recurring_load,
+      display: isMetricBlocked('recurring_load') ? 'Insufficient data' : null,
+      statusKey: 'recurringBurden',
     }),
     metricRow({
       key: 'active_alerts',
       label: 'Active review signals',
-      current: twSignals.length + twCKSignals.length,
+      current: eligibleTwSignals.length + eligibleTwCKSignals.length,
       previous: lwSignals.length + lwCKSignals.length,
       baseline: null,
       unit: 'signals',
@@ -2810,24 +3210,34 @@ export async function generateWeeklyBrief(orgId) {
       return {
         weekStart: date,
         label: `${point.weeksAgo}w ago`,
-        meetingHours: roundValue(point.meetingHours, 1),
-        afterHoursPct: roundValue(point.afterHoursRatioPct, 0),
-        focusHours: roundValue(point.focusTimeAvailability, 1),
-        fragmentation: roundValue(point.calendarFragmentation, 0),
+        meetingHours: isMetricEligible('meeting_hours') ? roundValue(point.meetingHours, 1) : null,
+        afterHoursPct: isMetricEligible('after_hours')
+          ? roundValue(point.afterHoursRatioPct, 0)
+          : null,
+        focusHours: isMetricEligible('focus_time')
+          ? roundValue(point.focusTimeAvailability, 1)
+          : null,
+        fragmentation: isMetricEligible('fragmentation')
+          ? roundValue(point.calendarFragmentation, 0)
+          : null,
       };
     }),
     {
       weekStart: thisWeekStart,
       label: 'Current',
-      meetingHours: roundValue(tw.meetingHours, 1),
-      afterHoursPct: roundValue((tw.afterHoursRatio || 0) * 100, 0),
-      focusHours: roundValue(tw.focusTimeAvailability, 1),
-      fragmentation: roundValue(tw.calendarFragmentation, 0),
+      meetingHours: isMetricEligible('meeting_hours') ? roundValue(tw.meetingHours, 1) : null,
+      afterHoursPct: isMetricEligible('after_hours')
+        ? roundValue((tw.afterHoursRatio || 0) * 100, 0)
+        : null,
+      focusHours: isMetricEligible('focus_time') ? roundValue(tw.focusTimeAvailability, 1) : null,
+      fragmentation: isMetricEligible('fragmentation')
+        ? roundValue(tw.calendarFragmentation, 0)
+        : null,
     },
   ];
 
   const signals = [
-    ...twSignals.map((signal) => {
+    ...eligibleTwSignals.map((signal) => {
       const presentation = SIGNAL_TYPE_PRESENTATION[signal.signalType] || {};
       return {
         type: signal.signalType,
@@ -2865,7 +3275,13 @@ export async function generateWeeklyBrief(orgId) {
         label: verdictText,
         evidenceGrade: verdictConfidence,
         summary: verdictSummary,
-        escalationAction: orgStatus.escalationAction || null,
+        reason: orgStatus.reason,
+        eligibleMetrics: orgStatus.eligibleMetrics,
+        blockedMetrics: orgStatus.blockedMetrics,
+        eligibleMetricKeys: orgStatus.eligibleMetricKeys,
+        blockedMetricKeys: orgStatus.blockedMetricKeys,
+        deterioratingMetrics: orgStatus.deterioratingMetrics,
+        escalationAction: displayEscalationAction || null,
         baselineWeeks: weeksOfHistory,
         contextTags: contextTags.map((item) => item.tag),
       },
@@ -2892,16 +3308,22 @@ export async function generateWeeklyBrief(orgId) {
       },
       metrics,
       trend,
-      observations: observations.map((item) => ({
-        text: item.text || String(item),
-        evidenceGrade: item.confidence || 'Low',
-        type: item.text?.startsWith('⚠️') ? 'data_quality' : 'measured_change',
+      observations: evidenceSignals.map((item) => ({
+        text: item.observation,
+        observation: item.observation,
+        evidence: item.evidence,
+        evidenceGrade: item.evidence.grade,
+        interpretation: item.interpretation,
+        alternativeExplanation: item.alternativeExplanation,
+        actionability: item.actionability,
+        recommendedNextStep: item.recommendedNextStep,
+        type: item.observation?.startsWith('⚠️') ? 'data_quality' : 'measured_change',
       })),
       risks,
       actions: {
         primary: primaryAction,
         roleBased: roleBasedActions,
-        ruleBased: recommendations,
+        ruleBased: [],
       },
       questions: managerPrompts,
       interpretations: (aiAnalysis?.hypotheses || []).map((item) => ({
@@ -2933,17 +3355,19 @@ export async function generateWeeklyBrief(orgId) {
         trackRecord: {
           matched: predictionsHeld,
           evaluated: evaluatedPredictions.length,
+          accuracy: forecastQuality.accuracy,
         },
+        displayTier: forecastQuality.displayTier,
         limitation: 'Experimental directional rule, not a probability or validated prediction.',
       },
       costEstimate,
-      workPattern: engagementSnapshot
+      workPattern: eligibleEngagementSnapshot
         ? {
-            ...engagementSnapshot,
+            ...eligibleEngagementSnapshot,
             modelVersion: '2.1.0',
             limitation:
               'Internal descriptive model. It does not measure engagement, burnout, attrition, health, intent, or performance.',
-            teams: engagementStrainByTeam.map((team) => ({
+            teams: eligibleEngagementTeams.map((team) => ({
               teamId: String(team.teamId),
               teamName: team.teamName,
               deviationIndex: team.engagementStrainRisk,
@@ -2962,7 +3386,7 @@ export async function generateWeeklyBrief(orgId) {
           }
         : null,
       signals,
-      teamHealth: teamBDIData.map(({ teamName, bdi, prevBDI }) => ({
+      teamHealth: statusEligibleTeamBDIData.map(({ teamName, bdi, prevBDI }) => ({
         teamName,
         score: bdi.driftScore,
         previousScore: prevBDI?.driftScore ?? null,
@@ -2982,6 +3406,10 @@ export async function generateWeeklyBrief(orgId) {
           'Action',
         teamName: intervention.teamId?.name || null,
         status: intervention.status,
+        targetMetric: intervention.targetMetricLabel || intervention.targetMetric || null,
+        baseline: intervention.baselineValue ?? intervention.outcomeDelta?.metricBefore ?? null,
+        expectedDirection: intervention.expectedDirection || intervention.targetDirection || null,
+        successCriterion: intervention.successCriterion || null,
         startedAt: intervention.startDate,
         reviewAt: intervention.reviewDate || intervention.recheckDate || null,
         outcome: intervention.outcomeDelta?.computedAt
@@ -2990,10 +3418,28 @@ export async function generateWeeklyBrief(orgId) {
               metricAfter: intervention.outcomeDelta.metricAfter,
               percentChange: intervention.outcomeDelta.percentChange,
               improved: intervention.outcomeDelta.improved,
+              result:
+                intervention.reviews?.at(-1)?.interpretation === 'insufficient_data'
+                  ? 'Insufficient post-action data'
+                  : intervention.reviews?.at(-1)?.interpretation === 'no_material_change' ||
+                      (intervention.outcomeDelta.percentChange != null &&
+                        Math.abs(intervention.outcomeDelta.percentChange) < 5)
+                    ? 'No material change'
+                    : intervention.outcomeDelta.improved
+                      ? 'Improved'
+                      : 'Worsened',
               measuredAt: intervention.outcomeDelta.computedAt,
-              summary: intervention.outcomeSummary || null,
+              summary:
+                intervention.outcomeSummary ||
+                `The measured pattern ${intervention.outcomeDelta.improved ? 'improved' : 'did not improve'} after the action. This does not establish causality.`,
             }
-          : null,
+          : new Date(intervention.reviewDate || intervention.recheckDate || 0) <= now
+            ? {
+                result: 'Insufficient post-action data',
+                summary:
+                  'The review date passed without enough post-action data to assess movement.',
+              }
+            : null,
       })),
       integrations: integrationConnections.map((item) =>
         serializeIntegration(item, staleConnectors)

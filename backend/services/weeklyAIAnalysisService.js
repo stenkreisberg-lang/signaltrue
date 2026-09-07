@@ -38,6 +38,8 @@ function buildPrompt(data) {
     connectedSources,
     contextTags,
     teamStatus,
+    metricReadiness,
+    afterHoursCounts,
   } = data;
 
   // Raw-count 6wk averages MUST come from the same dataset as the WoW table.
@@ -88,6 +90,11 @@ CRITICAL RULES:
 8. If data is limited or shows no concerns, say so plainly — do not manufacture problems.
 9. Compare only with the organization's own measured baseline. Do not introduce external benchmarks.
 10. Recommendations must specify the OWNER role (HR, Manager, or Leadership).
+11. A blocked or directional-only metric can produce at most a diagnostic question, never an intervention.
+12. Low evidence can produce at most a diagnostic question. One-week Medium evidence normally produces a question; after two consecutive periods it may justify a reversible experiment.
+13. If status is Stable and there is no meaningful negative movement, return empty action arrays. "No action recommended" is a valid result.
+14. Separate observation, cautious interpretation, alternative explanation, and next step.
+15. "After-hours messaging" is message metadata. Never call it after-hours work.
 
 ORGANIZATION CONTEXT:
 - Name: ${orgName}
@@ -111,7 +118,7 @@ Do NOT interpret the affected metrics (${(suspectMetrics || []).join(', ') || 's
 - Messages: ${twMessages} (last week: ${lwMessages}, 6wk avg: ${rawAvg.messages != null ? rawAvg.messages.toFixed(0) : '—'})
 - Meeting hours: ${tw.meetingHours?.toFixed(1) || 0}h (last week: ${lw.meetingHours?.toFixed(1) || 0}h, 6wk avg: ${sixWeekAvg?.meetingHours?.toFixed(1) || '—'}h)
 - Back-to-back blocks: ${tw.backToBack?.toFixed(0) || 0} (last week: ${lw.backToBack?.toFixed(0) || 0}, 6wk avg: ${sixWeekAvg?.backToBack?.toFixed(0) || '—'})
-- After-hours ratio: ${((tw.afterHoursRatio || 0) * 100).toFixed(0)}% (last week: ${((lw.afterHoursRatio || 0) * 100).toFixed(0)}%, 6wk avg: ${sixWeekAvg?.afterHoursRatioPct?.toFixed(0) || '—'}%)
+- After-hours messaging: ${afterHoursCounts?.denominator > 0 ? `${afterHoursCounts.numerator} of ${afterHoursCounts.denominator} observed messages (${((tw.afterHoursRatio || 0) * 100).toFixed(0)}%)` : 'No usable messaging observations this week'}; coverage ${metricReadiness?.after_hours?.mappedUsers || 0} of ${metricReadiness?.after_hours?.totalUsers || 0} people; readiness ${metricReadiness?.after_hours?.readiness || 'unknown'}
 - Focus time availability: ${tw.focusTimeAvailability?.toFixed(1) || '—'}h (last week: ${lw.focusTimeAvailability?.toFixed(1) || '—'}h)
 - Calendar fragmentation: ${tw.calendarFragmentation?.toFixed(0) || '—'}/100 (last week: ${lw.calendarFragmentation?.toFixed(0) || '—'}/100)
 - Recurring meeting burden: ${((tw.recurringBurden || 0) * 100).toFixed(0)}% (last week: ${((lw.recurringBurden || 0) * 100).toFixed(0)}%)
@@ -131,31 +138,45 @@ Respond in EXACTLY this JSON format:
       "evidence": ["metric 1 with number", "metric 2 with number"],
       "whatThisMayMean": "One cautious interpretation.",
       "confidence": "Low|Medium|High",
-      "whatCouldAlsoExplainIt": "Alternative explanation."
+      "whatCouldAlsoExplainIt": "Alternative explanation.",
+      "actionability": "no_action|diagnostic_question|reversible_experiment|intervention",
+      "recommendedNextStep": "Question or action justified by the evidence."
     }
   ],
   "hrActions": [
     {
       "action": "Specific action",
+      "observedProblem": "Exact observed change",
+      "affectedMetric": "Exact metric name",
       "effort": "Low|Medium|High",
-      "expectedOutcome": "What should improve",
-      "reviewWindow": "7 days|14 days"
+      "measure": "Exact metric used to review the action",
+      "successCondition": "Exact measurable success condition",
+      "reviewWindow": "7 days|14 days",
+      "actionability": "diagnostic_question|reversible_experiment|intervention"
     }
   ],
   "managerActions": [
     {
       "action": "Specific action",
+      "observedProblem": "Exact observed change",
+      "affectedMetric": "Exact metric name",
       "effort": "Low|Medium|High",
-      "expectedOutcome": "What should improve",
-      "reviewWindow": "7 days|14 days"
+      "measure": "Exact metric used to review the action",
+      "successCondition": "Exact measurable success condition",
+      "reviewWindow": "7 days|14 days",
+      "actionability": "diagnostic_question|reversible_experiment|intervention"
     }
   ],
   "leadershipActions": [
     {
       "action": "Specific action (only if risk elevated)",
+      "observedProblem": "Exact observed change",
+      "affectedMetric": "Exact metric name",
       "effort": "Low|Medium|High",
-      "expectedOutcome": "What should improve",
-      "reviewWindow": "14 days|30 days"
+      "measure": "Exact metric used to review the action",
+      "successCondition": "Exact measurable success condition",
+      "reviewWindow": "14 days|30 days",
+      "actionability": "reversible_experiment|intervention"
     }
   ],
   "trendOutlook": {
