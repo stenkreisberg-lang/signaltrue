@@ -206,24 +206,13 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
 }
 
 export async function reconcilePendingMicrosoftCompanyAccess() {
-  const retryBefore = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const organizations = await Organization.find({
     ...ACTIVE_ORG_FILTER,
     'integrations.microsoft.tenantId': { $exists: true, $ne: null },
     'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false },
-    $and: [
-      {
-        $or: [
-          { 'integrations.microsoft.delegatedConnectedAt': { $exists: true, $ne: null } },
-          { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
-        ],
-      },
-      {
-        $or: [
-          { 'integrations.microsoft.applicationConsentLastCheckedAt': { $exists: false } },
-          { 'integrations.microsoft.applicationConsentLastCheckedAt': { $lte: retryBefore } },
-        ],
-      },
+    $or: [
+      { 'integrations.microsoft.delegatedConnectedAt': { $exists: true, $ne: null } },
+      { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
     ],
   })
     .select('_id name')
