@@ -1,12 +1,15 @@
 import { Resend } from 'resend';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
+import IntegrationConnection from '../models/integrationConnection.js';
+import { claimNotification, completeNotificationClaim } from './notificationClaimService.js';
 
 /**
  * Notify HR admins when integrations are complete
  * Called after IT admin connects both Slack/Google Chat AND Calendar
  */
 export async function notifyHRIntegrationsComplete(orgId) {
+  let claimedDelivery = null;
   try {
     console.log('[IntegrationNotify] Checking if integrations complete for org:', orgId);
 
@@ -16,17 +19,29 @@ export async function notifyHRIntegrationsComplete(orgId) {
       return;
     }
 
-    // Check if integrations are complete (both chat + calendar)
+    const microsoftConnections = await IntegrationConnection.find({
+      orgId,
+      integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+    })
+      .select('integrationType status')
+      .lean();
+
+    // Microsoft is complete only after application-role verification and Graph
+    // probes have put the canonical source records into `connected` state.
     const slackConnected = !!org?.integrations?.slack?.accessToken;
     const googleChatConnected = !!org?.integrations?.googleChat?.accessToken;
-    const msScope = org?.integrations?.microsoft?.scope;
-    const msHasToken = !!org?.integrations?.microsoft?.accessToken;
-    const teamsConnected = msHasToken && (msScope === 'teams' || msScope === 'both');
+    const teamsConnected = microsoftConnections.some(
+      (connection) =>
+        connection.integrationType === 'microsoft-teams' && connection.status === 'connected'
+    );
     const chatConnected = slackConnected || googleChatConnected || teamsConnected;
 
     const googleCal =
       org?.integrations?.google?.scope === 'calendar' && !!org?.integrations?.google?.accessToken;
-    const msOutlook = msHasToken && (msScope === 'outlook' || msScope === 'both');
+    const msOutlook = microsoftConnections.some(
+      (connection) =>
+        connection.integrationType === 'microsoft-outlook' && connection.status === 'connected'
+    );
     const calendarConnected = googleCal || msOutlook;
 
     const integrationsComplete = chatConnected && calendarConnected;
@@ -36,12 +51,6 @@ export async function notifyHRIntegrationsComplete(orgId) {
         chatConnected,
         calendarConnected,
       });
-      return;
-    }
-
-    // Check if we've already sent this notification
-    if (org.settings?.integrationsNotificationSent) {
-      console.log('[IntegrationNotify] Notification already sent');
       return;
     }
 
@@ -55,6 +64,16 @@ export async function notifyHRIntegrationsComplete(orgId) {
       return;
     }
 
+    claimedDelivery = await claimNotification(
+      orgId,
+      'integrations_complete',
+      'verified-sources-v2'
+    );
+    if (!claimedDelivery.claimed) {
+      console.log('[IntegrationNotify] Duplicate completion notification skipped');
+      return { success: true, notified: 0, skipped: true };
+    }
+
     console.log('[IntegrationNotify] Sending notification to', hrAdmins.length, 'HR admins');
 
     // Count synced employees
@@ -64,10 +83,11 @@ export async function notifyHRIntegrationsComplete(orgId) {
     const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
 
+    let notified = 0;
     for (const hrAdmin of hrAdmins) {
       if (resend) {
         try {
-          await resend.emails.send({
+          const result = await resend.emails.send({
             from: process.env.EMAIL_FROM || 'SignalTrue <onboarding@resend.dev>',
             to: hrAdmin.email,
             subject: `🎉 ${org.name} is now connected to SignalTrue!`,
@@ -124,6 +144,9 @@ export async function notifyHRIntegrationsComplete(orgId) {
               </div>
             `,
           });
+          if (result?.error)
+            throw new Error(result.error.message || 'Email provider rejected send');
+          notified++;
           console.log('[IntegrationNotify] Email sent to:', hrAdmin.email);
         } catch (emailErr) {
           console.error('[IntegrationNotify] Email failed:', emailErr.message);
@@ -131,9 +154,13 @@ export async function notifyHRIntegrationsComplete(orgId) {
       }
     }
 
-    // Mark notification as sent
+    const deliveryStatus = notified > 0 ? 'sent' : resend ? 'failed' : 'skipped';
+    await completeNotificationClaim(orgId, claimedDelivery.key, deliveryStatus);
+
+    // Keep the legacy flag for existing reporting, now explicitly declared in
+    // the schema. Idempotency is enforced by the atomic claim above.
     await Organization.findByIdAndUpdate(orgId, {
-      $set: { 'settings.integrationsNotificationSent': true },
+      $set: { 'settings.integrationsNotificationSent': notified > 0 },
     });
 
     // Start calibration
@@ -150,13 +177,21 @@ export async function notifyHRIntegrationsComplete(orgId) {
         'calibration.calibrationProgress': 0,
         'calibration.calibrationConfidence': 'Low',
         'calibration.featuresUnlocked': false,
-        'calibration.dataSourcesConnected': [chatSource, calendarSource],
+        'calibration.dataSourcesConnected': [
+          { source: chatSource, connectedAt: new Date() },
+          { source: calendarSource, connectedAt: new Date() },
+        ],
       },
     });
     console.log('[IntegrationNotify] Calibration started for org:', orgId);
 
-    return { success: true, notified: hrAdmins.length };
+    return { success: true, notified, skipped: deliveryStatus === 'skipped' };
   } catch (error) {
+    if (claimedDelivery?.key) {
+      await completeNotificationClaim(orgId, claimedDelivery.key, 'failed', error.message).catch(
+        () => {}
+      );
+    }
     console.error('[IntegrationNotify] Error:', error.message);
     return { success: false, error: error.message };
   }

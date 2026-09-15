@@ -53,7 +53,11 @@ router.get('/organizations', authenticateToken, requireSuperadmin, async (req, r
         slackTeam: org.integrations?.slack?.teamName || null,
         google: !!org.integrations?.google?.accessToken,
         googleChat: !!org.integrations?.googleChat?.accessToken,
-        microsoft: !!org.integrations?.microsoft?.accessToken,
+        microsoft: Boolean(
+          org.integrations?.microsoft?.applicationConsentVerifiedAt ||
+          org.integrations?.microsoft?.applicationConsentSources?.outlook?.verifiedAt ||
+          org.integrations?.microsoft?.applicationConsentSources?.teams?.verifiedAt
+        ),
         microsoftScope: org.integrations?.microsoft?.scope || null, // 'teams' or 'outlook'
         jira: !!org.integrations?.jira?.accessToken,
         asana: !!org.integrations?.asana?.accessToken,

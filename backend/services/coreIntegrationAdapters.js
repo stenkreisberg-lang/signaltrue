@@ -345,15 +345,10 @@ class OrgIntegrationAdapter {
   }
 
   async updateConnectionCoverage(orgId, workEvents) {
-    const [totalUsers, organization] = await Promise.all([
-      User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } }),
-      Organization.findById(orgId)
-        .select('integrations.microsoft.applicationConsentVerifiedAt')
-        .lean(),
-    ]);
-    const companyWideVerified = Boolean(
-      organization?.integrations?.microsoft?.applicationConsentVerifiedAt
-    );
+    const totalUsers = await User.countDocuments({
+      orgId,
+      accountStatus: { $ne: 'inactive' },
+    });
     const mappedUsers = new Set(
       workEvents.map((event) => String(event.actorUserId || '')).filter(Boolean)
     ).size;
@@ -503,64 +498,32 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     return org.integrations?.microsoft;
   }
 
-  async refreshToken(org, integration) {
-    const refreshToken = decryptString(integration.refreshToken);
-    // Use the org's own tenant ID (stored at OAuth time) so multi-tenant clients work correctly.
-    // Fall back to 'common' which Microsoft resolves from the refresh token itself.
-    const tenant = integration.tenantId || org.integrations?.microsoft?.tenantId || 'common';
-
-    const response = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: process.env.MS_APP_CLIENT_ID,
-        client_secret: process.env.MS_APP_CLIENT_SECRET,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-      }).toString(),
-    });
-
-    if (!response.ok) {
-      let payload = {};
-      try {
-        payload = await response.json();
-      } catch {
-        // The stable OAuth error code is preferable to logging the response body.
-      }
-      const description = String(payload?.error_description || '');
-      const error = new Error(
-        /AADSTS700082|expired due to inactivity/i.test(description)
-          ? 'Microsoft authorization expired. Reconnect Microsoft to resume synchronization.'
-          : `Microsoft token refresh failed${payload?.error ? ` (${payload.error})` : ''}`
-      );
-      error.code = payload?.error || null;
-      error.microsoftCode = description.match(/AADSTS\d+/)?.[0] || null;
-      throw error;
+  async getAccessToken(orgId) {
+    const org = await Organization.findById(orgId).lean();
+    const tenantId = org?.integrations?.microsoft?.tenantId;
+    if (!tenantId) throw new Error('Microsoft tenant identity is not connected.');
+    const appToken = await getMicrosoftAppToken(tenantId);
+    if (!appToken) throw new Error('Microsoft application credentials are not configured.');
+    if (getMicrosoftTokenRoles(appToken).length === 0) {
+      throw new Error('Microsoft application permissions are not granted for this tenant.');
     }
-
-    const tokens = await response.json();
-
-    await Organization.findByIdAndUpdate(org._id, {
-      $set: {
-        'integrations.microsoft.accessToken': encryptString(tokens.access_token),
-        'integrations.microsoft.refreshToken': tokens.refresh_token
-          ? encryptString(tokens.refresh_token)
-          : integration.refreshToken,
-        'integrations.microsoft.expiry': new Date(Date.now() + tokens.expires_in * 1000),
-      },
-    });
-
-    return tokens.access_token;
+    return appToken;
   }
 
   async updateSyncStatus(orgId, success, count, error = null) {
     const failure = success ? null : classifyMicrosoftSyncError(error);
+    const failedSources = Object.entries(this.lastFetchSummary?.sources || {})
+      .filter(([, summary]) => summary?.attempted && !summary.success)
+      .map(([source, summary]) => `${source}: ${summary.errorMessage || 'sync failed'}`);
+    const syncStatus = success ? (failedSources.length > 0 ? 'partial' : 'ok') : 'error';
+    const syncError =
+      failure?.message || (failedSources.length > 0 ? failedSources.join(' ') : null);
     const now = new Date();
     const setPayload = {
       'integrations.microsoft.sync.lastRunAt': now,
       'integrations.microsoft.sync.lastSync': now,
-      'integrations.microsoft.sync.lastStatus': success ? 'ok' : 'error',
-      'integrations.microsoft.sync.error': failure?.message || null,
+      'integrations.microsoft.sync.lastStatus': syncStatus,
+      'integrations.microsoft.sync.error': syncError,
       'integrations.microsoft.sync.eventsCount': count,
     };
     if (failure?.disableSync) setPayload['integrations.microsoft.sync.enabled'] = false;
@@ -601,23 +564,20 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const [totalUsers, organization] = await Promise.all([
       User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } }),
       Organization.findById(orgId)
-        .select('integrations.microsoft.applicationConsentVerifiedAt')
+        .select(
+          'integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentSources'
+        )
         .lean(),
     ]);
-
-    // Tenant-wide admin consent means the connection is genuinely live even
-    // before any event maps to an internal user. The closure below reads this,
-    // so it has to be resolved here — it was previously only declared in the
-    // other adapter's method, which made every call through this path throw
-    // ReferenceError once it reached the status payload.
-    const companyWideVerified = Boolean(
-      organization?.integrations?.microsoft?.applicationConsentVerifiedAt
-    );
 
     const updateForType = async (integrationType, source) => {
       const sourceKey = source === 'microsoft-outlook' ? 'outlook' : 'teams';
       const fetchSummary = this.lastFetchSummary?.sources?.[sourceKey];
       if (!fetchSummary?.attempted) return;
+      const companyWideVerified = Boolean(
+        organization?.integrations?.microsoft?.applicationConsentSources?.[sourceKey]?.verifiedAt ||
+        organization?.integrations?.microsoft?.applicationConsentVerifiedAt
+      );
       const sourceEvents = workEvents.filter((event) => event.source === source);
 
       const coverageStart = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000);
@@ -644,7 +604,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       const setPayload = {
         status: fetchFailure
           ? fetchFailure.status
-          : hasMappedHistory || companyWideVerified
+          : companyWideVerified
             ? 'connected'
             : 'needs_admin',
         statusMessage:
@@ -657,7 +617,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                 ? 'Company-wide Microsoft access is verified; waiting for mapped activity'
                 : 'Microsoft administrator consent is required for organization-wide metadata.'),
         statusUpdatedAt: now,
-        connectedAt: now,
+        ...(companyWideVerified ? { connectedAt: now } : {}),
         'sync.lastSyncAt': now,
         'sync.lastSyncStatus': fetchFailure
           ? 'failed'
@@ -684,11 +644,11 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           : `Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} needs administrator consent for organization-wide coverage.`;
       }
 
-      await IntegrationConnection.findOneAndUpdate(
-        { orgId, integrationType },
-        { $set: setPayload },
-        { upsert: true }
-      );
+      const update = { $set: setPayload };
+      if (!companyWideVerified) update.$unset = { connectedAt: 1, connectedBy: 1 };
+      await IntegrationConnection.findOneAndUpdate({ orgId, integrationType }, update, {
+        upsert: true,
+      });
     };
 
     await Promise.all([
@@ -762,219 +722,88 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     }
   }
 
-  async fetchOutlookEvents(delegatedToken, since, until, orgId = null) {
+  async fetchOutlookEvents(appToken, since, until, orgId = null) {
     const allEvents = [];
     this.pendingOutlookCoverage = null;
     const select =
       '$select=id,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,recurrence,seriesMasterId,isCancelled,type&$top=100';
+    const roles = getMicrosoftTokenRoles(appToken);
+    const requiredRoles = ['Calendars.Read', 'User.Read.All'];
+    const missingRoles = requiredRoles.filter((role) => !roles.includes(role));
+    if (missingRoles.length > 0) {
+      throw new Error(
+        `Microsoft Outlook application permissions missing: ${missingRoles.join(', ')}`
+      );
+    }
+    if (!orgId) throw new Error('Organization is required for company-wide Outlook collection.');
 
-    // ── STRATEGY 1: App-only token (Calendars.Read application permission) ──
-    // This is the correct approach: the app authenticates with its own identity
-    // and reads every user's calendar directly.
-    // Requires "Calendars.Read" APPLICATION permission granted in Azure AD.
-    let appTokenWorked = false;
-    if (orgId) {
+    const orgUsers = await User.find({
+      orgId,
+      'externalIds.microsoftUserId': { $exists: true, $ne: null },
+      accountStatus: { $ne: 'inactive' },
+    })
+      .select('_id externalIds')
+      .lean();
+    if (orgUsers.length === 0) {
+      throw new Error('Microsoft directory must be synchronized before Outlook collection.');
+    }
+
+    let successCount = 0;
+    let unavailableCount = 0;
+    let permissionDeniedCount = 0;
+    let otherFailureCount = 0;
+    for (const user of orgUsers) {
+      const msId = user.externalIds?.microsoftUserId;
+      if (!msId) continue;
       try {
-        const org = await Organization.findById(orgId)
-          .select('integrations.microsoft.tenantId')
-          .lean();
-        const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
-        if (!tenantId) {
-          console.warn('[Microsoft] No tenantId available for app-only token');
-        } else {
-          const appToken = await getMicrosoftAppToken(tenantId);
-          const appRoles = appToken ? getMicrosoftTokenRoles(appToken) : [];
-          if (appToken && appRoles.includes('Calendars.Read')) {
-            const orgUsers = await User.find({
-              orgId,
-              'externalIds.microsoftUserId': { $exists: true, $ne: null },
-              accountStatus: { $ne: 'inactive' },
-            })
-              .select('_id externalIds')
-              .lean();
-
-            if (orgUsers.length > 0) {
-              console.log(`[Microsoft][AppOnly] Fetching calendars for ${orgUsers.length} users`);
-              let successCount = 0;
-              let unavailableCount = 0;
-              let permissionDeniedCount = 0;
-              let otherFailureCount = 0;
-              const otherFailureCodes = new Map();
-              for (const user of orgUsers) {
-                const msId = user.externalIds?.microsoftUserId;
-                if (!msId) continue;
-                try {
-                  const url = `https://graph.microsoft.com/v1.0/users/${msId}/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
-                  try {
-                    const calendarEvents = await fetchGraphCollection(url, appToken);
-                    const events = calendarEvents.map((e) => ({
-                      ...e,
-                      eventSource: 'outlook',
-                      _internalUserId: user._id,
-                    }));
-                    allEvents.push(...events);
-                    successCount++;
-                  } catch (calendarError) {
-                    if (isUnavailableMicrosoftMailboxError(calendarError)) {
-                      unavailableCount++;
-                    } else if (calendarError.status === 403) {
-                      permissionDeniedCount++;
-                      if (permissionDeniedCount >= 3 && successCount === 0) {
-                        console.warn(
-                          '[Microsoft][AppOnly] Multiple 403s — app permission not available, switching to attendee expansion'
-                        );
-                        break;
-                      }
-                    } else {
-                      otherFailureCount++;
-                      const code =
-                        calendarError.graphCode || `HTTP_${calendarError.status || 'unknown'}`;
-                      otherFailureCodes.set(code, (otherFailureCodes.get(code) || 0) + 1);
-                    }
-                  }
-                } catch {
-                  otherFailureCount++;
-                  otherFailureCodes.set(
-                    'unexpected',
-                    (otherFailureCodes.get('unexpected') || 0) + 1
-                  );
-                }
-              }
-              console.log(
-                `[Microsoft][AppOnly] Calendar coverage: ${successCount}/${orgUsers.length} accessible, ${unavailableCount} unavailable, ${permissionDeniedCount} permission-denied, ${otherFailureCount} other failures`
-              );
-              if (otherFailureCodes.size > 0) {
-                console.warn(
-                  `[Microsoft][AppOnly] Calendar failure codes: ${[...otherFailureCodes.entries()]
-                    .map(([code, count]) => `${code}=${count}`)
-                    .join(', ')}`
-                );
-              }
-              if (successCount > 0) {
-                appTokenWorked = true;
-                this.pendingOutlookCoverage = {
-                  availableUsers: successCount,
-                  unavailableUsers: unavailableCount,
-                  failedUsers: permissionDeniedCount + otherFailureCount,
-                };
-                console.log(
-                  `[Microsoft][AppOnly] SUCCESS: fetched ${allEvents.length} events from ${successCount}/${orgUsers.length} users`
-                );
-              }
-            }
-          } else if (appToken) {
-            console.info(
-              '[Microsoft][AppOnly] Calendars.Read application permission is unavailable; using delegated calendar fallback'
-            );
-          }
-        }
-      } catch (appErr) {
-        console.warn('[Microsoft][AppOnly] App token fetch failed:', appErr.message);
-      }
-    }
-
-    if (appTokenWorked) return allEvents;
-
-    // ── STRATEGY 2: Attendee expansion from /me/calendarview (delegated token) ──
-    // The delegated token can only read the signed-in user's own calendar, but each
-    // calendar event contains the full attendee list with email addresses.
-    // We fetch the admin's calendar, then for each meeting we create one WorkEvent
-    // per attendee whose email matches an internal user — giving us org-wide attribution
-    // for all meetings the admin was part of.
-    console.log(
-      '[Microsoft] App-only token unavailable — using attendee expansion from /me/calendarview'
-    );
-
-    // Build a complete email → userId map for all org users
-    const allOrgUsers = orgId ? await User.find({ orgId }).select('_id email teamId').lean() : [];
-    const emailToUserId = {};
-    for (const u of allOrgUsers) {
-      if (u.email) emailToUserId[u.email.toLowerCase()] = u._id;
-    }
-    console.log(
-      `[Microsoft][AttendeeExpansion] Have ${Object.keys(emailToUserId).length} org users for matching`
-    );
-
-    const meUrl = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${since.toISOString()}&endDateTime=${until.toISOString()}&${select}`;
-    const meEvents = await fetchGraphCollection(meUrl, delegatedToken);
-    console.log(
-      `[Microsoft][AttendeeExpansion] Got ${meEvents.length} events from /me, expanding attendees`
-    );
-
-    // For each calendar event, emit one copy per attendee that is an internal user
-    for (const event of meEvents) {
-      const attendeeEmails = (event.attendees || [])
-        .map((a) => a.emailAddress?.address?.toLowerCase())
-        .filter(Boolean);
-
-      // Also include the organizer
-      const organizerEmail = event.organizer?.emailAddress?.address?.toLowerCase();
-      const allParticipants = [...new Set([...attendeeEmails, organizerEmail].filter(Boolean))];
-
-      const matchedUsers = allParticipants
-        .map((email) => ({ email, userId: emailToUserId[email] }))
-        .filter((x) => x.userId);
-
-      if (matchedUsers.length > 0) {
-        // Emit one copy per matched internal user
-        for (const { email, userId } of matchedUsers) {
-          allEvents.push({
+        const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(msId)}/calendarview?startDateTime=${encodeURIComponent(since.toISOString())}&endDateTime=${encodeURIComponent(until.toISOString())}&${select}`;
+        const calendarEvents = await fetchGraphCollection(url, appToken);
+        allEvents.push(
+          ...calendarEvents.map((event) => ({
             ...event,
             eventSource: 'outlook',
-            _internalUserId: userId,
-            _userEmail: email,
-            _attendeeExpanded: true,
-          });
-        }
-      } else {
-        // No attendee matched — keep event unattributed (will have userId: null)
-        allEvents.push({ ...event, eventSource: 'outlook' });
+            _internalUserId: user._id,
+          }))
+        );
+        successCount++;
+      } catch (error) {
+        if (isUnavailableMicrosoftMailboxError(error)) unavailableCount++;
+        else if (error.status === 403) permissionDeniedCount++;
+        else otherFailureCount++;
       }
     }
 
-    const attributed = allEvents.filter((e) => e._internalUserId).length;
+    this.pendingOutlookCoverage = {
+      availableUsers: successCount,
+      unavailableUsers: unavailableCount,
+      failedUsers: permissionDeniedCount + otherFailureCount,
+    };
+    if (successCount === 0) {
+      throw new Error('No organization mailbox passed the Outlook application-access check.');
+    }
     console.log(
-      `[Microsoft][AttendeeExpansion] ${allEvents.length} total events, ${attributed} attributed to internal users`
+      `[Microsoft][AppOnly] Calendar coverage: ${successCount}/${orgUsers.length} accessible, ${unavailableCount} unavailable, ${permissionDeniedCount + otherFailureCount} failed`
     );
     return allEvents;
   }
 
-  async fetchTeamsMessages(delegatedToken, since, until, orgId = null) {
-    if (orgId) {
-      try {
-        const org = await Organization.findById(orgId)
-          .select('integrations.microsoft.tenantId')
-          .lean();
-        const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
-        const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
-        const appRoles = appToken ? getMicrosoftTokenRoles(appToken) : [];
-        const requiredTeamsRoles = MICROSOFT_TEAMS_APPLICATION_ROLES;
-        const missingRoles = requiredTeamsRoles.filter((role) => !appRoles.includes(role));
-        if (appToken && missingRoles.length === 0) {
-          const tenantMessages = await this.fetchTenantWideTeamsMessages(
-            appToken,
-            since,
-            until,
-            orgId
-          );
-          console.log(
-            `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel/chat messages`
-          );
-          return tenantMessages;
-        } else if (appToken) {
-          console.info(
-            `[Microsoft][AppOnly] Tenant-wide Teams access is awaiting ${missingRoles.length} application permissions; using delegated fallback`
-          );
-        }
-      } catch (error) {
-        console.warn(
-          '[Microsoft][AppOnly] Tenant-wide Teams access unavailable; using delegated fallback:',
-          error.message
-        );
-      }
+  async fetchTeamsMessages(appToken, since, until, orgId = null) {
+    const appRoles = getMicrosoftTokenRoles(appToken);
+    const missingRoles = MICROSOFT_TEAMS_APPLICATION_ROLES.filter(
+      (role) => !appRoles.includes(role)
+    );
+    if (missingRoles.length > 0) {
+      throw new Error(
+        `Microsoft Teams application permissions missing: ${missingRoles.join(', ')}`
+      );
     }
+    if (!orgId) throw new Error('Organization is required for company-wide Teams collection.');
 
-    return this.fetchDelegatedTeamsMessages(delegatedToken, since, until);
+    const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until, orgId);
+    console.log(
+      `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel messages`
+    );
+    return tenantMessages;
   }
 
   async fetchTenantWideTeamsMessages(appToken, since, until, orgId) {
@@ -991,7 +820,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       if (!microsoftUserId) continue;
       try {
         const joinedTeams = await fetchGraphCollection(
-          `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(microsoftUserId)}/joinedTeams?$top=100&$select=id,displayName`,
+          `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(microsoftUserId)}/joinedTeams`,
           appToken,
           { maxPages: 10 }
         );
@@ -1013,7 +842,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       let channelById = new Map();
       try {
         const channels = await fetchGraphCollection(
-          `https://graph.microsoft.com/v1.0/teams/${team.id}/allChannels`,
+          `https://graph.microsoft.com/v1.0/teams/${team.id}/allChannels?$select=id,displayName,membershipType`,
           appToken
         );
         channelById = new Map(channels.map((channel) => [channel.id, channel]));
@@ -1055,145 +884,6 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       throw new Error('Tenant teams are visible, but ChannelMessage.Read.All is unavailable');
     }
 
-    // Chat.Read.All is optional. When granted, include 1:1, group, and meeting chats.
-    try {
-      const chatMessages = await fetchGraphCollection(
-        `https://graph.microsoft.com/v1.0/chats/getAllMessages?$top=50&$filter=${filter}`,
-        appToken
-      );
-      const chatTypeById = new Map();
-      for (const chatId of new Set(chatMessages.map((message) => message.chatId).filter(Boolean))) {
-        try {
-          const response = await fetch(`https://graph.microsoft.com/v1.0/chats/${chatId}`, {
-            headers: { Authorization: `Bearer ${appToken}` },
-          });
-          if (response.ok) {
-            const chat = await response.json();
-            chatTypeById.set(chatId, chat.chatType);
-          }
-        } catch {}
-      }
-      for (const message of chatMessages) {
-        if (message.messageType !== 'message') continue;
-        const created = new Date(message.createdDateTime);
-        if (created < since || created > until) continue;
-        allMessages.push({
-          ...message,
-          chatId: message.chatId,
-          channelType: chatTypeById.get(message.chatId) === 'oneOnOne' ? 'dm' : 'group_dm',
-          eventSource: 'teams-chat',
-        });
-      }
-    } catch (error) {
-      console.info('[Microsoft][AppOnly] Chat metadata not available:', error.message);
-    }
-
-    return allMessages;
-  }
-
-  async fetchDelegatedTeamsMessages(accessToken, since, until) {
-    const teams = await fetchGraphCollection(
-      'https://graph.microsoft.com/v1.0/me/joinedTeams',
-      accessToken
-    );
-    const allMessages = [];
-
-    for (const team of teams) {
-      let channels = [];
-      try {
-        channels = await fetchGraphCollection(
-          `https://graph.microsoft.com/v1.0/teams/${team.id}/channels`,
-          accessToken
-        );
-      } catch (error) {
-        console.warn(`Failed to fetch Teams channels for ${team.displayName}:`, error.message);
-        continue;
-      }
-
-      for (const channel of channels) {
-        try {
-          const roots = await fetchGraphCollection(
-            `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages?$top=50`,
-            accessToken,
-            { maxPages: 20 }
-          );
-          const messages = [...roots];
-          const relevantRoots = roots.filter((root) => {
-            const activityTime = new Date(root.lastModifiedDateTime || root.createdDateTime);
-            return !isNaN(activityTime) && activityTime >= since;
-          });
-          for (const root of relevantRoots) {
-            try {
-              const replies = await fetchGraphCollection(
-                `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/${channel.id}/messages/${root.id}/replies?$top=50`,
-                accessToken
-              );
-              messages.push(...replies);
-            } catch (error) {
-              console.warn(
-                `[Microsoft] Failed to fetch replies for ${team.displayName}/${channel.displayName}:`,
-                error.message
-              );
-            }
-          }
-
-          for (const message of messages) {
-            if (message.messageType !== 'message') continue;
-            const created = new Date(message.createdDateTime);
-            if (created < since || created > until) continue;
-            allMessages.push({
-              ...message,
-              teamId: team.id,
-              teamName: team.displayName,
-              channelId: channel.id,
-              channelName: channel.displayName,
-              channelType: channel.membershipType === 'standard' ? 'public' : 'private',
-              eventSource: 'teams',
-            });
-          }
-        } catch (error) {
-          console.warn(
-            `[Microsoft] Failed to fetch messages for ${team.displayName}/${channel.displayName}:`,
-            error.message
-          );
-        }
-      }
-    }
-
-    try {
-      const chats = await fetchGraphCollection(
-        'https://graph.microsoft.com/v1.0/me/chats?$top=50',
-        accessToken
-      );
-      for (const chat of chats) {
-        try {
-          const messages = await fetchGraphCollection(
-            `https://graph.microsoft.com/v1.0/chats/${chat.id}/messages?$top=50`,
-            accessToken,
-            { maxPages: 20 }
-          );
-          for (const message of messages) {
-            if (message.messageType !== 'message') continue;
-            const created = new Date(message.createdDateTime);
-            if (created < since || created > until) continue;
-            allMessages.push({
-              ...message,
-              chatId: chat.id,
-              channelType: chat.chatType === 'oneOnOne' ? 'dm' : 'group_dm',
-              eventSource: 'teams-chat',
-            });
-          }
-        } catch (error) {
-          console.info(`[Microsoft] Chat ${chat.id} is not readable:`, error.message);
-        }
-      }
-    } catch (error) {
-      console.info('[Microsoft] Delegated chat metadata not available:', error.message);
-    }
-
-    console.log(
-      `[Microsoft] Teams delegated fallback: fetched ${allMessages.length} messages from ${teams.length} joined teams plus accessible chats`
-    );
     return allMessages;
   }
 
@@ -1817,7 +1507,10 @@ export async function syncCoreIntegrations(orgId, since, until) {
 
   // Microsoft (Outlook or Teams)
   if (
-    org.integrations?.microsoft?.accessToken &&
+    org.integrations?.microsoft?.tenantId &&
+    (org.integrations?.microsoft?.applicationConsentSources?.outlook?.verifiedAt ||
+      org.integrations?.microsoft?.applicationConsentSources?.teams?.verifiedAt ||
+      org.integrations?.microsoft?.applicationConsentVerifiedAt) &&
     org.integrations?.microsoft?.sync?.enabled !== false
   ) {
     try {

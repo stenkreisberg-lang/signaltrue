@@ -12,14 +12,12 @@ import { encryptString } from '../utils/crypto.js';
 import {
   syncEmployeesFromSlack,
   syncEmployeesFromGoogle,
-  syncEmployeesFromMicrosoft,
 } from '../services/employeeSyncService.js';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 import { notifyIntegrationConnected } from '../services/superadminNotifyService.js';
 import {
   getSlackImmediateInsights,
   getCalendarImmediateInsights,
-  getMicrosoftImmediateInsights,
   getGoogleChatImmediateInsights,
   getOrgVsBenchmarks,
 } from '../services/immediateInsightsService.js';
@@ -36,6 +34,26 @@ import { MICROSOFT_DELEGATED_SCOPES } from '../config/microsoftPermissions.js';
 
 const router = express.Router();
 
+async function completeVerifiedMicrosoftTransition(orgId, verification) {
+  if (!verification?.verified || verification.transitions?.length === 0) {
+    return { started: false };
+  }
+
+  const organization = await Organization.findById(orgId);
+  if (!organization) throw new Error('Organization not found after Microsoft verification.');
+
+  // Claims are taken before email delivery, so repeated callbacks and
+  // concurrent manual verification cannot send the same success event twice.
+  await Promise.all([
+    notifyHRIntegrationsComplete(orgId),
+    notifyIntegrationConnected(organization, 'microsoft', 'company-wide', {
+      idempotencyKey: `company-wide:${verification.tenantId}`,
+    }),
+  ]);
+
+  return startMicrosoftCompanyBackfill(orgId, 60);
+}
+
 router.post(
   '/integrations/microsoft/admin-consent/verify',
   authenticateToken,
@@ -43,10 +61,12 @@ router.post(
   async (req, res) => {
     try {
       const verification = await verifyMicrosoftCompanyWideAccess(req.user.orgId, req.user.userId);
-      const backfill = startMicrosoftCompanyBackfill(req.user.orgId, 60);
+      const backfill = await completeVerifiedMicrosoftTransition(req.user.orgId, verification);
       return res.json({ verification, backfill });
     } catch (error) {
-      return res.status(400).json({ message: error.message });
+      return res
+        .status(400)
+        .json({ message: error.message, verification: error.verification || null });
     }
   }
 );
@@ -332,7 +352,17 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     // Fetch IntegrationConnection records for category king integrations
     const integrationConnections = await IntegrationConnection.find({
       orgId,
-      integrationType: { $in: ['jira', 'asana', 'hubspot', 'pipedrive', 'notion'] },
+      integrationType: {
+        $in: [
+          'jira',
+          'asana',
+          'hubspot',
+          'pipedrive',
+          'notion',
+          'microsoft-outlook',
+          'microsoft-teams',
+        ],
+      },
       status: 'connected',
     }).lean();
 
@@ -363,15 +393,12 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
     };
 
     // --- Check Connected Status (based on data in DB) ---
-    const msScope = organization.integrations?.microsoft?.scope;
-    const msHasToken = !!organization.integrations?.microsoft?.accessToken;
-
     const connected = {
       slack: !!organization.integrations?.slack?.accessToken,
       google: !!organization.integrations?.google?.accessToken,
       googleChat: !!organization.integrations?.googleChat?.accessToken,
-      teams: msHasToken && (msScope === 'teams' || msScope === 'both'),
-      outlook: msHasToken && (msScope === 'outlook' || msScope === 'both'),
+      teams: !!connectedIntegrations['microsoft-teams'],
+      outlook: !!connectedIntegrations['microsoft-outlook'],
       // Check both Organization.integrations and IntegrationConnection for these
       jira: !!organization.integrations?.jira?.accessToken || !!connectedIntegrations.jira,
       asana: !!organization.integrations?.asana?.accessToken || !!connectedIntegrations.asana,
@@ -1109,9 +1136,8 @@ router.get(
   }
 );
 
-// Grants tenant admin consent for application permissions already configured on
-// the SignalTrue Entra application (Calendars.Read, Team.ReadBasic.All,
-// Channel.ReadBasic.All, ChannelMessage.Read.All and optionally Chat.Read.All).
+// Grants tenant admin consent for the application permissions already configured
+// on the SignalTrue Entra application.
 router.get(
   '/integrations/microsoft/admin-consent/start',
   authenticateTokenFromHeaderOrQuery,
@@ -1138,10 +1164,14 @@ router.get(
       returnTo: req.query.returnTo === 'integrations' ? '/integrations' : '/dashboard',
       nonce: crypto.randomBytes(8).toString('hex'),
     });
-    const url = new URL(`https://login.microsoftonline.com/${tenantId}/adminconsent`);
+    const url = new URL(`https://login.microsoftonline.com/${tenantId}/v2.0/adminconsent`);
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('state', state);
+    // The v2 admin-consent endpoint grants the application permissions already
+    // configured on SignalTrue's app registration. Delegated scopes belong to
+    // the separate interactive identity flow above.
+    url.searchParams.set('scope', 'https://graph.microsoft.com/.default');
     return res.redirect(String(url));
   }
 );
@@ -1175,16 +1205,28 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         return res.status(400).send('Microsoft application consent was not granted.');
       }
 
+      const callbackTenant = String(req.query.tenant || req.query.tenantId || '');
+      const storedOrganization = await Organization.findById(parsed.orgId)
+        .select('integrations.microsoft.tenantId')
+        .lean();
+      if (
+        callbackTenant &&
+        storedOrganization?.integrations?.microsoft?.tenantId &&
+        callbackTenant !== String(storedOrganization.integrations.microsoft.tenantId)
+      ) {
+        return res.status(400).send('Microsoft consent was returned for a different tenant.');
+      }
+
       await Organization.findByIdAndUpdate(parsed.orgId, {
         $set: {
-          'integrations.microsoft.applicationConsentGrantedAt': new Date(),
+          'integrations.microsoft.applicationConsentCallbackAt': new Date(),
           'integrations.microsoft.applicationConsentTenantId':
             req.query.tenant || req.query.tenantId || undefined,
         },
       });
       try {
-        await verifyMicrosoftCompanyWideAccess(parsed.orgId, parsed.userId);
-        startMicrosoftCompanyBackfill(parsed.orgId, 60);
+        const verification = await verifyMicrosoftCompanyWideAccess(parsed.orgId, parsed.userId);
+        await completeVerifiedMicrosoftTransition(parsed.orgId, verification);
         return res.redirect(`${getAppUrl()}${returnTo}?microsoftConsent=verified`);
       } catch (error) {
         console.error('Microsoft post-admin-consent verification failed:', error.message);
@@ -1222,7 +1264,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     });
     const tokens = await tokenRes.json();
     if (tokens.error) {
-      console.error('Microsoft OAuth error:', tokens);
+      console.error('Microsoft OAuth error:', tokens.error);
       const message = encodeURIComponent(
         'Microsoft authorization failed while SignalTrue was completing the connection.'
       );
@@ -1250,36 +1292,27 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         } catch {}
       }
 
-      // Determine actual scope from granted permissions
-      // If token has both Calendar and Teams scopes, store 'both'
-      const grantedScopes = tokens.scope || '';
-      const hasCalendar = grantedScopes.includes('Calendars.Read');
-      const hasTeams =
-        grantedScopes.includes('Team.ReadBasic') || grantedScopes.includes('ChannelMessage.Read');
-      const effectiveScope =
-        hasCalendar && hasTeams
-          ? 'both'
-          : hasTeams
-            ? 'teams'
-            : hasCalendar
-              ? 'outlook'
-              : scopeParam;
+      if (!tenantId) {
+        return res.status(400).send('Microsoft did not return a tenant identifier.');
+      }
+
+      const delegatedScopes = String(tokens.scope || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort();
 
       const microsoftFields = {
-        'integrations.microsoft.scope': effectiveScope,
-        'integrations.microsoft.accessToken': encryptString(tokens.access_token),
-        'integrations.microsoft.sync.enabled': true,
-        'integrations.microsoft.sync.lastStatus': 'ok',
-        'integrations.microsoft.sync.error': null,
-        'integrations.microsoft.expiry': tokens.expires_in
-          ? new Date(Date.now() + tokens.expires_in * 1000)
-          : null,
+        // Outlook and Teams are one company-wide application connection. This
+        // delegated step only identifies the administrator and tenant.
+        'integrations.microsoft.scope': 'both',
+        'integrations.microsoft.delegatedConnectedAt': new Date(),
+        'integrations.microsoft.delegatedScopes': delegatedScopes,
+        'integrations.microsoft.sync.enabled': false,
+        'integrations.microsoft.sync.lastStatus': 'needs_admin',
+        'integrations.microsoft.sync.error':
+          'Microsoft identity is linked; company-wide application access is not verified.',
+        'integrations.microsoft.tenantId': tenantId,
       };
-      if (tokens.refresh_token) {
-        microsoftFields['integrations.microsoft.refreshToken'] = encryptString(
-          tokens.refresh_token
-        );
-      }
       if (msUser) {
         microsoftFields['integrations.microsoft.email'] =
           msUser.userPrincipalName || msUser.mail || null;
@@ -1288,7 +1321,6 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
           displayName: msUser.displayName,
         };
       }
-      if (tenantId) microsoftFields['integrations.microsoft.tenantId'] = tenantId;
 
       // Prefer lookup by orgId if available, fall back to slug
       let updatedOrg;
@@ -1297,6 +1329,11 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
           orgId,
           {
             $set: microsoftFields,
+            $unset: {
+              'integrations.microsoft.accessToken': 1,
+              'integrations.microsoft.refreshToken': 1,
+              'integrations.microsoft.expiry': 1,
+            },
           },
           { returnDocument: 'after' }
         );
@@ -1307,104 +1344,49 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
         updatedOrg = await Organization.findOneAndUpdate(
           { slug: orgSlug },
           {
-            $setOnInsert: { name: orgSlug, industry: 'General' },
             $set: microsoftFields,
+            $unset: {
+              'integrations.microsoft.accessToken': 1,
+              'integrations.microsoft.refreshToken': 1,
+              'integrations.microsoft.expiry': 1,
+            },
           },
-          { upsert: true, returnDocument: 'after' }
+          { returnDocument: 'after' }
         );
       }
       if (!updatedOrg) {
         return res.status(404).send('Organization not found for Microsoft authorization.');
       }
-      const companyWideVerified = Boolean(
-        updatedOrg.integrations?.microsoft?.applicationConsentVerifiedAt
-      );
-      const connectedTypes =
-        effectiveScope === 'both'
-          ? ['microsoft-outlook', 'microsoft-teams']
-          : [effectiveScope === 'teams' ? 'microsoft-teams' : 'microsoft-outlook'];
       await Promise.all(
-        connectedTypes.map((integrationType) =>
+        ['microsoft-outlook', 'microsoft-teams'].map((integrationType) =>
           IntegrationConnection.findOneAndUpdate(
             { orgId: updatedOrg._id, integrationType },
             {
               $set: {
-                status: companyWideVerified ? 'connected' : 'needs_admin',
-                statusMessage: companyWideVerified
-                  ? 'Microsoft authorization refreshed; synchronization is starting'
-                  : 'Microsoft account connected; company-wide administrator consent is still required',
+                status: 'needs_admin',
+                statusMessage:
+                  'Microsoft identity linked; a tenant administrator must grant and verify company-wide application access',
                 statusUpdatedAt: new Date(),
-                connectedAt: new Date(),
-                connectedBy: parsed.userId || undefined,
-                measurementScope: companyWideVerified
-                  ? 'organization-wide Microsoft metadata'
-                  : 'connected Microsoft administrator account',
-                'sync.enabled': true,
-                'sync.lastSyncMessage':
-                  'Microsoft authorization refreshed; synchronization is starting',
+                measurementScope: 'application access not verified',
+                'sync.enabled': false,
+                'sync.lastSyncMessage': 'Waiting for verified Microsoft application permissions',
               },
+              $unset: { connectedAt: 1, connectedBy: 1 },
             },
             { upsert: true, returnDocument: 'after' }
           )
         )
       );
 
-      // Check if all integrations are complete and notify HR admins
-      if (updatedOrg) {
-        // Get immediate Microsoft insights (runs in background)
-        if (tokens.access_token) {
-          getMicrosoftImmediateInsights(updatedOrg._id, tokens.access_token, scopeParam)
-            .then((insights) => {
-              console.log('Microsoft immediate insights:', JSON.stringify(insights));
-            })
-            .catch((err) => {
-              console.error('Microsoft immediate insights error:', err.message);
-            });
-        }
-
-        notifyHRIntegrationsComplete(updatedOrg._id);
-        // Notify superadmin about new integration
-        notifyIntegrationConnected(updatedOrg, 'microsoft', scopeParam);
-        // Map the directory first so newly discovered people and departments are
-        // available when calendar and Teams events are attributed.
-        void (async () => {
-          try {
-            const result = await syncEmployeesFromMicrosoft(updatedOrg._id, tokens.access_token);
-            if (result.success) {
-              console.log('Microsoft employee sync completed:', result.stats);
-            } else {
-              console.log('Microsoft employee sync skipped:', result.message);
-            }
-          } catch (err) {
-            console.error('Microsoft employee sync failed:', err.message);
-          }
-
-          let companyBackfillStarted = false;
-          // If tenant-wide permission was granted directly in Entra before this
-          // interactive connection, discover it after directory mapping and begin
-          // the full backfill automatically.
-          if (!companyWideVerified && tenantId) {
-            try {
-              await verifyMicrosoftCompanyWideAccess(updatedOrg._id, parsed.userId);
-              startMicrosoftCompanyBackfill(updatedOrg._id, 60);
-              companyBackfillStarted = true;
-            } catch (error) {
-              console.info(
-                'Microsoft delegated connection is complete; company-wide access is pending:',
-                error.message
-              );
-            }
-          }
-
-          try {
-            if (!companyBackfillStarted) {
-              const results = await triggerImmediateSync(updatedOrg._id);
-              console.log('Microsoft immediate sync results:', results);
-            }
-          } catch (err) {
-            console.error('Microsoft immediate sync error:', err.message);
-          }
-        })();
+      try {
+        const verification = await verifyMicrosoftCompanyWideAccess(updatedOrg._id, parsed.userId);
+        await completeVerifiedMicrosoftTransition(updatedOrg._id, verification);
+        return res.redirect(`${getAppUrl()}/integrations?microsoftConsent=verified`);
+      } catch (error) {
+        console.info(
+          'Microsoft identity is linked; company-wide application access is pending:',
+          error.message
+        );
       }
     } catch (e) {
       console.error('Microsoft OAuth persist error:', e.message);
@@ -1414,7 +1396,7 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       return res.redirect(`${getAppUrl()}/dashboard?integrationStatus=error&msg=${message}`);
     }
 
-    const redirect = `${getAppUrl()}/dashboard?connected=microsoft-${scopeParam}`;
+    const redirect = `${getAppUrl()}/integrations?microsoftIdentity=connected`;
     return res.redirect(redirect);
   } catch (err) {
     console.error('Microsoft OAuth callback error:', err.message);

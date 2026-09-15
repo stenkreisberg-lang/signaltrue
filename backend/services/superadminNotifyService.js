@@ -6,6 +6,7 @@
  */
 
 import { Resend } from 'resend';
+import { claimNotification, completeNotificationClaim } from './notificationClaimService.js';
 
 // Superadmin email for receiving all report copies
 const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL || 'sten.kreisberg@gmail.com';
@@ -140,20 +141,44 @@ export async function notifySuperadmin({ title, message, type, data = {} }) {
  * @param {Object} org - Organization object
  * @param {string} integration - Integration name (e.g., 'microsoft', 'slack', 'jira')
  * @param {string} scope - Scope if applicable (e.g., 'teams', 'outlook')
+ * @param {Object} options - Delivery controls
+ * @param {string} options.idempotencyKey - Stable key for the genuine state transition
  */
-export async function notifyIntegrationConnected(org, integration, scope = null) {
+export async function notifyIntegrationConnected(org, integration, scope = null, options = {}) {
   const integrationName = scope ? `${integration} (${scope})` : integration;
+  const orgId = org?._id;
+  if (!orgId) return { sent: false, skipped: true, reason: 'organization_id_missing' };
 
-  await notifySuperadmin({
-    title: 'New Integration Connected',
-    message: `A client has connected a new integration. Review the dashboard to monitor their data.`,
-    type: 'integration_connected',
-    data: {
-      Organization: org?.name || org?.slug || 'Unknown',
-      Integration: integrationName,
-      'Connected At': new Date().toLocaleString(),
-    },
-  });
+  const idempotencyKey =
+    options.idempotencyKey || `${String(integration)}:${String(scope || 'default')}`;
+  let claim;
+  try {
+    claim = await claimNotification(orgId, 'integration_connected', idempotencyKey);
+    if (!claim.claimed) {
+      console.log(`[Superadmin Notify] Duplicate connection notification skipped: ${claim.key}`);
+      return { sent: false, skipped: true, reason: 'duplicate', key: claim.key };
+    }
+
+    const result = await notifySuperadmin({
+      title: 'New Integration Connected',
+      message: `A client has connected a new integration. Review the dashboard to monitor their data.`,
+      type: 'integration_connected',
+      data: {
+        Organization: org?.name || org?.slug || 'Unknown',
+        Integration: integrationName,
+        'Connected At': new Date().toLocaleString(),
+      },
+    });
+    const status = result ? 'sent' : process.env.RESEND_API_KEY ? 'failed' : 'skipped';
+    await completeNotificationClaim(orgId, claim.key, status);
+    return { sent: Boolean(result), skipped: status === 'skipped', key: claim.key };
+  } catch (error) {
+    if (claim?.key) {
+      await completeNotificationClaim(orgId, claim.key, 'failed', error.message).catch(() => {});
+    }
+    console.error('[Superadmin Notify] Connection notification failed:', error.message);
+    return { sent: false, skipped: false, error: error.message };
+  }
 }
 
 export default {

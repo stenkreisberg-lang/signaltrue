@@ -125,6 +125,8 @@ const organizationSchema = new mongoose.Schema(
       },
       microsoft: {
         scope: String, // 'outlook', 'teams', or 'both'
+        delegatedConnectedAt: Date,
+        delegatedScopes: [String],
         refreshToken: { type: String, set: encryptString },
         accessToken: { type: String, set: encryptString },
         expiry: Date,
@@ -133,17 +135,42 @@ const organizationSchema = new mongoose.Schema(
         eventsCount: Number,
         teamsCount: Number,
         tenantId: String,
+        applicationConsentCallbackAt: Date,
         applicationConsentGrantedAt: Date,
         applicationConsentVerifiedAt: Date,
         applicationConsentLastCheckedAt: Date,
         applicationConsentLastError: String,
         applicationConsentRoles: [String],
         applicationConsentTenantId: String,
+        applicationConsentSources: {
+          outlook: {
+            verifiedAt: Date,
+            lastCheckedAt: Date,
+            lastError: String,
+            missingRoles: [String],
+            probes: {
+              directory: String,
+              calendar: String,
+            },
+          },
+          teams: {
+            verifiedAt: Date,
+            lastCheckedAt: Date,
+            lastError: String,
+            missingRoles: [String],
+            probes: {
+              directory: String,
+              teams: String,
+              channels: String,
+              messages: String,
+            },
+          },
+        },
         calendarBackfillStartedAt: Date,
         lastPulledAt: Date,
         lastEmployeeSync: Date, // Track when employees were last synced
         sync: {
-          enabled: { type: Boolean, default: true },
+          enabled: { type: Boolean, default: false },
           lastSync: Date,
           lastStatus: String,
           lastRunAt: Date,
@@ -182,7 +209,26 @@ const organizationSchema = new mongoose.Schema(
       monthlyReportRecipients: [{ type: String }],
       quarterlyReportRecipients: [{ type: String }],
       semiAnnualReportRecipients: [{ type: String }],
+      integrationsNotificationSent: { type: Boolean, default: false },
     },
+
+    // Atomic, persistent idempotency claims for externally visible email
+    // events. A claim is inserted before sending, so concurrent callbacks can
+    // never emit the same notification twice.
+    notificationClaims: [
+      {
+        key: { type: String, required: true },
+        eventType: { type: String, required: true },
+        status: {
+          type: String,
+          enum: ['sending', 'sent', 'failed', 'skipped'],
+          default: 'sending',
+        },
+        claimedAt: { type: Date, default: Date.now },
+        completedAt: Date,
+        error: String,
+      },
+    ],
 
     teamEnrichment: {
       status: {

@@ -158,9 +158,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         (data.integrations || []).map((integration) => ({
           ...integration,
           source: integration.type,
-          connected: ['connected', 'measuring', 'needs_admin', 'error'].includes(
-            integration.status
-          ),
+          connected: ['connected', 'measuring'].includes(integration.status),
           coverageDetails: integration.coverage || {},
           coverage: integration.coverage?.percent || 0,
           eventCount: integration.coverage?.events || 0,
@@ -180,6 +178,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       }
     } catch (err) {
       setError(err.message);
+      await fetchIntegrations();
     } finally {
       setLoading(false);
     }
@@ -226,6 +225,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       await fetchIntegrations();
     } catch (err) {
       setError(err.message);
+      await fetchIntegrations();
     } finally {
       setVerifyingMicrosoft(false);
     }
@@ -238,17 +238,23 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const consent = params.get('microsoftConsent');
-    if (!consent) return;
-    if (consent === 'verified') {
+    const identity = params.get('microsoftIdentity');
+    if (identity === 'connected') {
+      setNotice(
+        'Microsoft identity and tenant are linked. Company-wide Outlook and Teams access still requires the application-permission step below.'
+      );
+    } else if (consent === 'verified') {
       setNotice('Microsoft company-wide access is verified. The 60-day backfill has started.');
     } else if (consent === 'verification-failed') {
       setError(
         'Microsoft accepted admin consent, but one or more required permissions are missing.'
       );
-    } else {
+    } else if (consent) {
       setError('Microsoft company-wide consent was not granted.');
     }
-    window.history.replaceState({}, document.title, '/integrations');
+    if (consent || identity) {
+      window.history.replaceState({}, document.title, '/integrations');
+    }
   }, []);
 
   // Start OAuth flow
@@ -360,7 +366,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
     <div className="space-y-6">
       {error && (
         <div className="rounded-container border border-amber-200 bg-amber-50 px-4 py-3 text-caption text-amber-800">
-          Data source status is temporarily unavailable. {error}
+          {error}
         </div>
       )}
       {notice && (
@@ -408,13 +414,30 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             <div className="max-w-2xl">
               <h3 className="font-semibold text-slate-950">Microsoft company-wide access</h3>
               <p className="mt-1 text-caption text-slate-600">
-                Outlook and Teams sign-in covers the connected administrator account. A Microsoft
-                tenant administrator must separately grant application permissions for
-                organization-wide calendar and Teams metadata.
+                Microsoft sign-in only identifies the administrator and tenant. Outlook and Teams
+                become connected only after a tenant administrator grants application permissions
+                and SignalTrue's live Graph checks pass.
               </p>
               <p className="mt-2 break-all text-caption text-slate-500">
                 Required application permissions: {microsoftRequiredRoles.join(', ')}
               </p>
+              <div className="mt-2 flex flex-wrap gap-2 text-caption">
+                {['outlook', 'teams'].map((source) => {
+                  const sourceState = microsoftCompanyAccess.sources?.[source];
+                  const verified = Boolean(sourceState?.verifiedAt);
+                  return (
+                    <span
+                      key={source}
+                      className={`rounded-control px-2 py-1 ${
+                        verified ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      {source === 'outlook' ? 'Outlook' : 'Teams'}:{' '}
+                      {verified ? 'verified' : 'not verified'}
+                    </span>
+                  );
+                })}
+              </div>
               {microsoftCompanyAccess.lastCheckedAt && !microsoftCompanyAccess.verifiedAt && (
                 <div className="mt-2 space-y-1 text-caption">
                   <p className="text-slate-600">
@@ -561,14 +584,16 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         {Object.entries(INTEGRATIONS).map(([source, config]) => {
           const integration = integrations.find((i) => i.source === source);
           const connected = integration?.connected || false;
+          const present = Boolean(integration && integration.status !== 'disconnected');
           const needsAdmin = integration?.status === 'needs_admin';
+          const hasError = integration?.status === 'error';
           const Icon = config.icon;
 
           return (
             <div
               key={source}
               className={`bg-white rounded-container border ${
-                connected ? 'border-teal-200' : 'border-gray-200'
+                connected ? 'border-teal-200' : present ? 'border-amber-200' : 'border-gray-200'
               } overflow-hidden`}
             >
               {/* Header */}
@@ -585,7 +610,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   </div>
                 </div>
 
-                {needsAdmin ? (
+                {needsAdmin || hasError ? (
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
                 ) : connected ? (
                   <CheckCircle2 className="w-5 h-5 text-teal-700" />
@@ -596,18 +621,18 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
               {/* Body */}
               <div className="p-4">
-                {connected ? (
+                {present ? (
                   <>
                     <div
                       className={`mb-4 rounded-control px-3 py-2 text-caption ${
-                        needsAdmin
+                        needsAdmin || hasError
                           ? 'bg-amber-50 text-amber-800'
                           : integration.status === 'measuring'
                             ? 'bg-teal-50 text-teal-800'
                             : 'bg-slate-50 text-slate-700'
                       }`}
                     >
-                      {needsAdmin
+                      {needsAdmin || hasError
                         ? integration.statusMessage || 'Administrator consent is still required.'
                         : integration.status === 'measuring'
                           ? `Measuring from ${integration.eventCount || 0} activity events.`
@@ -662,14 +687,25 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => triggerSync(source)}
-                        disabled={syncing[source]}
-                        className="flex-1 px-3 py-2 text-caption font-medium text-teal-700 bg-teal-50 rounded-control hover:bg-teal-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`} />
-                        {syncing[source] ? 'Syncing...' : 'Sync Now'}
-                      </button>
+                      {source.startsWith('microsoft-') && !connected ? (
+                        <button
+                          onClick={grantMicrosoftCompanyAccess}
+                          className="flex-1 px-3 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors"
+                        >
+                          Grant / verify company-wide access
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => triggerSync(source)}
+                          disabled={syncing[source] || !connected}
+                          className="flex-1 px-3 py-2 text-caption font-medium text-teal-700 bg-teal-50 rounded-control hover:bg-teal-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          <RefreshCw
+                            className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`}
+                          />
+                          {syncing[source] ? 'Syncing...' : 'Sync Now'}
+                        </button>
+                      )}
 
                       <button
                         onClick={() => setShowConnectModal(source)}

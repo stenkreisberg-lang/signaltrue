@@ -16,18 +16,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import Organization from '../models/organizationModel.js';
-import { getMicrosoftAppToken } from '../services/tokenService.js';
-import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
+import {
+  inspectMicrosoftCompanyWideAccess,
+  REQUIRED_MICROSOFT_APPLICATION_ROLES,
+} from '../services/microsoftAdminConsentService.js';
 
 const target = process.argv.slice(2).find((v) => !v.startsWith('--'));
 if (!target) throw new Error('Usage: microsoft-consent-check.js <name-or-domain>');
 if (!process.env.MONGO_URI) throw new Error('MONGO_URI is required');
-
-function decodeTokenPayload(token) {
-  const parts = String(token || '').split('.');
-  if (parts.length !== 3) return null;
-  return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-}
 
 await mongoose.connect(process.env.MONGO_URI);
 try {
@@ -51,33 +47,29 @@ try {
     applicationConsentLastCheckedAt: ms.applicationConsentLastCheckedAt || null,
     applicationConsentLastError: ms.applicationConsentLastError || null,
     applicationConsentRoles: ms.applicationConsentRoles || [],
+    applicationConsentSources: ms.applicationConsentSources || {},
   };
 
   let liveCheck = { attempted: false };
   if (ms.tenantId) {
     liveCheck.attempted = true;
     try {
-      const appToken = await getMicrosoftAppToken(ms.tenantId);
-      if (!appToken) throw new Error('Microsoft application credentials are not configured.');
-      const claims = decodeTokenPayload(appToken);
-      const roles = Array.isArray(claims?.roles) ? [...new Set(claims.roles)].sort() : [];
+      const assessment = await inspectMicrosoftCompanyWideAccess(org._id);
       liveCheck = {
         attempted: true,
         tokenAcquired: true,
-        grantedRoles: roles,
-        missingRequiredRoles: REQUIRED_MICROSOFT_APPLICATION_ROLES.filter(
-          (r) => !roles.includes(r)
-        ),
-        tenantOfToken: claims?.tid || null,
-        appId: claims?.appid || null,
+        grantedRoles: assessment.roles,
+        missingRequiredRoles: assessment.missingRoles,
+        tenantOfToken: assessment.tenantId,
+        sources: assessment.sources,
+        verified: assessment.verified,
       };
     } catch (error) {
       liveCheck = { attempted: true, tokenAcquired: false, error: error.message };
     }
   }
 
-  const consentLooksGranted =
-    liveCheck.tokenAcquired === true && liveCheck.missingRequiredRoles?.length === 0;
+  const consentLooksGranted = liveCheck.tokenAcquired === true && liveCheck.verified === true;
 
   console.log(
     JSON.stringify(
@@ -87,8 +79,8 @@ try {
         liveCheck,
         requiredRoles: REQUIRED_MICROSOFT_APPLICATION_ROLES,
         verdict: consentLooksGranted
-          ? 'Tenant consent present for all required application roles'
-          : 'Tenant consent INCOMPLETE — see missingRequiredRoles/error',
+          ? 'Tenant application roles and all required Graph probes verified'
+          : 'Tenant consent/access INCOMPLETE — see missingRequiredRoles, sources, or error',
       },
       null,
       2

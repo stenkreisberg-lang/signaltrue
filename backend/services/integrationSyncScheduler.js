@@ -23,6 +23,10 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
+import { syncEmployeesFromMicrosoft } from './employeeSyncService.js';
+import { getMicrosoftAppToken } from './tokenService.js';
+import { notifyHRIntegrationsComplete } from './integrationNotifyService.js';
+import { notifyIntegrationConnected } from './superadminNotifyService.js';
 import {
   getGrantedApplicationRoles,
   verifyMicrosoftCompanyWideAccess,
@@ -98,7 +102,32 @@ export function scheduleIntegrationJobs() {
 export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
   const startedAt = new Date();
   const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
-  triggerImmediateSync(orgId, { since, until: new Date() })
+  void (async () => {
+    await IntegrationConnection.updateMany(
+      {
+        orgId,
+        integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+        status: 'connected',
+      },
+      {
+        $set: {
+          'sync.backfillComplete': false,
+          'sync.backfillStartedAt': startedAt,
+          'sync.backfillCompletedAt': null,
+          'sync.backfillProgress': 0,
+          'sync.lastSyncMessage': `${daysBack}-day company-wide backfill started`,
+        },
+      }
+    );
+    const org = await Organization.findById(orgId).select('integrations.microsoft.tenantId').lean();
+    const tenantId = org?.integrations?.microsoft?.tenantId;
+    const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
+    if (!appToken) throw new Error('Microsoft application token is unavailable for backfill.');
+    const directory = await syncEmployeesFromMicrosoft(orgId, appToken);
+    if (!directory.success)
+      throw new Error(directory.message || 'Microsoft directory sync failed.');
+    return triggerImmediateSync(orgId, { since, until: new Date() });
+  })()
     .then(async (results) => {
       const microsoft = results.find((result) => result.source === 'microsoft');
       const completedAt = new Date();
@@ -127,9 +156,7 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
           .map(async (definition) => {
             const missingRoles = definition.requiredRoles.filter((role) => !roles.includes(role));
             const detail = microsoft?.details?.sources?.[definition.detailKey];
-            const complete = Boolean(
-              microsoft?.success && detail?.success !== false && missingRoles.length === 0
-            );
+            const complete = Boolean(detail?.success === true && missingRoles.length === 0);
             const message = complete
               ? `${daysBack}-day company-wide backfill completed`
               : missingRoles.length > 0
@@ -182,13 +209,21 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
   const retryBefore = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const organizations = await Organization.find({
     ...ACTIVE_ORG_FILTER,
-    'integrations.microsoft.accessToken': { $exists: true, $ne: null },
     'integrations.microsoft.tenantId': { $exists: true, $ne: null },
-    'integrations.microsoft.sync.enabled': { $ne: false },
     'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false },
-    $or: [
-      { 'integrations.microsoft.applicationConsentLastCheckedAt': { $exists: false } },
-      { 'integrations.microsoft.applicationConsentLastCheckedAt': { $lte: retryBefore } },
+    $and: [
+      {
+        $or: [
+          { 'integrations.microsoft.delegatedConnectedAt': { $exists: true, $ne: null } },
+          { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
+        ],
+      },
+      {
+        $or: [
+          { 'integrations.microsoft.applicationConsentLastCheckedAt': { $exists: false } },
+          { 'integrations.microsoft.applicationConsentLastCheckedAt': { $lte: retryBefore } },
+        ],
+      },
     ],
   })
     .select('_id name')
@@ -196,8 +231,17 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
 
   for (const organization of organizations) {
     try {
-      await verifyMicrosoftCompanyWideAccess(organization._id);
-      startMicrosoftCompanyBackfill(organization._id, 60);
+      const verification = await verifyMicrosoftCompanyWideAccess(organization._id);
+      if (verification.transitions.length > 0) {
+        const org = await Organization.findById(organization._id);
+        await Promise.all([
+          notifyHRIntegrationsComplete(organization._id),
+          notifyIntegrationConnected(org, 'microsoft', 'company-wide', {
+            idempotencyKey: `company-wide:${verification.tenantId}`,
+          }),
+        ]);
+        startMicrosoftCompanyBackfill(organization._id, 60);
+      }
       console.log(`[Microsoft Consent] Verified company-wide access for ${organization.name}`);
     } catch (error) {
       console.warn(
@@ -217,8 +261,7 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
           .lean();
         if (org?.integrations?.microsoft?.calendarBackfillStartedAt) continue;
 
-        const roles = await getGrantedApplicationRoles(org?.integrations?.microsoft?.tenantId);
-        if (!roles.includes('Calendars.Read')) continue;
+        if (!error.verification?.sources?.outlook?.verified) continue;
 
         // Recorded before starting so a restart cannot queue it repeatedly.
         await Organization.findByIdAndUpdate(organization._id, {
@@ -580,7 +623,24 @@ async function getActiveOrgs() {
         'integrations.slack.sync.enabled': { $ne: false },
       },
       {
-        'integrations.microsoft.accessToken': { $exists: true, $ne: null },
+        'integrations.microsoft.tenantId': { $exists: true, $ne: null },
+        $or: [
+          {
+            'integrations.microsoft.applicationConsentSources.outlook.verifiedAt': {
+              $exists: true,
+              $ne: null,
+            },
+          },
+          {
+            'integrations.microsoft.applicationConsentSources.teams.verifiedAt': {
+              $exists: true,
+              $ne: null,
+            },
+          },
+          {
+            'integrations.microsoft.applicationConsentVerifiedAt': { $exists: true, $ne: null },
+          },
+        ],
         'integrations.microsoft.sync.enabled': { $ne: false },
       },
       {

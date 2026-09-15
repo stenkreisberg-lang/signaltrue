@@ -9,6 +9,7 @@ import express from 'express';
 import Organization from '../models/organizationModel.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { decryptString } from '../utils/crypto.js';
+import { inspectMicrosoftCompanyWideAccess } from '../services/microsoftAdminConsentService.js';
 
 const router = express.Router();
 
@@ -118,7 +119,7 @@ router.get('/integrations/:orgId/slack', authenticateToken, requireSuperadmin, a
 
 /**
  * GET /api/debug/integrations/:orgId/microsoft
- * Fetch raw Microsoft Graph API responses for debugging
+ * Return a sanitized live Microsoft application-access assessment.
  */
 router.get(
   '/integrations/:orgId/microsoft',
@@ -133,94 +134,29 @@ router.get(
         return res.status(404).json({ message: 'Organization not found' });
       }
 
-      if (!org.integrations?.microsoft?.accessToken) {
+      if (!org.integrations?.microsoft?.tenantId) {
         return res.json({
           connected: false,
-          message: 'Microsoft not connected for this org',
-          integrationData: org.integrations?.microsoft || null,
+          message: 'Microsoft tenant identity is not connected for this org',
         });
       }
 
-      const token = decryptString(org.integrations.microsoft.accessToken);
-      const scope = org.integrations.microsoft.scope || 'outlook';
-      const results = { connected: true, scope, responses: {} };
-
-      // Get current user
       try {
-        const meRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-          headers: { Authorization: `Bearer ${token}` },
+        const assessment = await inspectMicrosoftCompanyWideAccess(orgId);
+        return res.json({
+          connected: assessment.verified,
+          tenantRecognized: true,
+          roles: assessment.roles,
+          missingRoles: assessment.missingRoles,
+          sources: assessment.sources,
         });
-        results.responses.me = await meRes.json();
       } catch (err) {
-        results.responses.me = { error: err.message };
+        return res.status(400).json({
+          connected: false,
+          tenantRecognized: true,
+          error: err.message,
+        });
       }
-
-      // Check token expiry
-      results.tokenInfo = {
-        hasToken: true,
-        scope: org.integrations.microsoft.scope,
-        expiry: org.integrations.microsoft.expiry,
-        isExpired: org.integrations.microsoft.expiry
-          ? new Date(org.integrations.microsoft.expiry) < new Date()
-          : 'unknown',
-        tenantId: org.integrations.microsoft.tenantId,
-        user: org.integrations.microsoft.user,
-      };
-
-      if (scope === 'outlook') {
-        // Get calendar events
-        try {
-          const now = new Date();
-          const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-          const eventsRes = await fetch(
-            `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${weekLater.toISOString()}&$top=10`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          results.responses.calendarEvents = await eventsRes.json();
-        } catch (err) {
-          results.responses.calendarEvents = { error: err.message };
-        }
-
-        // Get calendars
-        try {
-          const calendarsRes = await fetch(
-            'https://graph.microsoft.com/v1.0/me/calendars?$top=10',
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          results.responses.calendars = await calendarsRes.json();
-        } catch (err) {
-          results.responses.calendars = { error: err.message };
-        }
-      } else {
-        // Teams scope - get joined teams
-        try {
-          const teamsRes = await fetch('https://graph.microsoft.com/v1.0/me/joinedTeams?$top=10', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          results.responses.joinedTeams = await teamsRes.json();
-        } catch (err) {
-          results.responses.joinedTeams = { error: err.message };
-        }
-
-        // Get channels from first team
-        if (results.responses.joinedTeams?.value?.[0]?.id) {
-          try {
-            const teamId = results.responses.joinedTeams.value[0].id;
-            const channelsRes = await fetch(
-              `https://graph.microsoft.com/v1.0/teams/${teamId}/channels?$top=5`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            results.responses.channels = await channelsRes.json();
-            results.responses.channels._teamId = teamId;
-          } catch (err) {
-            results.responses.channels = { error: err.message };
-          }
-        }
-      }
-
-      res.json(results);
     } catch (err) {
       console.error('Microsoft debug error:', err);
       res.status(500).json({ message: err.message });
@@ -418,14 +354,20 @@ router.get(
             hasImmediateInsights: !!integrations.slack?.immediateInsights,
           },
           microsoft: {
-            connected: !!integrations.microsoft?.accessToken,
+            identityLinked: Boolean(
+              integrations.microsoft?.tenantId &&
+              (integrations.microsoft?.delegatedConnectedAt || integrations.microsoft?.accessToken)
+            ),
+            connected: !!integrations.microsoft?.applicationConsentVerifiedAt,
+            sources: {
+              outlook: Boolean(
+                integrations.microsoft?.applicationConsentSources?.outlook?.verifiedAt
+              ),
+              teams: Boolean(integrations.microsoft?.applicationConsentSources?.teams?.verifiedAt),
+            },
             scope: integrations.microsoft?.scope,
-            expiry: integrations.microsoft?.expiry,
-            isExpired: integrations.microsoft?.expiry
-              ? new Date(integrations.microsoft.expiry) < new Date()
-              : null,
             lastSync: integrations.microsoft?.sync?.lastSync,
-            syncStatus: integrations.microsoft?.sync?.status,
+            syncStatus: integrations.microsoft?.sync?.lastStatus,
             syncError: integrations.microsoft?.sync?.error,
             hasImmediateInsights: !!integrations.microsoft?.immediateInsights,
           },

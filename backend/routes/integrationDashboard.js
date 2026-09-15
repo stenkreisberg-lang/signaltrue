@@ -35,7 +35,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     const [organization, connections, healthIssues] = await Promise.all([
       Organization.findById(orgId)
         .select(
-          'integrations.microsoft.accessToken integrations.microsoft.tenantId integrations.microsoft.applicationConsentGrantedAt integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentLastCheckedAt integrations.microsoft.applicationConsentLastError integrations.microsoft.applicationConsentRoles'
+          'integrations.microsoft.accessToken integrations.microsoft.delegatedConnectedAt integrations.microsoft.delegatedScopes integrations.microsoft.tenantId integrations.microsoft.applicationConsentCallbackAt integrations.microsoft.applicationConsentGrantedAt integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentLastCheckedAt integrations.microsoft.applicationConsentLastError integrations.microsoft.applicationConsentRoles integrations.microsoft.applicationConsentSources'
         )
         .lean(),
       IntegrationConnection.find({ orgId }).lean(),
@@ -135,7 +135,9 @@ router.get('/status', authenticateToken, async (req, res) => {
 
     const microsoft = organization?.integrations?.microsoft;
     const microsoftCompanyAccess = {
-      connected: Boolean(microsoft?.accessToken && microsoft?.tenantId),
+      connected: Boolean(
+        microsoft?.tenantId && (microsoft?.delegatedConnectedAt || microsoft?.accessToken)
+      ),
       configured: Boolean(
         process.env.MS_APP_CLIENT_ID &&
         process.env.MS_APP_CLIENT_SECRET &&
@@ -147,6 +149,8 @@ router.get('/status', authenticateToken, async (req, res) => {
       lastError: microsoft?.applicationConsentLastError || null,
       grantedRoles: microsoft?.applicationConsentRoles || [],
       requiredRoles: REQUIRED_MICROSOFT_APPLICATION_ROLES,
+      delegatedScopes: microsoft?.delegatedScopes || [],
+      sources: microsoft?.applicationConsentSources || {},
     };
 
     res.json({

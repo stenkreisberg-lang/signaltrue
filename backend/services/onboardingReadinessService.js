@@ -30,16 +30,24 @@ function id(value) {
 
 function legacyConnection(org, type) {
   const microsoftScope = org.integrations?.microsoft?.scope;
-  const microsoftConnected = !!org.integrations?.microsoft?.accessToken;
+  const microsoftConnected = Boolean(
+    org.integrations?.microsoft?.delegatedConnectedAt ||
+    (org.integrations?.microsoft?.accessToken && org.integrations?.microsoft?.tenantId)
+  );
   const microsoftConsent = !!org.integrations?.microsoft?.applicationConsentVerifiedAt;
   const microsoftConsentError = org.integrations?.microsoft?.applicationConsentLastError;
 
   if (type === 'microsoft-outlook') {
+    const sourceVerified = Boolean(
+      org.integrations?.microsoft?.applicationConsentSources?.outlook?.verifiedAt ||
+      microsoftConsent
+    );
     const connected =
       microsoftConnected && (microsoftScope === 'outlook' || microsoftScope === 'both');
     return {
       connected,
-      needsAdmin: connected && !microsoftConsent,
+      needsAdmin: connected && !sourceVerified,
+      requiresVerification: true,
       connectedAt: org.integrations?.microsoft?.lastPulledAt || null,
       lastSync:
         org.integrations?.microsoft?.sync?.lastSync ||
@@ -53,11 +61,15 @@ function legacyConnection(org, type) {
     };
   }
   if (type === 'microsoft-teams') {
+    const sourceVerified = Boolean(
+      org.integrations?.microsoft?.applicationConsentSources?.teams?.verifiedAt || microsoftConsent
+    );
     const connected =
       microsoftConnected && (microsoftScope === 'teams' || microsoftScope === 'both');
     return {
       connected,
-      needsAdmin: connected && !microsoftConsent,
+      needsAdmin: connected && !sourceVerified,
+      requiresVerification: true,
       connectedAt: org.integrations?.microsoft?.lastPulledAt || null,
       lastSync:
         org.integrations?.microsoft?.sync?.lastSync ||
@@ -122,7 +134,8 @@ function sourceStatus({ connection, fallback, eventCount, mappedUsers, totalUser
     connection?.measurementScope || ''
   );
   const needsAdmin =
-    (fallback.needsAdmin && !companyWideScope) || connection?.status === 'needs_admin';
+    (fallback.needsAdmin && (fallback.requiresVerification || !companyWideScope)) ||
+    connection?.status === 'needs_admin';
   const status = !connected
     ? 'disconnected'
     : needsAdmin

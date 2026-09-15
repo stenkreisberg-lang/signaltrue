@@ -8,18 +8,12 @@ export const MICROSOFT_DELEGATED_SCOPES = [
   'openid',
   'email',
   'profile',
-  'offline_access',
   'https://graph.microsoft.com/User.Read',
-  'https://graph.microsoft.com/Calendars.Read',
-  'https://graph.microsoft.com/Mail.Read',
-  'https://graph.microsoft.com/Team.ReadBasic.All',
-  'https://graph.microsoft.com/Channel.ReadBasic.All',
-  'https://graph.microsoft.com/ChannelMessage.Read.All',
-  'https://graph.microsoft.com/Chat.Read',
-  'https://graph.microsoft.com/User.Read.All',
 ];
 
-export const MICROSOFT_OUTLOOK_APPLICATION_ROLES = ['Calendars.Read'];
+// Outlook collection enumerates the tenant directory before reading each
+// mailbox, so User.Read.All is part of the Outlook contract as well.
+export const MICROSOFT_OUTLOOK_APPLICATION_ROLES = ['Calendars.Read', 'User.Read.All'];
 
 export const MICROSOFT_TEAMS_APPLICATION_ROLES = [
   'Channel.ReadBasic.All',
@@ -29,8 +23,7 @@ export const MICROSOFT_TEAMS_APPLICATION_ROLES = [
 ];
 
 export const REQUIRED_MICROSOFT_APPLICATION_ROLES = [
-  ...MICROSOFT_OUTLOOK_APPLICATION_ROLES,
-  ...MICROSOFT_TEAMS_APPLICATION_ROLES,
+  ...new Set([...MICROSOFT_OUTLOOK_APPLICATION_ROLES, ...MICROSOFT_TEAMS_APPLICATION_ROLES]),
 ];
 
 export function getMissingMicrosoftApplicationRoles(grantedRoles = []) {

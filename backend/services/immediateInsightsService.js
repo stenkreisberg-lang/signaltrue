@@ -180,74 +180,6 @@ export async function getCalendarImmediateInsights(orgId, accessToken) {
 }
 
 /**
- * Get immediate insights after Microsoft (Outlook/Teams) connects
- */
-export async function getMicrosoftImmediateInsights(orgId, accessToken, scope = 'outlook') {
-  try {
-    const token = accessToken.includes(':') ? decryptString(accessToken) : accessToken;
-
-    if (scope === 'outlook') {
-      // Fetch calendar events
-      const now = new Date();
-      const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const eventsRes = await fetch(
-        `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${now.toISOString()}&endDateTime=${weekLater.toISOString()}&$top=100`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const eventsData = await eventsRes.json();
-
-      const events = eventsData.value || [];
-      let totalMeetingMinutes = 0;
-      let afterHoursCount = 0;
-
-      events.forEach((event) => {
-        if (event.start?.dateTime && event.end?.dateTime) {
-          const start = new Date(event.start.dateTime);
-          const end = new Date(event.end.dateTime);
-          totalMeetingMinutes += (end - start) / (1000 * 60);
-
-          const hour = start.getHours();
-          if (hour < 8 || hour >= 18) afterHoursCount++;
-        }
-      });
-
-      const meetingHoursThisWeek = Math.round((totalMeetingMinutes / 60) * 10) / 10;
-
-      return {
-        source: 'microsoft-outlook',
-        immediate: true,
-        stats: {
-          meetingsThisWeek: events.length,
-          meetingHoursThisWeek,
-          afterHoursMeetings: afterHoursCount,
-        },
-        message: `${events.length} Outlook meetings scheduled this week (${meetingHoursThisWeek} hours).`,
-      };
-    } else {
-      // Teams - fetch joined teams
-      const teamsRes = await fetch('https://graph.microsoft.com/v1.0/me/joinedTeams?$top=50', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const teamsData = await teamsRes.json();
-      const teams = teamsData.value || [];
-
-      return {
-        source: 'microsoft-teams',
-        immediate: true,
-        stats: {
-          teamsCount: teams.length,
-          teamNames: teams.slice(0, 5).map((t) => t.displayName),
-        },
-        message: `Connected to ${teams.length} Microsoft Teams.`,
-      };
-    }
-  } catch (err) {
-    console.error('Microsoft immediate insights error:', err.message);
-    return { source: `microsoft-${scope}`, immediate: true, error: err.message };
-  }
-}
-
-/**
  * Get immediate insights after Google Chat connects
  */
 export async function getGoogleChatImmediateInsights(orgId, accessToken) {
@@ -333,7 +265,6 @@ export async function getOrgVsBenchmarks(orgId) {
 export default {
   getSlackImmediateInsights,
   getCalendarImmediateInsights,
-  getMicrosoftImmediateInsights,
   getGoogleChatImmediateInsights,
   getIndustryBenchmarks,
   getOrgVsBenchmarks,

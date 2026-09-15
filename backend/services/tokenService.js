@@ -7,7 +7,7 @@ const appTokenCache = new Map(); // tenantId → { token, expiresAt }
 /**
  * Get a Microsoft app-only (client credentials) access token.
  * This token can read ALL users' calendars when the app has
- * Application-level "Calendars.Read" permission granted in Azure AD.
+ * Application-level Microsoft Graph permissions granted in Entra ID.
  *
  * No user sign-in required — uses MS_APP_CLIENT_ID + MS_APP_CLIENT_SECRET
  * with the org's tenant ID.

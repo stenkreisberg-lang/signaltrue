@@ -1164,7 +1164,13 @@ export async function generateWeeklyBrief(orgId) {
   // Connected integrations
   const integrations = org.integrations || {};
   const connectedSources = [];
-  if (integrations.microsoft?.accessToken) connectedSources.push('Microsoft (Outlook + Teams)');
+  if (
+    integrations.microsoft?.applicationConsentVerifiedAt ||
+    integrations.microsoft?.applicationConsentSources?.outlook?.verifiedAt ||
+    integrations.microsoft?.applicationConsentSources?.teams?.verifiedAt
+  ) {
+    connectedSources.push('Microsoft (Outlook + Teams)');
+  }
   if (integrations.slack?.accessToken) connectedSources.push('Slack');
   if (integrations.google?.accessToken) connectedSources.push('Google Calendar');
   if (integrations.googleChat?.accessToken) connectedSources.push('Google Chat');

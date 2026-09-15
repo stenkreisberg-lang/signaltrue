@@ -32,7 +32,12 @@ function organization(overrides = {}) {
     domain: 'tehnopol.ee',
     settings: { timezone: 'Europe/Tallinn', timezoneConfirmedAt: new Date() },
     integrations: {
-      microsoft: { accessToken: 'token', scope: 'both', ...overrides.microsoft },
+      microsoft: {
+        accessToken: 'token',
+        tenantId: 'tenant-1',
+        scope: 'both',
+        ...overrides.microsoft,
+      },
     },
   };
 }

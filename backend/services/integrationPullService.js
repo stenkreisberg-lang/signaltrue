@@ -48,72 +48,15 @@ export async function pullGoogleOrgData(org) {
   }
 }
 
-// Placeholder: In a future iteration, pull real data from Microsoft Graph using org.integrations.microsoft.accessToken
+// Microsoft is collected exclusively by the application-only adapter in
+// integrationSyncScheduler. Keeping this legacy delegated pull as a no-op
+// prevents a second scheduler from overwriting truthful permission state.
 export async function pullMicrosoftOrgData(org) {
-  try {
-    if (!org?.integrations?.microsoft?.accessToken) return { skipped: true };
-    const token = decryptString(org.integrations.microsoft.accessToken);
-    // Outlook events — always try (token may have Calendars.Read even if scope says 'teams')
-    let eventsCount = 0;
-    try {
-      const evRes = await fetch(
-        'https://graph.microsoft.com/v1.0/me/events?$top=25&$select=subject,organizer,start,end',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (evRes.ok) {
-        const ev = await evRes.json();
-        if (Array.isArray(ev.value)) eventsCount = ev.value.length;
-      }
-    } catch (e) {
-      console.warn(
-        `[Pull] Microsoft Outlook events error for org ${org.slug || org._id}:`,
-        e.message
-      );
-    }
-    // Teams joined — always try
-    let teamsCount = 0;
-    try {
-      const teamRes = await fetch(
-        'https://graph.microsoft.com/v1.0/me/joinedTeams?$top=25&$select=id,displayName',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (teamRes.ok) {
-        const tv = await teamRes.json();
-        if (Array.isArray(tv.value)) teamsCount = tv.value.length;
-      }
-    } catch (e) {
-      console.warn(`[Pull] Microsoft Teams error for org ${org.slug || org._id}:`, e.message);
-    }
-    console.log(
-      `ℹ️ [Pull] Microsoft: ${eventsCount} events, ${teamsCount} joined teams for org ${org.slug || org._id}`
-    );
-    // Use findByIdAndUpdate instead of org.save() to work with both lean and non-lean docs
-    await Organization.findByIdAndUpdate(org._id, {
-      $set: {
-        'integrations.microsoft.lastPulledAt': new Date(),
-        'integrations.microsoft.eventsCount': eventsCount,
-        'integrations.microsoft.teamsCount': teamsCount,
-        'integrations.microsoft.sync.lastStatus': 'ok',
-        'integrations.microsoft.sync.lastRunAt': new Date(),
-      },
-    });
-    return { ok: true, events: eventsCount, teams: teamsCount };
-  } catch (e) {
-    console.error(`❌ [Pull] Microsoft data failed for org ${org?.slug || org?._id}:`, e.message);
-    if (org?._id) {
-      await Organization.findByIdAndUpdate(org._id, {
-        $set: {
-          'integrations.microsoft.sync.lastStatus': 'error',
-          'integrations.microsoft.sync.lastRunAt': new Date(),
-        },
-      }).catch(() => {});
-    }
-    return { ok: false, error: e.message };
-  }
+  return {
+    skipped: true,
+    reason: 'Microsoft collection is managed by the verified application-only scheduler.',
+    organizationId: org?._id ? String(org._id) : null,
+  };
 }
 
 export async function pullAllConnectedOrgs() {
@@ -121,12 +64,10 @@ export async function pullAllConnectedOrgs() {
     $or: [
       { 'integrations.google.accessToken': { $exists: true, $ne: '' } },
       { 'integrations.googleChat.accessToken': { $exists: true, $ne: '' } },
-      { 'integrations.microsoft.accessToken': { $exists: true, $ne: '' } },
     ],
   });
   for (const org of orgs) {
     await pullGoogleOrgData(org);
-    await pullMicrosoftOrgData(org);
   }
 
   // Pull Google Chat data for all teams
