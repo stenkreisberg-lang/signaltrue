@@ -27,6 +27,10 @@ import {
   getGrantedApplicationRoles,
   verifyMicrosoftCompanyWideAccess,
 } from './microsoftAdminConsentService.js';
+import {
+  MICROSOFT_OUTLOOK_APPLICATION_ROLES,
+  MICROSOFT_TEAMS_APPLICATION_ROLES,
+} from '../config/microsoftPermissions.js';
 
 // ============================================================
 // SYNC SCHEDULER
@@ -107,18 +111,13 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
           integrationType: 'microsoft-outlook',
           detailKey: 'outlook',
           configured: ['outlook', 'both'].includes(org?.integrations?.microsoft?.scope),
-          requiredRoles: ['Calendars.Read'],
+          requiredRoles: MICROSOFT_OUTLOOK_APPLICATION_ROLES,
         },
         {
           integrationType: 'microsoft-teams',
           detailKey: 'teams',
           configured: ['teams', 'both'].includes(org?.integrations?.microsoft?.scope),
-          requiredRoles: [
-            'Team.ReadBasic.All',
-            'Channel.ReadBasic.All',
-            'ChannelMessage.Read.All',
-            'User.Read.All',
-          ],
+          requiredRoles: MICROSOFT_TEAMS_APPLICATION_ROLES,
         },
       ];
 

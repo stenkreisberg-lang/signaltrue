@@ -32,6 +32,7 @@ import {
   getGoogleWorkspacePublicConfig,
   verifyGoogleWorkspaceDelegation,
 } from '../services/googleWorkspaceAdminService.js';
+import { MICROSOFT_DELEGATED_SCOPES } from '../config/microsoftPermissions.js';
 
 const router = express.Router();
 
@@ -1082,27 +1083,9 @@ router.get(
       return res.status(400).json({ message: 'An organization is required to connect Microsoft.' });
     }
     const scopeParam = String(req.query.scope || 'outlook');
-    const scopesCore = [
-      'openid',
-      'email',
-      'profile',
-      'offline_access',
-      'https://graph.microsoft.com/User.Read',
-    ];
-    // Always request both Outlook + Teams scopes so one token covers everything
-    const teamsScopes = [
-      'https://graph.microsoft.com/Team.ReadBasic.All',
-      'https://graph.microsoft.com/ChannelMessage.Read.All',
-      'https://graph.microsoft.com/Channel.ReadBasic.All',
-      'https://graph.microsoft.com/Chat.Read',
-    ];
-    const outlookScopes = [
-      'https://graph.microsoft.com/Calendars.Read',
-      'https://graph.microsoft.com/Mail.Read',
-    ];
-    // Employee directory scope — allows listing org users so HR can see employees
-    const directoryScopes = ['https://graph.microsoft.com/User.Read.All'];
-    const scopes = [...scopesCore, ...outlookScopes, ...teamsScopes, ...directoryScopes];
+    // Always request the complete delegated set so either Outlook or Teams can
+    // establish one tenant-bound connection for the organization.
+    const scopes = MICROSOFT_DELEGATED_SCOPES;
     const state = signState({
       orgId: req.user.orgId?.toString() || null,
       userId: req.user.userId?.toString() || null,
@@ -1213,6 +1196,19 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       return res.status(400).send('Invalid or expired Microsoft authorization state.');
     }
 
+    if (req.query.error) {
+      console.error(
+        'Microsoft delegated consent failed:',
+        req.query.error_description || req.query.error
+      );
+      const message = encodeURIComponent(
+        req.query.error === 'access_denied'
+          ? 'Microsoft connection was cancelled before permission was granted.'
+          : 'Microsoft could not authorize the connection. Please try again.'
+      );
+      return res.redirect(`${getAppUrl()}/dashboard?integrationStatus=error&msg=${message}`);
+    }
+
     const tokenRes = await fetch(`https://login.microsoftonline.com/common/oauth2/v2.0/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1227,7 +1223,10 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
     const tokens = await tokenRes.json();
     if (tokens.error) {
       console.error('Microsoft OAuth error:', tokens);
-      return res.status(400).send('Microsoft authorization failed.');
+      const message = encodeURIComponent(
+        'Microsoft authorization failed while SignalTrue was completing the connection.'
+      );
+      return res.redirect(`${getAppUrl()}/dashboard?integrationStatus=error&msg=${message}`);
     }
 
     try {
@@ -1317,18 +1316,37 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       if (!updatedOrg) {
         return res.status(404).send('Organization not found for Microsoft authorization.');
       }
-      await IntegrationConnection.updateMany(
-        {
-          orgId: updatedOrg._id,
-          integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
-        },
-        {
-          $set: {
-            'sync.enabled': true,
-            'sync.lastSyncMessage':
-              'Microsoft authorization refreshed; synchronization is starting',
-          },
-        }
+      const companyWideVerified = Boolean(
+        updatedOrg.integrations?.microsoft?.applicationConsentVerifiedAt
+      );
+      const connectedTypes =
+        effectiveScope === 'both'
+          ? ['microsoft-outlook', 'microsoft-teams']
+          : [effectiveScope === 'teams' ? 'microsoft-teams' : 'microsoft-outlook'];
+      await Promise.all(
+        connectedTypes.map((integrationType) =>
+          IntegrationConnection.findOneAndUpdate(
+            { orgId: updatedOrg._id, integrationType },
+            {
+              $set: {
+                status: companyWideVerified ? 'connected' : 'needs_admin',
+                statusMessage: companyWideVerified
+                  ? 'Microsoft authorization refreshed; synchronization is starting'
+                  : 'Microsoft account connected; company-wide administrator consent is still required',
+                statusUpdatedAt: new Date(),
+                connectedAt: new Date(),
+                connectedBy: parsed.userId || undefined,
+                measurementScope: companyWideVerified
+                  ? 'organization-wide Microsoft metadata'
+                  : 'connected Microsoft administrator account',
+                'sync.enabled': true,
+                'sync.lastSyncMessage':
+                  'Microsoft authorization refreshed; synchronization is starting',
+              },
+            },
+            { upsert: true, returnDocument: 'after' }
+          )
+        )
       );
 
       // Check if all integrations are complete and notify HR admins
@@ -1361,9 +1379,28 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
             console.error('Microsoft employee sync failed:', err.message);
           }
 
+          let companyBackfillStarted = false;
+          // If tenant-wide permission was granted directly in Entra before this
+          // interactive connection, discover it after directory mapping and begin
+          // the full backfill automatically.
+          if (!companyWideVerified && tenantId) {
+            try {
+              await verifyMicrosoftCompanyWideAccess(updatedOrg._id, parsed.userId);
+              startMicrosoftCompanyBackfill(updatedOrg._id, 60);
+              companyBackfillStarted = true;
+            } catch (error) {
+              console.info(
+                'Microsoft delegated connection is complete; company-wide access is pending:',
+                error.message
+              );
+            }
+          }
+
           try {
-            const results = await triggerImmediateSync(updatedOrg._id);
-            console.log('Microsoft immediate sync results:', results);
+            if (!companyBackfillStarted) {
+              const results = await triggerImmediateSync(updatedOrg._id);
+              console.log('Microsoft immediate sync results:', results);
+            }
           } catch (err) {
             console.error('Microsoft immediate sync error:', err.message);
           }
@@ -1371,6 +1408,10 @@ router.get('/integrations/microsoft/oauth/callback', async (req, res) => {
       }
     } catch (e) {
       console.error('Microsoft OAuth persist error:', e.message);
+      const message = encodeURIComponent(
+        'Microsoft approved the request, but SignalTrue could not save the connection. Please try again or contact SignalTrue support.'
+      );
+      return res.redirect(`${getAppUrl()}/dashboard?integrationStatus=error&msg=${message}`);
     }
 
     const redirect = `${getAppUrl()}/dashboard?connected=microsoft-${scopeParam}`;

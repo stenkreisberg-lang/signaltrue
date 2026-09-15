@@ -15,6 +15,7 @@ import {
   Briefcase,
   LayoutGrid,
 } from 'lucide-react';
+import ITAdminInvitationManager from './ITAdminInvitationManager';
 
 /**
  * Integration Dashboard Component
@@ -121,7 +122,7 @@ const INTEGRATIONS = {
   },
 };
 
-export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChange }) {
+export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChange, userRole }) {
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -349,6 +350,11 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const measuringCount = integrations.filter((i) => i.status === 'measuring').length;
   const needsAdminCount = integrations.filter((i) => i.status === 'needs_admin').length;
   const dataQuality = calculateDataQuality();
+  const microsoftRequiredRoles = microsoftCompanyAccess?.requiredRoles || [];
+  const microsoftGrantedRoles = microsoftCompanyAccess?.grantedRoles || [];
+  const microsoftMissingRoles = microsoftRequiredRoles.filter(
+    (role) => !microsoftGrantedRoles.includes(role)
+  );
 
   return (
     <div className="space-y-6">
@@ -395,6 +401,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           </div>
         </div>
       )}
+      <ITAdminInvitationManager role={userRole} />
       {microsoftCompanyAccess?.connected && (
         <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -406,9 +413,23 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                 organization-wide calendar and Teams metadata.
               </p>
               <p className="mt-2 break-all text-caption text-slate-500">
-                Required application permissions:{' '}
-                {(microsoftCompanyAccess.requiredRoles || []).join(', ')}
+                Required application permissions: {microsoftRequiredRoles.join(', ')}
               </p>
+              {microsoftCompanyAccess.lastCheckedAt && !microsoftCompanyAccess.verifiedAt && (
+                <div className="mt-2 space-y-1 text-caption">
+                  <p className="text-slate-600">
+                    Granted application permissions:{' '}
+                    {microsoftGrantedRoles.length > 0
+                      ? microsoftGrantedRoles.join(', ')
+                      : 'none detected'}
+                  </p>
+                  {microsoftMissingRoles.length > 0 && (
+                    <p className="font-medium text-amber-700">
+                      Still missing: {microsoftMissingRoles.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
               {microsoftCompanyAccess.lastError && !microsoftCompanyAccess.verifiedAt && (
                 <p className="mt-2 text-caption text-amber-700">
                   {microsoftCompanyAccess.lastError}

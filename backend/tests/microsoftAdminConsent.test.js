@@ -80,6 +80,9 @@ describe('Microsoft company-wide access verification', () => {
     expect(organizationUpdate).toHaveBeenLastCalledWith(
       'org-1',
       expect.objectContaining({
+        $set: expect.objectContaining({
+          'integrations.microsoft.applicationConsentRoles': ['Calendars.Read'],
+        }),
         $unset: { 'integrations.microsoft.applicationConsentVerifiedAt': 1 },
       })
     );

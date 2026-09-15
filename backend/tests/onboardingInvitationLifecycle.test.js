@@ -16,15 +16,18 @@ let app;
 let Organization;
 let Team;
 let User;
+let Invitation;
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
-  [{ default: Organization }, { default: Team }, { default: User }] = await Promise.all([
-    import('../models/organizationModel.js'),
-    import('../models/team.js'),
-    import('../models/user.js'),
-  ]);
+  [{ default: Organization }, { default: Team }, { default: User }, { default: Invitation }] =
+    await Promise.all([
+      import('../models/organizationModel.js'),
+      import('../models/team.js'),
+      import('../models/user.js'),
+      import('../models/invitation.js'),
+    ]);
   const { default: onboardingRoutes } = await import('../routes/onboarding.js');
   app = express();
   app.use(express.json());
@@ -118,5 +121,68 @@ describe('HR → IT administrator onboarding', () => {
       .get(`/api/onboarding/invitations/${invitationId}/link`)
       .set('Authorization', bearer(hr))
       .expect(404);
+  });
+
+  test('HR can see and renew an expired invitation without creating a duplicate', async () => {
+    const { user: hr } = await seed();
+    const expired = await Invitation.createWithToken({
+      email: 'expired-it@role.test',
+      name: 'Expired IT',
+      role: 'it_admin',
+      orgId: hr.orgId,
+      invitedBy: hr._id,
+      ttlHours: -1,
+    });
+    const originalToken = expired.token;
+
+    const listed = await request(app)
+      .get('/api/onboarding/invitations')
+      .set('Authorization', bearer(hr))
+      .expect(200);
+    expect(listed.body).toHaveLength(1);
+    expect(listed.body[0]._id).toBe(String(expired._id));
+
+    const renewed = await request(app)
+      .post('/api/onboarding/invitations')
+      .set('Authorization', bearer(hr))
+      .send({ email: 'expired-it@role.test', name: 'Expired IT', role: 'it_admin' })
+      .expect(200);
+    expect(renewed.body.renewed).toBe(true);
+    expect(renewed.body._id).toBe(String(expired._id));
+
+    const saved = await Invitation.findById(expired._id);
+    expect(saved.token).not.toBe(originalToken);
+    expect(saved.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(await Invitation.countDocuments({ email: 'expired-it@role.test' })).toBe(1);
+  });
+
+  test('accepting an invitation activates an existing synced employee account', async () => {
+    const { org, team, user: hr } = await seed();
+    const synced = await User.create({
+      email: 'synced-it@role.test',
+      name: 'Synced IT',
+      role: 'team_member',
+      orgId: org._id,
+      teamId: team._id,
+      accountStatus: 'pending',
+      source: 'microsoft',
+    });
+    const invitation = await Invitation.createWithToken({
+      email: synced.email,
+      name: synced.name,
+      role: 'it_admin',
+      orgId: org._id,
+      teamId: team._id,
+      invitedBy: hr._id,
+    });
+
+    await request(app)
+      .post('/api/onboarding/accept')
+      .send({ token: invitation.token, name: synced.name, password: 'Password123!' })
+      .expect(200);
+
+    const activated = await User.findById(synced._id);
+    expect(activated.accountStatus).toBe('active');
+    expect(activated.role).toBe('it_admin');
   });
 });

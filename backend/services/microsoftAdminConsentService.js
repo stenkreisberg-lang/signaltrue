@@ -2,14 +2,9 @@ import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import { getMicrosoftAppToken } from './tokenService.js';
+import { getMissingMicrosoftApplicationRoles } from '../config/microsoftPermissions.js';
 
-export const REQUIRED_MICROSOFT_APPLICATION_ROLES = [
-  'Calendars.Read',
-  'Channel.ReadBasic.All',
-  'ChannelMessage.Read.All',
-  'Team.ReadBasic.All',
-  'User.Read.All',
-];
+export { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../config/microsoftPermissions.js';
 
 function decodeTokenPayload(token) {
   const parts = String(token || '').split('.');
@@ -56,6 +51,7 @@ export async function getGrantedApplicationRoles(tenantId) {
 
 export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null) {
   const attemptedAt = new Date();
+  let detectedRoles = [];
   const organization = await Organization.findById(orgId).lean();
   if (!organization) throw new Error('Organization not found.');
 
@@ -68,9 +64,8 @@ export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null)
 
     const claims = decodeTokenPayload(appToken);
     const roles = Array.isArray(claims.roles) ? [...new Set(claims.roles)].sort() : [];
-    const missingRoles = REQUIRED_MICROSOFT_APPLICATION_ROLES.filter(
-      (role) => !roles.includes(role)
-    );
+    detectedRoles = roles;
+    const missingRoles = getMissingMicrosoftApplicationRoles(roles);
     if (missingRoles.length > 0) {
       throw new Error(
         `Microsoft tenant consent is missing application permissions: ${missingRoles.join(', ')}.`
@@ -151,6 +146,7 @@ export async function verifyMicrosoftCompanyWideAccess(orgId, verifiedBy = null)
       $set: {
         'integrations.microsoft.applicationConsentLastCheckedAt': attemptedAt,
         'integrations.microsoft.applicationConsentLastError': String(error.message).slice(0, 500),
+        'integrations.microsoft.applicationConsentRoles': detectedRoles,
       },
       $unset: {
         'integrations.microsoft.applicationConsentVerifiedAt': 1,

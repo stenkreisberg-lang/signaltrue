@@ -15,6 +15,7 @@ import { enrichWorkEvents } from './workEventAttributionService.js';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 import { createGoogleWorkspaceAuth } from './googleWorkspaceAdminService.js';
+import { MICROSOFT_TEAMS_APPLICATION_ROLES } from '../config/microsoftPermissions.js';
 
 export async function fetchGraphCollection(
   initialUrl,
@@ -947,12 +948,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         const tenantId = org?.integrations?.microsoft?.tenantId || process.env.MS_APP_TENANT;
         const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
         const appRoles = appToken ? getMicrosoftTokenRoles(appToken) : [];
-        const requiredTeamsRoles = [
-          'Team.ReadBasic.All',
-          'Channel.ReadBasic.All',
-          'ChannelMessage.Read.All',
-          'User.Read.All',
-        ];
+        const requiredTeamsRoles = MICROSOFT_TEAMS_APPLICATION_ROLES;
         const missingRoles = requiredTeamsRoles.filter((role) => !appRoles.includes(role));
         if (appToken && missingRoles.length === 0) {
           const tenantMessages = await this.fetchTenantWideTeamsMessages(

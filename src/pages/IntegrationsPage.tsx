@@ -168,7 +168,11 @@ export default function IntegrationsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Integration Dashboard */}
             <div className="lg:col-span-2">
-              <IntegrationDashboard orgId={null} onIntegrationChange={() => {}} />
+              <IntegrationDashboard
+                orgId={null}
+                onIntegrationChange={() => {}}
+                userRole={user?.role}
+              />
             </div>
 
             {/* Setup guidance */}

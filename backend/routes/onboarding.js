@@ -85,6 +85,8 @@ router.get('/onboarding/status', authenticateToken, async (req, res) => {
 });
 
 // GET /api/onboarding/invitations (HR/Admin only)
+// Keep expired, unaccepted invitations visible so an administrator can renew
+// them instead of losing the only in-product way to invite the person again.
 router.get(
   '/onboarding/invitations',
   authenticateToken,
@@ -92,12 +94,10 @@ router.get(
   async (req, res) => {
     try {
       const orgId = req.user?.orgId;
-      const now = new Date();
       const invites = await Invitation.find({
         orgId,
         acceptedAt: null,
         revokedAt: null,
-        expiresAt: { $gt: now },
       })
         .sort({ createdAt: -1 })
         .select('_id email name role createdAt expiresAt delivery');
@@ -122,26 +122,62 @@ router.post(
       }
       if (!req.user?.orgId) return res.status(400).json({ message: 'Missing orgId' });
 
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const existingUser = await User.findOne({ email: normalizedEmail }).select(
+        '_id orgId accountStatus'
+      );
+      const sameOrganization =
+        !existingUser || String(existingUser.orgId || '') === String(req.user.orgId);
+      if (existingUser && !sameOrganization) {
+        return res.status(409).json({
+          message: 'This email address already belongs to another SignalTrue account.',
+        });
+      }
+      if (existingUser?.accountStatus === 'active') {
+        return res.status(409).json({
+          message: 'This person already has an active SignalTrue account.',
+        });
+      }
+
       // Get organization details for email
       const org = await Organization.findById(req.user.orgId);
       const inviterUser = await User.findById(req.user.userId);
-
-      const inv = await Invitation.createWithToken({
-        email: String(email).toLowerCase(),
-        name: String(name || '').trim() || undefined,
-        role,
+      const invitationTtl = typeof ttlHours === 'number' ? ttlHours : 24 * 7;
+      let inv = await Invitation.findOne({
+        email: normalizedEmail,
         orgId: req.user.orgId,
-        teamId: teamId || undefined,
-        invitedBy: req.user.userId,
-        ttlHours: typeof ttlHours === 'number' ? ttlHours : 24 * 7,
-      });
+        acceptedAt: null,
+        revokedAt: null,
+      }).sort({ createdAt: -1 });
+      const renewed = Boolean(inv);
+
+      if (inv) {
+        inv.name = String(name || '').trim() || inv.name;
+        inv.role = role;
+        inv.teamId = teamId || inv.teamId;
+        inv.invitedBy = req.user.userId;
+        inv.rotateToken(invitationTtl);
+        await inv.save();
+      } else {
+        inv = await Invitation.createWithToken({
+          email: normalizedEmail,
+          name: String(name || '').trim() || undefined,
+          role,
+          orgId: req.user.orgId,
+          teamId: teamId || undefined,
+          invitedBy: req.user.userId,
+          ttlHours: invitationTtl,
+        });
+      }
 
       const delivery = await deliverInvitation(inv, { organization: org, inviter: inviterUser });
 
       res.json({
+        _id: inv._id,
         email: inv.email,
         role: inv.role,
         expiresAt: inv.expiresAt,
+        renewed,
         ...delivery,
       });
     } catch (e) {
@@ -272,6 +308,11 @@ router.post('/onboarding/accept', async (req, res) => {
         isMasterAdmin: false,
       });
     } else {
+      if (user.orgId && String(user.orgId) !== String(inv.orgId)) {
+        return res.status(409).json({
+          message: 'This email address already belongs to another SignalTrue organization.',
+        });
+      }
       // Update existing user with org/role if missing
       user.name = user.name || name;
       user.password = password; // will be hashed by pre-save
@@ -279,6 +320,7 @@ router.post('/onboarding/accept', async (req, res) => {
       if (resolvedTeamId && !user.teamId) user.teamId = resolvedTeamId;
       user.role = inv.role === 'team_member' ? user.role || 'viewer' : inv.role;
       user.isMasterAdmin = false;
+      user.accountStatus = 'active';
     }
     await user.save();
 
