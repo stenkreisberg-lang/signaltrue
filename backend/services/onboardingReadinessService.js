@@ -172,8 +172,15 @@ function nextStep(readiness) {
 }
 
 export async function getOrganizationReadiness(orgOrId) {
-  const org =
-    typeof orgOrId === 'object' && orgOrId?._id ? orgOrId : await Organization.findById(orgOrId);
+  // Mongoose ObjectIds expose an `_id` getter that returns the ObjectId itself.
+  // Do not mistake one for a populated organization document, or all settings
+  // (including timezone confirmation) appear to be missing to ObjectId callers.
+  const isOrganizationObject =
+    typeof orgOrId === 'object' &&
+    orgOrId !== null &&
+    !(orgOrId instanceof mongoose.Types.ObjectId) &&
+    Boolean(orgOrId._id);
+  const org = isOrganizationObject ? orgOrId : await Organization.findById(orgOrId);
   if (!org) throw new Error('Organization not found');
 
   const orgId = org._id;

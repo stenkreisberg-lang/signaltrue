@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import mongoose from 'mongoose';
 
+const organizationFindById = jest.fn();
 const connectionLean = jest.fn();
 const teamLean = jest.fn();
 const userLean = jest.fn();
@@ -7,6 +9,9 @@ const aggregate = jest.fn();
 const countDocuments = jest.fn();
 const distinct = jest.fn();
 
+jest.unstable_mockModule('../models/organizationModel.js', () => ({
+  default: { findById: organizationFindById },
+}));
 jest.unstable_mockModule('../models/integrationConnection.js', () => ({
   default: { find: () => ({ lean: connectionLean }) },
 }));
@@ -44,6 +49,7 @@ function organization(overrides = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  organizationFindById.mockResolvedValue(null);
   connectionLean.mockResolvedValue([]);
   teamLean.mockResolvedValue([{ _id: teamId, name: 'Product' }]);
   userLean.mockResolvedValue(
@@ -59,6 +65,17 @@ beforeEach(() => {
 });
 
 describe('canonical onboarding readiness', () => {
+  test('loads an organization when called with a Mongoose ObjectId', async () => {
+    const storedOrganization = organization();
+    organizationFindById.mockResolvedValue(storedOrganization);
+
+    const setup = await getOrganizationReadiness(new mongoose.Types.ObjectId(orgId));
+
+    expect(organizationFindById).toHaveBeenCalledWith(new mongoose.Types.ObjectId(orgId));
+    expect(setup.org.timezone).toBe('Europe/Tallinn');
+    expect(setup.readiness.timezoneReady).toBe(true);
+  });
+
   test('does not call Microsoft ready before tenant consent or activity', async () => {
     const setup = await getOrganizationReadiness(organization());
 
