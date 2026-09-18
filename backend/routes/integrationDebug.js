@@ -166,13 +166,41 @@ router.get(
         });
       }
 
-      const [connections, outlookEvents, teamsEvents] = await Promise.all([
+      const [
+        connections,
+        outlookEvents,
+        teamsEvents,
+        outlookActorEvents,
+        outlookTeamEvents,
+        teamsActorEvents,
+        teamsTeamEvents,
+      ] = await Promise.all([
         IntegrationConnection.find({
           orgId,
           integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
         }).lean(),
         WorkEvent.countDocuments({ orgId, source: 'microsoft-outlook' }),
         WorkEvent.countDocuments({ orgId, source: 'microsoft-teams' }),
+        WorkEvent.countDocuments({
+          orgId,
+          source: 'microsoft-outlook',
+          actorUserId: { $ne: null },
+        }),
+        WorkEvent.countDocuments({
+          orgId,
+          source: 'microsoft-outlook',
+          teamId: { $ne: null },
+        }),
+        WorkEvent.countDocuments({
+          orgId,
+          source: 'microsoft-teams',
+          actorUserId: { $ne: null },
+        }),
+        WorkEvent.countDocuments({
+          orgId,
+          source: 'microsoft-teams',
+          teamId: { $ne: null },
+        }),
       ]);
       const connectionByType = new Map(
         connections.map((connection) => [connection.integrationType, connection])
@@ -225,11 +253,14 @@ router.get(
           verificationState: assessment.sources.outlook.status,
           reasonCode: assessment.sources.outlook.reasonCode || null,
           connectionState: outlookConnection?.status || 'disconnected',
+          syncEnabled: Boolean(outlookConnection && outlookConnection.sync?.enabled !== false),
           lastSuccessfulSync: outlookConnection?.sync?.lastSuccessfulSyncAt || null,
           usersAttempted: outlookConnection?.coverage?.attemptedUsers || 0,
           usersSynced: outlookConnection?.coverage?.syncedUsers || 0,
           usersSkipped: outlookConnection?.coverage?.skippedUsers || 0,
           eventsCollected: outlookEvents,
+          eventsWithActorAttribution: outlookActorEvents,
+          eventsWithTeamAttribution: outlookTeamEvents,
           latestErrorCategories: outlookConnection?.coverage?.errorCategories || {},
         },
         teams: {
@@ -240,6 +271,7 @@ router.get(
           verificationState: assessment.sources.teams.status,
           reasonCode: assessment.sources.teams.reasonCode || null,
           connectionState: teamsConnection?.status || 'disconnected',
+          syncEnabled: Boolean(teamsConnection && teamsConnection.sync?.enabled !== false),
           lastSuccessfulSync: teamsConnection?.sync?.lastSuccessfulSyncAt || null,
           usersAttempted: teamsConnection?.coverage?.attemptedUsers || 0,
           usersMapped: teamsConnection?.coverage?.mappedUsers || 0,
@@ -247,6 +279,8 @@ router.get(
           teamsDiscovered: teamsConnection?.coverage?.teamsDiscovered || 0,
           teamsRead: teamsConnection?.coverage?.teamsRead || 0,
           eventsCollected: teamsEvents,
+          eventsWithActorAttribution: teamsActorEvents,
+          eventsWithTeamAttribution: teamsTeamEvents,
           latestErrorCategories: teamsConnection?.coverage?.errorCategories || {},
         },
         backfill: {

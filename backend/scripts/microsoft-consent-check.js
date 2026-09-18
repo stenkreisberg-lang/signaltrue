@@ -22,6 +22,7 @@ import {
   inspectMicrosoftCompanyWideAccess,
   REQUIRED_MICROSOFT_APPLICATION_ROLES,
 } from '../services/microsoftAdminConsentService.js';
+import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 
 const target = process.argv.slice(2).find((v) => !v.startsWith('--'));
 if (!target) throw new Error('Usage: microsoft-consent-check.js <name-or-domain>');
@@ -89,13 +90,43 @@ try {
     }
   }
 
-  const [connections, outlookEvents, teamsEvents] = await Promise.all([
+  const [
+    connections,
+    outlookEvents,
+    teamsEvents,
+    outlookActorEvents,
+    outlookTeamEvents,
+    teamsActorEvents,
+    teamsTeamEvents,
+    readiness,
+  ] = await Promise.all([
     IntegrationConnection.find({
       orgId: org._id,
       integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
     }).lean(),
     WorkEvent.countDocuments({ orgId: org._id, source: 'microsoft-outlook' }),
     WorkEvent.countDocuments({ orgId: org._id, source: 'microsoft-teams' }),
+    WorkEvent.countDocuments({
+      orgId: org._id,
+      source: 'microsoft-outlook',
+      actorUserId: { $ne: null },
+    }),
+    WorkEvent.countDocuments({
+      orgId: org._id,
+      source: 'microsoft-outlook',
+      teamId: { $ne: null },
+    }),
+    WorkEvent.countDocuments({
+      orgId: org._id,
+      source: 'microsoft-teams',
+      actorUserId: { $ne: null },
+    }),
+    WorkEvent.countDocuments({
+      orgId: org._id,
+      source: 'microsoft-teams',
+      teamId: { $ne: null },
+    }),
+    getOrganizationReadiness(org._id),
   ]);
   const connectionByType = new Map(
     connections.map((connection) => [connection.integrationType, connection])
@@ -106,21 +137,33 @@ try {
   const backfillComplete =
     sourceConnections.length === 2 &&
     sourceConnections.every((connection) => connection.sync?.backfillComplete === true);
+  const backfillLeaseActive = sourceConnections.some(
+    (connection) =>
+      connection.sync?.backfillRunId &&
+      connection.sync?.backfillLeaseExpiresAt &&
+      new Date(connection.sync.backfillLeaseExpiresAt) > new Date()
+  );
   const operationalSources = sourceConnections.filter(
     (connection) => connection.status === 'connected' && connection.sync?.enabled !== false
   ).length;
-  const finalVerdict = !assessment
-    ? 'error'
-    : assessment.status === 'connected' && operationalSources === 2
+  const persistedStatus = ms.applicationConsentStatus || null;
+  const effectiveVerificationStatus = assessment?.status || persistedStatus || 'error';
+  const finalVerdict =
+    effectiveVerificationStatus === 'connected' && operationalSources === 2
       ? 'healthy'
-      : assessment.status === 'connected' && operationalSources === 1
+      : effectiveVerificationStatus === 'connected' && operationalSources === 1
         ? 'partial'
-        : assessment.status;
+        : effectiveVerificationStatus;
+
+  const grantedRoles = assessment?.roles || ms.applicationConsentRoles || [];
+  const outlookAssessment =
+    assessment?.sources?.outlook || ms.applicationConsentSources?.outlook || {};
+  const teamsAssessment = assessment?.sources?.teams || ms.applicationConsentSources?.teams || {};
 
   const roleState = Object.fromEntries(
     REQUIRED_MICROSOFT_APPLICATION_ROLES.map((role) => [
       role,
-      Boolean(assessment?.roles?.includes(role)),
+      Boolean(grantedRoles.includes(role)),
     ])
   );
 
@@ -131,34 +174,38 @@ try {
         microsoftTenant: {
           identityLinked: Boolean(ms.delegatedConnectedAt || ms.accessToken),
           tenantIdPresent: Boolean(ms.tenantId),
-          appOnlyTokenAcquired: Boolean(assessment),
+          appOnlyTokenAcquiredInThisEnvironment: Boolean(assessment),
+          liveVerificationReason,
         },
+        applicationRoleEvidence: assessment ? 'live' : grantedRoles.length > 0 ? 'stored' : 'none',
         applicationRoles: roleState,
         outlook: {
-          directoryProbe: assessment?.sources?.outlook?.probes?.directory || 'not_run',
-          calendarProbe: assessment?.sources?.outlook?.probes?.calendar || 'not_run',
-          verificationState: assessment?.sources?.outlook?.status || 'error',
-          reasonCode:
-            assessment?.sources?.outlook?.reasonCode ||
-            (assessment ? null : liveVerificationReason),
+          directoryProbe: outlookAssessment.probes?.directory || 'not_run',
+          calendarProbe: outlookAssessment.probes?.calendar || 'not_run',
+          verificationState:
+            outlookAssessment.status || (outlookAssessment.verifiedAt ? 'connected' : 'error'),
+          reasonCode: outlookAssessment.reasonCode || null,
           connectionState: outlookConnection?.status || 'disconnected',
+          syncEnabled: Boolean(outlookConnection && outlookConnection.sync?.enabled !== false),
           lastSuccessfulSync: outlookConnection?.sync?.lastSuccessfulSyncAt || null,
           usersAttempted: outlookConnection?.coverage?.attemptedUsers || 0,
           usersSynced: outlookConnection?.coverage?.syncedUsers || 0,
           usersSkipped: outlookConnection?.coverage?.skippedUsers || 0,
           eventsCollected: outlookEvents,
+          eventsWithActorAttribution: outlookActorEvents,
+          eventsWithTeamAttribution: outlookTeamEvents,
           latestErrorCategories: outlookConnection?.coverage?.errorCategories || {},
         },
         teams: {
-          directoryProbe: assessment?.sources?.teams?.probes?.directory || 'not_run',
-          joinedTeamsProbe: assessment?.sources?.teams?.probes?.teams || 'not_run',
-          channelsProbe: assessment?.sources?.teams?.probes?.channels || 'not_run',
-          messagesProbe: assessment?.sources?.teams?.probes?.messages || 'not_run',
-          verificationState: assessment?.sources?.teams?.status || 'error',
-          reasonCode:
-            assessment?.sources?.teams?.reasonCode ||
-            (assessment ? null : liveVerificationReason),
+          directoryProbe: teamsAssessment.probes?.directory || 'not_run',
+          joinedTeamsProbe: teamsAssessment.probes?.teams || 'not_run',
+          channelsProbe: teamsAssessment.probes?.channels || 'not_run',
+          messagesProbe: teamsAssessment.probes?.messages || 'not_run',
+          verificationState:
+            teamsAssessment.status || (teamsAssessment.verifiedAt ? 'connected' : 'error'),
+          reasonCode: teamsAssessment.reasonCode || null,
           connectionState: teamsConnection?.status || 'disconnected',
+          syncEnabled: Boolean(teamsConnection && teamsConnection.sync?.enabled !== false),
           lastSuccessfulSync: teamsConnection?.sync?.lastSuccessfulSyncAt || null,
           usersAttempted: teamsConnection?.coverage?.attemptedUsers || 0,
           usersMapped: teamsConnection?.coverage?.mappedUsers || 0,
@@ -166,13 +213,24 @@ try {
           teamsDiscovered: teamsConnection?.coverage?.teamsDiscovered || 0,
           teamsRead: teamsConnection?.coverage?.teamsRead || 0,
           eventsCollected: teamsEvents,
+          eventsWithActorAttribution: teamsActorEvents,
+          eventsWithTeamAttribution: teamsTeamEvents,
           latestErrorCategories: teamsConnection?.coverage?.errorCategories || {},
+        },
+        employeeSync: {
+          lastSuccessfulSync: ms.lastEmployeeSync || null,
+          totalUsers: readiness.directory.totalUsers,
+          directorySyncedUsers: readiness.directory.directorySyncedUsers,
+          namedAssignedUsers: readiness.directory.namedAssignedUsers,
+          unassignedUsers: readiness.directory.unassignedUsers,
         },
         backfill: {
           status: backfillComplete
             ? 'completed'
-            : sourceConnections.some((connection) => connection.sync?.backfillStartedAt)
-              ? 'in_progress_or_incomplete'
+            : backfillLeaseActive
+              ? 'in_progress'
+              : sourceConnections.some((connection) => connection.sync?.backfillStartedAt)
+                ? 'incomplete'
               : 'not_started',
           startedAt:
             sourceConnections
@@ -189,6 +247,38 @@ try {
                 ...sourceConnections.map((connection) => connection.sync?.backfillProgress || 0)
               )
             : 0,
+          sources: Object.fromEntries(
+            sourceConnections.map((connection) => [
+              connection.integrationType,
+              {
+                status: connection.sync?.backfillComplete
+                  ? 'completed'
+                  : connection.sync?.backfillRunId
+                    ? 'in_progress'
+                    : connection.sync?.backfillStartedAt
+                      ? 'incomplete'
+                      : 'not_started',
+                progress: connection.sync?.backfillProgress || 0,
+                lastSyncStatus: connection.sync?.lastSyncStatus || null,
+                lastSyncMessage: connection.sync?.lastSyncMessage || null,
+              },
+            ])
+          ),
+        },
+        readiness: {
+          permissionsReady: readiness.readiness.permissionsReady,
+          directoryReady: readiness.readiness.directoryReady,
+          teamsReady: readiness.readiness.teamsReady,
+          activityReady: readiness.readiness.activityReady,
+          mappingReady: readiness.readiness.mappingReady,
+          reportingReady: readiness.readiness.reportingReady,
+          setupComplete: readiness.readiness.setupComplete,
+          nextStep: readiness.readiness.nextStep,
+          mappingCoveragePct: readiness.activity.mappingCoveragePct,
+          historyDays: readiness.activity.historyDays,
+          firstEventAt: readiness.activity.firstEventAt,
+          lastEventAt: readiness.activity.lastEventAt,
+          reportReadyTeams: readiness.teams.ready,
         },
         finalVerdict,
       },
