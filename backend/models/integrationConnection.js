@@ -93,6 +93,8 @@ const integrationConnectionSchema = new mongoose.Schema(
       backfillStartedAt: Date,
       backfillCompletedAt: Date,
       backfillProgress: { type: Number, default: 0 }, // 0-100
+      backfillRunId: String,
+      backfillLeaseExpiresAt: Date,
 
       // Incremental sync cursor
       syncCursor: String,
@@ -106,6 +108,16 @@ const integrationConnectionSchema = new mongoose.Schema(
       availableUsers: { type: Number, default: 0 },
       unavailableUsers: { type: Number, default: 0 },
       failedUsers: { type: Number, default: 0 },
+      attemptedUsers: { type: Number, default: 0 },
+      syncedUsers: { type: Number, default: 0 },
+      skippedUsers: { type: Number, default: 0 },
+      eventsCollected: { type: Number, default: 0 },
+      teamsDiscovered: { type: Number, default: 0 },
+      teamsRead: { type: Number, default: 0 },
+      teamsSkipped: { type: Number, default: 0 },
+      // Aggregate provider categories only. Never persist mailbox addresses,
+      // meeting subjects, channel names, or message bodies here.
+      errorCategories: { type: mongoose.Schema.Types.Mixed, default: {} },
       unmappedEmails: [String], // Emails we couldn't match to users
       lastCoverageUpdatedAt: Date,
     },

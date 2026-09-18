@@ -2,20 +2,41 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import Notification from '../models/notification.js';
 import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 import User from '../models/user.js';
+import {
+  deriveMicrosoftIntegrationStatus,
+  getSafeMicrosoftTechnicalReason,
+} from './microsoftIntegrationStatusService.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function evaluateIntegrationHealth(connection, now = new Date()) {
+export function evaluateIntegrationHealth(connection, now = new Date(), context = {}) {
   if (!connection || connection.status === 'disconnected') return [];
   const issues = [];
   const source = connection.integrationType;
+  const microsoftSourceName =
+    source === 'microsoft-outlook' ? 'outlook' : source === 'microsoft-teams' ? 'teams' : null;
   if (connection.status === 'error' || connection.sync?.lastSyncStatus === 'failed') {
+    let message =
+      connection.statusMessage || connection.sync?.lastSyncMessage || 'The latest sync failed.';
+    if (microsoftSourceName) {
+      const sourceLabel = microsoftSourceName === 'outlook' ? 'Outlook' : 'Teams';
+      const derivedMessage = context.microsoftSourceState?.statusMessage;
+      const technicalReason = getSafeMicrosoftTechnicalReason(
+        context.microsoftSourceRecord,
+        connection,
+        microsoftSourceName
+      );
+      message =
+        connection.status === 'error'
+          ? derivedMessage ||
+            `Microsoft permissions are present, but SignalTrue could not verify ${sourceLabel}.${technicalReason ? ` ${technicalReason}` : ''}`
+          : `The latest Microsoft ${sourceLabel} sync failed.`;
+    }
     issues.push({
       key: `${source}:sync-failed`,
       source,
       severity: 'high',
-      message:
-        connection.statusMessage || connection.sync?.lastSyncMessage || 'The latest sync failed.',
+      message,
     });
   }
   if (connection.status === 'needs_admin') {
@@ -23,7 +44,9 @@ export function evaluateIntegrationHealth(connection, now = new Date()) {
       key: `${source}:needs-admin`,
       source,
       severity: 'high',
-      message: connection.statusMessage || 'Administrator consent is required.',
+      message: microsoftSourceName
+        ? 'Microsoft tenant connected. Company-wide Application permissions still require administrator consent.'
+        : connection.statusMessage || 'Administrator consent is required.',
     });
   }
   const lastSync = connection.sync?.lastSuccessfulSyncAt || connection.sync?.lastSyncAt;
@@ -75,8 +98,24 @@ export function evaluateIntegrationHealth(connection, now = new Date()) {
 }
 
 export async function getOrganizationIntegrationHealth(orgId) {
-  const connections = await IntegrationConnection.find({ orgId }).lean();
-  return connections.flatMap((connection) => evaluateIntegrationHealth(connection));
+  const [connections, organization] = await Promise.all([
+    IntegrationConnection.find({ orgId }).lean(),
+    Organization.findById(orgId).select('integrations.microsoft').lean(),
+  ]);
+  const microsoft = organization?.integrations?.microsoft || {};
+  const microsoftState = deriveMicrosoftIntegrationStatus(microsoft, connections);
+  return connections.flatMap((connection) => {
+    const sourceName =
+      connection.integrationType === 'microsoft-outlook'
+        ? 'outlook'
+        : connection.integrationType === 'microsoft-teams'
+          ? 'teams'
+          : null;
+    return evaluateIntegrationHealth(connection, new Date(), {
+      microsoftSourceState: sourceName ? microsoftState.sources[sourceName] : null,
+      microsoftSourceRecord: sourceName ? microsoft.applicationConsentSources?.[sourceName] : null,
+    });
+  });
 }
 
 export async function runIntegrationHealthMonitor() {

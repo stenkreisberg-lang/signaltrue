@@ -117,39 +117,60 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
         : 50
       : 0;
 
-  // Microsoft delegated connect only covers the signed-in account. Tenant-wide
-  // coverage requires a separate admin-consent grant by a Microsoft 365 Global
-  // Administrator — surface that step until it has been completed.
-  const msConnected = !!(integrations?.connections?.teams || integrations?.connections?.outlook);
-  const msConsentGranted = !!(
-    integrations?.details?.teams?.applicationConsentVerifiedAt ||
-    integrations?.details?.outlook?.applicationConsentVerifiedAt
+  const microsoftAccess = integrations?.microsoftCompanyAccess;
+  const microsoftIdentityLinked = Boolean(microsoftAccess?.identityLinked);
+  const needsMsConsent = Boolean(
+    microsoftIdentityLinked &&
+    microsoftAccess?.requiresAdminConsent &&
+    integrations?.oauth?.microsoftAdminConsent
   );
-  const needsMsConsent =
-    msConnected && !msConsentGranted && !!integrations?.oauth?.microsoftAdminConsent;
+  const microsoftNeedsAttention = Boolean(
+    microsoftIdentityLinked &&
+    !microsoftAccess?.requiresAdminConsent &&
+    ['error', 'partial'].includes(microsoftAccess?.status)
+  );
 
-  const msConsentBlock = needsMsConsent ? (
-    <div style={styles.consentBox}>
-      <p style={styles.helpText}>
-        <strong>Company-wide coverage:</strong> your Microsoft connection currently covers only the
-        account you signed in with. A Microsoft 365 Global Administrator needs to grant
-        organization-wide consent so SignalTrue can analyze all teams — not just yours.
-      </p>
-      <button style={styles.consentButton} onClick={() => openOAuth('microsoftAdminConsent')}>
-        Grant Company-Wide Access
-      </button>
-      <button
-        style={{ ...styles.consentButton, marginLeft: 8 }}
-        onClick={verifyMicrosoftCompanyAccess}
-        disabled={verifyingMicrosoft}
-      >
-        {verifyingMicrosoft ? 'Verifying…' : 'Already granted? Verify access'}
-      </button>
-      {microsoftVerificationError && (
-        <p style={{ ...styles.helpText, color: '#B91C1C' }}>{microsoftVerificationError}</p>
-      )}
-    </div>
-  ) : null;
+  const handleMicrosoftAction = (source: 'teams' | 'outlook') => {
+    if (!microsoftIdentityLinked) {
+      openOAuth(source);
+    } else if (needsMsConsent) {
+      openOAuth('microsoftAdminConsent');
+    } else {
+      verifyMicrosoftCompanyAccess();
+    }
+  };
+
+  const msConsentBlock =
+    needsMsConsent || microsoftNeedsAttention ? (
+      <div style={styles.consentBox}>
+        <p style={styles.helpText}>
+          <strong>Microsoft 365:</strong>{' '}
+          {needsMsConsent
+            ? 'Microsoft tenant connected. Company-wide Application permissions still require administrator consent.'
+            : microsoftAccess?.statusMessage ||
+              'Microsoft permissions are present, but SignalTrue could not verify one of the Microsoft data sources.'}
+        </p>
+        {needsMsConsent && (
+          <button style={styles.consentButton} onClick={() => openOAuth('microsoftAdminConsent')}>
+            Grant Company-Wide Access
+          </button>
+        )}
+        <button
+          style={{ ...styles.consentButton, marginLeft: needsMsConsent ? 8 : 0 }}
+          onClick={verifyMicrosoftCompanyAccess}
+          disabled={verifyingMicrosoft}
+        >
+          {verifyingMicrosoft
+            ? 'Verifying…'
+            : needsMsConsent
+              ? 'Already granted? Verify access'
+              : 'Retry source verification'}
+        </button>
+        {microsoftVerificationError && (
+          <p style={{ ...styles.helpText, color: '#B91C1C' }}>{microsoftVerificationError}</p>
+        )}
+      </div>
+    ) : null;
 
   return (
     <div style={styles.container}>
@@ -254,7 +275,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                   </button>
 
                   <button
-                    onClick={() => openOAuth('teams')}
+                    onClick={() => handleMicrosoftAction('teams')}
                     style={{
                       ...styles.integrationButton,
                       ...(integrations?.connections?.teams ? styles.connectedButton : {}),
@@ -265,7 +286,13 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                     <div>
                       <div style={styles.integrationName}>Microsoft Teams</div>
                       <div style={styles.integrationStatus}>
-                        {integrations?.connections?.teams ? 'Connected' : 'Not connected'}
+                        {integrations?.connections?.teams
+                          ? 'Connected'
+                          : integrations?.details?.teams?.status === 'error'
+                            ? 'Verification needs attention'
+                            : integrations?.details?.teams?.status === 'needs_admin'
+                              ? 'Administrator consent required'
+                              : 'Not connected'}
                       </div>
                     </div>
                   </button>
@@ -305,7 +332,7 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                   </button>
 
                   <button
-                    onClick={() => openOAuth('outlook')}
+                    onClick={() => handleMicrosoftAction('outlook')}
                     style={{
                       ...styles.integrationButton,
                       ...(integrations?.connections?.outlook ? styles.connectedButton : {}),
@@ -316,7 +343,13 @@ const ITAdminOnboarding: React.FC<Props> = ({ status: initialStatus }) => {
                     <div>
                       <div style={styles.integrationName}>Outlook Calendar</div>
                       <div style={styles.integrationStatus}>
-                        {integrations?.connections?.outlook ? 'Connected' : 'Not connected'}
+                        {integrations?.connections?.outlook
+                          ? 'Connected'
+                          : integrations?.details?.outlook?.status === 'error'
+                            ? 'Verification needs attention'
+                            : integrations?.details?.outlook?.status === 'needs_admin'
+                              ? 'Administrator consent required'
+                              : 'Not connected'}
                       </div>
                     </div>
                   </button>

@@ -7,9 +7,14 @@
 
 import express from 'express';
 import Organization from '../models/organizationModel.js';
+import IntegrationConnection from '../models/integrationConnection.js';
+import WorkEvent from '../models/workEvent.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { decryptString } from '../utils/crypto.js';
-import { inspectMicrosoftCompanyWideAccess } from '../services/microsoftAdminConsentService.js';
+import {
+  inspectMicrosoftCompanyWideAccess,
+  REQUIRED_MICROSOFT_APPLICATION_ROLES,
+} from '../services/microsoftAdminConsentService.js';
 
 const router = express.Router();
 
@@ -141,22 +146,144 @@ router.get(
         });
       }
 
+      let assessment;
       try {
-        const assessment = await inspectMicrosoftCompanyWideAccess(orgId);
-        return res.json({
-          connected: assessment.verified,
-          tenantRecognized: true,
-          roles: assessment.roles,
-          missingRoles: assessment.missingRoles,
-          sources: assessment.sources,
-        });
-      } catch (err) {
+        assessment = await inspectMicrosoftCompanyWideAccess(orgId);
+      } catch {
         return res.status(400).json({
-          connected: false,
-          tenantRecognized: true,
-          error: err.message,
+          microsoftTenant: {
+            identityLinked: Boolean(
+              org.integrations?.microsoft?.delegatedConnectedAt ||
+              org.integrations?.microsoft?.accessToken
+            ),
+            tenantIdPresent: true,
+          },
+          liveVerification: {
+            status: 'failed',
+            reasonCode: 'microsoft_live_verification_unavailable',
+          },
+          finalVerdict: 'error',
         });
       }
+
+      const [connections, outlookEvents, teamsEvents] = await Promise.all([
+        IntegrationConnection.find({
+          orgId,
+          integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+        }).lean(),
+        WorkEvent.countDocuments({ orgId, source: 'microsoft-outlook' }),
+        WorkEvent.countDocuments({ orgId, source: 'microsoft-teams' }),
+      ]);
+      const connectionByType = new Map(
+        connections.map((connection) => [connection.integrationType, connection])
+      );
+      const outlookConnection = connectionByType.get('microsoft-outlook');
+      const teamsConnection = connectionByType.get('microsoft-teams');
+      const sourceConnections = [outlookConnection, teamsConnection].filter(Boolean);
+      const backfillProgress = sourceConnections.length
+        ? Math.min(...sourceConnections.map((connection) => connection.sync?.backfillProgress || 0))
+        : 0;
+      const backfillStartedDates = sourceConnections
+        .map((connection) => connection.sync?.backfillStartedAt)
+        .filter(Boolean);
+      const backfillCompleted =
+        sourceConnections.length === 2 &&
+        sourceConnections.every((connection) => connection.sync?.backfillComplete);
+      const backfillCompletedDates = sourceConnections
+        .map((connection) => connection.sync?.backfillCompletedAt)
+        .filter(Boolean);
+      const operationalSources = sourceConnections.filter(
+        (connection) => connection.status === 'connected' && connection.sync?.enabled !== false
+      ).length;
+      const finalVerdict =
+        assessment.status === 'needs_admin'
+          ? 'needs_admin'
+          : assessment.status === 'error'
+            ? 'error'
+            : assessment.status === 'partial'
+              ? 'partial'
+              : operationalSources === 2
+                ? 'healthy'
+                : operationalSources === 1
+                  ? 'partial'
+                  : 'error';
+
+      return res.json({
+        microsoftTenant: {
+          identityLinked: Boolean(assessment.identityLinked),
+          tenantIdPresent: true,
+        },
+        applicationRoles: Object.fromEntries(
+          REQUIRED_MICROSOFT_APPLICATION_ROLES.map((role) => [
+            role,
+            assessment.roles.includes(role),
+          ])
+        ),
+        outlook: {
+          directoryProbe: assessment.sources.outlook.probes.directory,
+          calendarProbe: assessment.sources.outlook.probes.calendar,
+          verificationState: assessment.sources.outlook.status,
+          reasonCode: assessment.sources.outlook.reasonCode || null,
+          connectionState: outlookConnection?.status || 'disconnected',
+          lastSuccessfulSync: outlookConnection?.sync?.lastSuccessfulSyncAt || null,
+          usersAttempted: outlookConnection?.coverage?.attemptedUsers || 0,
+          usersSynced: outlookConnection?.coverage?.syncedUsers || 0,
+          usersSkipped: outlookConnection?.coverage?.skippedUsers || 0,
+          eventsCollected: outlookEvents,
+          latestErrorCategories: outlookConnection?.coverage?.errorCategories || {},
+        },
+        teams: {
+          directoryProbe: assessment.sources.teams.probes.directory,
+          joinedTeamsProbe: assessment.sources.teams.probes.teams,
+          channelsProbe: assessment.sources.teams.probes.channels,
+          messagesProbe: assessment.sources.teams.probes.messages,
+          verificationState: assessment.sources.teams.status,
+          reasonCode: assessment.sources.teams.reasonCode || null,
+          connectionState: teamsConnection?.status || 'disconnected',
+          lastSuccessfulSync: teamsConnection?.sync?.lastSuccessfulSyncAt || null,
+          usersAttempted: teamsConnection?.coverage?.attemptedUsers || 0,
+          usersMapped: teamsConnection?.coverage?.mappedUsers || 0,
+          usersSkipped: teamsConnection?.coverage?.skippedUsers || 0,
+          teamsDiscovered: teamsConnection?.coverage?.teamsDiscovered || 0,
+          teamsRead: teamsConnection?.coverage?.teamsRead || 0,
+          eventsCollected: teamsEvents,
+          latestErrorCategories: teamsConnection?.coverage?.errorCategories || {},
+        },
+        backfill: {
+          status: backfillCompleted
+            ? 'completed'
+            : backfillStartedDates.length > 0
+              ? 'in_progress'
+              : 'not_started',
+          startedAt:
+            backfillStartedDates.length > 0
+              ? new Date(
+                  Math.min(...backfillStartedDates.map((value) => new Date(value).getTime()))
+                )
+              : null,
+          completedAt:
+            backfillCompleted && backfillCompletedDates.length > 0
+              ? new Date(
+                  Math.max(...backfillCompletedDates.map((value) => new Date(value).getTime()))
+                )
+              : null,
+          progress: backfillProgress,
+          sources: Object.fromEntries(
+            sourceConnections.map((connection) => [
+              connection.integrationType,
+              {
+                status: connection.sync?.backfillComplete
+                  ? 'completed'
+                  : connection.sync?.backfillStartedAt
+                    ? 'in_progress'
+                    : 'not_started',
+                progress: connection.sync?.backfillProgress || 0,
+              },
+            ])
+          ),
+        },
+        finalVerdict,
+      });
     } catch (err) {
       console.error('Microsoft debug error:', err);
       res.status(500).json({ message: err.message });

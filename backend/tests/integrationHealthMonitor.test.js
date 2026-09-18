@@ -23,6 +23,22 @@ describe('integration health monitoring', () => {
       'microsoft-teams:stale',
       'microsoft-teams:unmapped',
     ]);
+    expect(issues[0].message).toContain('Microsoft permissions are present');
+    expect(issues[0].message.toLowerCase()).not.toContain('admin consent');
+  });
+
+  test('uses consent language only for needs_admin Microsoft sources', () => {
+    const issues = evaluateIntegrationHealth({
+      integrationType: 'microsoft-teams',
+      status: 'needs_admin',
+      statusMessage: 'BadRequest',
+      sync: {},
+      coverage: {},
+    });
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].key).toBe('microsoft-teams:needs-admin');
+    expect(issues[0].message).toContain('administrator consent');
   });
 
   test('reports inaccessible Microsoft mailboxes without including account identities', () => {

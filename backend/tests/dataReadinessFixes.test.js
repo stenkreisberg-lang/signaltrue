@@ -12,6 +12,7 @@ import {
 import { normalizeDepartmentName, resolveOrgWorkDomain } from '../services/employeeSyncService.js';
 import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
+  buildWorkEventUpsertOperations,
   classifyMicrosoftSyncError,
   fetchGraphCollection,
   GoogleCalendarAdapter,
@@ -374,6 +375,47 @@ describe('Microsoft Graph pagination', () => {
       expect(isUnavailableMicrosoftMailboxError(error)).toBe(true);
     }
   });
+
+  test('treats a mailbox-level 404 without a provider body as a per-user skip', () => {
+    const error = new Error('Microsoft Graph 404');
+    error.status = 404;
+
+    expect(isUnavailableMicrosoftMailboxError(error)).toBe(true);
+  });
+
+  test('retries a throttled page and respects the provider retry hint', async () => {
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: { get: () => '0' },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ value: [{ id: 'after-retry' }] }),
+      });
+
+    await expect(
+      fetchGraphCollection('https://graph.microsoft.com/test', 'token', {
+        baseRetryDelayMs: 0,
+      })
+    ).resolves.toEqual([{ id: 'after-retry' }]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('fails explicitly instead of returning a silently truncated collection', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ value: [{ id: 'one' }], '@odata.nextLink': 'page-2' }),
+    });
+
+    await expect(fetchGraphCollection('page-1', 'token', { maxPages: 1 })).rejects.toMatchObject({
+      code: 'MICROSOFT_GRAPH_PAGE_LIMIT',
+    });
+  });
 });
 
 describe('Microsoft synchronization state', () => {
@@ -387,6 +429,40 @@ describe('Microsoft synchronization state', () => {
         disableSync: true,
       })
     );
+  });
+
+  test('does not misclassify a Graph denial as missing admin consent', () => {
+    const error = new Error('Microsoft Graph 403 (Authorization_RequestDenied)');
+    error.status = 403;
+    error.graphCode = 'Authorization_RequestDenied';
+
+    expect(classifyMicrosoftSyncError(error)).toMatchObject({
+      kind: 'graph_access_denied',
+      status: 'error',
+      disableSync: false,
+    });
+  });
+
+  test('uses tenant-scoped keys when upserting provider events', () => {
+    const event = {
+      orgId: '507f1f77bcf86cd799439001',
+      source: 'microsoft-teams',
+      externalId: 'message-1',
+    };
+
+    expect(buildWorkEventUpsertOperations([event])).toEqual([
+      {
+        updateOne: {
+          filter: {
+            orgId: event.orgId,
+            source: event.source,
+            externalId: event.externalId,
+          },
+          update: { $set: event },
+          upsert: true,
+        },
+      },
+    ]);
   });
 
   test('writes canonical successful sync fields', async () => {
@@ -458,6 +534,135 @@ describe('Microsoft synchronization state', () => {
         new Date('2026-08-27T07:00:00Z')
       )
     ).resolves.toEqual([]);
+  });
+
+  test('skips an unavailable mailbox while collecting accessible users', async () => {
+    jest.spyOn(User, 'find').mockReturnValue({
+      select: () => ({
+        lean: async () => [
+          { _id: '507f1f77bcf86cd799439011', externalIds: { microsoftUserId: 'ms-1' } },
+          { _id: '507f1f77bcf86cd799439012', externalIds: { microsoftUserId: 'ms-2' } },
+        ],
+      }),
+    });
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: async () =>
+          JSON.stringify({ error: { code: 'ErrorMailboxNotEnabledForRESTAPI' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          value: [
+            {
+              id: 'meeting-1',
+              start: { dateTime: '2026-08-27T06:00:00Z' },
+              end: { dateTime: '2026-08-27T07:00:00Z' },
+            },
+          ],
+        }),
+      });
+    const roles = ['Calendars.Read', 'User.Read.All'];
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const token = `${encode({ alg: 'none' })}.${encode({ roles })}.signature`;
+    const adapter = new MicrosoftAdapter();
+
+    await expect(
+      adapter.fetchOutlookEvents(
+        token,
+        new Date('2026-08-27T06:00:00Z'),
+        new Date('2026-08-27T08:00:00Z'),
+        '507f1f77bcf86cd799439001'
+      )
+    ).resolves.toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(adapter.pendingOutlookCoverage).toEqual(
+      expect.objectContaining({
+        attemptedUsers: 2,
+        syncedUsers: 1,
+        skippedUsers: 1,
+        eventsCollected: 1,
+        unavailableUsers: 1,
+      })
+    );
+  });
+
+  test('tries another mapped user when the first has no Teams membership', async () => {
+    jest.spyOn(User, 'find').mockReturnValue({
+      select: () => ({
+        lean: async () => [
+          { externalIds: { microsoftUserId: 'ms-without-team' } },
+          { externalIds: { microsoftUserId: 'ms-with-team' } },
+        ],
+      }),
+    });
+    const fetchMock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ value: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ value: [{ id: 'team-1', displayName: 'Team' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ value: [{ id: 'channel-1', membershipType: 'standard' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          value: [
+            {
+              id: 'message-1',
+              messageType: 'message',
+              createdDateTime: '2026-08-27T07:00:00Z',
+              channelIdentity: { teamId: 'team-1', channelId: 'channel-1' },
+            },
+          ],
+        }),
+      });
+    const roles = [
+      'User.Read.All',
+      'Team.ReadBasic.All',
+      'Channel.ReadBasic.All',
+      'ChannelMessage.Read.All',
+    ];
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const token = `${encode({ alg: 'none' })}.${encode({ roles })}.signature`;
+    const adapter = new MicrosoftAdapter();
+
+    await expect(
+      adapter.fetchTeamsMessages(
+        token,
+        new Date('2026-08-27T06:00:00Z'),
+        new Date('2026-08-27T08:00:00Z'),
+        '507f1f77bcf86cd799439001'
+      )
+    ).resolves.toHaveLength(1);
+    expect(fetchMock.mock.calls[0][0]).toContain('/users/ms-without-team/joinedTeams');
+    expect(fetchMock.mock.calls[1][0]).toContain('/users/ms-with-team/joinedTeams');
+    expect(fetchMock.mock.calls[2][0]).toContain('/teams/team-1/allChannels?$select=');
+    expect(fetchMock.mock.calls[2][0]).not.toContain('$top');
+    expect(fetchMock.mock.calls[3][0]).toContain('/channels/getAllMessages?$top=50&$filter=');
+    expect(adapter.pendingTeamsCoverage).toEqual(
+      expect.objectContaining({
+        attemptedUsers: 2,
+        syncedUsers: 2,
+        teamsDiscovered: 1,
+        teamsRead: 1,
+        eventsCollected: 1,
+      })
+    );
   });
 });
 

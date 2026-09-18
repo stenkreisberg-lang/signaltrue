@@ -94,6 +94,7 @@ function Dashboard() {
     const integrationStatus = searchParams.get('integrationStatus');
     const msg = searchParams.get('msg');
     const connected = searchParams.get('connected');
+    const microsoftConsent = searchParams.get('microsoftConsent');
 
     if (integrationStatus) {
       // Show toast with the result
@@ -122,14 +123,29 @@ function Dashboard() {
         message: `${connected.replace('-', ' ')} connected successfully!`,
       });
       setTimeout(() => setToast(null), 3000);
-
-      // Clean up URL
-      window.history.replaceState({}, document.title, '/dashboard');
     }
 
-    // Always reload if coming back from an OAuth flow (Google or Slack)
-    if (searchParams.has('integrationStatus') || searchParams.has('connected')) {
+    if (microsoftConsent) {
+      setToast({
+        type: microsoftConsent === 'verified' ? 'success' : 'error',
+        message:
+          microsoftConsent === 'verified'
+            ? 'Microsoft 365 access verified. Outlook and Teams backfill is starting.'
+            : microsoftConsent === 'verification-failed'
+              ? 'Microsoft permissions are present, but SignalTrue could not verify one of the Microsoft data sources.'
+              : 'Microsoft company-wide consent was not granted.',
+      });
+      setTimeout(() => setToast(null), 8000);
+    }
+
+    // Always reload if coming back from an OAuth or Microsoft verification flow.
+    if (
+      searchParams.has('integrationStatus') ||
+      searchParams.has('connected') ||
+      searchParams.has('microsoftConsent')
+    ) {
       loadIntegrationStatus();
+      window.history.replaceState({}, document.title, '/dashboard');
     }
 
     // Also run on initial mount
@@ -238,6 +254,12 @@ function Dashboard() {
 
   // Determine teamId for DriftAlerts (if user is in a team)
   const teamId = user?.teamId || user?.team?.id || null;
+  const microsoftAccess = integrations?.microsoftCompanyAccess;
+  const microsoftIdentityLinked = Boolean(microsoftAccess?.identityLinked);
+  const microsoftStatus = microsoftAccess?.status || 'disconnected';
+  const microsoftNeedsAdmin = Boolean(microsoftAccess?.requiresAdminConsent);
+  const outlookStatus = microsoftAccess?.sources?.outlook?.status || 'disconnected';
+  const teamsStatus = microsoftAccess?.sources?.teams?.status || 'disconnected';
 
   return (
     <div style={styles.container}>
@@ -603,14 +625,20 @@ function Dashboard() {
             </div>
             <h3 style={styles.cardTitle}>
               Connect Outlook{' '}
-              {integrations?.connected?.outlook && (
-                <span style={styles.badgeConnected}>Connected</span>
+              {outlookStatus !== 'disconnected' && (
+                <span style={styles.badgeConnected}>
+                  {outlookStatus === 'connected'
+                    ? 'Connected'
+                    : outlookStatus === 'needs_admin'
+                      ? 'Needs admin'
+                      : 'Attention'}
+                </span>
               )}
             </h3>
             <p style={styles.cardText}>
               Analyze Outlook/Exchange calendar and email metadata for trends
             </p>
-            {!integrations?.connected?.outlook ? (
+            {!microsoftIdentityLinked ? (
               <button style={styles.cardButton} onClick={() => openOrGuide('outlook')}>
                 Connect Outlook Account
               </button>
@@ -635,14 +663,20 @@ function Dashboard() {
             </div>
             <h3 style={styles.cardTitle}>
               Connect Microsoft Teams{' '}
-              {integrations?.connected?.teams && (
-                <span style={styles.badgeConnected}>Connected</span>
+              {teamsStatus !== 'disconnected' && (
+                <span style={styles.badgeConnected}>
+                  {teamsStatus === 'connected'
+                    ? 'Connected'
+                    : teamsStatus === 'needs_admin'
+                      ? 'Needs admin'
+                      : 'Attention'}
+                </span>
               )}
             </h3>
             <p style={styles.cardText}>
               Import Teams collaboration patterns to enrich communication insights
             </p>
-            {!integrations?.connected?.teams ? (
+            {!microsoftIdentityLinked ? (
               <button style={styles.cardButton} onClick={() => openOrGuide('teams')}>
                 Connect Teams Workspace
               </button>
@@ -654,28 +688,25 @@ function Dashboard() {
           </div>
 
           {/* Microsoft company-wide access (tenant admin consent) */}
-          {(integrations?.connected?.outlook || integrations?.connected?.teams) && (
+          {microsoftIdentityLinked && (
             <div style={styles.card}>
               <div style={styles.cardIcon}>🏢</div>
               <h3 style={styles.cardTitle}>
                 Company-Wide Microsoft Access{' '}
-                {(integrations?.details?.outlook?.applicationConsentVerifiedAt ||
-                  integrations?.details?.teams?.applicationConsentVerifiedAt) && (
-                  <span style={styles.badgeConnected}>Granted</span>
+                {microsoftStatus === 'connected' && (
+                  <span style={styles.badgeConnected}>Verified</span>
                 )}
               </h3>
-              {integrations?.details?.outlook?.applicationConsentVerifiedAt ||
-              integrations?.details?.teams?.applicationConsentVerifiedAt ? (
+              {microsoftStatus === 'connected' ? (
                 <p style={styles.cardText}>
-                  Microsoft application permissions were tested successfully. The coverage panel
-                  shows how much company data has completed backfill.
+                  Microsoft 365 connected. Outlook and Teams are syncing. The coverage panel shows
+                  how much company data has completed backfill.
                 </p>
-              ) : (
+              ) : microsoftNeedsAdmin ? (
                 <>
                   <p style={styles.cardText}>
-                    Your Microsoft connection currently covers only your own account. A Microsoft
-                    365 Global Administrator must grant organization-wide consent so SignalTrue can
-                    analyze every team.
+                    Microsoft tenant connected. Company-wide Application permissions still require
+                    administrator consent.
                   </p>
                   <button
                     style={styles.cardButton}
@@ -690,13 +721,20 @@ function Dashboard() {
                   >
                     {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Already granted? Verify'}
                   </button>
-                  {(integrations?.details?.outlook?.applicationConsentLastError ||
-                    integrations?.details?.teams?.applicationConsentLastError) && (
-                    <p style={{ ...styles.cardText, marginTop: 8, color: '#B91C1C' }}>
-                      {integrations?.details?.outlook?.applicationConsentLastError ||
-                        integrations?.details?.teams?.applicationConsentLastError}
-                    </p>
-                  )}
+                </>
+              ) : (
+                <>
+                  <p style={styles.cardText}>
+                    {microsoftAccess?.statusMessage ||
+                      'Microsoft permissions are present, but SignalTrue could not verify one of the Microsoft data sources.'}
+                  </p>
+                  <button
+                    style={styles.cardButton}
+                    onClick={verifyMicrosoftCompanyAccess}
+                    disabled={verifyingMicrosoft}
+                  >
+                    {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Retry source verification'}
+                  </button>
                 </>
               )}
             </div>

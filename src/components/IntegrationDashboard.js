@@ -178,7 +178,6 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       }
     } catch (err) {
       setError(err.message);
-      await fetchIntegrations();
     } finally {
       setLoading(false);
     }
@@ -247,7 +246,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       setNotice('Microsoft company-wide access is verified. The 60-day backfill has started.');
     } else if (consent === 'verification-failed') {
       setError(
-        'Microsoft accepted admin consent, but one or more required permissions are missing.'
+        'Microsoft accepted the consent flow, but SignalTrue could not verify one or more Microsoft data sources. Review the source status below for the safe technical reason.'
       );
     } else if (consent) {
       setError('Microsoft company-wide consent was not granted.');
@@ -358,9 +357,11 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const dataQuality = calculateDataQuality();
   const microsoftRequiredRoles = microsoftCompanyAccess?.requiredRoles || [];
   const microsoftGrantedRoles = microsoftCompanyAccess?.grantedRoles || [];
-  const microsoftMissingRoles = microsoftRequiredRoles.filter(
-    (role) => !microsoftGrantedRoles.includes(role)
-  );
+  const microsoftMissingRoles =
+    microsoftCompanyAccess?.missingRoles ||
+    microsoftRequiredRoles.filter((role) => !microsoftGrantedRoles.includes(role));
+  const microsoftStatus = microsoftCompanyAccess?.status || 'disconnected';
+  const microsoftNeedsAdmin = Boolean(microsoftCompanyAccess?.requiresAdminConsent);
 
   return (
     <div className="space-y-6">
@@ -424,21 +425,30 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <div className="mt-2 flex flex-wrap gap-2 text-caption">
                 {['outlook', 'teams'].map((source) => {
                   const sourceState = microsoftCompanyAccess.sources?.[source];
-                  const verified = Boolean(sourceState?.verifiedAt);
+                  const sourceStatus = sourceState?.status || 'needs_admin';
+                  const verified = sourceStatus === 'connected';
                   return (
-                    <span
-                      key={source}
-                      className={`rounded-control px-2 py-1 ${
-                        verified ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'
-                      }`}
-                    >
-                      {source === 'outlook' ? 'Outlook' : 'Teams'}:{' '}
-                      {verified ? 'verified' : 'not verified'}
+                    <span key={source} className="flex flex-col gap-1">
+                      <span
+                        className={`rounded-control px-2 py-1 ${
+                          verified
+                            ? 'bg-teal-50 text-teal-800'
+                            : sourceStatus === 'error'
+                              ? 'bg-red-50 text-red-800'
+                              : 'bg-amber-50 text-amber-800'
+                        }`}
+                      >
+                        {source === 'outlook' ? 'Outlook' : 'Teams'}:{' '}
+                        {sourceStatus.replace('_', ' ')}
+                      </span>
+                      {!verified && sourceState?.statusMessage && (
+                        <span className="max-w-sm text-slate-600">{sourceState.statusMessage}</span>
+                      )}
                     </span>
                   );
                 })}
               </div>
-              {microsoftCompanyAccess.lastCheckedAt && !microsoftCompanyAccess.verifiedAt && (
+              {microsoftCompanyAccess.lastCheckedAt && microsoftNeedsAdmin && (
                 <div className="mt-2 space-y-1 text-caption">
                   <p className="text-slate-600">
                     Granted application permissions:{' '}
@@ -453,17 +463,17 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   )}
                 </div>
               )}
-              {microsoftCompanyAccess.lastError && !microsoftCompanyAccess.verifiedAt && (
+              {microsoftCompanyAccess.statusMessage && microsoftStatus !== 'connected' && (
                 <p className="mt-2 text-caption text-amber-700">
-                  {microsoftCompanyAccess.lastError}
+                  {microsoftCompanyAccess.statusMessage}
                 </p>
               )}
             </div>
-            {microsoftCompanyAccess.verifiedAt ? (
+            {microsoftStatus === 'connected' ? (
               <div className="rounded-control bg-teal-50 px-3 py-2 text-caption font-medium text-teal-800">
                 Company-wide access verified
               </div>
-            ) : (
+            ) : microsoftNeedsAdmin ? (
               <div className="flex min-w-[300px] flex-col gap-2">
                 <button
                   onClick={grantMicrosoftCompanyAccess}
@@ -484,6 +494,20 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                     SignalTrue Microsoft application configuration is required first.
                   </p>
                 )}
+              </div>
+            ) : (
+              <div className="flex min-w-[300px] flex-col gap-2">
+                <button
+                  onClick={verifyMicrosoftCompanyAccess}
+                  disabled={verifyingMicrosoft || !microsoftCompanyAccess.configured}
+                  className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
+                >
+                  {verifyingMicrosoft ? 'Checking sources…' : 'Retry Microsoft verification'}
+                </button>
+                <p className="text-caption text-slate-600">
+                  Application permissions are already present. Re-granting administrator consent is
+                  not required unless a missing role is listed.
+                </p>
               </div>
             )}
           </div>
@@ -632,12 +656,15 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                             : 'bg-slate-50 text-slate-700'
                       }`}
                     >
-                      {needsAdmin || hasError
+                      {needsAdmin
                         ? integration.statusMessage || 'Administrator consent is still required.'
-                        : integration.status === 'measuring'
-                          ? `Measuring from ${integration.eventCount || 0} activity events.`
-                          : integration.statusMessage ||
-                            'Authorized; waiting for the first activity sync.'}
+                        : hasError
+                          ? integration.statusMessage ||
+                            'Permissions are present, but this source could not be verified.'
+                          : integration.status === 'measuring'
+                            ? `Measuring from ${integration.eventCount || 0} activity events.`
+                            : integration.statusMessage ||
+                              'Authorized; waiting for the first activity sync.'}
                     </div>
                     {/* Status */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
@@ -687,12 +714,20 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                      {source.startsWith('microsoft-') && !connected ? (
+                      {source.startsWith('microsoft-') && needsAdmin ? (
                         <button
                           onClick={grantMicrosoftCompanyAccess}
                           className="flex-1 px-3 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors"
                         >
                           Grant / verify company-wide access
+                        </button>
+                      ) : source.startsWith('microsoft-') && hasError ? (
+                        <button
+                          onClick={verifyMicrosoftCompanyAccess}
+                          disabled={verifyingMicrosoft}
+                          className="flex-1 px-3 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors disabled:opacity-50"
+                        >
+                          {verifyingMicrosoft ? 'Verifying…' : 'Retry verification'}
                         </button>
                       ) : (
                         <button

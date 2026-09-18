@@ -54,6 +54,9 @@ export default function SignalCoverage() {
     if (source.status === 'needs_admin') {
       return { label: 'Needs admin', className: 'status-warn' };
     }
+    if (source.status === 'error') {
+      return { label: 'Verification error', className: 'status-warn' };
+    }
     return { label: 'Not connected', className: 'status-muted' };
   };
 

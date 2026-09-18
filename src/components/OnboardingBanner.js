@@ -63,6 +63,13 @@ const SETUP_MESSAGES = {
     to: '/integrations',
     action: 'Review access',
   },
+  review_source_verification: {
+    level: 'Source attention required',
+    banner:
+      'Application permissions are present, but SignalTrue could not verify or sync one of the connected data sources.',
+    to: '/integrations',
+    action: 'Review source',
+  },
   sync_directory: {
     level: 'Directory required',
     banner: 'Authorization is ready. Sync the employee directory before building teams.',

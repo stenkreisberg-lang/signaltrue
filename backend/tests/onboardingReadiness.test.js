@@ -135,4 +135,69 @@ describe('canonical onboarding readiness', () => {
     expect(setup.readiness.setupComplete).toBe(false);
     expect(setup.readiness.nextStep).toBe('build_team_coverage');
   });
+
+  test('does not let historical events turn a current Graph failure into needs_admin or measuring', async () => {
+    connectionLean.mockResolvedValue([
+      { integrationType: 'microsoft-outlook', status: 'connected' },
+      {
+        integrationType: 'microsoft-teams',
+        status: 'error',
+        statusMessage: 'Administrator consent required',
+      },
+    ]);
+    aggregate.mockResolvedValue([
+      {
+        _id: 'microsoft-teams',
+        events: 4290,
+        mappedUserIds: ['507f1f77bcf86cd799439020'],
+        firstEventAt: new Date('2026-07-01T08:00:00Z'),
+        lastEventAt: new Date('2026-07-31T08:00:00Z'),
+      },
+    ]);
+    countDocuments.mockReset();
+    countDocuments.mockResolvedValueOnce(4290).mockResolvedValueOnce(4290);
+
+    const setup = await getOrganizationReadiness(
+      organization({
+        microsoft: {
+          applicationConsentLastCheckedAt: new Date(),
+          applicationConsentRoles: [
+            'Calendars.Read',
+            'User.Read.All',
+            'Team.ReadBasic.All',
+            'Channel.ReadBasic.All',
+            'ChannelMessage.Read.All',
+          ],
+          applicationConsentSources: {
+            outlook: {
+              status: 'connected',
+              verifiedAt: new Date(),
+              lastCheckedAt: new Date(),
+              missingRoles: [],
+              probes: { directory: 'passed', calendar: 'passed' },
+            },
+            teams: {
+              status: 'error',
+              lastCheckedAt: new Date(),
+              missingRoles: [],
+              reasonCode: 'channels_probe_failed',
+              lastError: 'Company-wide Teams channels verification failed (BadRequest).',
+              probes: {
+                directory: 'passed',
+                teams: 'passed',
+                channels: 'failed',
+                messages: 'not_run',
+              },
+            },
+          },
+        },
+      })
+    );
+
+    const teams = setup.sources.find((source) => source.type === 'microsoft-teams');
+    expect(teams.status).toBe('error');
+    expect(teams.statusMessage).toContain('permissions are present');
+    expect(teams.statusMessage.toLowerCase()).not.toContain('administrator consent');
+    expect(setup.readiness.nextStep).toBe('review_source_verification');
+  });
 });

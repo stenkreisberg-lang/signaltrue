@@ -6,6 +6,7 @@
  */
 
 import cron from 'node-cron';
+import crypto from 'node:crypto';
 import { syncAllIntegrations, getAdapter } from './integrationAdapters.js';
 import {
   syncCoreIntegrations,
@@ -36,6 +37,10 @@ import {
   MICROSOFT_TEAMS_APPLICATION_ROLES,
 } from '../config/microsoftPermissions.js';
 
+const MICROSOFT_BACKFILL_LEASE_MS = 2 * 60 * 60 * 1000;
+const microsoftBackfillsInFlight = new Map();
+let microsoftReconciliationInFlight = null;
+
 // ============================================================
 // SYNC SCHEDULER
 // ============================================================
@@ -51,6 +56,13 @@ export function scheduleIntegrationJobs() {
   cron.schedule('*/15 6-22 * * *', async () => {
     console.log('⏰ Running incremental integration sync...');
     await runIncrementalSync();
+  });
+
+  // Re-check tenants that previously needed consent or hit a transient Graph
+  // verification failure. Admin consent can be granted out of band, so a new
+  // OAuth round trip must not be required for recovery.
+  cron.schedule('*/15 * * * *', async () => {
+    await runMicrosoftAccessReconciliation();
   });
 
   // Full backfill sync daily at 3am
@@ -93,32 +105,57 @@ export function scheduleIntegrationJobs() {
   console.log('✅ Integration jobs scheduled');
 
   setTimeout(() => {
-    reconcilePendingMicrosoftCompanyAccess().catch((error) =>
-      console.error('[Microsoft Consent] Startup reconciliation failed:', error.message)
-    );
+    void runMicrosoftAccessReconciliation();
   }, 5_000);
 }
 
-export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
-  const startedAt = new Date();
+export function runMicrosoftAccessReconciliation() {
+  if (microsoftReconciliationInFlight) return microsoftReconciliationInFlight;
+  microsoftReconciliationInFlight = reconcilePendingMicrosoftCompanyAccess()
+    .catch((error) => {
+      console.error('[Microsoft Consent] Scheduled reconciliation failed:', error.message);
+      return { checked: 0, error: error.message };
+    })
+    .finally(() => {
+      microsoftReconciliationInFlight = null;
+    });
+  return microsoftReconciliationInFlight;
+}
+
+export async function runMicrosoftCompanyBackfill(orgId, daysBack = 60, startedAt = new Date()) {
+  const runId = crypto.randomUUID();
+  const leaseExpiresAt = new Date(startedAt.getTime() + MICROSOFT_BACKFILL_LEASE_MS);
   const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
-  void (async () => {
-    await IntegrationConnection.updateMany(
-      {
-        orgId,
-        integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
-        status: 'connected',
+
+  const claim = await IntegrationConnection.updateMany(
+    {
+      orgId,
+      integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+      status: 'connected',
+      'sync.backfillComplete': { $ne: true },
+      $or: [
+        { 'sync.backfillLeaseExpiresAt': { $exists: false } },
+        { 'sync.backfillLeaseExpiresAt': null },
+        { 'sync.backfillLeaseExpiresAt': { $lte: startedAt } },
+      ],
+    },
+    {
+      $set: {
+        'sync.backfillRunId': runId,
+        'sync.backfillLeaseExpiresAt': leaseExpiresAt,
+        'sync.backfillComplete': false,
+        'sync.backfillStartedAt': startedAt,
+        'sync.backfillCompletedAt': null,
+        'sync.backfillProgress': 0,
+        'sync.lastSyncMessage': `${daysBack}-day company-wide backfill started`,
       },
-      {
-        $set: {
-          'sync.backfillComplete': false,
-          'sync.backfillStartedAt': startedAt,
-          'sync.backfillCompletedAt': null,
-          'sync.backfillProgress': 0,
-          'sync.lastSyncMessage': `${daysBack}-day company-wide backfill started`,
-        },
-      }
-    );
+    }
+  );
+  if ((claim.modifiedCount || 0) === 0) {
+    return { started: false, alreadyRunningOrComplete: true, startedAt, daysBack };
+  }
+
+  try {
     const org = await Organization.findById(orgId).select('integrations.microsoft.tenantId').lean();
     const tenantId = org?.integrations?.microsoft?.tenantId;
     const appToken = tenantId ? await getMicrosoftAppToken(tenantId) : null;
@@ -126,93 +163,171 @@ export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
     const directory = await syncEmployeesFromMicrosoft(orgId, appToken);
     if (!directory.success)
       throw new Error(directory.message || 'Microsoft directory sync failed.');
-    return triggerImmediateSync(orgId, { since, until: new Date() });
-  })()
-    .then(async (results) => {
-      const microsoft = results.find((result) => result.source === 'microsoft');
-      const completedAt = new Date();
-      const org = await Organization.findById(orgId)
-        .select('integrations.microsoft.tenantId integrations.microsoft.scope')
-        .lean();
-      const roles = await getGrantedApplicationRoles(org?.integrations?.microsoft?.tenantId);
-      const sourceDefinitions = [
-        {
-          integrationType: 'microsoft-outlook',
-          detailKey: 'outlook',
-          configured: ['outlook', 'both'].includes(org?.integrations?.microsoft?.scope),
-          requiredRoles: MICROSOFT_OUTLOOK_APPLICATION_ROLES,
-        },
-        {
-          integrationType: 'microsoft-teams',
-          detailKey: 'teams',
-          configured: ['teams', 'both'].includes(org?.integrations?.microsoft?.scope),
-          requiredRoles: MICROSOFT_TEAMS_APPLICATION_ROLES,
-        },
-      ];
+    const results = await triggerImmediateSync(orgId, { since, until: new Date() });
+    const microsoft = results.find((result) => result.source === 'microsoft');
+    const completedAt = new Date();
+    const refreshedOrg = await Organization.findById(orgId)
+      .select('integrations.microsoft.tenantId integrations.microsoft.scope')
+      .lean();
+    const roles = await getGrantedApplicationRoles(refreshedOrg?.integrations?.microsoft?.tenantId);
+    const scope = refreshedOrg?.integrations?.microsoft?.scope || 'both';
+    const sourceDefinitions = [
+      {
+        integrationType: 'microsoft-outlook',
+        detailKey: 'outlook',
+        configured: ['outlook', 'both'].includes(scope),
+        requiredRoles: MICROSOFT_OUTLOOK_APPLICATION_ROLES,
+      },
+      {
+        integrationType: 'microsoft-teams',
+        detailKey: 'teams',
+        configured: ['teams', 'both'].includes(scope),
+        requiredRoles: MICROSOFT_TEAMS_APPLICATION_ROLES,
+      },
+    ];
 
-      await Promise.all(
-        sourceDefinitions
-          .filter((definition) => definition.configured)
-          .map(async (definition) => {
-            const missingRoles = definition.requiredRoles.filter((role) => !roles.includes(role));
-            const detail = microsoft?.details?.sources?.[definition.detailKey];
-            const complete = Boolean(detail?.success === true && missingRoles.length === 0);
-            const message = complete
-              ? `${daysBack}-day company-wide backfill completed`
-              : missingRoles.length > 0
-                ? `Backfill requires Microsoft administrator consent for: ${missingRoles.join(', ')}`
-                : String(
-                    detail?.errorMessage ||
-                      microsoft?.error ||
-                      'Microsoft backfill did not complete'
-                  ).slice(0, 500);
-            await IntegrationConnection.findOneAndUpdate(
-              { orgId, integrationType: definition.integrationType },
-              {
-                $set: {
-                  ...(missingRoles.length > 0
-                    ? {
-                        status: 'needs_admin',
-                        statusMessage: message,
-                        statusUpdatedAt: completedAt,
-                      }
-                    : {}),
-                  'sync.backfillComplete': complete,
-                  'sync.backfillCompletedAt': complete ? completedAt : null,
-                  'sync.backfillProgress': complete ? 100 : 0,
-                  'sync.lastSyncMessage': message,
-                },
+    await Promise.all(
+      sourceDefinitions
+        .filter((definition) => definition.configured)
+        .map(async (definition) => {
+          const missingRoles = definition.requiredRoles.filter((role) => !roles.includes(role));
+          const detail = microsoft?.details?.sources?.[definition.detailKey];
+          const complete = Boolean(detail?.success === true && missingRoles.length === 0);
+          const message = complete
+            ? `${daysBack}-day company-wide backfill completed`
+            : missingRoles.length > 0
+              ? `Backfill requires Microsoft administrator consent for: ${missingRoles.join(', ')}`
+              : String(
+                  detail?.errorMessage || microsoft?.error || 'Microsoft backfill did not complete'
+                ).slice(0, 500);
+          await IntegrationConnection.findOneAndUpdate(
+            {
+              orgId,
+              integrationType: definition.integrationType,
+              'sync.backfillRunId': runId,
+            },
+            {
+              $set: {
+                ...(!complete
+                  ? {
+                      status: missingRoles.length > 0 ? 'needs_admin' : 'error',
+                      statusMessage: message,
+                      statusUpdatedAt: completedAt,
+                    }
+                  : {}),
+                'sync.backfillComplete': complete,
+                'sync.backfillCompletedAt': complete ? completedAt : null,
+                'sync.backfillProgress': complete ? 100 : 0,
+                'sync.lastSyncStatus': complete ? 'success' : 'failed',
+                'sync.lastSyncMessage': message,
               },
-              { upsert: true }
-            );
-          })
-      );
-    })
-    .catch(async (error) => {
-      await IntegrationConnection.updateMany(
-        { orgId, integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] } },
-        {
-          $set: {
-            'sync.backfillComplete': false,
-            'sync.backfillProgress': 0,
-            'sync.lastSyncStatus': 'failed',
-            'sync.lastSyncMessage': String(error.message).slice(0, 500),
-          },
-        }
-      ).catch(() => {});
-      console.error('Microsoft company-wide backfill failed:', error.message);
-    });
-  return { startedAt, daysBack };
+              $unset: {
+                'sync.backfillRunId': 1,
+                'sync.backfillLeaseExpiresAt': 1,
+              },
+            },
+            { upsert: false }
+          );
+        })
+    );
+
+    // Release any stale connected source that was claimed but is no longer in
+    // the configured Microsoft scope.
+    await IntegrationConnection.updateMany(
+      { orgId, 'sync.backfillRunId': runId },
+      {
+        $set: {
+          'sync.backfillComplete': false,
+          'sync.backfillProgress': 0,
+          'sync.lastSyncStatus': 'failed',
+          'sync.lastSyncMessage': 'Microsoft source is not configured for this organization',
+        },
+        $unset: {
+          'sync.backfillRunId': 1,
+          'sync.backfillLeaseExpiresAt': 1,
+        },
+      }
+    );
+
+    return { started: true, completed: true, startedAt, completedAt, daysBack, results };
+  } catch (error) {
+    await IntegrationConnection.updateMany(
+      { orgId, 'sync.backfillRunId': runId },
+      {
+        $set: {
+          'sync.backfillComplete': false,
+          'sync.backfillProgress': 0,
+          'sync.lastSyncStatus': 'failed',
+          'sync.lastSyncMessage': String(error.message).slice(0, 500),
+        },
+        $unset: {
+          'sync.backfillRunId': 1,
+          'sync.backfillLeaseExpiresAt': 1,
+        },
+      }
+    ).catch(() => {});
+    console.error('Microsoft company-wide backfill failed:', error.message);
+    return { started: true, completed: false, startedAt, daysBack, error: error.message };
+  }
 }
 
-export async function reconcilePendingMicrosoftCompanyAccess() {
+export function startMicrosoftCompanyBackfill(orgId, daysBack = 60) {
+  const key = String(orgId);
+  const existing = microsoftBackfillsInFlight.get(key);
+  if (existing) {
+    return { started: false, alreadyRunning: true, startedAt: existing.startedAt, daysBack };
+  }
+
+  const startedAt = new Date();
+  const completion = runMicrosoftCompanyBackfill(orgId, daysBack, startedAt).finally(() => {
+    if (microsoftBackfillsInFlight.get(key)?.completion === completion) {
+      microsoftBackfillsInFlight.delete(key);
+    }
+  });
+  microsoftBackfillsInFlight.set(key, { startedAt, completion });
+  // The route response stays JSON-safe; the durable lease and source status
+  // carry progress while the background operation runs.
+  return { started: true, startedAt, daysBack };
+}
+
+export async function reconcilePendingMicrosoftCompanyAccess({
+  startBackfill = startMicrosoftCompanyBackfill,
+} = {}) {
+  const now = new Date();
+  const retryableConnectionOrgIds = await IntegrationConnection.find({
+    integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+    $or: [
+      { status: { $in: ['needs_admin', 'error'] } },
+      {
+        status: 'connected',
+        'sync.backfillComplete': { $ne: true },
+        $or: [
+          { 'sync.backfillLeaseExpiresAt': { $exists: false } },
+          { 'sync.backfillLeaseExpiresAt': null },
+          { 'sync.backfillLeaseExpiresAt': { $lte: now } },
+        ],
+      },
+    ],
+  }).distinct('orgId');
   const organizations = await Organization.find({
     ...ACTIVE_ORG_FILTER,
     'integrations.microsoft.tenantId': { $exists: true, $ne: null },
-    'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false },
-    $or: [
-      { 'integrations.microsoft.delegatedConnectedAt': { $exists: true, $ne: null } },
-      { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
+    $and: [
+      {
+        $or: [
+          { 'integrations.microsoft.delegatedConnectedAt': { $exists: true, $ne: null } },
+          { 'integrations.microsoft.accessToken': { $exists: true, $ne: null } },
+        ],
+      },
+      {
+        $or: [
+          { 'integrations.microsoft.applicationConsentVerifiedAt': { $exists: false } },
+          { 'integrations.microsoft.applicationConsentVerifiedAt': null },
+          { 'integrations.microsoft.applicationConsentLastError': { $exists: true, $ne: null } },
+          { 'integrations.microsoft.sync.enabled': false },
+          { _id: { $in: retryableConnectionOrgIds } },
+        ],
+      },
     ],
   })
     .select('_id name')
@@ -229,7 +344,20 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
             idempotencyKey: `company-wide:${verification.tenantId}`,
           }),
         ]);
-        startMicrosoftCompanyBackfill(organization._id, 60);
+      }
+      const incompleteSource = await IntegrationConnection.exists({
+        orgId: organization._id,
+        integrationType: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+        status: 'connected',
+        'sync.backfillComplete': { $ne: true },
+        $or: [
+          { 'sync.backfillLeaseExpiresAt': { $exists: false } },
+          { 'sync.backfillLeaseExpiresAt': null },
+          { 'sync.backfillLeaseExpiresAt': { $lte: now } },
+        ],
+      });
+      if (verification.transitions.length > 0 || incompleteSource) {
+        startBackfill(organization._id, 60);
       }
       console.log(`[Microsoft Consent] Verified company-wide access for ${organization.name}`);
     } catch (error) {
@@ -243,20 +371,15 @@ export async function reconcilePendingMicrosoftCompanyAccess() {
       // increments the recurring sync collects — months of calendar evidence
       // that already exists would never be read.
       try {
-        const org = await Organization.findById(organization._id)
-          .select(
-            'integrations.microsoft.tenantId integrations.microsoft.calendarBackfillStartedAt'
-          )
-          .lean();
-        if (org?.integrations?.microsoft?.calendarBackfillStartedAt) continue;
-
         if (!error.verification?.sources?.outlook?.verified) continue;
 
-        // Recorded before starting so a restart cannot queue it repeatedly.
+        // Kept as an operator-visible timestamp only. The per-connection lease
+        // is the idempotency guard, so an incomplete/failed run remains
+        // eligible for the next reconciliation.
         await Organization.findByIdAndUpdate(organization._id, {
           $set: { 'integrations.microsoft.calendarBackfillStartedAt': new Date() },
         });
-        startMicrosoftCompanyBackfill(organization._id, 60);
+        startBackfill(organization._id, 60);
         console.log(
           `[Microsoft Consent] ${organization.name} has calendar access only — starting a 60-day calendar backfill while the remaining permissions are outstanding`
         );

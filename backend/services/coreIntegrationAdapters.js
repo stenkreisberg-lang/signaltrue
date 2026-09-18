@@ -20,7 +20,7 @@ import { MICROSOFT_TEAMS_APPLICATION_ROLES } from '../config/microsoftPermission
 export async function fetchGraphCollection(
   initialUrl,
   accessToken,
-  { maxPages = 100, maxRetries = 1 } = {}
+  { maxPages = 100, maxRetries = 2, baseRetryDelayMs = 500, maxRetryDelayMs = 30_000 } = {}
 ) {
   const items = [];
   let nextUrl = initialUrl;
@@ -43,7 +43,12 @@ export async function fetchGraphCollection(
       const transient = response.status === 429 || response.status >= 500;
       if (!transient || attempt === maxRetries) break;
       const retryAfter = Number(response.headers?.get?.('retry-after'));
-      const delayMs = Number.isFinite(retryAfter) ? retryAfter * 1000 : 500 * 2 ** attempt;
+      const delayMs = Math.min(
+        maxRetryDelayMs,
+        Number.isFinite(retryAfter) && retryAfter >= 0
+          ? retryAfter * 1000
+          : baseRetryDelayMs * 2 ** attempt
+      );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
     if (!response.ok) {
@@ -69,7 +74,9 @@ export async function fetchGraphCollection(
   }
 
   if (nextUrl) {
-    console.warn(`[Microsoft] Pagination stopped after ${maxPages} pages`);
+    const error = new Error(`Microsoft Graph pagination exceeded the ${maxPages}-page safety limit`);
+    error.code = 'MICROSOFT_GRAPH_PAGE_LIMIT';
+    throw error;
   }
   return items;
 }
@@ -103,12 +110,27 @@ export function classifyMicrosoftSyncError(error) {
       message: 'The Microsoft tenant is invalid. Reconnect Microsoft with the correct tenant.',
     };
   }
-  if (error?.status === 403 || /Forbidden|Authorization_RequestDenied/i.test(message)) {
+  if (
+    error?.kind === 'missing_application_roles' ||
+    (Array.isArray(error?.missingRoles) && error.missingRoles.length > 0) ||
+    /application permissions? (?:are )?(?:missing|not granted)/i.test(message)
+  ) {
     return {
       kind: 'admin_consent_required',
       status: 'needs_admin',
       disableSync: false,
-      message: 'Microsoft administrator consent is required for this data source.',
+      message: error?.missingRoles?.length
+        ? `Microsoft administrator consent is required for: ${error.missingRoles.join(', ')}.`
+        : 'Microsoft administrator consent is required for this data source.',
+    };
+  }
+  if (error?.status === 403 || /Forbidden|Authorization_RequestDenied|ErrorAccessDenied/i.test(message)) {
+    return {
+      kind: 'graph_access_denied',
+      status: 'error',
+      disableSync: false,
+      message:
+        'Microsoft permissions are present, but Graph denied this data-source request. Check application access policies and the live Graph diagnostic.',
     };
   }
   return {
@@ -120,10 +142,22 @@ export function classifyMicrosoftSyncError(error) {
 }
 
 export function isUnavailableMicrosoftMailboxError(error) {
+  const code = String(error?.graphCode || error?.microsoftCode || error?.message || '');
   return (
-    error?.status === 404 &&
-    String(error?.graphCode || error?.message || '').includes('MailboxNotEnabledForRESTAPI')
+    error?.status === 404 ||
+    /^(?:Error)?(?:MailboxNotEnabledForRESTAPI|MailboxNotFound|InvalidUser|ResourceNotFound)$/i.test(
+      code
+    )
   );
+}
+
+function missingMicrosoftRolesError(source, missingRoles) {
+  const error = new Error(
+    `Microsoft ${source} application permissions missing: ${missingRoles.join(', ')}`
+  );
+  error.kind = 'missing_application_roles';
+  error.missingRoles = missingRoles;
+  return error;
 }
 
 function hashMetadata(orgId, value) {
@@ -138,6 +172,16 @@ function getMessageLengthBucket(content) {
   if (length < 50) return 'short';
   if (length <= 300) return 'medium';
   return 'long';
+}
+
+export function buildWorkEventUpsertOperations(workEvents) {
+  return workEvents.map((event) => ({
+    updateOne: {
+      filter: { orgId: event.orgId, externalId: event.externalId, source: event.source },
+      update: { $set: event },
+      upsert: true,
+    },
+  }));
 }
 
 async function fetchSlackCollection(url, accessToken, { maxPages = 100 } = {}) {
@@ -293,13 +337,7 @@ class OrgIntegrationAdapter {
       const workEvents = await enrichWorkEvents(transformedEvents, orgId);
 
       // Bulk upsert to avoid duplicates
-      const bulkOps = workEvents.map((event) => ({
-        updateOne: {
-          filter: { externalId: event.externalId, source: event.source },
-          update: { $set: event },
-          upsert: true,
-        },
-      }));
+      const bulkOps = buildWorkEventUpsertOperations(workEvents);
 
       let upserted = 0,
         modified = 0;
@@ -488,6 +526,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     super('microsoft');
     this.lastFetchSummary = { sources: {} };
     this.pendingOutlookCoverage = null;
+    this.pendingTeamsCoverage = null;
   }
 
   getSyncDetails() {
@@ -521,17 +560,30 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const now = new Date();
     const setPayload = {
       'integrations.microsoft.sync.lastRunAt': now,
-      'integrations.microsoft.sync.lastSync': now,
       'integrations.microsoft.sync.lastStatus': syncStatus,
       'integrations.microsoft.sync.error': syncError,
       'integrations.microsoft.sync.eventsCount': count,
     };
+    if (success) {
+      setPayload['integrations.microsoft.sync.lastSync'] = now;
+      setPayload['integrations.microsoft.lastPulledAt'] = now;
+    }
     if (failure?.disableSync) setPayload['integrations.microsoft.sync.enabled'] = false;
     await Organization.findByIdAndUpdate(orgId, {
       $set: setPayload,
     });
 
     if (!success && failure) {
+      const hasSourceResults = Object.values(this.lastFetchSummary?.sources || {}).some(
+        (summary) => summary?.attempted
+      );
+      if (hasSourceResults) {
+        // A combined Microsoft run can fail overall while one source remains
+        // healthy. Persist each source result independently instead of
+        // overwriting Outlook and Teams with the first error encountered.
+        await this.updateConnectionCoverage(orgId, []);
+        return;
+      }
       const org = await Organization.findById(orgId).select('integrations.microsoft.scope').lean();
       const scope = org?.integrations?.microsoft?.scope || 'outlook';
       const integrationTypes =
@@ -638,6 +690,18 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         setPayload['coverage.unavailableUsers'] = fetchSummary.coverage.unavailableUsers;
         setPayload['coverage.failedUsers'] = fetchSummary.coverage.failedUsers;
       }
+      if (fetchSummary.coverage) {
+        setPayload['coverage.attemptedUsers'] = fetchSummary.coverage.attemptedUsers;
+        setPayload['coverage.syncedUsers'] = fetchSummary.coverage.syncedUsers;
+        setPayload['coverage.skippedUsers'] = fetchSummary.coverage.skippedUsers;
+        setPayload['coverage.eventsCollected'] = fetchSummary.coverage.eventsCollected;
+        setPayload['coverage.errorCategories'] = fetchSummary.coverage.errorCategories;
+        if (sourceKey === 'teams') {
+          setPayload['coverage.teamsDiscovered'] = fetchSummary.coverage.teamsDiscovered;
+          setPayload['coverage.teamsRead'] = fetchSummary.coverage.teamsRead;
+          setPayload['coverage.teamsSkipped'] = fetchSummary.coverage.teamsSkipped;
+        }
+      }
       if (!fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
         setPayload.statusMessage = companyWideVerified
           ? `Company-wide Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} access is verified; no activity was found in the coverage window.`
@@ -661,6 +725,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const org = await Organization.findById(orgId).lean();
     const scope = org.integrations?.microsoft?.scope || 'outlook';
     this.lastFetchSummary = { sources: {} };
+    this.pendingOutlookCoverage = null;
+    this.pendingTeamsCoverage = null;
 
     const fetchSource = async (key, fetcher) => {
       try {
@@ -671,6 +737,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           events: events.length,
           ...(key === 'outlook' && this.pendingOutlookCoverage
             ? { coverage: this.pendingOutlookCoverage }
+            : {}),
+          ...(key === 'teams' && this.pendingTeamsCoverage
+            ? { coverage: this.pendingTeamsCoverage }
             : {}),
         };
         return events;
@@ -683,6 +752,12 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           error,
           errorKind: failure.kind,
           errorMessage: failure.message,
+          ...(key === 'outlook' && this.pendingOutlookCoverage
+            ? { coverage: this.pendingOutlookCoverage }
+            : {}),
+          ...(key === 'teams' && this.pendingTeamsCoverage
+            ? { coverage: this.pendingTeamsCoverage }
+            : {}),
         };
         console.warn(`[Microsoft] ${key} fetch failed: ${failure.message}`);
         return [];
@@ -731,9 +806,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const requiredRoles = ['Calendars.Read', 'User.Read.All'];
     const missingRoles = requiredRoles.filter((role) => !roles.includes(role));
     if (missingRoles.length > 0) {
-      throw new Error(
-        `Microsoft Outlook application permissions missing: ${missingRoles.join(', ')}`
-      );
+      throw missingMicrosoftRolesError('Outlook', missingRoles);
     }
     if (!orgId) throw new Error('Organization is required for company-wide Outlook collection.');
 
@@ -751,6 +824,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     let successCount = 0;
     let unavailableCount = 0;
     let permissionDeniedCount = 0;
+    let transientFailureCount = 0;
     let otherFailureCount = 0;
     for (const user of orgUsers) {
       const msId = user.externalIds?.microsoftUserId;
@@ -769,17 +843,31 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       } catch (error) {
         if (isUnavailableMicrosoftMailboxError(error)) unavailableCount++;
         else if (error.status === 403) permissionDeniedCount++;
+        else if (error.status === 429 || error.status >= 500) transientFailureCount++;
         else otherFailureCount++;
       }
     }
 
     this.pendingOutlookCoverage = {
+      attemptedUsers: orgUsers.length,
+      syncedUsers: successCount,
+      skippedUsers:
+        unavailableCount + permissionDeniedCount + transientFailureCount + otherFailureCount,
+      eventsCollected: allEvents.length,
       availableUsers: successCount,
       unavailableUsers: unavailableCount,
-      failedUsers: permissionDeniedCount + otherFailureCount,
+      failedUsers: permissionDeniedCount + transientFailureCount + otherFailureCount,
+      errorCategories: {
+        mailboxUnavailable: unavailableCount,
+        accessDenied: permissionDeniedCount,
+        transient: transientFailureCount,
+        other: otherFailureCount,
+      },
     };
     if (successCount === 0) {
-      throw new Error('No organization mailbox passed the Outlook application-access check.');
+      const error = new Error('No organization mailbox was accessible during Outlook sync.');
+      error.coverage = this.pendingOutlookCoverage;
+      throw error;
     }
     console.log(
       `[Microsoft][AppOnly] Calendar coverage: ${successCount}/${orgUsers.length} accessible, ${unavailableCount} unavailable, ${permissionDeniedCount + otherFailureCount} failed`
@@ -793,9 +881,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       (role) => !appRoles.includes(role)
     );
     if (missingRoles.length > 0) {
-      throw new Error(
-        `Microsoft Teams application permissions missing: ${missingRoles.join(', ')}`
-      );
+      throw missingMicrosoftRolesError('Teams', missingRoles);
     }
     if (!orgId) throw new Error('Organization is required for company-wide Teams collection.');
 
@@ -807,6 +893,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
   }
 
   async fetchTenantWideTeamsMessages(appToken, since, until, orgId) {
+    this.pendingTeamsCoverage = null;
     const orgUsers = await User.find({
       orgId,
       'externalIds.microsoftUserId': { $exists: true, $ne: null },
@@ -814,26 +901,39 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     })
       .select('externalIds.microsoftUserId')
       .lean();
+    if (orgUsers.length === 0) {
+      throw new Error('Microsoft directory must be synchronized before Teams collection.');
+    }
+
     const teamById = new Map();
+    let membershipReads = 0;
+    let membershipAccessDenied = 0;
+    let membershipTransientFailures = 0;
+    let membershipOtherFailures = 0;
+    let lastMembershipError = null;
     for (const user of orgUsers) {
       const microsoftUserId = user.externalIds?.microsoftUserId;
       if (!microsoftUserId) continue;
       try {
         const joinedTeams = await fetchGraphCollection(
           `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(microsoftUserId)}/joinedTeams`,
-          appToken,
-          { maxPages: 10 }
+          appToken
         );
+        membershipReads++;
         for (const team of joinedTeams) teamById.set(team.id, team);
       } catch (error) {
-        console.warn(
-          `[Microsoft][AppOnly] Could not list joined teams for one mapped user: ${error.message}`
-        );
+        lastMembershipError = error;
+        if (error.status === 403) membershipAccessDenied++;
+        else if (error.status === 429 || error.status >= 500) membershipTransientFailures++;
+        else membershipOtherFailures++;
       }
     }
     const teams = [...teamById.values()];
     const allMessages = [];
     let successfulTeamReads = 0;
+    let failedTeamReads = 0;
+    let channelMetadataFailures = 0;
+    let lastTeamReadError = null;
     const filter = encodeURIComponent(
       `lastModifiedDateTime gt ${since.toISOString()} and lastModifiedDateTime lt ${until.toISOString()}`
     );
@@ -842,17 +942,17 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       let channelById = new Map();
       try {
         const channels = await fetchGraphCollection(
-          `https://graph.microsoft.com/v1.0/teams/${team.id}/allChannels?$select=id,displayName,membershipType`,
+          `https://graph.microsoft.com/v1.0/teams/${encodeURIComponent(team.id)}/allChannels?$select=id,displayName,membershipType`,
           appToken
         );
         channelById = new Map(channels.map((channel) => [channel.id, channel]));
-      } catch (error) {
-        console.warn(`[Microsoft][AppOnly] Channel metadata failed for ${team.id}:`, error.message);
+      } catch {
+        channelMetadataFailures++;
       }
 
       try {
         const messages = await fetchGraphCollection(
-          `https://graph.microsoft.com/v1.0/teams/${team.id}/channels/getAllMessages?$top=50&$filter=${filter}`,
+          `https://graph.microsoft.com/v1.0/teams/${encodeURIComponent(team.id)}/channels/getAllMessages?$top=50&$filter=${filter}`,
           appToken
         );
         successfulTeamReads++;
@@ -873,17 +973,38 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           });
         }
       } catch (error) {
-        console.warn(
-          `[Microsoft][AppOnly] Team message export failed for ${team.id}:`,
-          error.message
-        );
+        failedTeamReads++;
+        lastTeamReadError = error;
       }
     }
 
+    this.pendingTeamsCoverage = {
+      attemptedUsers: orgUsers.length,
+      syncedUsers: membershipReads,
+      skippedUsers: orgUsers.length - membershipReads,
+      eventsCollected: allMessages.length,
+      teamsDiscovered: teams.length,
+      teamsRead: successfulTeamReads,
+      teamsSkipped: failedTeamReads,
+      errorCategories: {
+        accessDenied: membershipAccessDenied,
+        transient: membershipTransientFailures,
+        other: membershipOtherFailures,
+        channelMetadata: channelMetadataFailures,
+        teamMessages: failedTeamReads,
+      },
+    };
+
+    if (membershipReads === 0) {
+      throw lastMembershipError || new Error('No mapped user could be checked for Teams membership.');
+    }
     if (teams.length > 0 && successfulTeamReads === 0) {
-      throw new Error('Tenant teams are visible, but ChannelMessage.Read.All is unavailable');
+      throw lastTeamReadError || new Error('No visible Microsoft Team could be read for messages.');
     }
 
+    console.log(
+      `[Microsoft][AppOnly] Teams coverage: ${membershipReads}/${orgUsers.length} membership checks succeeded, ${teams.length} teams discovered, ${successfulTeamReads} read, ${allMessages.length} messages collected`
+    );
     return allMessages;
   }
 

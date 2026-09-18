@@ -239,7 +239,7 @@ export default function AustraliaMonitoringGapAudit() {
                   <LeadForm
                     ctaLocation="au_monitoring_gap_result"
                     source="Australia monitoring gap audit"
-                    tag={`au-monitoring-gap-${category.toLowerCase().replaceAll(' ', '-')}`}
+                    tag={`au-monitoring-gap-${category.toLowerCase().split(' ').join('-')}`}
                     heading="Discuss the result with SignalTrue"
                     intro="If the result identifies a useful gap, tell us who should join a short pilot-readiness conversation. We normally reply within one Australian business day."
                     submitLabel="Discuss the Monitoring Gap Audit"

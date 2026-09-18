@@ -257,6 +257,7 @@ export default function ManagerCoaching() {
           eyebrow="Private manager workspace"
           title="Manager Coaching"
           description="Coaching appears only when SignalTrue has enough real, privacy-safe evidence."
+          action={null}
         />
         <StatePanel
           title={
@@ -284,6 +285,7 @@ export default function ManagerCoaching() {
         eyebrow="Private manager workspace"
         title="Your weekly operating coach"
         description="One observable work-pattern change, one useful question and one reversible experiment."
+        action={null}
       />
 
       {error && (
@@ -677,6 +679,7 @@ function humanize(value: string) {
 }
 
 function latestResult(experiment: Experiment) {
-  const measured = experiment.reviews?.filter((review) => review.measuredAt).at(-1);
+  const measuredReviews = experiment.reviews?.filter((review) => review.measuredAt) || [];
+  const measured = measuredReviews[measuredReviews.length - 1];
   return measured?.result?.replace(/_/g, ' ') || 'measurement pending';
 }

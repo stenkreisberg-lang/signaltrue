@@ -31,6 +31,7 @@ import {
   verifyGoogleWorkspaceDelegation,
 } from '../services/googleWorkspaceAdminService.js';
 import { MICROSOFT_DELEGATED_SCOPES } from '../config/microsoftPermissions.js';
+import { deriveMicrosoftIntegrationStatus } from '../services/microsoftIntegrationStatusService.js';
 
 const router = express.Router();
 
@@ -349,7 +350,9 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Organization not found.' });
     }
 
-    // Fetch IntegrationConnection records for category king integrations
+    // Fetch all connection states. Restricting this query to `connected`
+    // hides precisely the Microsoft `needs_admin` and Graph-error evidence the
+    // onboarding UI needs in order to give the right next step.
     const integrationConnections = await IntegrationConnection.find({
       orgId,
       integrationType: {
@@ -363,20 +366,25 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
           'microsoft-teams',
         ],
       },
-      status: 'connected',
     }).lean();
 
     // Convert to lookup map
     const connectedIntegrations = {};
     const integrationDetails = {};
     for (const conn of integrationConnections) {
-      connectedIntegrations[conn.integrationType] = true;
+      if (conn.status === 'connected') connectedIntegrations[conn.integrationType] = true;
       integrationDetails[conn.integrationType] = {
+        status: conn.status,
+        statusMessage: conn.statusMessage,
         connectedAt: conn.connectedAt,
         siteUrl: conn.auth?.siteUrl,
         cloudId: conn.auth?.cloudId,
       };
     }
+    const microsoftCompanyAccess = deriveMicrosoftIntegrationStatus(
+      organization.integrations?.microsoft,
+      integrationConnections
+    );
 
     // --- Check Available Integrations (based on environment variables) ---
     const available = {
@@ -443,32 +451,36 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
             email: organization.integrations.googleChat.email,
           }
         : null,
-      teams: connected.teams
+      teams: microsoftCompanyAccess.identityLinked
         ? {
             email: organization.integrations.microsoft?.email,
             user: organization.integrations.microsoft?.user,
+            status: microsoftCompanyAccess.sources.teams.status,
+            statusMessage: microsoftCompanyAccess.sources.teams.statusMessage,
+            missingRoles: microsoftCompanyAccess.sources.teams.missingRoles,
+            probes: microsoftCompanyAccess.sources.teams.probes,
             applicationConsentGrantedAt:
               organization.integrations.microsoft?.applicationConsentGrantedAt,
-            applicationConsentVerifiedAt:
-              organization.integrations.microsoft?.applicationConsentVerifiedAt,
+            applicationConsentVerifiedAt: microsoftCompanyAccess.sources.teams.verifiedAt,
             applicationConsentLastCheckedAt:
               organization.integrations.microsoft?.applicationConsentLastCheckedAt,
-            applicationConsentLastError:
-              organization.integrations.microsoft?.applicationConsentLastError,
+            applicationConsentLastError: microsoftCompanyAccess.sources.teams.technicalReason,
           }
         : null,
-      outlook: connected.outlook
+      outlook: microsoftCompanyAccess.identityLinked
         ? {
             email: organization.integrations.microsoft?.email,
             user: organization.integrations.microsoft?.user,
+            status: microsoftCompanyAccess.sources.outlook.status,
+            statusMessage: microsoftCompanyAccess.sources.outlook.statusMessage,
+            missingRoles: microsoftCompanyAccess.sources.outlook.missingRoles,
+            probes: microsoftCompanyAccess.sources.outlook.probes,
             applicationConsentGrantedAt:
               organization.integrations.microsoft?.applicationConsentGrantedAt,
-            applicationConsentVerifiedAt:
-              organization.integrations.microsoft?.applicationConsentVerifiedAt,
+            applicationConsentVerifiedAt: microsoftCompanyAccess.sources.outlook.verifiedAt,
             applicationConsentLastCheckedAt:
               organization.integrations.microsoft?.applicationConsentLastCheckedAt,
-            applicationConsentLastError:
-              organization.integrations.microsoft?.applicationConsentLastError,
+            applicationConsentLastError: microsoftCompanyAccess.sources.outlook.technicalReason,
           }
         : null,
       jira: connected.jira
@@ -549,7 +561,7 @@ router.get('/integrations/status', authenticateToken, async (req, res) => {
         : null,
     };
 
-    res.json({ available, connected, connections, details, oauth });
+    res.json({ available, connected, connections, details, oauth, microsoftCompanyAccess });
   } catch (err) {
     console.error('Error in /integrations/status:', err);
     res.status(500).json({ message: 'An internal server error occurred.' });

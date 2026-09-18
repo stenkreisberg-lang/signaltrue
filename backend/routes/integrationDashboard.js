@@ -8,6 +8,7 @@ import { getOrganizationReadiness } from '../services/onboardingReadinessService
 import { getOrganizationIntegrationHealth } from '../services/integrationHealthMonitorService.js';
 import { triggerManualSync } from '../services/integrationSyncScheduler.js';
 import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
+import { deriveMicrosoftIntegrationStatus } from '../services/microsoftIntegrationStatusService.js';
 
 const router = express.Router();
 
@@ -134,10 +135,12 @@ router.get('/status', authenticateToken, async (req, res) => {
     };
 
     const microsoft = organization?.integrations?.microsoft;
+    const microsoftState = deriveMicrosoftIntegrationStatus(microsoft, connections);
     const microsoftCompanyAccess = {
-      connected: Boolean(
-        microsoft?.tenantId && (microsoft?.delegatedConnectedAt || microsoft?.accessToken)
-      ),
+      ...microsoftState,
+      // Kept for older clients: this means the tenant identity is linked, not
+      // that both data sources passed live verification.
+      connected: microsoftState.identityLinked,
       configured: Boolean(
         process.env.MS_APP_CLIENT_ID &&
         process.env.MS_APP_CLIENT_SECRET &&
@@ -146,11 +149,14 @@ router.get('/status', authenticateToken, async (req, res) => {
       grantedAt: microsoft?.applicationConsentGrantedAt || null,
       verifiedAt: microsoft?.applicationConsentVerifiedAt || null,
       lastCheckedAt: microsoft?.applicationConsentLastCheckedAt || null,
-      lastError: microsoft?.applicationConsentLastError || null,
-      grantedRoles: microsoft?.applicationConsentRoles || [],
+      lastError:
+        ['error', 'partial'].includes(microsoftState.status) && !microsoftState.requiresAdminConsent
+          ? microsoftState.statusMessage
+          : null,
+      grantedRoles: microsoftState.grantedRoles,
       requiredRoles: REQUIRED_MICROSOFT_APPLICATION_ROLES,
       delegatedScopes: microsoft?.delegatedScopes || [],
-      sources: microsoft?.applicationConsentSources || {},
+      sources: microsoftState.sources,
     };
 
     res.json({

@@ -142,8 +142,17 @@ const organizationSchema = new mongoose.Schema(
         applicationConsentLastError: String,
         applicationConsentRoles: [String],
         applicationConsentTenantId: String,
+        applicationConsentStatus: {
+          type: String,
+          enum: ['connected', 'partial', 'needs_admin', 'error'],
+        },
         applicationConsentSources: {
           outlook: {
+            status: {
+              type: String,
+              enum: ['connected', 'needs_admin', 'error'],
+            },
+            reasonCode: String,
             verifiedAt: Date,
             lastCheckedAt: Date,
             lastError: String,
@@ -154,6 +163,11 @@ const organizationSchema = new mongoose.Schema(
             },
           },
           teams: {
+            status: {
+              type: String,
+              enum: ['connected', 'needs_admin', 'error'],
+            },
+            reasonCode: String,
             verifiedAt: Date,
             lastCheckedAt: Date,
             lastError: String,

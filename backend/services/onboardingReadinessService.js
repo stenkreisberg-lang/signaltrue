@@ -4,6 +4,7 @@ import IntegrationConnection from '../models/integrationConnection.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
 import WorkEvent from '../models/workEvent.js';
+import { deriveMicrosoftIntegrationStatus } from './microsoftIntegrationStatusService.js';
 
 const SOURCE_DEFINITIONS = [
   { type: 'microsoft-outlook', name: 'Microsoft Outlook', category: 'Meetings & Email' },
@@ -28,58 +29,37 @@ function id(value) {
   return value ? String(value._id || value) : null;
 }
 
-function legacyConnection(org, type) {
-  const microsoftScope = org.integrations?.microsoft?.scope;
-  const microsoftConnected = Boolean(
-    org.integrations?.microsoft?.delegatedConnectedAt ||
-    (org.integrations?.microsoft?.accessToken && org.integrations?.microsoft?.tenantId)
-  );
-  const microsoftConsent = !!org.integrations?.microsoft?.applicationConsentVerifiedAt;
-  const microsoftConsentError = org.integrations?.microsoft?.applicationConsentLastError;
-
+function legacyConnection(org, type, microsoftState) {
   if (type === 'microsoft-outlook') {
-    const sourceVerified = Boolean(
-      org.integrations?.microsoft?.applicationConsentSources?.outlook?.verifiedAt ||
-      microsoftConsent
-    );
-    const connected =
-      microsoftConnected && (microsoftScope === 'outlook' || microsoftScope === 'both');
+    const source = microsoftState.sources.outlook;
     return {
-      connected,
-      needsAdmin: connected && !sourceVerified,
-      requiresVerification: true,
-      connectedAt: org.integrations?.microsoft?.lastPulledAt || null,
+      connected: source.status !== 'disconnected',
+      accessStatus: source.status,
+      connectedAt:
+        org.integrations?.microsoft?.delegatedConnectedAt ||
+        org.integrations?.microsoft?.lastPulledAt ||
+        null,
       lastSync:
         org.integrations?.microsoft?.sync?.lastSync ||
         org.integrations?.microsoft?.lastPulledAt ||
         null,
-      statusMessage:
-        connected && !microsoftConsent
-          ? microsoftConsentError ||
-            'A Microsoft tenant administrator must grant company-wide access.'
-          : null,
+      statusMessage: source.statusMessage,
     };
   }
   if (type === 'microsoft-teams') {
-    const sourceVerified = Boolean(
-      org.integrations?.microsoft?.applicationConsentSources?.teams?.verifiedAt || microsoftConsent
-    );
-    const connected =
-      microsoftConnected && (microsoftScope === 'teams' || microsoftScope === 'both');
+    const source = microsoftState.sources.teams;
     return {
-      connected,
-      needsAdmin: connected && !sourceVerified,
-      requiresVerification: true,
-      connectedAt: org.integrations?.microsoft?.lastPulledAt || null,
+      connected: source.status !== 'disconnected',
+      accessStatus: source.status,
+      connectedAt:
+        org.integrations?.microsoft?.delegatedConnectedAt ||
+        org.integrations?.microsoft?.lastPulledAt ||
+        null,
       lastSync:
         org.integrations?.microsoft?.sync?.lastSync ||
         org.integrations?.microsoft?.lastPulledAt ||
         null,
-      statusMessage:
-        connected && !microsoftConsent
-          ? microsoftConsentError ||
-            'A Microsoft tenant administrator must grant company-wide access.'
-          : null,
+      statusMessage: source.statusMessage,
     };
   }
   if (type === 'slack') {
@@ -134,16 +114,18 @@ function sourceStatus({ connection, fallback, eventCount, mappedUsers, totalUser
     connection?.measurementScope || ''
   );
   const needsAdmin =
+    fallback.accessStatus === 'needs_admin' ||
     (fallback.needsAdmin && (fallback.requiresVerification || !companyWideScope)) ||
-    connection?.status === 'needs_admin';
+    (connection?.status === 'needs_admin' && fallback.accessStatus !== 'error');
+  const hasError = fallback.accessStatus === 'error' || connection?.status === 'error';
   const status = !connected
     ? 'disconnected'
     : needsAdmin
       ? 'needs_admin'
-      : eventCount > 0
-        ? 'measuring'
-        : connection?.status === 'error'
-          ? 'error'
+      : hasError
+        ? 'error'
+        : eventCount > 0
+          ? 'measuring'
           : 'connected';
 
   return {
@@ -151,8 +133,10 @@ function sourceStatus({ connection, fallback, eventCount, mappedUsers, totalUser
     statusMessage:
       (needsAdmin
         ? fallback.statusMessage || connection?.statusMessage
-        : connection?.statusMessage ||
-          (fallback.needsAdmin && companyWideScope ? null : fallback.statusMessage)) ||
+        : hasError
+          ? fallback.statusMessage || connection?.statusMessage
+          : connection?.statusMessage ||
+            (fallback.needsAdmin && companyWideScope ? null : fallback.statusMessage)) ||
       (status === 'connected' ? 'Authorized; waiting for the first activity sync.' : null),
     connectedAt: fallback.connectedAt || connection?.connectedAt || null,
     lastSync:
@@ -173,7 +157,9 @@ function sourceStatus({ connection, fallback, eventCount, mappedUsers, totalUser
 
 function nextStep(readiness) {
   if (readiness.connectedSources === 0) return 'connect_sources';
-  if (!readiness.permissionsReady) return 'grant_admin_access';
+  if (readiness.needsAdminSources > 0) return 'grant_admin_access';
+  if (readiness.errorSources > 0) return 'review_source_verification';
+  if (!readiness.permissionsReady) return 'review_source_verification';
   if (!readiness.directoryReady) return 'sync_directory';
   if (!readiness.timezoneReady) return 'confirm_timezone';
   if (!readiness.teamsReady) return 'assign_teams';
@@ -267,8 +253,12 @@ export async function getOrganizationReadiness(orgOrId) {
   const connectionByType = new Map(
     connections.map((connection) => [connection.integrationType, connection])
   );
+  const microsoftState = deriveMicrosoftIntegrationStatus(
+    org.integrations?.microsoft,
+    connectionByType
+  );
   const sources = SOURCE_DEFINITIONS.map((definition) => {
-    const fallback = legacyConnection(org, definition.type);
+    const fallback = legacyConnection(org, definition.type, microsoftState);
     const connection = connectionByType.get(definition.type);
     const event = eventsBySource.get(definition.type) || {
       events: 0,

@@ -286,7 +286,10 @@ workEventSchema.index({ orgId: 1, source: 1, timestamp: -1 });
 workEventSchema.index({ orgId: 1, teamId: 1, timestamp: -1 });
 workEventSchema.index({ orgId: 1, actorUserId: 1, timestamp: -1 });
 workEventSchema.index({ orgId: 1, eventType: 1, timestamp: -1 });
-workEventSchema.index({ source: 1, externalId: 1 }, { unique: true, sparse: true });
+workEventSchema.index(
+  { orgId: 1, source: 1, externalId: 1 },
+  { unique: true, sparse: true, name: 'orgId_1_source_1_externalId_1' }
+);
 
 // TTL index to automatically delete old events (optional, can be configured)
 // workEventSchema.index({ timestamp: 1 }, { expireAfterSeconds: 365 * 24 * 60 * 60 }); // 1 year

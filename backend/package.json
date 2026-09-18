@@ -12,6 +12,7 @@
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "migrate:encrypt-tokens": "node scripts/encrypt-existing-tokens.js",
     "migrate:privacy-floor": "node scripts/enforce-privacy-floor.js",
+    "migrate:work-event-dedupe-index": "node scripts/migrate-work-event-dedupe-index.js",
     "migrate:security": "npm run migrate:privacy-floor && npm run migrate:encrypt-tokens",
     "ga4:configure-commercial": "node scripts/configure-ga4-commercial.js",
     "ga4:verify-commercial": "node scripts/configure-ga4-commercial.js --verify",
