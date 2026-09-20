@@ -22,7 +22,7 @@ const Hero = () => {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Shield className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">Team-level only</span>
+                <span className="text-caption font-medium text-[#334155]">No surveys required</span>
               </div>
             </div>
 
@@ -37,7 +37,7 @@ const Hero = () => {
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
-              Metadata only. Team-level only. Human decisions stay with your organisation.
+              Metadata only. Team-level only. No surveys required. Human decisions stay with your organisation.
             </p>
 
             <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
