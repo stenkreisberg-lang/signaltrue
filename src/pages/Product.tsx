@@ -51,7 +51,7 @@ const decisionViews = [
   {
     audience: 'Health & Safety',
     question: 'Where should we investigate first?',
-    value: 'Qualified evidence, worker consultation prompts and a controlled evidence register.',
+    value: 'Qualified work-condition evidence, explicit limitations and a controlled evidence register.',
   },
   {
     audience: 'Operational owner',
@@ -69,8 +69,8 @@ export default function Product() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="SignalTrue Product | Psychosocial Risk Evidence and Action Reviews"
-        description="See how SignalTrue helps Health & Safety teams qualify work-design evidence, consult workers, assign preventive controls and review effectiveness."
+        title="SignalTrue Product | Psychosocial Risk & Control Assurance"
+        description="See how SignalTrue continuously observes team-level work conditions and helps Health & Safety teams verify whether organisational controls changed the work."
         path="/product"
       />
       <Navbar />
@@ -82,16 +82,16 @@ export default function Product() {
                 Product
               </p>
               <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
-                Observe changing work patterns. Investigate with workers. Review what changed.
+                Observe changing work patterns. Record the control. Verify what changed.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue turns privacy-safe team metadata into an evidence-led review
-                workflow—from baseline and confidence through consultation, control ownership and
-                subsequent observation.
+                SignalTrue turns privacy-safe team metadata into continuous work-condition evidence—from
+                baseline and persistence through control ownership, before-and-after comparison and
+                sustainability review.
               </p>
               <p className="mt-4 text-caption font-semibold text-[#475569]">
-                Team-level only · No message content · No individual productivity scores · No
-                diagnosis
+                Team-level only · No message content · No individual productivity scores · No surveys
+                required · No diagnosis
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
@@ -189,8 +189,8 @@ export default function Product() {
                   Inspect the complete evidence-to-action record.
                 </h2>
                 <p className="mt-4 max-w-2xl leading-7 text-[#CBD5E1]">
-                  See current values, baseline, change, confidence, consultation questions, control
-                  ownership, review timing and privacy boundaries in one fictional example.
+                  See current values, baseline, persistence, data quality, control ownership, review timing,
+                  sustainability and privacy boundaries in one fictional example.
                 </p>
                 <Button asChild className="mt-7 bg-white text-[#0F172A] hover:bg-[#E2E8F0]">
                   <SampleReportCTA ctaLocation="product_sample">
@@ -201,7 +201,7 @@ export default function Product() {
               <div className="rounded-container border border-[#334155] bg-[#1E293B] p-6">
                 {[
                   'Measured evidence stays separate from interpretation.',
-                  'Worker consultation is recorded before a control decision.',
+                  'The organisation records the control decision; SignalTrue does not require surveys or interviews.',
                   'Every control has an owner and review date.',
                   'Executives see decisions and barriers—not individual data.',
                 ].map((item) => (
