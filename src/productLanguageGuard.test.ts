@@ -23,17 +23,23 @@ const forbiddenClaims = [
 ];
 
 describe('SignalTrue product-language guard', () => {
-  it.each(protectedSurfaces)('%s avoids prohibited predictive or diagnostic claims', (relativePath) => {
-    const path = fileURLToPath(new URL(relativePath, import.meta.url));
-    const source = readFileSync(path, 'utf8');
+  it.each(protectedSurfaces)(
+    '%s avoids prohibited predictive or diagnostic claims',
+    (relativePath) => {
+      const path = fileURLToPath(new URL(relativePath, import.meta.url));
+      const source = readFileSync(path, 'utf8');
 
-    for (const claim of forbiddenClaims) {
-      expect(source).not.toMatch(claim);
+      for (const claim of forbiddenClaims) {
+        expect(source).not.toMatch(claim);
+      }
     }
-  });
+  );
 
   it('keeps the passive-monitoring boundaries visible on the homepage and product page', () => {
-    const hero = readFileSync(fileURLToPath(new URL('./components/Hero.tsx', import.meta.url)), 'utf8');
+    const hero = readFileSync(
+      fileURLToPath(new URL('./components/Hero.tsx', import.meta.url)),
+      'utf8'
+    );
     const product = readFileSync(
       fileURLToPath(new URL('./pages/Product.tsx', import.meta.url)),
       'utf8'

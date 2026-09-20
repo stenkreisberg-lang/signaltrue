@@ -37,7 +37,8 @@ const Hero = () => {
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
-              Metadata only. Team-level only. No surveys required. Human decisions stay with your organisation.
+              Metadata only. Team-level only. No surveys required. Human decisions stay with your
+              organisation.
             </p>
 
             <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">

@@ -70,8 +70,8 @@ const About = () => {
                   </span>
                 </h1>
                 <p className="text-body text-[#334155] max-w-xl mx-auto">
-                  SignalTrue helps workplace health &amp; safety leaders continuously observe changing work
-                  conditions and verify whether preventive controls changed the work.
+                  SignalTrue helps workplace health &amp; safety leaders continuously observe
+                  changing work conditions and verify whether preventive controls changed the work.
                 </p>
               </div>
               <img
@@ -94,7 +94,10 @@ const About = () => {
                 Lagging outcomes are not enough for prevention.
               </h2>
               <div className="space-y-6 text-body text-[#334155]">
-                <p>Worker surveys and consultation can add lived-experience context when organisations use them.</p>
+                <p>
+                  Worker surveys and consultation can add lived-experience context when
+                  organisations use them.
+                </p>
                 <p>Absence, incidents and turnover show outcomes that require investigation.</p>
                 <p>Operational dashboards show whether delivery has already been affected.</p>
                 <p>
@@ -102,8 +105,8 @@ const About = () => {
                   conditions.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
-                  The purpose is to show how work conditions change and whether controls alter them—not
-                  infer health status, diagnose people or replace a formal risk assessment.
+                  The purpose is to show how work conditions change and whether controls alter
+                  them—not infer health status, diagnose people or replace a formal risk assessment.
                 </p>
               </div>
             </div>
@@ -232,8 +235,8 @@ const About = () => {
                 See the complete evidence-to-action process.
               </h2>
               <p className="text-body text-[#334155] mb-8 max-w-xl mx-auto">
-                Explore a fictional report showing the baseline, persistence, data quality, control owner,
-                before-and-after evidence and review outcome.
+                Explore a fictional report showing the baseline, persistence, data quality, control
+                owner, before-and-after evidence and review outcome.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild variant="hero-outline" size="xl">

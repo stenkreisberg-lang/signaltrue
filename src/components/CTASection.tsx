@@ -16,8 +16,9 @@ const CTASection = () => {
             Bring one workplace risk concern.
           </h2>
           <p className="text-body text-[#CBD5E1] mb-10 max-w-xl mx-auto">
-            In 20 minutes, see how SignalTrue adds continuous, baseline-aware work-condition evidence
-            and verifies whether organisational controls changed the work. No surveys required.
+            In 20 minutes, see how SignalTrue adds continuous, baseline-aware work-condition
+            evidence and verifies whether organisational controls changed the work. No surveys
+            required.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">

@@ -51,7 +51,8 @@ const decisionViews = [
   {
     audience: 'Health & Safety',
     question: 'Where should we investigate first?',
-    value: 'Qualified work-condition evidence, explicit limitations and a controlled evidence register.',
+    value:
+      'Qualified work-condition evidence, explicit limitations and a controlled evidence register.',
   },
   {
     audience: 'Operational owner',
@@ -85,13 +86,13 @@ export default function Product() {
                 Observe changing work patterns. Record the control. Verify what changed.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue turns privacy-safe team metadata into continuous work-condition evidence—from
-                baseline and persistence through control ownership, before-and-after comparison and
-                sustainability review.
+                SignalTrue turns privacy-safe team metadata into continuous work-condition
+                evidence—from baseline and persistence through control ownership, before-and-after
+                comparison and sustainability review.
               </p>
               <p className="mt-4 text-caption font-semibold text-[#475569]">
-                Team-level only · No message content · No individual productivity scores · No surveys
-                required · No diagnosis
+                Team-level only · No message content · No individual productivity scores · No
+                surveys required · No diagnosis
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PrimaryCommercialCTA
@@ -189,8 +190,8 @@ export default function Product() {
                   Inspect the complete evidence-to-action record.
                 </h2>
                 <p className="mt-4 max-w-2xl leading-7 text-[#CBD5E1]">
-                  See current values, baseline, persistence, data quality, control ownership, review timing,
-                  sustainability and privacy boundaries in one fictional example.
+                  See current values, baseline, persistence, data quality, control ownership, review
+                  timing, sustainability and privacy boundaries in one fictional example.
                 </p>
                 <Button asChild className="mt-7 bg-white text-[#0F172A] hover:bg-[#E2E8F0]">
                   <SampleReportCTA ctaLocation="product_sample">
