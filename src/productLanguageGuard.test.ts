@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // These are active customer/search surfaces where legacy positioning must not return.
@@ -27,7 +27,7 @@ describe('SignalTrue product-language guard', () => {
   it.each(protectedSurfaces)(
     '%s avoids prohibited predictive or diagnostic claims',
     (relativePath) => {
-      const path = fileURLToPath(new URL(relativePath, import.meta.url));
+      const path = resolve(process.cwd(), 'src', relativePath.replace(/^\.\//, ''));
       const source = readFileSync(path, 'utf8');
 
       for (const claim of forbiddenClaims) {
@@ -37,14 +37,8 @@ describe('SignalTrue product-language guard', () => {
   );
 
   it('keeps the passive-monitoring boundaries visible on the homepage and product page', () => {
-    const hero = readFileSync(
-      fileURLToPath(new URL('./components/Hero.tsx', import.meta.url)),
-      'utf8'
-    );
-    const product = readFileSync(
-      fileURLToPath(new URL('./pages/Product.tsx', import.meta.url)),
-      'utf8'
-    );
+    const hero = readFileSync(resolve(process.cwd(), 'src/components/Hero.tsx'), 'utf8');
+    const product = readFileSync(resolve(process.cwd(), 'src/pages/Product.tsx'), 'utf8');
 
     expect(hero).toContain('No surveys required');
     expect(hero).toContain('No message content');
