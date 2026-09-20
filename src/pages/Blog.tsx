@@ -571,10 +571,10 @@ const Blog = () => {
   const { slug } = useParams<{ slug?: string }>();
   const editorialPost = editorialBlogPostBySlug(slug);
   const title =
-    editorialPost?.seo.metaTitle || 'SignalTrue Blog | Workload Risk and Burnout Prevention';
+    editorialPost?.seo.metaTitle || 'SignalTrue Blog | Psychosocial Risk & Control Effectiveness';
   const description =
     editorialPost?.seo.metaDescription ||
-    'Practical guidance on psychosocial risk evidence, manager capacity, worker consultation and team-level work-design prevention.';
+    'Practical guidance on continuous work-condition evidence, psychosocial risk, manager capacity and control effectiveness.';
 
   return (
     <div className="min-h-screen bg-background">
