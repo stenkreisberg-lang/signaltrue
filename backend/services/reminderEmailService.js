@@ -83,7 +83,7 @@ function generateEmailTemplate(content, preheader = '') {
           <tr>
             <td style="padding: 24px 40px; border-top: 1px solid ${BRAND_COLORS.border}; text-align: center;">
               <p style="margin: 0; font-size: 12px; color: ${BRAND_COLORS.mutedText};">
-                © ${new Date().getFullYear()} SignalTrue. Run healthier teams.
+                © ${new Date().getFullYear()} SignalTrue. Continuous evidence for how work is changing.
               </p>
               <p style="margin: 8px 0 0 0; font-size: 12px; color: ${BRAND_COLORS.mutedText};">
                 <a href="https://www.signaltrue.ai/privacy" style="color: ${BRAND_COLORS.mutedText}; text-decoration: underline;">Privacy</a> · 
@@ -129,7 +129,7 @@ export function generateNewUserReminderEmail(firstName, connectUrl) {
     </p>
     
     <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      You created your SignalTrue account — good move. Now the tool can start showing you early warning signs about burnout, overload, and execution drift across your teams.
+      You created your SignalTrue account. Once approved work systems are connected, SignalTrue can start building a team-level baseline and show how measurable work conditions change over time.
     </p>
     
     <p style="margin: 0 0 20px 0; font-size: 16px; color: ${BRAND_COLORS.warning}; line-height: 1.7; font-weight: 500;">
@@ -143,7 +143,7 @@ export function generateNewUserReminderEmail(firstName, connectUrl) {
     ${generateButton('👉 Connect Your Calendar & Slack', connectUrl)}
     
     <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      Once your calendar and Slack are connected, SignalTrue will begin analyzing collaboration patterns and delivering the insights you signed up for.
+      Once your approved metadata sources are connected, SignalTrue will begin building team baselines for meetings, after-hours activity, uninterrupted work opportunity and coordination patterns.
     </p>
     
     <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px; margin: 24px 0;">
@@ -151,7 +151,7 @@ export function generateNewUserReminderEmail(firstName, connectUrl) {
         No connections = no signal.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        Get them linked and start seeing where organizational risk actually lives.
+        Connect the approved sources so SignalTrue can begin producing continuous work-condition evidence.
       </p>
     </div>
     
@@ -182,7 +182,7 @@ export function generateITAdminReminderEmail(itAdminName, hrAdminName, setupUrl)
     </p>
     
     <p style="margin: 0 0 20px 0; font-size: 16px; color: ${BRAND_COLORS.warning}; line-height: 1.7; font-weight: 500;">
-      ⚠️ SignalTrue can't start providing meaningful signals about burnout and execution drift until integrations are live. Right now, nothing is connected.
+      ⚠️ SignalTrue cannot establish a work-pattern baseline until the approved integrations are live. Right now, nothing is connected.
     </p>
     
     <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
@@ -196,7 +196,7 @@ export function generateITAdminReminderEmail(itAdminName, hrAdminName, setupUrl)
         This is a one-click step.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        Without it, users will sign in and see a dead platform — no data, no risk flags, no alerts.
+        Without it, users will see an empty evidence layer — no baseline, no work-pattern observations and no control-verification history.
       </p>
     </div>
     
@@ -228,7 +228,7 @@ export function generateFollowUpReminderEmail(firstName, connectUrl, hoursElapse
         📊 Your dashboard is empty
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        Without integrations, SignalTrue can't detect burnout signals, workload imbalances, or execution drift.
+        Without integrations, SignalTrue cannot observe changing workload, meeting, recovery or coordination patterns.
       </p>
     </div>
     
@@ -246,13 +246,13 @@ export function generateFollowUpReminderEmail(firstName, connectUrl, hoursElapse
       <tr>
         <td style="padding: 8px 0;">
           <span style="color: #22c55e; font-size: 16px;">✓</span>
-          <span style="margin-left: 12px; color: ${BRAND_COLORS.text}; font-size: 14px;">Real-time team health scores</span>
+          <span style="margin-left: 12px; color: ${BRAND_COLORS.text}; font-size: 14px;">Team-level work-condition baselines</span>
         </td>
       </tr>
       <tr>
         <td style="padding: 8px 0;">
           <span style="color: #22c55e; font-size: 16px;">✓</span>
-          <span style="margin-left: 12px; color: ${BRAND_COLORS.text}; font-size: 14px;">Early warning signals for burnout</span>
+          <span style="margin-left: 12px; color: ${BRAND_COLORS.text}; font-size: 14px;">Persistent work-pattern change signals</span>
         </td>
       </tr>
       <tr>
@@ -458,7 +458,7 @@ export function generateUserWeek2ReminderEmail(firstName, connectUrl) {
         Right now, no integrations are connected.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        That means SignalTrue cannot detect overload, burnout risk, or execution drift in your organization.
+        That means SignalTrue cannot observe changing workload, recovery, meeting or coordination patterns in your organization.
       </p>
     </div>
     
@@ -467,7 +467,7 @@ export function generateUserWeek2ReminderEmail(firstName, connectUrl) {
     </p>
     
     <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      If your goal was to gain early visibility into team strain, this is the moment to activate it.
+      If your goal was continuous visibility into how work conditions are changing, this is the moment to activate it.
     </p>
     
     <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
@@ -477,7 +477,7 @@ export function generateUserWeek2ReminderEmail(firstName, connectUrl) {
     ${generateButton('👉 Connect Calendar & Slack Now', connectUrl)}
     
     <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      The earlier the signal starts, the earlier risk becomes preventable.
+      The earlier a reliable baseline starts, the sooner material changes can be compared with normal team patterns.
     </p>
     
     <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
@@ -506,26 +506,26 @@ export function generateUserWeek3ReminderEmail(firstName, connectUrl) {
         The platform is still not connected to any work systems.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        That means there is zero behavioral signal being tracked.
+        That means no team-level work-pattern evidence is being generated.
       </p>
     </div>
     
     <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      Burnout doesn't start with complaints.
+      Work conditions can change long before periodic reviews capture them.
     </p>
     <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText}; line-height: 1.7;">
-      It starts with subtle shifts in meetings, focus time, and collaboration load.
+      SignalTrue continuously observes measurable shifts in meetings, uninterrupted work opportunity, after-hours activity and coordination load.
     </p>
     
     <p style="margin: 0 0 16px 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      <strong>SignalTrue exists to detect those shifts early.</strong>
+      <strong>SignalTrue exists to make those shifts visible without reading message content or scoring individuals.</strong>
     </p>
     
     <p style="margin: 0 0 8px 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
       If this initiative matters to you, activate integrations below.
     </p>
     
-    ${generateButton('👉 Start Behavioral Monitoring', connectUrl)}
+    ${generateButton('👉 Start Work-Pattern Monitoring', connectUrl)}
     
     <p style="margin: 24px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.mutedText}; line-height: 1.7;">
       If not, your account will remain idle and no insights will be generated.
@@ -533,7 +533,7 @@ export function generateUserWeek3ReminderEmail(firstName, connectUrl) {
     
     <div style="border-left: 3px solid ${BRAND_COLORS.primary}; padding-left: 16px; margin: 24px 0;">
       <p style="margin: 0; font-size: 15px; color: ${BRAND_COLORS.text}; font-style: italic;">
-        The decision is simple: observe early, or react late.
+        The decision is simple: build a baseline now, or keep relying on periodic snapshots.
       </p>
     </div>
     
@@ -544,7 +544,7 @@ export function generateUserWeek3ReminderEmail(firstName, connectUrl) {
 
   return generateEmailTemplate(
     content,
-    'Your early-warning system is still inactive — final reminder'
+    'Your continuous work-condition evidence is still inactive — final reminder'
   );
 }
 
@@ -566,7 +566,7 @@ export function generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setu
         The integrations have not yet been completed.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        Until Slack and calendar access are activated, SignalTrue cannot generate behavioral insights for your organization.
+        Until approved calendar and collaboration metadata access is activated, SignalTrue cannot generate team-level work-condition evidence for your organization.
       </p>
     </div>
     
@@ -577,7 +577,7 @@ export function generateITAdminWeek2ReminderEmail(itAdminName, hrAdminName, setu
     ${generateButton('👉 Complete Integration Setup', setupUrl)}
     
     <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      Teams are waiting for visibility. The system cannot operate without this step.
+      The evidence layer cannot operate without this step. No message content is required.
     </p>
     
     <p style="margin: 24px 0 0 0; font-size: 15px; color: ${BRAND_COLORS.mutedText};">
@@ -604,12 +604,12 @@ export function generateITAdminWeek3ReminderEmail(itAdminName, hrAdminName, setu
     </p>
     
     <p style="margin: 0 0 16px 0; font-size: 16px; color: ${BRAND_COLORS.text}; line-height: 1.7;">
-      SignalTrue has not been connected to your organization's work systems. As a result, <strong>no behavioral risk monitoring is active.</strong>
+      SignalTrue has not been connected to your organization's work systems. As a result, <strong>no continuous work-condition monitoring is active.</strong>
     </p>
     
     <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
       <p style="margin: 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-        <strong>${hrAdminName || 'HR'}</strong> initiated this to gain early detection of overload and burnout patterns.
+        <strong>${hrAdminName || 'HR'}</strong> initiated this to gain continuous, team-level visibility into changing work conditions.
       </p>
       <p style="margin: 8px 0 0 0; font-size: 14px; color: ${BRAND_COLORS.mutedText};">
         Without integration approval, the initiative stalls here.
@@ -673,7 +673,7 @@ export async function sendUserWeek3Reminder(user) {
 
   return sendReminderEmail({
     to: user.email,
-    subject: 'Your early-warning system is still inactive',
+    subject: 'Your continuous work-condition evidence is still inactive',
     html,
     tags: [{ name: 'type', value: 'user-week3-reminder' }],
   });

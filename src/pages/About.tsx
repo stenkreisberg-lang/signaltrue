@@ -7,21 +7,8 @@ import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
 import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 /*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- *
- * About Page (per spec):
- * Purpose: Credibility + philosophical alignment.
- *
- * Opening: Why SignalTrue Exists
- * Copy: Burnout is not a motivation problem. It's a system problem that goes unseen for too long.
- *
- * Belief System:
- * - Signals beat surveys
- * - Systems shape behavior
- * - Early truth enables better leadership
- *
- * Founding Insight: Explain why existing tools fail leaders.
- * No bios first. Belief first.
+ * SignalTrue exists to make changing work conditions visible without reading
+ * message content, scoring individuals, or requiring employee surveys.
  */
 
 // Belief system per spec - 5 beliefs
@@ -40,9 +27,9 @@ const beliefs = [
   },
   {
     icon: Shield,
-    title: 'Consultation needs timely evidence.',
+    title: 'Continuous evidence closes the monitoring gap.',
     description:
-      'Surveys and conversations remain essential. SignalTrue helps health & safety leaders decide where and when to investigate.',
+      'SignalTrue does not require surveys or interviews to observe changing work conditions. Existing organisational processes can add context when needed.',
   },
   {
     icon: Shield,
@@ -63,7 +50,7 @@ const About = () => {
     <div className="min-h-screen bg-white">
       <PageMeta
         title="About SignalTrue | Prevention, Not Surveillance"
-        description="SignalTrue helps leaders see system pressure early with team-level metadata signals, not surveys, message reading, or individual productivity scoring."
+        description="SignalTrue provides continuous team-level work-condition evidence without message reading, individual productivity scoring, surveys or psychological diagnosis."
         path="/about"
       />
       <Navbar />
@@ -83,9 +70,8 @@ const About = () => {
                   </span>
                 </h1>
                 <p className="text-body text-[#334155] max-w-xl mx-auto">
-                  SignalTrue helps workplace health &amp; safety leaders observe changing
-                  psychosocial risk conditions, consult workers and review preventive controls
-                  earlier.
+                  SignalTrue helps workplace health &amp; safety leaders continuously observe
+                  changing work conditions and verify whether preventive controls changed the work.
                 </p>
               </div>
               <img
@@ -108,7 +94,10 @@ const About = () => {
                 Lagging outcomes are not enough for prevention.
               </h2>
               <div className="space-y-6 text-body text-[#334155]">
-                <p>Worker surveys and consultation explain lived experience.</p>
+                <p>
+                  Worker surveys and consultation can add lived-experience context when
+                  organisations use them.
+                </p>
                 <p>Absence, incidents and turnover show outcomes that require investigation.</p>
                 <p>Operational dashboards show whether delivery has already been affected.</p>
                 <p>
@@ -116,8 +105,8 @@ const About = () => {
                   conditions.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
-                  The purpose is to target consultation and preventive action—not infer health
-                  status or replace a formal risk assessment.
+                  The purpose is to show how work conditions change and whether controls alter
+                  them—not infer health status, diagnose people or replace a formal risk assessment.
                 </p>
               </div>
             </div>
@@ -175,7 +164,7 @@ const About = () => {
                 {[
                   [
                     'Complete sample',
-                    'Inspect the evidence, confidence, consultation and control record before a demo.',
+                    'Inspect the evidence, limitations and control-verification record before a demo.',
                     '/sample-report',
                   ],
                   [
@@ -246,8 +235,8 @@ const About = () => {
                 See the complete evidence-to-action process.
               </h2>
               <p className="text-body text-[#334155] mb-8 max-w-xl mx-auto">
-                Explore a fictional report showing the baseline, confidence, consultation prompts,
-                corrective action owner and 14-day review.
+                Explore a fictional report showing the baseline, persistence, data quality, control
+                owner, before-and-after evidence and review outcome.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild variant="hero-outline" size="xl">

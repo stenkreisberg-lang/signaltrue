@@ -214,8 +214,9 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Use with consultation.</strong> Signals support workplace risk review; they do
-            not diagnose health, establish cause or rank individual performance.
+            <strong>Passive evidence, not employee scoring.</strong> SignalTrue uses team-level work
+            patterns; no surveys are required, and signals do not diagnose health or establish
+            cause.
             <Link to="/app/privacy">View data policy</Link>
           </div>
           {children}

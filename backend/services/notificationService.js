@@ -38,29 +38,33 @@ export async function generateWeeklySummary(team) {
 
   const aiClient = getAIClient();
 
-  const prompt = `You are a performance management expert. Generate a concise weekly summary for the team "${team.name}".
+  const prompt = `You are a work-design evidence reviewer. Generate a concise weekly work-pattern summary for the team "${team.name}".
 
-Current Status:
+Measured work-pattern context:
 - Zone: ${team.zone}
-- BDI Score: ${team.bdi} (0=excellent, 100=critical burnout)
-- 7-day Trend: ${team.trend >= 0 ? '+' : ''}${team.trend}%
+- Team-level work-pattern index: ${team.bdi}/100
+- 7-day index change: ${team.trend >= 0 ? '+' : ''}${team.trend}%
 
-Slack Signals:
+Collaboration metadata:
 - Message Volume: ${team.slackSignals?.messageCount || 0} messages
 - Avg Response Time: ${team.slackSignals?.avgResponseDelayHours || 0} hours
-- Sentiment: ${team.slackSignals?.sentiment || 0}/100
 
-Calendar Signals:
+Calendar metadata:
 - Meeting Hours: ${team.calendarSignals?.meetingHoursWeek || 0} hours/week
 - After-Hours Meetings: ${team.calendarSignals?.afterHoursMeetings || 0}
-- Recovery Score: ${team.calendarSignals?.recoveryScore || 0}/100
+- Recovery Opportunity Index: ${team.calendarSignals?.recoveryScore || 0}/100
 
-Generate a 3-paragraph summary:
-1. Overall health assessment (2-3 sentences)
-2. Key concerns or wins (2-3 bullet points)
-3. Recommended actions (2-3 specific suggestions)
+Generate:
+1. Observed work-pattern summary (2-3 sentences)
+2. Material changes or stable areas (2-3 bullet points)
+3. Review questions or proportionate work-design actions (2-3 bullets)
 
-Keep it professional, data-driven, and actionable. Use emojis sparingly for visual interest.`;
+Hard rules:
+- Describe observations, not employee health or psychological state.
+- Do not infer burnout, engagement, sentiment, intent, productivity or causality.
+- Do not call the work-pattern index a health or risk score.
+- State when context should be checked before action.
+- Keep the language professional, neutral and evidence-led.`;
 
   try {
     const response = await aiClient.chat.completions.create({
@@ -68,12 +72,13 @@ Keep it professional, data-driven, and actionable. Use emojis sparingly for visu
       messages: [
         {
           role: 'system',
-          content: 'You are an expert in team performance and burnout prevention.',
+          content:
+            'You summarise aggregated work-pattern evidence. Never diagnose people, infer psychological state, score individuals or claim causality from metadata.',
         },
         { role: 'user', content: prompt },
       ],
       max_tokens: 500,
-      temperature: 0.7,
+      temperature: 0.4,
     });
 
     return response.choices[0].message.content.trim();
@@ -88,22 +93,22 @@ Keep it professional, data-driven, and actionable. Use emojis sparingly for visu
  */
 function generateFallbackSummary(team) {
   const zoneMessages = {
-    Recovery: '🟢 Team is in recovery mode with healthy metrics.',
-    Stable: '🔵 Team is stable with balanced workload.',
-    Watch: '🟡 Team shows early warning signs requiring attention.',
-    Surge: '🔴 Team is at high risk of burnout - immediate action needed.',
+    Recovery: '🟢 Measured work patterns are in the recovery range.',
+    Stable: '🔵 Measured work patterns are close to the team baseline.',
+    Watch: '🟡 A team-level work-pattern change is worth reviewing in context.',
+    Surge: '🔴 Measured work-pattern demand is elevated; review context and existing controls.',
   };
 
-  return `${zoneMessages[team.zone] || 'Status unknown'}
+  return `${zoneMessages[team.zone] || 'Work-pattern status unavailable.'}
 
-Current BDI: ${team.bdi}/100 (${team.trend >= 0 ? '+' : ''}${team.trend}% vs last week)
+Team-level work-pattern index: ${team.bdi}/100 (${team.trend >= 0 ? '+' : ''}${team.trend}% vs last week)
 
-Key Metrics:
-• ${team.slackSignals?.messageCount || 0} Slack messages
-• ${team.slackSignals?.avgResponseDelayHours || 0}h avg response time
+Observed metadata:
+• ${team.slackSignals?.messageCount || 0} collaboration messages
+• ${team.slackSignals?.avgResponseDelayHours || 0}h average response interval
 • ${team.calendarSignals?.meetingHoursWeek || 0}h meeting time
 
-Recommendation: Review team workload and meeting schedule to maintain healthy rhythm.`;
+Next step: Review the observed change against current workload, deadlines, staffing and work-design context. This evidence does not diagnose health or establish cause.`;
 }
 
 /**
@@ -121,13 +126,13 @@ export async function sendSlackSummary(channelId, teamName, summary) {
   try {
     await slackClient.chat.postMessage({
       channel: channelId,
-      text: `📊 Weekly Performance Summary: ${teamName}`,
+      text: `📊 Weekly Work-Pattern Summary: ${teamName}`,
       blocks: [
         {
           type: 'header',
           text: {
             type: 'plain_text',
-            text: `📊 Weekly Summary: ${teamName}`,
+            text: `📊 Weekly Work-Pattern Summary: ${teamName}`,
             emoji: true,
           },
         },
@@ -191,7 +196,7 @@ export async function sendEmailSummary(email, teamName, summary, team) {
 </head>
 <body>
   <div class="header">
-    <h1>📊 Weekly Performance Summary</h1>
+    <h1>📊 Weekly Work-Pattern Summary</h1>
     <h2>${teamName}</h2>
   </div>
   <div class="content">
@@ -199,7 +204,7 @@ export async function sendEmailSummary(email, teamName, summary, team) {
     
     <div class="metrics">
       <div class="metric-row">
-        <strong>BDI Score:</strong>
+        <strong>Work-pattern index:</strong>
         <span>${team.bdi}/100</span>
       </div>
       <div class="metric-row">
@@ -235,14 +240,14 @@ export async function sendEmailSummary(email, teamName, summary, team) {
     await emailTransporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: `📊 Weekly Summary: ${teamName}`,
+      subject: `📊 Weekly Work-Pattern Summary: ${teamName}`,
       html: htmlContent,
       text: summary, // Fallback plain text
     });
 
     // CC superadmin on all reports for verification
     await ccSuperadmin({
-      subject: `📊 Weekly Summary: ${teamName}`,
+      subject: `📊 Weekly Work-Pattern Summary: ${teamName}`,
       html: htmlContent,
       originalRecipient: email,
       reportType: 'weekly_summary',
