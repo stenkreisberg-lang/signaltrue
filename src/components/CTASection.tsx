@@ -3,11 +3,8 @@ import { ArrowRight } from 'lucide-react';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 /*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- *
- * Final CTA Section (per spec):
- * Title: You Don't Need Another Survey. You Need Earlier Truth.
- * Button: Request Early Signal Preview
+ * Final CTA: move from a concrete workplace-risk concern to a visibility review.
+ * The product promise is continuous work-condition evidence, not a survey or diagnosis.
  */
 
 const CTASection = () => {
