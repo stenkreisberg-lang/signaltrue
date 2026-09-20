@@ -7,21 +7,8 @@ import { ArrowRight, Activity, Shield, Eye } from 'lucide-react';
 import { PrimaryCommercialCTA, SampleReportCTA } from '../components/CommercialCTA';
 
 /*
- * CATEGORY: BEHAVIORAL DRIFT INTELLIGENCE
- *
- * About Page (per spec):
- * Purpose: Credibility + philosophical alignment.
- *
- * Opening: Why SignalTrue Exists
- * Copy: Burnout is not a motivation problem. It's a system problem that goes unseen for too long.
- *
- * Belief System:
- * - Signals beat surveys
- * - Systems shape behavior
- * - Early truth enables better leadership
- *
- * Founding Insight: Explain why existing tools fail leaders.
- * No bios first. Belief first.
+ * SignalTrue exists to make changing work conditions visible without reading
+ * message content, scoring individuals, or requiring employee surveys.
  */
 
 // Belief system per spec - 5 beliefs
