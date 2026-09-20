@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+// These are active customer/search surfaces where legacy positioning must not return.
 const protectedSurfaces = [
   './components/Hero.tsx',
   './components/CTASection.tsx',
