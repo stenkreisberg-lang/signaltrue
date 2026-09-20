@@ -43,6 +43,6 @@ describe('SignalTrue product-language guard', () => {
     expect(hero).toContain('No surveys required');
     expect(hero).toContain('No message content');
     expect(product).toContain('No individual productivity scores');
-    expect(product).toContain('No surveys');
+    expect(product).toMatch(/No\s+surveys\s+required/);
   });
 });
