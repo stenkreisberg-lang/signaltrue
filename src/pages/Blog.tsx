@@ -149,12 +149,12 @@ const BlogList = () => {
               SignalTrue Blog
             </p>
             <h1 className="text-display sm:text-display lg:text-display font-display font-bold mb-6">
-              Early warning ideas for leaders who want{' '}
-              <span className="text-gradient">work to stay sustainable.</span>
+              Evidence for leaders who want to know whether{' '}
+              <span className="text-gradient">work conditions are actually changing.</span>
             </h1>
             <p className="text-body text-muted-foreground max-w-xl mx-auto">
-              Practical thinking on psychosocial risk, workload pressure, worker consultation,
-              corrective controls, and sustainable execution.
+              Practical thinking on psychosocial risk, workload pressure, continuous work-condition
+              evidence, control effectiveness and sustainable execution.
             </p>
           </div>
         </div>
@@ -228,7 +228,7 @@ const BlogList = () => {
             <div className="text-center py-16">
               <p className="text-muted-foreground mb-2">No blog posts yet.</p>
               <p className="text-caption text-muted-foreground">
-                Check back soon for insights on organizational health.
+                Check back soon for research and practical guidance on work-condition evidence.
               </p>
             </div>
           ) : (
