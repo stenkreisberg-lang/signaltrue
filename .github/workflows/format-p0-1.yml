@@ -1,0 +1,41 @@
+name: One-shot format P0.1
+
+on:
+  push:
+    branches:
+      - automation/signaltrue-p0-1-language-2026-09-20
+    paths:
+      - '.github/workflows/format-p0-1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: automation/signaltrue-p0-1-language-2026-09-20
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Apply repository Prettier
+        run: >-
+          npx prettier --write
+          src/components/app/AppShell.js
+          src/components/CTASection.tsx
+          src/components/Hero.tsx
+          src/pages/About.tsx
+          src/pages/Product.tsx
+          src/productLanguageGuard.test.ts
+      - name: Commit formatting and remove one-shot workflow
+        run: |
+          git config user.name "signaltrue-automation"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/format-p0-1.yml
+          git add src/components/app/AppShell.js src/components/CTASection.tsx src/components/Hero.tsx src/pages/About.tsx src/pages/Product.tsx src/productLanguageGuard.test.ts
+          git commit -m "P0.1 apply repository formatting"
+          git push origin HEAD:automation/signaltrue-p0-1-language-2026-09-20
