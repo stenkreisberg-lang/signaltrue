@@ -22,23 +22,23 @@ const SOCIAL_IMAGE = `${SITE_URL}/social-preview-v2.png`;
  */
 const ROUTE_META = {
   '/': {
-    title: 'Verify Whether Workplace Controls Actually Worked | SignalTrue',
+    title: 'Psychosocial Risk & Control Assurance | SignalTrue',
     description:
-      'Compare work before and after a change, check whether improvement was sustained, and investigate possible workload migration with team-level metadata.',
+      'Continuous, privacy-preserving work-condition evidence. Compare work before and after a control, check sustainability and identify possible workload migration without surveys or message content.',
     summary:
-      'SignalTrue compares how work happened before and after a change, checks whether the improvement was sustained, and flags possible migration when demand shifts to another channel, time or team. It does not read message bodies or score individuals.',
+      'SignalTrue continuously measures team-level work patterns, compares conditions before and after a control, checks whether change was sustained, and flags possible migration. No message content, individual scoring, surveys or psychological diagnosis are required.',
   },
   '/product': {
-    title: 'Work-Pattern Signals for Psychosocial Risk | SignalTrue',
+    title: 'Continuous Work-Condition Evidence | SignalTrue',
     description:
-      'Observe persistent changes in meetings, uninterrupted calendar availability, after-hours activity and coordination, investigate with workers and review what changed after action.',
+      'Observe persistent changes in meetings, uninterrupted calendar availability, after-hours activity and coordination, then verify what changed after a control. No surveys required.',
     summary:
       'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed — not a diagnosis.',
   },
   '/how-it-works': {
-    title: 'How SignalTrue Observes Persistent Work-Pattern Change',
+    title: 'How SignalTrue Continuously Measures Work Conditions',
     description:
-      'Connect work-pattern metadata, establish each team’s baseline, observe persistent change, investigate with workers and review whether the work actually changed.',
+      'Connect work-pattern metadata, establish each team’s baseline, observe persistent change and verify whether organisational controls changed the work. No message content or surveys required.',
     summary:
       'SignalTrue connects work-pattern metadata, learns each team’s normal rhythm, and looks for material and persistent change rather than reacting to a single busy week. Leaders investigate the cause alongside worker consultation, then review whether the pattern improved.',
   },
@@ -148,7 +148,7 @@ const ROUTE_META = {
       'SignalTrue exists to make changes in the system of work visible — meeting structures, workload, uninterrupted calendar availability, management capacity and working hours — so leaders can investigate problems while they are still easier to address.',
   },
   '/pricing': {
-    title: 'Pricing | SignalTrue Work-Pattern Early Warning',
+    title: 'Pricing | SignalTrue Psychosocial Risk & Control Assurance',
     description:
       'Plans for Health & Safety, people and operational teams that need continuous visibility into workload and work-pattern change, and for leadership teams needing cross-team visibility.',
     summary:
