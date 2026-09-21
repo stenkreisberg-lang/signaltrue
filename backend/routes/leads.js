@@ -484,7 +484,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
       message: 'Lead captured successfully',
       leadId: lead._id,
       internalNotificationSent: lead.internalNotificationSent,
-      calendarLink: buildTrackedCalendarLink(existingLead) || null,
+      calendarLink: buildTrackedCalendarLink(lead) || null,
     });
   } catch (error) {
     if (error?.code === 11000 && req.body?.submissionId) {
