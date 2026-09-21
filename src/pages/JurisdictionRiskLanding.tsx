@@ -56,7 +56,8 @@ const MARKETS: Record<string, MarketConfig> = {
     description:
       'Add team-level work-pattern evidence between stress risk assessments and verify whether organisational controls changed the work.',
     eyebrow: 'United Kingdom · work-related stress',
-    headline: 'A stress risk assessment is a process. The work keeps changing after the form is complete.',
+    headline:
+      'A stress risk assessment is a process. The work keeps changing after the form is complete.',
     intro:
       'HSE says employers have a legal duty to protect workers from stress at work by carrying out a risk assessment and acting on it. Its Management Standards focus on demands, control, support, relationships, role and change. SignalTrue adds a narrower evidence layer: whether observable work conditions changed and whether a control produced the intended effect.',
     legalTitle: 'The regulatory starting point',
@@ -83,7 +84,8 @@ const MARKETS: Record<string, MarketConfig> = {
     description:
       'Teambezogene Arbeitsmuster als ergänzende Evidenz für Gefährdungsbeurteilung, Maßnahmen und Wirksamkeitskontrolle.',
     eyebrow: 'Deutschland · psychische Belastung',
-    headline: 'Gefährdungsbeurteilung endet nicht bei der Maßnahme. Entscheidend ist die Wirksamkeit.',
+    headline:
+      'Gefährdungsbeurteilung endet nicht bei der Maßnahme. Entscheidend ist die Wirksamkeit.',
     intro:
       '§ 5 Arbeitsschutzgesetz nennt psychische Belastungen bei der Arbeit ausdrücklich als mögliche Gefährdung. BAuA beschreibt die Gefährdungsbeurteilung als Prozess: Gefährdungen ermitteln, Maßnahmen umsetzen, Wirksamkeit prüfen und die Beurteilung fortschreiben. SignalTrue unterstützt genau den Übergang zwischen Maßnahme und Wirksamkeitsprüfung mit aggregierter Arbeitsmuster-Evidenz.',
     legalTitle: 'Der regulatorische Ausgangspunkt',
@@ -111,7 +113,8 @@ const MARKETS: Record<string, MarketConfig> = {
     description:
       'Gebruik teamniveau werkpatronen als aanvullende evidence tussen RI&E-momenten en controleer of maatregelen het werk werkelijk veranderden.',
     eyebrow: 'Nederland · psychosociale arbeidsbelasting',
-    headline: 'Een RI&E groeit mee met het bedrijf. Uw bewijs over de werking van maatregelen moet dat ook doen.',
+    headline:
+      'Een RI&E groeit mee met het bedrijf. Uw bewijs over de werking van maatregelen moet dat ook doen.',
     intro:
       'Arboportaal beschrijft de RI&E als een instrument dat nieuwe en bestaande arbeidsrisico’s in kaart brengt en steeds moet worden bijgewerkt wanneer de organisatie verandert. Werkdruk valt onder psychosociale arbeidsbelasting. SignalTrue voegt een praktische bewijslaag toe tussen meetmomenten: wat veranderde in het werk en werkte de maatregel daarna werkelijk?',
     legalTitle: 'Het uitgangspunt',
@@ -146,7 +149,9 @@ export default function JurisdictionRiskLanding() {
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
-            <p className="text-caption font-bold uppercase tracking-wider text-brand">{config.eyebrow}</p>
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              {config.eyebrow}
+            </p>
             <h1 className="mt-4 max-w-4xl text-section font-bold text-[#0F172A] sm:text-display">
               {config.headline}
             </h1>
@@ -203,7 +208,9 @@ export default function JurisdictionRiskLanding() {
           <div className="container mx-auto max-w-4xl px-6 text-center">
             <ShieldCheck className="mx-auto h-9 w-9 text-brand" />
             <h2 className="mt-4 text-section font-bold text-[#0F172A]">{config.assessmentTitle}</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-body text-[#475569]">{config.assessmentBody}</p>
+            <p className="mx-auto mt-4 max-w-2xl text-body text-[#475569]">
+              {config.assessmentBody}
+            </p>
             <Link
               to={`/control-evidence-assessment?market=${config.market}`}
               className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-control bg-brand px-6 py-3 text-caption font-bold text-white hover:bg-brand-hover"
