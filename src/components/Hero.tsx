@@ -1,4 +1,5 @@
 import { ArrowRight, Eye, Lock, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
@@ -41,20 +42,27 @@ const Hero = () => {
               organisation.
             </p>
 
-            <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <PrimaryCommercialCTA
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
                 Book a 20-minute visibility review <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
-              <SampleReportCTA
-                ctaLocation="homepage_hero"
-                className="inline-flex min-h-12 w-full items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 text-caption font-bold text-[#0F172A] hover:border-brand sm:w-auto"
+              <Link
+                to="/control-evidence-assessment"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 text-caption font-bold text-brand hover:bg-brand-softer sm:w-auto"
               >
-                View the fictional sample review
-              </SampleReportCTA>
+                Check your control-evidence maturity
+                <ArrowRight className="h-4 w-4 shrink-0" />
+              </Link>
             </div>
+            <SampleReportCTA
+              ctaLocation="homepage_hero"
+              className="inline-flex text-caption font-semibold text-[#475569] underline decoration-[#CBD5E1] underline-offset-4 hover:text-brand"
+            >
+              View the fictional sample review
+            </SampleReportCTA>
           </div>
 
           <div className="relative animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
