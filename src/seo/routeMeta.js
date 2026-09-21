@@ -272,6 +272,7 @@ const ROUTE_META = {
     summary:
       'This guide explains how HR and people teams can use workforce analytics without turning it into employee surveillance. It covers data minimisation, purpose limitation, team-level aggregation, access controls and the boundary between work-pattern evidence and individual performance monitoring.',
     type: 'article',
+    publishedAt: '2026-08-20T00:00:00.000Z',
     keywords: [
       'privacy first workforce analytics',
       'workforce analytics privacy',
@@ -288,6 +289,7 @@ const ROUTE_META = {
     summary:
       'A comparison guide for teams evaluating GetSignals.ai alternatives, with emphasis on team-level work-pattern evidence, workload visibility, privacy boundaries, aggregation and how different approaches support investigation without individual productivity scoring.',
     type: 'article',
+    publishedAt: '2026-09-01T00:00:00.000Z',
     keywords: [
       'GetSignals.ai alternatives',
       'GetSignals alternatives',
