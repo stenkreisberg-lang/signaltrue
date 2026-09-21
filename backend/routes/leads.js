@@ -85,9 +85,31 @@ function getInternalNotificationEmail(source) {
     : INTERNAL_NOTIFICATION_EMAIL;
 }
 
+export function buildAttributedCalendarLink(lead, calendarLink = CALENDAR_LINK) {
+  if (!calendarLink) return null;
+  try {
+    const url = new URL(calendarLink);
+    const leadId = String(lead?._id || lead?.id || '').trim();
+    url.searchParams.set('utm_source', 'signaltrue');
+    url.searchParams.set('utm_medium', 'lead');
+    if (leadId) url.searchParams.set('utm_campaign', `signaltrue_lead_${leadId}`);
+
+    const intent = cleanText(lead?.tag || lead?.source, 120)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    if (intent) url.searchParams.set('utm_content', intent);
+
+    return url.toString();
+  } catch {
+    return calendarLink;
+  }
+}
+
 function generateWebsiteClientEmailHTML(lead) {
   const firstName = extractFirstName(lead.name);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
+  const calendarLink = buildAttributedCalendarLink(lead);
 
   return `
 <!DOCTYPE html>
@@ -108,7 +130,7 @@ function generateWebsiteClientEmailHTML(lead) {
           <p style="margin:0 0 20px;font-weight:600;color:#0f172a;">${greeting}</p>
           <p style="margin:0 0 20px;">Thanks for requesting a SignalTrue demo or workload review. We received your details and will contact you with the next step.</p>
           <p style="margin:0 0 28px;">You can also choose a time directly:</p>
-          <p style="margin:0 0 28px;"><a href="${CALENDAR_LINK}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Schedule a call</a></p>
+          <p style="margin:0 0 28px;"><a href="${calendarLink || CALENDAR_LINK}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Schedule a call</a></p>
           <p style="margin:0;padding-top:24px;border-top:1px solid #e2e8f0;font-size:14px;color:#64748b;">SignalTrue uses work metadata only. No message content and no individual productivity scoring.</p>
         </td></tr>
       </table>
@@ -128,6 +150,7 @@ function generateClientEmailHTML(lead) {
 
   const firstName = extractFirstName(lead.name);
   const greeting = firstName ? `Tere, ${firstName}!` : 'Tere!';
+  const calendarLink = buildAttributedCalendarLink(lead);
 
   return `
 <!DOCTYPE html>
@@ -206,7 +229,7 @@ function generateClientEmailHTML(lead) {
               </p>
               
               <p style="margin: 0 0 32px;">
-                <a href="${CALENDAR_LINK}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">Broneeri aeg →</a>
+                <a href="${calendarLink || CALENDAR_LINK}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">Broneeri aeg →</a>
               </p>
               
               <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 32px 0 0; padding-top: 24px; border-top: 1px solid #e2e8f0;">
@@ -409,7 +432,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
           message: 'Lead was already captured successfully',
           leadId: existingLead._id,
           internalNotificationSent: existingLead.internalNotificationSent,
-          calendarLink: CALENDAR_LINK || null,
+          calendarLink: buildAttributedCalendarLink(existingLead),
         });
       }
     }
@@ -455,7 +478,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
       message: 'Lead captured successfully',
       leadId: lead._id,
       internalNotificationSent: lead.internalNotificationSent,
-      calendarLink: CALENDAR_LINK || null,
+      calendarLink: buildAttributedCalendarLink(lead),
     });
   } catch (error) {
     if (error?.code === 11000 && req.body?.submissionId) {
@@ -468,7 +491,7 @@ router.post('/', leadSubmissionLimiter, async (req, res) => {
           message: 'Lead was already captured successfully',
           leadId: existingLead._id,
           internalNotificationSent: existingLead.internalNotificationSent,
-          calendarLink: CALENDAR_LINK || null,
+          calendarLink: buildAttributedCalendarLink(existingLead),
         });
       }
     }
