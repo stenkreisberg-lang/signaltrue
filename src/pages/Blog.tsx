@@ -437,147 +437,147 @@ const BlogPostView = ({ slug }: { slug: string }) => {
         type="article"
       />
       <article className="py-12 lg:py-20">
-      <div className="container mx-auto px-6">
-        <div className="max-w-3xl mx-auto">
-          {/* Back Link */}
-          <Link
-            to="/blog"
-            className="inline-flex items-center text-caption text-muted-foreground hover:text-foreground mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Blog
-          </Link>
-
-          {/* Header */}
-          <header className="mb-8">
-            {/* Tags */}
-            {post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {post.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    to={`/blog?tag=${encodeURIComponent(tag)}`}
-                    className="px-2.5 py-1 text-caption font-medium bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Title */}
-            <h1 className="text-section sm:text-display lg:text-display font-display font-bold text-foreground mb-6">
-              {post.title}
-            </h1>
-
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
-              <div className="flex items-center gap-2">
-                {post.author.avatar ? (
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-                <span className="font-medium text-foreground">{post.author.name}</span>
-              </div>
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {formatDate(post.publishedAt)}
-              </span>
-              {post.readingTime && (
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
-                  {post.readingTime} min read
-                </span>
-              )}
-            </div>
-          </header>
-
-          {/* Featured Image */}
-          {post.featuredImage?.url && (
-            <figure className="mb-10">
-              <div className="aspect-[16/9] rounded-container overflow-hidden">
-                <img
-                  src={post.featuredImage.url}
-                  alt={post.featuredImage.alt || post.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {post.featuredImage.caption && (
-                <figcaption className="text-caption text-muted-foreground text-center mt-3">
-                  {post.featuredImage.caption}
-                </figcaption>
-              )}
-            </figure>
-          )}
-
-          {/* Content */}
-          <div
-            className="prose prose-lg dark:prose-invert max-w-none
-              prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground
-              prose-h1:hidden
-              prose-h2:text-lead prose-h2:mt-10 prose-h2:mb-4
-              prose-h3:text-lead prose-h3:mt-8 prose-h3:mb-3
-              prose-p:text-foreground/80 prose-p:leading-relaxed
-              prose-strong:text-foreground
-              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-              prose-blockquote:border-l-primary prose-blockquote:bg-secondary/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1
-              prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-secondary prose-pre:border prose-pre:border-border
-              prose-li:text-foreground/80
-              prose-th:text-foreground prose-td:text-foreground/80
-              prose-img:rounded-container
-              [&>p:first-of-type>img]:hidden"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-
-          {/* Footer */}
-          <footer className="mt-12 pt-8 border-t border-border">
-            {/* Author Bio */}
-            {post.author.bio && (
-              <div className="flex items-start gap-4 p-6 bg-secondary/50 rounded-container mb-8">
-                {post.author.avatar ? (
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    className="w-16 h-16 rounded-full"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <User className="w-8 h-8 text-primary" />
-                  </div>
-                )}
-                <div>
-                  <p className="font-display font-semibold text-foreground mb-1">
-                    {post.author.name}
-                  </p>
-                  <p className="text-caption text-muted-foreground">{post.author.bio}</p>
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mx-auto">
+            {/* Back Link */}
+            <Link
+              to="/blog"
+              className="inline-flex items-center text-caption text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Blog
+            </Link>
+  
+            {/* Header */}
+            <header className="mb-8">
+              {/* Tags */}
+              {post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {post.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      to={`/blog?tag=${encodeURIComponent(tag)}`}
+                      className="px-2.5 py-1 text-caption font-medium bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
                 </div>
+              )}
+  
+              {/* Title */}
+              <h1 className="text-section sm:text-display lg:text-display font-display font-bold text-foreground mb-6">
+                {post.title}
+              </h1>
+  
+              {/* Meta */}
+              <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                  <span className="font-medium text-foreground">{post.author.name}</span>
+                </div>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {formatDate(post.publishedAt)}
+                </span>
+                {post.readingTime && (
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {post.readingTime} min read
+                  </span>
+                )}
               </div>
+            </header>
+  
+            {/* Featured Image */}
+            {post.featuredImage?.url && (
+              <figure className="mb-10">
+                <div className="aspect-[16/9] rounded-container overflow-hidden">
+                  <img
+                    src={post.featuredImage.url}
+                    alt={post.featuredImage.alt || post.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {post.featuredImage.caption && (
+                  <figcaption className="text-caption text-muted-foreground text-center mt-3">
+                    {post.featuredImage.caption}
+                  </figcaption>
+                )}
+              </figure>
             )}
-
-            {/* CTA */}
-            <div className="text-center">
-              <p className="text-muted-foreground mb-4">
-                Want evidence of changing work conditions before they create preventable harm or
-                operational disruption?
-              </p>
-              <Link to="/product">
-                <Button variant="hero">
-                  See early workload risk signals
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
-            </div>
-          </footer>
+  
+            {/* Content */}
+            <div
+              className="prose prose-lg dark:prose-invert max-w-none
+                prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground
+                prose-h1:hidden
+                prose-h2:text-lead prose-h2:mt-10 prose-h2:mb-4
+                prose-h3:text-lead prose-h3:mt-8 prose-h3:mb-3
+                prose-p:text-foreground/80 prose-p:leading-relaxed
+                prose-strong:text-foreground
+                prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                prose-blockquote:border-l-primary prose-blockquote:bg-secondary/50 prose-blockquote:rounded-r-lg prose-blockquote:py-1
+                prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                prose-pre:bg-secondary prose-pre:border prose-pre:border-border
+                prose-li:text-foreground/80
+                prose-th:text-foreground prose-td:text-foreground/80
+                prose-img:rounded-container
+                [&>p:first-of-type>img]:hidden"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+  
+            {/* Footer */}
+            <footer className="mt-12 pt-8 border-t border-border">
+              {/* Author Bio */}
+              {post.author.bio && (
+                <div className="flex items-start gap-4 p-6 bg-secondary/50 rounded-container mb-8">
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-16 h-16 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <User className="w-8 h-8 text-primary" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-display font-semibold text-foreground mb-1">
+                      {post.author.name}
+                    </p>
+                    <p className="text-caption text-muted-foreground">{post.author.bio}</p>
+                  </div>
+                </div>
+              )}
+  
+              {/* CTA */}
+              <div className="text-center">
+                <p className="text-muted-foreground mb-4">
+                  Want evidence of changing work conditions before they create preventable harm or
+                  operational disruption?
+                </p>
+                <Link to="/product">
+                  <Button variant="hero">
+                    See early workload risk signals
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+            </footer>
+          </div>
         </div>
-      </div>
       </article>
     </>
   );
