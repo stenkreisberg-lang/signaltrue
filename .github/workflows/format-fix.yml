@@ -1,0 +1,22 @@
+name: Auto-format frontend
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format
+      - run: |
+          git config user.name "signaltrue-format"
+          git config user.email "format@signaltrue.ai"
+          git add src
+          git commit -m "chore: format product changes [skip ci]" || true
+          git push
