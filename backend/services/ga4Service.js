@@ -15,6 +15,7 @@ export const CONFIGURATION_STATES = Object.freeze({
 export const COMMERCIAL_PAGE_EVENT = 'page_view';
 export const FUNNEL_EVENT_NAMES = [
   'commercial_page_view',
+  'commercial_engaged_visit',
   'sample_report_click',
   'sample_report_view',
   'sample_report_print',
@@ -982,6 +983,7 @@ export async function getGa4Overview(options = {}) {
     })),
     funnelEvents,
     funnel: {
+      engagedVisits: eventCount('commercial_engaged_visit'),
       primaryCtaClicks: eventCount('primary_cta_click'),
       formStarts: eventCount('lead_form_start'),
       formErrors: eventCount('lead_form_error'),
@@ -989,6 +991,14 @@ export async function getGa4Overview(options = {}) {
       confirmedLeads: eventCount('lead_confirmed'),
       bookingLinkClicks: eventCount('booking_link_click'),
       rates: {
+        pageToEngaged: boundedShare(
+          eventCount('commercial_engaged_visit'),
+          summaryMetrics.sessions
+        ),
+        engagedToCta: boundedShare(
+          eventCount('primary_cta_click'),
+          eventCount('commercial_engaged_visit')
+        ),
         pageToCta: boundedShare(eventCount('primary_cta_click'), summaryMetrics.sessions),
         ctaToFormStart: boundedShare(
           eventCount('lead_form_start'),
