@@ -28,7 +28,7 @@ const Hero = () => {
             </div>
 
             <h1 className="mb-5 text-section font-bold text-[#0F172A] sm:text-display">
-              You removed the meetings. Did the workload actually go away?
+              You changed the work. Did the psychosocial risk control actually change the work?
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
@@ -47,13 +47,13 @@ const Hero = () => {
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Book a 20-minute visibility review <ArrowRight className="h-5 w-5 shrink-0" />
+                Review one psychosocial control <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
               <Link
-                to="/control-evidence-assessment"
+                to="/au"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 text-caption font-bold text-brand hover:bg-brand-softer sm:w-auto"
               >
-                Check your control-evidence maturity
+                See the Australian control-review approach
                 <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </div>
