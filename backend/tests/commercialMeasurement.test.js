@@ -12,6 +12,7 @@ import {
 import {
   GA4_DIAGNOSTIC_ACTIONS,
   generateSiteAnalyticsEmailHtml,
+  getInternalCommercialTelemetry,
   inferCommercialRecommendations,
   validateCommercialAnalyticsOverview,
 } from '../services/siteAnalyticsEmailService.js';
@@ -82,14 +83,60 @@ describe('commercial measurement integrity', () => {
   test('normalises acquisition aliases and aggregates each source/medium pair once', () => {
     expect(
       normalizeAcquisitionRows([
-        { source: '(direct)', medium: '(none)', sessions: 4, activeUsers: 3 },
-        { source: 'direct', medium: '(not set)', sessions: 2, activeUsers: 2 },
-        { source: '(not set)', medium: '(not set)', sessions: 1, activeUsers: 1 },
-        { source: 'WWW.Google.COM', medium: 'Organic Search', sessions: 5, activeUsers: 4 },
+        {
+          source: '(direct)',
+          medium: '(none)',
+          sessions: 4,
+          activeUsers: 3,
+          engagedSessions: 1,
+          engagementDuration: 40,
+        },
+        {
+          source: 'direct',
+          medium: '(not set)',
+          sessions: 2,
+          activeUsers: 2,
+          engagedSessions: 1,
+          engagementDuration: 20,
+        },
+        {
+          source: '(not set)',
+          medium: '(not set)',
+          sessions: 1,
+          activeUsers: 1,
+          engagedSessions: 0,
+          engagementDuration: 0,
+        },
+        {
+          source: 'WWW.Google.COM',
+          medium: 'Organic Search',
+          sessions: 5,
+          activeUsers: 4,
+          engagedSessions: 4,
+          engagementDuration: 250,
+        },
       ])
     ).toEqual([
-      { source: '(direct)', medium: '(none)', sessions: 7, activeUsers: 6 },
-      { source: 'google', medium: 'organic', sessions: 5, activeUsers: 4 },
+      {
+        source: '(direct)',
+        medium: '(none)',
+        sessions: 7,
+        activeUsers: 6,
+        engagedSessions: 2,
+        engagementDuration: 60,
+        engagementRate: 28.6,
+        averageEngagementTime: 9,
+      },
+      {
+        source: 'google',
+        medium: 'organic',
+        sessions: 5,
+        activeUsers: 4,
+        engagedSessions: 4,
+        engagementDuration: 250,
+        engagementRate: 80,
+        averageEngagementTime: 50,
+      },
     ]);
   });
 
@@ -242,6 +289,80 @@ describe('commercial measurement integrity', () => {
     expect(valid.fieldErrors).toEqual({});
   });
 
+  test('reads an independent server-side shadow count for the GA4 reporting window', async () => {
+    const queries = [];
+    const model = {
+      countDocuments: async (query) => {
+        queries.push(query);
+        return query.eventName === 'page_view' ? 11 : 3;
+      },
+    };
+
+    const result = await getInternalCommercialTelemetry(
+      { startDate: '2026-09-04', endDate: '2026-09-11' },
+      model
+    );
+
+    expect(result).toMatchObject({
+      connected: true,
+      startDate: '2026-09-04',
+      endDate: '2026-09-11',
+      pageViews: 11,
+      highIntentEvents: 3,
+    });
+    expect(queries).toHaveLength(2);
+    expect(queries[0].createdAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
+    expect(queries[0].createdAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
+  });
+
+  test('flags GA4 zero sessions when internal validated page views exist', () => {
+    const overview = {
+      summary: { sessions: 0, views: 0, engagementRate: 0, highIntentSessionShare: 0 },
+      sourceMedium: [],
+      campaigns: [],
+      topLandingPages: [],
+      topPages: [],
+      funnel: { rates: {} },
+      internalTelemetry: { connected: true, pageViews: 9, highIntentEvents: 1 },
+      searchDiscovery: { connected: true, summary: { clicks: 4 } },
+    };
+
+    const integrity = validateCommercialAnalyticsOverview(overview);
+    expect(integrity.valid).toBe(false);
+    expect(integrity.issues.map((issue) => issue.code)).toContain(
+      'ga4_zero_sessions_with_internal_pageviews'
+    );
+
+    overview.integrity = integrity;
+    const recommendations = inferCommercialRecommendations(overview);
+    expect(recommendations[0].priority).toMatch(/GA4 collection or reporting/i);
+    expect(recommendations[0].action).toMatch(/property\/stream|measurement ID|tag transport/i);
+  });
+
+  test('flags a public collection gap when Search Console has clicks but both collectors have zero', () => {
+    const overview = {
+      summary: { sessions: 0, views: 0, engagementRate: 0, highIntentSessionShare: 0 },
+      sourceMedium: [],
+      campaigns: [],
+      topLandingPages: [],
+      topPages: [],
+      funnel: { rates: {} },
+      internalTelemetry: { connected: true, pageViews: 0, highIntentEvents: 0 },
+      searchDiscovery: { connected: true, summary: { clicks: 6 } },
+    };
+
+    const integrity = validateCommercialAnalyticsOverview(overview);
+    expect(integrity.valid).toBe(false);
+    expect(integrity.issues.map((issue) => issue.code)).toContain(
+      'public_collection_gap_despite_search_clicks'
+    );
+
+    overview.integrity = integrity;
+    const recommendations = inferCommercialRecommendations(overview);
+    expect(recommendations[0].priority).toMatch(/public browser measurement/i);
+    expect(recommendations[0].action).toMatch(/hostname|analytics initialization/i);
+  });
+
   test('maps configuration diagnostics to specific actions', () => {
     const recommendations = inferCommercialRecommendations({
       diagnostics: [
@@ -261,7 +382,13 @@ describe('commercial measurement integrity', () => {
 
   test('withholds interpretation when the commercial overview is inconsistent', () => {
     const overview = {
-      summary: { sessions: 5, views: 4, engagementRate: 101 },
+      summary: {
+        sessions: 5,
+        views: 4,
+        engagementRate: 101,
+        highIntentSessions: 6,
+        highIntentSessionShare: 120,
+      },
       sourceMedium: [
         { source: 'direct', medium: '(none)', sessions: 6 },
         { source: '(direct)', medium: '(not set)', sessions: 1 },
@@ -276,6 +403,8 @@ describe('commercial measurement integrity', () => {
     expect(result.issues.map((issue) => issue.code)).toEqual(
       expect.arrayContaining([
         'engagement_rate_out_of_bounds',
+        'high_intent_share_out_of_bounds',
+        'high_intent_sessions_exceed_total',
         'direct_sessions_exceed_total',
         'commercial_views_below_sessions',
         'duplicate_normalized_source_medium',
@@ -305,6 +434,9 @@ describe('commercial measurement integrity', () => {
         summary: {
           sessions: 10,
           activeUsers: 8,
+          engagedSessions: 4,
+          highIntentSessions: 2,
+          highIntentSessionShare: 20,
           views: 12,
           engagementRate: 40,
           averageEngagementTime: 45,
@@ -313,19 +445,38 @@ describe('commercial measurement integrity', () => {
           sampleReportViews: 2,
         },
         previousSummary: {},
-        sourceMedium: [],
+        sourceMedium: [
+          {
+            source: 'google',
+            medium: 'organic',
+            sessions: 5,
+            engagedSessions: 4,
+            engagementRate: 80,
+            highIntentSessions: 2,
+            highIntentRate: 40,
+          },
+        ],
         campaigns: [],
-        topLandingPages: [],
+        topLandingPages: [
+          { path: '/product', sessions: 4, engagedSessions: 3, engagementRate: 75 },
+        ],
         topPages: [],
         topCtaLocations: [],
         formErrorsByType: [],
         unattributedDirectPercentage: 50,
         funnel: { rates: {} },
+        internalTelemetry: { connected: true, pageViews: 12, highIntentEvents: 2 },
       },
       []
     );
     expect(html).toContain('Search discovery');
+    expect(html).toContain('Measurement cross-check');
+    expect(html).toContain('Internal public page views');
+    expect(html).toContain('Traffic quality');
     expect(html).toContain('Qualified acquisition');
+    expect(html).toContain('High-intent sessions');
+    expect(html).toContain('Traffic quality by source / medium');
+    expect(html).toContain('plausible buyer behaviour');
     expect(html).toContain('On-site engagement');
     expect(html).toContain('Commercial funnel');
     expect(html).toContain('Supporting on-site diagnostics');

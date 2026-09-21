@@ -1,5 +1,11 @@
 import { Resend } from 'resend';
-import { getGa4Overview, isCommercialReportPath, normalizeAcquisition } from './ga4Service.js';
+import Analytics from '../models/analytics.js';
+import {
+  HIGH_INTENT_EVENT_NAMES,
+  getGa4Overview,
+  isCommercialReportPath,
+  normalizeAcquisition,
+} from './ga4Service.js';
 import { getSearchConsoleOverview } from './searchConsoleService.js';
 
 const DEFAULT_RECIPIENT = 'sten.kreisberg@gmail.com';
@@ -24,6 +30,51 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+export async function getInternalCommercialTelemetry(dateRange = {}, model = Analytics) {
+  const startDate = String(dateRange?.startDate || '');
+  const endDate = String(dateRange?.endDate || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    return {
+      connected: false,
+      reason: 'A valid commercial reporting date range is required.',
+      pageViews: 0,
+      highIntentEvents: 0,
+    };
+  }
+
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const endExclusive = new Date(`${endDate}T00:00:00.000Z`);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+  const createdAt = { $gte: start, $lt: endExclusive };
+
+  try {
+    const [pageViews, highIntentEvents] = await Promise.all([
+      model.countDocuments({ eventName: 'page_view', createdAt }),
+      model.countDocuments({
+        eventName: { $in: HIGH_INTENT_EVENT_NAMES },
+        createdAt,
+      }),
+    ]);
+
+    return {
+      connected: true,
+      startDate,
+      endDate,
+      pageViews: Number(pageViews || 0),
+      highIntentEvents: Number(highIntentEvents || 0),
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      startDate,
+      endDate,
+      pageViews: 0,
+      highIntentEvents: 0,
+      reason: error?.message || 'Internal commercial telemetry could not be read.',
+    };
+  }
+}
+
 function comparison(current = 0, previous = 0, suffix = '', comparisonAvailable = false) {
   if (!comparisonAvailable) return 'No valid prior clean comparison';
   if (!previous) return current ? `new activity; previous 0${suffix}` : `unchanged at 0${suffix}`;
@@ -32,6 +83,18 @@ function comparison(current = 0, previous = 0, suffix = '', comparisonAvailable 
 }
 
 export const GA4_DIAGNOSTIC_ACTIONS = Object.freeze({
+  ga4_zero_sessions_with_internal_pageviews: {
+    rank: 0,
+    title: 'Repair GA4 collection or reporting before judging traffic',
+    action:
+      'Internal production page views exist but GA4 reports zero sessions. Verify the GA4 property/stream, measurement ID, tag transport and report filters before using GA4 acquisition totals.',
+  },
+  public_collection_gap_despite_search_clicks: {
+    rank: 0,
+    title: 'Repair public browser measurement before judging acquisition',
+    action:
+      'Google Search delivered clicks but neither GA4 nor SignalTrue internal public-page telemetry recorded visits. Verify the production hostname, browser analytics initialization and /api/analytics/track delivery on the live site.',
+  },
   ga4_duplicate_page_view_risk: {
     rank: 1,
     title: 'Remove duplicate browser-history page views',
@@ -116,6 +179,7 @@ export function validateCommercialAnalyticsOverview(overview = {}) {
   const funnel = overview.funnel || {};
   const percentages = [
     ['engagement_rate_out_of_bounds', summary.engagementRate],
+    ['high_intent_share_out_of_bounds', summary.highIntentSessionShare],
     ['direct_share_out_of_bounds', overview.unattributedDirectPercentage],
     ...Object.entries(funnel.rates || {}).map(([key, value]) => [`${key}_out_of_bounds`, value]),
   ];
@@ -140,6 +204,46 @@ export function validateCommercialAnalyticsOverview(overview = {}) {
       ['acquisition']
     );
   }
+  const internalTelemetry = overview.internalTelemetry || {};
+  const searchDiscovery = overview.searchDiscovery || {};
+  const searchClicks = Number(searchDiscovery.summary?.clicks || 0);
+
+  if (
+    Number(summary.sessions || 0) === 0 &&
+    internalTelemetry.connected &&
+    Number(internalTelemetry.pageViews || 0) > 0
+  ) {
+    add(
+      'ga4_zero_sessions_with_internal_pageviews',
+      `GA4 reports 0 commercial sessions while SignalTrue recorded ${Number(
+        internalTelemetry.pageViews || 0
+      )} validated public page views in the same GA4 reporting window.`,
+      ['acquisition', 'engagement']
+    );
+  }
+
+  if (
+    Number(summary.sessions || 0) === 0 &&
+    searchDiscovery.connected &&
+    searchClicks > 0 &&
+    internalTelemetry.connected &&
+    Number(internalTelemetry.pageViews || 0) === 0
+  ) {
+    add(
+      'public_collection_gap_despite_search_clicks',
+      `Search Console recorded ${searchClicks} Google clicks while GA4 and SignalTrue internal public-page telemetry both recorded no commercial visits.`,
+      ['acquisition', 'engagement']
+    );
+  }
+
+  if (Number(summary.highIntentSessions || 0) > Number(summary.sessions || 0)) {
+    add(
+      'high_intent_sessions_exceed_total',
+      `High-intent sessions (${Number(summary.highIntentSessions || 0)}) exceed total commercial sessions (${Number(summary.sessions || 0)}).`,
+      ['acquisition', 'funnel']
+    );
+  }
+
   if (Number(summary.sessions || 0) > 0 && Number(summary.views || 0) < Number(summary.sessions)) {
     add(
       'commercial_views_below_sessions',
@@ -233,7 +337,22 @@ export function inferCommercialRecommendations(overview) {
   const smallSample = sessions < 50;
 
   if (!integrity.valid) {
+    const specificIntegrityActions = integrity.issues
+      .map((issue) => {
+        const mapped = GA4_DIAGNOSTIC_ACTIONS[issue.code];
+        if (!mapped) return null;
+        return {
+          priority: mapped.title,
+          evidence: issue.message,
+          action: mapped.action,
+          rank: mapped.rank,
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.rank - right.rank);
+
     return [
+      ...specificIntegrityActions,
       {
         priority: 'Fix measurement integrity before changing the website',
         evidence: integrity.issues.map((issue) => issue.message).join(' '),
@@ -452,6 +571,25 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${integrity.valid ? overview.dateRange?.comparisonReason || 'Commercial metrics passed self-consistency checks.' : `Affected metrics are not interpreted in this report. ${integrity.issues.map((issue) => issue.message).join(' ')}`}
     </div>
 
+    <h2 style="font-size:21px;margin:24px 0 10px;">Measurement cross-check</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+      ${metricCard(
+        'Internal public page views',
+        number(overview.internalTelemetry?.pageViews),
+        overview.internalTelemetry?.connected
+          ? 'validated production events stored by SignalTrue'
+          : 'internal telemetry unavailable'
+      )}
+      ${metricCard(
+        'Internal high-intent events',
+        number(overview.internalTelemetry?.highIntentEvents),
+        overview.internalTelemetry?.connected
+          ? 'server-side shadow count, not GA4 sessions'
+          : 'internal telemetry unavailable'
+      )}
+    </div>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;">This shadow measurement is intentionally separate from GA4. If GA4 reports zero while SignalTrue records validated production page views, the problem is in the GA4 collection/reporting path. If both are zero while Search Console records clicks, the production browser measurement path needs investigation.</p>
+
     <h2 style="font-size:21px;margin:24px 0 10px;">Search discovery</h2>
     ${
       search.connected
@@ -527,25 +665,29 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${smallSample ? `Small sample: ${number(summary.sessions)} sessions are insufficient for confident weekly conclusions. Treat movements as directional.` : 'The sample is large enough for stage-level comparison, though it does not establish causation.'}
     </div>
 
-    <h2 style="font-size:21px;margin:24px 0 10px;">Qualified acquisition</h2>
+    <h2 style="font-size:21px;margin:24px 0 10px;">Traffic quality</h2>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      ${metricCard('External users', number(summary.activeUsers), comparison(summary.activeUsers, previous.activeUsers, '', comparisonAvailable))}
       ${metricCard('External sessions', number(summary.sessions), comparison(summary.sessions, previous.sessions, '', comparisonAvailable))}
+      ${metricCard('Engaged sessions', number(summary.engagedSessions), 'GA4 engaged-session definition')}
+      ${metricCard('High-intent sessions', number(summary.highIntentSessions), integrity.valid ? `${interpretedPercent(summary.highIntentSessionShare)} of commercial sessions` : 'withheld after integrity failure')}
+      ${metricCard('Qualified landings', number(summary.qualifiedLandingPageSessions), 'Product, Contact, Sample Report or visibility review')}
       ${metricCard('Organic sessions', number(summary.organicSessions), 'source / medium = organic')}
-      ${metricCard('Qualified landings', number(summary.qualifiedLandingPageSessions), 'focused commercial pages')}
       ${metricCard('Direct / unattributed', interpretedPercent(overview.unattributedDirectPercentage), integrity.valid ? 'share of commercial sessions' : 'withheld after integrity failure')}
-      ${metricCard('Production scope', overview.hostname || 'www.signaltrue.ai', 'preview and app traffic excluded')}
     </div>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;">A high-intent session is not a page load. It requires an explicit commercial action such as viewing the sample report, clicking a primary or pricing CTA, starting a lead form, completing a diagnostic, booking, checkout or subscription activity. This makes raw traffic and plausible buyer behaviour visible separately.</p>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
       <section style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:18px;">
-        <h3 style="margin:0 0 10px;">Sessions by source / medium</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${rows(
-          (overview.sourceMedium || []).slice(0, 8),
-          (item) =>
-            `<tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px;">${item.source} / ${item.medium}</td><td style="padding:8px;text-align:right;font-weight:700;">${number(item.sessions)}</td></tr>`,
-          2
-        )}</tbody></table>
+        <h3 style="margin:0 0 10px;">Traffic quality by source / medium</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="text-align:left;color:#64748b;"><th style="padding:8px;">Source</th><th style="padding:8px;text-align:right;">Sessions</th><th style="padding:8px;text-align:right;">Engaged</th><th style="padding:8px;text-align:right;">High intent</th></tr></thead>
+          <tbody>${rows(
+            (overview.sourceMedium || []).slice(0, 8),
+            (item) =>
+              `<tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px;">${escapeHtml(item.source)} / ${escapeHtml(item.medium)}</td><td style="padding:8px;text-align:right;font-weight:700;">${number(item.sessions)}</td><td style="padding:8px;text-align:right;">${number(item.engagedSessions)} · ${interpretedPercent(item.engagementRate)}</td><td style="padding:8px;text-align:right;">${number(item.highIntentSessions)} · ${interpretedPercent(item.highIntentRate)}</td></tr>`,
+            4
+          )}</tbody>
+        </table>
       </section>
       <section style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:18px;">
         <h3 style="margin:0 0 10px;">Sessions by campaign</h3>
@@ -557,6 +699,8 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
         )}</tbody></table>
       </section>
     </div>
+
+    <p style="font-size:12px;color:#64748b;margin-top:14px;"><strong>Qualified acquisition</strong> is now shown inside Traffic quality so acquisition volume is not confused with buyer behaviour.</p>
 
     <h2 style="font-size:21px;margin:24px 0 10px;">On-site engagement</h2>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
@@ -592,7 +736,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       <table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${rows(
         overview.topLandingPages || [],
         (item) =>
-          `<tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px;">${item.path}</td><td style="padding:8px;text-align:right;">${number(item.sessions)} sessions</td></tr>`,
+          `<tr style="border-top:1px solid #e2e8f0;"><td style="padding:8px;">${escapeHtml(item.path)}</td><td style="padding:8px;text-align:right;">${number(item.sessions)} sessions · ${number(item.engagedSessions)} engaged (${interpretedPercent(item.engagementRate)})</td></tr>`,
         2
       )}</tbody></table>
     </section>
@@ -635,6 +779,7 @@ export async function sendWeeklySiteAnalyticsReport(trigger = 'manual') {
   if (!overview.connected) throw new Error(overview.reason || 'GA4 is not connected.');
 
   overview.searchDiscovery = searchDiscovery;
+  overview.internalTelemetry = await getInternalCommercialTelemetry(overview.dateRange);
   overview.integrity = validateCommercialAnalyticsOverview(overview);
   if (!overview.integrity.valid) {
     console.error(
