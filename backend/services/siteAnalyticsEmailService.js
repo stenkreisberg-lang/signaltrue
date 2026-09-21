@@ -337,7 +337,22 @@ export function inferCommercialRecommendations(overview) {
   const smallSample = sessions < 50;
 
   if (!integrity.valid) {
+    const specificIntegrityActions = integrity.issues
+      .map((issue) => {
+        const mapped = GA4_DIAGNOSTIC_ACTIONS[issue.code];
+        if (!mapped) return null;
+        return {
+          priority: mapped.title,
+          evidence: issue.message,
+          action: mapped.action,
+          rank: mapped.rank,
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.rank - right.rank);
+
     return [
+      ...specificIntegrityActions,
       {
         priority: 'Fix measurement integrity before changing the website',
         evidence: integrity.issues.map((issue) => issue.message).join(' '),
