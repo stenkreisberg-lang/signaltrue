@@ -220,7 +220,7 @@ function calculateMaturity(answers = []) {
       Object.values(dimensions).length
   );
   const level =
-    score < 40 ? 'reactive' : score < 60 ? 'developing' : score < 80 ? 'structured' : 'continuous';
+    score < 40 ? 'reactive' : score < 60 ? 'developing' : score < 80 ? 'structured' : 'review_ready';
   const weakestDimension = Object.entries(dimensions).sort((a, b) => a[1] - b[1])[0][0];
 
   return { score, level, weakestDimension, dimensions, answers: sanitizedAnswers };
@@ -231,14 +231,14 @@ function maturityLevelLabel(level) {
     reactive: 'Reactive evidence',
     developing: 'Developing evidence',
     structured: 'Structured evidence',
-    continuous: 'Continuous evidence',
+    review_ready: 'Review-ready evidence process',
   }[level] || 'Control evidence';
 }
 
 function maturityDimensionLabel(dimension) {
   return {
-    detection: 'Detection',
-    investigation: 'Investigation',
+    detection: 'Evidence visibility',
+    investigation: 'Investigation & context',
     verification: 'Control verification',
     governance: 'Governance & privacy',
   }[dimension] || dimension;
@@ -269,8 +269,8 @@ async function sendControlMaturityEmails(submission) {
 <p style="font-size:18px;font-weight:700;color:#0f172a">${level}</p>
 <p>Your largest evidence gap is <strong>${weakest}</strong>.</p>
 <table width="100%" style="border-collapse:collapse;margin:24px 0">
-<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Detection</td><td align="right">${submission.dimensions.detection}/100</td></tr>
-<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Investigation</td><td align="right">${submission.dimensions.investigation}/100</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Evidence visibility</td><td align="right">${submission.dimensions.detection}/100</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Investigation &amp; context</td><td align="right">${submission.dimensions.investigation}/100</td></tr>
 <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Control verification</td><td align="right">${submission.dimensions.verification}/100</td></tr>
 <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0">Governance & privacy</td><td align="right">${submission.dimensions.governance}/100</td></tr>
 </table>
@@ -285,7 +285,7 @@ async function sendControlMaturityEmails(submission) {
 <p><strong>Market:</strong> ${escapeHtml(submission.market)}</p>
 <p><strong>Score:</strong> ${submission.score}/100 (${escapeHtml(level)})</p>
 <p><strong>Weakest dimension:</strong> ${escapeHtml(weakest)}</p>
-<p>Detection ${submission.dimensions.detection} · Investigation ${submission.dimensions.investigation} · Verification ${submission.dimensions.verification} · Governance ${submission.dimensions.governance}</p>`;
+<p>Evidence visibility ${submission.dimensions.detection} | Investigation &amp; context ${submission.dimensions.investigation} | Control verification ${submission.dimensions.verification} | Governance &amp; privacy ${submission.dimensions.governance}</p>`;
 
   await Promise.allSettled([
     resend.emails.send({
