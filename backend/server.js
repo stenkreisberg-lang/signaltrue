@@ -80,6 +80,7 @@ import integrationsRoutes from './routes/integrations.js';
 import billingRoutes from './routes/billing.js';
 import stripeWebhookRoutes from './routes/stripe-webhook.js';
 import emailWebhookRoutes from './routes/emailWebhook.js';
+import calendlyWebhookRoutes from './routes/calendlyWebhook.js';
 import briefResponseRoutes from './routes/briefResponse.js';
 import adminRoutes from './routes/adminRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
@@ -281,6 +282,11 @@ async function main() {
     // Signature verification needs the exact bytes, so this is mounted raw
     // before the JSON parser too.
     app.use('/api/webhooks/email', express.raw({ type: 'application/json' }), emailWebhookRoutes);
+    app.use(
+      '/api/webhooks/calendly',
+      express.raw({ type: 'application/json' }),
+      calendlyWebhookRoutes
+    );
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
