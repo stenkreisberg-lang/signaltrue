@@ -183,6 +183,7 @@ import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
 import { pullAllConnectedOrgs } from './services/integrationPullService.js';
+import { syncCalendlyCommercialBookings } from './services/calendlyCommercialSyncService.js';
 import { purgeAllOrgs } from './services/retentionPurgeService.js';
 import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
@@ -519,6 +520,23 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: integration health monitor hourly');
+
+      if (process.env.CALENDLY_ACCESS_TOKEN) {
+        const runCalendlyCommercialSync = async () => {
+          try {
+            const result = await syncCalendlyCommercialBookings();
+            console.log(
+              `✅ Calendly commercial sync: ${result.eventsSeen} events, ${result.inviteesSeen} invitees, ${result.accepted} new conversion events`
+            );
+          } catch (err) {
+            console.error('❌ Calendly commercial sync failed:', err.message);
+          }
+        };
+
+        cron.schedule('17 * * * *', runCalendlyCommercialSync);
+        void runCalendlyCommercialSync();
+        console.log('⏰ Cron job scheduled: Calendly commercial conversion sync hourly');
+      }
 
       // Work Network action outcomes - daily after the first integration sync
       cron.schedule('20 6 * * *', async () => {
