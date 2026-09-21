@@ -122,6 +122,52 @@ describe('Calendly commercial conversion tracking', () => {
     expect(analyticsDocs).toHaveLength(1);
   });
 
+  test('treats an atomic duplicate-key conflict as a duplicate delivery', async () => {
+    class RacingAnalytics {
+      constructor(doc) {
+        Object.assign(this, doc);
+      }
+      static async findOne() {
+        return null;
+      }
+      async save() {
+        const error = new Error('duplicate key');
+        error.code = 11000;
+        throw error;
+      }
+    }
+    const lead = {
+      _id: '66aabbccddeeff0011223344',
+      calendly: null,
+      save: jest.fn(async () => {}),
+    };
+    const LeadModel = {
+      findById: jest.fn(async () => lead),
+      findOne: jest.fn(() => ({ sort: async () => null })),
+    };
+
+    const result = await processCalendlyWebhookEvent(
+      {
+        event: 'invitee.created',
+        created_at: '2026-09-21T12:00:00.000Z',
+        payload: {
+          uri: 'https://api.calendly.com/scheduled_events/race/invitees/race',
+          event: 'https://api.calendly.com/scheduled_events/race',
+          tracking: {
+            utm_source: 'signaltrue',
+            utm_content: 'stlead_66aabbccddeeff0011223344',
+          },
+        },
+      },
+      { AnalyticsModel: RacingAnalytics, LeadModel }
+    );
+
+    expect(result).toMatchObject({
+      duplicate: true,
+      analyticsEvent: 'calendly_booking_created',
+    });
+  });
+
   test('does not count an unrelated Calendly booking as a SignalTrue conversion', async () => {
     const AnalyticsModel = {
       findOne: jest.fn(async () => null),
