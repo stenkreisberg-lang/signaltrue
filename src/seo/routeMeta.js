@@ -70,6 +70,41 @@ const ROUTE_META = {
     summary:
       'SignalTrue helps WHS leaders identify changing workload and coordination conditions between formal assessments using team-level, metadata-focused patterns. It does not diagnose individuals, and worker consultation and governance remain the employer’s responsibility.',
   },
+  '/control-evidence-assessment': {
+    title: 'Psychosocial Control Evidence Maturity Assessment | SignalTrue',
+    description:
+      'Assess how well your organisation detects change, investigates psychosocial risk, verifies controls and protects worker privacy. Get a 0-100 maturity score.',
+    summary:
+      'A 12-question diagnostic across detection, investigation, control verification and governance. Results describe process maturity and are not a legal compliance assessment or individual health assessment.',
+  },
+  '/norway/psychosocial-work-environment': {
+    title: 'Psykososialt arbeidsmiljø og kontrollbevis | SignalTrue',
+    description:
+      'Se hvordan teamnivådata kan støtte systematisk arbeid med psykososialt arbeidsmiljø mellom kartlegginger, uten individuell overvåking.',
+    summary:
+      'SignalTrue supplerer norsk systematisk arbeidsmiljøarbeid med aggregert evidens om vedvarende endringer i arbeidsmønstre og før/etter-vurdering av organisatoriske tiltak.',
+  },
+  '/uk/work-related-stress': {
+    title: 'Work-related stress risk and control evidence | SignalTrue',
+    description:
+      'Add team-level work-pattern evidence between stress risk assessments and verify whether organisational controls changed the work.',
+    summary:
+      'SignalTrue adds aggregated work-pattern evidence alongside worker consultation and HSE-style organisational stress risk management. It does not diagnose individuals or determine legal compliance.',
+  },
+  '/germany/psychische-belastung': {
+    title: 'Psychische Belastung und Wirksamkeitskontrolle | SignalTrue',
+    description:
+      'Teambezogene Arbeitsmuster als ergänzende Evidenz für Gefährdungsbeurteilung, Maßnahmen und Wirksamkeitskontrolle.',
+    summary:
+      'SignalTrue unterstützt die Wirksamkeitskontrolle mit aggregierter Vorher/Nachher-Evidenz zu Arbeitsmustern. Die Plattform ersetzt keine Gefährdungsbeurteilung oder Rechtsberatung.',
+  },
+  '/netherlands/psychosociale-arbeidsbelasting': {
+    title: 'Psychosociale arbeidsbelasting en RI&E-bewijs | SignalTrue',
+    description:
+      'Gebruik teamniveau werkpatronen als aanvullende evidence tussen RI&E-momenten en controleer of maatregelen het werk werkelijk veranderden.',
+    summary:
+      'SignalTrue voegt geaggregeerde werkpatroon-evidence toe tussen RI&E-momenten en helpt voor/na een maatregel te controleren of de werkwijze werkelijk veranderde.',
+  },
   '/au': {
     title: 'Continuous Psychosocial Risk Monitoring Australia | SignalTrue',
     description:
