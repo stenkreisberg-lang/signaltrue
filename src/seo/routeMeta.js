@@ -106,11 +106,11 @@ const ROUTE_META = {
       'SignalTrue voegt geaggregeerde werkpatroon-evidence toe tussen RI&E-momenten en helpt voor/na een maatregel te controleren of de werkwijze werkelijk veranderde.',
   },
   '/au': {
-    title: 'Continuous Psychosocial Risk Monitoring Australia | SignalTrue',
+    title: 'Psychosocial Control Effectiveness Evidence Australia | SignalTrue',
     description:
-      'Team-level work-pattern evidence between psychosocial risk assessments. Observe changes without reading message bodies, diagnosing workers or scoring individual productivity.',
+      'Review whether a psychosocial control was followed by a meaningful change in team work patterns, with worker validation and explicit evidence limits.',
     summary:
-      'For Australian WHS and operational leaders: continuous, team-level visibility into changing work patterns between psychosocial risk assessments. SignalTrue complements worker consultation and risk assessment; it does not replace them.',
+      'For Australian WHS and psychosocial-risk teams reviewing controls: compare relevant team work patterns before and after a change, check for migration and validate the observation with workers before a decision.',
   },
   '/au/psychosocial-risk-monitoring': {
     title: 'Psychosocial Risk Monitoring Australia | SignalTrue',
@@ -127,11 +127,18 @@ const ROUTE_META = {
       'The Australian pilot confirms readiness, connects selected work systems, establishes a qualified baseline, investigates observations with workers, records a control and produces a final Psychosocial Control Evidence Pack.',
   },
   '/au/monitoring-gap-audit': {
-    title: 'Monitoring Gap Audit Australia | SignalTrue',
+    title: 'Psychosocial Control Review Readiness | SignalTrue Australia',
     description:
-      'Assess how your organisation monitors and reviews psychosocial controls between formal assessments. The result describes practice maturity, not legal compliance.',
+      'Six questions test whether your organisation can review one psychosocial control from implementation through evidence, worker validation and a decision.',
     summary:
-      'Six questions assess control records, review cadence, evidence between assessments, visibility into changing work conditions, before-and-after comparison and worker consultation.',
+      'Test whether your control-review process connects ownership, expected work change, before-and-after evidence, worker consultation and a maintain, modify or replace decision.',
+  },
+  '/au/standards-assurance': {
+    title: 'Australian WHS & ISO 45003 Assurance | SignalTrue',
+    description:
+      'How SignalTrue relates to Australian psychosocial risk management, control review, ISO 45003 and ISO 45001 without claiming certification or legal compliance.',
+    summary:
+      'Primary-source-backed explanation of where SignalTrue can contribute evidence to control review, where worker consultation remains essential, and which legal, causal and certification claims SignalTrue deliberately does not make.',
   },
   '/au/privacy': {
     title: 'Australian Privacy Overview | SignalTrue',
