@@ -82,14 +82,60 @@ describe('commercial measurement integrity', () => {
   test('normalises acquisition aliases and aggregates each source/medium pair once', () => {
     expect(
       normalizeAcquisitionRows([
-        { source: '(direct)', medium: '(none)', sessions: 4, activeUsers: 3 },
-        { source: 'direct', medium: '(not set)', sessions: 2, activeUsers: 2 },
-        { source: '(not set)', medium: '(not set)', sessions: 1, activeUsers: 1 },
-        { source: 'WWW.Google.COM', medium: 'Organic Search', sessions: 5, activeUsers: 4 },
+        {
+          source: '(direct)',
+          medium: '(none)',
+          sessions: 4,
+          activeUsers: 3,
+          engagedSessions: 1,
+          engagementDuration: 40,
+        },
+        {
+          source: 'direct',
+          medium: '(not set)',
+          sessions: 2,
+          activeUsers: 2,
+          engagedSessions: 1,
+          engagementDuration: 20,
+        },
+        {
+          source: '(not set)',
+          medium: '(not set)',
+          sessions: 1,
+          activeUsers: 1,
+          engagedSessions: 0,
+          engagementDuration: 0,
+        },
+        {
+          source: 'WWW.Google.COM',
+          medium: 'Organic Search',
+          sessions: 5,
+          activeUsers: 4,
+          engagedSessions: 4,
+          engagementDuration: 250,
+        },
       ])
     ).toEqual([
-      { source: '(direct)', medium: '(none)', sessions: 7, activeUsers: 6 },
-      { source: 'google', medium: 'organic', sessions: 5, activeUsers: 4 },
+      {
+        source: '(direct)',
+        medium: '(none)',
+        sessions: 7,
+        activeUsers: 6,
+        engagedSessions: 2,
+        engagementDuration: 60,
+        engagementRate: 28.6,
+        averageEngagementTime: 9,
+      },
+      {
+        source: 'google',
+        medium: 'organic',
+        sessions: 5,
+        activeUsers: 4,
+        engagedSessions: 4,
+        engagementDuration: 250,
+        engagementRate: 80,
+        averageEngagementTime: 50,
+      },
     ]);
   });
 
@@ -261,7 +307,13 @@ describe('commercial measurement integrity', () => {
 
   test('withholds interpretation when the commercial overview is inconsistent', () => {
     const overview = {
-      summary: { sessions: 5, views: 4, engagementRate: 101 },
+      summary: {
+        sessions: 5,
+        views: 4,
+        engagementRate: 101,
+        highIntentSessions: 6,
+        highIntentSessionShare: 120,
+      },
       sourceMedium: [
         { source: 'direct', medium: '(none)', sessions: 6 },
         { source: '(direct)', medium: '(not set)', sessions: 1 },
@@ -276,6 +328,8 @@ describe('commercial measurement integrity', () => {
     expect(result.issues.map((issue) => issue.code)).toEqual(
       expect.arrayContaining([
         'engagement_rate_out_of_bounds',
+        'high_intent_share_out_of_bounds',
+        'high_intent_sessions_exceed_total',
         'direct_sessions_exceed_total',
         'commercial_views_below_sessions',
         'duplicate_normalized_source_medium',
@@ -305,6 +359,9 @@ describe('commercial measurement integrity', () => {
         summary: {
           sessions: 10,
           activeUsers: 8,
+          engagedSessions: 4,
+          highIntentSessions: 2,
+          highIntentSessionShare: 20,
           views: 12,
           engagementRate: 40,
           averageEngagementTime: 45,
@@ -313,9 +370,21 @@ describe('commercial measurement integrity', () => {
           sampleReportViews: 2,
         },
         previousSummary: {},
-        sourceMedium: [],
+        sourceMedium: [
+          {
+            source: 'google',
+            medium: 'organic',
+            sessions: 5,
+            engagedSessions: 4,
+            engagementRate: 80,
+            highIntentSessions: 2,
+            highIntentRate: 40,
+          },
+        ],
         campaigns: [],
-        topLandingPages: [],
+        topLandingPages: [
+          { path: '/product', sessions: 4, engagedSessions: 3, engagementRate: 75 },
+        ],
         topPages: [],
         topCtaLocations: [],
         formErrorsByType: [],
@@ -325,7 +394,11 @@ describe('commercial measurement integrity', () => {
       []
     );
     expect(html).toContain('Search discovery');
+    expect(html).toContain('Traffic quality');
     expect(html).toContain('Qualified acquisition');
+    expect(html).toContain('High-intent sessions');
+    expect(html).toContain('Traffic quality by source / medium');
+    expect(html).toContain('plausible buyer behaviour');
     expect(html).toContain('On-site engagement');
     expect(html).toContain('Commercial funnel');
     expect(html).toContain('Supporting on-site diagnostics');
