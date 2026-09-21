@@ -80,8 +80,8 @@ export default function SampleReport() {
         }
       `}</style>
       <PageMeta
-        title="Sample Psychosocial Risk Review | SignalTrue"
-        description="Explore a complete SignalTrue team-level workplace risk report with persistence, data quality, consultation prompts and corrective actions."
+        title="Sample Psychosocial Control Review | SignalTrue"
+        description="See a fictional Australian-style control review showing baseline, post-control observations, worker validation prompts, limitations and a decision record."
         path="/sample-report"
       />
       <Navbar />
@@ -93,7 +93,7 @@ export default function SampleReport() {
                 Complete sample report
               </p>
               <h1 className="max-w-4xl text-display font-bold leading-tight text-[#0F172A] sm:text-display lg:text-display">
-                From an early indicator to a reviewed preventive action.
+                You changed the work. Here is how SignalTrue helps review what happened next.
               </h1>
               <p className="mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 This fictional example shows what a health &amp; safety manager receives after team
@@ -105,7 +105,7 @@ export default function SampleReport() {
                   ctaLocation="sample_report_hero"
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
-                  Book a 20-minute visibility review <ArrowRight className="h-5 w-5" />
+                  Review one psychosocial control <ArrowRight className="h-5 w-5" />
                 </PrimaryCommercialCTA>
                 <a
                   href="#report"
@@ -137,18 +137,18 @@ export default function SampleReport() {
                 <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
                   <div>
                     <p className="text-caption font-bold uppercase tracking-[0.18em] text-[#93C5FD]">
-                      Team workplace risk review
+                      Psychosocial control review
                     </p>
                     <h2 className="mt-3 text-section font-bold">Product &amp; Engineering</h2>
                     <p className="mt-2 text-[#CBD5E1]">
-                      Review period: 6–19 May · Baseline: previous 6 qualified weeks
+                      Control: recurring meeting reduction · Review: 4 weeks after change
                     </p>
                   </div>
                   <div className="rounded-container border border-amber-300/30 bg-amber-300/10 px-5 py-4">
                     <p className="text-caption font-bold uppercase tracking-wide text-amber-200">
-                      Review priority
+                      Decision status
                     </p>
-                    <p className="mt-1 text-lead font-bold">Action recommended</p>
+                    <p className="mt-1 text-lead font-bold">Validate before decision</p>
                   </div>
                 </div>
               </header>
@@ -159,7 +159,7 @@ export default function SampleReport() {
                     Executive summary
                   </p>
                   <h2 className="mt-3 text-lead font-bold text-[#0F172A]">
-                    Demand is rising while control and recovery opportunities are reducing.
+                    Calendar congestion improved. Total demand may not have.
                   </h2>
                   <p className="mt-4 max-w-4xl leading-7 text-[#475569]">
                     Three independent team-level indicators have moved away from the team baseline
@@ -261,16 +261,16 @@ export default function SampleReport() {
                 </section>
 
                 <section>
-                  <h2 className="text-lead font-bold text-[#0F172A]">Action record and sign-off</h2>
+                  <h2 className="text-lead font-bold text-[#0F172A]">Control record and review ownership</h2>
                   <div className="mt-5 grid gap-4 rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5 sm:grid-cols-2 lg:grid-cols-4">
                     {[
                       ['Risk process owner', 'Health & Safety Manager'],
                       ['Operational owner', 'Product Director'],
                       ['Consultation', 'Completed 21 May'],
-                      ['Control status', 'Active · review due 3 June'],
+                      ['Control status', 'Implemented · under review'],
                       ['Worker feedback', 'Review scheduled'],
                       ['Executive barrier', 'No additional budget required'],
-                      ['Effectiveness decision', 'Pending review evidence'],
+                      ['Effectiveness decision', 'Pending worker validation'],
                       ['Sign-off', 'H&S and operational owner'],
                     ].map(([label, value]) => (
                       <div key={label}>
@@ -286,7 +286,7 @@ export default function SampleReport() {
                 <section>
                   <div className="mb-5 flex items-center gap-3">
                     <ClipboardCheck className="h-6 w-6 text-brand" />
-                    <h2 className="text-lead font-bold text-[#0F172A]">Control and review plan</h2>
+                    <h2 className="text-lead font-bold text-[#0F172A]">Observation → interpretation → validation → action</h2>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {steps.map(([title, copy], index) => (
