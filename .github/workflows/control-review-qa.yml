@@ -1,0 +1,77 @@
+name: Control Review Production QA
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'qa/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        id: frontend_install
+        continue-on-error: true
+        run: npm ci
+
+      - name: Build frontend
+        id: frontend_build
+        if: steps.frontend_install.outcome == 'success'
+        continue-on-error: true
+        run: npm run build
+
+      - name: Install backend dependencies
+        id: backend_install
+        continue-on-error: true
+        working-directory: backend
+        run: npm ci
+
+      - name: Run control review acceptance suite
+        id: control_acceptance
+        if: steps.backend_install.outcome == 'success'
+        continue-on-error: true
+        working-directory: backend
+        run: npm test -- --runInBand tests/controlReviewAcceptance.test.js
+
+      - name: Write QA result
+        if: always()
+        env:
+          FRONTEND_INSTALL: ${{ steps.frontend_install.outcome }}
+          FRONTEND_BUILD: ${{ steps.frontend_build.outcome }}
+          BACKEND_INSTALL: ${{ steps.backend_install.outcome }}
+          CONTROL_ACCEPTANCE: ${{ steps.control_acceptance.outcome }}
+        run: |
+          mkdir -p qa
+          printf '{\n  "commit": "%s",\n  "run_id": "%s",\n  "frontend_install": "%s",\n  "frontend_build": "%s",\n  "backend_install": "%s",\n  "control_review_acceptance": "%s",\n  "completed_at": "%s"\n}\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$FRONTEND_INSTALL" "$FRONTEND_BUILD" "$BACKEND_INSTALL" "$CONTROL_ACCEPTANCE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > qa/last-control-review-qa.json
+
+      - name: Persist QA result
+        if: always()
+        run: |
+          git config user.name "signaltrue-qa"
+          git config user.email "qa@signaltrue.ai"
+          git add qa/last-control-review-qa.json
+          git commit -m "qa: record control review test result [skip ci]" || true
+          git push
+
+      - name: Enforce QA gate
+        if: always()
+        env:
+          FRONTEND_BUILD: ${{ steps.frontend_build.outcome }}
+          CONTROL_ACCEPTANCE: ${{ steps.control_acceptance.outcome }}
+        run: |
+          test "$FRONTEND_BUILD" = "success"
+          test "$CONTROL_ACCEPTANCE" = "success"
