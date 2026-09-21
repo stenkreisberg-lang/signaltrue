@@ -73,7 +73,7 @@ const WhyOrganizationsGoBlind = () => {
           {/* Highlight box */}
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-container bg-brand-softer border border-brand-soft">
             <p className="text-lead text-[#0F172A] font-medium">
-              SignalTrue adds continuous evidence alongside worker consultation. It does not replace it.
+              SignalTrue adds work-pattern evidence alongside worker consultation. It does not replace it.
             </p>
             <p className="text-[#334155] mt-2">
               Define the control and its intended effect. Observe what changed, investigate the evidence with workers, then review whether the control should be maintained, modified or investigated further.
