@@ -65,7 +65,7 @@ export default function AustraliaPilot() {
               Australian pilot
             </p>
             <h1 className="mt-4 text-display font-bold text-[#0F172A] sm:text-display lg:text-display">
-              Eight weeks to see what happens between your psychosocial risk assessments.
+              Eight weeks to review one psychosocial control against what changed in the work.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
               Test whether privacy-preserving, team-level work-pattern evidence improves the way one
@@ -73,7 +73,7 @@ export default function AustraliaPilot() {
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <Link to="/au/monitoring-gap-audit">Run the Monitoring Gap Audit</Link>
+                <Link to="/au/monitoring-gap-audit">Review one control</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <PrimaryCommercialCTA
@@ -169,7 +169,7 @@ export default function AustraliaPilot() {
                       'Data coverage and baseline',
                       'Team-level observations',
                       'Investigation and consultation record',
-                      'Control ownership and timing',
+                      'Control intent, ownership and timing',
                       'Subsequent observations',
                       'Mandatory limitations and audit information',
                     ].map((item) => (
