@@ -308,9 +308,10 @@ describe('commercial measurement integrity', () => {
       startDate: '2026-09-04',
       endDate: '2026-09-11',
       pageViews: 11,
+      engagedVisits: 3,
       highIntentEvents: 3,
     });
-    expect(queries).toHaveLength(2);
+    expect(queries).toHaveLength(3);
     expect(queries[0].createdAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
     expect(queries[0].createdAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
   });
