@@ -1,5 +1,11 @@
 import { Resend } from 'resend';
-import { getGa4Overview, isCommercialReportPath, normalizeAcquisition } from './ga4Service.js';
+import Analytics from '../models/analytics.js';
+import {
+  HIGH_INTENT_EVENT_NAMES,
+  getGa4Overview,
+  isCommercialReportPath,
+  normalizeAcquisition,
+} from './ga4Service.js';
 import { getSearchConsoleOverview } from './searchConsoleService.js';
 
 const DEFAULT_RECIPIENT = 'sten.kreisberg@gmail.com';
@@ -24,6 +30,51 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+export async function getInternalCommercialTelemetry(dateRange = {}, model = Analytics) {
+  const startDate = String(dateRange?.startDate || '');
+  const endDate = String(dateRange?.endDate || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    return {
+      connected: false,
+      reason: 'A valid commercial reporting date range is required.',
+      pageViews: 0,
+      highIntentEvents: 0,
+    };
+  }
+
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const endExclusive = new Date(`${endDate}T00:00:00.000Z`);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+  const createdAt = { $gte: start, $lt: endExclusive };
+
+  try {
+    const [pageViews, highIntentEvents] = await Promise.all([
+      model.countDocuments({ eventName: 'page_view', createdAt }),
+      model.countDocuments({
+        eventName: { $in: HIGH_INTENT_EVENT_NAMES },
+        createdAt,
+      }),
+    ]);
+
+    return {
+      connected: true,
+      startDate,
+      endDate,
+      pageViews: Number(pageViews || 0),
+      highIntentEvents: Number(highIntentEvents || 0),
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      startDate,
+      endDate,
+      pageViews: 0,
+      highIntentEvents: 0,
+      reason: error?.message || 'Internal commercial telemetry could not be read.',
+    };
+  }
+}
+
 function comparison(current = 0, previous = 0, suffix = '', comparisonAvailable = false) {
   if (!comparisonAvailable) return 'No valid prior clean comparison';
   if (!previous) return current ? `new activity; previous 0${suffix}` : `unchanged at 0${suffix}`;
@@ -32,6 +83,18 @@ function comparison(current = 0, previous = 0, suffix = '', comparisonAvailable 
 }
 
 export const GA4_DIAGNOSTIC_ACTIONS = Object.freeze({
+  ga4_zero_sessions_with_internal_pageviews: {
+    rank: 0,
+    title: 'Repair GA4 collection or reporting before judging traffic',
+    action:
+      'Internal production page views exist but GA4 reports zero sessions. Verify the GA4 property/stream, measurement ID, tag transport and report filters before using GA4 acquisition totals.',
+  },
+  public_collection_gap_despite_search_clicks: {
+    rank: 0,
+    title: 'Repair public browser measurement before judging acquisition',
+    action:
+      'Google Search delivered clicks but neither GA4 nor SignalTrue internal public-page telemetry recorded visits. Verify the production hostname, browser analytics initialization and /api/analytics/track delivery on the live site.',
+  },
   ga4_duplicate_page_view_risk: {
     rank: 1,
     title: 'Remove duplicate browser-history page views',
@@ -141,6 +204,38 @@ export function validateCommercialAnalyticsOverview(overview = {}) {
       ['acquisition']
     );
   }
+  const internalTelemetry = overview.internalTelemetry || {};
+  const searchDiscovery = overview.searchDiscovery || {};
+  const searchClicks = Number(searchDiscovery.summary?.clicks || 0);
+
+  if (
+    Number(summary.sessions || 0) === 0 &&
+    internalTelemetry.connected &&
+    Number(internalTelemetry.pageViews || 0) > 0
+  ) {
+    add(
+      'ga4_zero_sessions_with_internal_pageviews',
+      `GA4 reports 0 commercial sessions while SignalTrue recorded ${Number(
+        internalTelemetry.pageViews || 0
+      )} validated public page views in the same GA4 reporting window.`,
+      ['acquisition', 'engagement']
+    );
+  }
+
+  if (
+    Number(summary.sessions || 0) === 0 &&
+    searchDiscovery.connected &&
+    searchClicks > 0 &&
+    internalTelemetry.connected &&
+    Number(internalTelemetry.pageViews || 0) === 0
+  ) {
+    add(
+      'public_collection_gap_despite_search_clicks',
+      `Search Console recorded ${searchClicks} Google clicks while GA4 and SignalTrue internal public-page telemetry both recorded no commercial visits.`,
+      ['acquisition', 'engagement']
+    );
+  }
+
   if (Number(summary.highIntentSessions || 0) > Number(summary.sessions || 0)) {
     add(
       'high_intent_sessions_exceed_total',
@@ -461,6 +556,25 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${integrity.valid ? overview.dateRange?.comparisonReason || 'Commercial metrics passed self-consistency checks.' : `Affected metrics are not interpreted in this report. ${integrity.issues.map((issue) => issue.message).join(' ')}`}
     </div>
 
+    <h2 style="font-size:21px;margin:24px 0 10px;">Measurement cross-check</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+      ${metricCard(
+        'Internal public page views',
+        number(overview.internalTelemetry?.pageViews),
+        overview.internalTelemetry?.connected
+          ? 'validated production events stored by SignalTrue'
+          : 'internal telemetry unavailable'
+      )}
+      ${metricCard(
+        'Internal high-intent events',
+        number(overview.internalTelemetry?.highIntentEvents),
+        overview.internalTelemetry?.connected
+          ? 'server-side shadow count, not GA4 sessions'
+          : 'internal telemetry unavailable'
+      )}
+    </div>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;">This shadow measurement is intentionally separate from GA4. If GA4 reports zero while SignalTrue records validated production page views, the problem is in the GA4 collection/reporting path. If both are zero while Search Console records clicks, the production browser measurement path needs investigation.</p>
+
     <h2 style="font-size:21px;margin:24px 0 10px;">Search discovery</h2>
     ${
       search.connected
@@ -650,6 +764,7 @@ export async function sendWeeklySiteAnalyticsReport(trigger = 'manual') {
   if (!overview.connected) throw new Error(overview.reason || 'GA4 is not connected.');
 
   overview.searchDiscovery = searchDiscovery;
+  overview.internalTelemetry = await getInternalCommercialTelemetry(overview.dateRange);
   overview.integrity = validateCommercialAnalyticsOverview(overview);
   if (!overview.integrity.valid) {
     console.error(
