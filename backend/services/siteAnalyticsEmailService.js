@@ -21,6 +21,13 @@ function percent(value) {
     .replace('.0', '')}%`;
 }
 
+function rate(numerator, denominator) {
+  const top = Number(numerator || 0);
+  const bottom = Number(denominator || 0);
+  if (!bottom) return 0;
+  return Math.max(0, Math.min(100, (top / bottom) * 100));
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -40,6 +47,10 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: 0,
       engagedVisits: 0,
       highIntentEvents: 0,
+      calendlyBookings: 0,
+      calendlyCancellations: 0,
+      calendlyMatchedBookings: 0,
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
     };
   }
 
@@ -49,11 +60,25 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
   const createdAt = { $gte: start, $lt: endExclusive };
 
   try {
-    const [pageViews, engagedVisits, highIntentEvents] = await Promise.all([
+    const [
+      pageViews,
+      engagedVisits,
+      highIntentEvents,
+      calendlyBookings,
+      calendlyCancellations,
+      calendlyMatchedBookings,
+    ] = await Promise.all([
       model.countDocuments({ eventName: 'page_view', createdAt }),
       model.countDocuments({ eventName: 'commercial_engaged_visit', createdAt }),
       model.countDocuments({
         eventName: { $in: HIGH_INTENT_EVENT_NAMES },
+        createdAt,
+      }),
+      model.countDocuments({ eventName: 'calendly_booking_created', createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_canceled', createdAt }),
+      model.countDocuments({
+        eventName: 'calendly_booking_created',
+        'payload.matchedLead': true,
         createdAt,
       }),
     ]);
@@ -65,6 +90,10 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: Number(pageViews || 0),
       engagedVisits: Number(engagedVisits || 0),
       highIntentEvents: Number(highIntentEvents || 0),
+      calendlyBookings: Number(calendlyBookings || 0),
+      calendlyCancellations: Number(calendlyCancellations || 0),
+      calendlyMatchedBookings: Number(calendlyMatchedBookings || 0),
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
     };
   } catch (error) {
     return {
@@ -74,6 +103,10 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: 0,
       engagedVisits: 0,
       highIntentEvents: 0,
+      calendlyBookings: 0,
+      calendlyCancellations: 0,
+      calendlyMatchedBookings: 0,
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
       reason: error?.message || 'Internal commercial telemetry could not be read.',
     };
   }
@@ -591,6 +624,24 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ? 'server-side shadow count, not GA4 sessions'
           : 'internal telemetry unavailable'
       )}
+      ${metricCard(
+        'Confirmed Calendly bookings',
+        overview.internalTelemetry?.calendlyWebhookConfigured
+          ? number(overview.internalTelemetry?.calendlyBookings)
+          : 'Not active',
+        overview.internalTelemetry?.calendlyWebhookConfigured
+          ? `${number(overview.internalTelemetry?.calendlyMatchedBookings)} matched to captured leads`
+          : 'webhook signing key not configured'
+      )}
+      ${metricCard(
+        'Calendly cancellations',
+        overview.internalTelemetry?.calendlyWebhookConfigured
+          ? number(overview.internalTelemetry?.calendlyCancellations)
+          : 'Not active',
+        overview.internalTelemetry?.calendlyWebhookConfigured
+          ? 'signed Calendly cancellation events'
+          : 'webhook signing key not configured'
+      )}
     </div>
     <p style="font-size:12px;color:#64748b;line-height:1.6;">This shadow measurement is intentionally separate from GA4. If GA4 reports zero while SignalTrue records validated production page views, the problem is in the GA4 collection/reporting path. If both are zero while Search Console records clicks, the production browser measurement path needs investigation.</p>
 
@@ -726,6 +777,23 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ['Valid submissions', funnel.validSubmissions, funnel.rates?.formStartToSubmit],
           ['Confirmed leads', funnel.confirmedLeads, funnel.rates?.submitToConfirmed],
           ['Booking-link clicks', funnel.bookingLinkClicks, funnel.rates?.confirmedToBooking],
+          ...(overview.internalTelemetry?.calendlyWebhookConfigured
+            ? [
+                [
+                  'Confirmed Calendly bookings',
+                  overview.internalTelemetry?.calendlyBookings,
+                  rate(
+                    overview.internalTelemetry?.calendlyBookings,
+                    funnel.bookingLinkClicks
+                  ),
+                ],
+                [
+                  'Calendly cancellations',
+                  overview.internalTelemetry?.calendlyCancellations,
+                  null,
+                ],
+              ]
+            : []),
         ]
           .map(
             ([label, count, stageRate]) =>
@@ -767,7 +835,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${recommendations.map((item, index) => `<div style="padding:${index ? '14px 0 0' : '0'};margin-top:${index ? '14px' : '0'};border-top:${index ? '1px solid #e2e8f0' : '0'};"><strong>${index + 1}. ${item.priority}</strong><p style="margin:6px 0;color:#475569;">${item.evidence}</p><p style="margin:0;">${item.action}</p></div>`).join('')}
     </section>
 
-    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Confirmed Calendly bookings come from signed invitee.created webhooks, not booking-link clicks. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
   </div></body></html>`;
 }
 
