@@ -465,7 +465,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Blog
             </Link>
-  
+
             {/* Header */}
             <header className="mb-8">
               {/* Tags */}
@@ -482,12 +482,12 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                   ))}
                 </div>
               )}
-  
+
               {/* Title */}
               <h1 className="text-section sm:text-display lg:text-display font-display font-bold text-foreground mb-6">
                 {post.title}
               </h1>
-  
+
               {/* Meta */}
               <div className="flex flex-wrap items-center gap-4 text-caption text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -516,7 +516,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                 )}
               </div>
             </header>
-  
+
             {/* Featured Image */}
             {post.featuredImage?.url && (
               <figure className="mb-10">
@@ -534,7 +534,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                 )}
               </figure>
             )}
-  
+
             {/* Content */}
             <div
               className="prose prose-lg dark:prose-invert max-w-none
@@ -554,7 +554,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                 [&>p:first-of-type>img]:hidden"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
-  
+
             {/* Footer */}
             <footer className="mt-12 pt-8 border-t border-border">
               {/* Author Bio */}
@@ -579,7 +579,7 @@ const BlogPostView = ({ slug }: { slug: string }) => {
                   </div>
                 </div>
               )}
-  
+
               {/* CTA */}
               <div className="text-center">
                 <p className="text-muted-foreground mb-4">
