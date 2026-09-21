@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 /**
- * Navigation is ordered by the week's actual sequence — read what changed,
- * look into it, do something about it — rather than by feature area.
+ * Navigation is ordered by the week's actual sequence: read what changed,
+ * investigate it, review the control, then document the decision.
  *
  * Labels avoid near-duplicates: "Priority Signals" beside "All Signals", or
  * "Coverage" beside "Data Sources", asks the reader to work out a distinction
@@ -18,7 +18,8 @@ const links = [
     group: 'This week',
     roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
-  { to: '/app/signals', label: 'Signals', group: 'Act' },
+  { to: '/app/signals', label: 'Work-pattern evidence', group: 'Review' },
+  { to: '/app/control-reviews', label: 'Control reviews', group: 'Review', roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive', 'manager'] },
   { to: '/app/actions', label: 'Actions', group: 'Act' },
   {
     to: '/app/manager-coaching',
@@ -26,13 +27,7 @@ const links = [
     group: 'Act',
     roles: ['manager'],
   },
-  {
-    to: '/app/control-reviews',
-    label: 'Control reviews',
-    group: 'Act',
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive', 'manager'],
-  },
-  { to: '/app/active-monitoring', label: 'Risk feed', group: 'Explore' },
+  { to: '/app/active-monitoring', label: 'Pattern feed', group: 'Explore' },
   {
     to: '/app/work-network',
     label: 'Work Network',
@@ -214,9 +209,9 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Passive evidence, not employee scoring.</strong> SignalTrue uses team-level work
-            patterns; no surveys are required, and signals do not diagnose health or establish
-            cause.
+            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates observed work
+            patterns from interpretation. Worker consultation and human judgement remain part of the
+            review; the product does not diagnose health or establish cause.
             <Link to="/app/privacy">View data policy</Link>
           </div>
           {children}
