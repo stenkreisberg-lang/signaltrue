@@ -42,6 +42,23 @@ export const FUNNEL_EVENT_NAMES = [
   'checkout_started',
   'subscription_started',
 ];
+
+export const HIGH_INTENT_EVENT_NAMES = [
+  'sample_report_view',
+  'trust_overview_download',
+  'primary_cta_click',
+  'pricing_plan_click',
+  'lead_form_start',
+  'lead_submit_success',
+  'lead_confirmed',
+  'booking_link_click',
+  'diagnostic_completed',
+  'diagnostic_unlock_submit',
+  'diagnostic_lead_confirmed',
+  'drift_report_cta_click',
+  'checkout_started',
+  'subscription_started',
+];
 const QUALIFIED_LANDING_PATHS = new Set([
   '/psychosocial-risk-visibility-review',
   '/product',
@@ -119,6 +136,10 @@ function funnelFilter(eventName) {
   return buildCommercialReportFilter(
     eventName ? exactFilter('eventName', eventName) : inListFilter('eventName', FUNNEL_EVENT_NAMES)
   );
+}
+
+function highIntentFilter() {
+  return buildCommercialReportFilter(inListFilter('eventName', HIGH_INTENT_EVENT_NAMES));
 }
 
 export function isCommercialReportPath(path = '') {
@@ -203,15 +224,38 @@ export function normalizeAcquisition(source = '', medium = '') {
 
 export function normalizeAcquisitionRows(rows = []) {
   const grouped = new Map();
+  const optionalNumericFields = ['engagedSessions', 'engagementDuration', 'highIntentSessions'];
+
   for (const row of rows) {
     const pair = normalizeAcquisition(row.source, row.medium);
     const key = `${pair.source}\u0000${pair.medium}`;
     const current = grouped.get(key) || { ...pair, sessions: 0, activeUsers: 0 };
     current.sessions += Number(row.sessions || 0);
     current.activeUsers += Number(row.activeUsers || 0);
+
+    for (const field of optionalNumericFields) {
+      if (row[field] === undefined) continue;
+      current[field] = Number(current[field] || 0) + Number(row[field] || 0);
+    }
+
     grouped.set(key, current);
   }
-  return [...grouped.values()].sort((left, right) => right.sessions - left.sessions);
+
+  return [...grouped.values()]
+    .map((row) => {
+      const result = { ...row };
+      if (row.engagedSessions !== undefined) {
+        result.engagementRate = boundedShare(row.engagedSessions, row.sessions);
+        result.averageEngagementTime = rounded(
+          row.sessions ? Number(row.engagementDuration || 0) / row.sessions : 0
+        );
+      }
+      if (row.highIntentSessions !== undefined) {
+        result.highIntentRate = boundedShare(row.highIntentSessions, row.sessions);
+      }
+      return result;
+    })
+    .sort((left, right) => right.sessions - left.sessions);
 }
 
 function isoDate(value, fallback = new Date()) {
@@ -501,6 +545,7 @@ function metricsFromSummary(report) {
   return {
     activeUsers: getMetric(row, headers, 'activeUsers'),
     sessions,
+    engagedSessions: getMetric(row, headers, 'engagedSessions'),
     views: getMetric(row, headers, 'eventCount'),
     engagementRate: oneDecimalPercent(getMetric(row, headers, 'engagementRate')),
     averageEngagementTime: rounded(sessions ? engagementDuration / sessions : 0),
@@ -554,6 +599,7 @@ export async function getGa4Overview(options = {}) {
     metrics: [
       { name: 'activeUsers' },
       { name: 'sessions' },
+      { name: 'engagedSessions' },
       { name: 'eventCount' },
       { name: 'engagementRate' },
       { name: 'userEngagementDuration' },
@@ -570,6 +616,8 @@ export async function getGa4Overview(options = {}) {
     landingPages,
     daily,
     funnel,
+    highIntentSummary,
+    highIntentSourceMedium,
     ctaLocationResult,
     leadCtaLocationResult,
     formErrorResult,
@@ -593,7 +641,12 @@ export async function getGa4Overview(options = {}) {
     runReport(client, propertyId, {
       dateRanges,
       dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
-      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      metrics: [
+        { name: 'sessions' },
+        { name: 'activeUsers' },
+        { name: 'engagedSessions' },
+        { name: 'userEngagementDuration' },
+      ],
       dimensionFilter: commercialPageFilter(),
       orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
       limit: 1000,
@@ -609,7 +662,7 @@ export async function getGa4Overview(options = {}) {
     runReport(client, propertyId, {
       dateRanges,
       dimensions: [{ name: 'landingPagePlusQueryString' }],
-      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'engagedSessions' }],
       dimensionFilter: commercialPageFilter(),
       orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
       limit: 50,
@@ -628,6 +681,19 @@ export async function getGa4Overview(options = {}) {
       metrics: [{ name: 'eventCount' }],
       dimensionFilter: funnelFilter(),
       limit: 50,
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      dimensionFilter: highIntentFilter(),
+    }),
+    runReport(client, propertyId, {
+      dateRanges,
+      dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      dimensionFilter: highIntentFilter(),
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 1000,
     }),
     runOptionalReport(
       client,
@@ -766,8 +832,47 @@ export async function getGa4Overview(options = {}) {
       medium: getDimension(row, sourceMedium.dimensionHeaders || [], 'sessionMedium'),
       sessions: getMetric(row, sourceMedium.metricHeaders || [], 'sessions'),
       activeUsers: getMetric(row, sourceMedium.metricHeaders || [], 'activeUsers'),
+      engagedSessions: getMetric(row, sourceMedium.metricHeaders || [], 'engagedSessions'),
+      engagementDuration: getMetric(
+        row,
+        sourceMedium.metricHeaders || [],
+        'userEngagementDuration'
+      ),
     }))
   );
+
+  const highIntentSourceRows = normalizeAcquisitionRows(
+    (highIntentSourceMedium.rows || []).map((row) => ({
+      source: getDimension(row, highIntentSourceMedium.dimensionHeaders || [], 'sessionSource'),
+      medium: getDimension(row, highIntentSourceMedium.dimensionHeaders || [], 'sessionMedium'),
+      sessions: getMetric(row, highIntentSourceMedium.metricHeaders || [], 'sessions'),
+      activeUsers: getMetric(row, highIntentSourceMedium.metricHeaders || [], 'activeUsers'),
+    }))
+  );
+  const highIntentBySourceMedium = new Map(
+    highIntentSourceRows.map((row) => [`${row.source}\u0000${row.medium}`, row.sessions])
+  );
+  const sourceMediumQualityRows = sourceMediumRows.map((row) => {
+    const highIntentSessions =
+      highIntentBySourceMedium.get(`${row.source}\u0000${row.medium}`) || 0;
+    return {
+      ...row,
+      highIntentSessions,
+      highIntentRate: boundedShare(highIntentSessions, row.sessions),
+    };
+  });
+  const highIntentSummaryRow = highIntentSummary.rows?.[0] || {};
+  const highIntentSessions = getMetric(
+    highIntentSummaryRow,
+    highIntentSummary.metricHeaders || [],
+    'sessions'
+  );
+  const highIntentUsers = getMetric(
+    highIntentSummaryRow,
+    highIntentSummary.metricHeaders || [],
+    'activeUsers'
+  );
+
   const directSessions = sourceMediumRows
     .filter((row) => row.source === '(direct)' && row.medium === '(none)')
     .reduce((sum, row) => sum + row.sessions, 0);
@@ -783,6 +888,11 @@ export async function getGa4Overview(options = {}) {
       path: getDimension(row, landingPages.dimensionHeaders || [], 'landingPagePlusQueryString'),
       sessions: getMetric(row, landingPages.metricHeaders || [], 'sessions'),
       activeUsers: getMetric(row, landingPages.metricHeaders || [], 'activeUsers'),
+      engagedSessions: getMetric(row, landingPages.metricHeaders || [], 'engagedSessions'),
+      engagementRate: boundedShare(
+        getMetric(row, landingPages.metricHeaders || [], 'engagedSessions'),
+        getMetric(row, landingPages.metricHeaders || [], 'sessions')
+      ),
     }))
     .filter((row) => isCommercialReportPath(row.path));
   const qualifiedLandingPageSessions = landingRows
@@ -815,6 +925,7 @@ export async function getGa4Overview(options = {}) {
         pageViewAutomationStatus.state === CONFIGURATION_STATES.UNKNOWN
           ? null
           : pageViewAutomationStatus.state === CONFIGURATION_STATES.ACTIVE,
+      highIntentEvents: HIGH_INTENT_EVENT_NAMES,
       cleanReportingStartDate: rangeSelection.cleanStartDate,
       historicalComparisonAvailable: rangeSelection.comparisonAvailable,
       comparisonReason: rangeSelection.reason,
@@ -837,11 +948,14 @@ export async function getGa4Overview(options = {}) {
       ...summaryMetrics,
       organicSessions,
       qualifiedLandingPageSessions,
+      highIntentSessions,
+      highIntentUsers,
+      highIntentSessionShare: boundedShare(highIntentSessions, summaryMetrics.sessions),
       sampleReportClicks: eventCount('sample_report_click'),
       sampleReportViews: eventCount('sample_report_view'),
     },
     previousSummary: previousMetrics,
-    sourceMedium: sourceMediumRows,
+    sourceMedium: sourceMediumQualityRows,
     campaigns: (campaigns.rows || []).map((row) => ({
       campaign:
         getDimension(row, campaigns.dimensionHeaders || [], 'sessionCampaignName') || '(not set)',
