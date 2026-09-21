@@ -7,6 +7,7 @@ import {
   safeAnalyticsPath,
   sanitizeAnalyticsParams,
   shouldCollectAnalytics,
+  trackCommercialEngagedVisit,
 } from './analytics';
 
 describe('commercial analytics boundaries', () => {
@@ -129,5 +130,11 @@ describe('commercial analytics boundaries', () => {
     expect(sanitizeAnalyticsParams({ source: 'jane@example.com' })).toEqual({
       source: '[redacted]',
     });
+  });
+
+  test('records the stricter commercial engagement stage only once per session', () => {
+    expect(trackCommercialEngagedVisit('active_time')).toBe(true);
+    expect(trackCommercialEngagedVisit('multi_page')).toBe(false);
+    expect(window.sessionStorage.getItem('signaltrue:commercial-engaged:v1')).toBe('true');
   });
 });
