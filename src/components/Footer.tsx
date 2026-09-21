@@ -30,7 +30,7 @@ const footerLinks = {
     { label: 'Privacy policy', href: '/privacy' },
     { label: 'Responsible-use terms', href: '/terms' },
     { label: 'Australian AI governance', href: '/au/ai-governance' },
-    { label: 'WHS & ISO assurance', href: '/au/standards-assurance' },
+    { label: 'ISO 45003 alignment', href: '/au/standards-assurance' },
   ],
   Guides: [
     { label: 'SignalTrue Australia', href: '/au' },
