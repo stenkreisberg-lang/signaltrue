@@ -80,6 +80,7 @@ import integrationsRoutes from './routes/integrations.js';
 import billingRoutes from './routes/billing.js';
 import stripeWebhookRoutes from './routes/stripe-webhook.js';
 import emailWebhookRoutes from './routes/emailWebhook.js';
+import calendlyWebhookRoutes from './routes/calendlyWebhook.js';
 import briefResponseRoutes from './routes/briefResponse.js';
 import adminRoutes from './routes/adminRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
@@ -182,6 +183,7 @@ import { seedMasterAdmin } from './scripts/seed.js';
 import { scheduleWeeklyJob } from './services/weeklySchedulerService.js';
 import { scheduleIntegrationJobs } from './services/integrationSyncScheduler.js';
 import { pullAllConnectedOrgs } from './services/integrationPullService.js';
+import { syncCalendlyCommercialBookings } from './services/calendlyCommercialSyncService.js';
 import { purgeAllOrgs } from './services/retentionPurgeService.js';
 import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
@@ -281,6 +283,11 @@ async function main() {
     // Signature verification needs the exact bytes, so this is mounted raw
     // before the JSON parser too.
     app.use('/api/webhooks/email', express.raw({ type: 'application/json' }), emailWebhookRoutes);
+    app.use(
+      '/api/webhooks/calendly',
+      express.raw({ type: 'application/json' }),
+      calendlyWebhookRoutes
+    );
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
@@ -513,6 +520,23 @@ async function main() {
         }
       });
       console.log('⏰ Cron job scheduled: integration health monitor hourly');
+
+      if (process.env.CALENDLY_ACCESS_TOKEN) {
+        const runCalendlyCommercialSync = async () => {
+          try {
+            const result = await syncCalendlyCommercialBookings();
+            console.log(
+              `✅ Calendly commercial sync: ${result.eventsSeen} events, ${result.inviteesSeen} invitees, ${result.accepted} new conversion events`
+            );
+          } catch (err) {
+            console.error('❌ Calendly commercial sync failed:', err.message);
+          }
+        };
+
+        cron.schedule('17 * * * *', runCalendlyCommercialSync);
+        void runCalendlyCommercialSync();
+        console.log('⏰ Cron job scheduled: Calendly commercial conversion sync hourly');
+      }
 
       // Work Network action outcomes - daily after the first integration sync
       cron.schedule('20 6 * * *', async () => {

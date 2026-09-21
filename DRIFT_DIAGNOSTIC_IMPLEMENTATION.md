@@ -221,7 +221,7 @@ Required for email functionality:
 RESEND_API_KEY=your_resend_api_key
 EMAIL_FROM=SignalTrue <notifications@signaltrue.ai>
 FRONTEND_URL=https://signaltrue.ai
-CALENDAR_LINK=https://calendly.com/signaltrue/drift-review
+CALENDAR_LINK=https://calendly.com/sten-kreisberg-signaltrue/30min
 ```
 
 ## Next Steps

@@ -21,6 +21,15 @@ function percent(value) {
     .replace('.0', '')}%`;
 }
 
+function calendlySyncMode() {
+  const webhook = Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY);
+  const polling = Boolean(process.env.CALENDLY_ACCESS_TOKEN);
+  if (webhook && polling) return 'webhook + polling';
+  if (webhook) return 'webhook';
+  if (polling) return 'polling';
+  return 'inactive';
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -40,6 +49,13 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: 0,
       engagedVisits: 0,
       highIntentEvents: 0,
+      calendlyBookings: 0,
+      calendlyCancellations: 0,
+      calendlyReschedules: 0,
+      calendlyMatchedBookings: 0,
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
     };
   }
 
@@ -49,12 +65,28 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
   const createdAt = { $gte: start, $lt: endExclusive };
 
   try {
-    const [pageViews, engagedVisits, highIntentEvents] = await Promise.all([
+    const [
+      pageViews,
+      engagedVisits,
+      highIntentEvents,
+      calendlyBookings,
+      calendlyCancellations,
+      calendlyReschedules,
+      calendlyMatchedBookings,
+    ] = await Promise.all([
       model.countDocuments({ eventName: 'page_view', createdAt }),
       model.countDocuments({ eventName: 'commercial_engaged_visit', createdAt }),
       model.countDocuments({
         eventName: { $in: HIGH_INTENT_EVENT_NAMES },
         createdAt,
+      }),
+      model.countDocuments({ eventName: 'calendly_booking_created', occurredAt: createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_canceled', occurredAt: createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_rescheduled', occurredAt: createdAt }),
+      model.countDocuments({
+        eventName: 'calendly_booking_created',
+        'payload.matchedLead': true,
+        occurredAt: createdAt,
       }),
     ]);
 
@@ -65,6 +97,13 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: Number(pageViews || 0),
       engagedVisits: Number(engagedVisits || 0),
       highIntentEvents: Number(highIntentEvents || 0),
+      calendlyBookings: Number(calendlyBookings || 0),
+      calendlyCancellations: Number(calendlyCancellations || 0),
+      calendlyReschedules: Number(calendlyReschedules || 0),
+      calendlyMatchedBookings: Number(calendlyMatchedBookings || 0),
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
     };
   } catch (error) {
     return {
@@ -74,6 +113,13 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       pageViews: 0,
       engagedVisits: 0,
       highIntentEvents: 0,
+      calendlyBookings: 0,
+      calendlyCancellations: 0,
+      calendlyReschedules: 0,
+      calendlyMatchedBookings: 0,
+      calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
       reason: error?.message || 'Internal commercial telemetry could not be read.',
     };
   }
@@ -591,6 +637,33 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ? 'server-side shadow count, not GA4 sessions'
           : 'internal telemetry unavailable'
       )}
+      ${metricCard(
+        'Confirmed Calendly bookings',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? number(overview.internalTelemetry?.calendlyBookings)
+          : 'Not active',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? `${number(overview.internalTelemetry?.calendlyMatchedBookings)} matched to captured leads · ${overview.internalTelemetry?.calendlySyncMode || 'sync'}`
+          : 'Calendly conversion sync not configured'
+      )}
+      ${metricCard(
+        'Calendly cancellations',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? number(overview.internalTelemetry?.calendlyCancellations)
+          : 'Not active',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? 'true cancellations only; reschedules excluded'
+          : 'Calendly conversion sync not configured'
+      )}
+      ${metricCard(
+        'Calendly reschedules',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? number(overview.internalTelemetry?.calendlyReschedules)
+          : 'Not active',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? 'old slot replaced by a new booking'
+          : 'Calendly conversion sync not configured'
+      )}
     </div>
     <p style="font-size:12px;color:#64748b;line-height:1.6;">This shadow measurement is intentionally separate from GA4. If GA4 reports zero while SignalTrue records validated production page views, the problem is in the GA4 collection/reporting path. If both are zero while Search Console records clicks, the production browser measurement path needs investigation.</p>
 
@@ -726,6 +799,25 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ['Valid submissions', funnel.validSubmissions, funnel.rates?.formStartToSubmit],
           ['Confirmed leads', funnel.confirmedLeads, funnel.rates?.submitToConfirmed],
           ['Booking-link clicks', funnel.bookingLinkClicks, funnel.rates?.confirmedToBooking],
+          ...(overview.internalTelemetry?.calendlySyncConfigured
+            ? [
+                [
+                  'Confirmed Calendly bookings',
+                  overview.internalTelemetry?.calendlyBookings,
+                  null,
+                ],
+                [
+                  'Calendly cancellations',
+                  overview.internalTelemetry?.calendlyCancellations,
+                  null,
+                ],
+                [
+                  'Calendly reschedules',
+                  overview.internalTelemetry?.calendlyReschedules,
+                  null,
+                ],
+              ]
+            : []),
         ]
           .map(
             ([label, count, stageRate]) =>
@@ -767,7 +859,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${recommendations.map((item, index) => `<div style="padding:${index ? '14px 0 0' : '0'};margin-top:${index ? '14px' : '0'};border-top:${index ? '1px solid #e2e8f0' : '0'};"><strong>${index + 1}. ${item.priority}</strong><p style="margin:6px 0;color:#475569;">${item.evidence}</p><p style="margin:0;">${item.action}</p></div>`).join('')}
     </section>
 
-    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Confirmed Calendly bookings come from verified Calendly invitee records via signed webhooks or API polling, not booking-link clicks. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
   </div></body></html>`;
 }
 

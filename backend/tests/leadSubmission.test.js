@@ -3,7 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
-import leadsRoutes, { sendLeadEmails } from '../routes/leads.js';
+import leadsRoutes, { buildTrackedCalendarLink, sendLeadEmails } from '../routes/leads.js';
 import Lead from '../models/lead.js';
 
 let mongoServer;
@@ -49,6 +49,12 @@ describe('lead submission API', () => {
       confirmed: true,
       internalNotificationSent: false,
     });
+    const calendarUrl = new URL(response.body.calendarLink);
+    expect(calendarUrl.hostname).toBe('calendly.com');
+    expect(calendarUrl.searchParams.get('utm_source')).toBe('signaltrue');
+    expect(calendarUrl.searchParams.get('utm_medium')).toBe('website');
+    expect(calendarUrl.searchParams.get('utm_campaign')).toBe('lead_confirmation');
+    expect(calendarUrl.searchParams.get('utm_content')).toBe(`stlead_${response.body.leadId}`);
     const stored = await Lead.findById(response.body.leadId).lean();
     expect(stored).toMatchObject({
       name: 'Jane Smith',
@@ -87,6 +93,19 @@ describe('lead submission API', () => {
       .send({ ...validLead, submissionId: 'spam-test', website: 'https://spam.example' })
       .expect(400);
     expect(await Lead.countDocuments({ submissionId: 'spam-test' })).toBe(0);
+  });
+
+  test('builds an opaque attributed booking link without putting contact data in the URL', () => {
+    const link = buildTrackedCalendarLink(
+      { _id: '66aabbccddeeff0011223344', email: 'jane@example.com' },
+      { medium: 'email', campaign: 'lead_confirmation_email' }
+    );
+    expect(link).toContain('utm_source=signaltrue');
+    expect(link).toContain('utm_medium=email');
+    expect(link).toContain('utm_campaign=lead_confirmation_email');
+    expect(link).toContain('utm_content=stlead_66aabbccddeeff0011223344');
+    expect(link).not.toContain('jane%40example.com');
+    expect(link).not.toContain('jane@example.com');
   });
 
   test('sends the internal notification and visitor confirmation through the email provider', async () => {

@@ -490,7 +490,7 @@ const DriftReportPage = () => {
                   this stage.
                 </p>
                 <a
-                  href="https://calendly.com/signaltrue/drift-review"
+                  href="https://calendly.com/sten-kreisberg-signaltrue/30min?utm_source=signaltrue&utm_medium=website&utm_campaign=drift_report"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
