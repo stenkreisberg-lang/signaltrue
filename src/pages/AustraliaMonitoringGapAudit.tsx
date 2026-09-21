@@ -6,9 +6,9 @@ import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 
 type AuditCategory =
-  | 'Established monitoring practice'
-  | 'Developing monitoring practice'
-  | 'Limited monitoring visibility';
+  | 'Strong control-review foundation'
+  | 'Control-review evidence gap'
+  | 'Build the review process first';
 
 interface AuditOption {
   label: string;
@@ -82,18 +82,18 @@ const questions: AuditQuestion[] = [
 ];
 
 export function calculateAuditResult(score: number): AuditCategory {
-  if (score >= 9) return 'Established monitoring practice';
-  if (score >= 5) return 'Developing monitoring practice';
-  return 'Limited monitoring visibility';
+  if (score >= 9) return 'Strong control-review foundation';
+  if (score >= 5) return 'Control-review evidence gap';
+  return 'Build the review process first';
 }
 
 const resultCopy: Record<AuditCategory, string> = {
-  'Established monitoring practice':
-    'Your organisation appears to have a structured foundation. The next question is whether continuous team-level work-pattern evidence would improve the timing or quality of control reviews.',
-  'Developing monitoring practice':
-    'Some important practices exist, but evidence, ownership or review cadence may be inconsistent. A focused pilot can test one gap without replacing your existing assessment and consultation process.',
-  'Limited monitoring visibility':
-    'Your organisation may have limited structured visibility between formal assessments. Start by clarifying purpose, consultation, governance and the controls that need review before introducing new monitoring.',
+  'Strong control-review foundation':
+    'You already have the governance SignalTrue needs. The useful test is narrow: choose one implemented control and see whether aggregated work-pattern evidence adds something your existing review process cannot see quickly or consistently.',
+  'Control-review evidence gap':
+    'You have parts of the process, but the chain from control → expected work change → evidence → worker validation → decision is inconsistent. This is the strongest pilot fit because SignalTrue can be tested against one real control without replacing your WHS process.',
+  'Build the review process first':
+    'Do not add another monitoring tool yet. First establish control ownership, review triggers and worker consultation. SignalTrue becomes useful only when there is a defined control and a real decision its evidence can support.',
 };
 
 export default function AustraliaMonitoringGapAudit() {
@@ -127,8 +127,8 @@ export default function AustraliaMonitoringGapAudit() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="Monitoring Gap Audit Australia | SignalTrue"
-        description="Assess how your organisation monitors and reviews psychosocial controls between formal assessments. The result is a practice diagnostic, not a compliance conclusion."
+        title="Psychosocial Control Review Readiness | SignalTrue Australia"
+        description="Six questions to test whether your organisation can review one psychosocial control from implementation through evidence, worker validation and a maintain, modify or replace decision."
         path="/au/monitoring-gap-audit"
         lang="en-AU"
       />
@@ -141,7 +141,7 @@ export default function AustraliaMonitoringGapAudit() {
               Australian diagnostic
             </p>
             <h1 className="mt-3 text-display font-bold text-[#0F172A] sm:text-display">
-              Where is the gap between assessments?
+              Can you show whether one psychosocial control actually worked?
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-body leading-8 text-[#475569]">
               Six questions about control records, review cadence, evidence and worker consultation.
@@ -206,7 +206,7 @@ export default function AustraliaMonitoringGapAudit() {
                   type="submit"
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                 >
-                  View my monitoring result <ArrowRight className="h-5 w-5" />
+                  Show my control-review gap <ArrowRight className="h-5 w-5" />
                 </button>
               </form>
             ) : (
@@ -240,9 +240,9 @@ export default function AustraliaMonitoringGapAudit() {
                     ctaLocation="au_monitoring_gap_result"
                     source="Australia monitoring gap audit"
                     tag={`au-monitoring-gap-${category.toLowerCase().split(' ').join('-')}`}
-                    heading="Discuss the result with SignalTrue"
-                    intro="If the result identifies a useful gap, tell us who should join a short pilot-readiness conversation. We normally reply within one Australian business day."
-                    submitLabel="Discuss the Monitoring Gap Audit"
+                    heading="Bring one control. We will map the evidence gap."
+                    intro="Tell us one psychosocial control you have already implemented and who owns its review. We will use the conversation to map the expected work change, available evidence, worker-validation step and the decision the review needs to support."
+                    submitLabel="Review one control with SignalTrue"
                   />
                 </section>
               </div>
