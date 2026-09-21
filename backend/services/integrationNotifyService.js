@@ -3,6 +3,29 @@ import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import { claimNotification, completeNotificationClaim } from './notificationClaimService.js';
+import { classifyUserDirectoryRecord } from '../utils/employeeIdentity.js';
+import { normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
+
+export function isValidatedEmployeeRecord(user, orgDomain = null) {
+  if (!user || user.isMasterAdmin === true || user.accountStatus === 'inactive') return false;
+  const classification = classifyUserDirectoryRecord(user);
+  if (!classification.ok) return false;
+  if (orgDomain && normalizeWorkEmailDomain(user.email) !== orgDomain) return false;
+  return true;
+}
+
+export async function countValidatedEmployees(org) {
+  const orgDomain = String(org?.domain || '').toLowerCase().replace(/^@/, '').trim() || null;
+  const users = await User.find({
+    orgId: org._id,
+    accountStatus: { $ne: 'inactive' },
+    isMasterAdmin: { $ne: true },
+  })
+    .select('email name firstName lastName source profile role accountStatus isMasterAdmin')
+    .lean();
+
+  return users.filter((user) => isValidatedEmployeeRecord(user, orgDomain)).length;
+}
 
 /**
  * Notify HR admins when integrations are complete
@@ -76,8 +99,9 @@ export async function notifyHRIntegrationsComplete(orgId) {
 
     console.log('[IntegrationNotify] Sending notification to', hrAdmins.length, 'HR admins');
 
-    // Count synced employees
-    const employeeCount = await User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } });
+    // Count validated employees only. Raw directory/user records can include
+    // shared mailboxes, resource accounts, service identities and external IT admins.
+    const employeeCount = await countValidatedEmployees(org);
 
     // Send email via Resend
     const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -115,7 +139,7 @@ export async function notifyHRIntegrationsComplete(orgId) {
                     <ul style="margin: 0; padding-left: 20px; color: #374151;">
                       <li style="margin-bottom: 8px;"><strong>${slackConnected ? 'Slack' : teamsConnected ? 'Microsoft Teams' : 'Google Chat'}</strong> - Team communication connected</li>
                       <li style="margin-bottom: 8px;"><strong>${msOutlook ? 'Outlook Calendar' : 'Google Calendar'}</strong> - Meeting patterns connected</li>
-                      <li style="margin-bottom: 8px;"><strong>${employeeCount} team members</strong> synced and ready to assign</li>
+                      <li style="margin-bottom: 8px;"><strong>${employeeCount} validated employees</strong> synced and ready to assign</li>
                     </ul>
                   </div>
                   
