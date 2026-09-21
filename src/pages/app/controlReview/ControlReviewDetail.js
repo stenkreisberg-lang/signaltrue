@@ -19,8 +19,8 @@ import { getAuthenticatedContext } from '../../../utils/authContext';
 /**
  * One control review, end to end (spec §13–§20).
  *
- * The tabs follow the actual sequence — investigate, consult, control, verify,
- * decide, evidence — rather than grouping by data type, because that sequence
+ * The tabs follow the actual sequence ;  investigate, consult, control, verify,
+ * decide, evidence ;  rather than grouping by data type, because that sequence
  * is the product.
  */
 
@@ -158,6 +158,36 @@ export default function ControlReviewDetail() {
         </div>
 
         <aside className="cr-detail-side">
+          {data.completeness.methodology && (
+            <section className="app-panel">
+              <h2>Standards-informed method</h2>
+              <p className="app-muted">
+                One control-review method across markets. Local deployment requirements are handled
+                separately in the Trust pack.
+              </p>
+              <ul className="cr-completeness">
+                {data.completeness.methodology.stages.map((stage) => (
+                  <li key={stage.key} className={STATUS_CLASS[stage.status]}>
+                    <div className="cr-completeness-head">
+                      <span>{stage.label}</span>
+                      <em>{COMPLETENESS_STATUS_LABELS[stage.status] || stage.status}</em>
+                    </div>
+                    <p className="cr-meta">{stage.detail}</p>
+                  </li>
+                ))}
+              </ul>
+              <details className="cr-details">
+                <summary>Standards context</summary>
+                <ul className="cr-question-list">
+                  {data.completeness.methodology.standardsContext.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+                <p className="cr-disclaimer">{data.completeness.methodology.statement}</p>
+              </details>
+            </section>
+          )}
+
           <section className="app-panel">
             <h2>Review completeness</h2>
             <p className="app-muted">
@@ -279,7 +309,7 @@ function InvestigationTab({ data, meta, closed, busy, run }) {
         {data.observations.filter((o) => o.status === 'DEVIATION_OBSERVED').length === 0 ? (
           <p className="cr-empty">
             No persistent deviation from this team’s own baseline was recorded. A case can still
-            proceed — SignalTrue observation is one input, not a precondition.
+            proceed ;  SignalTrue observation is one input, not a precondition.
           </p>
         ) : (
           <table className="cr-table">
@@ -475,7 +505,7 @@ function ConsultationTab({ data, closed, busy, run }) {
                 <p className="cr-meta">
                   Feedback back to workers:{' '}
                   {record.feedbackBackToWorkers?.provided
-                    ? `${formatDate(record.feedbackBackToWorkers.date)} — ${record.feedbackBackToWorkers.description}`
+                    ? `${formatDate(record.feedbackBackToWorkers.date)} ;  ${record.feedbackBackToWorkers.description}`
                     : 'not recorded'}
                 </p>
                 {!record.feedbackBackToWorkers?.provided && !closed && (
@@ -715,7 +745,7 @@ function ControlTab({ data, closed, busy, run }) {
 
             <div className="cr-expected-block">
               <span className="cr-meta">
-                Expected effects, recorded {formatDate(intervention.expectedEffectsRecordedAt)} —
+                Expected effects, recorded {formatDate(intervention.expectedEffectsRecordedAt)} ; 
                 before the post-period comparison
               </span>
               <ul>
@@ -727,7 +757,7 @@ function ControlTab({ data, closed, busy, run }) {
                       : effect.direction === 'DECREASE'
                         ? '↓'
                         : '→'}
-                    {effect.rationale && <em> — {effect.rationale}</em>}
+                    {effect.rationale && <em> ;  {effect.rationale}</em>}
                   </li>
                 ))}
               </ul>
@@ -912,12 +942,12 @@ function VerificationTab({ data, busy, run }) {
                   <td>{formatPercent(evaluation.relativeChange)}</td>
                   <td>
                     {evaluation.expectedDirection === 'NOT_SPECIFIED'
-                      ? '—'
+                      ? '; '
                       : evaluation.expectedDirection.toLowerCase()}
                   </td>
                   <td>
                     {evaluation.directionMatched === null
-                      ? '—'
+                      ? '; '
                       : evaluation.directionMatched
                         ? 'yes'
                         : 'no'}
@@ -926,7 +956,7 @@ function VerificationTab({ data, busy, run }) {
                     {evaluation.reboundDetected
                       ? 'not sustained'
                       : evaluation.sustained === null
-                        ? '—'
+                        ? '; '
                         : 'held'}
                   </td>
                 </tr>
@@ -1081,15 +1111,15 @@ function DecisionTab({ data, closed, busy, run }) {
       {data.completeness.outstanding.length > 0 && (
         <div className="cr-alert cr-alert-info">
           Outstanding review components: {data.completeness.outstanding.join(', ')}. You may still
-          record a decision — completeness is information, not a gate.
+          record a decision ;  completeness is information, not a gate.
         </div>
       )}
 
       <label className="cr-field">
         <span>Decision</span>
         <select value={form.status} onChange={(e) => update({ status: e.target.value })}>
-          <option value="DECISION_REQUIRED">Keep open — decision still required</option>
-          <option value="MONITORING">Keep open — continue monitoring</option>
+          <option value="DECISION_REQUIRED">Keep open ;  decision still required</option>
+          <option value="MONITORING">Keep open ;  continue monitoring</option>
           {CLOSURE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -1174,7 +1204,7 @@ function EvidenceTab({ data, busy, run }) {
       <h2>Review Evidence Pack</h2>
       <p className="app-muted">
         The full review record: trigger, investigation, consultation, control, verification,
-        migration check, decision and audit timeline — with its methodology and limitations. Every
+        migration check, decision and audit timeline ;  with its methodology and limitations. Every
         export is logged.
       </p>
 
