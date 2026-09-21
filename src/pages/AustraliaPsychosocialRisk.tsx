@@ -128,7 +128,7 @@ export default function AustraliaPsychosocialRisk() {
                 <p className="mt-5 leading-7 text-[#475569]">
                   Restructures, hiring constraints, project peaks, leadership changes and new
                   systems can alter working conditions between formal reviews. SignalTrue
-                  complements—not replaces—risk assessment and worker consultation.
+                  complements; not replaces; risk assessment and worker consultation.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
