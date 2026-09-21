@@ -6,10 +6,7 @@ import Lead from '../models/lead.js';
 const router = express.Router();
 const SIGNATURE_TOLERANCE_SECONDS = 180;
 const LEAD_TRACKING_PATTERN = /^stlead_([a-f\d]{24})$/i;
-const SUPPORTED_EVENTS = new Map([
-  ['invitee.created', 'calendly_booking_created'],
-  ['invitee.canceled', 'calendly_booking_canceled'],
-]);
+const SUPPORTED_EVENTS = new Set(['invitee.created', 'invitee.canceled']);
 
 function safeText(value, maxLength = 512) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -81,18 +78,25 @@ export async function processCalendlyWebhookEvent(
   { AnalyticsModel = Analytics, LeadModel = Lead, now = new Date() } = {}
 ) {
   const eventName = safeText(body?.event, 64);
-  const analyticsEvent = SUPPORTED_EVENTS.get(eventName);
-  if (!analyticsEvent) return { ignored: true, reason: 'unsupported_event' };
+  if (!SUPPORTED_EVENTS.has(eventName)) {
+    return { ignored: true, reason: 'unsupported_event' };
+  }
+
+  const rescheduled = eventName === 'invitee.canceled' && Boolean(body?.payload?.rescheduled);
+  const analyticsEvent =
+    eventName === 'invitee.created'
+      ? 'calendly_booking_created'
+      : rescheduled
+        ? 'calendly_booking_rescheduled'
+        : 'calendly_booking_canceled';
 
   const payload = body?.payload && typeof body.payload === 'object' ? body.payload : {};
   const inviteeUri = safeText(payload.uri, 1024);
   const eventUri = safeText(payload.event, 1024);
   if (!inviteeUri || !eventUri) return { ignored: true, reason: 'missing_resource_uri' };
 
-  const duplicate = await AnalyticsModel.findOne({
-    eventName: analyticsEvent,
-    'payload.inviteeUri': inviteeUri,
-  });
+  const dedupeKey = `calendly:${analyticsEvent}:${inviteeUri}`;
+  const duplicate = await AnalyticsModel.findOne({ dedupeKey });
   if (duplicate) return { duplicate: true, analyticsEvent };
 
   const { lead, matchedBy } = await findLeadForInvitee(payload, LeadModel, now);
@@ -105,7 +109,7 @@ export async function processCalendlyWebhookEvent(
   const effectiveAt = Number.isNaN(createdAt.getTime()) ? now : createdAt;
   const status = eventName === 'invitee.created' ? 'scheduled' : 'canceled';
 
-  if (lead) {
+  if (lead && !rescheduled) {
     lead.calendly = {
       eventUri,
       inviteeUri,
@@ -113,17 +117,22 @@ export async function processCalendlyWebhookEvent(
       bookedAt:
         status === 'scheduled' ? effectiveAt : lead.calendly?.bookedAt || undefined,
       canceledAt: status === 'canceled' ? effectiveAt : undefined,
-      rescheduled: Boolean(payload.rescheduled),
+      rescheduled,
       utmSource: trackedValue(payload, 'utm_source'),
       utmMedium: trackedValue(payload, 'utm_medium'),
       utmCampaign: trackedValue(payload, 'utm_campaign'),
       matchedBy,
     };
     await lead.save();
+  } else if (lead && rescheduled && lead.calendly) {
+    lead.calendly.rescheduled = true;
+    await lead.save();
   }
 
   const analytics = new AnalyticsModel({
     eventName: analyticsEvent,
+    occurredAt: effectiveAt,
+    dedupeKey,
     payload: {
       leadId: lead?._id ? String(lead._id) : null,
       matchedLead: Boolean(lead),
@@ -138,7 +147,14 @@ export async function processCalendlyWebhookEvent(
       source: 'calendly_webhook',
     },
   });
-  await analytics.save();
+  try {
+    await analytics.save();
+  } catch (error) {
+    if (error?.code === 11000) {
+      return { duplicate: true, analyticsEvent };
+    }
+    throw error;
+  }
 
   return {
     accepted: true,
