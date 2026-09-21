@@ -96,6 +96,11 @@ export async function processCalendlyWebhookEvent(
   if (duplicate) return { duplicate: true, analyticsEvent };
 
   const { lead, matchedBy } = await findLeadForInvitee(payload, LeadModel, now);
+  const signalTrueTracked = trackedValue(payload, 'utm_source') === 'signaltrue';
+  if (!lead && !signalTrueTracked) {
+    return { ignored: true, reason: 'unattributed_booking' };
+  }
+
   const createdAt = body?.created_at ? new Date(body.created_at) : now;
   const effectiveAt = Number.isNaN(createdAt.getTime()) ? now : createdAt;
   const status = eventName === 'invitee.created' ? 'scheduled' : 'canceled';
