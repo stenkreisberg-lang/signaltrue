@@ -22,9 +22,9 @@ interface InformationPage {
 const pages: Record<string, InformationPage> = {
   '/au/psychosocial-risk-monitoring': {
     eyebrow: 'Category overview',
-    title: 'Continuous work-pattern evidence between psychosocial risk assessments.',
+    title: 'Evidence for reviewing whether a psychosocial control changed the work.',
     description:
-      'SignalTrue observes material, persistent changes in aggregated team work patterns so WHS and operational leaders know where further investigation may be useful.',
+      'SignalTrue compares relevant aggregated team work patterns around an implemented control so WHS and operational leaders can investigate whether the intended work change appeared, persisted or migrated elsewhere.',
     sections: [
       {
         title: 'What is observed',
@@ -38,7 +38,7 @@ const pages: Record<string, InformationPage> = {
       },
       {
         title: 'How evidence is used',
-        copy: 'An observation should be investigated with workers and relevant operational evidence. It can then be linked to a documented control and reviewed against subsequent work-pattern data.',
+        copy: 'Start with the control and its intended work change. Compare the relevant work pattern before and after implementation, check whether pressure migrated elsewhere, then validate the observation with workers and relevant operational evidence before deciding whether to maintain, modify or investigate the control further.',
       },
       {
         title: 'What it does not replace',
