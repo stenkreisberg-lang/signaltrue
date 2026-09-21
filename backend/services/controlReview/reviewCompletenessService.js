@@ -242,14 +242,77 @@ export async function assessCompleteness({ tenantId, caseId }) {
 
   const outstanding = components.filter((c) => c.status === STATUS.PENDING || c.status === STATUS.PARTIAL);
 
+  const methodology = buildMethodologyView({ components, caseDoc });
+
   return {
     caseId: String(caseDoc._id),
     caseNumber: caseDoc.caseNumber,
     components,
     outstanding: outstanding.map((c) => c.label),
+    methodology,
     // Deliberately not a score, a percentage or a verdict.
     note: 'SignalTrue reports which review components are recorded. Whether the evidence is sufficient is the organisation’s judgement.',
     mixedEvidence: assessMixedEvidence({ evaluations, consultations: followUps.length ? followUps : consultations }),
+  };
+}
+
+
+function buildMethodologyView({ components, caseDoc }) {
+  const byKey = new Map(components.map((item) => [item.key, item]));
+  const statusFor = (...keys) => {
+    const states = keys.map((key) => byKey.get(key)?.status).filter(Boolean);
+    if (!states.length) return STATUS.PENDING;
+    if (states.every((state) => state === STATUS.COMPLETE || state === STATUS.NOT_APPLICABLE)) return STATUS.COMPLETE;
+    if (states.some((state) => state === STATUS.COMPLETE || state === STATUS.PARTIAL || state === STATUS.NOT_APPLICABLE)) return STATUS.PARTIAL;
+    if (states.every((state) => state === STATUS.UNAVAILABLE)) return STATUS.UNAVAILABLE;
+    return STATUS.PENDING;
+  };
+
+  const stages = [
+    {
+      key: 'define',
+      label: 'Define the review',
+      status: statusFor('trigger', 'intervention', 'expectedEffects'),
+      detail: 'Source, control and intended effects are recorded before interpreting the outcome.',
+    },
+    {
+      key: 'observe',
+      label: 'Observe what changed',
+      status: statusFor('workPatternEvidence', 'postPeriodData'),
+      detail: 'Qualified team-level work-pattern evidence is compared before and after implementation.',
+    },
+    {
+      key: 'interpret',
+      label: 'Interpret in context',
+      status: statusFor('context', 'sustainability', 'migrationCheck'),
+      detail: 'Context, persistence and possible workload migration are kept visible alongside the comparison.',
+    },
+    {
+      key: 'validate',
+      label: 'Validate with people',
+      status: statusFor('consultation', 'workerFollowUp', 'feedbackToWorkers'),
+      detail: 'Worker views and follow-up remain separate evidence and are not collapsed into a software score.',
+    },
+    {
+      key: 'decide',
+      label: 'Decide and review',
+      status: statusFor('organisationDecision'),
+      detail: caseDoc.nextReviewDate
+        ? 'A human decision and next review date are recorded.'
+        : 'The organisation records the decision and, where relevant, the next review date.',
+    },
+  ];
+
+  return {
+    name: 'SignalTrue control-review method',
+    standardsContext: [
+      'ISO 45003-informed psychosocial risk-management workflow',
+      'Designed to contribute evidence within an ISO 45001 OH&S management-system context',
+      'Worker consultation and human judgement remain organisational responsibilities',
+    ],
+    stages,
+    statement:
+      'This is a methodology-completeness view, not an ISO conformity score, certification result or legal-compliance assessment.',
   };
 }
 
