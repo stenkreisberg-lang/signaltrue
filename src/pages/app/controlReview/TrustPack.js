@@ -88,6 +88,20 @@ export default function TrustPack() {
       {error && <div className="cr-alert cr-alert-error">{error}</div>}
       {notice && <div className="cr-alert cr-alert-ok">{notice}</div>}
 
+      <section className="app-panel">
+        <h2>Method and local context</h2>
+        <p className="app-muted">
+          SignalTrue uses one control-review method across markets: define the control, observe,
+          interpret, validate with people, then record the review decision. The deployment pack
+          below adds local privacy, employment, consultation and health and safety checkpoints.
+        </p>
+        <ul className="cr-plain-list">
+          <li><strong>ISO 45003-informed:</strong> psychosocial risk, participation, controls, monitoring, review and continual improvement inform the workflow.</li>
+          <li><strong>ISO 45001 context:</strong> SignalTrue contributes evidence to the organisation's OH&amp;S management process rather than replacing it.</li>
+          <li><strong>Not certification:</strong> the product does not grade ISO conformity or claim that deployment establishes legal compliance.</li>
+        </ul>
+      </section>
+
       <div className="cr-trust-status app-panel">
         <div>
           <h2>
@@ -96,7 +110,7 @@ export default function TrustPack() {
           <p className="app-muted">
             {pack.connectorsActivated
               ? `Switched on ${formatDate(pack.acknowledgedAt)}. Data collection is running under the settings below.`
-              : 'Nothing is collected until you switch this on. The checklist below is preparation material — it does not block you.'}
+              : 'Nothing is collected until you switch this on. The checklist below is preparation material ;  it does not block you.'}
           </p>
           {pack.outstanding.length > 0 && (
             <p className="cr-meta">Not yet ticked: {pack.outstanding.join(', ')}</p>
@@ -127,7 +141,7 @@ export default function TrustPack() {
         <h2>Deployment checklist</h2>
         <p className="app-muted">
           Preparation material, not a gate. Tick what applies, skip what your organisation already
-          handles its own way — none of it blocks activation.
+          handles its own way ;  none of it blocks activation.
         </p>
         <ul className="cr-checklist">
           {pack.checklist.map((item) => (
@@ -228,7 +242,7 @@ export default function TrustPack() {
       <section className="app-panel">
         <h2>Where does this organisation operate?</h2>
         <p className="app-muted">
-          The review process itself is the same everywhere. Only the deployment checkpoints change —
+          The review process itself is the same everywhere. Only the deployment checkpoints change ; 
           what you must tell workers, who you must consult, and whose guidance to check against.
         </p>
 
@@ -259,7 +273,7 @@ export default function TrustPack() {
             ))}
           </select>
           <em className="cr-hint">
-            Not listed? Leave it on “No specific jurisdiction configured” — you still get the
+            Not listed? Leave it on “No specific jurisdiction configured” ;  you still get the
             universal checklist below.
           </em>
         </label>
@@ -279,7 +293,7 @@ export default function TrustPack() {
         <ul className="cr-plain-list">
           {pack.jurisdictionCheckpoints.map((entry, index) => (
             <li key={index}>
-              <strong>{entry.jurisdiction}</strong> — {entry.checkpoint}
+              <strong>{entry.jurisdiction}</strong> ;  {entry.checkpoint}
             </li>
           ))}
         </ul>
