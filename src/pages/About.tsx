@@ -27,7 +27,7 @@ const beliefs = [
   },
   {
     icon: Shield,
-    title: 'Continuous evidence closes the monitoring gap.',
+    title: 'Control-review evidence closes the gap between action and review.',
     description:
       'SignalTrue does not require surveys or interviews to observe changing work conditions. Existing organisational processes can add context when needed.',
   },
@@ -101,7 +101,7 @@ const About = () => {
                 <p>Absence, incidents and turnover show outcomes that require investigation.</p>
                 <p>Operational dashboards show whether delivery has already been affected.</p>
                 <p>
-                  All are useful. SignalTrue adds earlier, continuous evidence about changing work
+                  All are useful. SignalTrue adds team-level work-pattern evidence that can be compared before and after a control, helping teams review changing work
                   conditions.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
