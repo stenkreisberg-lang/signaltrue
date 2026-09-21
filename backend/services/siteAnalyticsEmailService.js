@@ -28,6 +28,15 @@ function rate(numerator, denominator) {
   return Math.max(0, Math.min(100, (top / bottom) * 100));
 }
 
+function calendlySyncMode() {
+  const webhook = Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY);
+  const polling = Boolean(process.env.CALENDLY_ACCESS_TOKEN);
+  if (webhook && polling) return 'webhook + polling';
+  if (webhook) return 'webhook';
+  if (polling) return 'polling';
+  return 'inactive';
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -51,6 +60,8 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       calendlyCancellations: 0,
       calendlyMatchedBookings: 0,
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
     };
   }
 
@@ -94,6 +105,8 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       calendlyCancellations: Number(calendlyCancellations || 0),
       calendlyMatchedBookings: Number(calendlyMatchedBookings || 0),
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
     };
   } catch (error) {
     return {
@@ -107,6 +120,8 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       calendlyCancellations: 0,
       calendlyMatchedBookings: 0,
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
+      calendlySyncConfigured: calendlySyncMode() !== 'inactive',
+      calendlySyncMode: calendlySyncMode(),
       reason: error?.message || 'Internal commercial telemetry could not be read.',
     };
   }
@@ -626,21 +641,21 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       )}
       ${metricCard(
         'Confirmed Calendly bookings',
-        overview.internalTelemetry?.calendlyWebhookConfigured
+        overview.internalTelemetry?.calendlySyncConfigured
           ? number(overview.internalTelemetry?.calendlyBookings)
           : 'Not active',
-        overview.internalTelemetry?.calendlyWebhookConfigured
-          ? `${number(overview.internalTelemetry?.calendlyMatchedBookings)} matched to captured leads`
-          : 'webhook signing key not configured'
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? `${number(overview.internalTelemetry?.calendlyMatchedBookings)} matched to captured leads · ${overview.internalTelemetry?.calendlySyncMode || 'sync'}`
+          : 'Calendly conversion sync not configured'
       )}
       ${metricCard(
         'Calendly cancellations',
-        overview.internalTelemetry?.calendlyWebhookConfigured
+        overview.internalTelemetry?.calendlySyncConfigured
           ? number(overview.internalTelemetry?.calendlyCancellations)
           : 'Not active',
-        overview.internalTelemetry?.calendlyWebhookConfigured
+        overview.internalTelemetry?.calendlySyncConfigured
           ? 'signed Calendly cancellation events'
-          : 'webhook signing key not configured'
+          : 'Calendly conversion sync not configured'
       )}
     </div>
     <p style="font-size:12px;color:#64748b;line-height:1.6;">This shadow measurement is intentionally separate from GA4. If GA4 reports zero while SignalTrue records validated production page views, the problem is in the GA4 collection/reporting path. If both are zero while Search Console records clicks, the production browser measurement path needs investigation.</p>
@@ -777,7 +792,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ['Valid submissions', funnel.validSubmissions, funnel.rates?.formStartToSubmit],
           ['Confirmed leads', funnel.confirmedLeads, funnel.rates?.submitToConfirmed],
           ['Booking-link clicks', funnel.bookingLinkClicks, funnel.rates?.confirmedToBooking],
-          ...(overview.internalTelemetry?.calendlyWebhookConfigured
+          ...(overview.internalTelemetry?.calendlySyncConfigured
             ? [
                 [
                   'Confirmed Calendly bookings',
