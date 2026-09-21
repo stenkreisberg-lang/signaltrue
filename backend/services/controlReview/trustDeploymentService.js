@@ -3,7 +3,7 @@
  *
  * Deployment trust is a product requirement, not a legal-document afterthought.
  * A customer should be able to explain SignalTrue to workers *before*
- * activation — so connector activation is gated on the pack being acknowledged
+ * activation ;  so connector activation is gated on the pack being acknowledged
  * (§36.22), not merely available.
  *
  * The checklist itself is universal: notice, data-flow, metadata dictionary,
@@ -32,7 +32,7 @@ import {
   unreviewedJurisdictions,
 } from './jurisdictionPacks.js';
 
-// §21 — the deliverables a customer needs before workers are told about this.
+// §21 ;  the deliverables a customer needs before workers are told about this.
 export const TRUST_PACK_CHECKLIST = [
   {
     key: 'employee_explanation',
@@ -67,7 +67,7 @@ export const TRUST_PACK_CHECKLIST = [
     label: 'Worker representative consultation completed before deployment',
     required: true,
     guidance:
-      'Questions and process for consultation with workers and their representatives — HSR, works council, union or equivalent — before activation.',
+      'Questions and process for consultation with workers and their representatives ;  HSR, works council, union or equivalent ;  before activation.',
   },
   {
     key: 'surveillance_checklist',
@@ -108,7 +108,7 @@ export const TRUST_PACK_CHECKLIST = [
 // existing importers keep working.
 export { listJurisdictions, resolvePack };
 
-// §21 — the metadata dictionary, stating what is and is not ingested.
+// §21 ;  the metadata dictionary, stating what is and is not ingested.
 export const METADATA_DICTIONARY = [
   {
     connector: 'Calendar (Microsoft 365 / Google Workspace)',
@@ -231,6 +231,16 @@ export async function getTrustPack({ tenantId, actor = null }) {
     availableJurisdictions: listJurisdictions(),
     unrecognisedJurisdictions,
     awaitingCounselReview,
+    methodology: {
+      name: 'SignalTrue control-review method',
+      standardsContext: [
+        'ISO 45003-informed psychosocial risk-management workflow',
+        'Designed to contribute evidence within an ISO 45001 OH&S management-system context',
+        'Observation, interpretation, worker validation and organisational decision remain distinct steps',
+      ],
+      stages: ['Define the control', 'Observe', 'Interpret', 'Validate with people', 'Decide and review'],
+      statement: 'Methodology alignment is not ISO certification, regulator endorsement or a legal-compliance determination.',
+    },
     dataFlow: DATA_FLOW,
     metadataDictionary: METADATA_DICTIONARY,
     employeeExplanation: buildEmployeeExplanation(config),
@@ -249,7 +259,7 @@ function buildEmployeeExplanation(config) {
   return {
     whatItCollects: [
       'When meetings happen, how long they run and how many people attend.',
-      'When messages, emails and calls happen — counts and timing only.',
+      'When messages, emails and calls happen ;  counts and timing only.',
       'Your team, your reporting line and your working schedule.',
     ],
     whatItDoesNotCollect: [
@@ -260,7 +270,7 @@ function buildEmployeeExplanation(config) {
     whyItIsUsed:
       'To check whether an action the organisation took to reduce a psychosocial work risk actually changed how work happens, whether the change lasted, and whether the demand moved somewhere else.',
     whoCanSeeIt:
-      'Health and safety staff and named case owners see team-level patterns. No one — at any level — can see an individual’s figures, because the product does not produce them.',
+      'Health and safety staff and named case owners see team-level patterns. No one ;  at any level ;  can see an individual’s figures, because the product does not produce them.',
     minimumGroupRule: `Nothing is reported for a group smaller than ${config.minGroupSize} people. Below that threshold the output is suppressed or rolled up into a larger group.`,
     notUsedFor:
       'This data is not used for performance management, disciplinary processes or individual assessment.',
@@ -355,7 +365,7 @@ export async function updateConfiguration({ tenantId, actor, updates, req = null
  *
  * The pack is reference material, not a gate. Whether workers were informed is
  * the customer's duty as data controller, not something this platform can
- * verify — a checkbox saying "we told everyone" is a self-attestation, and
+ * verify ;  a checkbox saying "we told everyone" is a self-attestation, and
  * blocking on it would buy friction rather than assurance. The contract puts
  * that duty where it legally sits.
  *
