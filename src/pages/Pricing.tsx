@@ -25,10 +25,10 @@ import { trackFunnelEvent } from '../lib/analytics';
 // Pricing tiers per spec
 const tiers = [
   {
-    name: 'Team Signals',
+    name: 'Control Review',
     planKey: 'visibility',
-    outcome: 'Start with a structured workload scan, then continue with weekly team visibility.',
-    description: 'Best for Health & Safety teams running ongoing team-level risk reviews.',
+    outcome: 'Review one team or business unit with a repeatable evidence workflow.',
+    description: 'Best for Health & Safety teams that need to connect implemented controls to evidence and review decisions.',
     price: '€299',
     period: '/month',
     priceNote:
@@ -52,10 +52,10 @@ const tiers = [
     cta: 'Discuss Team Signals',
   },
   {
-    name: 'Leadership Signals',
+    name: 'Organisation Review',
     planKey: 'interpretation',
-    outcome: 'Organizational visibility across multiple teams.',
-    description: 'Best for executives and leadership teams who need cross-team insight.',
+    outcome: 'Extend the same control-review method across multiple teams and controls.',
+    description: 'Best for larger organisations that need comparable review evidence across teams without individual scoring.',
     price: '€499',
     period: '/month',
     priceNote:
@@ -122,8 +122,7 @@ const Pricing = () => {
                 <span className="text-brand">you need.</span>
               </h1>
               <p className="text-lead text-[#334155] max-w-2xl mx-auto mb-6">
-                Team Signals begins with a structured onboarding scan, then continues as weekly
-                team-level evidence. Leadership Signals adds a view across teams.
+                Choose the scope of the control-review system. Every plan keeps measured observations separate from interpretation, supports before-and-after review and preserves team-level privacy boundaries.
               </p>
               <p className="text-caption text-[#475569]">
                 All plans use metadata only. No message content. No individual productivity scores.
@@ -141,13 +140,10 @@ const Pricing = () => {
                   Who this is for
                 </p>
                 <h2 className="text-section font-display font-bold text-[#0F172A] mb-4">
-                  Best when health &amp; safety leaders have a concern that needs timely, objective
-                  investigation.
+                  Best when health &amp; safety leaders need to know whether an organisational control changed the work.
                 </h2>
                 <p className="text-[#475569]">
-                  SignalTrue is strongest for teams where meetings, management capacity, response
-                  pressure and recovery conditions are changing before they show up in surveys or
-                  turnover.
+                  SignalTrue is strongest when a control has an intended effect that can be tested against relevant team work patterns and then validated with workers and operational context.
                 </p>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -191,8 +187,8 @@ const Pricing = () => {
                 {[
                   'Connect metadata sources and define privacy boundaries.',
                   'Build team baselines for meetings, focus, response pressure, and recovery.',
-                  'Review the first qualified risk evidence with workers and managers.',
-                  'Assign one proportionate control and schedule its effectiveness review.',
+                  'Review the first qualified observation with workers and accountable managers.',
+                  'Record one implemented control, its intended effect and the review decision date.',
                 ].map((step, index) => (
                   <div
                     key={step}
