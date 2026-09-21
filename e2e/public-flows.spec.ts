@@ -63,7 +63,7 @@ test('verification-led homepage keeps its primary action above the mobile fold',
   await page.goto('/');
 
   const heading = page.getByRole('heading', {
-    name: 'You removed the meetings. Did the workload actually go away?',
+    name: 'You changed the work. Did the psychosocial risk control actually change the work?',
   });
   await expect(heading).toBeVisible();
   await expect(page.getByText(/migration when the demand simply moved/i)).toBeVisible();
