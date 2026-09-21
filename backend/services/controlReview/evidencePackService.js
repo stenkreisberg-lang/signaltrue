@@ -39,7 +39,7 @@ const RULE = '#E5E7EB';
 const ACCENT = '#1F3A5F';
 
 function fmtDate(date) {
-  if (!date) return '—';
+  if (!date) return '-';
   return new Date(date).toLocaleDateString('en-AU', {
     day: '2-digit',
     month: 'short',
@@ -48,7 +48,7 @@ function fmtDate(date) {
 }
 
 function fmtPct(value) {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
   const pct = Math.round(value * 100);
   return `${pct > 0 ? '+' : ''}${pct}%`;
 }
@@ -134,7 +134,7 @@ export async function assembleEvidence({ tenantId, caseId }) {
 }
 
 /**
- * Render the pack. Returns { buffer, snapshot } — the caller persists and
+ * Render the pack. Returns { buffer, snapshot } - the caller persists and
  * audits, so this function stays a pure renderer.
  */
 export async function renderEvidencePack({ tenantId, caseId }) {
@@ -212,7 +212,7 @@ function drawPdf(data) {
     // ── Cover ────────────────────────────────────────────────────────────────
     doc.fillColor(ACCENT).fontSize(22).text('Control Review Evidence Pack');
     doc.moveDown(0.3);
-    doc.fillColor(INK).fontSize(15).text(`${caseDoc.caseNumber} — ${caseDoc.title}`);
+    doc.fillColor(INK).fontSize(15).text(`${caseDoc.caseNumber} - ${caseDoc.title}`);
     doc.moveDown(0.2);
     doc
       .fillColor(MUTED)
@@ -220,7 +220,7 @@ function drawPdf(data) {
       .text(`Generated ${fmtDate(new Date())} · Algorithm version ${ALGORITHM_VERSION}`);
     doc.moveDown(1);
 
-    // §20.1 — required disclaimer, verbatim, before any finding.
+    // §20.1 - required disclaimer, verbatim, before any finding.
     boxedNote(doc, REQUIRED_DISCLAIMER);
     doc.moveDown(0.8);
 
@@ -230,9 +230,9 @@ function drawPdf(data) {
       ['Status', caseDoc.status.replace(/_/g, ' ')],
       ['Trigger type', caseDoc.trigger.type.replace(/_/g, ' ')],
       ['Trigger date', fmtDate(caseDoc.trigger.date)],
-      ['Trigger reference', caseDoc.trigger.reference || '—'],
-      ['Teams', data.teams.map((t) => t.name).join(', ') || '—'],
-      ['Case owner', data.owner?.name || data.owner?.email || '—'],
+      ['Trigger reference', caseDoc.trigger.reference || '-'],
+      ['Teams', data.teams.map((t) => t.name).join(', ') || '-'],
+      ['Case owner', data.owner?.name || data.owner?.email || '-'],
       ['Opened', fmtDate(caseDoc.openedAt)],
       ['Closed', fmtDate(caseDoc.closedAt)],
     ]);
@@ -243,7 +243,7 @@ function drawPdf(data) {
       for (const item of data.evidence) {
         bullet(
           doc,
-          `${item.sourceName}${item.sourceDate ? ` (${fmtDate(item.sourceDate)})` : ''} — ${
+          `${item.sourceName}${item.sourceDate ? ` (${fmtDate(item.sourceDate)})` : ''} - ${
             item.summary || 'No summary recorded.'
           }`
         );
@@ -262,7 +262,7 @@ function drawPdf(data) {
         ['Metric', 'Periods observed', 'Latest vs baseline', 'Largest change', 'Persist.'],
         summary.map((row) => [
           METRIC_LABELS[row.metric] || row.metric,
-          `${fmtDate(row.firstPeriod)} – ${fmtDate(row.lastPeriod)}`,
+          `${fmtDate(row.firstPeriod)} to ${fmtDate(row.lastPeriod)}`,
           `${fmtNumber(row.latestValue)} vs ${fmtNumber(row.baselineValue)}`,
           fmtPct(row.peakChange),
           `${row.maxPersistence}w`,
@@ -288,13 +288,13 @@ function drawPdf(data) {
     );
     keyValues(doc, [
       ['Baseline', 'Rolling 8 weeks, excluding the current week'],
-      ['Analysis period', `${fmtDate(data.analysisPeriod.start)} – ${fmtDate(data.analysisPeriod.end)}`],
+      ['Analysis period', `${fmtDate(data.analysisPeriod.start)} to ${fmtDate(data.analysisPeriod.end)}`],
       ['Algorithm version', ALGORITHM_VERSION],
       [
         'Metric units',
         (caseDoc.monitoredMetrics || [])
-          .map((m) => `${METRIC_LABELS[m] || m}: ${METRIC_UNITS[m] || '—'}`)
-          .join('; ') || '—',
+          .map((m) => `${METRIC_LABELS[m] || m}: ${METRIC_UNITS[m] || '-'}`)
+          .join('; ') || '-',
       ],
     ]);
 
@@ -305,7 +305,7 @@ function drawPdf(data) {
       for (const event of data.contextEvents) {
         bullet(
           doc,
-          `${event.name} (${event.eventType.replace(/_/g, ' ')}) — ${fmtDate(event.startDate)} to ${fmtDate(
+          `${event.name} (${event.eventType.replace(/_/g, ' ')}) - ${fmtDate(event.startDate)} to ${fmtDate(
             event.endDate
           )}. ${event.notes || ''}`
         );
@@ -315,10 +315,10 @@ function drawPdf(data) {
     section(doc, '6. Investigation record');
     const investigation = caseDoc.investigation || {};
     keyValues(doc, [
-      ['What is known', investigation.whatIsKnown || '—'],
-      ['What is uncertain', investigation.whatIsUncertain || '—'],
-      ['Why review is needed', investigation.whyReviewIsNeeded || '—'],
-      ['Open questions', (investigation.openQuestions || []).join('; ') || '—'],
+      ['What is known', investigation.whatIsKnown || '-'],
+      ['What is uncertain', investigation.whatIsUncertain || '-'],
+      ['Why review is needed', investigation.whyReviewIsNeeded || '-'],
+      ['Open questions', (investigation.openQuestions || []).join('; ') || '-'],
     ]);
 
     section(doc, '7. Worker consultation');
@@ -350,7 +350,7 @@ function drawPdf(data) {
           .text(
             `Feedback back to workers: ${
               record.feedbackBackToWorkers?.provided
-                ? `${fmtDate(record.feedbackBackToWorkers.date)} — ${record.feedbackBackToWorkers.description}`
+                ? `${fmtDate(record.feedbackBackToWorkers.date)} - ${record.feedbackBackToWorkers.description}`
                 : 'not recorded'
             }`
           );
@@ -365,7 +365,7 @@ function drawPdf(data) {
         keyValues(doc, [
           ['Control', intervention.name],
           ['Type', intervention.interventionType.replace(/_/g, ' ')],
-          ['Description', intervention.description || '—'],
+          ['Description', intervention.description || '-'],
           ['Implementation date', fmtDate(intervention.implementationDate)],
           ['Implementation confirmed', intervention.implementationConfirmed ? 'Yes' : 'No'],
           ['Status', intervention.status],
@@ -376,18 +376,18 @@ function drawPdf(data) {
     section(doc, '9. Expected effects recorded before review');
     for (const intervention of data.interventions) {
       doc.fillColor(MUTED).fontSize(9).text(
-        `Recorded ${fmtDate(intervention.expectedEffectsRecordedAt)} — before the post-period comparison.`
+        `Recorded ${fmtDate(intervention.expectedEffectsRecordedAt)} - before the post-period comparison.`
       );
       for (const effect of intervention.expectedEffects || []) {
         bullet(
           doc,
           `${METRIC_LABELS[effect.metric] || effect.metric}: expected to ${effect.direction.toLowerCase()}${
-            effect.rationale ? ` — ${effect.rationale}` : ''
+            effect.rationale ? ` - ${effect.rationale}` : ''
           }`
         );
       }
     }
-    if (data.interventions.length === 0) paragraph(doc, '—');
+    if (data.interventions.length === 0) paragraph(doc, '-');
 
     section(doc, '10. Before / after evidence');
     const comparable = data.evaluations.filter((e) => e.evaluationPossible);
@@ -402,8 +402,8 @@ function drawPdf(data) {
           fmtNumber(e.prePeriodValue),
           fmtNumber(e.postPeriodValue),
           fmtPct(e.relativeChange),
-          e.expectedDirection === 'NOT_SPECIFIED' ? '—' : e.expectedDirection.toLowerCase(),
-          e.directionMatched === null ? '—' : e.directionMatched ? 'yes' : 'no',
+          e.expectedDirection === 'NOT_SPECIFIED' ? '-' : e.expectedDirection.toLowerCase(),
+          e.directionMatched === null ? '-' : e.directionMatched ? 'yes' : 'no',
         ]),
         [150, 55, 55, 55, 70, 50]
       );
@@ -464,7 +464,7 @@ function drawPdf(data) {
       for (const record of followUps) {
         bullet(
           doc,
-          `${fmtDate(record.date)} — ${record.summary || 'Recorded.'} Worker-reported direction: ${record.workerReportedDirection.toLowerCase()}.`
+          `${fmtDate(record.date)} - ${record.summary || 'Recorded.'} Worker-reported direction: ${record.workerReportedDirection.toLowerCase()}.`
         );
       }
     }
@@ -484,24 +484,46 @@ function drawPdf(data) {
     } else {
       keyValues(doc, [
         ['Decision', caseDoc.organisationDecision],
-        ['Notes', caseDoc.decisionNotes || '—'],
+        ['Notes', caseDoc.decisionNotes || '-'],
         ['Recorded', fmtDate(caseDoc.decisionRecordedAt)],
         ['Next review', fmtDate(caseDoc.nextReviewDate)],
         ['Closure status', caseDoc.status.replace(/_/g, ' ')],
       ]);
     }
 
-    section(doc, '16. Review completeness');
+    section(doc, '16. Standards-informed methodology record');
+    paragraph(
+      doc,
+      data.completeness.methodology?.statement ||
+        'This view records methodology completeness. It is not an ISO conformity score, certification result or legal-compliance assessment.'
+    );
+    if (data.completeness.methodology?.standardsContext?.length) {
+      for (const line of data.completeness.methodology.standardsContext) bullet(doc, line);
+    }
+    if (data.completeness.methodology?.stages?.length) {
+      table(
+        doc,
+        ['Method stage', 'Status', 'What the stage records'],
+        data.completeness.methodology.stages.map((stage) => [
+          stage.label,
+          stage.status.replace(/_/g, ' '),
+          stage.detail,
+        ]),
+        [130, 75, 230]
+      );
+    }
+
+    section(doc, '17. Review completeness');
     table(
       doc,
       ['Component', 'Status', 'Detail'],
-      data.completeness.components.map((c) => [c.label, c.status.replace(/_/g, ' '), c.detail || '—']),
+      data.completeness.components.map((c) => [c.label, c.status.replace(/_/g, ' '), c.detail || '-']),
       [150, 80, 205]
     );
     doc.moveDown(0.4);
     doc.fillColor(MUTED).fontSize(8.5).text(data.completeness.note, { width: 460 });
 
-    section(doc, '17. Audit timeline');
+    section(doc, '18. Audit timeline');
     if (data.timeline.length === 0) {
       paragraph(doc, 'No audit events recorded.');
     } else {
@@ -619,7 +641,7 @@ function keyValues(doc, pairs) {
     if (doc.y > doc.page.height - 90) doc.addPage();
     const y = doc.y;
     doc.fillColor(MUTED).fontSize(9).text(key, LEFT, y, { width: 130 });
-    doc.fillColor(INK).fontSize(9.5).text(String(value ?? '—'), 185, y, { width: 360 });
+    doc.fillColor(INK).fontSize(9.5).text(String(value ?? '-'), 185, y, { width: 360 });
     doc.moveDown(0.25);
   }
   doc.moveDown(0.2);
@@ -653,7 +675,7 @@ function table(doc, headers, rows, widths) {
   doc.fillColor(INK).fontSize(9);
   for (const row of rows) {
     const heights = row.map((cell, i) =>
-      doc.heightOfString(String(cell ?? '—'), { width: widths[i] })
+      doc.heightOfString(String(cell ?? '-'), { width: widths[i] })
     );
     const rowHeight = Math.max(...heights, 12);
 
@@ -664,7 +686,7 @@ function table(doc, headers, rows, widths) {
 
     x = startX;
     row.forEach((cell, i) => {
-      doc.text(String(cell ?? '—'), x, y, { width: widths[i] });
+      doc.text(String(cell ?? '-'), x, y, { width: widths[i] });
       x += widths[i];
     });
     y += rowHeight + 5;
