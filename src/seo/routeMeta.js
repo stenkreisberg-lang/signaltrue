@@ -223,16 +223,16 @@ const ROUTE_META = {
       'Response pressure shows whether expected response intervals are shortening and urgent communication is rising, which can indicate that coordination requirements have changed.',
   },
   '/signals/coordination-overhead': {
-    title: 'Coordination Load Signal | SignalTrue',
+    title: 'Coordination Overhead: Meaning, Signs & What to Change | SignalTrue',
     description:
-      'See when teams spend more of their time aligning work than moving decisions forward.',
+      'Coordination overhead is time lost to handoffs, alignment loops and approvals. See how changing team work patterns can reveal rising coordination load.',
     summary:
-      'Coordination load shows whether handoffs, alignment loops and decision paths are growing. Persistent increases may warrant investigation into dependencies, decision processes and team structure.',
+      'Coordination overhead is the time and effort consumed by handoffs, alignment loops, approval paths and repeated coordination. SignalTrue shows whether these work patterns are changing against a team baseline so leaders can investigate the underlying process.',
   },
   '/signals/manager-load': {
-    title: 'Manager Coordination Load Signal | SignalTrue',
+    title: 'Manager Overload: Work-Pattern Signs & What to Review | SignalTrue',
     description:
-      'See where manager coordination patterns are changing — meeting density, decision demand and available uninterrupted calendar availability.',
+      'See changing manager workload through meeting density, decision demand and uninterrupted calendar availability, without individual productivity scoring.',
     summary:
       'Manager coordination load shows team-level changes in manager meeting density, coordination demand and focus-time availability. Persistent increases may warrant investigation into management capacity, spans of control, decision processes or team dependencies.',
   },

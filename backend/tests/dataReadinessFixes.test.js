@@ -10,6 +10,7 @@ import {
   classifyUserDirectoryRecord,
 } from '../utils/employeeIdentity.js';
 import { normalizeDepartmentName, resolveOrgWorkDomain } from '../services/employeeSyncService.js';
+import { isValidatedEmployeeRecord } from '../services/integrationNotifyService.js';
 import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {
   buildWorkEventUpsertOperations,
@@ -55,6 +56,59 @@ describe('organization identity setup', () => {
     expect(resolveOrgWorkDomain({ domain: '@tehnopol.ee' })).toBe('tehnopol.ee');
     expect(resolveOrgWorkDomain({})).toBeNull();
     expect(resolveOrgWorkDomain(null)).toBeNull();
+  });
+});
+
+describe('integration completion employee counting', () => {
+  test('counts real internal employees but rejects resource, external and inactive accounts', () => {
+    expect(
+      isValidatedEmployeeRecord(
+        {
+          email: 'agnes.roos@tehnopol.ee',
+          name: 'Agnes Roos',
+          source: 'microsoft',
+          accountStatus: 'pending',
+        },
+        'tehnopol.ee'
+      )
+    ).toBe(true);
+
+    expect(
+      isValidatedEmployeeRecord(
+        {
+          email: 'google.kalendar@tehnopol.ee',
+          name: 'Google Kalendar',
+          source: 'microsoft',
+          accountStatus: 'pending',
+        },
+        'tehnopol.ee'
+      )
+    ).toBe(false);
+
+    expect(
+      isValidatedEmployeeRecord(
+        {
+          email: 'mark.steinberg@csc.ee',
+          name: 'Mark Steinberg',
+          source: 'invitation',
+          accountStatus: 'active',
+          role: 'it_admin',
+        },
+        'tehnopol.ee'
+      )
+    ).toBe(false);
+
+    expect(
+      isValidatedEmployeeRecord(
+        {
+          email: 'former.employee@tehnopol.ee',
+          name: 'Former Employee',
+          source: 'microsoft',
+          accountStatus: 'inactive',
+        },
+        'tehnopol.ee'
+      )
+    ).toBe(false);
   });
 });
 
