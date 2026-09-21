@@ -24,7 +24,7 @@ type Answer = {
 type AssessmentResult = {
   submissionId: string;
   score: number;
-  level: 'reactive' | 'developing' | 'structured' | 'continuous';
+  level: 'reactive' | 'developing' | 'structured' | 'review_ready';
   weakestDimension: Dimension;
   dimensions: Record<Dimension, number>;
 };
@@ -45,7 +45,7 @@ const QUESTIONS: Question[] = [
       { label: 'Mostly at the next scheduled assessment', value: 0 },
       { label: 'When a complaint, absence or incident triggers attention', value: 1 },
       { label: 'Managers or H&S review major changes as they happen', value: 2 },
-      { label: 'We have defined triggers plus ongoing team-level indicators', value: 3 },
+      { label: 'We have defined review triggers plus relevant team-level evidence', value: 3 },
     ],
   },
   {
@@ -203,8 +203,8 @@ const QUESTIONS: Question[] = [
 ];
 
 const DIMENSION_LABELS: Record<Dimension, string> = {
-  detection: 'Detection',
-  investigation: 'Investigation',
+  detection: 'Evidence visibility',
+  investigation: 'Investigation & context',
   verification: 'Control verification',
   governance: 'Governance & privacy',
 };
@@ -213,7 +213,7 @@ const LEVEL_LABELS = {
   reactive: 'Reactive evidence',
   developing: 'Developing evidence',
   structured: 'Structured evidence',
-  continuous: 'Continuous evidence',
+  review_ready: 'Review-ready evidence process',
 };
 
 const NEXT_ACTION: Record<Dimension, string> = {
@@ -355,7 +355,7 @@ export default function ControlEvidenceAssessment() {
     <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       <PageMeta
         title="Psychosocial Control Evidence Maturity Assessment | SignalTrue"
-        description="Assess how well your organisation detects change, investigates risk, verifies controls and protects worker privacy. Get a 0-100 control-evidence maturity score."
+        description="Assess how well your organisation detects change, investigates risk, verifies controls and protects worker privacy. Get a structured view of your control-evidence process across four review dimensions."
         path="/control-evidence-assessment"
       />
 
@@ -379,11 +379,10 @@ export default function ControlEvidenceAssessment() {
                 5-7 minute assessment
               </p>
               <h1 className="text-section font-bold sm:text-display">
-                Can you prove your psychosocial risk controls are working?
+                Can you show how you review whether a psychosocial risk control worked?
               </h1>
               <p className="mt-4 max-w-2xl text-body text-[#475569]">
-                Measure the maturity of your evidence loop across detection, investigation, control
-                verification and privacy governance. This is a maturity diagnostic, not a legal or
+                Measure the maturity of your control-review method across evidence visibility, investigation and context, control verification, and privacy governance. This is a maturity diagnostic, not a legal or
                 compliance assessment.
               </p>
               <p className="mt-3 max-w-2xl text-caption leading-6 text-[#64748B]">
