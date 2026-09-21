@@ -240,11 +240,20 @@ const App = () => (
                 <Route path="/blog/:slug" element={<Blog />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/demo" element={<Navigate to="/contact?intent=demo" replace />} />
-                <Route path="/control-evidence-assessment" element={<ControlEvidenceAssessment />} />
-                <Route path="/norway/psychosocial-work-environment" element={<JurisdictionRiskLanding />} />
+                <Route
+                  path="/control-evidence-assessment"
+                  element={<ControlEvidenceAssessment />}
+                />
+                <Route
+                  path="/norway/psychosocial-work-environment"
+                  element={<JurisdictionRiskLanding />}
+                />
                 <Route path="/uk/work-related-stress" element={<JurisdictionRiskLanding />} />
                 <Route path="/germany/psychische-belastung" element={<JurisdictionRiskLanding />} />
-                <Route path="/netherlands/psychosociale-arbeidsbelasting" element={<JurisdictionRiskLanding />} />
+                <Route
+                  path="/netherlands/psychosociale-arbeidsbelasting"
+                  element={<JurisdictionRiskLanding />}
+                />
                 <Route path="/sample-report" element={<SampleReport />} />
                 <Route
                   path="/psychosocial-risk-visibility-review"
