@@ -134,11 +134,11 @@ const ROUTE_META = {
       'Test whether your control-review process connects ownership, expected work change, before-and-after evidence, worker consultation and a maintain, modify or replace decision.',
   },
   '/au/standards-assurance': {
-    title: 'Australian WHS & ISO 45003 Assurance | SignalTrue',
+    title: 'ISO 45003 Alignment & Australian WHS | SignalTrue',
     description:
-      'How SignalTrue relates to Australian psychosocial risk management, control review, ISO 45003 and ISO 45001 without claiming certification or legal compliance.',
+      'See how SignalTrue supports an ISO 45003-informed psychosocial risk process and Australian WHS control review, with responsibilities and product boundaries mapped explicitly.',
     summary:
-      'Primary-source-backed explanation of where SignalTrue can contribute evidence to control review, where worker consultation remains essential, and which legal, causal and certification claims SignalTrue deliberately does not make.',
+      'An explicit mapping of the control-review workflow to ISO 45003-informed psychosocial risk management and the ISO 45001 OH&S context, including worker consultation, evidence boundaries and responsibilities.'
   },
   '/au/privacy': {
     title: 'Australian Privacy Overview | SignalTrue',
