@@ -43,6 +43,7 @@ const staticPages = [
   ['/au/psychosocial-risk-monitoring', 'weekly', '0.95'],
   ['/au/8-week-pilot', 'weekly', '0.95'],
   ['/au/monitoring-gap-audit', 'weekly', '1.0'],
+  ['/au/standards-assurance', 'monthly', '0.9'],
   ['/au/privacy', 'monthly', '0.8'],
   ['/au/worker-transparency', 'monthly', '0.8'],
   ['/au/security', 'monthly', '0.8'],
