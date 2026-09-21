@@ -81,6 +81,19 @@ const leadSchema = new mongoose.Schema(
       default: false,
     },
 
+    calendly: {
+      eventUri: { type: String, trim: true, maxlength: 1024 },
+      inviteeUri: { type: String, trim: true, maxlength: 1024 },
+      status: { type: String, enum: ['scheduled', 'canceled'] },
+      bookedAt: Date,
+      canceledAt: Date,
+      rescheduled: { type: Boolean, default: false },
+      utmSource: { type: String, trim: true, maxlength: 255 },
+      utmMedium: { type: String, trim: true, maxlength: 255 },
+      utmCampaign: { type: String, trim: true, maxlength: 255 },
+      matchedBy: { type: String, enum: ['tracking_id', 'recent_email'] },
+    },
+
     // Timestamp from form submission
     submittedAt: {
       type: Date,
