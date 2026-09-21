@@ -61,6 +61,26 @@ query. Source/medium values are canonicalized before aggregation; `(direct) / (n
 known aliases therefore cannot produce separate rows. All shares and funnel rates use comparable
 numerators and denominators and are bounded to 0–100%.
 
+### Traffic quality
+
+Raw commercial sessions are not treated as buyer demand.
+
+The report separates three levels:
+
+- **Commercial sessions**: any clean public production session.
+- **Engaged sessions**: GA4's standard engaged-session definition.
+- **High-intent sessions**: sessions containing at least one explicit commercial action such as a
+  sample-report view, trust download, primary or pricing CTA, lead-form activity, diagnostic
+  completion/unlock, booking click, checkout, or subscription start.
+
+High-intent sessions are reported as a share of commercial sessions and are also split by normalized
+source / medium. This makes it possible to distinguish a high-volume source that produces shallow
+visits from a lower-volume source that produces meaningful commercial behaviour.
+
+Qualified landing-page sessions remain a separate concept. They identify sessions that *start* on a
+focused commercial page such as Product, Contact, Sample Report, or the psychosocial-risk visibility
+review. A qualified landing does not by itself count as high intent.
+
 Automated production funnel checks use the fixed non-commercial marker
 `utm_source=production_smoke&utm_medium=qa&utm_campaign=conversion_e2e`. The browser suppresses
 analytics collection for that session, and the GA4 report excludes the source, medium, and campaign
