@@ -264,6 +264,38 @@ const ROUTE_META = {
     summary:
       'Articles on job demands and work design, what happens between psychosocial risk assessments, and using operational evidence alongside worker consultation.',
   },
+  '/blog/privacy-in-workforce-analysis-a-practical-guide-for-hr': {
+    title: 'Privacy-First Workforce Analytics: Practical HR Guide | SignalTrue',
+    headline: 'Privacy-first workforce analytics',
+    description:
+      'A practical guide to workforce analytics using purpose limitation, metadata boundaries, aggregation and no individual productivity scoring.',
+    summary:
+      'This guide explains how HR and people teams can use workforce analytics without turning it into employee surveillance. It covers data minimisation, purpose limitation, team-level aggregation, access controls and the boundary between work-pattern evidence and individual performance monitoring.',
+    type: 'article',
+    keywords: [
+      'privacy first workforce analytics',
+      'workforce analytics privacy',
+      'HR analytics privacy',
+      'employee analytics GDPR',
+      'privacy preserving workforce analytics',
+    ],
+  },
+  '/blog/getsignals-ai-alternatives-7': {
+    title: 'GetSignals.ai Alternatives for Work-Pattern Analytics | SignalTrue',
+    headline: 'GetSignals.ai alternatives for work-pattern analytics',
+    description:
+      'Compare approaches to workload visibility, work-pattern analytics, privacy and team-level early warning when evaluating GetSignals.ai alternatives.',
+    summary:
+      'A comparison guide for teams evaluating GetSignals.ai alternatives, with emphasis on team-level work-pattern evidence, workload visibility, privacy boundaries, aggregation and how different approaches support investigation without individual productivity scoring.',
+    type: 'article',
+    keywords: [
+      'GetSignals.ai alternatives',
+      'GetSignals alternatives',
+      'work-pattern analytics',
+      'workload analytics software',
+      'privacy-first workforce analytics',
+    ],
+  },
   '/blog/unreasonable-workload-psychosocial-hazard-australia': {
     title: 'Unreasonable Workload: Psychosocial Hazard in Australia',
     headline: 'Unreasonable workload is a psychosocial hazard.',
