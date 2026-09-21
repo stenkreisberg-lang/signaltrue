@@ -2,7 +2,7 @@
  * Per-route title, description and crawler summary.
  *
  * The app renders entirely on the client, so a crawler that does not run
- * JavaScript sees only the shell in public/index.html — the same title and
+ * JavaScript sees only the shell in public/index.html ;  the same title and
  * description on every URL, and none of the page's copy. The build step in
  * scripts/generate-route-html.js writes one HTML file per route from this
  * manifest, so the served response carries the right metadata before any
@@ -33,7 +33,7 @@ const ROUTE_META = {
     description:
       'Observe persistent changes in meetings, uninterrupted calendar availability, after-hours activity and coordination, then verify what changed after a control. No surveys required.',
     summary:
-      'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed — not a diagnosis.',
+      'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed ;  not a diagnosis.',
   },
   '/how-it-works': {
     title: 'How SignalTrue Continuously Measures Work Conditions',
@@ -194,7 +194,7 @@ const ROUTE_META = {
     description:
       'Many organisational problems are visible in working patterns before they are obvious in business outcomes. SignalTrue helps leaders see those changes earlier, without surveillance.',
     summary:
-      'SignalTrue exists to make changes in the system of work visible — meeting structures, workload, uninterrupted calendar availability, management capacity and working hours — so leaders can investigate problems while they are still easier to address.',
+      'SignalTrue exists to make changes in the system of work visible ;  meeting structures, workload, uninterrupted calendar availability, management capacity and working hours ;  so leaders can investigate problems while they are still easier to address.',
   },
   '/pricing': {
     title: 'Pricing | SignalTrue Psychosocial Risk & Control Assurance',
@@ -234,14 +234,14 @@ const ROUTE_META = {
 
   // Signal pages and the older SEO landing pages. These carry most of the
   // organic search surface, and without an entry here every one of them serves
-  // the same shell title — which is what search engines had indexed for several
+  // the same shell title ;  which is what search engines had indexed for several
   // of them.
   '/signals/meeting-overload': {
     title: 'Meeting Load Signal | SignalTrue',
     description:
       'See when meeting hours or recurring coordination demand rise persistently above a team’s normal pattern, and what may be worth investigating.',
     summary:
-      'Meeting load shows whether meeting demand is increasing materially relative to the team’s normal pattern. High meeting load does not by itself mean a team has excessive job demands — it is a starting point for investigating delivery expectations, recurring meetings, dependencies and staffing.',
+      'Meeting load shows whether meeting demand is increasing materially relative to the team’s normal pattern. High meeting load does not by itself mean a team has excessive job demands ;  it is a starting point for investigating delivery expectations, recurring meetings, dependencies and staffing.',
   },
   '/signals/recovery-time-collapse': {
     title: 'Recovery Time Signal | SignalTrue',
@@ -290,7 +290,7 @@ const ROUTE_META = {
     description:
       'Use work-pattern evidence to focus worker consultation on the teams where working conditions have measurably changed.',
     summary:
-      'Work-pattern data cannot explain why a team is experiencing a change — workers can. SignalTrue helps identify where patterns have changed enough to warrant a closer conversation, and is used alongside worker consultation rather than instead of it.',
+      'Work-pattern data cannot explain why a team is experiencing a change ;  workers can. SignalTrue helps identify where patterns have changed enough to warrant a closer conversation, and is used alongside worker consultation rather than instead of it.',
   },
   '/drift-diagnostic': {
     title: 'Work-Pattern Diagnostic | SignalTrue',
