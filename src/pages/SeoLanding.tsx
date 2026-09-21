@@ -54,19 +54,19 @@ const signalContent: Record<string, { title: string; description: string; bullet
     ],
   },
   'coordination-overhead': {
-    title: 'Coordination overhead signal',
+    title: 'Coordination overhead: when alignment consumes execution time',
     description:
-      'Spot when teams spend more energy coordinating work than moving important decisions forward.',
-    bullets: ['More handoffs', 'More alignment loops', 'Slower decision flow'],
+      'Coordination overhead is the work required to keep work moving: handoffs, alignment loops, approvals and repeated status coordination. SignalTrue shows when those patterns are increasing against a team baseline.',
+    bullets: ['Handoffs multiplying', 'Alignment loops expanding', 'Decision paths getting longer'],
   },
   'manager-load': {
-    title: 'management capacity signal',
+    title: 'Manager overload: when coordination crowds out leadership work',
     description:
-      'See when managers are becoming overloaded by meetings, interruptions, and decision bottlenecks.',
+      'See whether manager work patterns are shifting toward denser meetings, concentrated decision demand and less uninterrupted calendar availability.',
     bullets: [
-      'Manager meeting load rising',
-      'Decision load concentrated',
-      'Protected uninterrupted calendar availability falling',
+      'Manager meeting density rising',
+      'Decision demand concentrating',
+      'Uninterrupted calendar availability shrinking',
     ],
   },
 };
