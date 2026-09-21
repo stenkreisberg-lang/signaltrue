@@ -3,7 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
-import leadsRoutes, { sendLeadEmails } from '../routes/leads.js';
+import leadsRoutes, { buildAttributedCalendarLink, sendLeadEmails } from '../routes/leads.js';
 import Lead from '../models/lead.js';
 
 let mongoServer;
@@ -49,6 +49,15 @@ describe('lead submission API', () => {
       confirmed: true,
       internalNotificationSent: false,
     });
+    const bookingUrl = new URL(response.body.calendarLink);
+    expect(bookingUrl.searchParams.get('utm_source')).toBe('signaltrue');
+    expect(bookingUrl.searchParams.get('utm_medium')).toBe('lead');
+    expect(bookingUrl.searchParams.get('utm_campaign')).toBe(
+      `signaltrue_lead_${response.body.leadId}`
+    );
+    expect(bookingUrl.searchParams.get('utm_content')).toBe(
+      'psychosocial_risk_visibility_review'
+    );
     const stored = await Lead.findById(response.body.leadId).lean();
     expect(stored).toMatchObject({
       name: 'Jane Smith',
@@ -89,6 +98,21 @@ describe('lead submission API', () => {
     expect(await Lead.countDocuments({ submissionId: 'spam-test' })).toBe(0);
   });
 
+  test('builds a Calendly URL that carries an opaque persisted lead identifier', () => {
+    const url = new URL(
+      buildAttributedCalendarLink(
+        { _id: '66aa11bb22cc33dd44ee55ff', source: 'Website demo request', tag: 'pricing' },
+        'https://calendly.com/example/30min'
+      )
+    );
+    expect(url.searchParams.get('utm_source')).toBe('signaltrue');
+    expect(url.searchParams.get('utm_medium')).toBe('lead');
+    expect(url.searchParams.get('utm_campaign')).toBe(
+      'signaltrue_lead_66aa11bb22cc33dd44ee55ff'
+    );
+    expect(url.searchParams.get('utm_content')).toBe('pricing');
+  });
+
   test('sends the internal notification and visitor confirmation through the email provider', async () => {
     const lead = {
       name: 'Jane Smith',
@@ -97,6 +121,8 @@ describe('lead submission API', () => {
       title: '',
       challenge: '',
       source: 'Website demo request',
+      tag: 'demo',
+      _id: '66aa11bb22cc33dd44ee55ff',
       attribution: {},
       internalNotificationSent: false,
       clientEmailSent: false,
@@ -117,6 +143,7 @@ describe('lead submission API', () => {
     expect(sent).toHaveLength(2);
     expect(sent[0].subject).toMatch(/New SignalTrue demo request/);
     expect(sent[1]).toMatchObject({ to: 'jane@example.com' });
+    expect(sent[1].html).toContain('utm_campaign=signaltrue_lead_66aa11bb22cc33dd44ee55ff');
     expect(lead).toMatchObject({ internalNotificationSent: true, clientEmailSent: true });
   });
 });
