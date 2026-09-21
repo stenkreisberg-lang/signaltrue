@@ -39,7 +39,8 @@ const QUESTIONS: Question[] = [
     id: 'detection_1',
     dimension: 'detection',
     prompt: 'When work changes, how quickly is your psychosocial risk picture refreshed?',
-    context: 'Think reorganisations, staffing changes, new clients, new technology or workload shifts.',
+    context:
+      'Think reorganisations, staffing changes, new clients, new technology or workload shifts.',
     options: [
       { label: 'Mostly at the next scheduled assessment', value: 0 },
       { label: 'When a complaint, absence or incident triggers attention', value: 1 },
@@ -51,7 +52,8 @@ const QUESTIONS: Question[] = [
     id: 'detection_2',
     dimension: 'detection',
     prompt: 'Can you see sustained changes in how work is happening between formal assessments?',
-    context: 'For example meeting demand, after-hours activity, uninterrupted calendar availability or coordination load.',
+    context:
+      'For example meeting demand, after-hours activity, uninterrupted calendar availability or coordination load.',
     options: [
       { label: 'No, not consistently', value: 0 },
       { label: 'Only through manual observation or anecdotes', value: 1 },
@@ -62,7 +64,8 @@ const QUESTIONS: Question[] = [
   {
     id: 'detection_3',
     dimension: 'detection',
-    prompt: 'How do you distinguish a temporary busy period from a persistent change in working conditions?',
+    prompt:
+      'How do you distinguish a temporary busy period from a persistent change in working conditions?',
     context: 'The issue is persistence, not whether one week looks busy.',
     options: [
       { label: 'We generally do not distinguish them', value: 0 },
@@ -80,14 +83,18 @@ const QUESTIONS: Question[] = [
       { label: 'Consultation is mostly separate or reactive', value: 0 },
       { label: 'Managers talk to workers, but without a consistent evidence trail', value: 1 },
       { label: 'We bring specific observations into worker consultation', value: 2 },
-      { label: 'Observation, consultation and decisions are linked in one review record', value: 3 },
+      {
+        label: 'Observation, consultation and decisions are linked in one review record',
+        value: 3,
+      },
     ],
   },
   {
     id: 'investigation_2',
     dimension: 'investigation',
     prompt: 'Can you connect a change in work patterns to organisational context?',
-    context: 'Examples include a restructure, vacancy, delivery deadline, new system or leadership change.',
+    context:
+      'Examples include a restructure, vacancy, delivery deadline, new system or leadership change.',
     options: [
       { label: 'Usually not', value: 0 },
       { label: 'Only if someone remembers the context', value: 1 },
@@ -99,7 +106,8 @@ const QUESTIONS: Question[] = [
     id: 'investigation_3',
     dimension: 'investigation',
     prompt: 'How many evidence sources are normally used before deciding what the problem is?',
-    context: 'Strong investigations combine worker voice, work evidence and organisational context.',
+    context:
+      'Strong investigations combine worker voice, work evidence and organisational context.',
     options: [
       { label: 'Usually one source', value: 0 },
       { label: 'Two sources, but inconsistently', value: 1 },
@@ -122,20 +130,25 @@ const QUESTIONS: Question[] = [
   {
     id: 'verification_2',
     dimension: 'verification',
-    prompt: 'After a control is implemented, how do you check whether it actually changed the work?',
+    prompt:
+      'After a control is implemented, how do you check whether it actually changed the work?',
     context: 'Think before/after evidence, not whether the action was completed.',
     options: [
       { label: 'We mainly confirm the action was completed', value: 0 },
       { label: 'We ask for feedback later', value: 1 },
       { label: 'We compare some before/after evidence', value: 2 },
-      { label: 'We compare before/after evidence and check whether improvement was sustained', value: 3 },
+      {
+        label: 'We compare before/after evidence and check whether improvement was sustained',
+        value: 3,
+      },
     ],
   },
   {
     id: 'verification_3',
     dimension: 'verification',
     prompt: 'Do you check whether demand moved somewhere else after an intervention?',
-    context: 'A meeting reduction can move demand into messages, evenings, another role or another team.',
+    context:
+      'A meeting reduction can move demand into messages, evenings, another role or another team.',
     options: [
       { label: 'No', value: 0 },
       { label: 'Only if someone reports a new problem', value: 1 },
@@ -147,7 +160,8 @@ const QUESTIONS: Question[] = [
     id: 'governance_1',
     dimension: 'governance',
     prompt: 'At what level is digital work-pattern evidence analysed?',
-    context: 'The safer unit is the work system or sufficiently large group, not the individual employee.',
+    context:
+      'The safer unit is the work system or sufficiently large group, not the individual employee.',
     options: [
       { label: 'Individual-level data is commonly available to managers', value: 0 },
       { label: 'It varies by tool or team', value: 1 },
@@ -159,12 +173,16 @@ const QUESTIONS: Question[] = [
     id: 'governance_2',
     dimension: 'governance',
     prompt: 'How clearly do you separate an observation from a conclusion about people?',
-    context: '“Meeting load increased” is an observation. “This employee is stressed” is a conclusion.',
+    context:
+      '“Meeting load increased” is an observation. Inferring an individual health state is a conclusion.',
     options: [
       { label: 'The distinction is not formalised', value: 0 },
       { label: 'We rely on manager judgement', value: 1 },
       { label: 'Guidance exists for sensitive interpretations', value: 2 },
-      { label: 'The product and process explicitly prevent individual diagnosis or scoring', value: 3 },
+      {
+        label: 'The product and process explicitly prevent individual diagnosis or scoring',
+        value: 3,
+      },
     ],
   },
   {
@@ -176,7 +194,10 @@ const QUESTIONS: Question[] = [
       { label: 'No clear policy', value: 0 },
       { label: 'General privacy policy only', value: 1 },
       { label: 'Specific internal rules exist', value: 2 },
-      { label: 'Purpose, prohibited uses, access and retention are explicit and communicated', value: 3 },
+      {
+        label: 'Purpose, prohibited uses, access and retention are explicit and communicated',
+        value: 3,
+      },
     ],
   },
 ];
@@ -222,7 +243,12 @@ export default function ControlEvidenceAssessment() {
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [loadingResult, setLoadingResult] = useState(false);
   const [error, setError] = useState('');
-  const [contact, setContact] = useState({ email: '', organization: '', role: '', consentGiven: false });
+  const [contact, setContact] = useState({
+    email: '',
+    organization: '',
+    role: '',
+    consentGiven: false,
+  });
   const [claimed, setClaimed] = useState(false);
   const [claiming, setClaiming] = useState(false);
 
@@ -430,7 +456,9 @@ export default function ControlEvidenceAssessment() {
                 Your control-evidence maturity
               </p>
               <div className="mt-3 flex items-end gap-3">
-                <span className="text-[4rem] font-bold leading-none text-[#0F172A]">{result.score}</span>
+                <span className="text-[4rem] font-bold leading-none text-[#0F172A]">
+                  {result.score}
+                </span>
                 <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
               </div>
               <p className="mt-3 text-subsection font-bold">{LEVEL_LABELS[result.level]}</p>
@@ -471,7 +499,9 @@ export default function ControlEvidenceAssessment() {
             <aside className="rounded-container border border-[#E2E8F0] bg-white p-7 shadow-sm sm:p-8">
               {!claimed ? (
                 <>
-                  <h2 className="text-subsection font-bold">Keep the result and benchmark it later</h2>
+                  <h2 className="text-subsection font-bold">
+                    Keep the result and benchmark it later
+                  </h2>
                   <p className="mt-2 text-caption leading-6 text-[#64748B]">
                     We will email this result and its four-dimension breakdown. As the anonymous
                     dataset grows, SignalTrue can also publish aggregate benchmarks without exposing
@@ -531,7 +561,9 @@ export default function ControlEvidenceAssessment() {
                       </span>
                     </label>
 
-                    {error ? <p className="text-caption font-semibold text-red-700">{error}</p> : null}
+                    {error ? (
+                      <p className="text-caption font-semibold text-red-700">{error}</p>
+                    ) : null}
 
                     <button
                       type="submit"
