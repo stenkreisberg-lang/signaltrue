@@ -31,11 +31,11 @@ export const CASE_STATUS_LABELS = {
   MONITORING: 'Monitoring',
   REVIEW_DUE: 'Review due',
   DECISION_REQUIRED: 'Decision required',
-  CLOSED_IMPROVEMENT_OBSERVED: 'Closed — improvement observed',
-  CLOSED_NO_MATERIAL_CHANGE: 'Closed — no material change',
-  CLOSED_MIXED_EVIDENCE: 'Closed — mixed evidence',
-  CLOSED_CONTEXT_EXPLAINS: 'Closed — context explains',
-  CLOSED_OTHER: 'Closed — other',
+  CLOSED_IMPROVEMENT_OBSERVED: 'Closed ;  improvement observed',
+  CLOSED_NO_MATERIAL_CHANGE: 'Closed ;  no material change',
+  CLOSED_MIXED_EVIDENCE: 'Closed ;  mixed evidence',
+  CLOSED_CONTEXT_EXPLAINS: 'Closed ;  context explains',
+  CLOSED_OTHER: 'Closed ;  other',
 };
 
 export const TRIGGER_LABELS = {
@@ -104,15 +104,15 @@ export const COMPLETENESS_STATUS_LABELS = {
 export const CLOSURE_OPTIONS = [
   {
     value: 'CLOSED_IMPROVEMENT_OBSERVED',
-    label: 'Close — relevant evidence moved in the intended direction',
+    label: 'Close ;  relevant evidence moved in the intended direction',
   },
   {
     value: 'CLOSED_NO_MATERIAL_CHANGE',
-    label: 'Close — the intended work-pattern change was not observed',
+    label: 'Close ;  the intended work-pattern change was not observed',
   },
-  { value: 'CLOSED_MIXED_EVIDENCE', label: 'Close — evidence moved in conflicting directions' },
-  { value: 'CLOSED_CONTEXT_EXPLAINS', label: 'Close — context indicates no further action' },
-  { value: 'CLOSED_OTHER', label: 'Close — other documented reason' },
+  { value: 'CLOSED_MIXED_EVIDENCE', label: 'Close ;  evidence moved in conflicting directions' },
+  { value: 'CLOSED_CONTEXT_EXPLAINS', label: 'Close ;  context indicates no further action' },
+  { value: 'CLOSED_OTHER', label: 'Close ;  other documented reason' },
 ];
 
 export function isClosed(status) {
@@ -120,12 +120,12 @@ export function isClosed(status) {
 }
 
 export function formatDate(value) {
-  if (!value) return '—';
+  if (!value) return '; ';
   return new Intl.DateTimeFormat('en-AU', { dateStyle: 'medium' }).format(new Date(value));
 }
 
 export function formatPercent(value) {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '; ';
   const pct = Math.round(value * 100);
   return `${pct > 0 ? '+' : ''}${pct}%`;
 }
