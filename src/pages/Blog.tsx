@@ -383,39 +383,57 @@ const BlogPostView = ({ slug }: { slug: string }) => {
 
   if (loading) {
     return (
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <div className="max-w-3xl mx-auto animate-pulse">
-            <div className="h-4 bg-secondary rounded w-1/4 mb-6" />
-            <div className="h-10 bg-secondary rounded w-3/4 mb-4" />
-            <div className="h-4 bg-secondary rounded w-1/3 mb-8" />
-            <div className="aspect-[16/9] bg-secondary rounded-container mb-8" />
-            <div className="space-y-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-4 bg-secondary rounded" />
-              ))}
+      <>
+        <PageMeta
+          title="SignalTrue Article | SignalTrue"
+          description="SignalTrue article on psychosocial risk, work design and continuous work-condition evidence."
+          path={`/blog/${slug}`}
+          lang="en"
+          type="article"
+        />
+        <section className="py-20">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto animate-pulse">
+              <div className="h-4 bg-secondary rounded w-1/4 mb-6" />
+              <div className="h-10 bg-secondary rounded w-3/4 mb-4" />
+              <div className="h-4 bg-secondary rounded w-1/3 mb-8" />
+              <div className="aspect-[16/9] bg-secondary rounded-container mb-8" />
+              <div className="space-y-4">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="h-4 bg-secondary rounded" />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
   if (error || !post) {
     return (
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-lead font-display font-bold mb-4">{error || 'Post not found'}</h1>
-            <Link to="/blog">
-              <Button variant="outline">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Blog
-              </Button>
-            </Link>
+      <>
+        <PageMeta
+          title="Article Not Found | SignalTrue"
+          description="The requested SignalTrue article could not be loaded."
+          path={`/blog/${slug}`}
+          lang="en"
+          type="website"
+        />
+        <section className="py-20">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto text-center">
+              <h1 className="text-lead font-display font-bold mb-4">{error || 'Post not found'}</h1>
+              <Link to="/blog">
+                <Button variant="outline">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Blog
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
