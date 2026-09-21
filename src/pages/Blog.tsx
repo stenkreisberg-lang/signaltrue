@@ -419,8 +419,24 @@ const BlogPostView = ({ slug }: { slug: string }) => {
     );
   }
 
+  const metaTitle = post.seo?.metaTitle || post.title;
+  const metaDescription =
+    post.seo?.metaDescription ||
+    post.excerpt ||
+    'SignalTrue article on psychosocial risk, work design and continuous work-condition evidence.';
+
   return (
-    <article className="py-12 lg:py-20">
+    <>
+      <PageMeta
+        title={metaTitle}
+        description={metaDescription}
+        path={`/blog/${post.slug}`}
+        lang={editorialPost ? 'en-AU' : 'en'}
+        socialImage={post.seo?.ogImage || post.featuredImage?.url}
+        socialImageAlt={post.featuredImage?.alt || post.title}
+        type="article"
+      />
+      <article className="py-12 lg:py-20">
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto">
           {/* Back Link */}
@@ -562,31 +578,25 @@ const BlogPostView = ({ slug }: { slug: string }) => {
           </footer>
         </div>
       </div>
-    </article>
+      </article>
+    </>
   );
 };
 
 // Main Blog Page Component
 const Blog = () => {
   const { slug } = useParams<{ slug?: string }>();
-  const editorialPost = editorialBlogPostBySlug(slug);
-  const title =
-    editorialPost?.seo.metaTitle || 'SignalTrue Blog | Psychosocial Risk & Control Effectiveness';
-  const description =
-    editorialPost?.seo.metaDescription ||
-    'Practical guidance on continuous work-condition evidence, psychosocial risk, manager capacity and control effectiveness.';
-
   return (
     <div className="min-h-screen bg-background">
-      <PageMeta
-        title={title}
-        description={description}
-        path={slug ? `/blog/${slug}` : '/blog'}
-        lang={editorialPost ? 'en-AU' : 'en'}
-        socialImage={editorialPost?.seo.ogImage}
-        socialImageAlt={editorialPost?.featuredImage.alt}
-        type={editorialPost ? 'article' : 'website'}
-      />
+      {!slug && (
+        <PageMeta
+          title="SignalTrue Blog | Psychosocial Risk & Control Effectiveness"
+          description="Practical guidance on continuous work-condition evidence, psychosocial risk, manager capacity and control effectiveness."
+          path="/blog"
+          lang="en"
+          type="website"
+        />
+      )}
       <Navbar />
       <main className="pt-20">{slug ? <BlogPostView slug={slug} /> : <BlogList />}</main>
       <Footer />
