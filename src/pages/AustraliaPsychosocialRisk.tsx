@@ -91,6 +91,12 @@ export default function AustraliaPsychosocialRisk() {
                   <Link to="/au/8-week-pilot">See the 8-week control review pilot</Link>
                 </Button>
               </div>
+              <Link
+                to="/sample-report"
+                className="mt-5 inline-flex items-center text-caption font-semibold text-brand hover:underline"
+              >
+                See a fictional control review from baseline to decision <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
               <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-caption text-[#475569]">
                 {[
                   'Team-level evidence',
