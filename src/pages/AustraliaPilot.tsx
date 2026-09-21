@@ -123,6 +123,33 @@ export default function AustraliaPilot() {
           </div>
         </section>
 
+        <section className="border-b border-[#E2E8F0] py-16 lg:py-20">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+              <div>
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">Pilot entry criteria</p>
+                <h2 className="mt-3 text-section font-bold text-[#0F172A]">Do not pilot SignalTrue just to “see the dashboard”.</h2>
+                <p className="mt-4 leading-7 text-[#475569]">A useful pilot begins with a real control and a real review decision. If those do not exist, we should not start telemetry.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  'One implemented psychosocial or work-design control',
+                  'An accountable WHS and operational owner',
+                  'A stated work change the control was intended to create',
+                  'Workers or HSRs who can validate the interpretation',
+                  'Relevant data with enough history for a qualified comparison',
+                  'A decision date: maintain, modify, investigate or replace',
+                ].map((item) => (
+                  <div key={item} className="flex gap-3 rounded-container border border-[#E2E8F0] bg-white p-4">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+                    <span className="text-caption leading-6 text-[#334155]">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6">
             <div className="text-center">
