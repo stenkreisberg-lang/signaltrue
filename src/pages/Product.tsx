@@ -87,7 +87,7 @@ export default function Product() {
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue turns privacy-safe team metadata into continuous work-condition
-                evidence—from baseline and persistence through control ownership, before-and-after
+                evidence; from baseline and persistence through control ownership, before-and-after
                 comparison and sustainability review.
               </p>
               <p className="mt-4 text-caption font-semibold text-[#475569]">
@@ -204,7 +204,7 @@ export default function Product() {
                   'Measured evidence stays separate from interpretation.',
                   'The organisation records the control decision; SignalTrue does not require surveys or interviews.',
                   'Every control has an owner and review date.',
-                  'Executives see decisions and barriers—not individual data.',
+                  'Executives see decisions and barriers; not individual data.',
                 ].map((item) => (
                   <div
                     key={item}
