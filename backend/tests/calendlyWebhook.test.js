@@ -50,13 +50,7 @@ describe('Calendly commercial conversion tracking', () => {
       }
 
       static async findOne(query) {
-        return (
-          analyticsDocs.find(
-            (doc) =>
-              doc.eventName === query.eventName &&
-              doc.payload.inviteeUri === query['payload.inviteeUri']
-          ) || null
-        );
+        return analyticsDocs.find((doc) => doc.dedupeKey === query.dedupeKey) || null;
       }
 
       async save() {
@@ -106,6 +100,11 @@ describe('Calendly commercial conversion tracking', () => {
     expect(lead.calendly.status).toBe('scheduled');
     expect(lead.calendly.matchedBy).toBe('tracking_id');
     expect(analyticsDocs).toHaveLength(1);
+    expect(analyticsDocs[0]).toMatchObject({
+      occurredAt: new Date('2026-09-21T12:00:00.000Z'),
+      dedupeKey:
+        'calendly:calendly_booking_created:https://api.calendly.com/scheduled_events/event-1/invitees/invitee-1',
+    });
     expect(analyticsDocs[0].payload).toMatchObject({
       matchedLead: true,
       matchedBy: 'tracking_id',
@@ -121,5 +120,77 @@ describe('Calendly commercial conversion tracking', () => {
     });
     expect(duplicate).toMatchObject({ duplicate: true });
     expect(analyticsDocs).toHaveLength(1);
+  });
+
+  test('does not count an unrelated Calendly booking as a SignalTrue conversion', async () => {
+    const AnalyticsModel = {
+      findOne: jest.fn(async () => null),
+    };
+    const LeadModel = {
+      findById: jest.fn(async () => null),
+      findOne: jest.fn(() => ({ sort: async () => null })),
+    };
+
+    const result = await processCalendlyWebhookEvent(
+      {
+        event: 'invitee.created',
+        payload: {
+          uri: 'https://api.calendly.com/scheduled_events/other/invitees/other',
+          event: 'https://api.calendly.com/scheduled_events/other',
+          email: 'unrelated@example.com',
+          tracking: {},
+        },
+      },
+      { AnalyticsModel, LeadModel }
+    );
+
+    expect(result).toEqual({ ignored: true, reason: 'unattributed_booking' });
+  });
+
+  test('records a reschedule separately without turning the lead into a cancellation', async () => {
+    const analyticsDocs = [];
+    class FakeAnalytics {
+      constructor(doc) {
+        Object.assign(this, doc);
+      }
+      static async findOne(query) {
+        return analyticsDocs.find((doc) => doc.dedupeKey === query.dedupeKey) || null;
+      }
+      async save() {
+        analyticsDocs.push(this);
+      }
+    }
+
+    const lead = {
+      _id: '66aabbccddeeff0011223344',
+      calendly: { status: 'scheduled', rescheduled: false },
+      save: jest.fn(async () => {}),
+    };
+    const LeadModel = {
+      findById: jest.fn(async () => lead),
+      findOne: jest.fn(() => ({ sort: async () => null })),
+    };
+
+    const result = await processCalendlyWebhookEvent(
+      {
+        event: 'invitee.canceled',
+        created_at: '2026-09-21T13:00:00.000Z',
+        payload: {
+          uri: 'https://api.calendly.com/scheduled_events/old/invitees/old',
+          event: 'https://api.calendly.com/scheduled_events/old',
+          rescheduled: true,
+          tracking: {
+            utm_source: 'signaltrue',
+            utm_content: 'stlead_66aabbccddeeff0011223344',
+          },
+        },
+      },
+      { AnalyticsModel: FakeAnalytics, LeadModel }
+    );
+
+    expect(result.analyticsEvent).toBe('calendly_booking_rescheduled');
+    expect(lead.calendly.status).toBe('scheduled');
+    expect(lead.calendly.rescheduled).toBe(true);
+    expect(analyticsDocs[0].eventName).toBe('calendly_booking_rescheduled');
   });
 });
