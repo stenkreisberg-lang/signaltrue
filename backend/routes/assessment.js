@@ -174,6 +174,15 @@ function cleanText(value, maxLength) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function calculateMaturity(answers = []) {
   if (!Array.isArray(answers) || answers.length !== 12) {
     throw new Error('Exactly 12 assessment answers are required.');
@@ -270,12 +279,12 @@ async function sendControlMaturityEmails(submission) {
 </td></tr></table></td></tr></table></body></html>`;
 
   const internalHtml = `<h2>New Control Evidence Assessment lead</h2>
-<p><strong>Email:</strong> ${submission.email}</p>
-<p><strong>Organisation:</strong> ${submission.organization || 'Not provided'}</p>
-<p><strong>Role:</strong> ${submission.role || 'Not provided'}</p>
-<p><strong>Market:</strong> ${submission.market}</p>
-<p><strong>Score:</strong> ${submission.score}/100 (${level})</p>
-<p><strong>Weakest dimension:</strong> ${weakest}</p>
+<p><strong>Email:</strong> ${escapeHtml(submission.email)}</p>
+<p><strong>Organisation:</strong> ${escapeHtml(submission.organization || 'Not provided')}</p>
+<p><strong>Role:</strong> ${escapeHtml(submission.role || 'Not provided')}</p>
+<p><strong>Market:</strong> ${escapeHtml(submission.market)}</p>
+<p><strong>Score:</strong> ${submission.score}/100 (${escapeHtml(level)})</p>
+<p><strong>Weakest dimension:</strong> ${escapeHtml(weakest)}</p>
 <p>Detection ${submission.dimensions.detection} · Investigation ${submission.dimensions.investigation} · Verification ${submission.dimensions.verification} · Governance ${submission.dimensions.governance}</p>`;
 
   await Promise.allSettled([
