@@ -103,7 +103,7 @@ export default function AustraliaPilot() {
                 ],
                 [
                   FileCheck2,
-                  'Evidence—not a certificate',
+                  'Evidence; not a certificate',
                   'The output records observations, investigation, consultation, controls and limitations.',
                 ],
               ].map(([Icon, title, copy]) => {
