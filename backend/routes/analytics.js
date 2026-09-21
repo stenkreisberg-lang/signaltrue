@@ -151,6 +151,7 @@ router.get('/funnel', authenticateToken, requireAdmin, async (req, res) => {
       'booking_link_click',
       'calendly_booking_created',
       'calendly_booking_canceled',
+      'calendly_booking_rescheduled',
       'diagnostic_started',
       'diagnostic_completed',
       'diagnostic_lead_confirmed',
