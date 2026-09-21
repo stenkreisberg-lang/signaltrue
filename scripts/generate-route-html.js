@@ -7,7 +7,7 @@
  * that distinguishes one page from another.
  *
  * Each generated file is the real build output with the head rewritten for that
- * route, so the bundle, hashes and hydration are untouched — only the metadata
+ * route, so the bundle, hashes and hydration are untouched ;  only the metadata
  * differs. Vercel matches the filesystem before applying the SPA rewrite, so
  * /product serves build/product/index.html and the app takes over from there.
  */
@@ -44,7 +44,7 @@ function buildHtml(shell, route, meta) {
   const description = escapeHtml(meta.description);
   const language = meta.lang || (route === '/au' || route.startsWith('/au/') ? 'en-AU' : 'en');
   const socialImage = meta.socialImage || SOCIAL_IMAGE;
-  const socialImageAlt = meta.socialImageAlt || 'SignalTrue — Early evidence for safer work';
+  const socialImageAlt = meta.socialImageAlt || 'SignalTrue ;  Early evidence for safer work';
 
   let html = shell;
   html = html.replace(/<html lang="[^"]*">/, `<html lang="${language}">`);
@@ -155,7 +155,7 @@ function buildHtml(shell, route, meta) {
 
 function main() {
   if (!fs.existsSync(SHELL)) {
-    throw new Error('build/index.html not found — run the build first');
+    throw new Error('build/index.html not found ;  run the build first');
   }
   const shell = fs.readFileSync(SHELL, 'utf8');
   const written = [];
