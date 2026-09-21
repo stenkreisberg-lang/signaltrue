@@ -19,6 +19,21 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      - name: Emit canonical formatting for inbound files
+        run: |
+          npx prettier --write src/App.tsx src/pages/ControlEvidenceAssessment.tsx src/pages/JurisdictionRiskLanding.tsx
+          echo "::group::FORMAT_APP"
+          base64 -w0 src/App.tsx
+          echo
+          echo "::endgroup::"
+          echo "::group::FORMAT_ASSESSMENT"
+          base64 -w0 src/pages/ControlEvidenceAssessment.tsx
+          echo
+          echo "::endgroup::"
+          echo "::group::FORMAT_JURISDICTION"
+          base64 -w0 src/pages/JurisdictionRiskLanding.tsx
+          echo
+          echo "::endgroup::"
       - name: Lint
         run: npm run lint
       - name: Check formatting
