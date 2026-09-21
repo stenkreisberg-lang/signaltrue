@@ -86,9 +86,7 @@ export default function Product() {
                 Observe changing work patterns. Record the control. Verify what changed.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue turns privacy-safe team metadata into continuous work-condition
-                evidence; from baseline and persistence through control ownership, before-and-after
-                comparison and sustainability review.
+                SignalTrue turns privacy-conscious team metadata into control-review evidence. Start with a defined change, compare relevant work patterns before and after it, test persistence and possible migration, validate the interpretation with people, then record the review decision.
               </p>
               <p className="mt-4 text-caption font-semibold text-[#475569]">
                 Team-level only · No message content · No individual productivity scores · No
@@ -99,7 +97,7 @@ export default function Product() {
                   ctaLocation="product_hero"
                   className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
-                  Book a 20-minute visibility review{' '}
+                  Review one control{' '}
                   <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
@@ -116,14 +114,13 @@ export default function Product() {
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 max-w-3xl">
                 <p className="mb-3 text-caption font-bold uppercase tracking-wider text-brand">
-                  Evidence for investigation
+                  The evidence method
                 </p>
                 <h2 className="text-section font-bold text-[#0F172A]">
-                  Six team-level indicator families
+                  Observe work conditions without scoring people
                 </h2>
                 <p className="mt-3 text-[#475569]">
-                  Each indicator is compared with the team’s own qualified baseline. A change starts
-                  a review; it does not establish cause or worker health.
+                  Relevant indicators are selected because they connect to the control being reviewed. Each is compared with a qualified team baseline. A change is an observation to investigate, not a diagnosis, causal conclusion or individual score.
                 </p>
               </div>
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -157,10 +154,10 @@ export default function Product() {
             <div className="mx-auto max-w-6xl">
               <div className="mb-10 text-center">
                 <p className="mb-3 text-caption font-bold uppercase tracking-wider text-brand">
-                  One evidence base, three decisions
+                  From evidence to accountable decisions
                 </p>
                 <h2 className="text-section font-bold text-[#0F172A]">
-                  Useful at every level without becoming an employee score
+                  Different roles see the decision they need, not an employee score
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-3">
@@ -225,11 +222,10 @@ export default function Product() {
         <section className="bg-white py-16 text-center">
           <div className="container mx-auto px-6">
             <h2 className="text-section font-bold text-[#0F172A]">
-              See whether continuous visibility fits your risk process.
+              See whether the method fits one real control.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-[#475569]">
-              Bring one current gap. We will review the evidence boundaries and whether a controlled
-              pilot is justified.
+              Bring one control your organisation has implemented. We will map the intended work change, the evidence that could test it, the worker-validation step and the decision the review needs to support.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA
