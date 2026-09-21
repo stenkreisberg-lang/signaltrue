@@ -7,7 +7,7 @@ const OUTPUT_PATHS = [
   new URL('../public/sitemap.xml', import.meta.url),
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
-const CORE_LAST_MODIFIED = '2026-08-29';
+const CORE_LAST_MODIFIED = '2026-09-21';
 const STATIC_BLOG_ENTRIES = [
   {
     url: `${SITE_URL}/blog/unreasonable-workload-psychosocial-hazard-australia`,
@@ -25,6 +25,11 @@ const staticPages = [
   ['/drift-diagnostic', 'weekly', '0.9'],
   ['/sample-report', 'weekly', '0.9'],
   ['/psychosocial-risk-visibility-review', 'weekly', '1.0'],
+  ['/control-evidence-assessment', 'weekly', '1.0'],
+  ['/norway/psychosocial-work-environment', 'weekly', '0.95'],
+  ['/uk/work-related-stress', 'weekly', '0.95'],
+  ['/germany/psychische-belastung', 'weekly', '0.95'],
+  ['/netherlands/psychosociale-arbeidsbelasting', 'weekly', '0.95'],
   ['/client-success', 'monthly', '0.85'],
   ['/employee-engagement-leading-indicators', 'weekly', '0.9'],
   ['/signals/meeting-overload', 'monthly', '0.8'],
