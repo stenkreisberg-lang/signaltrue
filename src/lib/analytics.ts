@@ -18,6 +18,7 @@ export const GA_MEASUREMENT_ID = 'G-32VLC15W5G';
 export const COMMERCIAL_HOSTNAME = 'www.signaltrue.ai';
 export const FUNNEL_EVENT_NAMES = [
   'commercial_page_view',
+  'commercial_engaged_visit',
   'sample_report_click',
   'sample_report_view',
   'sample_report_print',
@@ -61,6 +62,7 @@ export interface OriginalAttribution {
 }
 
 const ATTRIBUTION_KEY = 'signaltrue:commercial-attribution:v1';
+const COMMERCIAL_ENGAGED_KEY = 'signaltrue:commercial-engaged:v1';
 const ANALYTICS_SUPPRESSED_KEY = 'signaltrue:analytics-suppressed:v1';
 const ANALYTICS_SCRIPT_ID = 'signaltrue-ga4';
 const AUTOMATION_MARKER_PATTERN =
@@ -433,6 +435,16 @@ export const trackFunnelEvent = (eventName: FunnelEventName, params: AnalyticsPa
   window.gtag?.('event', eventName, safeParams);
   sendInternalEvent(eventName, safeParams);
 };
+
+export function trackCommercialEngagedVisit(reason: 'active_time' | 'multi_page') {
+  if (typeof window === 'undefined') return false;
+  const storage = safeSessionStorage();
+  if (storage?.getItem(COMMERCIAL_ENGAGED_KEY) === 'true') return false;
+
+  trackFunnelEvent('commercial_engaged_visit', { engagement_reason: reason });
+  storage?.setItem(COMMERCIAL_ENGAGED_KEY, 'true');
+  return true;
+}
 
 export const trackPageView = (path: string, title = document.title) => {
   if (typeof window === 'undefined') return;
