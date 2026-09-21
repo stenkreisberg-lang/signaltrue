@@ -56,8 +56,8 @@ export default function AustraliaPsychosocialRisk() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="Continuous Psychosocial Risk Monitoring Australia | SignalTrue"
-        description="Team-level work-pattern evidence between psychosocial risk assessments. Observe changes without reading message bodies, diagnosing workers or scoring individual productivity."
+        title="Psychosocial Control Effectiveness Evidence Australia | SignalTrue"
+        description="Evidence for Australian WHS teams reviewing whether psychosocial controls changed the work. Privacy-conscious team-level work-pattern evidence, worker validation and clear limits."
         path="/au"
         lang="en-AU"
       />
@@ -71,7 +71,7 @@ export default function AustraliaPsychosocialRisk() {
                 SignalTrue Australia
               </p>
               <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
-                See when work starts changing between psychosocial risk assessments.
+                You implemented a psychosocial control. Did the work actually change?
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue gives WHS and operational leaders continuous, team-level visibility into
@@ -79,16 +79,16 @@ export default function AustraliaPsychosocialRisk() {
                 after-hours activity and coordination.
               </p>
               <p className="mx-auto mt-4 max-w-3xl font-semibold text-[#334155]">
-                It does not read message bodies, diagnose workers or score individual productivity.
+                Start with one control: workload redistribution, meeting reduction, role clarification, roster change or another work-design intervention. Observe what changed, validate it with workers, then decide what to do next.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg">
                   <Link to="/au/monitoring-gap-audit">
-                    Run a Monitoring Gap Audit <ArrowRight className="ml-2 h-4 w-4" />
+                    Review one control <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/au/8-week-pilot">View the 8-Week Australian Pilot</Link>
+                  <Link to="/au/8-week-pilot">See the 8-week control review pilot</Link>
                 </Button>
               </div>
               <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-caption text-[#475569]">
@@ -112,10 +112,10 @@ export default function AustraliaPsychosocialRisk() {
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
               <div>
                 <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                  The 364-Day Gap
+                  The control-review gap
                 </p>
                 <h2 className="mt-3 text-section font-bold text-[#0F172A] sm:text-display">
-                  The assessment is a snapshot. Work keeps changing.
+                  The harder question starts after the assessment: did the control work?
                 </h2>
                 <p className="mt-5 leading-7 text-[#475569]">
                   Restructures, hiring constraints, project peaks, leadership changes and new
@@ -147,10 +147,10 @@ export default function AustraliaPsychosocialRisk() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                A continuous review layer
+                Where SignalTrue fits
               </p>
               <h2 className="mt-3 text-section font-bold text-[#0F172A]">
-                Observation starts a conversation. It is not a conclusion.
+                OBSERVATION → INTERPRETATION → VALIDATION → ACTION
               </h2>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-5">
@@ -344,7 +344,7 @@ export default function AustraliaPsychosocialRisk() {
         <section className="py-16 lg:py-20">
           <div className="container mx-auto max-w-3xl px-6 text-center">
             <h2 className="text-section font-bold text-[#0F172A]">
-              Start with the monitoring gap.
+              Start with one control you already changed.
             </h2>
             <p className="mt-5 text-body text-[#475569]">
               Assess how your organisation currently reviews psychosocial controls between formal
@@ -352,7 +352,7 @@ export default function AustraliaPsychosocialRisk() {
             </p>
             <Button asChild size="lg" className="mt-8">
               <Link to="/au/monitoring-gap-audit">
-                Run the Monitoring Gap Audit <ArrowRight className="ml-2 h-4 w-4" />
+                Review one control <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
