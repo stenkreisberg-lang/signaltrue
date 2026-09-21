@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, Lock, Shield } from 'lucide-react';
+import { ArrowRight, Eye, Lock, Shield, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
@@ -28,18 +28,15 @@ const Hero = () => {
             </div>
 
             <h1 className="mb-5 text-section font-bold text-[#0F172A] sm:text-display">
-              You changed the work. Did the psychosocial risk control actually change the work?
+              You changed the work. Can you show whether the control actually changed the work?
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
-              SignalTrue compares how work happened before and after a change, checks whether the
-              improvement was sustained, and flags possible migration when the demand simply moved
-              to another channel, another time, or another team.
+              SignalTrue gives Health & Safety and organisational-risk teams an evidence layer for control review: compare relevant work patterns before and after a change, check whether the change lasted, and see whether demand may simply have moved elsewhere.
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
-              Metadata only. Team-level only. No surveys required. Human decisions stay with your
-              organisation.
+              Built around a standards-informed method: observation → interpretation → worker validation → action. Team-level evidence only. No message content. No individual risk or productivity scores.
             </p>
 
             <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
@@ -47,13 +44,13 @@ const Hero = () => {
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Review one psychosocial control <ArrowRight className="h-5 w-5 shrink-0" />
+                Review one control <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
               <Link
-                to="/au"
+                to="/standards"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 text-caption font-bold text-brand hover:bg-brand-softer sm:w-auto"
               >
-                See the Australian control-review approach
+                See the standards & methodology
                 <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </div>
@@ -63,6 +60,13 @@ const Hero = () => {
             >
               View the fictional sample review
             </SampleReportCTA>
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-caption text-[#475569]">
+              {['ISO 45003-informed', 'ISO 45001 OH&S context', 'Jurisdiction-aware deployment', 'Privacy by design'].map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-brand" aria-hidden="true" /> {item}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="relative animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
