@@ -360,6 +360,11 @@ export default function ControlEvidenceAssessment() {
                 verification and privacy governance. This is a maturity diagnostic, not a legal or
                 compliance assessment.
               </p>
+              <p className="mt-3 max-w-2xl text-caption leading-6 text-[#64748B]">
+                Your 12 answers are stored without your name or email so the score can be calculated
+                consistently and, over time, used only in aggregate benchmark reporting. Contact
+                details are optional after you see the result.
+              </p>
             </div>
 
             <div className="mb-5 h-2 overflow-hidden rounded-full bg-[#E2E8F0]">
