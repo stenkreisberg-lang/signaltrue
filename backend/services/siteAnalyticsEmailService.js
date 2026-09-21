@@ -719,8 +719,8 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       <thead><tr style="background:#f1f5f9;text-align:left;"><th style="padding:10px;">Stage</th><th style="padding:10px;">Count</th><th style="padding:10px;">Rate from prior stage</th></tr></thead>
       <tbody>
         ${[
-          ['Primary CTA clicks', funnel.primaryCtaClicks, funnel.rates?.pageToCta],
           ['Commercial engaged visits', funnel.engagedVisits, funnel.rates?.pageToEngaged],
+          ['Primary CTA clicks', funnel.primaryCtaClicks, funnel.rates?.engagedToCta],
           ['Lead-form starts', funnel.formStarts, funnel.rates?.ctaToFormStart],
           ['Form errors', funnel.formErrors, null],
           ['Valid submissions', funnel.validSubmissions, funnel.rates?.formStartToSubmit],
