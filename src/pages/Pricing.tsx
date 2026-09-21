@@ -376,7 +376,7 @@ const Pricing = () => {
                   },
                   {
                     q: 'What makes this different from surveys?',
-                    a: 'Surveys and worker consultation capture lived experience. SignalTrue adds continuous evidence about changing work conditions between reviews.',
+                    a: 'Surveys and worker consultation capture lived experience. SignalTrue adds team-level work-pattern evidence that can be compared around a control review.',
                   },
                 ].map((item) => (
                   <div key={item.q} className="rounded-container border border-[#E2E8F0] p-6">
