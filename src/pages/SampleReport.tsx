@@ -97,7 +97,7 @@ export default function SampleReport() {
               </h1>
               <p className="mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 This fictional example shows what a health &amp; safety manager receives after team
-                coverage and baseline requirements are met. It is evidence for investigation—not a
+                coverage and baseline requirements are met. It is evidence for investigation; not a
                 diagnosis or a substitute for worker consultation.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
