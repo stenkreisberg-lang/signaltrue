@@ -4,6 +4,9 @@
   var measurementId = 'G-32VLC15W5G';
   var productionHost = 'www.signaltrue.ai';
   var suppressionKey = 'signaltrue:analytics-suppressed:v1';
+  var engagedKey = 'signaltrue:commercial-engaged:v1';
+  var seenRoutesKey = 'signaltrue:commercial-seen-routes:v1';
+  var analyticsApi = 'https://signaltrue-backend.onrender.com/api/analytics/track';
   var automationMarker = /^(?:production[_ -]?smoke|qa|quality[_ -]?assurance|automated[_ -]?qa|e2e|playwright|puppeteer|test)$/i;
   var allowedIntents = ['demo', 'pilot', 'pricing', 'security-review', 'au-pilot', 'workload-scan', 'sample-report'];
   var privatePrefixes = [
@@ -148,6 +151,8 @@
   var currentUrl = new URL(window.location.href);
   var currentPath = safePath(currentUrl);
   var allowedEvents = [
+    'page_view',
+    'commercial_engaged_visit',
     'primary_cta_click',
     'sample_report_click',
     'sample_report_view',
@@ -164,6 +169,8 @@
     'intent',
     'error_type',
     'form_version',
+    'page_title',
+    'engagement_reason',
   ];
   window.signaltrueTrack = function (eventName, params) {
     if (allowedEvents.indexOf(eventName) === -1) return;
@@ -177,12 +184,57 @@
       safeParams[key] = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(stringValue) ? '[redacted]' : value;
     });
     window.gtag('event', eventName, safeParams);
+    try {
+      fetch(analyticsApi, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: eventName,
+          data: safeParams,
+          timestamp: new Date().toISOString(),
+        }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (_) {
+      // Measurement must never interrupt navigation.
+    }
   };
-  window.gtag('event', 'page_view', {
+  window.signaltrueTrack('page_view', {
     page_title: document.title,
-    page_location: currentUrl.origin + currentPath,
-    page_path: currentPath,
   });
+
+  function markCommercialEngaged(reason) {
+    try {
+      if (window.sessionStorage.getItem(engagedKey) === 'true') return;
+      window.signaltrueTrack('commercial_engaged_visit', { engagement_reason: reason });
+      window.sessionStorage.setItem(engagedKey, 'true');
+    } catch (_) {
+      window.signaltrueTrack('commercial_engaged_visit', { engagement_reason: reason });
+    }
+  }
+
+  try {
+    var seenRoutes = JSON.parse(window.sessionStorage.getItem(seenRoutesKey) || '[]');
+    if (seenRoutes.indexOf(currentUrl.pathname) === -1) seenRoutes.push(currentUrl.pathname);
+    window.sessionStorage.setItem(seenRoutesKey, JSON.stringify(seenRoutes.slice(-20)));
+    if (seenRoutes.length >= 2) markCommercialEngaged('multi_page');
+  } catch (_) {}
+
+  var interacted = false;
+  ['pointerdown', 'touchstart', 'scroll', 'keydown'].forEach(function (eventName) {
+    window.addEventListener(
+      eventName,
+      function () {
+        interacted = true;
+      },
+      { passive: true, once: true }
+    );
+  });
+  window.setTimeout(function () {
+    if (document.visibilityState === 'visible' && interacted) {
+      markCommercialEngaged('active_time');
+    }
+  }, 20000);
 
   if (/\/(?:sample-report)(?:\.html)?\/?$/i.test(currentUrl.pathname)) {
     window.signaltrueTrack('sample_report_view', {

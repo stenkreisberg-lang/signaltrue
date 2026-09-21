@@ -139,6 +139,7 @@ router.get('/funnel', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const funnelEvents = [
       'page_view',
+      'commercial_engaged_visit',
       'sample_report_click',
       'sample_report_view',
       'trust_overview_download',
