@@ -237,7 +237,7 @@ const Trust = () => {
                   Workers should understand and challenge how evidence is used
                 </h2>
                 <p className="text-body text-[#475569] max-w-2xl mx-auto">
-                  Responsible use requires communication and consultation—not a hidden analytics
+                  Responsible use requires communication and consultation; not a hidden analytics
                   process. SignalTrue provides the material needed for that conversation.
                 </p>
               </div>
@@ -375,7 +375,7 @@ const Trust = () => {
                   Responsible-use method
                 </p>
                 <h2 className="text-section font-bold text-[#0F172A] sm:text-display">
-                  A signal is the start of a risk review—not a conclusion.
+                  A signal is the start of a risk review; not a conclusion.
                 </h2>
                 <p className="mt-4 text-body leading-8 text-[#475569]">
                   SignalTrue separates measured evidence from interpretation and records the
