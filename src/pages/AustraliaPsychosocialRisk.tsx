@@ -222,6 +222,30 @@ export default function AustraliaPsychosocialRisk() {
           </div>
         </section>
 
+        <section className="border-b border-[#E2E8F0] py-16 lg:py-20">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">Start from the control, not the dashboard</p>
+              <h2 className="mt-3 text-section font-bold text-[#0F172A]">Four controls. Four evidence questions.</h2>
+              <p className="mt-4 leading-7 text-[#475569]">SignalTrue is useful only when an observation connects to a decision. These examples show the level of specificity we expect before a pilot begins.</p>
+            </div>
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              {[
+                ['High job demands', 'Work was redistributed across the team', 'Did after-hours activity and meeting demand reduce without coordination load moving to another team?'],
+                ['Low job control', 'Approval steps were simplified', 'Did response bottlenecks and coordination loops reduce, and do workers report greater practical control over workflow?'],
+                ['Poor role clarity', 'Decision rights and hand-offs were clarified', 'Did repeated coordination and cross-team dependency patterns reduce after the change?'],
+                ['Poor organisational change management', 'Change cadence and manager support were redesigned', 'Did manager coordination load and after-hours activity stabilise, and do workers validate the improvement?'],
+              ].map(([hazard, control, question]) => (
+                <article key={hazard} className="rounded-container border border-[#E2E8F0] bg-white p-6">
+                  <p className="text-caption font-bold text-brand">{hazard}</p>
+                  <h3 className="mt-2 font-bold text-[#0F172A]">{control}</h3>
+                  <p className="mt-3 text-caption leading-6 text-[#475569]">{question}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
