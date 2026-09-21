@@ -312,11 +312,14 @@ describe('commercial measurement integrity', () => {
       highIntentEvents: 3,
       calendlyBookings: 3,
       calendlyCancellations: 3,
+      calendlyReschedules: 3,
       calendlyMatchedBookings: 3,
     });
-    expect(queries).toHaveLength(6);
+    expect(queries).toHaveLength(7);
     expect(queries[0].createdAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
     expect(queries[0].createdAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
+    expect(queries[3].occurredAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
+    expect(queries[3].occurredAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
   });
 
   test('flags GA4 zero sessions when internal validated page views exist', () => {
@@ -478,6 +481,7 @@ describe('commercial measurement integrity', () => {
           calendlySyncMode: 'polling',
           calendlyBookings: 2,
           calendlyCancellations: 1,
+          calendlyReschedules: 1,
           calendlyMatchedBookings: 2,
         },
       },
@@ -488,6 +492,7 @@ describe('commercial measurement integrity', () => {
     expect(html).toContain('Internal public page views');
     expect(html).toContain('Confirmed Calendly bookings');
     expect(html).toContain('Calendly cancellations');
+    expect(html).toContain('Calendly reschedules');
     expect(html).toContain('Traffic quality');
     expect(html).toContain('Qualified acquisition');
     expect(html).toContain('High-intent sessions');
