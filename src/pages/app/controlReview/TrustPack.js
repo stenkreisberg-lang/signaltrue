@@ -96,10 +96,9 @@ export default function TrustPack() {
           below adds local privacy, employment, consultation and health and safety checkpoints.
         </p>
         <ul className="cr-plain-list">
-          <li><strong>ISO 45003-informed:</strong> psychosocial risk, participation, controls, monitoring, review and continual improvement inform the workflow.</li>
-          <li><strong>ISO 45001 context:</strong> SignalTrue contributes evidence to the organisation's OH&amp;S management process rather than replacing it.</li>
-          <li><strong>Not certification:</strong> the product does not grade ISO conformity or claim that deployment establishes legal compliance.</li>
+          {(pack.methodology?.standardsContext || []).map((line) => <li key={line}>{line}</li>)}
         </ul>
+        <p className="cr-disclaimer">{pack.methodology?.statement}</p>
       </section>
 
       <div className="cr-trust-status app-panel">
