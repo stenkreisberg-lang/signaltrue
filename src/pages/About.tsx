@@ -41,7 +41,7 @@ const beliefs = [
     icon: Activity,
     title: 'Prevention means changing the work.',
     description:
-      'A signal should lead to questions about demands, control, support, relationships, role and change—not questions about individual productivity.',
+      'A signal should lead to questions about demands, control, support, relationships, role and change; not questions about individual productivity.',
   },
 ];
 
@@ -106,7 +106,7 @@ const About = () => {
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
                   The purpose is to show how work conditions change and whether controls alter
-                  them—not infer health status, diagnose people or replace a formal risk assessment.
+                  them; not infer health status, diagnose people or replace a formal risk assessment.
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ const About = () => {
                 </h2>
                 <p className="mt-3 text-[#475569]">
                   Credibility should come from inspectable method, boundaries and delivery
-                  commitments—not invented social proof.
+                  commitments; not invented social proof.
                 </p>
               </div>
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
