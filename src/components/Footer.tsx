@@ -95,7 +95,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-caption text-[#94A3B8]">
-            © 2026 SignalTrue. Evidence for prevention—not employee monitoring.
+            © 2026 SignalTrue. Evidence for prevention; not employee monitoring.
           </p>
           <p className="text-caption text-[#94A3B8]">
             Signals support consultation; they do not diagnose.
