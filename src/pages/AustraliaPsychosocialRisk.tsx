@@ -74,9 +74,7 @@ export default function AustraliaPsychosocialRisk() {
                 You implemented a psychosocial control. Did the work actually change?
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue gives WHS and operational leaders continuous, team-level visibility into
-                changing work patterns such as meeting load, uninterrupted calendar availability,
-                after-hours activity and coordination.
+                SignalTrue helps Australian WHS and psychosocial-risk teams review whether a control was followed by a meaningful, sustained change in aggregated work patterns, and whether pressure may simply have moved elsewhere.
               </p>
               <p className="mx-auto mt-4 max-w-3xl font-semibold text-[#334155]">
                 Start with one control: workload redistribution, meeting reduction, role clarification, roster change or another work-design intervention. Observe what changed, validate it with workers, then decide what to do next.
@@ -97,12 +95,16 @@ export default function AustraliaPsychosocialRisk() {
               >
                 See a fictional control review from baseline to decision <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
+              <p className="mx-auto mt-5 max-w-3xl text-caption leading-6 text-[#64748B]">
+                Designed to support an ISO 45003-informed psychosocial risk process within an ISO 45001 OH&amp;S context. Alignment does not mean certification or establish WHS compliance.{' '}
+                <Link to="/au/standards-assurance" className="font-semibold text-brand hover:underline">See the standards mapping.</Link>
+              </p>
               <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-caption text-[#475569]">
                 {[
-                  'Team-level evidence',
-                  'No individual productivity scores',
-                  'No message bodies',
-                  'Worker transparency',
+                  'ISO 45003-informed workflow',
+                  'Australian WHS control-review fit',
+                  'Team-level, aggregated evidence',
+                  'No individual risk or productivity scores',
                 ].map((item) => (
                   <span key={item} className="inline-flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-brand" /> {item}
