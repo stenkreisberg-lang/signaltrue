@@ -12,6 +12,7 @@ import {
 import {
   GA4_DIAGNOSTIC_ACTIONS,
   generateSiteAnalyticsEmailHtml,
+  getInternalCommercialTelemetry,
   inferCommercialRecommendations,
   validateCommercialAnalyticsOverview,
 } from '../services/siteAnalyticsEmailService.js';
@@ -288,6 +289,80 @@ describe('commercial measurement integrity', () => {
     expect(valid.fieldErrors).toEqual({});
   });
 
+  test('reads an independent server-side shadow count for the GA4 reporting window', async () => {
+    const queries = [];
+    const model = {
+      countDocuments: async (query) => {
+        queries.push(query);
+        return query.eventName === 'page_view' ? 11 : 3;
+      },
+    };
+
+    const result = await getInternalCommercialTelemetry(
+      { startDate: '2026-09-04', endDate: '2026-09-11' },
+      model
+    );
+
+    expect(result).toMatchObject({
+      connected: true,
+      startDate: '2026-09-04',
+      endDate: '2026-09-11',
+      pageViews: 11,
+      highIntentEvents: 3,
+    });
+    expect(queries).toHaveLength(2);
+    expect(queries[0].createdAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
+    expect(queries[0].createdAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
+  });
+
+  test('flags GA4 zero sessions when internal validated page views exist', () => {
+    const overview = {
+      summary: { sessions: 0, views: 0, engagementRate: 0, highIntentSessionShare: 0 },
+      sourceMedium: [],
+      campaigns: [],
+      topLandingPages: [],
+      topPages: [],
+      funnel: { rates: {} },
+      internalTelemetry: { connected: true, pageViews: 9, highIntentEvents: 1 },
+      searchDiscovery: { connected: true, summary: { clicks: 4 } },
+    };
+
+    const integrity = validateCommercialAnalyticsOverview(overview);
+    expect(integrity.valid).toBe(false);
+    expect(integrity.issues.map((issue) => issue.code)).toContain(
+      'ga4_zero_sessions_with_internal_pageviews'
+    );
+
+    overview.integrity = integrity;
+    const recommendations = inferCommercialRecommendations(overview);
+    expect(recommendations[0].priority).toMatch(/GA4 collection or reporting/i);
+    expect(recommendations[0].action).toMatch(/property\/stream|measurement ID|tag transport/i);
+  });
+
+  test('flags a public collection gap when Search Console has clicks but both collectors have zero', () => {
+    const overview = {
+      summary: { sessions: 0, views: 0, engagementRate: 0, highIntentSessionShare: 0 },
+      sourceMedium: [],
+      campaigns: [],
+      topLandingPages: [],
+      topPages: [],
+      funnel: { rates: {} },
+      internalTelemetry: { connected: true, pageViews: 0, highIntentEvents: 0 },
+      searchDiscovery: { connected: true, summary: { clicks: 6 } },
+    };
+
+    const integrity = validateCommercialAnalyticsOverview(overview);
+    expect(integrity.valid).toBe(false);
+    expect(integrity.issues.map((issue) => issue.code)).toContain(
+      'public_collection_gap_despite_search_clicks'
+    );
+
+    overview.integrity = integrity;
+    const recommendations = inferCommercialRecommendations(overview);
+    expect(recommendations[0].priority).toMatch(/public browser measurement/i);
+    expect(recommendations[0].action).toMatch(/hostname|analytics initialization/i);
+  });
+
   test('maps configuration diagnostics to specific actions', () => {
     const recommendations = inferCommercialRecommendations({
       diagnostics: [
@@ -390,10 +465,13 @@ describe('commercial measurement integrity', () => {
         formErrorsByType: [],
         unattributedDirectPercentage: 50,
         funnel: { rates: {} },
+        internalTelemetry: { connected: true, pageViews: 12, highIntentEvents: 2 },
       },
       []
     );
     expect(html).toContain('Search discovery');
+    expect(html).toContain('Measurement cross-check');
+    expect(html).toContain('Internal public page views');
     expect(html).toContain('Traffic quality');
     expect(html).toContain('Qualified acquisition');
     expect(html).toContain('High-intent sessions');
