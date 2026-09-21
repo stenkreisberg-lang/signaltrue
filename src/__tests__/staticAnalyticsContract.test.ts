@@ -38,6 +38,8 @@ describe('legacy static public-site analytics', () => {
     expect(helper).toContain('production[_ -]?smoke');
     expect(helper).toContain("window.signaltrueTrack('primary_cta_click'");
     expect(helper).toContain("window.signaltrueTrack('sample_report_view'");
+    expect(helper).toContain("window.signaltrueTrack('commercial_engaged_visit'");
+    expect(helper).toContain('/api/analytics/track');
   });
 
   it('keeps the legacy contact form on the same short authoritative contract', () => {
