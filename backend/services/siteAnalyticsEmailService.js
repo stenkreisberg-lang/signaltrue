@@ -21,13 +21,6 @@ function percent(value) {
     .replace('.0', '')}%`;
 }
 
-function rate(numerator, denominator) {
-  const top = Number(numerator || 0);
-  const bottom = Number(denominator || 0);
-  if (!bottom) return 0;
-  return Math.max(0, Math.min(100, (top / bottom) * 100));
-}
-
 function calendlySyncMode() {
   const webhook = Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY);
   const polling = Boolean(process.env.CALENDLY_ACCESS_TOKEN);
@@ -58,6 +51,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       highIntentEvents: 0,
       calendlyBookings: 0,
       calendlyCancellations: 0,
+      calendlyReschedules: 0,
       calendlyMatchedBookings: 0,
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
       calendlySyncConfigured: calendlySyncMode() !== 'inactive',
@@ -77,6 +71,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       highIntentEvents,
       calendlyBookings,
       calendlyCancellations,
+      calendlyReschedules,
       calendlyMatchedBookings,
     ] = await Promise.all([
       model.countDocuments({ eventName: 'page_view', createdAt }),
@@ -85,12 +80,13 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
         eventName: { $in: HIGH_INTENT_EVENT_NAMES },
         createdAt,
       }),
-      model.countDocuments({ eventName: 'calendly_booking_created', createdAt }),
-      model.countDocuments({ eventName: 'calendly_booking_canceled', createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_created', occurredAt: createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_canceled', occurredAt: createdAt }),
+      model.countDocuments({ eventName: 'calendly_booking_rescheduled', occurredAt: createdAt }),
       model.countDocuments({
         eventName: 'calendly_booking_created',
         'payload.matchedLead': true,
-        createdAt,
+        occurredAt: createdAt,
       }),
     ]);
 
@@ -103,6 +99,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       highIntentEvents: Number(highIntentEvents || 0),
       calendlyBookings: Number(calendlyBookings || 0),
       calendlyCancellations: Number(calendlyCancellations || 0),
+      calendlyReschedules: Number(calendlyReschedules || 0),
       calendlyMatchedBookings: Number(calendlyMatchedBookings || 0),
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
       calendlySyncConfigured: calendlySyncMode() !== 'inactive',
@@ -118,6 +115,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       highIntentEvents: 0,
       calendlyBookings: 0,
       calendlyCancellations: 0,
+      calendlyReschedules: 0,
       calendlyMatchedBookings: 0,
       calendlyWebhookConfigured: Boolean(process.env.CALENDLY_WEBHOOK_SIGNING_KEY),
       calendlySyncConfigured: calendlySyncMode() !== 'inactive',
@@ -654,7 +652,16 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
           ? number(overview.internalTelemetry?.calendlyCancellations)
           : 'Not active',
         overview.internalTelemetry?.calendlySyncConfigured
-          ? 'signed Calendly cancellation events'
+          ? 'true cancellations only; reschedules excluded'
+          : 'Calendly conversion sync not configured'
+      )}
+      ${metricCard(
+        'Calendly reschedules',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? number(overview.internalTelemetry?.calendlyReschedules)
+          : 'Not active',
+        overview.internalTelemetry?.calendlySyncConfigured
+          ? 'old slot replaced by a new booking'
           : 'Calendly conversion sync not configured'
       )}
     </div>
@@ -797,14 +804,16 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
                 [
                   'Confirmed Calendly bookings',
                   overview.internalTelemetry?.calendlyBookings,
-                  rate(
-                    overview.internalTelemetry?.calendlyBookings,
-                    funnel.bookingLinkClicks
-                  ),
+                  null,
                 ],
                 [
                   'Calendly cancellations',
                   overview.internalTelemetry?.calendlyCancellations,
+                  null,
+                ],
+                [
+                  'Calendly reschedules',
+                  overview.internalTelemetry?.calendlyReschedules,
                   null,
                 ],
               ]
@@ -850,7 +859,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       ${recommendations.map((item, index) => `<div style="padding:${index ? '14px 0 0' : '0'};margin-top:${index ? '14px' : '0'};border-top:${index ? '1px solid #e2e8f0' : '0'};"><strong>${index + 1}. ${item.priority}</strong><p style="margin:6px 0;color:#475569;">${item.evidence}</p><p style="margin:0;">${item.action}</p></div>`).join('')}
     </section>
 
-    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Confirmed Calendly bookings come from signed invitee.created webhooks, not booking-link clicks. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
+    <p style="font-size:12px;color:#64748b;line-height:1.6;margin-top:18px;">Confirmed leads are counted only from lead_confirmed after a successful server response. Confirmed Calendly bookings come from verified Calendly invitee records via signed webhooks or API polling, not booking-link clicks. Names, email addresses, organisations, roles and messages are not included in analytics events.</p>
   </div></body></html>`;
 }
 
