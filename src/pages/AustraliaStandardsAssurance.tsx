@@ -5,6 +5,13 @@ import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 import { Button } from '../components/ui/button';
 
+const sources = [
+  ['Safe Work Australia: Managing psychosocial risks', 'https://www.safeworkaustralia.gov.au/safety-topic/managing-health-and-safety/mental-health/managing-risks'],
+  ['Safe Work Australia: Reviewing controls', 'https://www.safeworkaustralia.gov.au/book/health-care-and-social-assistance/managing-whs-risks/review-controls'],
+  ['Comcare: Managing psychosocial hazards', 'https://www.comcare.gov.au/scheme-legislation/whs-act/regulatory-guides/managing-psychosocial-hazards'],
+  ['ISO 45003:2021', 'https://www.iso.org/standard/64283.html'],
+];
+
 const principles = [
   ['Australian WHS risk-management cycle', 'SignalTrue is designed to add evidence to control review. It does not identify legal duties for you, determine compliance, or replace consultation with workers and HSRs.'],
   ['ISO 45003:2021', 'Our product and operating approach use the standard as a reference point for psychosocial-risk management within an OH&S management system. This is alignment work, not a claim of certification.'],
@@ -70,6 +77,18 @@ export default function AustraliaStandardsAssurance() {
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
                   <p className="text-caption leading-6 text-[#334155]">{item}</p>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-[#E2E8F0] bg-[#F8FAFC] py-16 lg:py-20">
+          <div className="container mx-auto max-w-4xl px-6">
+            <h2 className="text-section font-bold text-[#0F172A]">Verify the basis yourself</h2>
+            <p className="mt-4 leading-7 text-[#475569]">We would rather show the source than turn regulation or standards into a marketing badge. These are the primary references behind the Australian positioning above.</p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              {sources.map(([label, href]) => (
+                <a key={href} href={href} target="_blank" rel="noreferrer" className="rounded-container border border-[#E2E8F0] bg-white p-4 text-caption font-semibold text-brand hover:border-[#93C5FD] hover:underline">{label}</a>
               ))}
             </div>
           </div>
