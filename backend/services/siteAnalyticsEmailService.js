@@ -38,6 +38,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       connected: false,
       reason: 'A valid commercial reporting date range is required.',
       pageViews: 0,
+      engagedVisits: 0,
       highIntentEvents: 0,
     };
   }
@@ -48,8 +49,9 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
   const createdAt = { $gte: start, $lt: endExclusive };
 
   try {
-    const [pageViews, highIntentEvents] = await Promise.all([
+    const [pageViews, engagedVisits, highIntentEvents] = await Promise.all([
       model.countDocuments({ eventName: 'page_view', createdAt }),
+      model.countDocuments({ eventName: 'commercial_engaged_visit', createdAt }),
       model.countDocuments({
         eventName: { $in: HIGH_INTENT_EVENT_NAMES },
         createdAt,
@@ -61,6 +63,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       startDate,
       endDate,
       pageViews: Number(pageViews || 0),
+      engagedVisits: Number(engagedVisits || 0),
       highIntentEvents: Number(highIntentEvents || 0),
     };
   } catch (error) {
@@ -69,6 +72,7 @@ export async function getInternalCommercialTelemetry(dateRange = {}, model = Ana
       startDate,
       endDate,
       pageViews: 0,
+      engagedVisits: 0,
       highIntentEvents: 0,
       reason: error?.message || 'Internal commercial telemetry could not be read.',
     };
@@ -716,6 +720,7 @@ export function generateSiteAnalyticsEmailHtml(overview, recommendations) {
       <tbody>
         ${[
           ['Primary CTA clicks', funnel.primaryCtaClicks, funnel.rates?.pageToCta],
+          ['Commercial engaged visits', funnel.engagedVisits, funnel.rates?.pageToEngaged],
           ['Lead-form starts', funnel.formStarts, funnel.rates?.ctaToFormStart],
           ['Form errors', funnel.formErrors, null],
           ['Valid submissions', funnel.validSubmissions, funnel.rates?.formStartToSubmit],
