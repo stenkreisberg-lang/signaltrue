@@ -310,8 +310,11 @@ describe('commercial measurement integrity', () => {
       pageViews: 11,
       engagedVisits: 3,
       highIntentEvents: 3,
+      calendlyBookings: 3,
+      calendlyCancellations: 3,
+      calendlyMatchedBookings: 3,
     });
-    expect(queries).toHaveLength(3);
+    expect(queries).toHaveLength(6);
     expect(queries[0].createdAt.$gte.toISOString()).toBe('2026-09-04T00:00:00.000Z');
     expect(queries[0].createdAt.$lt.toISOString()).toBe('2026-09-12T00:00:00.000Z');
   });
@@ -466,13 +469,23 @@ describe('commercial measurement integrity', () => {
         formErrorsByType: [],
         unattributedDirectPercentage: 50,
         funnel: { rates: {} },
-        internalTelemetry: { connected: true, pageViews: 12, highIntentEvents: 2 },
+        internalTelemetry: {
+          connected: true,
+          pageViews: 12,
+          highIntentEvents: 2,
+          calendlyWebhookConfigured: true,
+          calendlyBookings: 2,
+          calendlyCancellations: 1,
+          calendlyMatchedBookings: 2,
+        },
       },
       []
     );
     expect(html).toContain('Search discovery');
     expect(html).toContain('Measurement cross-check');
     expect(html).toContain('Internal public page views');
+    expect(html).toContain('Confirmed Calendly bookings');
+    expect(html).toContain('Calendly cancellations');
     expect(html).toContain('Traffic quality');
     expect(html).toContain('Qualified acquisition');
     expect(html).toContain('High-intent sessions');
