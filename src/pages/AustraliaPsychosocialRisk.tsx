@@ -304,6 +304,17 @@ export default function AustraliaPsychosocialRisk() {
 
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
+            <div className="mb-10 rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:p-8">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">The question Australian guidance already asks</p>
+              <p className="mt-3 text-lead font-bold text-[#0F172A]">Are the controls working effectively, without creating new risks?</p>
+              <p className="mt-3 max-w-4xl text-caption leading-6 text-[#475569]">
+                Safe Work Australia says control measures should be reviewed regularly and changed or replaced when they are not working effectively. SignalTrue does not answer that legal question for you. It contributes one missing evidence source: whether relevant team work patterns changed after the control, and whether pressure may have moved elsewhere.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-caption font-semibold">
+                <a href="https://www.safeworkaustralia.gov.au/book/health-care-and-social-assistance/managing-whs-risks/review-controls" target="_blank" rel="noreferrer" className="text-brand hover:underline">Safe Work Australia: Review controls</a>
+                <Link to="/au/standards-assurance" className="text-brand hover:underline">How SignalTrue relates to WHS and ISO 45003</Link>
+              </div>
+            </div>
             <div className="grid gap-5 md:grid-cols-3">
               {[
                 [
