@@ -105,6 +105,13 @@ const ROUTE_META = {
     summary:
       'SignalTrue voegt geaggregeerde werkpatroon-evidence toe tussen RI&E-momenten en helpt voor/na een maatregel te controleren of de werkwijze werkelijk veranderde.',
   },
+  '/standards': {
+    title: 'Standards & Methodology | SignalTrue',
+    description:
+      'SignalTrue’s global control-review methodology: ISO 45003-informed, compatible with an ISO 45001 OH&S context, privacy-conscious and adaptable to local jurisdiction requirements.',
+    summary:
+      'One evidence method across markets: define the control, observe, interpret, validate with people and support a review decision; local packs add jurisdiction-specific deployment context.',
+  },
   '/au': {
     title: 'Psychosocial Control Effectiveness Evidence Australia | SignalTrue',
     description:
