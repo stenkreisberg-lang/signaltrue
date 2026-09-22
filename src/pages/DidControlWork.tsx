@@ -388,12 +388,12 @@ export default function DidControlWork() {
                     </p>
                   </div>
                   <div className="mt-4 rounded-control border border-brand-soft bg-brand-softer p-5">
-                  <p className="text-caption font-bold text-brand">
-                    What should change if it works?
-                  </p>
-                  <p className="mt-2 text-caption leading-6 text-[#334155]">
-                    {entry.expectedEffect}
-                  </p>
+                    <p className="text-caption font-bold text-brand">
+                      What should change if it works?
+                    </p>
+                    <p className="mt-2 text-caption leading-6 text-[#334155]">
+                      {entry.expectedEffect}
+                    </p>
                   </div>
                 </>
               ) : null}
