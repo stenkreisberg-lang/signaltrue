@@ -145,7 +145,7 @@ export default function AustraliaMonitoringGapAudit() {
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-body leading-8 text-[#475569]">
               Six questions about control records, review cadence, evidence and worker consultation.
-              The result describes monitoring maturity; not legal compliance.
+              The result describes control-review readiness; not legal compliance.
             </p>
           </div>
         </section>
