@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { retrieveRelevantChunks, formatChunksForContext } from './retrievalService.js';
 import ChatLog from '../models/chatLog.js';
 import ChatLead from '../models/chatLead.js';
+import { getPublicEvidenceKnowledge } from './publicEvidenceKnowledge.js';
 
 // Check for API key
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -56,7 +57,7 @@ const TRIAL_RECOMMENDATION_RESPONSE =
 const SYSTEM_PROMPT = `You are the SignalTrue AI assistant.
 
 Rules you must always follow:
-- Answer ONLY using the provided SignalTrue documentation.
+- Answer ONLY using the provided SignalTrue documentation and named public evidence sources.
 - Do NOT use general knowledge or assumptions.
 - If the answer is not in the documents, say you do not have that information.
 - Never speculate.
@@ -66,6 +67,8 @@ Rules you must always follow:
 - Be clear, factual, and concise.
 - If a question concerns security, privacy, or compliance, prioritize those aspects.
 - If a question indicates buying intent, suggest contacting SignalTrue.
+- For public regulatory or jurisdiction questions, distinguish what the cited source says from what SignalTrue adds as an evidence layer.
+- Never state that SignalTrue certifies legal compliance.
 
 CRITICAL PRIVACY GUARDRAILS - Always state these facts when relevant:
 - SignalTrue measures metadata only
@@ -172,11 +175,15 @@ export async function generateChatResponse(
   }
 
   try {
-    // Step 1: Retrieve relevant chunks
-    const retrieval = await retrieveRelevantChunks(question);
+    // Step 1: Retrieve relevant product documentation and constrained public evidence.
+    const publicEvidence = getPublicEvidenceKnowledge(question);
+    const retrieval = await retrieveRelevantChunks(question).catch((error) => {
+      console.warn('[Chat] Product-document retrieval unavailable:', error.message);
+      return { hasRelevantResults: false, chunks: [], confidenceScore: 0 };
+    });
 
-    // Step 2: Check if we have relevant results
-    if (!retrieval.hasRelevantResults) {
+    // Step 2: Refuse only when neither source set can support the answer.
+    if (!retrieval.hasRelevantResults && !publicEvidence.hasRelevantResults) {
       // Log the query
       await logChatInteraction({
         sessionId,
@@ -196,7 +203,10 @@ export async function generateChatResponse(
     }
 
     // Step 3: Format context for LLM
-    const context = formatChunksForContext(retrieval.chunks);
+    const productContext = retrieval.hasRelevantResults
+      ? formatChunksForContext(retrieval.chunks)
+      : '';
+    const context = [productContext, publicEvidence.context].filter(Boolean).join('\n\n');
 
     // Step 3b: Build assessment context if available
     let assessmentContextStr = '';
@@ -242,17 +252,24 @@ Remember: Only use information from the documentation above. If the answer is no
     const response = completion.choices[0].message.content;
 
     // Step 6: Validate response
-    const validation = validateResponse(response, retrieval.chunks);
+    const validation = validateResponse(response, [...retrieval.chunks, ...publicEvidence.sources]);
 
     if (!validation.valid) {
       await logChatInteraction({
         sessionId,
         question,
-        retrievedSources: retrieval.chunks.map((c) => ({
-          source: c.source,
-          section: c.section,
-          relevanceScore: c.relevanceScore,
-        })),
+        retrievedSources: [
+          ...retrieval.chunks.map((c) => ({
+            source: c.source,
+            section: c.section,
+            relevanceScore: c.relevanceScore,
+          })),
+          ...publicEvidence.sources.map((source) => ({
+            source: source.source,
+            section: source.section,
+            relevanceScore: 1,
+          })),
+        ],
         confidenceScore: retrieval.confidenceScore,
         responseType: 'refused',
         processingTime: Date.now() - startTime,
@@ -273,11 +290,18 @@ Remember: Only use information from the documentation above. If the answer is no
     await logChatInteraction({
       sessionId,
       question,
-      retrievedSources: retrieval.chunks.map((c) => ({
-        source: c.source,
-        section: c.section,
-        relevanceScore: c.relevanceScore,
-      })),
+      retrievedSources: [
+        ...retrieval.chunks.map((c) => ({
+          source: c.source,
+          section: c.section,
+          relevanceScore: c.relevanceScore,
+        })),
+        ...publicEvidence.sources.map((source) => ({
+          source: source.source,
+          section: source.section,
+          relevanceScore: 1,
+        })),
+      ],
       confidenceScore: retrieval.confidenceScore,
       responseType: leadTrigger ? 'lead_capture' : 'answered',
       processingTime: Date.now() - startTime,
@@ -285,10 +309,13 @@ Remember: Only use information from the documentation above. If the answer is no
 
     return {
       response,
-      sources: retrieval.chunks.map((c) => ({
-        source: c.source,
-        section: c.section,
-      })),
+      sources: [
+        ...retrieval.chunks.map((c) => ({
+          source: c.source,
+          section: c.section,
+        })),
+        ...publicEvidence.sources,
+      ],
       leadTrigger,
       confidenceScore: retrieval.confidenceScore,
     };

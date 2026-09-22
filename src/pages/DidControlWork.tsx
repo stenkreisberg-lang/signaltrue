@@ -5,7 +5,9 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Copy,
+  FileText,
   SearchCheck,
+  Share2,
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
@@ -14,12 +16,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { trackEvent } from '../lib/analytics';
-import {
-  CONTROL_LIBRARY,
-  HAZARDS,
-  controlPath,
-  findControlEntry,
-} from '../content/controlLibrary';
+import { JURISDICTION_GUIDES, findJurisdiction } from '../content/jurisdictionGuides';
+import { CONTROL_LIBRARY, HAZARDS, controlPath, findControlEntry } from '../content/controlLibrary';
 
 type EvidenceState = {
   baseline: boolean;
@@ -27,14 +25,6 @@ type EvidenceState = {
   sustained: boolean;
   migration: boolean;
   workerValidation: boolean;
-};
-
-const EMPTY_EVIDENCE: EvidenceState = {
-  baseline: false,
-  postChange: false,
-  sustained: false,
-  migration: false,
-  workerValidation: false,
 };
 
 const EVIDENCE_ITEMS: Array<{
@@ -55,19 +45,26 @@ const EVIDENCE_ITEMS: Array<{
   {
     key: 'sustained',
     label: 'A sustainability check exists',
-    explanation: 'You checked later to see whether the change lasted rather than relying on a short-term dip.',
+    explanation:
+      'You checked later to see whether the change lasted rather than relying on a short-term dip.',
   },
   {
     key: 'migration',
     label: 'You checked for workload migration',
-    explanation: 'You looked for demand moving into messages, evenings, another role, or another team.',
+    explanation:
+      'You looked for demand moving into messages, evenings, another role, or another team.',
   },
   {
     key: 'workerValidation',
     label: 'Workers validated what the evidence means',
-    explanation: 'Worker consultation is connected to the evidence rather than treated as a separate exercise.',
+    explanation:
+      'Worker consultation is connected to the evidence rather than treated as a separate exercise.',
   },
 ];
+
+function parseBoolean(value: string | null) {
+  return value === '1' || value === 'true';
+}
 
 function addDays(value: string, days: number) {
   if (!value) return '';
@@ -100,16 +97,27 @@ export default function DidControlWork() {
   const [searchParams] = useSearchParams();
   const requestedHazard = searchParams.get('hazard') || '';
   const requestedControl = searchParams.get('control') || '';
+  const requestedJurisdiction = searchParams.get('jurisdiction') || '';
   const [hazardSlug, setHazardSlug] = useState(() =>
     HAZARDS.some((item) => item.slug === requestedHazard) ? requestedHazard : ''
   );
   const [controlSlug, setControlSlug] = useState(() =>
     findControlEntry(requestedHazard, requestedControl) ? requestedControl : ''
   );
-  const [implementedOn, setImplementedOn] = useState('');
-  const [evidence, setEvidence] = useState<EvidenceState>(EMPTY_EVIDENCE);
+  const [implementedOn, setImplementedOn] = useState(searchParams.get('date') || '');
+  const [jurisdictionSlug, setJurisdictionSlug] = useState(() =>
+    findJurisdiction(requestedJurisdiction) ? requestedJurisdiction : ''
+  );
+  const [evidence, setEvidence] = useState<EvidenceState>(() => ({
+    baseline: parseBoolean(searchParams.get('baseline')),
+    postChange: parseBoolean(searchParams.get('post')),
+    sustained: parseBoolean(searchParams.get('sustained')),
+    migration: parseBoolean(searchParams.get('migration')),
+    workerValidation: parseBoolean(searchParams.get('workers')),
+  }));
   const [showPlan, setShowPlan] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [planCopied, setPlanCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const availableControls = useMemo(
     () => CONTROL_LIBRARY.filter((entry) => entry.hazardSlug === hazardSlug),
@@ -117,10 +125,8 @@ export default function DidControlWork() {
   );
 
   const entry = findControlEntry(hazardSlug, controlSlug);
-  const score = EVIDENCE_ITEMS.reduce(
-    (total, item) => total + (evidence[item.key] ? 20 : 0),
-    0
-  );
+  const jurisdiction = findJurisdiction(jurisdictionSlug);
+  const score = EVIDENCE_ITEMS.reduce((total, item) => total + (evidence[item.key] ? 20 : 0), 0);
   const missing = EVIDENCE_ITEMS.filter((item) => !evidence[item.key]);
 
   useEffect(() => {
@@ -140,15 +146,40 @@ export default function DidControlWork() {
     };
   }, [implementedOn]);
 
+  const buildReviewParams = () => {
+    if (!entry) return new URLSearchParams();
+    const params = new URLSearchParams({
+      hazard: entry.hazardSlug,
+      control: entry.controlSlug,
+      baseline: evidence.baseline ? '1' : '0',
+      post: evidence.postChange ? '1' : '0',
+      sustained: evidence.sustained ? '1' : '0',
+      migration: evidence.migration ? '1' : '0',
+      workers: evidence.workerValidation ? '1' : '0',
+    });
+    if (implementedOn) params.set('date', implementedOn);
+    if (jurisdictionSlug) params.set('jurisdiction', jurisdictionSlug);
+    return params;
+  };
+
   const generatePlan = () => {
     if (!entry) return;
+    const params = buildReviewParams();
+    window.history.replaceState(null, '', `/did-the-control-work?${params.toString()}`);
     setShowPlan(true);
-    setCopied(false);
+    setPlanCopied(false);
+    setShareCopied(false);
     trackEvent('did_control_work_completed', {
       hazard_slug: entry.hazardSlug,
       control_slug: entry.controlSlug,
+      jurisdiction: jurisdictionSlug || 'global',
       evidence_score: score,
       missing_count: missing.length,
+      missing_baseline: !evidence.baseline,
+      missing_post_change: !evidence.postChange,
+      missing_sustained: !evidence.sustained,
+      missing_migration: !evidence.migration,
+      missing_worker_validation: !evidence.workerValidation,
     });
     window.setTimeout(() => {
       document.getElementById('control-review-plan')?.scrollIntoView({ behavior: 'smooth' });
@@ -193,10 +224,22 @@ export default function DidControlWork() {
         .join('\n')
     : '';
 
+  const copyShareLink = async () => {
+    if (!entry) return;
+    const shareUrl = `${window.location.origin}/control-review-pack?${buildReviewParams().toString()}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    trackEvent('control_review_pack_shared', {
+      hazard_slug: entry.hazardSlug,
+      control_slug: entry.controlSlug,
+      jurisdiction: jurisdictionSlug || 'global',
+    });
+  };
+
   const copyPlan = async () => {
     if (!planText) return;
     await navigator.clipboard.writeText(planText);
-    setCopied(true);
+    setPlanCopied(true);
     trackEvent('did_control_work_plan_copied', {
       hazard_slug: entry?.hazardSlug,
       control_slug: entry?.controlSlug,
@@ -235,7 +278,8 @@ export default function DidControlWork() {
                   <ShieldCheck className="h-4 w-4 text-brand" /> No employee data entered
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not a legal conclusion
+                  <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not a legal
+                  conclusion
                 </span>
               </div>
             </div>
@@ -250,8 +294,11 @@ export default function DidControlWork() {
               </p>
 
               <label className="mt-6 block text-caption font-bold text-[#334155]">
-                Psychosocial hazard
+                Hazard being controlled
               </label>
+              <p className="mt-1 text-caption leading-5 text-[#64748B]">
+                The work-design or psychosocial risk you are trying to reduce.
+              </p>
               <select
                 value={hazardSlug}
                 onChange={(event) => {
@@ -270,8 +317,11 @@ export default function DidControlWork() {
               </select>
 
               <label className="mt-5 block text-caption font-bold text-[#334155]">
-                Control introduced
+                Control or intervention introduced
               </label>
+              <p className="mt-1 text-caption leading-5 text-[#64748B]">
+                The concrete change made to address that hazard.
+              </p>
               <select
                 value={controlSlug}
                 disabled={!hazardSlug}
@@ -299,11 +349,53 @@ export default function DidControlWork() {
                 className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
               />
 
+              <label className="mt-5 block text-caption font-bold text-[#334155]">
+                Jurisdiction <span className="font-normal text-[#64748B]">(optional)</span>
+              </label>
+              <select
+                value={jurisdictionSlug}
+                onChange={(event) => {
+                  setJurisdictionSlug(event.target.value);
+                  setShowPlan(false);
+                }}
+                className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
+              >
+                <option value="">General evidence method</option>
+                {JURISDICTION_GUIDES.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+
+              {jurisdiction ? (
+                <Link
+                  to={`/jurisdictions/${jurisdiction.slug}`}
+                  className="mt-3 inline-flex items-center gap-2 text-caption font-bold text-brand hover:text-brand-hover"
+                >
+                  See {jurisdiction.regulator} context <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : null}
+
               {entry ? (
-                <div className="mt-6 rounded-control border border-brand-soft bg-brand-softer p-5">
-                  <p className="text-caption font-bold text-brand">What should change if it works?</p>
-                  <p className="mt-2 text-caption leading-6 text-[#334155]">{entry.expectedEffect}</p>
-                </div>
+                <>
+                  <div className="mt-6 rounded-control border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                    <p className="text-caption font-bold text-[#334155]">Selected review</p>
+                    <p className="mt-1 text-caption leading-6 text-[#475569]">
+                      <strong>{entry.hazard}</strong>
+                      <span className="mx-2 text-[#94A3B8]">→</span>
+                      {entry.control}
+                    </p>
+                  </div>
+                  <div className="mt-4 rounded-control border border-brand-soft bg-brand-softer p-5">
+                    <p className="text-caption font-bold text-brand">
+                      What should change if it works?
+                    </p>
+                    <p className="mt-2 text-caption leading-6 text-[#334155]">
+                      {entry.expectedEffect}
+                    </p>
+                  </div>
+                </>
               ) : null}
             </div>
 
@@ -334,7 +426,9 @@ export default function DidControlWork() {
                       className="mt-1 h-4 w-4 rounded border-[#94A3B8] accent-[var(--brand)]"
                     />
                     <span>
-                      <span className="block text-caption font-bold text-[#1E293B]">{item.label}</span>
+                      <span className="block text-caption font-bold text-[#1E293B]">
+                        {item.label}
+                      </span>
                       <span className="mt-1 block text-caption leading-5 text-[#64748B]">
                         {item.explanation}
                       </span>
@@ -407,14 +501,35 @@ export default function DidControlWork() {
                         <h2 className="mt-2 text-section font-bold">
                           {entry.hazard}: {entry.control}
                         </h2>
+                        {jurisdiction ? (
+                          <p className="mt-2 text-caption text-[#64748B]">
+                            Jurisdiction context: {jurisdiction.name}
+                          </p>
+                        ) : null}
                       </div>
-                      <button
-                        type="button"
-                        onClick={copyPlan}
-                        className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
-                      >
-                        <Copy className="h-4 w-4" /> {copied ? 'Copied' : 'Copy plan'}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={copyPlan}
+                          className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
+                        >
+                          <Copy className="h-4 w-4" /> {planCopied ? 'Copied' : 'Copy plan'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void copyShareLink()}
+                          className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
+                        >
+                          <Share2 className="h-4 w-4" />{' '}
+                          {shareCopied ? 'Link copied' : 'Share pack'}
+                        </button>
+                        <Link
+                          to={`/control-review-pack?${buildReviewParams().toString()}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-caption font-bold text-white hover:bg-brand-hover"
+                        >
+                          <FileText className="h-4 w-4" /> Open review pack
+                        </Link>
+                      </div>
                     </div>
 
                     {planDates ? (
@@ -502,6 +617,17 @@ export default function DidControlWork() {
                       </div>
                     </div>
 
+                    {jurisdiction ? (
+                      <div className="mt-8 rounded-container border border-[#E2E8F0] bg-white p-6">
+                        <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                          {jurisdiction.name} review context
+                        </p>
+                        <p className="mt-2 text-caption leading-6 text-[#475569]">
+                          {jurisdiction.reviewExpectation}
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                       <Link
                         to="/control-evidence-assessment"
@@ -525,10 +651,12 @@ export default function DidControlWork() {
 
         <section className="container mx-auto px-6 py-14">
           <div className="mx-auto max-w-5xl rounded-container border border-[#E2E8F0] bg-white p-7 sm:p-9">
-            <h2 className="text-section font-bold">Why this is different from “did we complete the action?”</h2>
+            <h2 className="text-section font-bold">
+              Why this is different from “did we complete the action?”
+            </h2>
             <p className="mt-4 max-w-3xl text-body leading-8 text-[#475569]">
-              Completing a control is not the same as showing that working conditions changed.
-              A useful review compares before and after, checks whether the effect lasted, looks for
+              Completing a control is not the same as showing that working conditions changed. A
+              useful review compares before and after, checks whether the effect lasted, looks for
               unintended migration, and validates interpretation with workers.
             </p>
             <Link

@@ -13,11 +13,10 @@ import { PrimaryCommercialCTA } from './CommercialCTA';
 
 const navItems = [
   { label: 'Product', href: '/product' },
-  { label: 'How It Works', href: '/how-it-works' },
   { label: 'Free tool', href: '/did-the-control-work' },
+  { label: 'Ask SignalTrue', href: '/ask' },
   { label: 'Control Library', href: '/controls' },
-  { label: 'Standards', href: '/standards' },
-  { label: 'Pricing', href: '/pricing' },
+  { label: 'Labs', href: '/labs' },
   { label: 'Trust', href: '/trust' },
 ];
 

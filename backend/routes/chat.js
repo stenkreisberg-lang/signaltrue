@@ -203,16 +203,16 @@ router.get('/suggested-prompts', (req, res) => {
   res.json({
     prompts: [
       {
-        text: 'What data does SignalTrue analyze?',
+        text: 'How do we know whether a psychosocial control actually worked?',
       },
       {
-        text: 'How is employee privacy protected?',
+        text: 'What should we check after reducing recurring meetings?',
       },
       {
-        text: 'What does the pilot require from IT?',
+        text: 'What does Safe Work Australia expect when controls are reviewed?',
       },
       {
-        text: 'Is SignalTrue GDPR compliant?',
+        text: 'How can SignalTrue help without monitoring individual employees?',
       },
     ],
   });

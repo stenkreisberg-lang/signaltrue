@@ -382,8 +382,9 @@ export default function ControlEvidenceAssessment() {
                 Can you show how you review whether a psychosocial risk control worked?
               </h1>
               <p className="mt-4 max-w-2xl text-body text-[#475569]">
-                Measure the maturity of your control-review method across evidence visibility, investigation and context, control verification, and privacy governance. This is a maturity diagnostic, not a legal or
-                compliance assessment.
+                Measure the maturity of your control-review method across evidence visibility,
+                investigation and context, control verification, and privacy governance. This is a
+                maturity diagnostic, not a legal or compliance assessment.
               </p>
               <p className="mt-3 max-w-2xl text-caption leading-6 text-[#64748B]">
                 Your 12 answers are stored without your name or email so the score can be calculated
