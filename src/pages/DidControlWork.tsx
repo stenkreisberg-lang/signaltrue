@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
@@ -97,8 +97,15 @@ function readinessLabel(score: number) {
 }
 
 export default function DidControlWork() {
-  const [hazardSlug, setHazardSlug] = useState('');
-  const [controlSlug, setControlSlug] = useState('');
+  const [searchParams] = useSearchParams();
+  const requestedHazard = searchParams.get('hazard') || '';
+  const requestedControl = searchParams.get('control') || '';
+  const [hazardSlug, setHazardSlug] = useState(() =>
+    HAZARDS.some((item) => item.slug === requestedHazard) ? requestedHazard : ''
+  );
+  const [controlSlug, setControlSlug] = useState(() =>
+    findControlEntry(requestedHazard, requestedControl) ? requestedControl : ''
+  );
   const [implementedOn, setImplementedOn] = useState('');
   const [evidence, setEvidence] = useState<EvidenceState>(EMPTY_EVIDENCE);
   const [showPlan, setShowPlan] = useState(false);
