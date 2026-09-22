@@ -218,7 +218,7 @@ export const ChatWidget: React.FC = () => {
           {/* Header */}
           <div className="bg-blue-600 px-4 py-4 text-white">
             <h3 className="font-semibold text-body">Ask SignalTrue</h3>
-            <p className="text-blue-100 text-caption">Answers based on SignalTrue documentation</p>
+            <p className="text-blue-100 text-caption">Control evidence answers with constrained sources</p>
           </div>
 
           {/* Messages Area */}
@@ -249,7 +249,8 @@ export const ChatWidget: React.FC = () => {
                 )}
 
                 <p className="text-gray-600 text-caption text-center">
-                  Hi! I can answer questions about SignalTrue's product, privacy, and pilot process.
+                  Ask about control effectiveness, workload migration, privacy, or how SignalTrue
+                  supports a review.
                   {assessmentSession?.completed &&
                     ' I also have context from your assessment results.'}
                 </p>
