@@ -13,10 +13,10 @@ import { Link } from 'react-router-dom';
 const footerLinks = {
   Product: [
     { label: 'Product', href: '/product' },
-    { label: 'How It Works', href: '/how-it-works' },
     { label: 'Did the Control Work?', href: '/did-the-control-work' },
+    { label: 'Ask SignalTrue', href: '/ask' },
     { label: 'Control Library', href: '/controls' },
-    { label: 'Pricing', href: '/pricing' },
+    { label: 'SignalTrue Labs', href: '/labs' },
   ],
   Company: [
     { label: 'About', href: '/about' },
@@ -33,6 +33,9 @@ const footerLinks = {
     { label: 'ISO 45003 alignment', href: '/au/standards-assurance' },
   ],
   Guides: [
+    { label: 'Australia control evidence', href: '/jurisdictions/australia' },
+    { label: 'UK control evidence', href: '/jurisdictions/uk' },
+    { label: 'Estonia control evidence', href: '/jurisdictions/estonia' },
     { label: 'SignalTrue Australia', href: '/au' },
     { label: 'Monitoring Gap Audit', href: '/au/monitoring-gap-audit' },
     { label: '8-week Australian pilot', href: '/au/8-week-pilot' },
