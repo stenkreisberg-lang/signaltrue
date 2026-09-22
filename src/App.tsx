@@ -67,6 +67,10 @@ const DidControlWork = lazy(() => import('./pages/DidControlWork'));
 const ControlLibrary = lazy(() => import('./pages/ControlLibrary'));
 const ControlLibraryDetail = lazy(() => import('./pages/ControlLibraryDetail'));
 const JurisdictionRiskLanding = lazy(() => import('./pages/JurisdictionRiskLanding'));
+const JurisdictionEvidenceGuide = lazy(() => import('./pages/JurisdictionEvidenceGuide'));
+const AskSignalTrue = lazy(() => import('./pages/AskSignalTrue'));
+const ControlReviewPack = lazy(() => import('./pages/ControlReviewPack'));
+const SignalTrueLabs = lazy(() => import('./pages/SignalTrueLabs'));
 
 // Control-verification module (H&S / psychosocial risk).
 const ControlReviews = lazy(() => import('./pages/app/controlReview/ControlReviews'));
@@ -252,6 +256,13 @@ const App = () => (
                   element={<ControlEvidenceAssessment />}
                 />
                 <Route path="/did-the-control-work" element={<DidControlWork />} />
+                <Route path="/control-review-pack" element={<ControlReviewPack />} />
+                <Route path="/ask" element={<AskSignalTrue />} />
+                <Route path="/labs" element={<SignalTrueLabs />} />
+                <Route
+                  path="/jurisdictions/:jurisdictionSlug"
+                  element={<JurisdictionEvidenceGuide />}
+                />
                 <Route path="/controls" element={<ControlLibrary />} />
                 <Route
                   path="/controls/:hazardSlug/:controlSlug"
