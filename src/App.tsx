@@ -251,6 +251,12 @@ const App = () => (
                   path="/control-evidence-assessment"
                   element={<ControlEvidenceAssessment />}
                 />
+                <Route path="/did-the-control-work" element={<DidControlWork />} />
+                <Route path="/controls" element={<ControlLibrary />} />
+                <Route
+                  path="/controls/:hazardSlug/:controlSlug"
+                  element={<ControlLibraryDetail />}
+                />
                 <Route
                   path="/norway/psychosocial-work-environment"
                   element={<JurisdictionRiskLanding />}
