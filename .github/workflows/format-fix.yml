@@ -1,6 +1,8 @@
 name: Auto-format frontend
 on:
   workflow_dispatch:
+  push:
+    branches: [prospect-inbound-v2-20260922]
 permissions:
   contents: write
 jobs:
