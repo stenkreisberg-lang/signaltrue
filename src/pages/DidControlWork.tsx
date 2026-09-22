@@ -32,14 +32,6 @@ type EvidenceState = {
   workerValidation: boolean;
 };
 
-const EMPTY_EVIDENCE: EvidenceState = {
-  baseline: false,
-  postChange: false,
-  sustained: false,
-  migration: false,
-  workerValidation: false,
-};
-
 const EVIDENCE_ITEMS: Array<{
   key: keyof EvidenceState;
   label: string;
@@ -126,7 +118,8 @@ export default function DidControlWork() {
     workerValidation: parseBoolean(searchParams.get('workers')),
   }));
   const [showPlan, setShowPlan] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [planCopied, setPlanCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const availableControls = useMemo(
     () => CONTROL_LIBRARY.filter((entry) => entry.hazardSlug === hazardSlug),
@@ -179,7 +172,8 @@ export default function DidControlWork() {
     const params = buildReviewParams();
     window.history.replaceState(null, '', `/did-the-control-work?${params.toString()}`);
     setShowPlan(true);
-    setCopied(false);
+    setPlanCopied(false);
+    setShareCopied(false);
     trackEvent('did_control_work_completed', {
       hazard_slug: entry.hazardSlug,
       control_slug: entry.controlSlug,
@@ -239,7 +233,7 @@ export default function DidControlWork() {
     if (!entry) return;
     const shareUrl = `${window.location.origin}/control-review-pack?${buildReviewParams().toString()}`;
     await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
+    setShareCopied(true);
     trackEvent('control_review_pack_shared', {
       hazard_slug: entry.hazardSlug,
       control_slug: entry.controlSlug,
@@ -250,7 +244,7 @@ export default function DidControlWork() {
   const copyPlan = async () => {
     if (!planText) return;
     await navigator.clipboard.writeText(planText);
-    setCopied(true);
+    setPlanCopied(true);
     trackEvent('did_control_work_plan_copied', {
       hazard_slug: entry?.hazardSlug,
       control_slug: entry?.controlSlug,
@@ -501,14 +495,14 @@ export default function DidControlWork() {
                           onClick={copyPlan}
                           className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
                         >
-                          <Copy className="h-4 w-4" /> Copy plan
+                          <Copy className="h-4 w-4" /> {planCopied ? 'Copied' : 'Copy plan'}
                         </button>
                         <button
                           type="button"
                           onClick={() => void copyShareLink()}
                           className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
                         >
-                          <Share2 className="h-4 w-4" /> {copied ? 'Link copied' : 'Share pack'}
+                          <Share2 className="h-4 w-4" /> {shareCopied ? 'Link copied' : 'Share pack'}
                         </button>
                         <Link
                           to={`/control-review-pack?${buildReviewParams().toString()}`}
