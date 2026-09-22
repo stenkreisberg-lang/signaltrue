@@ -176,6 +176,91 @@ router.get('/funnel', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// GET - anonymised control-review research foundation for SignalTrue Labs
+router.get('/control-labs', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const match = { eventName: 'did_control_work_completed' };
+
+    const [totalReviews, hazards, controls, jurisdictions, gaps] = await Promise.all([
+      Analytics.countDocuments(match),
+      Analytics.aggregate([
+        { $match: match },
+        { $group: { _id: '$payload.hazard_slug', count: { $sum: 1 } } },
+        { $match: { _id: { $nin: [null, ''] } } },
+        { $sort: { count: -1 } },
+      ]),
+      Analytics.aggregate([
+        { $match: match },
+        { $group: { _id: '$payload.control_slug', count: { $sum: 1 } } },
+        { $match: { _id: { $nin: [null, ''] } } },
+        { $sort: { count: -1 } },
+      ]),
+      Analytics.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: { $ifNull: ['$payload.jurisdiction', 'global'] },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+      Analytics.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: null,
+            baseline: {
+              $sum: { $cond: [{ $eq: ['$payload.missing_baseline', true] }, 1, 0] },
+            },
+            postChange: {
+              $sum: { $cond: [{ $eq: ['$payload.missing_post_change', true] }, 1, 0] },
+            },
+            sustained: {
+              $sum: { $cond: [{ $eq: ['$payload.missing_sustained', true] }, 1, 0] },
+            },
+            migration: {
+              $sum: { $cond: [{ $eq: ['$payload.missing_migration', true] }, 1, 0] },
+            },
+            workerValidation: {
+              $sum: {
+                $cond: [{ $eq: ['$payload.missing_worker_validation', true] }, 1, 0],
+              },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    res.json({
+      totalReviews,
+      hazards: hazards.map((item) => ({ key: item._id, count: item.count })),
+      controls: controls.map((item) => ({ key: item._id, count: item.count })),
+      jurisdictions: jurisdictions.map((item) => ({ key: item._id, count: item.count })),
+      evidenceGaps: gaps[0]
+        ? {
+            baseline: gaps[0].baseline,
+            postChange: gaps[0].postChange,
+            sustained: gaps[0].sustained,
+            migration: gaps[0].migration,
+            workerValidation: gaps[0].workerValidation,
+          }
+        : {
+            baseline: 0,
+            postChange: 0,
+            sustained: 0,
+            migration: 0,
+            workerValidation: 0,
+          },
+      publicationReady: false,
+      note:
+        'Internal research foundation only. Do not publish benchmark percentages until sample-size and anonymity thresholds are defined and met.',
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET - summary stats for analytics dashboard
 router.get('/summary', authenticateToken, requireAdmin, async (req, res) => {
   try {
