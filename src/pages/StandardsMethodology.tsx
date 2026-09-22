@@ -1,4 +1,4 @@
-import { CheckCircle2, Globe2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Globe2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
