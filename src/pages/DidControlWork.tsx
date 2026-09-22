@@ -5,7 +5,9 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Copy,
+  FileText,
   SearchCheck,
+  Share2,
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
@@ -14,6 +16,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { trackEvent } from '../lib/analytics';
+import { JURISDICTION_GUIDES, findJurisdiction } from '../content/jurisdictionGuides';
 import {
   CONTROL_LIBRARY,
   HAZARDS,
@@ -69,6 +72,10 @@ const EVIDENCE_ITEMS: Array<{
   },
 ];
 
+function parseBoolean(value: string | null) {
+  return value === '1' || value === 'true';
+}
+
 function addDays(value: string, days: number) {
   if (!value) return '';
   const date = new Date(`${value}T12:00:00`);
@@ -100,14 +107,24 @@ export default function DidControlWork() {
   const [searchParams] = useSearchParams();
   const requestedHazard = searchParams.get('hazard') || '';
   const requestedControl = searchParams.get('control') || '';
+  const requestedJurisdiction = searchParams.get('jurisdiction') || '';
   const [hazardSlug, setHazardSlug] = useState(() =>
     HAZARDS.some((item) => item.slug === requestedHazard) ? requestedHazard : ''
   );
   const [controlSlug, setControlSlug] = useState(() =>
     findControlEntry(requestedHazard, requestedControl) ? requestedControl : ''
   );
-  const [implementedOn, setImplementedOn] = useState('');
-  const [evidence, setEvidence] = useState<EvidenceState>(EMPTY_EVIDENCE);
+  const [implementedOn, setImplementedOn] = useState(searchParams.get('date') || '');
+  const [jurisdictionSlug, setJurisdictionSlug] = useState(() =>
+    findJurisdiction(requestedJurisdiction) ? requestedJurisdiction : ''
+  );
+  const [evidence, setEvidence] = useState<EvidenceState>(() => ({
+    baseline: parseBoolean(searchParams.get('baseline')),
+    postChange: parseBoolean(searchParams.get('post')),
+    sustained: parseBoolean(searchParams.get('sustained')),
+    migration: parseBoolean(searchParams.get('migration')),
+    workerValidation: parseBoolean(searchParams.get('workers')),
+  }));
   const [showPlan, setShowPlan] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -117,6 +134,7 @@ export default function DidControlWork() {
   );
 
   const entry = findControlEntry(hazardSlug, controlSlug);
+  const jurisdiction = findJurisdiction(jurisdictionSlug);
   const score = EVIDENCE_ITEMS.reduce(
     (total, item) => total + (evidence[item.key] ? 20 : 0),
     0
@@ -140,15 +158,39 @@ export default function DidControlWork() {
     };
   }, [implementedOn]);
 
+  const buildReviewParams = () => {
+    if (!entry) return new URLSearchParams();
+    const params = new URLSearchParams({
+      hazard: entry.hazardSlug,
+      control: entry.controlSlug,
+      baseline: evidence.baseline ? '1' : '0',
+      post: evidence.postChange ? '1' : '0',
+      sustained: evidence.sustained ? '1' : '0',
+      migration: evidence.migration ? '1' : '0',
+      workers: evidence.workerValidation ? '1' : '0',
+    });
+    if (implementedOn) params.set('date', implementedOn);
+    if (jurisdictionSlug) params.set('jurisdiction', jurisdictionSlug);
+    return params;
+  };
+
   const generatePlan = () => {
     if (!entry) return;
+    const params = buildReviewParams();
+    window.history.replaceState(null, '', `/did-the-control-work?${params.toString()}`);
     setShowPlan(true);
     setCopied(false);
     trackEvent('did_control_work_completed', {
       hazard_slug: entry.hazardSlug,
       control_slug: entry.controlSlug,
+      jurisdiction: jurisdictionSlug || 'global',
       evidence_score: score,
       missing_count: missing.length,
+      missing_baseline: !evidence.baseline,
+      missing_post_change: !evidence.postChange,
+      missing_sustained: !evidence.sustained,
+      missing_migration: !evidence.migration,
+      missing_worker_validation: !evidence.workerValidation,
     });
     window.setTimeout(() => {
       document.getElementById('control-review-plan')?.scrollIntoView({ behavior: 'smooth' });
@@ -192,6 +234,18 @@ export default function DidControlWork() {
         .filter(Boolean)
         .join('\n')
     : '';
+
+  const copyShareLink = async () => {
+    if (!entry) return;
+    const shareUrl = `${window.location.origin}/control-review-pack?${buildReviewParams().toString()}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    trackEvent('control_review_pack_shared', {
+      hazard_slug: entry.hazardSlug,
+      control_slug: entry.controlSlug,
+      jurisdiction: jurisdictionSlug || 'global',
+    });
+  };
 
   const copyPlan = async () => {
     if (!planText) return;
@@ -298,6 +352,34 @@ export default function DidControlWork() {
                 onChange={(event) => setImplementedOn(event.target.value)}
                 className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
               />
+
+              <label className="mt-5 block text-caption font-bold text-[#334155]">
+                Jurisdiction <span className="font-normal text-[#64748B]">(optional)</span>
+              </label>
+              <select
+                value={jurisdictionSlug}
+                onChange={(event) => {
+                  setJurisdictionSlug(event.target.value);
+                  setShowPlan(false);
+                }}
+                className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
+              >
+                <option value="">General evidence method</option>
+                {JURISDICTION_GUIDES.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+
+              {jurisdiction ? (
+                <Link
+                  to={`/jurisdictions/${jurisdiction.slug}`}
+                  className="mt-3 inline-flex items-center gap-2 text-caption font-bold text-brand hover:text-brand-hover"
+                >
+                  See {jurisdiction.regulator} context <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : null}
 
               {entry ? (
                 <div className="mt-6 rounded-control border border-brand-soft bg-brand-softer p-5">
@@ -407,14 +489,34 @@ export default function DidControlWork() {
                         <h2 className="mt-2 text-section font-bold">
                           {entry.hazard}: {entry.control}
                         </h2>
+                        {jurisdiction ? (
+                          <p className="mt-2 text-caption text-[#64748B]">
+                            Jurisdiction context: {jurisdiction.name}
+                          </p>
+                        ) : null}
                       </div>
-                      <button
-                        type="button"
-                        onClick={copyPlan}
-                        className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
-                      >
-                        <Copy className="h-4 w-4" /> {copied ? 'Copied' : 'Copy plan'}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={copyPlan}
+                          className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
+                        >
+                          <Copy className="h-4 w-4" /> Copy plan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void copyShareLink()}
+                          className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
+                        >
+                          <Share2 className="h-4 w-4" /> {copied ? 'Link copied' : 'Share pack'}
+                        </button>
+                        <Link
+                          to={`/control-review-pack?${buildReviewParams().toString()}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-control bg-brand px-4 py-2.5 text-caption font-bold text-white hover:bg-brand-hover"
+                        >
+                          <FileText className="h-4 w-4" /> Open review pack
+                        </Link>
+                      </div>
                     </div>
 
                     {planDates ? (
@@ -501,6 +603,17 @@ export default function DidControlWork() {
                         </div>
                       </div>
                     </div>
+
+                    {jurisdiction ? (
+                      <div className="mt-8 rounded-container border border-[#E2E8F0] bg-white p-6">
+                        <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                          {jurisdiction.name} review context
+                        </p>
+                        <p className="mt-2 text-caption leading-6 text-[#475569]">
+                          {jurisdiction.reviewExpectation}
+                        </p>
+                      </div>
+                    ) : null}
 
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                       <Link
