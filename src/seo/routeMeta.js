@@ -113,9 +113,9 @@ const ROUTE_META = {
       'One evidence method across markets: define the control, observe, interpret, validate with people and support a review decision; local packs add jurisdiction-specific deployment context.',
   },
   '/au': {
-    title: 'Psychosocial Control Effectiveness Evidence Australia | SignalTrue',
+    title: 'Psychosocial Control Review Australia | SignalTrue',
     description:
-      'Review whether a psychosocial control was followed by a meaningful change in team work patterns, with worker validation and explicit evidence limits.',
+      'Review whether a psychosocial control changed team work patterns, with worker validation, privacy-conscious evidence and explicit limits.',
     summary:
       'For Australian WHS and psychosocial-risk teams reviewing controls: compare relevant team work patterns before and after a change, check for migration and validate the observation with workers before a decision.',
   },
