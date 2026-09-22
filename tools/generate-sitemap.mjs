@@ -7,7 +7,7 @@ const OUTPUT_PATHS = [
   new URL('../public/sitemap.xml', import.meta.url),
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
-const CORE_LAST_MODIFIED = '2026-09-21';
+const CORE_LAST_MODIFIED = '2026-09-22';
 const STATIC_BLOG_ENTRIES = [
   {
     url: `${SITE_URL}/blog/unreasonable-workload-psychosocial-hazard-australia`,
@@ -26,6 +26,20 @@ const staticPages = [
   ['/sample-report', 'weekly', '0.9'],
   ['/psychosocial-risk-visibility-review', 'weekly', '1.0'],
   ['/control-evidence-assessment', 'weekly', '1.0'],
+  ['/did-the-control-work', 'weekly', '1.0'],
+  ['/controls', 'weekly', '1.0'],
+  ['/controls/excessive-workload/reduce-recurring-meetings', 'monthly', '0.95'],
+  ['/controls/excessive-workload/reprioritise-work', 'monthly', '0.95'],
+  ['/controls/excessive-workload/add-capacity', 'monthly', '0.95'],
+  ['/controls/low-job-control/increase-decision-autonomy', 'monthly', '0.95'],
+  ['/controls/poor-support/protect-manager-capacity', 'monthly', '0.95'],
+  ['/controls/poor-role-clarity/clarify-decision-rights', 'monthly', '0.95'],
+  ['/controls/after-hours-work/right-to-disconnect-boundaries', 'monthly', '0.95'],
+  ['/controls/meeting-overload/meeting-free-focus-blocks', 'monthly', '0.95'],
+  ['/controls/remote-isolation/team-contact-rhythm', 'monthly', '0.95'],
+  ['/controls/organisational-change/staged-rollout', 'monthly', '0.95'],
+  ['/controls/staffing-gaps/temporary-cover', 'monthly', '0.95'],
+  ['/controls/conflict-and-friction/clear-escalation-process', 'monthly', '0.95'],
   ['/norway/psychosocial-work-environment', 'weekly', '0.95'],
   ['/uk/work-related-stress', 'weekly', '0.95'],
   ['/germany/psychische-belastung', 'weekly', '0.95'],
