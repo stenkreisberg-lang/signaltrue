@@ -1,0 +1,3 @@
+P0.1 release-gate redeploy trigger: 2026-09-22
+
+Purpose: force the Render deployment workflow after PR #18 merged without a Render deployment run. This file has no runtime effect.
