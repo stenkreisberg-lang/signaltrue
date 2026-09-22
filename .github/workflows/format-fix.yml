@@ -1,8 +1,6 @@
 name: Auto-format frontend
 on:
   workflow_dispatch:
-  push:
-    branches: [prospect-inbound-v2-20260922]
 permissions:
   contents: write
 jobs:
@@ -20,5 +18,5 @@ jobs:
           git config user.name "signaltrue-format"
           git config user.email "format@signaltrue.ai"
           git add src
-          git commit -m "chore: format hierarchy fix [skip ci]" || true
+          git commit -m "chore: format product changes [skip ci]" || true
           git push
