@@ -140,13 +140,59 @@ function buildHtml(shell, route, meta) {
     );
   }
 
-  // noscript, not hidden markup: it restates what the page already says for
-  // agents that do not run JavaScript, and never differs from what a visitor
-  // sees once the app renders.
+  // Put a concise, truthful route summary and key navigation in the initial
+  // HTML. The React app removes this fallback before mounting, so users see the
+  // full interactive page while crawlers that do not execute JavaScript still
+  // receive substantive, linkable page content.
   if (meta.summary) {
+    const links =
+      route === '/au'
+        ? [
+            ['/au/monitoring-gap-audit', 'Review one control'],
+            ['/au/8-week-pilot', 'See the 8-week control review pilot'],
+            ['/sample-report', 'See a fictional control review'],
+            ['/au/standards-assurance', 'Standards and assurance'],
+            ['/au/trust', 'Australian Trust Centre'],
+          ]
+        : [];
+
+    const fallbackLinks = links.length
+      ? `<nav aria-label="SignalTrue Australia resources"><ul>${links
+          .map(
+            ([href, label]) =>
+              `<li><a href="${href}">${escapeHtml(label)}</a></li>`
+          )
+          .join('')}</ul></nav>`
+      : '';
+
+    const fallback = `<div id="route-static-fallback"><main><h1>${title}</h1><p>${escapeHtml(
+      meta.summary
+    )}</p>${fallbackLinks}</main></div>`;
+    html = html.replace('<div id="root"></div>', `${fallback}<div id="root"></div>`);
+  }
+
+  if (route === '/au') {
+    const structuredData = escapeJsonForHtml({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': `${canonical}#webpage`,
+      url: canonical,
+      name: meta.title,
+      description: meta.description,
+      inLanguage: language,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'SignalTrue',
+        url: SITE_URL,
+      },
+      about: {
+        '@type': 'Thing',
+        name: 'Psychosocial control review',
+      },
+    });
     html = html.replace(
-      '</body>',
-      `  <noscript><h1>${title}</h1><p>${escapeHtml(meta.summary)}</p></noscript>\n</body>`
+      '</head>',
+      `    <script type="application/ld+json">${structuredData}</script>\n  </head>`
     );
   }
 
