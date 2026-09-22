@@ -14,9 +14,9 @@ const footerLinks = {
   Product: [
     { label: 'Product', href: '/product' },
     { label: 'How It Works', href: '/how-it-works' },
+    { label: 'Did the Control Work?', href: '/did-the-control-work' },
+    { label: 'Control Library', href: '/controls' },
     { label: 'Pricing', href: '/pricing' },
-    { label: 'Sample report', href: '/sample-report' },
-    { label: 'Client success process', href: '/client-success' },
   ],
   Company: [
     { label: 'About', href: '/about' },
@@ -57,7 +57,7 @@ const Footer = () => {
               <span className="text-lead font-display font-bold text-white">SignalTrue</span>
             </Link>
             <p className="text-[#CBD5E1] text-caption max-w-sm mb-6">
-              Early team-level evidence for workplace health, safety and work-design prevention.
+              Team-level evidence for reviewing whether workplace controls actually changed the work.
             </p>
             <div className="flex items-center gap-4">
               <a

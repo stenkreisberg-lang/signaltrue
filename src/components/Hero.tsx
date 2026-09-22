@@ -1,7 +1,7 @@
 import { ArrowRight, Eye, Lock, Shield, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
-import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
+import { SampleReportCTA } from './CommercialCTA';
 
 const Hero = () => {
   return (
@@ -40,17 +40,17 @@ const Hero = () => {
             </p>
 
             <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <PrimaryCommercialCTA
-                ctaLocation="homepage_hero"
+              <Link
+                to="/did-the-control-work"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Review one control <ArrowRight className="h-5 w-5 shrink-0" />
-              </PrimaryCommercialCTA>
+                Check one control for free <ArrowRight className="h-5 w-5 shrink-0" />
+              </Link>
               <Link
-                to="/standards"
+                to="/controls"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 text-caption font-bold text-brand hover:bg-brand-softer sm:w-auto"
               >
-                See the standards & methodology
+                Browse the Control Library
                 <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </div>

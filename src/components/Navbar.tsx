@@ -14,10 +14,10 @@ import { PrimaryCommercialCTA } from './CommercialCTA';
 const navItems = [
   { label: 'Product', href: '/product' },
   { label: 'How It Works', href: '/how-it-works' },
+  { label: 'Free tool', href: '/did-the-control-work' },
+  { label: 'Control Library', href: '/controls' },
   { label: 'Standards', href: '/standards' },
-  { label: 'Assessment', href: '/control-evidence-assessment' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'About', href: '/about' },
   { label: 'Trust', href: '/trust' },
 ];
 
