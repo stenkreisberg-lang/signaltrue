@@ -294,8 +294,11 @@ export default function DidControlWork() {
               </p>
 
               <label className="mt-6 block text-caption font-bold text-[#334155]">
-                Psychosocial hazard
+                Hazard being controlled
               </label>
+              <p className="mt-1 text-caption leading-5 text-[#64748B]">
+                The work-design or psychosocial risk you are trying to reduce.
+              </p>
               <select
                 value={hazardSlug}
                 onChange={(event) => {
@@ -314,8 +317,11 @@ export default function DidControlWork() {
               </select>
 
               <label className="mt-5 block text-caption font-bold text-[#334155]">
-                Control introduced
+                Control or intervention introduced
               </label>
+              <p className="mt-1 text-caption leading-5 text-[#64748B]">
+                The concrete change made to address that hazard.
+              </p>
               <select
                 value={controlSlug}
                 disabled={!hazardSlug}
@@ -372,14 +378,24 @@ export default function DidControlWork() {
               ) : null}
 
               {entry ? (
-                <div className="mt-6 rounded-control border border-brand-soft bg-brand-softer p-5">
+                <>
+                  <div className="mt-6 rounded-control border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                    <p className="text-caption font-bold text-[#334155]">Selected review</p>
+                    <p className="mt-1 text-caption leading-6 text-[#475569]">
+                      <strong>{entry.hazard}</strong>
+                      <span className="mx-2 text-[#94A3B8]">→</span>
+                      {entry.control}
+                    </p>
+                  </div>
+                  <div className="mt-4 rounded-control border border-brand-soft bg-brand-softer p-5">
                   <p className="text-caption font-bold text-brand">
                     What should change if it works?
                   </p>
                   <p className="mt-2 text-caption leading-6 text-[#334155]">
                     {entry.expectedEffect}
                   </p>
-                </div>
+                  </div>
+                </>
               ) : null}
             </div>
 
