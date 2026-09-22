@@ -1,6 +1,7 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import CustomerBand from '../components/CustomerBand';
+import InboundDiscoverySection from '../components/InboundDiscoverySection';
 import WhyOrganizationsGoBlind from '../components/WhyOrganizationsGoBlind';
 import VerificationProcess from '../components/VerificationProcess';
 import WorkloadMigrationSection from '../components/WorkloadMigrationSection';
@@ -23,6 +24,7 @@ const Index = () => {
         <Hero />
         {/* Owner-approved customer/prospect/pilot proof. Do not remove without explicit approval. */}
         <CustomerBand />
+        <InboundDiscoverySection />
         <WhyOrganizationsGoBlind />
         <VerificationProcess />
         <WorkloadMigrationSection />
