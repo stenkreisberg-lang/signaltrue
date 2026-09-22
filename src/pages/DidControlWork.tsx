@@ -17,12 +17,7 @@ import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { trackEvent } from '../lib/analytics';
 import { JURISDICTION_GUIDES, findJurisdiction } from '../content/jurisdictionGuides';
-import {
-  CONTROL_LIBRARY,
-  HAZARDS,
-  controlPath,
-  findControlEntry,
-} from '../content/controlLibrary';
+import { CONTROL_LIBRARY, HAZARDS, controlPath, findControlEntry } from '../content/controlLibrary';
 
 type EvidenceState = {
   baseline: boolean;
@@ -50,17 +45,20 @@ const EVIDENCE_ITEMS: Array<{
   {
     key: 'sustained',
     label: 'A sustainability check exists',
-    explanation: 'You checked later to see whether the change lasted rather than relying on a short-term dip.',
+    explanation:
+      'You checked later to see whether the change lasted rather than relying on a short-term dip.',
   },
   {
     key: 'migration',
     label: 'You checked for workload migration',
-    explanation: 'You looked for demand moving into messages, evenings, another role, or another team.',
+    explanation:
+      'You looked for demand moving into messages, evenings, another role, or another team.',
   },
   {
     key: 'workerValidation',
     label: 'Workers validated what the evidence means',
-    explanation: 'Worker consultation is connected to the evidence rather than treated as a separate exercise.',
+    explanation:
+      'Worker consultation is connected to the evidence rather than treated as a separate exercise.',
   },
 ];
 
@@ -128,10 +126,7 @@ export default function DidControlWork() {
 
   const entry = findControlEntry(hazardSlug, controlSlug);
   const jurisdiction = findJurisdiction(jurisdictionSlug);
-  const score = EVIDENCE_ITEMS.reduce(
-    (total, item) => total + (evidence[item.key] ? 20 : 0),
-    0
-  );
+  const score = EVIDENCE_ITEMS.reduce((total, item) => total + (evidence[item.key] ? 20 : 0), 0);
   const missing = EVIDENCE_ITEMS.filter((item) => !evidence[item.key]);
 
   useEffect(() => {
@@ -283,7 +278,8 @@ export default function DidControlWork() {
                   <ShieldCheck className="h-4 w-4 text-brand" /> No employee data entered
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not a legal conclusion
+                  <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not a legal
+                  conclusion
                 </span>
               </div>
             </div>
@@ -377,8 +373,12 @@ export default function DidControlWork() {
 
               {entry ? (
                 <div className="mt-6 rounded-control border border-brand-soft bg-brand-softer p-5">
-                  <p className="text-caption font-bold text-brand">What should change if it works?</p>
-                  <p className="mt-2 text-caption leading-6 text-[#334155]">{entry.expectedEffect}</p>
+                  <p className="text-caption font-bold text-brand">
+                    What should change if it works?
+                  </p>
+                  <p className="mt-2 text-caption leading-6 text-[#334155]">
+                    {entry.expectedEffect}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -410,7 +410,9 @@ export default function DidControlWork() {
                       className="mt-1 h-4 w-4 rounded border-[#94A3B8] accent-[var(--brand)]"
                     />
                     <span>
-                      <span className="block text-caption font-bold text-[#1E293B]">{item.label}</span>
+                      <span className="block text-caption font-bold text-[#1E293B]">
+                        {item.label}
+                      </span>
                       <span className="mt-1 block text-caption leading-5 text-[#64748B]">
                         {item.explanation}
                       </span>
@@ -502,7 +504,8 @@ export default function DidControlWork() {
                           onClick={() => void copyShareLink()}
                           className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
                         >
-                          <Share2 className="h-4 w-4" /> {shareCopied ? 'Link copied' : 'Share pack'}
+                          <Share2 className="h-4 w-4" />{' '}
+                          {shareCopied ? 'Link copied' : 'Share pack'}
                         </button>
                         <Link
                           to={`/control-review-pack?${buildReviewParams().toString()}`}
@@ -632,10 +635,12 @@ export default function DidControlWork() {
 
         <section className="container mx-auto px-6 py-14">
           <div className="mx-auto max-w-5xl rounded-container border border-[#E2E8F0] bg-white p-7 sm:p-9">
-            <h2 className="text-section font-bold">Why this is different from “did we complete the action?”</h2>
+            <h2 className="text-section font-bold">
+              Why this is different from “did we complete the action?”
+            </h2>
             <p className="mt-4 max-w-3xl text-body leading-8 text-[#475569]">
-              Completing a control is not the same as showing that working conditions changed.
-              A useful review compares before and after, checks whether the effect lasted, looks for
+              Completing a control is not the same as showing that working conditions changed. A
+              useful review compares before and after, checks whether the effect lasted, looks for
               unintended migration, and validates interpretation with workers.
             </p>
             <Link

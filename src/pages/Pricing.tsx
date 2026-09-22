@@ -28,7 +28,8 @@ const tiers = [
     name: 'Control Review',
     planKey: 'visibility',
     outcome: 'Review one team or business unit with a repeatable evidence workflow.',
-    description: 'Best for Health & Safety teams that need to connect implemented controls to evidence and review decisions.',
+    description:
+      'Best for Health & Safety teams that need to connect implemented controls to evidence and review decisions.',
     price: '€299',
     period: '/month',
     priceNote:
@@ -55,7 +56,8 @@ const tiers = [
     name: 'Organisation Review',
     planKey: 'interpretation',
     outcome: 'Extend the same control-review method across multiple teams and controls.',
-    description: 'Best for larger organisations that need comparable review evidence across teams without individual scoring.',
+    description:
+      'Best for larger organisations that need comparable review evidence across teams without individual scoring.',
     price: '€499',
     period: '/month',
     priceNote:
@@ -122,7 +124,9 @@ const Pricing = () => {
                 <span className="text-brand">you need.</span>
               </h1>
               <p className="text-lead text-[#334155] max-w-2xl mx-auto mb-6">
-                Choose the scope of the control-review system. Every plan keeps measured observations separate from interpretation, supports before-and-after review and preserves team-level privacy boundaries.
+                Choose the scope of the control-review system. Every plan keeps measured
+                observations separate from interpretation, supports before-and-after review and
+                preserves team-level privacy boundaries.
               </p>
               <p className="text-caption text-[#475569]">
                 All plans use metadata only. No message content. No individual productivity scores.
@@ -140,10 +144,13 @@ const Pricing = () => {
                   Who this is for
                 </p>
                 <h2 className="text-section font-display font-bold text-[#0F172A] mb-4">
-                  Best when health &amp; safety leaders need to know whether an organisational control changed the work.
+                  Best when health &amp; safety leaders need to know whether an organisational
+                  control changed the work.
                 </h2>
                 <p className="text-[#475569]">
-                  SignalTrue is strongest when a control has an intended effect that can be tested against relevant team work patterns and then validated with workers and operational context.
+                  SignalTrue is strongest when a control has an intended effect that can be tested
+                  against relevant team work patterns and then validated with workers and
+                  operational context.
                 </p>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">

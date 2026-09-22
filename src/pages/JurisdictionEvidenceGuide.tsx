@@ -16,11 +16,7 @@ export default function JurisdictionEvidenceGuide() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
-      <PageMeta
-        title={title}
-        description={description}
-        path={`/jurisdictions/${guide.slug}`}
-      />
+      <PageMeta title={title} description={description} path={`/jurisdictions/${guide.slug}`} />
       <Navbar />
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white">

@@ -218,7 +218,9 @@ export const ChatWidget: React.FC = () => {
           {/* Header */}
           <div className="bg-blue-600 px-4 py-4 text-white">
             <h3 className="font-semibold text-body">Ask SignalTrue</h3>
-            <p className="text-blue-100 text-caption">Control evidence answers with constrained sources</p>
+            <p className="text-blue-100 text-caption">
+              Control evidence answers with constrained sources
+            </p>
           </div>
 
           {/* Messages Area */}

@@ -309,7 +309,7 @@ function InvestigationTab({ data, meta, closed, busy, run }) {
         {data.observations.filter((o) => o.status === 'DEVIATION_OBSERVED').length === 0 ? (
           <p className="cr-empty">
             No persistent deviation from this team’s own baseline was recorded. A case can still
-            proceed ;  SignalTrue observation is one input, not a precondition.
+            proceed ; SignalTrue observation is one input, not a precondition.
           </p>
         ) : (
           <table className="cr-table">
@@ -745,7 +745,7 @@ function ControlTab({ data, closed, busy, run }) {
 
             <div className="cr-expected-block">
               <span className="cr-meta">
-                Expected effects, recorded {formatDate(intervention.expectedEffectsRecordedAt)} ; 
+                Expected effects, recorded {formatDate(intervention.expectedEffectsRecordedAt)} ;
                 before the post-period comparison
               </span>
               <ul>
@@ -757,7 +757,7 @@ function ControlTab({ data, closed, busy, run }) {
                       : effect.direction === 'DECREASE'
                         ? '↓'
                         : '→'}
-                    {effect.rationale && <em> ;  {effect.rationale}</em>}
+                    {effect.rationale && <em> ; {effect.rationale}</em>}
                   </li>
                 ))}
               </ul>
@@ -1111,15 +1111,15 @@ function DecisionTab({ data, closed, busy, run }) {
       {data.completeness.outstanding.length > 0 && (
         <div className="cr-alert cr-alert-info">
           Outstanding review components: {data.completeness.outstanding.join(', ')}. You may still
-          record a decision ;  completeness is information, not a gate.
+          record a decision ; completeness is information, not a gate.
         </div>
       )}
 
       <label className="cr-field">
         <span>Decision</span>
         <select value={form.status} onChange={(e) => update({ status: e.target.value })}>
-          <option value="DECISION_REQUIRED">Keep open ;  decision still required</option>
-          <option value="MONITORING">Keep open ;  continue monitoring</option>
+          <option value="DECISION_REQUIRED">Keep open ; decision still required</option>
+          <option value="MONITORING">Keep open ; continue monitoring</option>
           {CLOSURE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -1204,7 +1204,7 @@ function EvidenceTab({ data, busy, run }) {
       <h2>Review Evidence Pack</h2>
       <p className="app-muted">
         The full review record: trigger, investigation, consultation, control, verification,
-        migration check, decision and audit timeline ;  with its methodology and limitations. Every
+        migration check, decision and audit timeline ; with its methodology and limitations. Every
         export is logged.
       </p>
 

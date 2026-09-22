@@ -54,7 +54,8 @@ export const CONTROL_LIBRARY: ControlLibraryEntry[] = [
     hazard: 'Excessive workload',
     controlSlug: 'reprioritise-work',
     control: 'Reprioritise or remove lower-value work',
-    intent: 'Reduce total demand rather than asking people to absorb the same workload differently.',
+    intent:
+      'Reduce total demand rather than asking people to absorb the same workload differently.',
     expectedEffect:
       'Work intensity, after-hours activity, and coordination pressure should reduce while delivery on the highest-priority work remains stable.',
     indicators: [
@@ -119,7 +120,8 @@ export const CONTROL_LIBRARY: ControlLibraryEntry[] = [
       'Are critical dependencies still concentrated?',
       'Did new capacity change deadlines or only increase output expectations?',
     ],
-    reviewTiming: 'Separate onboarding effects from the review; assess 6–12 weeks after effective capacity is available.',
+    reviewTiming:
+      'Separate onboarding effects from the review; assess 6–12 weeks after effective capacity is available.',
   },
   {
     hazardSlug: 'low-job-control',
@@ -306,7 +308,8 @@ export const CONTROL_LIBRARY: ControlLibraryEntry[] = [
     hazard: 'Remote or hybrid isolation',
     controlSlug: 'team-contact-rhythm',
     control: 'Create a purposeful team contact rhythm',
-    intent: 'Improve access to useful connection and support without adding unnecessary meeting load.',
+    intent:
+      'Improve access to useful connection and support without adding unnecessary meeting load.',
     expectedEffect:
       'Collaboration should become more evenly distributed and support access should improve without creating a new meeting burden.',
     indicators: [
@@ -378,7 +381,8 @@ export const CONTROL_LIBRARY: ControlLibraryEntry[] = [
     hazard: 'Staffing gaps or vacancies',
     controlSlug: 'temporary-cover',
     control: 'Introduce temporary workload cover',
-    intent: 'Prevent vacancy-related demand from becoming sustained overload for the remaining team.',
+    intent:
+      'Prevent vacancy-related demand from becoming sustained overload for the remaining team.',
     expectedEffect:
       'After-hours work, meeting concentration, and dependency on key people should reduce during the vacancy period.',
     indicators: [
@@ -407,14 +411,16 @@ export const CONTROL_LIBRARY: ControlLibraryEntry[] = [
       'Who is carrying the hidden coordination burden?',
       'What needs to stop until permanent capacity is restored?',
     ],
-    reviewTiming: 'Review within 2–4 weeks of introducing cover and monthly while the vacancy remains.',
+    reviewTiming:
+      'Review within 2–4 weeks of introducing cover and monthly while the vacancy remains.',
   },
   {
     hazardSlug: 'conflict-and-friction',
     hazard: 'Conflict or organisational friction',
     controlSlug: 'clear-escalation-process',
     control: 'Create a clear escalation and resolution process',
-    intent: 'Reduce unresolved friction and repeated coordination loops by making escalation predictable.',
+    intent:
+      'Reduce unresolved friction and repeated coordination loops by making escalation predictable.',
     expectedEffect:
       'Repeated cross-team coordination and manager escalation should reduce while unresolved cases move to clear owners.',
     indicators: [

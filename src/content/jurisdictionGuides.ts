@@ -65,7 +65,8 @@ export const JURISDICTION_GUIDES: JurisdictionGuide[] = [
     name: 'Estonia',
     shortName: 'EE',
     regulator: 'Tööinspektsioon / Riigi Teataja',
-    headline: 'Psychosocial hazards belong in the risk analysis and preventive measures must be applied.',
+    headline:
+      'Psychosocial hazards belong in the risk analysis and preventive measures must be applied.',
     summary:
       'Estonian occupational health and safety law defines psychosocial hazards broadly across management, work organisation and the work environment. The employer must apply preventive measures, including adapting work organisation and optimising workload.',
     reviewExpectation:

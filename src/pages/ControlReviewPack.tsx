@@ -61,7 +61,10 @@ function readinessLabel(score: number) {
 export default function ControlReviewPack() {
   const [searchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
-  const entry = findControlEntry(searchParams.get('hazard') || '', searchParams.get('control') || '');
+  const entry = findControlEntry(
+    searchParams.get('hazard') || '',
+    searchParams.get('control') || ''
+  );
   const jurisdiction = findJurisdiction(searchParams.get('jurisdiction'));
   const implementedOn = searchParams.get('date') || '';
 

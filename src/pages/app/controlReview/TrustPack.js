@@ -96,7 +96,9 @@ export default function TrustPack() {
           below adds local privacy, employment, consultation and health and safety checkpoints.
         </p>
         <ul className="cr-plain-list">
-          {(pack.methodology?.standardsContext || []).map((line) => <li key={line}>{line}</li>)}
+          {(pack.methodology?.standardsContext || []).map((line) => (
+            <li key={line}>{line}</li>
+          ))}
         </ul>
         <p className="cr-disclaimer">{pack.methodology?.statement}</p>
       </section>
@@ -140,7 +142,7 @@ export default function TrustPack() {
         <h2>Deployment checklist</h2>
         <p className="app-muted">
           Preparation material, not a gate. Tick what applies, skip what your organisation already
-          handles its own way ;  none of it blocks activation.
+          handles its own way ; none of it blocks activation.
         </p>
         <ul className="cr-checklist">
           {pack.checklist.map((item) => (
@@ -241,7 +243,7 @@ export default function TrustPack() {
       <section className="app-panel">
         <h2>Where does this organisation operate?</h2>
         <p className="app-muted">
-          The review process itself is the same everywhere. Only the deployment checkpoints change ; 
+          The review process itself is the same everywhere. Only the deployment checkpoints change ;
           what you must tell workers, who you must consult, and whose guidance to check against.
         </p>
 
@@ -272,7 +274,7 @@ export default function TrustPack() {
             ))}
           </select>
           <em className="cr-hint">
-            Not listed? Leave it on “No specific jurisdiction configured” ;  you still get the
+            Not listed? Leave it on “No specific jurisdiction configured” ; you still get the
             universal checklist below.
           </em>
         </label>
@@ -292,7 +294,7 @@ export default function TrustPack() {
         <ul className="cr-plain-list">
           {pack.jurisdictionCheckpoints.map((entry, index) => (
             <li key={index}>
-              <strong>{entry.jurisdiction}</strong> ;  {entry.checkpoint}
+              <strong>{entry.jurisdiction}</strong> ; {entry.checkpoint}
             </li>
           ))}
         </ul>

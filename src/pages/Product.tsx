@@ -86,7 +86,10 @@ export default function Product() {
                 Observe changing work patterns. Record the control. Verify what changed.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue turns privacy-conscious team metadata into control-review evidence. Start with a defined change, compare relevant work patterns before and after it, test persistence and possible migration, validate the interpretation with people, then record the review decision.
+                SignalTrue turns privacy-conscious team metadata into control-review evidence. Start
+                with a defined change, compare relevant work patterns before and after it, test
+                persistence and possible migration, validate the interpretation with people, then
+                record the review decision.
               </p>
               <p className="mt-4 text-caption font-semibold text-[#475569]">
                 Team-level only · No message content · No individual productivity scores · No
@@ -97,8 +100,7 @@ export default function Product() {
                   ctaLocation="product_hero"
                   className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
-                  Review one control{' '}
-                  <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
+                  Review one control <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
                   ctaLocation="product_hero"
@@ -120,7 +122,10 @@ export default function Product() {
                   Observe work conditions without scoring people
                 </h2>
                 <p className="mt-3 text-[#475569]">
-                  Relevant indicators are selected because they connect to the control being reviewed. Each is compared with a qualified team baseline. A change is an observation to investigate, not a diagnosis, causal conclusion or individual score.
+                  Relevant indicators are selected because they connect to the control being
+                  reviewed. Each is compared with a qualified team baseline. A change is an
+                  observation to investigate, not a diagnosis, causal conclusion or individual
+                  score.
                 </p>
               </div>
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -225,7 +230,9 @@ export default function Product() {
               See whether the method fits one real control.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-[#475569]">
-              Bring one control your organisation has implemented. We will map the intended work change, the evidence that could test it, the worker-validation step and the decision the review needs to support.
+              Bring one control your organisation has implemented. We will map the intended work
+              change, the evidence that could test it, the worker-validation step and the decision
+              the review needs to support.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA

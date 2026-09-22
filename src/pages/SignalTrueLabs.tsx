@@ -36,7 +36,8 @@ export default function SignalTrueLabs() {
                 SignalTrue Labs
               </div>
               <h1 className="max-w-4xl text-section font-bold sm:text-display">
-                Most organisations record what they changed. Very few can compare what happened next.
+                Most organisations record what they changed. Very few can compare what happened
+                next.
               </h1>
               <p className="mt-5 max-w-3xl text-body leading-8 text-[#475569]">
                 SignalTrue Labs is building an evidence base around a narrower question: when an
@@ -88,7 +89,9 @@ export default function SignalTrueLabs() {
                     className="flex gap-3 rounded-control border border-[#E2E8F0] bg-[#F8FAFC] p-4"
                   >
                     <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" />
-                    <p className="text-caption font-semibold leading-6 text-[#334155]">{question}</p>
+                    <p className="text-caption font-semibold leading-6 text-[#334155]">
+                      {question}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -122,8 +125,8 @@ export default function SignalTrueLabs() {
                 </h2>
                 <p className="mt-3 text-body leading-8 text-[#475569]">
                   SignalTrue Labs is intended to move the conversation from “we introduced an
-                  intervention” toward “here is the evidence that working conditions changed, here is
-                  what workers said, and here is what happened over time.”
+                  intervention” toward “here is the evidence that working conditions changed, here
+                  is what workers said, and here is what happened over time.”
                 </p>
                 <Link
                   to="/ask"
