@@ -40,7 +40,7 @@ describe('SignalTrue product-language guard', () => {
     const hero = readFileSync(resolve(process.cwd(), 'src/components/Hero.tsx'), 'utf8');
     const product = readFileSync(resolve(process.cwd(), 'src/pages/Product.tsx'), 'utf8');
 
-    expect(hero).toContain('No surveys required');
+    expect(hero).toContain('No recurring survey required for work-pattern evidence');
     expect(hero).toContain('No message content');
     expect(product).toContain('No individual productivity scores');
     expect(product).toMatch(/No\s+surveys\s+required/);
