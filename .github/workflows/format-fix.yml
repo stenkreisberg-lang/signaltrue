@@ -1,6 +1,9 @@
 name: Auto-format frontend
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - automation/signaltrue-p0-1-render-redeploy-20260923
 permissions:
   contents: write
 jobs:
