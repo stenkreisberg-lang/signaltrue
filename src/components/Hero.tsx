@@ -23,9 +23,7 @@ const Hero = () => {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Shield className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">
-                  No recurring survey required for work-pattern evidence
-                </span>
+                <span className="text-caption font-medium text-[#334155]">No surveys required</span>
               </div>
             </div>
 
