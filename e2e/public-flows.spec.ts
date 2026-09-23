@@ -9,6 +9,11 @@ const publicRoutes = [
   '/trust',
   '/sample-report',
   '/psychosocial-risk-visibility-review',
+  '/control-evidence-assessment',
+  '/norway/psychosocial-work-environment',
+  '/uk/work-related-stress',
+  '/germany/psychische-belastung',
+  '/netherlands/psychosociale-arbeidsbelasting',
   '/client-success',
   '/blog',
   '/contact',
@@ -168,3 +173,81 @@ test('visibility-review form preserves values and exposes a server failure', asy
   await expect(page.getByRole('alert')).toContainText('Synthetic server failure');
   await expect(page.getByLabel('Name')).toHaveValue('Synthetic Failure User');
 });
+
+test('control-evidence assessment completes, renders the server score and claims the result', async ({
+  page,
+}) => {
+  let completePayload: Record<string, unknown> | null = null;
+  let claimPayload: Record<string, unknown> | null = null;
+
+  await page.route('**/api/analytics/track', (route) =>
+    route.fulfill({ status: 201, contentType: 'application/json', body: '{"success":true}' })
+  );
+
+  await page.route('**/api/assessment/control-maturity/complete', async (route) => {
+    completePayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        submissionId: 'assessment-e2e',
+        score: 58,
+        level: 'developing',
+        weakestDimension: 'verification',
+        dimensions: {
+          detection: 67,
+          investigation: 67,
+          verification: 33,
+          governance: 67,
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/assessment/control-maturity/claim', async (route) => {
+    claimPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, submissionId: 'assessment-e2e' }),
+    });
+  });
+
+  await page.goto('/control-evidence-assessment?market=uk');
+
+  await expect(
+    page.getByRole('heading', {
+      name: 'Can you prove your psychosocial risk controls are working?',
+    })
+  ).toBeVisible();
+
+  for (let index = 0; index < 12; index += 1) {
+    await page.locator('main button').first().click();
+  }
+
+  await expect(page.getByText('58')).toBeVisible();
+  await expect(page.getByText('Developing evidence')).toBeVisible();
+  await expect(page.getByText('Control verification')).toBeVisible();
+
+  expect(completePayload).toMatchObject({
+    market: 'uk',
+    sourcePath: '/control-evidence-assessment',
+  });
+  expect((completePayload as { answers: unknown[] }).answers).toHaveLength(12);
+
+  await page.getByLabel('Work email').fill('hr@example.com');
+  await page.getByLabel('Organisation').fill('Example Organisation');
+  await page.getByLabel(/Role/).fill('Head of People');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Email my result' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Result saved' })).toBeVisible();
+  expect(claimPayload).toMatchObject({
+    email: 'hr@example.com',
+    organization: 'Example Organisation',
+    role: 'Head of People',
+    consentGiven: true,
+  });
+});
+
