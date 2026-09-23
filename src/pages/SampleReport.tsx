@@ -261,7 +261,9 @@ export default function SampleReport() {
                 </section>
 
                 <section>
-                  <h2 className="text-lead font-bold text-[#0F172A]">Control record and review ownership</h2>
+                  <h2 className="text-lead font-bold text-[#0F172A]">
+                    Control record and review ownership
+                  </h2>
                   <div className="mt-5 grid gap-4 rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5 sm:grid-cols-2 lg:grid-cols-4">
                     {[
                       ['Risk process owner', 'Health & Safety Manager'],
@@ -286,7 +288,9 @@ export default function SampleReport() {
                 <section>
                   <div className="mb-5 flex items-center gap-3">
                     <ClipboardCheck className="h-6 w-6 text-brand" />
-                    <h2 className="text-lead font-bold text-[#0F172A]">Observation → interpretation → validation → action</h2>
+                    <h2 className="text-lead font-bold text-[#0F172A]">
+                      Observation → interpretation → validation → action
+                    </h2>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {steps.map(([title, copy], index) => (

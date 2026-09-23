@@ -74,10 +74,14 @@ export default function AustraliaPsychosocialRisk() {
                 You implemented a psychosocial control. Did the work actually change?
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                SignalTrue helps Australian WHS and psychosocial-risk teams review whether a control was followed by a meaningful, sustained change in aggregated work patterns, and whether pressure may simply have moved elsewhere.
+                SignalTrue helps Australian WHS and psychosocial-risk teams review whether a control
+                was followed by a meaningful, sustained change in aggregated work patterns, and
+                whether pressure may simply have moved elsewhere.
               </p>
               <p className="mx-auto mt-4 max-w-3xl font-semibold text-[#334155]">
-                Start with one control: workload redistribution, meeting reduction, role clarification, roster change or another work-design intervention. Observe what changed, validate it with workers, then decide what to do next.
+                Start with one control: workload redistribution, meeting reduction, role
+                clarification, roster change or another work-design intervention. Observe what
+                changed, validate it with workers, then decide what to do next.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -93,11 +97,19 @@ export default function AustraliaPsychosocialRisk() {
                 to="/sample-report"
                 className="mt-5 inline-flex items-center text-caption font-semibold text-brand hover:underline"
               >
-                See a fictional control review from baseline to decision <ArrowRight className="ml-2 h-4 w-4" />
+                See a fictional control review from baseline to decision{' '}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <p className="mx-auto mt-5 max-w-3xl text-caption leading-6 text-[#64748B]">
-                Designed to support an ISO 45003-informed psychosocial risk process within an ISO 45001 OH&amp;S context. Alignment does not mean certification or establish WHS compliance.{' '}
-                <Link to="/au/standards-assurance" className="font-semibold text-brand hover:underline">See the standards mapping.</Link>
+                Designed to support an ISO 45003-informed psychosocial risk process within an ISO
+                45001 OH&amp;S context. Alignment does not mean certification or establish WHS
+                compliance.{' '}
+                <Link
+                  to="/au/standards-assurance"
+                  className="font-semibold text-brand hover:underline"
+                >
+                  See the standards mapping.
+                </Link>
               </p>
               <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-caption text-[#475569]">
                 {[
@@ -227,18 +239,44 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">Start from the control, not the dashboard</p>
-              <h2 className="mt-3 text-section font-bold text-[#0F172A]">Four controls. Four evidence questions.</h2>
-              <p className="mt-4 leading-7 text-[#475569]">SignalTrue is useful only when an observation connects to a decision. These examples show the level of specificity we expect before a pilot begins.</p>
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                Start from the control, not the dashboard
+              </p>
+              <h2 className="mt-3 text-section font-bold text-[#0F172A]">
+                Four controls. Four evidence questions.
+              </h2>
+              <p className="mt-4 leading-7 text-[#475569]">
+                SignalTrue is useful only when an observation connects to a decision. These examples
+                show the level of specificity we expect before a pilot begins.
+              </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2">
               {[
-                ['High job demands', 'Work was redistributed across the team', 'Did after-hours activity and meeting demand reduce without coordination load moving to another team?'],
-                ['Low job control', 'Approval steps were simplified', 'Did response bottlenecks and coordination loops reduce, and do workers report greater practical control over workflow?'],
-                ['Poor role clarity', 'Decision rights and hand-offs were clarified', 'Did repeated coordination and cross-team dependency patterns reduce after the change?'],
-                ['Poor organisational change management', 'Change cadence and manager support were redesigned', 'Did manager coordination load and after-hours activity stabilise, and do workers validate the improvement?'],
+                [
+                  'High job demands',
+                  'Work was redistributed across the team',
+                  'Did after-hours activity and meeting demand reduce without coordination load moving to another team?',
+                ],
+                [
+                  'Low job control',
+                  'Approval steps were simplified',
+                  'Did response bottlenecks and coordination loops reduce, and do workers report greater practical control over workflow?',
+                ],
+                [
+                  'Poor role clarity',
+                  'Decision rights and hand-offs were clarified',
+                  'Did repeated coordination and cross-team dependency patterns reduce after the change?',
+                ],
+                [
+                  'Poor organisational change management',
+                  'Change cadence and manager support were redesigned',
+                  'Did manager coordination load and after-hours activity stabilise, and do workers validate the improvement?',
+                ],
               ].map(([hazard, control, question]) => (
-                <article key={hazard} className="rounded-container border border-[#E2E8F0] bg-white p-6">
+                <article
+                  key={hazard}
+                  className="rounded-container border border-[#E2E8F0] bg-white p-6"
+                >
                   <p className="text-caption font-bold text-brand">{hazard}</p>
                   <h3 className="mt-2 font-bold text-[#0F172A]">{control}</h3>
                   <p className="mt-3 text-caption leading-6 text-[#475569]">{question}</p>
@@ -331,14 +369,31 @@ export default function AustraliaPsychosocialRisk() {
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-6xl px-6">
             <div className="mb-10 rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:p-8">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">The question Australian guidance already asks</p>
-              <p className="mt-3 text-lead font-bold text-[#0F172A]">Are the controls working effectively, without creating new risks?</p>
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                The question Australian guidance already asks
+              </p>
+              <p className="mt-3 text-lead font-bold text-[#0F172A]">
+                Are the controls working effectively, without creating new risks?
+              </p>
               <p className="mt-3 max-w-4xl text-caption leading-6 text-[#475569]">
-                Safe Work Australia says control measures should be reviewed regularly and changed or replaced when they are not working effectively. SignalTrue does not answer that legal question for you. It contributes one missing evidence source: whether relevant team work patterns changed after the control, and whether pressure may have moved elsewhere.
+                Safe Work Australia says control measures should be reviewed regularly and changed
+                or replaced when they are not working effectively. SignalTrue does not answer that
+                legal question for you. It contributes one missing evidence source: whether relevant
+                team work patterns changed after the control, and whether pressure may have moved
+                elsewhere.
               </p>
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-caption font-semibold">
-                <a href="https://www.safeworkaustralia.gov.au/book/health-care-and-social-assistance/managing-whs-risks/review-controls" target="_blank" rel="noreferrer" className="text-brand hover:underline">Safe Work Australia: Review controls</a>
-                <Link to="/au/standards-assurance" className="text-brand hover:underline">How SignalTrue relates to WHS and ISO 45003</Link>
+                <a
+                  href="https://www.safeworkaustralia.gov.au/book/health-care-and-social-assistance/managing-whs-risks/review-controls"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brand hover:underline"
+                >
+                  Safe Work Australia: Review controls
+                </a>
+                <Link to="/au/standards-assurance" className="text-brand hover:underline">
+                  How SignalTrue relates to WHS and ISO 45003
+                </Link>
               </div>
             </div>
             <div className="grid gap-5 md:grid-cols-3">
