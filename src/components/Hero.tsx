@@ -23,7 +23,7 @@ const Hero = () => {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Shield className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">No recurring survey required for work-pattern evidence</span>
+                <span className="text-caption font-medium text-[#334155]">No surveys required</span>
               </div>
             </div>
 
@@ -32,11 +32,15 @@ const Hero = () => {
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
-              SignalTrue gives Health & Safety and organisational-risk teams an evidence layer for control review: compare relevant work patterns before and after a change, check whether the change lasted, and see whether demand may simply have moved elsewhere.
+              SignalTrue gives Health & Safety and organisational-risk teams an evidence layer for
+              control review: compare relevant work patterns before and after a change, check
+              whether the change lasted, and see whether demand may simply have moved elsewhere.
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
-              Built around a standards-informed method: observation → interpretation → worker validation → action. Team-level evidence only. No message content. No individual risk or productivity scores.
+              Built around a standards-informed method: observation → interpretation → worker
+              validation → action. Team-level evidence only. No message content. No individual risk
+              or productivity scores.
             </p>
 
             <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
@@ -61,7 +65,12 @@ const Hero = () => {
               View the fictional sample review
             </SampleReportCTA>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-caption text-[#475569]">
-              {['ISO 45003-informed', 'ISO 45001 OH&S context', 'Jurisdiction-aware deployment', 'Privacy by design'].map((item) => (
+              {[
+                'ISO 45003-informed',
+                'ISO 45001 OH&S context',
+                'Jurisdiction-aware deployment',
+                'Privacy by design',
+              ].map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-brand" aria-hidden="true" /> {item}
                 </span>

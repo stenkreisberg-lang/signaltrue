@@ -145,7 +145,7 @@ const ROUTE_META = {
     description:
       'See how SignalTrue supports an ISO 45003-informed psychosocial risk process and Australian WHS control review, with responsibilities and product boundaries mapped explicitly.',
     summary:
-      'An explicit mapping of the control-review workflow to ISO 45003-informed psychosocial risk management and the ISO 45001 OH&S context, including worker consultation, evidence boundaries and responsibilities.'
+      'An explicit mapping of the control-review workflow to ISO 45003-informed psychosocial risk management and the ISO 45001 OH&S context, including worker consultation, evidence boundaries and responsibilities.',
   },
   '/au/privacy': {
     title: 'Australian Privacy Overview | SignalTrue',

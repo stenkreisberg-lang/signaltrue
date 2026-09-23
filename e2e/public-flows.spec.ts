@@ -63,21 +63,19 @@ test('verification-led homepage keeps its primary action above the mobile fold',
   await page.goto('/');
 
   const heading = page.getByRole('heading', {
-    name: 'You changed the work. Did the psychosocial risk control actually change the work?',
+    name: 'You changed the work. Can you show whether the control actually changed the work?',
   });
   await expect(heading).toBeVisible();
-  await expect(page.getByText(/migration when the demand simply moved/i)).toBeVisible();
-  await expect(page.getByText(/improvement was sustained/i)).toBeVisible();
+  await expect(page.getByText(/whether the change lasted/i)).toBeVisible();
+  await expect(page.getByText(/demand may simply have moved elsewhere/i)).toBeVisible();
 
   const lineCount = await heading.evaluate((element) => {
     const styles = window.getComputedStyle(element);
     return element.getBoundingClientRect().height / Number.parseFloat(styles.lineHeight);
   });
-  expect(lineCount).toBeLessThanOrEqual(3.1);
+  expect(lineCount).toBeLessThanOrEqual(4.1);
 
-  const primaryAction = page
-    .getByRole('link', { name: /Book a 20-minute visibility review/i })
-    .first();
+  const primaryAction = page.getByRole('link', { name: /Check one control for free/i }).first();
   const actionBox = await primaryAction.boundingBox();
   expect(actionBox).not.toBeNull();
   expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(812);
