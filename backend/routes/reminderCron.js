@@ -18,6 +18,10 @@ import {
   sendITAdminWeek2Reminder,
   sendITAdminWeek3Reminder,
 } from '../services/reminderEmailService.js';
+import {
+  buildAdminReminderUserQuery,
+  buildConnectedOrganizationQuery,
+} from '../utils/emailRecipientPolicy.js';
 
 const router = express.Router();
 
@@ -62,23 +66,19 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-    // Get all orgs to check integration status
-    const orgsWithIntegrations = await Organization.find({
-      $or: [
-        { 'integrations.slack.installed': true },
-        { 'integrations.google.refreshToken': { $exists: true, $ne: null } },
-        { 'integrations.googleChat.refreshToken': { $exists: true, $ne: null } },
-        { 'integrations.microsoft.refreshToken': { $exists: true, $ne: null } },
-      ],
-    }).select('_id');
+    // Treat delegated and application-consent integrations as connected.
+    // App-consent Microsoft tenants do not necessarily have a refresh token.
+    const orgsWithIntegrations = await Organization.find(buildConnectedOrganizationQuery()).select(
+      '_id'
+    );
 
     const connectedOrgIds = orgsWithIntegrations.map((o) => o._id);
 
-    // Find users in orgs WITHOUT integrations who registered 24+ hours ago
-    const usersNeedingReminder = await User.find({
-      createdAt: { $lt: twentyFourHoursAgo },
-      orgId: { $nin: connectedOrgIds },
-    }).populate('orgId');
+    // Fail closed: only active, human-created HR/admin accounts can receive onboarding
+    // reminders. Directory-synced employees are data subjects, not product users.
+    const usersNeedingReminder = await User.find(
+      buildAdminReminderUserQuery(twentyFourHoursAgo, connectedOrgIds)
+    ).populate('orgId');
 
     results.usersChecked = usersNeedingReminder.length;
 
