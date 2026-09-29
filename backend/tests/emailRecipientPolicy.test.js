@@ -2,7 +2,7 @@ import {
   ADMIN_REMINDER_ROLES,
   HUMAN_ACCOUNT_SOURCES,
   buildAdminReminderUserQuery,
-  buildConnectedOrganizationQuery,
+  buildReminderExcludedOrganizationQuery,
 } from '../utils/emailRecipientPolicy.js';
 
 describe('email recipient policy', () => {
@@ -29,7 +29,7 @@ describe('email recipient policy', () => {
   });
 
   test('Microsoft application-consent connections count as connected', () => {
-    const query = buildConnectedOrganizationQuery();
+    const query = buildReminderExcludedOrganizationQuery();
     expect(query.$or).toEqual(
       expect.arrayContaining([
         { 'integrations.microsoft.applicationConsentGrantedAt': { $exists: true, $ne: null } },
@@ -41,6 +41,8 @@ describe('email recipient policy', () => {
   });
 
   test('retired organizations are excluded from reminder processing', () => {
-    expect(buildConnectedOrganizationQuery().lifecycleStatus).toEqual({ $ne: 'retired' });
+    expect(buildReminderExcludedOrganizationQuery().$or).toContainEqual({
+      lifecycleStatus: 'retired',
+    });
   });
 });
