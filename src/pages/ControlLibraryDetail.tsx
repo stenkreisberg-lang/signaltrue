@@ -155,7 +155,9 @@ export default function ControlLibraryDetail() {
           </div>
 
           <div className="mx-auto mt-6 max-w-6xl rounded-container border border-[#E2E8F0] bg-white p-6 sm:p-8">
-            <p className="text-caption font-bold uppercase tracking-wider text-brand">Review timing</p>
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              Review timing
+            </p>
             <p className="mt-2 text-body font-bold">{entry.reviewTiming}</p>
             <p className="mt-3 max-w-4xl text-caption leading-6 text-[#64748B]">
               Timing depends on the nature of the hazard, the control, local duties, and how quickly
