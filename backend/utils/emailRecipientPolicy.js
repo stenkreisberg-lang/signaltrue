@@ -14,10 +14,10 @@ export const ADMIN_REMINDER_ROLES = Object.freeze([
 
 export const HUMAN_ACCOUNT_SOURCES = Object.freeze(['manual', 'invitation']);
 
-export function buildConnectedOrganizationQuery() {
+export function buildReminderExcludedOrganizationQuery() {
   return {
-    lifecycleStatus: { $ne: 'retired' },
     $or: [
+      { lifecycleStatus: 'retired' },
       { 'integrations.slack.installed': true },
       { 'integrations.google.refreshToken': { $exists: true, $ne: null } },
       { 'integrations.googleChat.refreshToken': { $exists: true, $ne: null } },
