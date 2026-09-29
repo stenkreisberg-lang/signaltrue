@@ -63,7 +63,7 @@ const alignment = [
 const boundaries = [
   'No diagnosis of burnout, stress, psychological injury or individual health.',
   'No individual psychosocial-risk or productivity score.',
-  'No claim that a work-pattern change proves causation.',
+  'No claim that a work-pattern change establishes causation.',
   'No claim that SignalTrue makes an organisation WHS compliant.',
   'No claim that Australian law requires SignalTrue, continuous telemetry or any specific technology.',
   'No claim that SignalTrue is ISO 45003 or ISO 45001 certified.',
