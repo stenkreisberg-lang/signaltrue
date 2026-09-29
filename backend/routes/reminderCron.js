@@ -20,7 +20,7 @@ import {
 } from '../services/reminderEmailService.js';
 import {
   buildAdminReminderUserQuery,
-  buildConnectedOrganizationQuery,
+  buildReminderExcludedOrganizationQuery,
 } from '../utils/emailRecipientPolicy.js';
 
 const router = express.Router();
@@ -68,16 +68,16 @@ router.post('/check-followups', verifyCronSecret, async (req, res) => {
 
     // Treat delegated and application-consent integrations as connected.
     // App-consent Microsoft tenants do not necessarily have a refresh token.
-    const orgsWithIntegrations = await Organization.find(buildConnectedOrganizationQuery()).select(
-      '_id'
-    );
+    const excludedOrganizations = await Organization.find(
+      buildReminderExcludedOrganizationQuery()
+    ).select('_id');
 
-    const connectedOrgIds = orgsWithIntegrations.map((o) => o._id);
+    const excludedOrganizationIds = excludedOrganizations.map((o) => o._id);
 
     // Fail closed: only active, human-created HR/admin accounts can receive onboarding
     // reminders. Directory-synced employees are data subjects, not product users.
     const usersNeedingReminder = await User.find(
-      buildAdminReminderUserQuery(twentyFourHoursAgo, connectedOrgIds)
+      buildAdminReminderUserQuery(twentyFourHoursAgo, excludedOrganizationIds)
     ).populate('orgId');
 
     results.usersChecked = usersNeedingReminder.length;
