@@ -19,7 +19,12 @@ const links = [
     roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
   { to: '/app/signals', label: 'Work-pattern evidence', group: 'Review' },
-  { to: '/app/control-reviews', label: 'Control reviews', group: 'Review', roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive', 'manager'] },
+  {
+    to: '/app/control-reviews',
+    label: 'Control reviews',
+    group: 'Review',
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive', 'manager'],
+  },
   { to: '/app/actions', label: 'Actions', group: 'Act' },
   {
     to: '/app/manager-coaching',
@@ -209,9 +214,9 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates observed work
-            patterns from interpretation. Worker consultation and human judgement remain part of the
-            review; the product does not diagnose health or establish cause.
+            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates
+            observed work patterns from interpretation. Worker consultation and human judgement
+            remain part of the review; the product does not diagnose health or establish cause.
             <Link to="/app/privacy">View data policy</Link>
           </div>
           {children}

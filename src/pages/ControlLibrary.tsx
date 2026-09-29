@@ -44,9 +44,9 @@ export default function ControlLibrary() {
                 A control is not finished when the action is completed.
               </h1>
               <p className="mt-5 max-w-3xl text-body leading-8 text-[#475569]">
-                Use these guides to define what should change, what evidence to collect, where demand
-                can migrate, when to review, and what workers should be asked before a control is
-                considered effective.
+                Use these guides to define what should change, what evidence to collect, where
+                demand can migrate, when to review, and what workers should be asked before a
+                control is considered effective.
               </p>
               <div className="mt-7">
                 <Link

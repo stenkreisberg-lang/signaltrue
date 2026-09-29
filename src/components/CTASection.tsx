@@ -16,7 +16,9 @@ const CTASection = () => {
             Bring one control you need to review.
           </h2>
           <p className="text-body text-[#CBD5E1] mb-10 max-w-xl mx-auto">
-            See how SignalTrue can connect one implemented control to a qualified baseline, before-and-after work-pattern evidence, possible demand migration, worker validation and a documented review decision.
+            See how SignalTrue can connect one implemented control to a qualified baseline,
+            before-and-after work-pattern evidence, possible demand migration, worker validation and
+            a documented review decision.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">

@@ -57,7 +57,8 @@ const Footer = () => {
               <span className="text-lead font-display font-bold text-white">SignalTrue</span>
             </Link>
             <p className="text-[#CBD5E1] text-caption max-w-sm mb-6">
-              Team-level evidence for reviewing whether workplace controls actually changed the work.
+              Team-level evidence for reviewing whether workplace controls actually changed the
+              work.
             </p>
             <div className="flex items-center gap-4">
               <a

@@ -3,12 +3,12 @@ import { calculateAuditResult } from './AustraliaMonitoringGapAudit';
 
 describe('Australian monitoring gap result', () => {
   test.each([
-    [0, 'Limited monitoring visibility'],
-    [4, 'Limited monitoring visibility'],
-    [5, 'Developing monitoring practice'],
-    [8, 'Developing monitoring practice'],
-    [9, 'Established monitoring practice'],
-    [12, 'Established monitoring practice'],
+    [0, 'Build the review process first'],
+    [4, 'Build the review process first'],
+    [5, 'Control-review evidence gap'],
+    [8, 'Control-review evidence gap'],
+    [9, 'Strong control-review foundation'],
+    [12, 'Strong control-review foundation'],
   ])('maps score %s to %s', (score, expected) => {
     expect(calculateAuditResult(score)).toBe(expected);
   });
