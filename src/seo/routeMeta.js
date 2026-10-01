@@ -519,6 +519,108 @@ const ROUTE_META = {
     summary:
       'Articles on job demands and work design, what happens between psychosocial risk assessments, and using operational evidence alongside worker consultation.',
   },
+  '/blog/people-at-work-decommissioning-what-next-australia': {
+    title: 'People at Work Is Closing: What Australian Employers Do Next',
+    headline: 'People at Work is being decommissioned. What should Australian employers do next?',
+    description:
+      'People at Work closes its online platform on 2 October 2026. See what Australian employers should preserve, replace and add to their psychosocial risk process.',
+    summary:
+      'People at Work is being decommissioned in 2026, with 2 October 2026 the final date for organisations to access the online platform. Rather than searching for a one-for-one replacement, Australian employers can preserve structured worker voice and strengthen the surrounding process with control records, continuous evidence and review.',
+    type: 'article',
+    publishedAt: '2026-10-01T08:00:00.000Z',
+    keywords: [
+      'People at Work decommissioned',
+      'People at Work alternative',
+      'psychosocial risk assessment Australia',
+      'psychosocial control review',
+      'WHS psychosocial risk',
+    ],
+    crawlerSections: [
+      {
+        heading: 'People at Work is not the whole risk-management system',
+        text:
+          'Worker-reported assessment remains valuable, but Australian psychosocial risk management also requires suitable controls, consultation and regular review of whether controls remain effective.',
+      },
+      {
+        heading: 'Build an evidence loop after assessment',
+        text:
+          'Connect worker voice to a defined organisational control, compare relevant work conditions before and after the change, check whether improvement held and use the combined evidence to maintain, modify or replace the control.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'When does the People at Work online platform close?',
+        answer:
+          'Comcare states that 2 October 2026 is the final date for organisations to access the online platform and that organisations should extract their reports before that date.',
+      },
+      {
+        question: 'Is SignalTrue a replacement for People at Work?',
+        answer:
+          'No. SignalTrue does not replace worker-reported assessment or consultation. It adds continuous team-level work-pattern evidence that can support investigation and control review.',
+      },
+      {
+        question: 'What should organisations preserve from People at Work?',
+        answer:
+          'Preserve existing reports and the principle of structured worker voice, then strengthen the process around controls, ongoing evidence and review.',
+      },
+    ],
+    links: [
+      ['/au/psychosocial-risk-assessment-beyond-surveys', 'Assessment beyond surveys'],
+      ['/au/psychosocial-control-effectiveness', 'Control effectiveness'],
+      ['/au', 'SignalTrue Australia'],
+    ],
+  },
+  '/blog/psychosocial-risk-monitoring-without-employee-surveillance-australia': {
+    title: 'Monitor Psychosocial Risk Without Employee Surveillance',
+    headline: 'How do you monitor psychosocial risk without creating employee surveillance?',
+    description:
+      'Australian guidance recognises intrusive surveillance as a psychosocial hazard. See how team-level work-pattern evidence can support WHS monitoring without individual productivity scoring.',
+    summary:
+      'Monitoring intended to support psychosocial safety can become a problem if workers experience it as intrusive individual surveillance. A safer design starts with a narrow WHS purpose, minimises fields, works at team level, protects small groups and keeps worker consultation central.',
+    type: 'article',
+    publishedAt: '2026-10-01T08:10:00.000Z',
+    keywords: [
+      'intrusive surveillance psychosocial hazard',
+      'employee surveillance Australia',
+      'psychosocial risk monitoring',
+      'workplace metadata privacy',
+      'WHS monitoring',
+    ],
+    crawlerSections: [
+      {
+        heading: 'Monitoring can itself create psychosocial risk',
+        text:
+          'Comcare identifies intrusive surveillance as a psychosocial hazard. The design goal should therefore be the minimum evidence needed for a legitimate WHS decision, not the maximum data a workplace system can expose.',
+      },
+      {
+        heading: 'Move the unit of analysis away from the individual',
+        text:
+          'Aggregated team-level patterns can support questions about workload, meetings, after-hours work and coordination without turning the system into a person-level productivity ranking tool.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is employee surveillance a psychosocial hazard in Australia?',
+        answer:
+          'Comcare identifies intrusive surveillance as a psychosocial hazard and describes potential effects on stress, trust, autonomy, work intensity and worker wellbeing. Applicable duties and definitions depend on jurisdiction and circumstances.',
+      },
+      {
+        question: 'Can workplace metadata be used without surveilling individuals?',
+        answer:
+          'It can be designed that way, but metadata alone is not enough. Purpose limitation, field minimisation, aggregation, group-size protections, access controls and clear prohibited uses are also needed.',
+      },
+      {
+        question: 'Does SignalTrue score individual employees?',
+        answer:
+          'SignalTrue is designed for aggregated team-level work-pattern evidence rather than individual productivity ranking or psychological profiling.',
+      },
+    ],
+    links: [
+      ['/au/continuous-psychosocial-risk-monitoring', 'Continuous psychosocial risk monitoring'],
+      ['/au/worker-transparency', 'Worker transparency'],
+      ['/au/privacy', 'Australian privacy overview'],
+    ],
+  },
   '/blog/privacy-in-workforce-analysis-a-practical-guide-for-hr': {
     title: 'Privacy-First Workforce Analytics: Practical HR Guide | SignalTrue',
     headline: 'Privacy-first workforce analytics',
