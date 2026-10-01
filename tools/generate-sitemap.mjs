@@ -7,11 +7,19 @@ const OUTPUT_PATHS = [
   new URL('../public/sitemap.xml', import.meta.url),
   new URL('../marketing/sitemap.xml', import.meta.url),
 ];
-const CORE_LAST_MODIFIED = '2026-09-22';
+const CORE_LAST_MODIFIED = '2026-10-01';
 const STATIC_BLOG_ENTRIES = [
   {
     url: `${SITE_URL}/blog/unreasonable-workload-psychosocial-hazard-australia`,
     lastModified: '2026-08-30',
+  },
+  {
+    url: `${SITE_URL}/blog/people-at-work-decommissioning-what-next-australia`,
+    lastModified: '2026-10-01',
+  },
+  {
+    url: `${SITE_URL}/blog/psychosocial-risk-monitoring-without-employee-surveillance-australia`,
+    lastModified: '2026-10-01',
   },
 ];
 const LEGACY_UNSAFE_TOPIC_PATTERN =
@@ -55,6 +63,10 @@ const staticPages = [
   ['/signals/manager-load', 'monthly', '0.8'],
   ['/au', 'weekly', '1.0'],
   ['/au/psychosocial-risk-monitoring', 'weekly', '0.95'],
+  ['/au/psychosocial-control-effectiveness', 'weekly', '1.0'],
+  ['/au/review-psychosocial-controls', 'weekly', '0.95'],
+  ['/au/continuous-psychosocial-risk-monitoring', 'weekly', '0.95'],
+  ['/au/psychosocial-risk-assessment-beyond-surveys', 'weekly', '0.95'],
   ['/au/8-week-pilot', 'weekly', '0.95'],
   ['/au/monitoring-gap-audit', 'weekly', '1.0'],
   ['/au/standards-assurance', 'monthly', '0.9'],
