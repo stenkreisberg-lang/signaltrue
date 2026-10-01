@@ -165,7 +165,7 @@ export const editorialBlogPosts = [
 
       <p>This article is general information, not legal advice. Psychosocial WHS requirements differ by jurisdiction. Digital indicators should be treated as evidence for investigation and consultation, not as proof of an individual psychological condition.</p>
     `,
-  },,
+  },
   {
     _id: 'editorial-people-at-work-decommissioning-australia',
     title: 'People at Work is being decommissioned. What should Australian employers do next?',
@@ -192,9 +192,9 @@ export const editorialBlogPosts = [
       metaTitle: 'People at Work Is Closing: What Australian Employers Do Next',
       metaDescription:
         'People at Work closes its online platform on 2 October 2026. See what Australian employers should preserve, replace and add to their psychosocial risk process.',
-      canonicalUrl: \`https://www.signaltrue.ai/blog/\${PEOPLE_AT_WORK_SLUG}\`,
+      canonicalUrl: `https://www.signaltrue.ai/blog/${PEOPLE_AT_WORK_SLUG}`,
     },
-    content: \`
+    content: `
       <p><strong>People at Work is not simply another software product disappearing. For many Australian organisations it has been a familiar way to collect structured worker-reported evidence about psychosocial risk.</strong></p>
 
       <p>Comcare says the People at Work platform is being decommissioned in 2026. New registrations stopped on 1 June, new surveys stopped on 1 July, and 2 October 2026 is the final date for organisations to access the online platform and extract their reports.</p>
@@ -284,7 +284,7 @@ export const editorialBlogPosts = [
       <p><strong>Sources:</strong> <a href="https://www.comcare.gov.au/safe-healthy-work/mentally-healthy-workplaces/mental-health-initiatives/people-at-work" target="_blank" rel="noreferrer">Comcare: People at Work decommissioning</a>; <a href="https://www.safeworkaustralia.gov.au/doc/model-code-practice-managing-psychosocial-hazards-work" target="_blank" rel="noreferrer">Safe Work Australia: Model Code of Practice, Managing psychosocial hazards at work</a>.</p>
 
       <p><em>This article is general information, not legal advice. WHS requirements vary by jurisdiction.</em></p>
-    \`,
+    `,
   },
   {
     _id: 'editorial-monitor-without-surveillance-australia',
@@ -312,9 +312,9 @@ export const editorialBlogPosts = [
       metaTitle: 'Monitor Psychosocial Risk Without Employee Surveillance',
       metaDescription:
         'Australian guidance recognises intrusive surveillance as a psychosocial hazard. See how team-level work-pattern evidence can support WHS monitoring without individual productivity scoring.',
-      canonicalUrl: \`https://www.signaltrue.ai/blog/\${NON_SURVEILLANCE_SLUG}\`,
+      canonicalUrl: `https://www.signaltrue.ai/blog/${NON_SURVEILLANCE_SLUG}`,
     },
-    content: \`
+    content: `
       <p><strong>There is an uncomfortable contradiction in psychosocial risk technology: a system intended to make work safer can make work worse if workers experience it as constant individual surveillance.</strong></p>
 
       <p>This is not a theoretical objection. <a href="https://www.comcare.gov.au/safe-healthy-work/prevent-harm/psychosocial-hazards/intrusive-surveillance" target="_blank" rel="noreferrer">Comcare identifies intrusive surveillance as a psychosocial hazard</a> and gives examples including unreasonable oversight, keyboard tracking, monitoring emails and files, covert webcam surveillance and remote screenshots.</p>
@@ -418,7 +418,7 @@ export const editorialBlogPosts = [
       <p><strong>Sources:</strong> <a href="https://www.comcare.gov.au/safe-healthy-work/prevent-harm/psychosocial-hazards/intrusive-surveillance" target="_blank" rel="noreferrer">Comcare: Intrusive surveillance</a>; <a href="https://www.safeworkaustralia.gov.au/doc/model-code-practice-managing-psychosocial-hazards-work" target="_blank" rel="noreferrer">Safe Work Australia: Model Code of Practice, Managing psychosocial hazards at work</a>.</p>
 
       <p><em>This article is general information, not legal advice. Privacy, surveillance and WHS requirements vary by jurisdiction.</em></p>
-    \`,
+    `,
   }
 ];
 
