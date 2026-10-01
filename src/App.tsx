@@ -34,7 +34,6 @@ const Insights = lazy(() => import('./pages/app/Insights'));
 const Signals = lazy(() => import('./pages/app/Signals'));
 const ActiveMonitoring = lazy(() => import('./pages/app/ActiveMonitoring'));
 const Actions = lazy(() => import('./pages/app/Actions'));
-const ManagerCoaching = lazy(() => import('./pages/app/ManagerCoaching'));
 const Privacy = lazy(() => import('./pages/app/Privacy'));
 const SignalCoverage = lazy(() => import('./pages/app/SignalCoverage'));
 const Employees = lazy(() => import('./pages/app/Employees'));
@@ -86,6 +85,17 @@ const queryClient = new QueryClient({
 });
 
 const withAuthentication = (page: ReactNode) => <ProtectedRoute>{page}</ProtectedRoute>;
+const HR_REPORT_ROLES = [
+  'master_admin',
+  'admin',
+  'hr_admin',
+  'org_admin',
+  'executive',
+  'compliance',
+];
+const withHrAccess = (page: ReactNode) => (
+  <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>{page}</ProtectedRoute>
+);
 
 const App = () => (
   <ErrorBoundary>
@@ -159,67 +169,58 @@ const App = () => (
                 <Route
                   path="/app/overview"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>
                       <Overview />
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/app/latest-brief" element={withAuthentication(<LatestBrief />)} />
-                <Route path="/app/insights" element={withAuthentication(<Insights />)} />
-                <Route path="/app/insights/:teamId" element={withAuthentication(<Insights />)} />
-                <Route path="/app/signals" element={withAuthentication(<Signals />)} />
-                <Route path="/app/signals/:signalId" element={withAuthentication(<Signals />)} />
-                <Route
-                  path="/app/active-monitoring"
-                  element={withAuthentication(<ActiveMonitoring />)}
-                />
-                <Route path="/app/risk-feed" element={withAuthentication(<ActiveMonitoring />)} />
-                <Route path="/app/actions" element={withAuthentication(<Actions />)} />
+                <Route path="/app/latest-brief" element={withHrAccess(<LatestBrief />)} />
+                <Route path="/app/insights" element={withHrAccess(<Insights />)} />
+                <Route path="/app/insights/:teamId" element={withHrAccess(<Insights />)} />
+                <Route path="/app/signals" element={withHrAccess(<Signals />)} />
+                <Route path="/app/signals/:signalId" element={withHrAccess(<Signals />)} />
+                <Route path="/app/active-monitoring" element={withHrAccess(<ActiveMonitoring />)} />
+                <Route path="/app/risk-feed" element={withHrAccess(<ActiveMonitoring />)} />
+                <Route path="/app/actions" element={withHrAccess(<Actions />)} />
                 <Route
                   path="/app/manager-coaching"
-                  element={withAuthentication(<ManagerCoaching />)}
+                  element={withHrAccess(<Navigate to="/app/overview" replace />)}
                 />
-                <Route
-                  path="/app/control-reviews"
-                  element={withAuthentication(<ControlReviews />)}
-                />
+                <Route path="/app/control-reviews" element={withHrAccess(<ControlReviews />)} />
                 <Route
                   path="/app/control-reviews/new"
-                  element={withAuthentication(<NewControlReview />)}
+                  element={withHrAccess(<NewControlReview />)}
                 />
                 <Route
                   path="/app/control-reviews/findings"
-                  element={withAuthentication(<ControlReviewFindings />)}
+                  element={withHrAccess(<ControlReviewFindings />)}
                 />
                 <Route
                   path="/app/control-reviews/:caseId"
-                  element={withAuthentication(<ControlReviewDetail />)}
+                  element={withHrAccess(<ControlReviewDetail />)}
                 />
-                <Route path="/app/trust-pack" element={withAuthentication(<TrustPack />)} />
+                <Route path="/app/trust-pack" element={withHrAccess(<TrustPack />)} />
                 <Route
                   path="/app/executive-summary"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>
                       <ExecutiveSummary />
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/app/privacy" element={withAuthentication(<Privacy />)} />
-                <Route
-                  path="/app/signal-coverage"
-                  element={withAuthentication(<SignalCoverage />)}
-                />
-                <Route path="/app/employees" element={withAuthentication(<Employees />)} />
-                <Route path="/app/work-network" element={withAuthentication(<WorkNetwork />)} />
+                <Route path="/app/privacy" element={withHrAccess(<Privacy />)} />
+                <Route path="/app/signal-coverage" element={withHrAccess(<SignalCoverage />)} />
+                <Route path="/app/employees" element={withHrAccess(<Employees />)} />
+                <Route path="/app/work-network" element={withHrAccess(<WorkNetwork />)} />
                 <Route
                   path="/app/methodology"
-                  element={withAuthentication(<Navigate to="/app/overview" replace />)}
+                  element={withHrAccess(<Navigate to="/app/overview" replace />)}
                 />
                 <Route
                   path="/app/validation"
-                  element={withAuthentication(<Navigate to="/app/overview" replace />)}
+                  element={withHrAccess(<Navigate to="/app/overview" replace />)}
                 />
-                <Route path="/app/site-analytics" element={withAuthentication(<SiteAnalytics />)} />
+                <Route path="/app/site-analytics" element={withHrAccess(<SiteAnalytics />)} />
                 <Route
                   path="/app/monthly-report"
                   element={withAuthentication(<Navigate to="/app/overview" replace />)}

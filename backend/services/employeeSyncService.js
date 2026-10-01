@@ -1009,6 +1009,14 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       `[EmployeeSync] Found ${allMsUsers.length} total MS users, ${domainFilteredUsers.length} matching org domain`
     );
 
+    // Reconciliation is deliberately guarded: an empty or domain-mismatched
+    // Graph response must not deactivate the whole directory. Once Graph has
+    // returned a non-empty, domain-valid directory, users previously linked to
+    // Microsoft but missing from the current active population are marked
+    // inactive so they cannot continue contributing to team-level reporting.
+    const canReconcileDirectory = allMsUsers.length > 0 && domainFilteredUsers.length > 0;
+    const currentMicrosoftIds = new Set(domainFilteredUsers.map((user) => String(user.id)));
+
     const validatedMsUsers = [];
     for (const msUser of domainFilteredUsers) {
       const identity = classifyEmployeeCandidate(
@@ -1130,6 +1138,28 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       }
     }
 
+    let inactivated = 0;
+    if (canReconcileDirectory) {
+      const missingUsers = await User.updateMany(
+        {
+          orgId,
+          'externalIds.microsoftUserId': { $exists: true, $nin: [...currentMicrosoftIds] },
+          accountStatus: { $ne: 'inactive' },
+        },
+        {
+          $set: { accountStatus: 'inactive' },
+        }
+      );
+      inactivated = missingUsers.modifiedCount || 0;
+      if (inactivated > 0) {
+        console.log(`[EmployeeSync] Marked ${inactivated} missing Microsoft users inactive`);
+      }
+    } else {
+      console.warn(
+        '[EmployeeSync] Skipped Microsoft directory reconciliation because the source population was empty or did not match the organization domain'
+      );
+    }
+
     // Update last sync timestamp
     await Organization.findByIdAndUpdate(orgId, {
       $set: { 'integrations.microsoft.lastEmployeeSync': new Date() },
@@ -1150,6 +1180,7 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
       success: true,
       stats: {
         ...syncStats,
+        inactivated,
         removedInvalid: invalidCleanup.removed,
         normalizedInvalid: invalidCleanup.normalized,
       },
@@ -1158,6 +1189,10 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
         normalized: invalidCleanup.normalized,
         protected: invalidCleanup.protected,
         duplicatesMerged: invalidCleanup.duplicatesMerged,
+      },
+      reconciliation: {
+        performed: canReconcileDirectory,
+        inactivated,
       },
       eventRemap,
     };

@@ -21,10 +21,32 @@ const FIELD_ALIASES = {
   firstName: ['firstname', 'first', 'givenname', 'given', 'eesnimi'],
   lastName: ['lastname', 'last', 'surname', 'familyname', 'family', 'perenimi', 'perekonnanimi'],
   name: ['name', 'fullname', 'displayname', 'employeename', 'employee', 'worker', 'tootaja'],
-  email: ['email', 'emailaddress', 'workemail', 'mail', 'primaryemail'],
-  position: ['position', 'title', 'jobtitle', 'role', 'ametikoht'],
-  team: ['team', 'teamname', 'department', 'dept', 'unit', 'orgunit', 'division', 'osakond'],
-  department: ['department', 'dept', 'unit', 'orgunit', 'division', 'osakond'],
+  email: ['email', 'emailaddress', 'workemail', 'mail', 'primaryemail', 'epost'],
+  position: ['position', 'title', 'jobtitle', 'role', 'ametikoht', 'amet', 'ametinimetus'],
+  team: [
+    'team',
+    'teamname',
+    'department',
+    'dept',
+    'unit',
+    'orgunit',
+    'division',
+    'osakond',
+    'uksus',
+    'meeskond',
+  ],
+  department: ['department', 'dept', 'unit', 'orgunit', 'division', 'osakond', 'uksus'],
+  status: [
+    'status',
+    'employmentstatus',
+    'accountstatus',
+    'active',
+    'isactive',
+    'employmentstate',
+    'staatus',
+    'toosuhe',
+    'toostatus',
+  ],
 };
 
 function normalizeHeader(value) {
@@ -56,7 +78,27 @@ function canonicalizeRosterRow(row, index) {
     position: getAliasedValue(row, 'position'),
     team,
     department: department || team,
+    status: getAliasedValue(row, 'status'),
   };
+}
+
+function isInactiveRosterStatus(status) {
+  if (!status) return false;
+  const normalized = normalizeHeader(status) || '';
+  return [
+    'inactive',
+    'disabled',
+    'deleted',
+    'terminated',
+    'former',
+    'left',
+    'departed',
+    'inactiveemployee',
+    'endnud',
+    'lahkunud',
+    'suletud',
+    'peatatud',
+  ].includes(normalized);
 }
 
 function escapeRegex(value) {
@@ -263,6 +305,7 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     created: 0,
     updated: 0,
     skipped: 0,
+    inactiveSkipped: 0,
     teamsCreated: 0,
     skippedRows: [],
   };
@@ -274,6 +317,11 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
 
   for (const [index, row] of rows.entries()) {
     const canonical = canonicalizeRosterRow(row, index);
+    if (isInactiveRosterStatus(canonical.status)) {
+      stats.inactiveSkipped++;
+      pushSkipped(stats, canonical.rowNumber, canonical.email, 'inactive_employee');
+      continue;
+    }
     const identity = classifyEmployeeCandidate({
       email: canonical.email,
       firstName: canonical.firstName,
@@ -310,7 +358,6 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       existing.lastName = identity.lastName;
       existing.teamId = team._id;
       existing.profile = profile;
-      if (existing.accountStatus === 'inactive') existing.accountStatus = 'pending';
       await existing.save();
       stats.updated++;
     } else {

@@ -113,12 +113,24 @@ describe('manager coaching readiness and insight integrity', () => {
 });
 
 describe('private API and experiment loop', () => {
+  test('does not expose individual coaching data to managers', async () => {
+    const orgId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+    const app = coachingApp();
+
+    const response = await request(app)
+      .get(`/api/manager-coaching/v2/me?orgId=${orgId}`)
+      .set('Authorization', `Bearer ${sign({ userId, orgId, role: 'manager' })}`);
+
+    expect(response.status).toBe(403);
+  });
+
   test('rejects cross-tenant requests before any coaching data is read', async () => {
     const orgA = new mongoose.Types.ObjectId();
     const orgB = new mongoose.Types.ObjectId();
     const userId = new mongoose.Types.ObjectId();
     const app = coachingApp();
-    const token = sign({ userId, orgId: orgA, role: 'manager' });
+    const token = sign({ userId, orgId: orgA, role: 'hr_admin' });
     await request(app)
       .get(`/api/manager-coaching/v2/me?orgId=${orgB}`)
       .set('Authorization', `Bearer ${token}`)
@@ -129,7 +141,7 @@ describe('private API and experiment loop', () => {
     const orgId = new mongoose.Types.ObjectId();
     const userId = new mongoose.Types.ObjectId();
     const app = coachingApp();
-    const token = sign({ userId, orgId, role: 'manager' });
+    const token = sign({ userId, orgId, role: 'hr_admin' });
     await request(app)
       .get('/api/manager-coaching/v2/me?orgId=not-an-object-id')
       .set('Authorization', `Bearer ${token}`)
@@ -151,7 +163,7 @@ describe('private API and experiment loop', () => {
     const fixture = await seedManager({ activeReports: 8, suppressed: false, historyWeeks: 4 });
     const coaching = await generateManagerCoaching(fixture);
     const app = coachingApp();
-    const token = sign({ ...fixture, role: 'manager' });
+    const token = sign({ ...fixture, role: 'hr_admin' });
     const response = await request(app)
       .post('/api/manager-coaching/v2/experiments')
       .set('Authorization', `Bearer ${token}`)
@@ -177,7 +189,7 @@ describe('private API and experiment loop', () => {
     const fixture = await seedManager({ activeReports: 8, suppressed: false, historyWeeks: 4 });
     const coaching = await generateManagerCoaching(fixture);
     const app = coachingApp();
-    const token = sign({ ...fixture, role: 'manager' });
+    const token = sign({ ...fixture, role: 'hr_admin' });
     const started = await request(app)
       .post('/api/manager-coaching/v2/experiments')
       .set('Authorization', `Bearer ${token}`)
@@ -277,6 +289,7 @@ async function seedManager({ activeReports, suppressed, historyWeeks }) {
         graph: 1,
       },
       confidence: 'high',
+      dataQualityVersion: '2.0.0',
     };
   });
   await ManagerWeekly.insertMany([
@@ -308,6 +321,7 @@ async function seedManager({ activeReports, suppressed, historyWeeks }) {
         graph: 1,
       },
       confidence: 'high',
+      dataQualityVersion: '2.0.0',
     },
   ]);
   await EngagementTeamDaily.insertMany(

@@ -13,7 +13,13 @@ import {
 
 const router = express.Router();
 router.use(authenticateToken);
-router.use(['/v2/me', '/v2/events', '/v2/experiments'], requireRoles(['manager']));
+// Manager Coaching is retired as an end-user feature. Keep the API available
+// only to HR/admin roles for controlled review and migration tooling; managers
+// and employees must not receive individual coaching data from SignalTrue.
+router.use(
+  ['/v2/me', '/v2/events', '/v2/experiments'],
+  requireRoles(['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive', 'compliance'])
+);
 
 router.get(
   '/v2/admin/adoption',

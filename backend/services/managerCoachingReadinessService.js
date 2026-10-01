@@ -56,7 +56,11 @@ export async function getManagerCoachingReadiness({ orgId, userId }) {
         .lean()
     : [];
 
-  const since = new Date();
+  // Coverage must be measured relative to the latest available manager week,
+  // not the server clock. Backfilled or delayed data would otherwise appear to
+  // have no coverage once the current date moves beyond the reporting period.
+  const referenceDate = latestWeek ? new Date(`${latestWeek.weekStart}T00:00:00.000Z`) : new Date();
+  const since = new Date(referenceDate);
   since.setUTCDate(since.getUTCDate() - 42);
   const sinceDate = since.toISOString().slice(0, 10);
   const teamDays = manager.teamId

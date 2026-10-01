@@ -135,4 +135,60 @@ describe('HR roster import', () => {
       parseHrRosterFile({ originalName: 'employees.xls', buffer: Buffer.from('legacy') })
     ).rejects.toThrow('Export the roster as .xlsx or CSV');
   });
+
+  test('recognizes Estonian headers and excludes inactive roster rows', async () => {
+    const org = await Organization.create({ name: 'Tehnopol', domain: 'tehnopol.ee' });
+
+    const result = await importHrRosterRows(org._id, [
+      {
+        Eesnimi: 'Triin',
+        Perekonnanimi: 'Kuldmaa',
+        'E-post': 'triin@tehnopol.ee',
+        Ametinimetus: 'HR',
+        Üksus: 'People',
+        Staatus: 'aktiivne',
+      },
+      {
+        Eesnimi: 'Former',
+        Perekonnanimi: 'Employee',
+        'E-post': 'former@tehnopol.ee',
+        Üksus: 'People',
+        Staatus: 'lahkunud',
+      },
+    ]);
+
+    expect(result.stats).toMatchObject({
+      created: 1,
+      inactiveSkipped: 1,
+      skipped: 1,
+    });
+    expect(await User.countDocuments({ orgId: org._id })).toBe(1);
+    expect(await User.findOne({ email: 'triin@tehnopol.ee' })).toMatchObject({
+      firstName: 'Triin',
+      lastName: 'Kuldmaa',
+    });
+  });
+
+  test('does not reactivate an inactive existing employee during roster import', async () => {
+    const org = await Organization.create({ name: 'Example', domain: 'example.com' });
+    const team = await Team.create({ name: 'People', orgId: org._id });
+    await User.create({
+      email: 'former@example.com',
+      name: 'Former Employee',
+      password: 'temporary',
+      accountStatus: 'inactive',
+      source: 'microsoft',
+      role: 'team_member',
+      orgId: org._id,
+      teamId: team._id,
+    });
+
+    await importHrRosterRows(org._id, [
+      { Name: 'Former Employee', Email: 'former@example.com', Team: 'People' },
+    ]);
+
+    expect(await User.findOne({ email: 'former@example.com' })).toMatchObject({
+      accountStatus: 'inactive',
+    });
+  });
 });

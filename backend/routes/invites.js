@@ -1,8 +1,9 @@
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import Invite from '../models/invite.js';
-import ReminderEmail from '../models/reminderEmail.js';
-import { sendITAdminReminder } from '../services/reminderEmailService.js';
+import Invitation from '../models/invitation.js';
+import Organization from '../models/organizationModel.js';
+import User from '../models/user.js';
+import { deliverInvitation } from '../services/invitationDeliveryService.js';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -14,57 +15,40 @@ router.post(
   requireRoles(['admin', 'hr_admin', 'master_admin']),
   async (req, res) => {
     try {
-      const { email, role, inviterName, companyName } = req.body;
+      const { email, role, inviterName } = req.body;
       if (!email || !role) return res.status(400).json({ message: 'Email and role required' });
       if (
         !['viewer', 'team_member', 'it_admin', 'hr_admin', 'manager', 'executive'].includes(role)
       ) {
         return res.status(400).json({ message: 'Invalid invitation role' });
       }
-      const inviterId = req.user.userId;
       const orgId = req.user.orgId;
-      const token = uuidv4();
-      const expiry = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
-      const invite = await Invite.create({
+      const normalizedRole = role === 'hr_admin' ? 'hr_admin' : role === 'it_admin' ? 'it_admin' : 'team_member';
+      const [organization, inviter] = await Promise.all([
+        Organization.findById(orgId),
+        User.findById(req.user.userId),
+      ]);
+      if (!organization) return res.status(404).json({ message: 'Organization not found' });
+
+      const invitation = await Invitation.createWithToken({
         email,
-        role,
-        token,
-        expiry,
-        inviterName,
-        companyName,
+        name: String(inviterName || '').trim() || undefined,
+        role: normalizedRole,
         orgId,
+        invitedBy: req.user.userId,
+        ttlHours: 48,
       });
+      const delivery = await deliverInvitation(invitation, { organization, inviter });
 
-      // If this is an IT admin invite, send the reminder email
-      if (role === 'it_admin') {
-        const setupUrl = `https://www.signaltrue.ai/onboarding?token=${token}`;
-        const itAdminName = email.split('@')[0]; // Extract name from email
-
-        (async () => {
-          try {
-            const result = await sendITAdminReminder(email, itAdminName, inviterName, setupUrl);
-            if (result.success) {
-              await ReminderEmail.recordSent({
-                recipientEmail: email,
-                orgId,
-                reminderType: 'it-admin-invite',
-                subject: 'IT action needed — complete the integration setup',
-                emailId: result.emailId,
-                invitedBy: {
-                  userId: inviterId,
-                  name: inviterName,
-                  email: null,
-                },
-              });
-              console.log(`[Reminder] Sent IT admin invite reminder to ${email}`);
-            }
-          } catch (err) {
-            console.error('[Reminder] Failed to send IT admin reminder:', err.message);
-          }
-        })();
-      }
-
-      res.json({ email, role, token, expiry, reminderSent: role === 'it_admin' });
+      res.json({
+        email: invitation.email,
+        role,
+        token: invitation.token,
+        expiry: invitation.expiresAt,
+        emailSent: delivery.emailSent,
+        warning: delivery.warning || null,
+        inviteUrl: delivery.inviteUrl,
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }

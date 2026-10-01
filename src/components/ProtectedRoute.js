@@ -6,7 +6,7 @@ import {
   SESSION_INVALIDATED_EVENT,
 } from '../utils/authContext';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, allowedRoles }) {
   const token = localStorage.getItem('token');
   const [sessionState, setSessionState] = useState(token ? 'checking' : 'missing');
 
@@ -28,8 +28,13 @@ function ProtectedRoute({ children }) {
 
     setSessionState('checking');
     getAuthenticatedContext()
-      .then(() => {
-        if (active) setSessionState('valid');
+      .then(({ user }) => {
+        if (!active) return;
+        if (allowedRoles?.length && !allowedRoles.includes(user?.role)) {
+          setSessionState('forbidden');
+          return;
+        }
+        setSessionState('valid');
       })
       .catch(() => {
         clearStoredSession();
@@ -39,10 +44,29 @@ function ProtectedRoute({ children }) {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, allowedRoles]);
 
   if (sessionState === 'missing' || sessionState === 'invalid') {
     return <Navigate to="/login" replace />;
+  }
+
+  if (sessionState === 'forbidden') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 text-center">
+        <div className="max-w-md rounded-container border border-slate-200 bg-white p-8 shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">HR access required</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            This SignalTrue workspace is available to authorised HR and organisation administrators.
+          </p>
+          <a
+            className="mt-6 inline-block text-sm font-semibold text-slate-900 underline"
+            href="/dashboard"
+          >
+            Return to dashboard
+          </a>
+        </div>
+      </div>
+    );
   }
 
   if (sessionState === 'checking') {

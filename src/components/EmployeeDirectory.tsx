@@ -102,6 +102,7 @@ interface HrRosterStats {
   created: number;
   updated: number;
   skipped: number;
+  inactiveSkipped?: number;
   teamsCreated: number;
   skippedRows: Array<{ rowNumber: number; email: string | null; reason: string }>;
 }
@@ -789,7 +790,7 @@ const EmployeeDirectory: React.FC = () => {
               HR roster export
               <input
                 type="file"
-                accept=".csv,.xls,.xlsx,.pdf"
+                accept=".csv,.xlsx,.pdf"
                 disabled={importingRoster}
                 onChange={(event) => setRosterFile(event.target.files?.[0] || null)}
                 className="mt-1 block w-full text-caption text-gray-700 file:mr-4 file:rounded-control file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-caption file:font-medium file:text-blue-700 hover:file:bg-blue-100"
@@ -805,8 +806,9 @@ const EmployeeDirectory: React.FC = () => {
             </button>
           </div>
           <p className="mt-2 text-caption text-gray-500">
-            Accepted columns include first name, surname, email, position, team, and department. PDF
-            imports work best with selectable table text.
+            Accepted columns include first name, surname, email, position, team, department, and
+            optional active/status fields. CSV and XLSX imports work best; PDF imports work best
+            with selectable table text.
           </p>
 
           {rosterStats && (
@@ -815,6 +817,9 @@ const EmployeeDirectory: React.FC = () => {
                 {rosterStats.rowsProcessed} rows processed · {rosterStats.created} created ·{' '}
                 {rosterStats.updated} updated · {rosterStats.teamsCreated} teams created ·{' '}
                 {rosterStats.skipped} skipped
+                {rosterStats.inactiveSkipped
+                  ? ` · ${rosterStats.inactiveSkipped} inactive excluded`
+                  : ''}
               </div>
               {rosterStats.skippedRows.length > 0 && (
                 <div className="mt-2 text-caption text-blue-800">
