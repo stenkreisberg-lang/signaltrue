@@ -79,6 +79,15 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
     timestamp: { $gte: window7dStart, $lt: endOfDay },
   }).lean();
 
+  // Notion orphan detection needs 30 days of history; keep the normal
+  // seven-day window for all other metrics to avoid inflating event counts.
+  const notionHistoryEvents = await WorkEvent.find({
+    orgId,
+    teamId,
+    source: 'notion',
+    timestamp: { $gte: subtractDays(date, 30), $lt: endOfDay },
+  }).lean();
+
   // Compute task metrics (Jira/Asana)
   const taskMetrics = computeTaskMetrics(events, date);
 
@@ -94,7 +103,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
   const meetingMetrics = computeMeetingMetrics(events, date);
 
   // Compute Notion metrics
-  const notionMetrics = computeNotionMetrics(events, date);
+  const notionMetrics = computeNotionMetrics(events, date, notionHistoryEvents);
 
   // Compute CRM metrics (HubSpot/Pipedrive)
   const crmMetrics = computeCRMMetrics(events, date);
@@ -161,10 +170,16 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
     timestamp: { $gte: window7dStart, $lt: endOfDay },
   }).lean();
 
+  const notionHistoryEvents = await WorkEvent.find({
+    orgId,
+    source: 'notion',
+    timestamp: { $gte: subtractDays(date, 30), $lt: endOfDay },
+  }).lean();
+
   const taskMetrics = computeTaskMetrics(events, date);
   const emailMetrics = computeEmailMetrics(events, date, workSchedule);
   const meetingMetrics = computeMeetingMetrics(events, date);
-  const notionMetrics = computeNotionMetrics(events, date);
+  const notionMetrics = computeNotionMetrics(events, date, notionHistoryEvents);
   const crmMetrics = computeCRMMetrics(events, date);
   const basecampMetrics = computeBasecampMetrics(events, date);
   const messagingMetrics = computeMessagingMetrics(events, date, workSchedule);
@@ -292,6 +307,11 @@ function computeTaskMetrics(events, date) {
   );
   const overdueTasksCount = overdueEvents.length;
 
+  const overdueEventsPrev7d = eventsPrev7d.filter(
+    (e) => e.metadata?.dueOn && new Date(e.metadata.dueOn) < window7dStart
+  );
+  const overdueTasksPrev7d = overdueEventsPrev7d.length;
+
   // Assignment churn
   const assignmentEvents = events7d.filter((e) => e.eventType === 'task_assigned');
   const assignmentChurn7d = assignmentEvents.length;
@@ -309,7 +329,7 @@ function computeTaskMetrics(events, date) {
     cycleTimeMedianDays,
     cycleTimeP90Days,
     overdueTasksCount,
-    overdueGrowth7d: 0, // TODO: implement
+    overdueGrowth7d: overdueTasksCount - overdueTasksPrev7d,
     assignmentChurn7d,
   };
 }
@@ -492,8 +512,9 @@ export function computeMeetingMetrics(events, date) {
 // NOTION METRICS
 // ============================================================
 
-function computeNotionMetrics(events, date) {
+function computeNotionMetrics(events, date, historyEvents = events) {
   const notionEvents = events.filter((e) => e.source === 'notion');
+  const notionHistoryEvents = historyEvents.filter((e) => e.source === 'notion');
 
   const window7dStart = new Date(date);
   window7dStart.setDate(window7dStart.getDate() - 7);
@@ -522,9 +543,28 @@ function computeNotionMetrics(events, date) {
   });
   const distinctPagesEditedPerDay = mean(Object.values(pagesPerDay).map((s) => s.size)) || 0;
 
+  // A page is considered orphaned when it was created at least seven days ago
+  // and has no later update in the available 30-day observation window. This
+  // is a measurable proxy, not a claim about the page's business importance.
+  const orphanCutoff = new Date(date);
+  orphanCutoff.setDate(orphanCutoff.getDate() - 7);
+  const createdPages = new Map();
+  const updatedPages = new Set();
+  notionHistoryEvents.forEach((event) => {
+    const pageId = event.metadata?.pageIdHash;
+    if (!pageId) return;
+    const timestamp = new Date(event.timestamp);
+    if (event.eventType === 'page_created' && timestamp <= orphanCutoff) {
+      const existing = createdPages.get(pageId);
+      if (!existing || timestamp < existing) createdPages.set(pageId, timestamp);
+    }
+    if (event.eventType === 'page_updated') updatedPages.add(pageId);
+  });
+  const orphanPages30d = [...createdPages.keys()].filter((pageId) => !updatedPages.has(pageId)).length;
+
   return {
     editChurn7d,
-    orphanPages30d: 0, // TODO: requires longer history
+    orphanPages30d,
     highCollabPages7d,
     docChurnPerUser7d: editChurn7d, // simplified
     distinctPagesEditedPerDay,
@@ -563,9 +603,21 @@ function computeCRMMetrics(events, date) {
   const closeDateSlips7d = closeDateEvents.length;
   const closeDateSlipRate7d = totalDeals > 0 ? closeDateSlips7d / totalDeals : 0;
 
-  // Handoff spike (CRM changes followed by task creation)
-  // This would need cross-source correlation
-  const handoffSpike48h = 0; // TODO: implement cross-source correlation
+  // Handoff spike: CRM stage changes followed by task creation within 48h.
+  // This is a count of observable handoffs, not a claim about why the task
+  // was created.
+  const stageChanges = events7d.filter((e) => e.eventType === 'deal_stage_changed');
+  const taskCreations = events7d.filter(
+    (e) => ['jira', 'asana'].includes(e.source) && e.eventType === 'task_created'
+  );
+  const handoffSpike48h = stageChanges.reduce((count, stageChange) => {
+    const stageTime = new Date(stageChange.timestamp).getTime();
+    const hasFollowUpTask = taskCreations.some((task) => {
+      const taskTime = new Date(task.timestamp).getTime();
+      return taskTime >= stageTime && taskTime <= stageTime + 48 * 60 * 60 * 1000;
+    });
+    return count + (hasFollowUpTask ? 1 : 0);
+  }, 0);
 
   // Tickets
   const ticketsCreated7d = events7d.filter((e) => e.eventType === 'ticket_created').length;
@@ -706,8 +758,10 @@ function computeCompositeMetrics(taskMetrics, emailMetrics, meetingMetrics, crmM
     Math.floor((emailMetrics.emailReceived7d || 0) / 10); // email spikes proxy
   const cvir = (taskMetrics.tasksCompleted7d || 0) / (interruptEvents7d + 1);
 
-  // CVIR trend (would need previous period)
-  const cvirTrend7d = 0; // TODO: compute from history
+  // Compare the current rolling CVIR with the trailing daily median. A missing
+  // baseline is represented as null rather than a fabricated zero.
+  const cvirTrend7d =
+    Number.isFinite(baseline.cvirMedian) ? cvir - baseline.cvirMedian : null;
 
   // B) RCI - Recovery Collapse Index
   // RCI = z(back_to_back) + z(after_hours_ratio) + z(1/avg_gap)
@@ -817,6 +871,9 @@ async function getTrailingBaseline(orgId, teamId, userId, date, days) {
   const replyLatencyMedian = historicalMetrics.map((m) => m.replyLatencyMedian7d || 0);
   const backToBackBlocks = historicalMetrics.map((m) => m.backToBackMeetingBlocks || 0);
   const escalationRate = historicalMetrics.map((m) => m.escalationRate7d || 0);
+  const cvir = historicalMetrics
+    .map((m) => m.cvir)
+    .filter((value) => Number.isFinite(value));
 
   return {
     wipOpenTasksMedian: median(wipOpenTasks),
@@ -833,6 +890,7 @@ async function getTrailingBaseline(orgId, teamId, userId, date, days) {
     backToBackBlocksMAD: mad(backToBackBlocks),
     escalationRate7dMedian: median(escalationRate),
     escalationRate7dMAD: mad(escalationRate),
+    cvirMedian: cvir.length > 0 ? median(cvir) : null,
   };
 }
 
@@ -1052,6 +1110,12 @@ export async function computeWeeklyRollups(orgId) {
 function sum(arr) {
   const valid = arr.filter((v) => v != null && !isNaN(v));
   return valid.reduce((a, b) => a + b, 0);
+}
+
+function subtractDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() - days);
+  return result;
 }
 
 function average(arr) {

@@ -440,7 +440,7 @@ router.get('/metrics', authenticateToken, async (req, res) => {
       categoryKingMetrics: {
         cvir: {
           value: latestMetrics.cvir || 0,
-          trend7d: latestMetrics.cvirTrend7d || 0,
+          trend7d: latestMetrics.cvirTrend7d ?? null,
           description: 'Completion vs Interruption Ratio',
           interpretation: getCVIRInterpretation(latestMetrics.cvir, latestMetrics.cvirTrend7d),
         },

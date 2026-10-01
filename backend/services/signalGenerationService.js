@@ -778,7 +778,11 @@ function evaluateSignal(signalType, definition, latestMetrics, historicalMetrics
 
   // Evaluate each trigger condition
   for (const trigger of definition.triggers) {
-    const currentValue = latestMetrics[trigger.metric] || 0;
+    const rawValue = latestMetrics[trigger.metric];
+    // Missing source history is not the same as a measured zero. Do not
+    // trigger a signal from an unavailable metric.
+    if (rawValue === null || rawValue === undefined) continue;
+    const currentValue = rawValue;
     const conditionResult = evaluateCondition(trigger, currentValue, historicalMetrics);
 
     if (conditionResult.met) {

@@ -92,7 +92,8 @@ async function getTeamMetrics(teamId, periodStart, periodEnd) {
       responseTime: team.slackSignals?.avgResponseDelayHours || 0,
       asyncParticipation: team.slackSignals?.messageCount || 0,
       focusTime: team.calendarSignals?.focusHoursWeek || 0,
-      collaborationBreadth: 10, // placeholder, need to track unique collaborators
+      collaborationBreadth:
+        team.slackSignals?.uniqueContacts ?? team.calendarSignals?.uniqueParticipants ?? null,
     };
   }
 

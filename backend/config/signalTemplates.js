@@ -10,6 +10,8 @@
  * - Signal Convergence Detector (SCD)
  */
 
+import { rulesMatch } from '../services/thresholdRuleEvaluator.js';
+
 // ========== SHARED CONSTANTS ==========
 
 export const BASELINE_WEEKS = 6; // Baseline window: last 6 full weeks after calibration
@@ -695,13 +697,7 @@ export function determineSeverity(signalType, metrics, sustainedWeeks) {
  * Check if any threshold rule is satisfied (helper function)
  */
 function checkThresholdRules(rules, metrics, sustainedWeeks) {
-  // This is a placeholder - actual implementation would parse conditions
-  // and evaluate against provided metrics
-  return rules.some((rule) => {
-    // Parse and evaluate rule.condition against metrics
-    // Check if sustainedWeeks meets rule.sustained requirement
-    return false; // TODO: Implement condition parser
-  });
+  return rulesMatch(rules, metrics, sustainedWeeks);
 }
 
 export default SIGNAL_TEMPLATES;

@@ -30,7 +30,7 @@ const Hero = () => {
             </div>
 
             <h1 className="mb-5 text-section font-bold text-[#0F172A] sm:text-display">
-              You changed the work. Can you show whether the control actually changed the work?
+              Can you show whether the control changed the work?
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
