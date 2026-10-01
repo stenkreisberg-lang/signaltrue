@@ -28,6 +28,8 @@ export default [
       'no-unused-vars': [
         'warn',
         {
+          args: 'none',
+          caughtErrors: 'none',
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
         },

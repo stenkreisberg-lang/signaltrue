@@ -1,7 +1,6 @@
 import WeeklyReport from '../models/weeklyReport.js';
 import TeamState from '../models/teamState.js';
 import CrisisEvent from '../models/crisisEvent.js';
-import Action from '../models/action.js';
 import Team from '../models/team.js';
 import { generateWeeklyRecommendations } from './aiRecommendationContext.js';
 import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
@@ -17,7 +16,6 @@ import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 const RISK_INCREASE_THRESHOLD = 10; // Only report if risk increased by ≥10 points
 const YELLOW_THRESHOLD = 35;
-const RED_THRESHOLD = 65;
 
 /**
  * Generate weekly report for a specific team

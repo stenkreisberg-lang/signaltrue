@@ -5,7 +5,6 @@
  */
 
 import express from 'express';
-import mongoose from 'mongoose';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Invite from '../models/invite.js';

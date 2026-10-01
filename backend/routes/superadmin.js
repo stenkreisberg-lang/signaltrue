@@ -11,7 +11,6 @@
  */
 
 import express from 'express';
-import mongoose from 'mongoose';
 import { authenticateToken, requireMasterAdmin } from '../middleware/auth.js';
 import Organization from '../models/organizationModel.js';
 import User from '../models/user.js';

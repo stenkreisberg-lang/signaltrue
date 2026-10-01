@@ -1,7 +1,4 @@
 import fetch from 'node-fetch';
-import { spawn } from 'node:child_process';
-import fs from 'fs';
-import path from 'path';
 import assert from 'assert';
 
 // This is a lightweight integration test that expects the backend's test

@@ -13,7 +13,6 @@ import {
   PLAN_DEFINITIONS,
   ROLES,
 } from '../utils/subscriptionConstants.js';
-import SubscriptionPlan from '../models/SubscriptionPlan.js';
 
 const ROLE_ALIASES = {
   hr_admin: ROLES.HR_ADMIN,

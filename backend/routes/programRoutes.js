@@ -2,13 +2,8 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import ProgramImpact from '../models/programImpact.js';
 import Team from '../models/team.js';
-import MetricsDaily from '../models/metricsDaily.js';
 
 const router = express.Router();
-
-function startOfDayUTC(d = new Date()) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
 
 // GET /api/programs - List all programs
 router.get('/programs', authenticateToken, async (req, res) => {

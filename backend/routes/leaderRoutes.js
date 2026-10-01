@@ -14,12 +14,11 @@ router.get('/dashboard/:teamId', authenticateToken, async (req, res) => {
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
     // Compute key metrics
-    const { bdi, zone, trend, driverWeights, seasonalityFlags, bdiHistory } = team;
+    const { bdi, zone, trend, driverWeights, bdiHistory } = team;
     const recentHistory = bdiHistory.slice(0, 4);
 
     // Analyze patterns
     const isImproving = trend > 0;
-    const isStagnant = Math.abs(trend) < 3;
     const inDangerZone = zone === 'Surge' || zone === 'Watch';
 
     // Build context for AI

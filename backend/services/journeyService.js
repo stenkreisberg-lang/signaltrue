@@ -5,9 +5,6 @@
 
 import JourneyEvent from '../models/journeyEvent.js';
 import OARScore from '../models/oarScore.js';
-import Intervention from '../models/intervention.js';
-import Goal from '../models/goal.js';
-import DriftEvent from '../models/driftEvent.js';
 
 /**
  * Create a journey event

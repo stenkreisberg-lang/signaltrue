@@ -561,7 +561,7 @@ router.post('/signals/:id/dismiss', authenticateToken, async (req, res) => {
 router.get('/sync-history', authenticateToken, async (req, res) => {
   try {
     const { orgId } = req.user;
-    const { type, limit = 10 } = req.query;
+    const { type } = req.query;
 
     const query = { orgId };
     if (type) query.integrationType = type;

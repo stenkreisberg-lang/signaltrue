@@ -42,7 +42,6 @@ export function isAfterHours(timestamp, workHours = DEFAULT_WORK_HOURS, timezone
   const date = new Date(timestamp);
 
   // Get local time components
-  const options = { timeZone: timezone, hour: 'numeric', weekday: 'short' };
   let hour, dayOfWeek;
 
   try {
@@ -53,13 +52,6 @@ export function isAfterHours(timestamp, workHours = DEFAULT_WORK_HOURS, timezone
     });
     hour = parseInt(formatter.format(date));
 
-    const dayFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      weekday: 'narrow',
-    });
-    const dayStr = dayFormatter.format(date);
-    const dayMap = { S: 0, M: 1, T: 2, W: 3, F: 5 };
-    // Handle Tuesday vs Thursday
     const fullDayFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       weekday: 'long',

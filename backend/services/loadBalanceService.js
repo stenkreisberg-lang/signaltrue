@@ -12,7 +12,6 @@
  */
 
 import Team from '../models/team.js';
-import Organization from '../models/organizationModel.js';
 
 /**
  * Load Balance thresholds

@@ -14,7 +14,6 @@
 
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
-import Team from '../models/team.js';
 
 // ────────────────────────────────────────────────────
 // CategoryKing signalCategory → Signal signalType map

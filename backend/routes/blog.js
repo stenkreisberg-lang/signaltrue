@@ -594,8 +594,6 @@ router.post('/webhook/babylovegrowth', requireApiKey, async (req, res) => {
       publishedAt,
       published_at,
       date,
-      lang,
-      languageCode,
     } = req.body;
 
     // BabyLoveGrowth uses content_html for HTML content

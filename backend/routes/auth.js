@@ -7,7 +7,6 @@ import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import ReminderEmail from '../models/reminderEmail.js';
 import { authenticateToken, requireApiKey } from '../middleware/auth.js';
-import { encryptString } from '../utils/crypto.js';
 import { sendNewUserReminder } from '../services/reminderEmailService.js';
 import { isValidIanaTimezone, normalizeWorkEmailDomain } from '../utils/organizationIdentity.js';
 import {

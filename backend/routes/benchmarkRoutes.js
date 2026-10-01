@@ -8,7 +8,7 @@ const router = express.Router();
 // Returns BDI and driver medians, percentiles for given industry/size
 router.get('/industry', async (req, res) => {
   try {
-    const { industry, size } = req.query;
+    const { industry } = req.query;
     if (!industry) return res.status(400).json({ message: 'Industry required' });
     // Find all teams in orgs matching industry/size
     const orgs = await Organization.find({ industry });

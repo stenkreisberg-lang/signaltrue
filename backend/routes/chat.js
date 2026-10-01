@@ -86,7 +86,7 @@ router.post('/lead', async (req, res) => {
     }
 
     // Capture lead
-    const result = await captureLeadFromChat(email, question, triggerType || 'contact', sessionId);
+    await captureLeadFromChat(email, question, triggerType || 'contact', sessionId);
 
     res.json({
       success: true,

@@ -8,7 +8,7 @@ import {
   createSnapshot,
 } from '../utils/bdiHistory.js';
 import { authenticateToken, isMasterAdmin } from '../middleware/auth.js';
-import { requireTier, attachTierLimits } from '../middleware/checkTier.js';
+import { attachTierLimits } from '../middleware/checkTier.js';
 
 const router = express.Router();
 

@@ -1,7 +1,6 @@
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import IntegrationConnection from '../models/integrationConnection.js';
-import Team from '../models/team.js';
 
 /**
  * Category-King Signal Generation Service

@@ -12,18 +12,11 @@
  */
 
 import mongoose from 'mongoose';
+
 import RetentionPolicy from '../models/retentionPolicy.js';
 import Organization from '../models/organizationModel.js';
 
 // Default retention windows (days) — used when no org policy exists
-const DEFAULTS = {
-  rawEventRetentionDays: 90,
-  metricsRetentionDays: 730,
-  auditLogRetentionDays: 1825,
-  chatLogRetentionDays: 30,
-  documentChunkRetentionDays: 3650,
-};
-
 /**
  * Get or create the retention policy for an org.
  */

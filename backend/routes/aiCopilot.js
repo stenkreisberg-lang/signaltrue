@@ -2,7 +2,6 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { generateCopilotResponse, buildCopilotPayload } from '../services/aiCopilotService.js';
 import { selectActions, getPlaybook, getAllPlaybooks } from '../services/actionPlaybookService.js';
-import { getActiveSignals } from '../services/signalGenerationService.js';
 
 const router = express.Router();
 
@@ -19,7 +18,7 @@ const router = express.Router();
  */
 router.post('/copilot', authenticateToken, async (req, res) => {
   try {
-    const { orgId, userId } = req.user;
+    const { orgId } = req.user;
 
     // Accept either full payload or simple request
     let payload;

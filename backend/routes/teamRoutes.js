@@ -2,7 +2,6 @@ import express from 'express';
 import Team from '../models/team.js';
 import { requireApiKey } from '../middleware/auth.js';
 import { getExpandedEnergyIndex } from '../services/energyIndexService.js';
-import dotenv from 'dotenv';
 import getProvider from '../utils/aiProvider.js';
 import { incrementUsage, readUsage } from '../utils/aiUsage.js';
 import { isMasterAdmin } from '../middleware/auth.js';

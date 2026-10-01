@@ -5,7 +5,6 @@ import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js'
 import User from '../models/user.js';
 import { Resend } from 'resend';
 import { ccSuperadmin } from './superadminNotifyService.js';
-import { getQuarterBounds } from './quarterlyReportService.js';
 
 /**
  * Semi-Annual Report Service

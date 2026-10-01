@@ -5,7 +5,6 @@
  */
 
 import TeamAction from '../models/teamAction.js';
-import RiskDriver from '../models/riskDriver.js';
 import { buildRecommendationContext, formatContextForPrompt } from './aiRecommendationContext.js';
 import getProvider from '../utils/aiProvider.js';
 

@@ -24,8 +24,6 @@ import {
   storeFocusForecast,
   getFocusForecastHistory,
   getLatestFocusForecast,
-  calculateFocusBlocks,
-  calculateFragmentationIndex,
 } from '../services/focusForecastService.js';
 import {
   computeWorkHealthDelta,

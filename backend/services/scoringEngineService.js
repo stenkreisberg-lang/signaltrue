@@ -326,7 +326,7 @@ async function computeOverloadRisk(teamId, weekStart, metrics, baselines) {
       explanationText: buildDeviationText(c.metricKey, c.deviation),
     }));
 
-  const risk = await RiskWeekly.findOneAndUpdate(
+  await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'overload' },
     {
       score,
@@ -368,7 +368,7 @@ async function computeExecutionRisk(teamId, weekStart, metrics, baselines) {
       explanationText: buildDeviationText(c.metricKey, c.deviation),
     }));
 
-  const risk = await RiskWeekly.findOneAndUpdate(
+  await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'execution' },
     {
       score,
@@ -410,7 +410,7 @@ async function computeRetentionStrainRisk(teamId, weekStart, history, baselines)
       explanationText: buildTrendText(c.metricKey, c.deviation),
     }));
 
-  const risk = await RiskWeekly.findOneAndUpdate(
+  await RiskWeekly.findOneAndUpdate(
     { teamId, weekStart, riskType: 'retention_strain' },
     {
       score,

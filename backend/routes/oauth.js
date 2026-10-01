@@ -2,10 +2,8 @@ import express from 'express';
 import { google } from 'googleapis';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
-import { authenticateToken } from '../middleware/auth.js';
 import { WebClient } from '@slack/web-api';
 import Organization from '../models/organizationModel.js';
-import { v4 as uuidv4 } from 'uuid';
 import { notifyHRIntegrationsComplete } from '../services/integrationNotifyService.js';
 import { syncEmployeesFromSlack } from '../services/employeeSyncService.js';
 

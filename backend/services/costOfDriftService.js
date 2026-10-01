@@ -10,7 +10,6 @@
 
 import Team from '../models/team.js';
 import MetricsDaily from '../models/metricsDaily.js';
-import Organization from '../models/organizationModel.js';
 
 // Default hourly cost if org hasn't configured one
 const DEFAULT_HOURLY_COST = 75; // USD

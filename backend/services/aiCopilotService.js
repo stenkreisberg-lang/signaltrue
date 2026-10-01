@@ -1,8 +1,7 @@
 import crypto from 'node:crypto';
-import { selectActions, getPlaybook } from './actionPlaybookService.js';
+import { selectActions } from './actionPlaybookService.js';
 import { getActiveSignals } from './signalGenerationService.js';
 import IntegrationConnection from '../models/integrationConnection.js';
-import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 
 /**
  * AI Copilot Service
@@ -36,7 +35,7 @@ const responseCache = new Map();
  * @returns {Object} - Structured Copilot response
  */
 export async function generateCopilotResponse(payload) {
-  const { org_id, viewer_role, time_range, scope, signals, connectors, policies } = payload;
+  const { viewer_role, time_range, scope, signals, connectors, policies } = payload;
 
   // Validate privacy mode
   if (policies?.privacy_mode !== 'metadata_only') {

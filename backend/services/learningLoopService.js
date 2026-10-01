@@ -7,7 +7,6 @@ import ActionLearning from '../models/actionLearning.js';
 import Experiment from '../models/experiment.js';
 import Impact from '../models/impact.js';
 import Team from '../models/team.js';
-import TeamAction from '../models/teamAction.js';
 
 /**
  * Record an action outcome when experiment completes

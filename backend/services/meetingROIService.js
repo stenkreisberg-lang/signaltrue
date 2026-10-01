@@ -14,7 +14,6 @@
  */
 
 import { MeetingROI } from '../models/loopClosing.js';
-import MetricsDaily from '../models/metricsDaily.js';
 import Team from '../models/team.js';
 
 /**

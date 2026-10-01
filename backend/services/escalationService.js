@@ -19,8 +19,6 @@
  * - Escalating Risk: suggest formal work design review
  */
 
-import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
-import WeekContext from '../models/weekContext.js';
 
 // ─── Status definitions ───
 export const STATUS_LEVELS = {
