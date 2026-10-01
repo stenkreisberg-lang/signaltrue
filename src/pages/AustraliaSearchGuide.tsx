@@ -60,7 +60,7 @@ const guides: Record<string, Guide> = {
     ],
     faqs: [
       {
-        question: 'Does SignalTrue determine whether a psychosocial control is legally effective?',
+        question: 'Does SignalTrue make a legal determination about a psychosocial control?',
         answer:
           'No. SignalTrue supplies work-pattern evidence that can support a control review. The organisation remains responsible for consultation, legal duties, context and the final decision.',
       },
@@ -90,7 +90,7 @@ const guides: Record<string, Guide> = {
       {
         title: 'Start with the control, not the dashboard',
         paragraphs: [
-          'The review should begin with a concrete organisational action. For example, reducing recurring meetings, changing staffing, protecting focus time, changing escalation rules or adjusting after-hours coverage.',
+          'The review should begin with a concrete organisational action. For example, reducing recurring meetings, changing staffing, protecting uninterrupted work periods, changing escalation rules or adjusting after-hours coverage.',
           'Before measuring anything, state what observable part of work should change if the control is doing what was intended.',
         ],
       },
