@@ -208,9 +208,9 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates observed work
-            patterns from interpretation. Worker consultation and human judgement remain part of the
-            review; the product does not diagnose health or establish cause.
+            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates
+            observed work patterns from interpretation. Worker consultation and human judgement
+            remain part of the review; the product does not diagnose health or establish cause.
             <Link to="/app/privacy">View data policy</Link>
           </div>
           {children}

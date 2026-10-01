@@ -1,6 +1,7 @@
 export const UNREASONABLE_WORKLOAD_SLUG = 'unreasonable-workload-psychosocial-hazard-australia';
 export const PEOPLE_AT_WORK_SLUG = 'people-at-work-decommissioning-what-next-australia';
-export const NON_SURVEILLANCE_SLUG = 'psychosocial-risk-monitoring-without-employee-surveillance-australia';
+export const NON_SURVEILLANCE_SLUG =
+  'psychosocial-risk-monitoring-without-employee-surveillance-australia';
 
 export const editorialBlogPosts = [
   {
@@ -419,7 +420,7 @@ export const editorialBlogPosts = [
 
       <p><em>This article is general information, not legal advice. Privacy, surveillance and WHS requirements vary by jurisdiction.</em></p>
     `,
-  }
+  },
 ];
 
 export const editorialBlogPostBySlug = (slug?: string) =>

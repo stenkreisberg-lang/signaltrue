@@ -269,21 +269,22 @@ export default function AustraliaSearchGuide() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
-      <PageMeta
-        title={guide.title}
-        description={guide.description}
-        path={pathname}
-        lang="en-AU"
-      />
+      <PageMeta title={guide.title} description={guide.description} path={pathname} lang="en-AU" />
       <Navbar />
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-24">
           <div className="container mx-auto max-w-5xl px-6">
-            <p className="text-caption font-bold uppercase tracking-wider text-brand">{guide.eyebrow}</p>
-            <h1 className="mt-4 max-w-4xl text-display font-bold leading-tight">{guide.question}</h1>
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              {guide.eyebrow}
+            </p>
+            <h1 className="mt-4 max-w-4xl text-display font-bold leading-tight">
+              {guide.question}
+            </h1>
             <p className="mt-6 max-w-3xl text-body leading-8 text-[#475569]">{guide.intro}</p>
             <div className="mt-8 rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-6 md:p-8">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">Short answer</p>
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                Short answer
+              </p>
               <p className="mt-3 text-lead leading-8 text-[#0F172A]">{guide.answer}</p>
             </div>
           </div>
@@ -317,7 +318,10 @@ export default function AustraliaSearchGuide() {
             <h2 className="text-section font-bold">Frequently asked questions</h2>
             <div className="mt-8 space-y-5">
               {guide.faqs.map((faq) => (
-                <article key={faq.question} className="rounded-container border border-[#E2E8F0] p-6">
+                <article
+                  key={faq.question}
+                  className="rounded-container border border-[#E2E8F0] p-6"
+                >
                   <h3 className="text-lead font-bold">{faq.question}</h3>
                   <p className="mt-3 text-body leading-7 text-[#475569]">{faq.answer}</p>
                 </article>
@@ -330,7 +334,8 @@ export default function AustraliaSearchGuide() {
           <div className="container mx-auto max-w-4xl px-6">
             <h2 className="text-lead font-bold">Primary Australian sources</h2>
             <p className="mt-3 text-caption leading-6 text-[#64748B]">
-              SignalTrue is not a regulator and this page is general information, not legal advice. Requirements vary by jurisdiction.
+              SignalTrue is not a regulator and this page is general information, not legal advice.
+              Requirements vary by jurisdiction.
             </p>
             <div className="mt-5 flex flex-col gap-3">
               {regulatorLinks.map((link) => (
@@ -350,9 +355,12 @@ export default function AustraliaSearchGuide() {
 
         <section className="py-16 lg:py-20">
           <div className="container mx-auto max-w-4xl px-6 text-center">
-            <h2 className="text-section font-bold">Review one control, not another generic dashboard.</h2>
+            <h2 className="text-section font-bold">
+              Review one control, not another generic dashboard.
+            </h2>
             <p className="mx-auto mt-5 max-w-2xl text-body leading-7 text-[#475569]">
-              Start with one organisational control you already changed and test whether your evidence process can show what happened next.
+              Start with one organisational control you already changed and test whether your
+              evidence process can show what happened next.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">
@@ -361,9 +369,7 @@ export default function AustraliaSearchGuide() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link to="/au">
-                  SignalTrue Australia
-                </Link>
+                <Link to="/au">SignalTrue Australia</Link>
               </Button>
             </div>
           </div>

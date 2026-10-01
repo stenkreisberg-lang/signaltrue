@@ -101,12 +101,13 @@ const About = () => {
                 <p>Absence, incidents and turnover show outcomes that require investigation.</p>
                 <p>Operational dashboards show whether delivery has already been affected.</p>
                 <p>
-                  All are useful. SignalTrue adds team-level work-pattern evidence that can be compared before and after a control, helping teams review changing work
+                  All are useful. SignalTrue adds team-level work-pattern evidence that can be
+                  compared before and after a control, helping teams review changing work
                   conditions.
                 </p>
                 <p className="text-[#0F172A] font-medium border-l-4 border-brand pl-6 bg-[#EFF6FF] py-4 pr-4 rounded-r-xl">
-                  The purpose is to show how work conditions change and whether controls alter
-                  them; not infer health status, diagnose people or replace a formal risk assessment.
+                  The purpose is to show how work conditions change and whether controls alter them;
+                  not infer health status, diagnose people or replace a formal risk assessment.
                 </p>
               </div>
             </div>

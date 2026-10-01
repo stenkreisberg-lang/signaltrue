@@ -122,13 +122,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'Where SignalTrue fits in the Australian WHS process',
-        text:
-          'Use worker consultation and formal risk processes to identify and assess psychosocial risk, implement organisational controls, then use SignalTrue as an additional evidence source when reviewing whether relevant work conditions changed and whether the change held.',
+        text: 'Use worker consultation and formal risk processes to identify and assess psychosocial risk, implement organisational controls, then use SignalTrue as an additional evidence source when reviewing whether relevant work conditions changed and whether the change held.',
       },
       {
         heading: 'Continuous evidence without message-content surveillance',
-        text:
-          'SignalTrue focuses on aggregated team-level work patterns such as meeting demand, after-hours activity, uninterrupted calendar availability and coordination patterns. It is designed to avoid message bodies, individual productivity scoring and automated psychological diagnosis.',
+        text: 'SignalTrue focuses on aggregated team-level work patterns such as meeting demand, after-hours activity, uninterrupted calendar availability and coordination patterns. It is designed to avoid message bodies, individual productivity scoring and automated psychological diagnosis.',
       },
     ],
     faqs: [
@@ -174,13 +172,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'A control review should test the work change',
-        text:
-          'Safe Work Australia describes reviewing control measures as part of the risk-management process. A practical review connects the control to the work condition it was intended to change, then checks what happened after implementation.',
+        text: 'Safe Work Australia describes reviewing control measures as part of the risk-management process. A practical review connects the control to the work condition it was intended to change, then checks what happened after implementation.',
       },
       {
         heading: 'SignalTrue contributes one evidence source',
-        text:
-          'SignalTrue compares aggregated team-level work patterns before and after a control and can help check sustainability and possible migration. It does not make a legal effectiveness decision or replace consultation.',
+        text: 'SignalTrue compares aggregated team-level work patterns before and after a control and can help check sustainability and possible migration. It does not make a legal effectiveness decision or replace consultation.',
       },
     ],
     faqs: [
@@ -216,13 +212,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'Start with one defined organisational control',
-        text:
-          'State what the organisation changed and what observable part of work should change if that control is doing what was intended. Then measure the same relevant conditions before and after implementation.',
+        text: 'State what the organisation changed and what observable part of work should change if that control is doing what was intended. Then measure the same relevant conditions before and after implementation.',
       },
       {
         heading: 'Keep observation separate from conclusion',
-        text:
-          'A before-and-after pattern can strengthen or weaken a hypothesis, but it does not by itself prove causation. Worker consultation and operational context remain necessary before a management decision.',
+        text: 'A before-and-after pattern can strengthen or weaken a hypothesis, but it does not by itself prove causation. Worker consultation and operational context remain necessary before a management decision.',
       },
     ],
     faqs: [
@@ -258,13 +252,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'Monitoring is not diagnosis',
-        text:
-          'A rise in after-hours activity, meeting demand or coordination load does not prove psychological harm. It shows that the way work is happening has changed and may deserve investigation.',
+        text: 'A rise in after-hours activity, meeting demand or coordination load does not prove psychological harm. It shows that the way work is happening has changed and may deserve investigation.',
       },
       {
         heading: 'Use continuous evidence to improve the questions',
-        text:
-          'The purpose is to help WHS teams identify where to investigate, what to ask workers and whether an organisational control appears to have changed the relevant work conditions over time.',
+        text: 'The purpose is to help WHS teams identify where to investigate, what to ask workers and whether an organisational control appears to have changed the relevant work conditions over time.',
       },
     ],
     faqs: [
@@ -300,13 +292,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'Keep worker voice and add operational evidence',
-        text:
-          'SignalTrue should not replace worker voice. Its role is to add a continuous evidence layer about how work is organised, so WHS teams can investigate material changes between formal assessment dates.',
+        text: 'SignalTrue should not replace worker voice. Its role is to add a continuous evidence layer about how work is organised, so WHS teams can investigate material changes between formal assessment dates.',
       },
       {
         heading: 'Different evidence answers different questions',
-        text:
-          'Use consultation and surveys to understand worker experience, records and complaints to understand reported problems, observation to understand the work environment, and work-pattern evidence to identify persistent change and review controls over time.',
+        text: 'Use consultation and surveys to understand worker experience, records and complaints to understand reported problems, observation to understand the work environment, and work-pattern evidence to identify persistent change and review controls over time.',
       },
     ],
     faqs: [
@@ -351,7 +341,7 @@ const ROUTE_META = {
     description:
       'See how SignalTrue supports an ISO 45003-informed psychosocial risk process and Australian WHS control review, with responsibilities and product boundaries mapped explicitly.',
     summary:
-      'An explicit mapping of the control-review workflow to ISO 45003-informed psychosocial risk management and the ISO 45001 OH&S context, including worker consultation, evidence boundaries and responsibilities.'
+      'An explicit mapping of the control-review workflow to ISO 45003-informed psychosocial risk management and the ISO 45001 OH&S context, including worker consultation, evidence boundaries and responsibilities.',
   },
   '/au/privacy': {
     title: 'Australian Privacy Overview | SignalTrue',
@@ -538,13 +528,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'People at Work is not the whole risk-management system',
-        text:
-          'Worker-reported assessment remains valuable, but Australian psychosocial risk management also requires suitable controls, consultation and regular review of whether controls remain effective.',
+        text: 'Worker-reported assessment remains valuable, but Australian psychosocial risk management also requires suitable controls, consultation and regular review of whether controls remain effective.',
       },
       {
         heading: 'Build an evidence loop after assessment',
-        text:
-          'Connect worker voice to a defined organisational control, compare relevant work conditions before and after the change, check whether improvement held and use the combined evidence to maintain, modify or replace the control.',
+        text: 'Connect worker voice to a defined organisational control, compare relevant work conditions before and after the change, check whether improvement held and use the combined evidence to maintain, modify or replace the control.',
       },
     ],
     faqs: [
@@ -589,13 +577,11 @@ const ROUTE_META = {
     crawlerSections: [
       {
         heading: 'Monitoring can itself create psychosocial risk',
-        text:
-          'Comcare identifies intrusive surveillance as a psychosocial hazard. The design goal should therefore be the minimum evidence needed for a legitimate WHS decision, not the maximum data a workplace system can expose.',
+        text: 'Comcare identifies intrusive surveillance as a psychosocial hazard. The design goal should therefore be the minimum evidence needed for a legitimate WHS decision, not the maximum data a workplace system can expose.',
       },
       {
         heading: 'Move the unit of analysis away from the individual',
-        text:
-          'Aggregated team-level patterns can support questions about workload, meetings, after-hours work and coordination without turning the system into a person-level productivity ranking tool.',
+        text: 'Aggregated team-level patterns can support questions about workload, meetings, after-hours work and coordination without turning the system into a person-level productivity ranking tool.',
       },
     ],
     faqs: [
