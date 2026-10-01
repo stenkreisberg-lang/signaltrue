@@ -20,6 +20,7 @@ const AustraliaPilot = lazy(() => import('./pages/AustraliaPilot'));
 const AustraliaMonitoringGapAudit = lazy(() => import('./pages/AustraliaMonitoringGapAudit'));
 const AustraliaInformationPage = lazy(() => import('./pages/AustraliaInformationPage'));
 const AustraliaStandardsAssurance = lazy(() => import('./pages/AustraliaStandardsAssurance'));
+const AustraliaSearchGuide = lazy(() => import('./pages/AustraliaSearchGuide'));
 const StandardsMethodology = lazy(() => import('./pages/StandardsMethodology'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -130,6 +131,14 @@ const App = () => (
                 <Route path="/au/8-week-pilot" element={<AustraliaPilot />} />
                 <Route path="/au/monitoring-gap-audit" element={<AustraliaMonitoringGapAudit />} />
                 <Route path="/au/standards-assurance" element={<AustraliaStandardsAssurance />} />
+                {[
+                  '/au/psychosocial-control-effectiveness',
+                  '/au/review-psychosocial-controls',
+                  '/au/continuous-psychosocial-risk-monitoring',
+                  '/au/psychosocial-risk-assessment-beyond-surveys',
+                ].map((path) => (
+                  <Route key={path} path={path} element={<AustraliaSearchGuide />} />
+                ))}
                 <Route path="/standards" element={<StandardsMethodology />} />
                 {[
                   '/au/psychosocial-risk-monitoring',
