@@ -37,6 +37,9 @@ const footerLinks = {
     { label: 'Monitoring Gap Audit', href: '/au/monitoring-gap-audit' },
     { label: '8-week Australian pilot', href: '/au/8-week-pilot' },
     { label: 'Psychosocial risk monitoring', href: '/au/psychosocial-risk-monitoring' },
+    { label: 'Control effectiveness', href: '/au/psychosocial-control-effectiveness' },
+    { label: 'Review psychosocial controls', href: '/au/review-psychosocial-controls' },
+    { label: 'Assessment beyond surveys', href: '/au/psychosocial-risk-assessment-beyond-surveys' },
     { label: 'Worker consultation indicators', href: '/employee-engagement-leading-indicators' },
     { label: 'Manager capacity', href: '/signals/manager-load' },
     { label: 'Meeting demand', href: '/signals/meeting-overload' },
@@ -57,7 +60,8 @@ const Footer = () => {
               <span className="text-lead font-display font-bold text-white">SignalTrue</span>
             </Link>
             <p className="text-[#CBD5E1] text-caption max-w-sm mb-6">
-              Team-level evidence for reviewing whether workplace controls actually changed the work.
+              Team-level evidence for reviewing whether workplace controls actually changed the
+              work.
             </p>
             <div className="flex items-center gap-4">
               <a

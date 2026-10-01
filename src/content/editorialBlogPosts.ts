@@ -1,4 +1,7 @@
 export const UNREASONABLE_WORKLOAD_SLUG = 'unreasonable-workload-psychosocial-hazard-australia';
+export const PEOPLE_AT_WORK_SLUG = 'people-at-work-decommissioning-what-next-australia';
+export const NON_SURVEILLANCE_SLUG =
+  'psychosocial-risk-monitoring-without-employee-surveillance-australia';
 
 export const editorialBlogPosts = [
   {
@@ -162,6 +165,260 @@ export const editorialBlogPosts = [
       <h2>Editorial note</h2>
 
       <p>This article is general information, not legal advice. Psychosocial WHS requirements differ by jurisdiction. Digital indicators should be treated as evidence for investigation and consultation, not as proof of an individual psychological condition.</p>
+    `,
+  },
+  {
+    _id: 'editorial-people-at-work-decommissioning-australia',
+    title: 'People at Work is being decommissioned. What should Australian employers do next?',
+    slug: PEOPLE_AT_WORK_SLUG,
+    excerpt:
+      'People at Work closes its online platform on 2 October 2026. The useful question is not which tool copies it, but how to build a stronger psychosocial risk evidence system around worker voice, controls and ongoing review.',
+    author: { name: 'SignalTrue Team' },
+    tags: [
+      'People at Work',
+      'psychosocial risk Australia',
+      'WHS',
+      'control effectiveness',
+      'psychosocial risk assessment',
+    ],
+    categories: ['Australian psychosocial risk'],
+    status: 'published',
+    publishedAt: '2026-10-01T08:00:00.000Z',
+    readingTime: 7,
+    viewCount: 0,
+    featured: true,
+    createdAt: '2026-10-01T08:00:00.000Z',
+    updatedAt: '2026-10-01T08:00:00.000Z',
+    seo: {
+      metaTitle: 'People at Work Is Closing: What Australian Employers Do Next',
+      metaDescription:
+        'People at Work closes its online platform on 2 October 2026. See what Australian employers should preserve, replace and add to their psychosocial risk process.',
+      canonicalUrl: `https://www.signaltrue.ai/blog/${PEOPLE_AT_WORK_SLUG}`,
+    },
+    content: `
+      <p><strong>People at Work is not simply another software product disappearing. For many Australian organisations it has been a familiar way to collect structured worker-reported evidence about psychosocial risk.</strong></p>
+
+      <p>Comcare says the People at Work platform is being decommissioned in 2026. New registrations stopped on 1 June, new surveys stopped on 1 July, and 2 October 2026 is the final date for organisations to access the online platform and extract their reports.</p>
+
+      <p><a href="https://www.comcare.gov.au/safe-healthy-work/mentally-healthy-workplaces/mental-health-initiatives/people-at-work" target="_blank" rel="noreferrer">Comcare also explains why the change matters</a>: changes in legislation and advances in research revealed gaps in the tool, so it may no longer meet the needs of organisations managing psychosocial hazards.</p>
+
+      <h2>The wrong question is: what is the closest replacement?</h2>
+
+      <p>A one-for-one replacement mindset preserves the old operating model. Run a survey, receive a report, create actions, then wait until the next assessment cycle.</p>
+
+      <p>The stronger question is: <strong>what evidence system do we need now?</strong></p>
+
+      <p>Australian psychosocial risk management does not end with hazard identification or assessment. Safe Work Australia describes a cycle: identify hazards, assess risks where needed, implement controls, and regularly review whether those controls remain effective. Worker consultation supports every step.</p>
+
+      <p>That means an organisation needs more than a new questionnaire. It needs a process that connects worker voice to action and then to evidence about whether the action changed the work.</p>
+
+      <h2>Keep the part surveys do well</h2>
+
+      <p>Worker-reported data matters. People can describe context that digital systems cannot infer: unclear expectations, harmful behaviour, poor support, low job control, unfairness, emotional demands or whether a workload feels manageable in practice.</p>
+
+      <p>Do not replace that with passive data and call it progress.</p>
+
+      <p>Survey and consultation methods remain valuable when the decision depends on worker experience. The opportunity is to stop asking one method to do everything.</p>
+
+      <h2>Add the evidence surveys cannot provide continuously</h2>
+
+      <p>Work changes after a survey closes. A team can lose two people. A restructure can add approvals. Meeting demand can rise. Delivery deadlines can compress. After-hours work can become normal. A manager can inherit another team.</p>
+
+      <p>Those changes may happen weeks or months before the next structured assessment.</p>
+
+      <p>In digital and hybrid work, some operating conditions can be observed at team level through metadata without reading message content. Examples include meeting hours, back-to-back meeting density, uninterrupted calendar availability, after-hours activity and coordination patterns.</p>
+
+      <p>These patterns do not prove a psychosocial hazard or psychological harm. They can show that the way work is being organised has materially changed and may deserve investigation with workers.</p>
+
+      <h2>The missing capability is control review</h2>
+
+      <p>The most commercially and operationally important gap appears after an organisation acts.</p>
+
+      <p>Imagine a team reports excessive job demands. The organisation removes recurring meetings and changes delivery priorities. The action plan now shows two completed actions.</p>
+
+      <p>What happened next?</p>
+
+      <ul>
+        <li>Did meeting demand actually fall?</li>
+        <li>Did uninterrupted working time increase?</li>
+        <li>Did after-hours activity fall, or did the work simply move into evenings?</li>
+        <li>Did the improvement last for one week or for two months?</li>
+        <li>Did pressure migrate to a neighbouring team?</li>
+        <li>Do workers say the change improved the underlying problem?</li>
+      </ul>
+
+      <p>Safe Work Australia explicitly asks whether controls are working effectively without creating new risks. That is a different problem from running the initial assessment.</p>
+
+      <h2>A stronger post-People at Work architecture</h2>
+
+      <ol>
+        <li><strong>Worker voice:</strong> surveys, interviews, HSR input and consultation for experience and context.</li>
+        <li><strong>Operational evidence:</strong> records, observation and relevant team-level work-pattern data.</li>
+        <li><strong>Control record:</strong> what changed, why, who owns it and what work condition should change.</li>
+        <li><strong>Before-and-after review:</strong> compare the relevant evidence after implementation.</li>
+        <li><strong>Sustainability check:</strong> did the improvement hold?</li>
+        <li><strong>Migration check:</strong> did demand move somewhere else?</li>
+        <li><strong>Decision:</strong> maintain, modify or replace the control, informed by workers and the evidence.</li>
+      </ol>
+
+      <h2>Where SignalTrue fits, and where it does not</h2>
+
+      <p>SignalTrue is not a replacement for People at Work.</p>
+
+      <p>It does not replace worker-reported psychosocial risk assessment, consultation, HSR involvement or the organisation's WHS responsibilities. It also does not diagnose workers or decide whether an organisation is legally compliant.</p>
+
+      <p>Its narrower role is to add continuous, aggregated work-pattern evidence between formal assessments and during control review. The useful question is whether the conditions of work changed after the organisation acted.</p>
+
+      <p>That is why the end of People at Work should not trigger a search for another identical survey interface. It is an opportunity to build a better evidence loop.</p>
+
+      <h2>Frequently asked questions</h2>
+
+      <h3>When does the People at Work online platform close?</h3>
+      <p>Comcare states that 2 October 2026 is the final date for organisations to access the online platform and that organisations should extract their reports before that date.</p>
+
+      <h3>Is SignalTrue a replacement for People at Work?</h3>
+      <p>No. SignalTrue does not replace worker-reported assessment or consultation. It adds continuous team-level work-pattern evidence that can support investigation and control review.</p>
+
+      <h3>What should organisations preserve from People at Work?</h3>
+      <p>Preserve existing reports and the principle of structured worker voice. Then strengthen the process around controls, ongoing evidence and review rather than treating the survey itself as the risk-management system.</p>
+
+      <p><strong>Sources:</strong> <a href="https://www.comcare.gov.au/safe-healthy-work/mentally-healthy-workplaces/mental-health-initiatives/people-at-work" target="_blank" rel="noreferrer">Comcare: People at Work decommissioning</a>; <a href="https://www.safeworkaustralia.gov.au/doc/model-code-practice-managing-psychosocial-hazards-work" target="_blank" rel="noreferrer">Safe Work Australia: Model Code of Practice, Managing psychosocial hazards at work</a>.</p>
+
+      <p><em>This article is general information, not legal advice. WHS requirements vary by jurisdiction.</em></p>
+    `,
+  },
+  {
+    _id: 'editorial-monitor-without-surveillance-australia',
+    title: 'How do you monitor psychosocial risk without creating employee surveillance?',
+    slug: NON_SURVEILLANCE_SLUG,
+    excerpt:
+      'Australian guidance recognises intrusive surveillance as a psychosocial hazard. Monitoring psychosocial risk therefore has a design problem: gather useful evidence without turning workers into individual scores.',
+    author: { name: 'SignalTrue Team' },
+    tags: [
+      'intrusive surveillance',
+      'psychosocial risk Australia',
+      'worker privacy',
+      'WHS',
+      'continuous monitoring',
+    ],
+    categories: ['Australian psychosocial risk'],
+    status: 'published',
+    publishedAt: '2026-10-01T08:10:00.000Z',
+    readingTime: 8,
+    viewCount: 0,
+    featured: true,
+    createdAt: '2026-10-01T08:10:00.000Z',
+    updatedAt: '2026-10-01T08:10:00.000Z',
+    seo: {
+      metaTitle: 'Monitor Psychosocial Risk Without Employee Surveillance',
+      metaDescription:
+        'Australian guidance recognises intrusive surveillance as a psychosocial hazard. See how team-level work-pattern evidence can support WHS monitoring without individual productivity scoring.',
+      canonicalUrl: `https://www.signaltrue.ai/blog/${NON_SURVEILLANCE_SLUG}`,
+    },
+    content: `
+      <p><strong>There is an uncomfortable contradiction in psychosocial risk technology: a system intended to make work safer can make work worse if workers experience it as constant individual surveillance.</strong></p>
+
+      <p>This is not a theoretical objection. <a href="https://www.comcare.gov.au/safe-healthy-work/prevent-harm/psychosocial-hazards/intrusive-surveillance" target="_blank" rel="noreferrer">Comcare identifies intrusive surveillance as a psychosocial hazard</a> and gives examples including unreasonable oversight, keyboard tracking, monitoring emails and files, covert webcam surveillance and remote screenshots.</p>
+
+      <p>So the design question is not simply: <em>can we collect workplace data?</em></p>
+
+      <p>It is: <strong>what is the minimum evidence needed to support a legitimate WHS decision without turning monitoring into another source of risk?</strong></p>
+
+      <h2>Start with purpose, not available data</h2>
+
+      <p>Most workplace systems expose far more data than a psychosocial-risk process needs. The existence of an API field is not a reason to ingest it.</p>
+
+      <p>A defensible monitoring design starts with a narrow purpose. For example: determine whether recurring meeting reduction changed team-level meeting demand and whether work moved into after-hours activity.</p>
+
+      <p>That purpose does not require reading meeting transcripts, message bodies, documents or ranking individuals.</p>
+
+      <h2>Move the unit of analysis away from the person</h2>
+
+      <p>Individual dashboards invite individual interpretation. Once a system shows that Alex sent 17 messages after 8 pm and Priya attended 29 hours of meetings, the tool is no longer just describing work design. It can easily become a productivity or behaviour-monitoring system.</p>
+
+      <p>Psychosocial risk management is usually more useful when the unit is the work group and the question is structural:</p>
+
+      <ul>
+        <li>Has meeting demand for this team risen materially against its baseline?</li>
+        <li>Is uninterrupted calendar availability shrinking across the group?</li>
+        <li>Is after-hours activity becoming a persistent team pattern?</li>
+        <li>Did a work-design control change those conditions?</li>
+      </ul>
+
+      <p>These questions point towards workload, staffing, coordination and systems of work rather than towards whether one employee is "performing correctly".</p>
+
+      <h2>Metadata is not automatically harmless</h2>
+
+      <p>Calling something metadata does not solve the governance problem. Metadata can still be sensitive, especially when groups are small or fields can be joined back to individuals.</p>
+
+      <p>A privacy-preserving approach needs additional controls:</p>
+
+      <ul>
+        <li>purpose limitation</li>
+        <li>field allowlists rather than ingesting everything available</li>
+        <li>minimum group sizes</li>
+        <li>role-based access</li>
+        <li>clear retention and deletion rules</li>
+        <li>worker transparency about what is collected and why</li>
+        <li>prohibition of individual productivity ranking</li>
+        <li>human review before conclusions or employment decisions</li>
+      </ul>
+
+      <h2>Do not infer mental state from digital behaviour</h2>
+
+      <p>A calendar pattern cannot tell you that a worker is anxious, burnt out or psychologically injured. A messaging pattern cannot establish bullying by itself. After-hours activity does not prove excessive workload.</p>
+
+      <p>The safe inference is narrower: <strong>a relevant work pattern changed.</strong></p>
+
+      <p>That observation can trigger better consultation. It can help a WHS team decide where to look and what to ask. It should not become an automated diagnosis.</p>
+
+      <h2>Consultation is part of the monitoring design</h2>
+
+      <p>Workers should not discover a monitoring system after it is already running. Australian WHS guidance places consultation throughout the psychosocial risk-management process.</p>
+
+      <p>Good deployment therefore explains the purpose, fields, exclusions, access, group protections, retention, limitations and prohibited uses before monitoring starts.</p>
+
+      <p>It should also give workers and HSRs a way to challenge interpretation. If the system shows a rise in after-hours activity, workers may explain that it reflects an agreed global support rotation rather than uncontrolled workload. Context changes the management decision.</p>
+
+      <h2>The strongest safeguard is what the product refuses to do</h2>
+
+      <p>Trust pages matter, but architecture matters more.</p>
+
+      <p>A product that says "we respect privacy" while collecting message bodies and producing person-level scores creates a governance burden that wording cannot fix.</p>
+
+      <p>SignalTrue's intended boundary is narrower: team-level work-pattern evidence, no message-content requirement, no individual productivity ranking and no psychological diagnosis. The output supports investigation and control review rather than automated judgement about workers.</p>
+
+      <h2>A practical test before deploying any monitoring tool</h2>
+
+      <ol>
+        <li>What exact WHS decision will this data support?</li>
+        <li>Which fields are genuinely necessary for that decision?</li>
+        <li>Can the same purpose be achieved at team level?</li>
+        <li>What data will the system explicitly refuse to collect?</li>
+        <li>Who can see the output?</li>
+        <li>What prevents individual productivity use?</li>
+        <li>How are small groups protected?</li>
+        <li>How will workers and HSRs be consulted?</li>
+        <li>How can an interpretation be challenged?</li>
+        <li>When will the data be deleted?</li>
+      </ol>
+
+      <p>If those questions do not have precise answers, the monitoring system is not ready simply because the technology works.</p>
+
+      <h2>Frequently asked questions</h2>
+
+      <h3>Is employee surveillance a psychosocial hazard in Australia?</h3>
+      <p>Comcare identifies intrusive surveillance as a psychosocial hazard and describes potential effects on stress, trust, autonomy, work intensity and worker wellbeing. Applicable duties and definitions depend on jurisdiction and circumstances.</p>
+
+      <h3>Can workplace metadata be used without surveilling individuals?</h3>
+      <p>It can be designed that way, but metadata alone is not enough. Purpose limitation, field minimisation, aggregation, group-size protections, access controls and clear prohibited uses are also needed.</p>
+
+      <h3>Does SignalTrue score individual employees?</h3>
+      <p>SignalTrue is designed for aggregated team-level work-pattern evidence rather than individual productivity ranking or psychological profiling.</p>
+
+      <p><strong>Sources:</strong> <a href="https://www.comcare.gov.au/safe-healthy-work/prevent-harm/psychosocial-hazards/intrusive-surveillance" target="_blank" rel="noreferrer">Comcare: Intrusive surveillance</a>; <a href="https://www.safeworkaustralia.gov.au/doc/model-code-practice-managing-psychosocial-hazards-work" target="_blank" rel="noreferrer">Safe Work Australia: Model Code of Practice, Managing psychosocial hazards at work</a>.</p>
+
+      <p><em>This article is general information, not legal advice. Privacy, surveillance and WHS requirements vary by jurisdiction.</em></p>
     `,
   },
 ];

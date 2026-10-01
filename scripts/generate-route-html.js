@@ -140,13 +140,57 @@ function buildHtml(shell, route, meta) {
     );
   }
 
+  if (meta.type !== 'article' && (meta.faqs?.length || meta.schemaAbout)) {
+    const graph = [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonical}#webpage`,
+        url: canonical,
+        name: meta.title,
+        description: meta.description,
+        inLanguage: language,
+        isPartOf: {
+          '@type': 'WebSite',
+          name: 'SignalTrue',
+          url: SITE_URL,
+        },
+        about: {
+          '@type': 'Thing',
+          name: meta.schemaAbout || meta.title,
+        },
+      },
+    ];
+
+    if (meta.faqs?.length) {
+      graph.push({
+        '@type': 'FAQPage',
+        '@id': `${canonical}#faq`,
+        mainEntity: meta.faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+        })),
+      });
+    }
+
+    const structuredData = escapeJsonForHtml({
+      '@context': 'https://schema.org',
+      '@graph': graph,
+    });
+    html = html.replace(
+      '</head>',
+      `    <script type="application/ld+json">${structuredData}</script>\n  </head>`
+    );
+  }
+
   // Put a concise, truthful route summary and key navigation in the initial
   // HTML. The React app removes this fallback before mounting, so users see the
   // full interactive page while crawlers that do not execute JavaScript still
   // receive substantive, linkable page content.
   if (meta.summary) {
     const links =
-      route === '/au'
+      meta.links ||
+      (route === '/au'
         ? [
             ['/au/monitoring-gap-audit', 'Review one control'],
             ['/au/8-week-pilot', 'See the 8-week control review pilot'],
@@ -154,10 +198,10 @@ function buildHtml(shell, route, meta) {
             ['/au/standards-assurance', 'Standards and assurance'],
             ['/au/trust', 'Australian Trust Centre'],
           ]
-        : [];
+        : []);
 
     const fallbackLinks = links.length
-      ? `<nav aria-label="SignalTrue Australia resources"><ul>${links
+      ? `<nav aria-label="Related SignalTrue resources"><ul>${links
           .map(
             ([href, label]) =>
               `<li><a href="${href}">${escapeHtml(label)}</a></li>`
@@ -165,9 +209,29 @@ function buildHtml(shell, route, meta) {
           .join('')}</ul></nav>`
       : '';
 
+    const fallbackSections = (meta.crawlerSections || [])
+      .map(
+        (section) =>
+          `<section><h2>${escapeHtml(section.heading)}</h2><p>${escapeHtml(
+            section.text
+          )}</p></section>`
+      )
+      .join('');
+
+    const fallbackFaqs = meta.faqs?.length
+      ? `<section><h2>Frequently asked questions</h2>${meta.faqs
+          .map(
+            (faq) =>
+              `<article><h3>${escapeHtml(faq.question)}</h3><p>${escapeHtml(
+                faq.answer
+              )}</p></article>`
+          )
+          .join('')}</section>`
+      : '';
+
     const fallback = `<div id="route-static-fallback"><main><h1>${title}</h1><p>${escapeHtml(
       meta.summary
-    )}</p>${fallbackLinks}</main></div>`;
+    )}</p>${fallbackSections}${fallbackFaqs}${fallbackLinks}</main></div>`;
     html = html.replace('<div id="root"></div>', `${fallback}<div id="root"></div>`);
   }
 
