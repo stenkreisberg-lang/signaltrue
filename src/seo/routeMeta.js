@@ -113,11 +113,49 @@ const ROUTE_META = {
       'One evidence method across markets: define the control, observe, interpret, validate with people and support a review decision; local packs add jurisdiction-specific deployment context.',
   },
   '/au': {
-    title: 'Psychosocial Control Review Australia | SignalTrue',
+    title: 'Psychosocial Risk Monitoring Australia | SignalTrue',
     description:
-      'Review whether a psychosocial control changed team work patterns, with worker validation, privacy-conscious evidence and explicit limits.',
+      'Continuous team-level work-pattern evidence for Australian WHS teams. Investigate changing work conditions and review whether psychosocial controls changed the work.',
     summary:
-      'For Australian WHS and psychosocial-risk teams reviewing controls: compare relevant team work patterns before and after a change, check for migration and validate the observation with workers before a decision.',
+      'SignalTrue helps Australian WHS and psychosocial-risk teams add continuous work-pattern evidence between formal assessments and during control review. It supports investigation and worker consultation; it does not diagnose people or determine legal compliance.',
+    schemaAbout: 'Psychosocial risk monitoring and control effectiveness in Australia',
+    crawlerSections: [
+      {
+        heading: 'Where SignalTrue fits in the Australian WHS process',
+        text:
+          'Use worker consultation and formal risk processes to identify and assess psychosocial risk, implement organisational controls, then use SignalTrue as an additional evidence source when reviewing whether relevant work conditions changed and whether the change held.',
+      },
+      {
+        heading: 'Continuous evidence without message-content surveillance',
+        text:
+          'SignalTrue focuses on aggregated team-level work patterns such as meeting demand, after-hours activity, uninterrupted calendar availability and coordination patterns. It is designed to avoid message bodies, individual productivity scoring and automated psychological diagnosis.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Can SignalTrue replace worker consultation or a psychosocial risk assessment?',
+        answer:
+          'No. SignalTrue adds continuous team-level work-pattern evidence. Worker consultation, applicable WHS duties, formal assessment and the final management decision remain with the organisation.',
+      },
+      {
+        question: 'What does SignalTrue help an Australian WHS team review?',
+        answer:
+          'It helps compare relevant work patterns before and after an organisational control, check whether improvement was sustained and look for possible migration of demand into another channel, time period or team.',
+      },
+      {
+        question: 'Does SignalTrue read employee messages?',
+        answer:
+          'SignalTrue is designed around metadata and aggregated team-level patterns rather than message bodies, document content or individual productivity scores.',
+      },
+    ],
+    links: [
+      ['/au/psychosocial-control-effectiveness', 'Psychosocial control effectiveness'],
+      ['/au/review-psychosocial-controls', 'How to review psychosocial controls'],
+      ['/au/continuous-psychosocial-risk-monitoring', 'Continuous psychosocial risk monitoring'],
+      ['/au/psychosocial-risk-assessment-beyond-surveys', 'Psychosocial assessment beyond surveys'],
+      ['/au/monitoring-gap-audit', 'Review one control'],
+      ['/au/8-week-pilot', 'See the 8-week pilot'],
+    ],
   },
   '/au/psychosocial-risk-monitoring': {
     title: 'Psychosocial Risk Monitoring Australia | SignalTrue',
@@ -125,6 +163,174 @@ const ROUTE_META = {
       'Understand how continuous team-level work-pattern evidence supports investigation and control review between formal psychosocial risk assessments.',
     summary:
       'SignalTrue observes material and persistent changes in aggregated team work patterns. An observation supports investigation with workers and review of controls; it is not a hazard conclusion, diagnosis or compliance finding.',
+  },
+  '/au/psychosocial-control-effectiveness': {
+    title: 'Psychosocial Control Effectiveness Australia | SignalTrue',
+    description:
+      'How Australian WHS teams can review whether psychosocial controls changed the work, whether improvement held and whether risk moved elsewhere.',
+    summary:
+      'Review psychosocial control effectiveness by combining worker consultation with relevant before-and-after evidence, then checking whether the intended work change occurred, was sustained and created any new or different risks.',
+    schemaAbout: 'Psychosocial control effectiveness in Australia',
+    crawlerSections: [
+      {
+        heading: 'A control review should test the work change',
+        text:
+          'Safe Work Australia describes reviewing control measures as part of the risk-management process. A practical review connects the control to the work condition it was intended to change, then checks what happened after implementation.',
+      },
+      {
+        heading: 'SignalTrue contributes one evidence source',
+        text:
+          'SignalTrue compares aggregated team-level work patterns before and after a control and can help check sustainability and possible migration. It does not make a legal effectiveness decision or replace consultation.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does SignalTrue determine whether a psychosocial control is legally effective?',
+        answer:
+          'No. SignalTrue supplies work-pattern evidence that can support a control review. The organisation remains responsible for consultation, applicable legal duties, context and the final decision.',
+      },
+      {
+        question: 'Can a control review rely only on digital workplace data?',
+        answer:
+          'No. Digital work-pattern evidence can complement worker consultation, observation, records and other relevant evidence; it should not replace them.',
+      },
+      {
+        question: 'What is control migration?',
+        answer:
+          'It is the possibility that one visible condition improves while demand moves into another channel, time period or team. A useful review checks for that before declaring success.',
+      },
+    ],
+    links: [
+      ['/au/review-psychosocial-controls', 'Practical control review method'],
+      ['/did-the-control-work', 'Did the control work?'],
+      ['/au/monitoring-gap-audit', 'Control review readiness audit'],
+    ],
+  },
+  '/au/review-psychosocial-controls': {
+    title: 'How to Review Psychosocial Controls in Australia | SignalTrue',
+    description:
+      'A practical Australian WHS review method for psychosocial controls using consultation, before-and-after evidence, sustainability and migration checks.',
+    summary:
+      'A useful psychosocial control review connects the original hazard and organisational action to expected work changes, worker consultation, before-and-after evidence, unintended effects and a documented maintain, modify or replace decision.',
+    schemaAbout: 'Reviewing psychosocial controls in Australian workplaces',
+    crawlerSections: [
+      {
+        heading: 'Start with one defined organisational control',
+        text:
+          'State what the organisation changed and what observable part of work should change if that control is doing what was intended. Then measure the same relevant conditions before and after implementation.',
+      },
+      {
+        heading: 'Keep observation separate from conclusion',
+        text:
+          'A before-and-after pattern can strengthen or weaken a hypothesis, but it does not by itself prove causation. Worker consultation and operational context remain necessary before a management decision.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'How often should psychosocial controls be reviewed?',
+        answer:
+          'Australian guidance says controls should be reviewed regularly and when circumstances indicate a review is needed, including when they may not be effective, workplace change creates new risk, consultation indicates a problem or an HSR requests review in relevant circumstances.',
+      },
+      {
+        question: 'What evidence can be used in a psychosocial control review?',
+        answer:
+          'Worker consultation, workplace observation, reports, complaints, records and relevant data can all contribute. The appropriate mix depends on the hazard, work and jurisdiction.',
+      },
+      {
+        question: 'Can SignalTrue replace a psychosocial risk assessment?',
+        answer:
+          'No. SignalTrue is designed to add continuous work-pattern evidence between formal assessments and during control review.',
+      },
+    ],
+    links: [
+      ['/au/psychosocial-control-effectiveness', 'Control effectiveness'],
+      ['/au/standards-assurance', 'Standards and assurance'],
+      ['/sample-report', 'See a fictional control review'],
+    ],
+  },
+  '/au/continuous-psychosocial-risk-monitoring': {
+    title: 'Continuous Psychosocial Risk Monitoring Australia | SignalTrue',
+    description:
+      'What continuous psychosocial risk monitoring can and cannot do in Australian workplaces, and how work-pattern evidence can complement consultation and formal assessment.',
+    summary:
+      'Continuous psychosocial risk monitoring means observing material and persistent changes in work conditions that may warrant investigation, while keeping worker consultation and human judgement central. SignalTrue focuses on aggregated team-level work patterns rather than diagnosing people.',
+    schemaAbout: 'Continuous psychosocial risk monitoring in Australia',
+    crawlerSections: [
+      {
+        heading: 'Monitoring is not diagnosis',
+        text:
+          'A rise in after-hours activity, meeting demand or coordination load does not prove psychological harm. It shows that the way work is happening has changed and may deserve investigation.',
+      },
+      {
+        heading: 'Use continuous evidence to improve the questions',
+        text:
+          'The purpose is to help WHS teams identify where to investigate, what to ask workers and whether an organisational control appears to have changed the relevant work conditions over time.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does continuous psychosocial monitoring replace worker consultation?',
+        answer:
+          'No. Consultation remains essential. Continuous work-pattern evidence can help target and inform consultation.',
+      },
+      {
+        question: 'Does SignalTrue read emails or chat messages?',
+        answer:
+          'SignalTrue is designed around metadata and team-level patterns rather than message bodies, document content or individual productivity scoring.',
+      },
+      {
+        question: 'Why monitor between formal assessments?',
+        answer:
+          'Because workload, coordination, staffing and work-hour patterns can change faster than periodic assessment cycles. Continuous evidence can help identify material and persistent change that deserves investigation.',
+      },
+    ],
+    links: [
+      ['/au/psychosocial-risk-monitoring', 'Psychosocial risk monitoring'],
+      ['/au/psychosocial-risk-assessment-beyond-surveys', 'Assessment beyond surveys'],
+      ['/au/worker-transparency', 'Worker transparency'],
+    ],
+  },
+  '/au/psychosocial-risk-assessment-beyond-surveys': {
+    title: 'Psychosocial Risk Assessment Beyond Surveys | Australia',
+    description:
+      'How Australian organisations can combine worker consultation and surveys with observation, records and continuous work-pattern evidence.',
+    summary:
+      'Surveys can provide valuable worker-reported evidence, but work keeps changing after a survey closes. Strong psychosocial risk processes combine worker voice with consultation, observation, records and relevant operational evidence.',
+    schemaAbout: 'Psychosocial risk assessment evidence in Australia',
+    crawlerSections: [
+      {
+        heading: 'Keep worker voice and add operational evidence',
+        text:
+          'SignalTrue should not replace worker voice. Its role is to add a continuous evidence layer about how work is organised, so WHS teams can investigate material changes between formal assessment dates.',
+      },
+      {
+        heading: 'Different evidence answers different questions',
+        text:
+          'Use consultation and surveys to understand worker experience, records and complaints to understand reported problems, observation to understand the work environment, and work-pattern evidence to identify persistent change and review controls over time.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is a psychosocial survey enough to manage risk?',
+        answer:
+          'A survey can be an important evidence source, but managing risk also requires suitable controls, consultation and review of whether controls remain effective.',
+      },
+      {
+        question: 'Can work-pattern data show psychological harm?',
+        answer:
+          'No. Work-pattern data can show changes in how work is organised. It should not be used to diagnose individual psychological conditions.',
+      },
+      {
+        question: 'Where does SignalTrue add value after an assessment?',
+        answer:
+          'It helps teams observe relevant work conditions between assessment cycles and compare evidence before and after organisational controls.',
+      },
+    ],
+    links: [
+      ['/au/continuous-psychosocial-risk-monitoring', 'Continuous monitoring'],
+      ['/au/psychosocial-control-effectiveness', 'Control effectiveness'],
+      ['/blog/people-at-work-decommissioning-what-next-australia', 'People at Work: what next?'],
+    ],
   },
   '/au/8-week-pilot': {
     title: '8-Week Australian Psychosocial Control Pilot | SignalTrue',
