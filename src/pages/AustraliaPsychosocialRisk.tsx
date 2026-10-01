@@ -384,6 +384,40 @@ export default function AustraliaPsychosocialRisk() {
           </div>
         </section>
 
+        <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="max-w-3xl">
+              <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                Australian WHS knowledge hub
+              </p>
+              <h2 className="mt-3 text-section font-bold text-[#0F172A]">
+                Search the problem the way a WHS team would ask it.
+              </h2>
+              <p className="mt-4 text-body leading-7 text-[#475569]">
+                Practical guidance on continuous psychosocial risk evidence, control review and privacy boundaries.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {[
+                ['/au/psychosocial-control-effectiveness', 'How do you review psychosocial control effectiveness?'],
+                ['/au/review-psychosocial-controls', 'What should a psychosocial control review contain?'],
+                ['/au/continuous-psychosocial-risk-monitoring', 'What is continuous psychosocial risk monitoring?'],
+                ['/au/psychosocial-risk-assessment-beyond-surveys', 'Should psychosocial risk assessment rely only on surveys?'],
+                ['/blog/people-at-work-decommissioning-what-next-australia', 'People at Work is closing. What should employers do next?'],
+                ['/blog/psychosocial-risk-monitoring-without-employee-surveillance-australia', 'How do you monitor risk without creating surveillance?'],
+              ].map(([href, label]) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="rounded-container border border-[#E2E8F0] p-5 font-semibold text-[#0F172A] transition hover:border-brand hover:text-brand"
+                >
+                  {label} <ArrowRight className="ml-2 inline h-4 w-4" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="py-16 lg:py-20">
           <div className="container mx-auto max-w-3xl px-6 text-center">
             <h2 className="text-section font-bold text-[#0F172A]">
