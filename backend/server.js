@@ -188,6 +188,7 @@ import { purgeAllOrgs } from './services/retentionPurgeService.js';
 import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
 import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
+import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDiagnostic.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -211,6 +212,9 @@ async function main() {
         console.log('Attempting to connect to MongoDB Atlas...');
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ MongoDB connected');
+        logTehnopolProductionDiagnostic().catch((err) =>
+          console.error('[TehnopolAudit] startup diagnostic failed:', err?.message || err)
+        );
         mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });
