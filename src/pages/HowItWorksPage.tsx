@@ -119,7 +119,7 @@ const HowItWorksPage = () => {
               </p>
               <Button asChild variant="hero" size="xl">
                 <PrimaryCommercialCTA ctaLocation="how_it_works_hero">
-                  Book a 20-minute visibility review
+                  Apply for a free control-review pilot
                   <ArrowRight className="w-5 h-5" />
                 </PrimaryCommercialCTA>
               </Button>
@@ -331,7 +331,7 @@ const HowItWorksPage = () => {
                 </Button>
                 <Button asChild variant="hero-outline" size="lg">
                   <PrimaryCommercialCTA ctaLocation="how_it_works_diagnostic">
-                    Book a 20-minute visibility review
+                    Apply for a free control-review pilot
                   </PrimaryCommercialCTA>
                 </Button>
               </div>
@@ -352,7 +352,7 @@ const HowItWorksPage = () => {
               </h2>
               <Button asChild variant="hero" size="xl">
                 <PrimaryCommercialCTA ctaLocation="how_it_works_final">
-                  Book a 20-minute visibility review
+                  Apply for a free control-review pilot
                   <ArrowRight className="w-5 h-5" />
                 </PrimaryCommercialCTA>
               </Button>
