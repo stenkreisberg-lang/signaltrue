@@ -76,7 +76,7 @@ const WhyOrganizationsGoBlind = () => {
                 ctaLocation="homepage_problem"
                 className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-5 py-3 text-caption font-bold text-white hover:bg-brand-hover"
               >
-                Apply for a free pilot
+                Start the AU$99 founding review
               </PrimaryCommercialCTA>
               <SampleReportCTA
                 ctaLocation="homepage_problem"
