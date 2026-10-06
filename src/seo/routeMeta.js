@@ -22,18 +22,18 @@ const SOCIAL_IMAGE = `${SITE_URL}/social-preview-v2.png`;
  */
 const ROUTE_META = {
   '/': {
-    title: 'Psychosocial Risk & Control Assurance | SignalTrue',
+    title: 'Psychosocial Control Effectiveness Evidence | SignalTrue',
     description:
-      'Continuous, privacy-preserving work-condition evidence. Compare work before and after a control, check sustainability and identify possible workload migration without surveys or message content.',
+      'Psychosocial assessment found the risk. SignalTrue helps WHS teams review whether an implemented control changed the work, whether the effect lasted and whether pressure moved elsewhere.',
     summary:
-      'SignalTrue continuously measures team-level work patterns, compares conditions before and after a control, checks whether change was sustained, and flags possible migration. No message content, individual scoring, surveys or psychological diagnosis are required.',
+      'SignalTrue sits after psychosocial assessment and control implementation. It adds team-level before-and-after work-pattern evidence, sustainability checks and possible workload-migration evidence alongside worker consultation.',
   },
   '/product': {
-    title: 'Continuous Work-Condition Evidence | SignalTrue',
+    title: 'Psychosocial Control Review Product | SignalTrue',
     description:
-      'Observe persistent changes in meetings, uninterrupted calendar availability, after-hours activity and coordination, then verify what changed after a control. No surveys required.',
+      'Review one implemented psychosocial control using team-level before-and-after evidence, sustainability checks, workload-migration review and worker consultation.',
     summary:
-      'SignalTrue compares each team’s current work patterns with its own baseline and surfaces persistent changes that may warrant investigation. A signal is evidence that something in the way work is organised has changed ;  not a diagnosis.',
+      'SignalTrue helps WHS teams test whether the work condition a control was meant to change actually changed, whether the change held and whether demand moved elsewhere.',
   },
   '/how-it-works': {
     title: 'How SignalTrue Continuously Measures Work Conditions',
@@ -57,11 +57,11 @@ const ROUTE_META = {
       'SignalTrue does not require message text, email bodies, documents or meeting recordings. Insights are team-level, with minimum group sizes, and there are no productivity ratings, leaderboards or employee rankings.',
   },
   '/sample-report': {
-    title: 'Sample Work-Pattern Intelligence Report | SignalTrue',
+    title: 'Sample Psychosocial Control Review | SignalTrue',
     description:
-      'See how a weekly work-pattern brief reports magnitude against baseline, how long a change has persisted, and what may be worth investigating.',
+      'See a clearly labelled fictional control-review report with baseline, post-control, sustainability, workload-migration, worker evidence and a final review decision.',
     summary:
-      'A sample weekly brief showing meeting hours, uninterrupted calendar availability, after-hours activity and manager coordination load against the team’s established baseline, with how long each change has persisted and what may warrant investigation.',
+      'A fictional example showing the value object a WHS team receives when reviewing one psychosocial control: intended outcome, before-and-after evidence, sustainability, possible workload migration, worker evidence and a documented decision.',
   },
   '/psychosocial-risk-visibility-review': {
     title: 'What happens between psychosocial risk assessments? | SignalTrue',
@@ -393,11 +393,11 @@ const ROUTE_META = {
       'SignalTrue exists to make changes in the system of work visible ;  meeting structures, workload, uninterrupted calendar availability, management capacity and working hours ;  so leaders can investigate problems while they are still easier to address.',
   },
   '/pricing': {
-    title: 'Pricing | SignalTrue Psychosocial Risk & Control Assurance',
+    title: 'Free Australian Psychosocial Control-Review Pilot | SignalTrue',
     description:
-      'Plans for Health & Safety, people and operational teams that need continuous visibility into workload and work-pattern change, and for leadership teams needing cross-team visibility.',
+      'Selected Australian organisations can run one psychosocial control-review pilot at no fee in exchange for structured feedback on the method and report.',
     summary:
-      'Team Intelligence for Health & Safety, People and operational teams needing continuous visibility into work-pattern change. Leadership Intelligence for leadership teams needing cross-team visibility into workload and coordination pressure.',
+      'The current Australian validation offer is a free pilot around one real psychosocial control. SignalTrue supplies the review method and report; the organisation supplies a real control, approved evidence and structured feedback.',
   },
   '/contact': {
     title: 'Discuss a Pilot | SignalTrue',
