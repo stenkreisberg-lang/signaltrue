@@ -192,7 +192,7 @@ export default function SeoLanding() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild variant="hero" size="xl">
                   <PrimaryCommercialCTA ctaLocation={ctaLocation}>
-                    Book a 20-minute visibility review
+                    Apply for a free control-review pilot
                     <ArrowRight className="w-5 h-5" />
                   </PrimaryCommercialCTA>
                 </Button>
