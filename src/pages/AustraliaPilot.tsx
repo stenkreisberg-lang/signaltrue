@@ -68,8 +68,9 @@ export default function AustraliaPilot() {
               A free Australian pilot to review one psychosocial control against what changed in the work.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-              Test whether privacy-preserving, team-level work-pattern evidence improves the way one
-              defined control is investigated, documented and reviewed.
+              Selected Australian organisations can test SignalTrue on one real psychosocial control
+              at no pilot fee. In return, we ask for structured feedback on the method, the final
+              report and what your WHS team would need before adopting it more broadly.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Button asChild size="lg">
