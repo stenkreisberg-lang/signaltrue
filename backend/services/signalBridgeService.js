@@ -14,6 +14,7 @@
 
 import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
+import Organization, { ACTIVE_ORG_FILTER } from '../models/organizationModel.js';
 
 // ────────────────────────────────────────────────────
 // CategoryKing signalCategory → Signal signalType map
@@ -167,7 +168,11 @@ export async function bridgeSignalsForOrg(orgId) {
  * Designed to run right after runSignalGeneration() in the scheduler.
  */
 export async function bridgeAllOrgSignals() {
-  const orgIds = await CategoryKingSignal.distinct('orgId', { status: 'active' });
+  const signalOrgIds = await CategoryKingSignal.distinct('orgId', { status: 'active' });
+  const orgIds = await Organization.find({
+    ...ACTIVE_ORG_FILTER,
+    _id: { $in: signalOrgIds },
+  }).distinct('_id');
   const results = { orgs: 0, created: 0, updated: 0, skipped: 0 };
 
   for (const orgId of orgIds) {
