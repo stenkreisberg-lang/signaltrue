@@ -1,7 +1,7 @@
 import { ArrowRight, Eye, Lock, Shield, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
-import { SampleReportCTA } from './CommercialCTA';
+import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 const Hero = () => {
   return (
@@ -15,7 +15,7 @@ const Hero = () => {
             <div className="mb-4 flex flex-wrap gap-2">
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Eye className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">Control evidence</span>
+                <span className="text-caption font-medium text-[#334155]">Psychosocial control evidence</span>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Lock className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
@@ -23,54 +23,52 @@ const Hero = () => {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Shield className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">
-                  No surveys required for work-pattern evidence
-                </span>
+                <span className="text-caption font-medium text-[#334155]">Team-level evidence</span>
               </div>
             </div>
 
             <h1 className="mb-5 text-section font-bold text-[#0F172A] sm:text-display">
-              Can you show whether the control changed the work?
+              Your psychosocial assessment found the risk. Did the control actually change the work?
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
-              SignalTrue gives Health & Safety and organisational-risk teams an evidence layer for
-              control review: compare relevant work patterns before and after a change, check
-              whether the change lasted, and see whether demand may simply have moved elsewhere.
+              SignalTrue helps Health &amp; Safety teams review one implemented psychosocial control:
+              compare relevant work patterns before and after the change, check whether the result
+              lasted, identify possible workload migration, and combine the evidence with worker
+              consultation.
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
-              Built around a standards-informed method: observation → interpretation → worker
-              validation → action. Team-level evidence only. No message content. No individual risk
-              or productivity scores.
+              Assessment tells you where to investigate. SignalTrue adds the evidence needed to
+              review what happened after action was taken. No diagnosis. No individual productivity
+              scores. No employee surveillance.
             </p>
 
             <div className="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Link
-                to="/did-the-control-work"
+              <PrimaryCommercialCTA
+                ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Check one control for free <ArrowRight className="h-5 w-5 shrink-0" />
-              </Link>
-              <Link
-                to="/controls"
+                Apply for a free pilot <ArrowRight className="h-5 w-5 shrink-0" />
+              </PrimaryCommercialCTA>
+              <SampleReportCTA
+                ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 text-caption font-bold text-brand hover:bg-brand-softer sm:w-auto"
               >
-                Browse the Control Library
-                <ArrowRight className="h-4 w-4 shrink-0" />
-              </Link>
+                See the sample report <ArrowRight className="h-4 w-4 shrink-0" />
+              </SampleReportCTA>
             </div>
-            <SampleReportCTA
-              ctaLocation="homepage_hero"
-              className="inline-flex text-caption font-semibold text-[#475569] underline decoration-[#CBD5E1] underline-offset-4 hover:text-brand"
-            >
-              View the fictional sample review
-            </SampleReportCTA>
+
+            <p className="mt-3 max-w-xl text-caption text-[#64748B]">
+              The Australian validation pilot is free for selected organisations in exchange for
+              structured feedback on the method and final report.
+            </p>
+
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-caption text-[#475569]">
               {[
                 'ISO 45003-informed',
                 'ISO 45001 OH&S context',
-                'Jurisdiction-aware deployment',
+                'Before / after / sustainability review',
                 'Privacy by design',
               ].map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5">
