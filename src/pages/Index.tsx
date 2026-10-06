@@ -14,8 +14,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <PageMeta
-        title="SignalTrue | Verify Whether Workplace Controls Actually Worked"
-        description="Compare work before and after a change, check whether improvement was sustained, and investigate possible workload migration with team-level metadata."
+        title="SignalTrue | Psychosocial Control Effectiveness Evidence"
+        description="Psychosocial assessment found the risk. SignalTrue helps WHS teams review whether an implemented control changed the work, whether the effect lasted and whether pressure moved elsewhere."
         path="/"
       />
       <Navbar />
