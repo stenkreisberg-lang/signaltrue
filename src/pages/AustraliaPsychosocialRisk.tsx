@@ -85,8 +85,8 @@ export default function AustraliaPsychosocialRisk() {
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg">
-                  <Link to="/au/monitoring-gap-audit">
-                    Review one control <ArrowRight className="ml-2 h-4 w-4" />
+                  <Link to="/did-the-control-work">
+                    Check your control-review gaps <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
@@ -502,8 +502,8 @@ export default function AustraliaPsychosocialRisk() {
               assessments, then decide whether a controlled pilot is justified.
             </p>
             <Button asChild size="lg" className="mt-8">
-              <Link to="/au/monitoring-gap-audit">
-                Review one control <ArrowRight className="ml-2 h-4 w-4" />
+              <Link to="/did-the-control-work">
+                Check your control-review gaps <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
