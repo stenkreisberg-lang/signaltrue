@@ -80,7 +80,7 @@ const Navbar = () => {
                 ctaLocation="navbar_desktop"
                 className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
               >
-                Book a 20-minute visibility review
+                Apply for a free pilot
               </PrimaryCommercialCTA>
             )}
           </div>
@@ -131,7 +131,7 @@ const Navbar = () => {
                       className="flex w-full items-center justify-center rounded-control bg-brand px-4 py-3 text-center text-caption font-semibold text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Run the Monitoring Gap Audit
+                      Apply for the free pilot
                     </Link>
                   </>
                 ) : (
