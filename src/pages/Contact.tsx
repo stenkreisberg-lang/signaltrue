@@ -6,7 +6,7 @@ import LeadForm from '../components/LeadForm';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 
-const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'au-pilot']);
+const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'au-founding-review']);
 
 export function normalizeContactIntent(value: string | null) {
   const normalized = (value || 'demo').split('?')[0].trim().toLowerCase();
@@ -65,7 +65,7 @@ export default function Contact() {
                 [Mail, 'General enquiries', 'hello@signaltrue.ai', 'mailto:hello@signaltrue.ai'],
                 [
                   Calendar,
-                  'Free control-review pilot',
+                  'AU$99 founding control review',
                   'Use the request form below',
                   '#commercial-lead-form',
                 ],
