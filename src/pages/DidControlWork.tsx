@@ -1,545 +1,337 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ArrowRight,
-  CalendarDays,
-  CheckCircle2,
-  ClipboardCheck,
-  Copy,
-  SearchCheck,
-  ShieldCheck,
-  TriangleAlert,
-} from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { trackEvent } from '../lib/analytics';
-import { CONTROL_LIBRARY, HAZARDS, controlPath, findControlEntry } from '../content/controlLibrary';
 
-type EvidenceState = {
-  baseline: boolean;
-  postChange: boolean;
-  sustained: boolean;
-  migration: boolean;
-  workerValidation: boolean;
+type AnswerValue = 0 | 1 | 2;
+
+type Question = {
+  id: string;
+  question: string;
+  context?: string;
+  answers: Array<{ label: string; value: AnswerValue }>;
+  gapTitle: string;
+  gapCopy: string;
 };
 
-const EMPTY_EVIDENCE: EvidenceState = {
-  baseline: false,
-  postChange: false,
-  sustained: false,
-  migration: false,
-  workerValidation: false,
-};
-
-const EVIDENCE_ITEMS: Array<{
-  key: keyof EvidenceState;
-  label: string;
-  explanation: string;
-}> = [
+const QUESTIONS: Question[] = [
   {
-    key: 'baseline',
-    label: 'Pre-change baseline exists',
-    explanation: 'You can compare the new pattern with several normal weeks before the control.',
+    id: 'assessment',
+    question: 'Have you completed a psychosocial risk assessment?',
+    answers: [
+      { label: 'Yes, within the last 12 months', value: 2 },
+      { label: 'Yes, but more than 12 months ago / still in progress', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'Assessment basis is weak or outdated',
+    gapCopy: 'A control review needs a clear starting point: what risk was identified, where, and for whom.',
   },
   {
-    key: 'postChange',
-    label: 'Post-change evidence exists',
-    explanation: 'You have comparable evidence from after the control was introduced.',
+    id: 'specificRisk',
+    question: 'Did the assessment identify a specific hazard or exposure area?',
+    answers: [
+      { label: 'Yes, specific hazard and affected work group', value: 2 },
+      { label: 'Only broad organisational themes', value: 1 },
+      { label: 'Not clearly', value: 0 },
+    ],
+    gapTitle: 'The risk is too broad to review',
+    gapCopy: 'If the risk is not specific, it is difficult to connect a control to a measurable change in work.',
   },
   {
-    key: 'sustained',
-    label: 'A sustainability check exists',
-    explanation:
-      'You checked later to see whether the change lasted rather than relying on a short-term dip.',
+    id: 'control',
+    question: 'For the risk you are managing, is there a defined control?',
+    answers: [
+      { label: 'Yes', value: 2 },
+      { label: 'Partly / several actions but no clear control', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'The control is not clearly defined',
+    gapCopy: 'A review should test one intended change, not a collection of unrelated wellbeing activities.',
   },
   {
-    key: 'migration',
-    label: 'You checked for workload migration',
-    explanation:
-      'You looked for demand moving into messages, evenings, another role, or another team.',
+    id: 'outcome',
+    question: 'Did you define what should change if the control works?',
+    context: 'For example: less after-hours work, lower meeting burden, more recovery time or fewer handoff delays.',
+    answers: [
+      { label: 'Yes, with a measurable outcome', value: 2 },
+      { label: 'Only a broad desired outcome', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'No measurable control outcome',
+    gapCopy: 'You can prove an intervention happened, but not whether it changed the exposure it was meant to reduce.',
   },
   {
-    key: 'workerValidation',
-    label: 'Workers validated what the evidence means',
-    explanation:
-      'Worker consultation is connected to the evidence rather than treated as a separate exercise.',
+    id: 'baseline',
+    question: 'Do you have a baseline from before the control was introduced?',
+    answers: [
+      { label: 'Yes, comparable evidence exists', value: 2 },
+      { label: 'Partly / limited baseline', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'No reliable baseline',
+    gapCopy: 'Without a pre-control baseline, normal fluctuation can easily be mistaken for improvement.',
+  },
+  {
+    id: 'reviewEvidence',
+    question: 'How will you determine whether the control worked?',
+    answers: [
+      { label: 'Worker consultation plus operational evidence', value: 2 },
+      { label: 'Survey or operational evidence only', value: 1 },
+      { label: 'Manager judgement / not defined', value: 0 },
+    ],
+    gapTitle: 'The review depends on one evidence source',
+    gapCopy: 'Worker experience and operational work patterns answer different questions. Strong review evidence uses both.',
+  },
+  {
+    id: 'migration',
+    question: 'Can you see whether the problem moved somewhere else?',
+    context: 'For example: fewer meetings but more after-hours email, chat or coordination work.',
+    answers: [
+      { label: 'Yes', value: 2 },
+      { label: 'Partly', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'Risk migration is invisible',
+    gapCopy: 'A control can improve one metric while moving demand into another channel, time period or work group.',
+  },
+  {
+    id: 'reviewDecision',
+    question: 'Is there a defined review date and decision point?',
+    answers: [
+      { label: 'Yes, date and decision are defined', value: 2 },
+      { label: 'Review date only', value: 1 },
+      { label: 'No', value: 0 },
+    ],
+    gapTitle: 'No clear review decision',
+    gapCopy: 'A control should end in a human decision: maintain, modify, replace, investigate further or gather more evidence.',
   },
 ];
 
-function addDays(value: string, days: number) {
-  if (!value) return '';
-  const date = new Date(`${value}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return '';
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function formatDate(value: string) {
-  if (!value) return '';
-  const date = new Date(`${value}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
-function readinessLabel(score: number) {
-  if (score >= 100) return 'Strong basis for a control review';
-  if (score >= 80) return 'Reviewable, with one evidence gap';
-  if (score >= 60) return 'Partial evidence. Do not close the review yet';
-  if (score >= 40) return 'Too many gaps to judge the control reliably';
-  return 'Too early to say the control worked';
+function scoreLabel(score: number) {
+  if (score >= 85) return 'Strong control-review foundation';
+  if (score >= 65) return 'Reviewable, but important gaps remain';
+  if (score >= 40) return 'Material gaps in your control-review process';
+  return 'Too many gaps to confidently judge control effectiveness';
 }
 
 export default function DidControlWork() {
-  const [searchParams] = useSearchParams();
-  const requestedHazard = searchParams.get('hazard') || '';
-  const requestedControl = searchParams.get('control') || '';
-  const [hazardSlug, setHazardSlug] = useState(() =>
-    HAZARDS.some((item) => item.slug === requestedHazard) ? requestedHazard : ''
-  );
-  const [controlSlug, setControlSlug] = useState(() =>
-    findControlEntry(requestedHazard, requestedControl) ? requestedControl : ''
-  );
-  const [implementedOn, setImplementedOn] = useState('');
-  const [evidence, setEvidence] = useState<EvidenceState>(EMPTY_EVIDENCE);
-  const [showPlan, setShowPlan] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const availableControls = useMemo(
-    () => CONTROL_LIBRARY.filter((entry) => entry.hazardSlug === hazardSlug),
-    [hazardSlug]
-  );
-
-  const entry = findControlEntry(hazardSlug, controlSlug);
-  const score = EVIDENCE_ITEMS.reduce((total, item) => total + (evidence[item.key] ? 20 : 0), 0);
-  const missing = EVIDENCE_ITEMS.filter((item) => !evidence[item.key]);
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+  const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
-    trackEvent('did_control_work_viewed');
+    trackEvent('did_control_work_viewed', { campaign: 'people_at_work_transition' });
   }, []);
 
-  const planDates = useMemo(() => {
-    if (!implementedOn) return null;
-    return {
-      baselineStart: addDays(implementedOn, -28),
-      baselineEnd: addDays(implementedOn, -1),
-      bufferEnd: addDays(implementedOn, 13),
-      initialStart: addDays(implementedOn, 14),
-      initialEnd: addDays(implementedOn, 42),
-      sustainedStart: addDays(implementedOn, 43),
-      sustainedEnd: addDays(implementedOn, 84),
-    };
-  }, [implementedOn]);
+  const answeredCount = Object.keys(answers).length;
+  const score = useMemo(() => {
+    const total = Object.values(answers).reduce<number>((sum, value) => sum + value, 0);
+    return Math.round((total / (QUESTIONS.length * 2)) * 100);
+  }, [answers]);
 
-  const generatePlan = () => {
-    if (!entry) return;
-    setShowPlan(true);
-    setCopied(false);
+  const gaps = useMemo(
+    () =>
+      QUESTIONS
+        .filter((q) => (answers[q.id] ?? 2) < 2)
+        .sort((a, b) => (answers[a.id] ?? 2) - (answers[b.id] ?? 2))
+        .slice(0, 4),
+    [answers]
+  );
+
+  const finish = () => {
+    if (answeredCount !== QUESTIONS.length) return;
+    setShowResult(true);
     trackEvent('did_control_work_completed', {
-      hazard_slug: entry.hazardSlug,
-      control_slug: entry.controlSlug,
-      evidence_score: score,
-      missing_count: missing.length,
+      score,
+      gap_count: gaps.length,
+      campaign: 'people_at_work_transition',
     });
     window.setTimeout(() => {
-      document.getElementById('control-review-plan')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('diagnostic-result')?.scrollIntoView({ behavior: 'smooth' });
     }, 20);
-  };
-
-  const planText = entry
-    ? [
-        `SignalTrue control review plan`,
-        `Hazard: ${entry.hazard}`,
-        `Control: ${entry.control}`,
-        `Current evidence score: ${score}/100 — ${readinessLabel(score)}`,
-        '',
-        `Expected effect: ${entry.expectedEffect}`,
-        '',
-        'Evidence to review:',
-        ...entry.evidenceNeeded.map((item) => `- ${item}`),
-        '',
-        'Work-pattern indicators:',
-        ...entry.indicators.map((item) => `- ${item}`),
-        '',
-        'Possible workload migration:',
-        ...entry.migrationRisks.map((item) => `- ${item}`),
-        '',
-        'Worker consultation questions:',
-        ...entry.consultationQuestions.map((item) => `- ${item}`),
-        '',
-        `Suggested timing: ${entry.reviewTiming}`,
-        planDates
-          ? `Illustrative windows from ${formatDate(implementedOn)}: baseline ${formatDate(
-              planDates.baselineStart
-            )}–${formatDate(planDates.baselineEnd)}; initial review ${formatDate(
-              planDates.initialStart
-            )}–${formatDate(planDates.initialEnd)}; sustainability check ${formatDate(
-              planDates.sustainedStart
-            )}–${formatDate(planDates.sustainedEnd)}.`
-          : '',
-        '',
-        'Use this as a review aid, not as a legal conclusion or substitute for worker consultation.',
-      ]
-        .filter(Boolean)
-        .join('\n')
-    : '';
-
-  const copyPlan = async () => {
-    if (!planText) return;
-    await navigator.clipboard.writeText(planText);
-    setCopied(true);
-    trackEvent('did_control_work_plan_copied', {
-      hazard_slug: entry?.hazardSlug,
-      control_slug: entry?.controlSlug,
-    });
   };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       <PageMeta
-        title="Did the Control Work? Free Psychosocial Control Review Tool | SignalTrue"
-        description="Choose a psychosocial hazard and workplace control, check the evidence you already have, and generate a practical before-and-after control review plan."
+        title="People at Work closed. Is your psychosocial control review ready? | SignalTrue"
+        description="A two-minute diagnostic for Australian organisations to find gaps between psychosocial risk assessment, the control introduced and the evidence needed to review whether it worked."
         path="/did-the-control-work"
       />
       <Navbar />
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white">
-          <div className="container mx-auto px-6 py-16 lg:py-20">
-            <div className="mx-auto max-w-4xl">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-soft bg-brand-softer px-3 py-1.5 text-caption font-bold text-brand">
-                <SearchCheck className="h-4 w-4" />
-                Free control review utility
-              </div>
-              <h1 className="max-w-3xl text-section font-bold sm:text-display">
-                You changed the work. Did the control actually work?
-              </h1>
-              <p className="mt-5 max-w-2xl text-body leading-8 text-[#475569]">
-                Pick one psychosocial hazard and one control. SignalTrue will show what evidence is
-                still missing, what to measure, where workload can migrate, and what to ask workers
-                before closing the review.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-4 text-caption text-[#475569]">
-                <span className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-brand" /> No sign-up required
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-brand" /> No employee data entered
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not a legal
-                  conclusion
-                </span>
-              </div>
+          <div className="container mx-auto max-w-5xl px-6 py-16 lg:py-20">
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              Australia · 2-minute control-review diagnostic
+            </p>
+            <h1 className="mt-4 max-w-4xl text-section font-bold sm:text-display">
+              People at Work closed on 2 October. Is your psychosocial risk process ready for what comes next?
+            </h1>
+            <p className="mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
+              Assessment identifies risk. The harder part is proving whether the control you introduced
+              actually changed the conditions of work. Check where your current review process has gaps.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-4 text-caption text-[#475569]">
+              <span className="inline-flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-brand" /> No sign-up
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-brand" /> No employee data
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <TriangleAlert className="h-4 w-4 text-brand" /> Review aid, not legal advice
+              </span>
             </div>
           </div>
         </section>
 
-        <section className="container mx-auto px-6 py-12 lg:py-16">
-          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-container border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                1. Define the control
-              </p>
+        <section className="container mx-auto max-w-5xl px-6 py-12 lg:py-16">
+          <div className="rounded-container border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">Check your process</p>
+                <h2 className="mt-2 text-section font-bold">8 questions. About two minutes.</h2>
+              </div>
+              <p className="text-caption font-bold text-[#64748B]">{answeredCount}/8</p>
+            </div>
 
-              <label className="mt-6 block text-caption font-bold text-[#334155]">
-                Psychosocial hazard
-              </label>
-              <select
-                value={hazardSlug}
-                onChange={(event) => {
-                  setHazardSlug(event.target.value);
-                  setControlSlug('');
-                  setShowPlan(false);
-                }}
-                className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
-              >
-                <option value="">Choose a hazard</option>
-                {HAZARDS.map((hazard) => (
-                  <option key={hazard.slug} value={hazard.slug}>
-                    {hazard.label}
-                  </option>
-                ))}
-              </select>
-
-              <label className="mt-5 block text-caption font-bold text-[#334155]">
-                Control introduced
-              </label>
-              <select
-                value={controlSlug}
-                disabled={!hazardSlug}
-                onChange={(event) => {
-                  setControlSlug(event.target.value);
-                  setShowPlan(false);
-                }}
-                className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A] disabled:bg-[#F1F5F9] disabled:text-[#94A3B8]"
-              >
-                <option value="">Choose a control</option>
-                {availableControls.map((control) => (
-                  <option key={control.controlSlug} value={control.controlSlug}>
-                    {control.control}
-                  </option>
-                ))}
-              </select>
-
-              <label className="mt-5 block text-caption font-bold text-[#334155]">
-                Implementation date <span className="font-normal text-[#64748B]">(optional)</span>
-              </label>
-              <input
-                type="date"
-                value={implementedOn}
-                onChange={(event) => setImplementedOn(event.target.value)}
-                className="mt-2 w-full rounded-control border border-[#CBD5E1] bg-white px-4 py-3 text-body text-[#0F172A]"
-              />
-
-              {entry ? (
-                <div className="mt-6 rounded-control border border-brand-soft bg-brand-softer p-5">
-                  <p className="text-caption font-bold text-brand">
-                    What should change if it works?
-                  </p>
-                  <p className="mt-2 text-caption leading-6 text-[#334155]">
-                    {entry.expectedEffect}
-                  </p>
+            <div className="mt-8 space-y-8">
+              {QUESTIONS.map((q, index) => (
+                <div key={q.id} className="border-t border-[#E2E8F0] pt-7 first:border-0 first:pt-0">
+                  <p className="text-caption font-bold text-brand">Question {index + 1}</p>
+                  <h3 className="mt-2 text-lead font-bold">{q.question}</h3>
+                  {q.context ? <p className="mt-2 text-caption leading-6 text-[#64748B]">{q.context}</p> : null}
+                  <div className="mt-4 grid gap-3">
+                    {q.answers.map((option) => {
+                      const selected = answers[q.id] === option.value;
+                      return (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() => {
+                            setAnswers((current) => ({ ...current, [q.id]: option.value }));
+                            setShowResult(false);
+                          }}
+                          className={
+                            'rounded-control border px-4 py-3 text-left text-caption font-semibold transition ' +
+                            (selected
+                              ? 'border-brand bg-brand-softer text-[#0F172A]'
+                              : 'border-[#E2E8F0] bg-white text-[#334155] hover:border-brand-soft')
+                          }
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : null}
+              ))}
             </div>
 
-            <div className="rounded-container border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                2. What evidence do you have?
-              </p>
-              <p className="mt-3 text-caption leading-6 text-[#64748B]">
-                Tick only what is genuinely available for this specific control.
-              </p>
-
-              <div className="mt-6 space-y-3">
-                {EVIDENCE_ITEMS.map((item) => (
-                  <label
-                    key={item.key}
-                    className="flex cursor-pointer gap-4 rounded-control border border-[#E2E8F0] p-4 transition hover:border-brand-soft hover:bg-brand-softer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={evidence[item.key]}
-                      onChange={(event) => {
-                        setEvidence((current) => ({
-                          ...current,
-                          [item.key]: event.target.checked,
-                        }));
-                        setShowPlan(false);
-                      }}
-                      className="mt-1 h-4 w-4 rounded border-[#94A3B8] accent-[var(--brand)]"
-                    />
-                    <span>
-                      <span className="block text-caption font-bold text-[#1E293B]">
-                        {item.label}
-                      </span>
-                      <span className="mt-1 block text-caption leading-5 text-[#64748B]">
-                        {item.explanation}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                disabled={!entry}
-                onClick={generatePlan}
-                className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-5 py-3 text-body font-bold text-white shadow-sm hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
-              >
-                Generate the control review plan
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={answeredCount !== QUESTIONS.length}
+              onClick={finish}
+              className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-body font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-[#94A3B8]"
+            >
+              Show my control-review gaps <ArrowRight className="h-5 w-5" />
+            </button>
           </div>
         </section>
 
-        {showPlan && entry ? (
-          <section id="control-review-plan" className="border-y border-[#E2E8F0] bg-white">
-            <div className="container mx-auto px-6 py-14 lg:py-18">
-              <div className="mx-auto max-w-6xl">
-                <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-                  <aside className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-6 sm:p-8">
-                    <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                      Current review basis
-                    </p>
-                    <div className="mt-4 flex items-end gap-3">
-                      <span className="text-[4rem] font-bold leading-none">{score}</span>
-                      <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
-                    </div>
-                    <p className="mt-3 text-subsection font-bold">{readinessLabel(score)}</p>
+        {showResult ? (
+          <section id="diagnostic-result" className="border-y border-[#E2E8F0] bg-white">
+            <div className="container mx-auto max-w-5xl px-6 py-14 lg:py-18">
+              <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+                <aside className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-7">
+                  <p className="text-caption font-bold uppercase tracking-wider text-brand">Your readiness score</p>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span className="text-[4.5rem] font-bold leading-none">{score}</span>
+                    <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
+                  </div>
+                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>
+                </aside>
 
-                    {missing.length ? (
-                      <div className="mt-6">
-                        <p className="text-caption font-bold text-[#334155]">Still missing</p>
-                        <ul className="mt-3 space-y-2 text-caption leading-6 text-[#475569]">
-                          {missing.map((item) => (
-                            <li key={item.key} className="flex gap-2">
-                              <TriangleAlert className="mt-1 h-4 w-4 shrink-0 text-amber-600" />
-                              {item.label}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                <div>
+                  <p className="text-caption font-bold uppercase tracking-wider text-brand">What needs attention</p>
+                  <div className="mt-5 space-y-4">
+                    {gaps.length ? (
+                      gaps.map((gap) => (
+                        <div key={gap.id} className="rounded-container border border-[#E2E8F0] p-5">
+                          <h3 className="font-bold">{gap.gapTitle}</h3>
+                          <p className="mt-2 text-caption leading-6 text-[#475569]">{gap.gapCopy}</p>
+                        </div>
+                      ))
                     ) : (
-                      <div className="mt-6 rounded-control border border-emerald-200 bg-emerald-50 p-4 text-caption leading-6 text-emerald-950">
-                        All five evidence layers are present. The next step is interpretation and
-                        documented worker consultation, not an automatic “pass”.
+                      <div className="rounded-container border border-emerald-200 bg-emerald-50 p-5 text-caption leading-6 text-emerald-950">
+                        Your process has all eight foundations. The remaining question is whether the evidence can be gathered consistently and turned into a clear human review decision.
                       </div>
                     )}
-
-                    <Link
-                      to={controlPath(entry)}
-                      className="mt-7 inline-flex items-center gap-2 text-caption font-bold text-brand hover:text-brand-hover"
-                    >
-                      Open the full control guide <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </aside>
-
-                  <div>
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                      <div>
-                        <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                          Your evidence plan
-                        </p>
-                        <h2 className="mt-2 text-section font-bold">
-                          {entry.hazard}: {entry.control}
-                        </h2>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={copyPlan}
-                        className="inline-flex items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-4 py-2.5 text-caption font-bold text-[#334155] hover:border-brand"
-                      >
-                        <Copy className="h-4 w-4" /> {copied ? 'Copied' : 'Copy plan'}
-                      </button>
-                    </div>
-
-                    {planDates ? (
-                      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                        {[
-                          [
-                            'Baseline',
-                            `${formatDate(planDates.baselineStart)} – ${formatDate(
-                              planDates.baselineEnd
-                            )}`,
-                          ],
-                          [
-                            'Initial review',
-                            `${formatDate(planDates.initialStart)} – ${formatDate(
-                              planDates.initialEnd
-                            )}`,
-                          ],
-                          [
-                            'Sustainability',
-                            `${formatDate(planDates.sustainedStart)} – ${formatDate(
-                              planDates.sustainedEnd
-                            )}`,
-                          ],
-                        ].map(([label, value]) => (
-                          <div
-                            key={label}
-                            className="rounded-control border border-[#E2E8F0] bg-[#F8FAFC] p-4"
-                          >
-                            <CalendarDays className="h-4 w-4 text-brand" />
-                            <p className="mt-2 text-caption font-bold">{label}</p>
-                            <p className="mt-1 text-caption text-[#64748B]">{value}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="mt-8 grid gap-6 md:grid-cols-2">
-                      <div>
-                        <h3 className="text-subsection font-bold">Measure these patterns</h3>
-                        <ul className="mt-3 space-y-2 text-caption leading-6 text-[#475569]">
-                          {entry.indicators.map((item) => (
-                            <li key={item} className="flex gap-2">
-                              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="text-subsection font-bold">Check where demand moved</h3>
-                        <ul className="mt-3 space-y-2 text-caption leading-6 text-[#475569]">
-                          {entry.migrationRisks.map((item) => (
-                            <li key={item} className="flex gap-2">
-                              <TriangleAlert className="mt-1 h-4 w-4 shrink-0 text-amber-600" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="mt-8 rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-6">
-                      <h3 className="text-subsection font-bold">Ask workers these questions</h3>
-                      <ul className="mt-4 grid gap-3 md:grid-cols-2">
-                        {entry.consultationQuestions.map((item) => (
-                          <li
-                            key={item}
-                            className="rounded-control border border-[#E2E8F0] bg-white p-4 text-caption leading-6 text-[#475569]"
-                          >
-                            “{item}”
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="mt-8 rounded-container border border-brand-soft bg-brand-softer p-6">
-                      <div className="flex gap-3">
-                        <ClipboardCheck className="mt-1 h-5 w-5 shrink-0 text-brand" />
-                        <div>
-                          <p className="font-bold">Suggested review timing</p>
-                          <p className="mt-1 text-caption leading-6 text-[#475569]">
-                            {entry.reviewTiming}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                      <Link
-                        to="/control-evidence-assessment"
-                        className="inline-flex min-h-12 items-center justify-center rounded-control border border-brand bg-white px-5 py-3 text-caption font-bold text-brand hover:bg-brand-softer"
-                      >
-                        Assess your overall evidence process
-                      </Link>
-                      <Link
-                        to="/contact?intent=control-review"
-                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-5 py-3 text-caption font-bold text-white hover:bg-brand-hover"
-                      >
-                        Review this control with SignalTrue <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="mt-10 rounded-container border border-brand-soft bg-brand-softer p-7 sm:p-8">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">What if much of this evidence did not have to be assembled manually?</p>
+                <h2 className="mt-3 text-section font-bold">
+                  SignalTrue connects the assessment, the control and evidence about how work changed.
+                </h2>
+                <p className="mt-4 max-w-3xl text-body leading-7 text-[#475569]">
+                  It can compare relevant team-level calendar and collaboration patterns before and after a control,
+                  check whether the change lasted, flag possible workload migration, and keep worker consultation
+                  beside the operational evidence. The final decision remains with the organisation.
+                </p>
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to="/sample-report"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
+                  >
+                    See the fictional sample report <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    to="/contact?intent=au-founding-review"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 font-bold text-brand hover:bg-white/70"
+                  >
+                    Start a founding review · AU$99
+                  </Link>
+                </div>
+
+                <div className="mt-7 border-t border-brand-soft pt-6">
+                  <p className="text-caption leading-6 text-[#475569]">
+                    Want the thinking behind this approach? Read Sten Kreisberg's AHRI article on the gap between
+                    psychosocial assessment and ongoing evidence.
+                  </p>
+                  <a
+                    href="https://www.ahri.com.au/articles/how-to-assess-psychosocial-risk-exposure-before-its-too-late"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 text-caption font-bold text-brand hover:underline"
+                  >
+                    Read the AHRI article <ExternalLink className="h-4 w-4" />
+                  </a>
                 </div>
               </div>
             </div>
           </section>
         ) : null}
 
-        <section className="container mx-auto px-6 py-14">
-          <div className="mx-auto max-w-5xl rounded-container border border-[#E2E8F0] bg-white p-7 sm:p-9">
-            <h2 className="text-section font-bold">
-              Why this is different from “did we complete the action?”
-            </h2>
-            <p className="mt-4 max-w-3xl text-body leading-8 text-[#475569]">
-              Completing a control is not the same as showing that working conditions changed. A
-              useful review compares before and after, checks whether the effect lasted, looks for
-              unintended migration, and validates interpretation with workers.
+        <section className="bg-[#0F172A] py-14 text-white">
+          <div className="container mx-auto max-w-4xl px-6 text-center">
+            <p className="text-caption font-bold uppercase tracking-wider text-[#93C5FD]">Founding review</p>
+            <h2 className="mt-3 text-section font-bold">One risk. One control. AU$99.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[#CBD5E1]">
+              The aim is to validate whether this review is useful, not to maximise pilot revenue.
+              One team, one identified psychosocial risk, one control and one final evidence review.
             </p>
             <Link
-              to="/controls"
-              className="mt-6 inline-flex items-center gap-2 text-caption font-bold text-brand hover:text-brand-hover"
+              to="/contact?intent=au-founding-review"
+              className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
             >
-              Browse the Psychosocial Control Library <ArrowRight className="h-4 w-4" />
+              Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </div>
         </section>
