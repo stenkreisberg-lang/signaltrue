@@ -2,8 +2,8 @@ import { MouseEvent, ReactNode } from 'react';
 import { Link, LinkProps } from 'react-router-dom';
 import { trackFunnelEvent } from '../lib/analytics';
 
-export const PRIMARY_CTA_LABEL = 'Apply for a free control-review pilot';
-export const PRIMARY_CTA_PATH = '/contact?intent=au-pilot';
+export const PRIMARY_CTA_LABEL = 'Start the AU$99 founding review';
+export const PRIMARY_CTA_PATH = '/contact?intent=au-founding-review';
 
 interface CommercialLinkProps extends Omit<LinkProps, 'to'> {
   ctaLocation: string;
@@ -21,7 +21,7 @@ export function PrimaryCommercialCTA({
   ...linkProps
 }: CommercialLinkProps) {
   const search = new URLSearchParams();
-  search.set('intent', queryParams?.intent || 'au-pilot');
+  search.set('intent', queryParams?.intent || 'au-founding-review');
   if (queryParams?.plan) search.set('plan', queryParams.plan);
   const destination = `/contact?${search.toString()}`;
   const navigationState = {
@@ -41,7 +41,7 @@ export function PrimaryCommercialCTA({
           cta_location: ctaLocation,
           cta_destination: destination,
           ...(queryParams?.plan ? { plan: queryParams.plan } : {}),
-          intent: queryParams?.intent || 'au-pilot',
+          intent: queryParams?.intent || 'au-founding-review',
         });
         onClick?.(event);
       }}
