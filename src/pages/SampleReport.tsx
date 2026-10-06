@@ -63,7 +63,7 @@ export default function SampleReport() {
                 ctaLocation="sample_report_hero"
                 className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
               >
-                Apply for a free pilot <ArrowRight className="ml-2 h-4 w-4" />
+                Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
               </PrimaryCommercialCTA>
               <button
                 type="button"
@@ -215,16 +215,16 @@ export default function SampleReport() {
 
         <section className="sample-report-no-print bg-[#0F172A] py-16 text-white">
           <div className="container mx-auto max-w-3xl px-6 text-center">
-            <h2 className="text-section font-bold">Have one real control you want to test?</h2>
+            <h2 className="text-section font-bold">Have one real control you need to review?</h2>
             <p className="mx-auto mt-4 max-w-2xl text-[#CBD5E1]">
-              The Australian validation pilot is free for selected organisations in exchange for
+              The Australian founding review is free for selected organisations in exchange for
               structured feedback on the method and report.
             </p>
             <PrimaryCommercialCTA
               ctaLocation="sample_report_final"
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
             >
-              Apply for the free pilot <ArrowRight className="ml-2 h-4 w-4" />
+              Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
             </PrimaryCommercialCTA>
           </div>
         </section>
