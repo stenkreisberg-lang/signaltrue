@@ -1,22 +1,22 @@
 import { XCircle } from 'lucide-react';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
-const laggingIndicators = [
+const gaps = [
   {
-    name: 'Annual risk assessments',
-    problem: 'Can become a snapshot that misses how work changes between reviews.',
+    name: 'Risk assessment',
+    problem: 'Identifies hazards and exposure, but does not by itself prove that a later control worked.',
   },
   {
-    name: 'Absence and turnover data',
-    problem: 'Confirm harm or disruption after preventive opportunities have passed.',
+    name: 'Worker survey',
+    problem: 'Captures lived experience at a point in time, but the work can change between survey rounds.',
   },
   {
-    name: 'Manager observations',
-    problem: 'Essential context, but difficult to compare consistently across teams.',
+    name: 'Absence and turnover',
+    problem: 'Useful outcomes, but usually too late to tell whether a preventive control should be changed now.',
   },
   {
-    name: 'Delivery dashboards',
-    problem: 'Show delayed work, not the work-design conditions creating the risk.',
+    name: 'Workforce analytics',
+    problem: 'Shows meetings, focus time or after-hours activity, but usually stops before the WHS control decision.',
   },
 ];
 
@@ -27,32 +27,24 @@ const WhyOrganizationsGoBlind = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-4">
             <p className="text-caption font-semibold text-primary uppercase tracking-wider mb-4">
-              The problem
+              The gap after assessment
             </p>
           </div>
 
-          {/* Section headline */}
           <h2 className="text-section font-display font-bold text-center mb-6">
-            Psychosocial risks build gradually.
-            <br />
-            The work pattern changes first.
+            Finding a psychosocial risk is not the same as knowing whether the response worked.
           </h2>
 
           <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16">
             <p className="text-lead text-muted-foreground">
-              Before deadlines slip or people leave, the work pattern changes. Meetings increase.
-              Uninterrupted calendar availability shrinks. Managers become bottlenecks. Urgent
-              messages become normal. Work moves into evenings.
-            </p>
-            <p className="text-lead text-muted-foreground mt-4">
-              Most organizations notice too late because their evidence is periodic, fragmented or
-              focused on outcomes after exposure has already increased.
+              A control is introduced. Meetings are reduced, work is redistributed, roles are
+              clarified or staffing changes. Then comes the difficult question: did the conditions
+              of work improve, did the improvement last, or did pressure move somewhere else?
             </p>
           </div>
 
-          {/* Enemy Tools Grid */}
           <div className="grid sm:grid-cols-2 gap-4 lg:gap-6 mb-12 max-w-4xl mx-auto">
-            {laggingIndicators.map((item, index) => (
+            {gaps.map((item, index) => (
               <div
                 key={index}
                 className="p-6 rounded-container bg-white border border-[#E2E8F0] shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
@@ -70,26 +62,28 @@ const WhyOrganizationsGoBlind = () => {
             ))}
           </div>
 
-          {/* Highlight box */}
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-container bg-brand-softer border border-brand-soft">
             <p className="text-lead text-[#0F172A] font-medium">
-              SignalTrue adds work-pattern evidence alongside worker consultation. It does not
-              replace it.
+              SignalTrue sits between assessment and the decision to maintain, modify or replace a control.
             </p>
             <p className="text-[#334155] mt-2">
-              Define the control and its intended effect. Observe what changed, investigate the
-              evidence with workers, then review whether the control should be maintained, modified
-              or investigated further.
+              Use the organisation's existing psychosocial assessment and worker consultation. Add
+              team-level work-pattern evidence before and after the intervention. Then bring the
+              evidence back to people for the review decision.
             </p>
             <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryCommercialCTA
                 ctaLocation="homepage_problem"
                 className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-5 py-3 text-caption font-bold text-white hover:bg-brand-hover"
-              />
+              >
+                Apply for a free pilot
+              </PrimaryCommercialCTA>
               <SampleReportCTA
                 ctaLocation="homepage_problem"
                 className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-5 py-3 text-caption font-bold text-[#0F172A]"
-              />
+              >
+                See the sample report
+              </SampleReportCTA>
             </div>
           </div>
         </div>
