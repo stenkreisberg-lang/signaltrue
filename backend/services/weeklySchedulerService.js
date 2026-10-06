@@ -100,13 +100,8 @@ async function processTeam(teamId, weekStart, results) {
   const retentionStrainRisk = await calculateRetentionStrainRisk(teamId, weekStart);
 
   // Step 2: Determine team state based on risk scores
-  const teamState = await determineTeamState(
-    teamId,
-    weekStart,
-    overloadRisk,
-    executionRisk,
-    retentionStrainRisk
-  );
+  const risks = [overloadRisk?.risk, executionRisk?.risk, retentionStrainRisk?.risk].filter(Boolean);
+  const teamState = await determineTeamState(teamId, weekStart, risks);
 
   // Track state in summary
   results.summary[teamState.state]++;
@@ -120,7 +115,7 @@ async function processTeam(teamId, weekStart, results) {
   }
 
   console.log(
-    `[Weekly Diagnosis] Team ${teamId} is ${teamState.state} (confidence: ${teamState.confidence}%)`
+    `[Weekly Diagnosis] Team ${teamId} is ${teamState.state} (confidence: ${teamState.confidence})`
   );
 }
 
