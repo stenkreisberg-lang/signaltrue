@@ -11,19 +11,18 @@ const CTASection = () => {
             Have one psychosocial control you are not sure worked?
           </h2>
           <p className="text-body text-[#CBD5E1] mb-5 max-w-xl mx-auto">
-            We are selecting Australian organisations for a free validation pilot. Bring one real
+            We are selecting Australian organisations for a AU$99 founding review. Bring one real
             control. SignalTrue will structure the baseline, after-period, sustainability,
             migration and worker-evidence review.
           </p>
           <p className="text-caption text-[#94A3B8] mb-10 max-w-xl mx-auto">
-            There is no pilot fee. In return, we ask for structured feedback on the method, report
-            usefulness and what a WHS team would need before adopting it more broadly.
+            The AU$99 price is for the founding validation phase. We use the feedback to improve the method and final report before standard commercial pricing.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild variant="hero" size="xl">
               <PrimaryCommercialCTA ctaLocation="homepage_final">
-                Apply for a free pilot <ArrowRight className="h-5 w-5" />
+                Start the AU$99 founding review <ArrowRight className="h-5 w-5" />
               </PrimaryCommercialCTA>
             </Button>
             <Button asChild variant="hero-outline" size="xl">
