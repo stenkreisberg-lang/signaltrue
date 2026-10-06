@@ -49,7 +49,7 @@ const Hero = () => {
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Apply for a free pilot <ArrowRight className="h-5 w-5 shrink-0" />
+                Start the AU$99 founding review <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
               <SampleReportCTA
                 ctaLocation="homepage_hero"
@@ -60,7 +60,7 @@ const Hero = () => {
             </div>
 
             <p className="mt-3 max-w-xl text-caption text-[#64748B]">
-              The Australian validation pilot is free for selected organisations in exchange for
+              The Australian founding review is free for selected organisations in exchange for
               structured feedback on the method and final report.
             </p>
 
