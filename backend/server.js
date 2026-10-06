@@ -189,6 +189,8 @@ import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
 import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDiagnostic.js';
+import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
+import { triggerImmediateSync } from './services/integrationSyncScheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -212,9 +214,16 @@ async function main() {
         console.log('Attempting to connect to MongoDB Atlas...');
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ MongoDB connected');
-        logTehnopolProductionDiagnostic().catch((err) =>
-          console.error('[TehnopolAudit] startup diagnostic failed:', err?.message || err)
-        );
+        await repairTehnopolCanonicalOrganization();
+        await logTehnopolProductionDiagnostic();
+        setTimeout(() => {
+          const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          void triggerImmediateSync(TEHNOPOL_CANONICAL_ORG_ID, { since, until: new Date() })
+            .then(() => logTehnopolProductionDiagnostic())
+            .catch((err) =>
+              console.error('[TehnopolRepair] canonical refresh failed:', err?.message || err)
+            );
+        }, 15_000);
         mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });
