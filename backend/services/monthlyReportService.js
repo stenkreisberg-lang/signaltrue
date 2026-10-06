@@ -1040,19 +1040,16 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
   const subject = `${previewOnly ? 'PREVIEW - ' : ''}${report.reportMode === 'setup' ? 'Monthly Setup Brief' : 'Monthly Decision Brief'} - ${org.name} - ${periodLabel}`;
   const html = generateMonthlyEmailHTML({ org, report });
 
-  // Setup issues go to admins/HR. Leadership recipients receive decision-ready reports only.
-  const recipientRoles =
-    report.reportMode === 'setup'
-      ? ['master_admin', 'hr_admin', 'admin']
-      : ['master_admin', 'hr_admin', 'admin', 'executive'];
+  // Automated reports are restricted to active HR/admin account owners.
   const orgUsers = await User.find({
     orgId,
-    role: { $in: recipientRoles },
+    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
+    accountStatus: { $ne: 'inactive' },
+    email: { $exists: true, $ne: null },
   }).select('email');
-  const userEmails = orgUsers.map((u) => u.email);
-  const overrides =
-    report.reportMode === 'decision' ? org.settings?.monthlyReportRecipients || [] : [];
-  const recipients = previewOnly ? [] : [...new Set([...userEmails, ...overrides])];
+  const recipients = previewOnly
+    ? []
+    : [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
 
   // ── Data quality gate: never send all-zero report to clients ──────────────
   const hasData = reportHasRealData(report);
