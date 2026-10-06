@@ -761,18 +761,15 @@ export async function sendQuarterlyReportEmail(org, report) {
     return;
   }
 
-  // Build recipient list
-  // 1. Users with roles: master_admin, hr_admin, executive
+  // Automated reports are restricted to active HR/admin account owners.
   const recipients = await User.find({
     orgId: org._id,
-    role: { $in: ['master_admin', 'hr_admin', 'executive'] },
+    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
+    accountStatus: { $ne: 'inactive' },
+    email: { $exists: true, $ne: null },
   }).select('email');
 
-  const recipientEmails = recipients.map((u) => u.email);
-
-  // 2. Merge org-level overrides (e.g. external CEO email)
-  const overrides = org.settings?.quarterlyReportRecipients || [];
-  const allRecipients = [...new Set([...recipientEmails, ...overrides])];
+  const allRecipients = [...new Set(recipients.map((u) => u.email).filter(Boolean))];
 
   if (allRecipients.length === 0) {
     console.warn(`[QuarterlyReport] No recipients for ${org.name} — skipping email`);
