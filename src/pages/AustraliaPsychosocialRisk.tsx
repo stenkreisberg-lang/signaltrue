@@ -90,7 +90,7 @@ export default function AustraliaPsychosocialRisk() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/au/8-week-pilot">See the 8-week control review pilot</Link>
+                  <Link to="/sample-report">See the sample control-review report</Link>
                 </Button>
               </div>
               <Link
