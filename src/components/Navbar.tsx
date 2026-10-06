@@ -66,7 +66,7 @@ const Navbar = () => {
                   to="/au/8-week-pilot"
                   className="inline-flex h-9 items-center rounded-control px-3 text-caption font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
                 >
-                  Free pilot
+                  AU$99 review
                 </Link>
                 <Link
                   to="/au/monitoring-gap-audit"
@@ -80,7 +80,7 @@ const Navbar = () => {
                 ctaLocation="navbar_desktop"
                 className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
               >
-                Apply for a free pilot
+                Start the AU$99 founding review
               </PrimaryCommercialCTA>
             )}
           </div>
@@ -124,14 +124,14 @@ const Navbar = () => {
                       className="flex w-full items-center justify-center rounded-control px-4 py-3 text-caption font-semibold text-[#475569]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      View the free pilot
+                      View the AU$99 founding review
                     </Link>
                     <Link
                       to="/au/monitoring-gap-audit"
                       className="flex w-full items-center justify-center rounded-control bg-brand px-4 py-3 text-center text-caption font-semibold text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Apply for the free pilot
+                      Start the AU$99 founding review
                     </Link>
                   </>
                 ) : (
