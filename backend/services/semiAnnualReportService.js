@@ -972,15 +972,15 @@ export async function sendSemiAnnualReportEmail(org, report) {
     return;
   }
 
-  // Recipients: executive + master_admin, plus org overrides
+  // Automated reports are restricted to active HR/admin account owners.
   const recipients = await User.find({
     orgId: org._id,
-    role: { $in: ['master_admin', 'executive'] },
+    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
+    accountStatus: { $ne: 'inactive' },
+    email: { $exists: true, $ne: null },
   }).select('email');
 
-  const recipientEmails = recipients.map((u) => u.email);
-  const overrides = org.settings?.semiAnnualReportRecipients || [];
-  const allRecipients = [...new Set([...recipientEmails, ...overrides])];
+  const allRecipients = [...new Set(recipients.map((u) => u.email).filter(Boolean))];
 
   if (allRecipients.length === 0) {
     console.warn(`[SemiAnnualReport] No recipients for ${org.name} — skipping email`);
