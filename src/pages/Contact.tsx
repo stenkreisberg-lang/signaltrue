@@ -38,7 +38,7 @@ export default function Contact() {
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
         title="Contact SignalTrue | Sales, Privacy and Support"
-        description="Contact SignalTrue for general enquiries, customer support, privacy questions or a 20-minute psychosocial risk visibility review."
+        description="Apply for a free SignalTrue psychosocial control-review pilot, or contact us about privacy, support and general enquiries."
         path="/contact"
       />
       <Navbar />
@@ -49,7 +49,7 @@ export default function Contact() {
               Contact SignalTrue
             </p>
             <h1 className="mx-auto mt-4 max-w-4xl text-display font-bold text-[#0F172A] sm:text-display">
-              Start with the right conversation.
+              Have one psychosocial control you are not sure worked?
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-lead leading-8 text-[#475569]">
               Use the request form for a commercial conversation, or contact the relevant team
@@ -65,7 +65,7 @@ export default function Contact() {
                 [Mail, 'General enquiries', 'hello@signaltrue.ai', 'mailto:hello@signaltrue.ai'],
                 [
                   Calendar,
-                  'Visibility review',
+                  'Free control-review pilot',
                   'Use the request form below',
                   '#commercial-lead-form',
                 ],
