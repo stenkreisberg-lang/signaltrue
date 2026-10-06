@@ -3477,16 +3477,15 @@ export async function sendWeeklyBrief(orgId) {
   // Always generate the brief first — we need it for the superadmin copy regardless
   const html = await generateWeeklyBrief(orgId);
 
-  // Build recipient list:
-  //  1. Users with HR/admin/executive roles
+  // Automated SignalTrue reports are restricted to HR/admin account owners.
+  // Employees, managers, executives and arbitrary override recipients must not receive them.
   const orgUsers = await User.find({
     orgId,
-    role: { $in: ['master_admin', 'hr_admin', 'admin', 'executive'] },
+    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
+    accountStatus: { $ne: 'inactive' },
+    email: { $exists: true, $ne: null },
   });
-  const userEmails = orgUsers.map((u) => u.email);
-  //  2. Org-level override list (external C-level / CEO emails without a SignalTrue login)
-  const overrides = org.settings?.weeklyBriefRecipients || [];
-  const recipients = [...new Set([...userEmails, ...overrides])];
+  const recipients = [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
 
   if (recipients.length > 0) {
     console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);
