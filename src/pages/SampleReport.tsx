@@ -1,11 +1,4 @@
-import {
-  ArrowRight,
-  CheckCircle2,
-  ClipboardCheck,
-  Database,
-  Printer,
-  ShieldCheck,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2, Printer } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
@@ -13,50 +6,17 @@ import PageMeta from '../components/PageMeta';
 import { PrimaryCommercialCTA } from '../components/CommercialCTA';
 import { trackFunnelEvent } from '../lib/analytics';
 
-const signals = [
-  {
-    factor: 'Demands',
-    indicator: 'Meeting demand',
-    current: '18.4h/week',
-    baseline: '14.9h/week',
-    change: '+23%',
-    evidenceQuality: 'Persistent 3 weeks · data quality good',
-    interpretation: 'Usable work time has reduced for three consecutive weeks.',
-  },
-  {
-    factor: 'Recovery',
-    indicator: 'After-hours activity',
-    current: '12.8%',
-    baseline: '7.6%',
-    change: '+5.2 pts',
-    evidenceQuality: 'Persistent 2 weeks · data quality adequate',
-    interpretation: 'Work outside normal hours is above the team baseline.',
-  },
-  {
-    factor: 'Control',
-    indicator: 'Protected uninterrupted calendar availability',
-    current: '6.1h/week',
-    baseline: '8.7h/week',
-    change: '-30%',
-    evidenceQuality: 'Persistent 3 weeks · data quality good',
-    interpretation: 'Fewer uninterrupted windows are available for planned work.',
-  },
+const evidenceRows = [
+  ['Meeting hours / week', '13.2 h', '9.4 h', '9.8 h', '-26% sustained'],
+  ['Protected focus availability', '8.1 h', '10.7 h', '10.4 h', '+28% sustained'],
+  ['After-hours activity', '18%', '13%', '17%', 'Initial improvement faded'],
+  ['Chat coordination volume', 'Baseline', '+24%', '+31%', 'Possible demand migration'],
 ];
 
-const steps = [
-  [
-    'Verify',
-    'Discuss the pattern with the affected team and check deadline, staffing and meeting context.',
-  ],
-  [
-    'Control',
-    'Trial two protected focus blocks and remove one recurring status meeting for 14 days.',
-  ],
-  ['Own', 'Health & Safety Manager coordinates; Product Director owns implementation.'],
-  [
-    'Review',
-    'Re-measure meeting demand, uninterrupted calendar availability and after-hours activity on 3 June.',
-  ],
+const consultation = [
+  'Workers reported fewer recurring interruptions after meeting changes.',
+  'Most workers did not report a meaningful reduction in total workload.',
+  'Late customer handovers were still identified as a source of after-hours work.',
 ];
 
 export default function SampleReport() {
@@ -75,295 +35,197 @@ export default function SampleReport() {
           nav, footer, .sample-report-no-print { display: none !important; }
           main { padding-top: 0 !important; }
           #report { padding: 0 !important; }
-          #report article { padding: 0 !important; }
-          #report article > div { border: 0 !important; box-shadow: none !important; }
         }
       `}</style>
       <PageMeta
         title="Sample Psychosocial Control Review | SignalTrue"
-        description="See a fictional Australian-style control review showing baseline, post-control observations, worker validation prompts, limitations and a decision record."
+        description="A clearly labelled fictional example of the report a WHS team can receive after reviewing one psychosocial control with baseline, post-control, sustainability, worker evidence and a decision."
         path="/sample-report"
       />
       <Navbar />
       <main className="pt-20">
-        <section className="sample-report-no-print border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
-          <div className="container mx-auto px-6">
-            <div className="mx-auto max-w-5xl">
-              <p className="mb-4 text-caption font-bold uppercase tracking-wider text-brand">
-                Complete sample report
-              </p>
-              <h1 className="max-w-4xl text-display font-bold leading-tight text-[#0F172A] sm:text-display lg:text-display">
-                You changed the work. Here is how SignalTrue helps review what happened next.
-              </h1>
-              <p className="mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-                This fictional example shows what a health &amp; safety manager receives after team
-                coverage and baseline requirements are met. It is evidence for investigation; not a
-                diagnosis or a substitute for worker consultation.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <PrimaryCommercialCTA
-                  ctaLocation="sample_report_hero"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
-                >
-                  Review one psychosocial control <ArrowRight className="h-5 w-5" />
-                </PrimaryCommercialCTA>
-                <a
-                  href="#report"
-                  className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
-                >
-                  Read the sample
-                </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackFunnelEvent('sample_report_print', {
-                      cta_location: 'sample_report_hero',
-                    });
-                    window.print();
-                  }}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A] hover:border-brand"
-                >
-                  <Printer className="h-4 w-4" aria-hidden="true" /> Print or save PDF
-                </button>
-              </div>
+        <section className="sample-report-no-print border-b border-[#E2E8F0] bg-white py-14 lg:py-16">
+          <div className="container mx-auto max-w-5xl px-6">
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">
+              Fictional example
+            </p>
+            <h1 className="mt-4 max-w-4xl text-display font-bold text-[#0F172A]">
+              This is the control-review report SignalTrue is designed to produce.
+            </h1>
+            <p className="mt-5 max-w-3xl text-lead leading-8 text-[#475569]">
+              The organisation, team, intervention and numbers below are fictional. The structure
+              shows how one psychosocial control can be reviewed from intended outcome through
+              baseline, after-period, sustainability, possible workload migration, worker evidence
+              and a human decision.
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <PrimaryCommercialCTA
+                ctaLocation="sample_report_hero"
+                className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
+              >
+                Apply for a free pilot <ArrowRight className="ml-2 h-4 w-4" />
+              </PrimaryCommercialCTA>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A]"
+              >
+                Print sample <Printer className="ml-2 h-4 w-4" />
+              </button>
             </div>
           </div>
         </section>
 
         <section id="report" className="py-12 lg:py-16">
-          <article className="container mx-auto px-6">
-            <div className="mx-auto max-w-6xl overflow-hidden rounded-container border border-[#CBD5E1] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-              <header className="border-b border-[#E2E8F0] bg-[#0F172A] p-7 text-white lg:p-10">
-                <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="container mx-auto max-w-5xl px-6">
+            <article className="overflow-hidden rounded-container border border-[#CBD5E1] bg-white shadow-sm">
+              <div className="border-b border-[#E2E8F0] bg-[#0F172A] p-7 text-white">
+                <p className="text-caption font-bold uppercase tracking-wider text-[#93C5FD]">
+                  Psychosocial Control Review
+                </p>
+                <div className="mt-4 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
                   <div>
-                    <p className="text-caption font-bold uppercase tracking-[0.18em] text-[#93C5FD]">
-                      Psychosocial control review
-                    </p>
-                    <h2 className="mt-3 text-section font-bold">Product &amp; Engineering</h2>
+                    <h2 className="text-section font-bold">Customer Operations</h2>
                     <p className="mt-2 text-[#CBD5E1]">
-                      Control: recurring meeting reduction · Review: 4 weeks after change
+                      Hazard context: high job demands and insufficient recovery opportunity
                     </p>
                   </div>
-                  <div className="rounded-container border border-amber-300/30 bg-amber-300/10 px-5 py-4">
-                    <p className="text-caption font-bold uppercase tracking-wide text-amber-200">
-                      Decision status
-                    </p>
-                    <p className="mt-1 text-lead font-bold">Validate before decision</p>
+                  <div className="rounded-control bg-[#FEF3C7] px-4 py-3 text-[#92400E]">
+                    <p className="text-caption font-bold uppercase tracking-wide">Review finding</p>
+                    <p className="mt-1 font-bold">PARTIALLY EFFECTIVE</p>
                   </div>
                 </div>
-              </header>
+              </div>
 
-              <div className="space-y-10 p-7 lg:p-10">
-                <section>
-                  <p className="text-caption font-bold uppercase tracking-[0.16em] text-brand">
-                    Executive summary
-                  </p>
-                  <h2 className="mt-3 text-lead font-bold text-[#0F172A]">
-                    Calendar congestion improved. Total demand may not have.
-                  </h2>
-                  <p className="mt-4 max-w-4xl leading-7 text-[#475569]">
-                    Three independent team-level indicators have moved away from the team baseline
-                    for at least two qualified periods. The pattern is sufficient to prioritise a
-                    conversation about workload, deadlines, meeting design and staffing. It does not
-                    establish that any worker is experiencing ill health.
-                  </p>
-                </section>
-
-                <section aria-labelledby="signal-table-title">
-                  <div className="mb-5 flex items-center gap-3">
-                    <Database className="h-6 w-6 text-brand" />
-                    <h2 id="signal-table-title" className="text-lead font-bold text-[#0F172A]">
-                      Evidence reviewed
-                    </h2>
+              <div className="grid gap-0 border-b border-[#E2E8F0] md:grid-cols-3">
+                {[
+                  ['Control', 'Remove three recurring status meetings and protect two weekly focus blocks.'],
+                  ['Implemented', '12 August 2026'],
+                  ['Intended outcome', 'Reduce coordination burden and after-hours catch-up work.'],
+                ].map(([label, value]) => (
+                  <div key={label} className="border-b border-[#E2E8F0] p-6 last:border-0 md:border-b-0 md:border-r md:last:border-r-0">
+                    <p className="text-caption font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
+                    <p className="mt-2 text-caption leading-6 text-[#0F172A]">{value}</p>
                   </div>
-                  <div className="hidden overflow-x-auto rounded-container border border-[#E2E8F0] md:block">
-                    <table className="w-full min-w-[860px] border-collapse text-left text-caption">
-                      <thead className="bg-[#F1F5F9] text-[#334155]">
-                        <tr>
-                          {[
-                            'Risk factor',
-                            'Indicator',
-                            'Current',
-                            'Baseline',
-                            'Change',
-                            'Persistence and data quality',
-                            'What it may mean',
-                          ].map((heading) => (
-                            <th key={heading} className="px-4 py-3 font-bold">
-                              {heading}
-                            </th>
+                ))}
+              </div>
+
+              <div className="p-7">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  1. Executive decision
+                </p>
+                <h3 className="mt-3 text-lead font-bold text-[#0F172A]">
+                  Do not close the control yet.
+                </h3>
+                <p className="mt-3 max-w-3xl leading-7 text-[#475569]">
+                  Meeting burden fell and focus availability improved, but the reduction in
+                  after-hours activity was not sustained. Coordination demand also increased in chat.
+                  The available evidence supports keeping the control in place while investigating
+                  workload allocation and late customer handovers.
+                </p>
+              </div>
+
+              <div className="border-y border-[#E2E8F0] bg-[#F8FAFC] p-7">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  2. Before, after and sustainability
+                </p>
+                <div className="mt-5 overflow-x-auto">
+                  <table className="min-w-full border-collapse text-left text-caption">
+                    <thead>
+                      <tr className="border-b border-[#CBD5E1] text-[#64748B]">
+                        {['Indicator', 'Baseline', 'After', 'Sustainability', 'Finding'].map((h) => (
+                          <th key={h} className="px-3 py-3 font-bold">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evidenceRows.map((row) => (
+                        <tr key={row[0]} className="border-b border-[#E2E8F0] last:border-0">
+                          {row.map((cell, i) => (
+                            <td key={i} className={"px-3 py-3 " + (i === 0 ? 'font-semibold text-[#0F172A]' : 'text-[#475569]')}>
+                              {cell}
+                            </td>
                           ))}
                         </tr>
-                      </thead>
-                      <tbody>
-                        {signals.map((signal) => (
-                          <tr
-                            key={signal.indicator}
-                            className="border-t border-[#E2E8F0] align-top"
-                          >
-                            <td className="px-4 py-4 font-bold text-brand">{signal.factor}</td>
-                            <td className="px-4 py-4 font-semibold text-[#0F172A]">
-                              {signal.indicator}
-                            </td>
-                            <td className="px-4 py-4">{signal.current}</td>
-                            <td className="px-4 py-4">{signal.baseline}</td>
-                            <td className="px-4 py-4 font-bold text-[#B45309]">{signal.change}</td>
-                            <td className="px-4 py-4">{signal.evidenceQuality}</td>
-                            <td className="max-w-xs px-4 py-4 text-[#475569]">
-                              {signal.interpretation}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="grid gap-4 md:hidden">
-                    {signals.map((signal) => (
-                      <article
-                        key={signal.indicator}
-                        className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-caption font-bold uppercase tracking-wide text-brand">
-                              {signal.factor}
-                            </p>
-                            <h3 className="mt-1 font-bold text-[#0F172A]">{signal.indicator}</h3>
-                          </div>
-                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-caption font-bold text-amber-800">
-                            {signal.change}
-                          </span>
-                        </div>
-                        <dl className="mt-4 grid grid-cols-3 gap-3 text-caption">
-                          <div>
-                            <dt className="text-caption text-[#64748B]">Current</dt>
-                            <dd className="mt-1 font-bold">{signal.current}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-caption text-[#64748B]">Baseline</dt>
-                            <dd className="mt-1 font-bold">{signal.baseline}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-caption text-[#64748B]">Evidence quality</dt>
-                            <dd className="mt-1 font-bold">{signal.evidenceQuality}</dd>
-                          </div>
-                        </dl>
-                        <p className="mt-4 text-caption leading-6 text-[#475569]">
-                          {signal.interpretation}
-                        </p>
-                      </article>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-caption leading-5 text-[#64748B]">
-                    Data quality reflects coverage and baseline maturity. Persistence shows how many
-                    qualified periods the change continued. Neither establishes cause.
-                  </p>
-                </section>
-
-                <section>
-                  <h2 className="text-lead font-bold text-[#0F172A]">
-                    Control record and review ownership
-                  </h2>
-                  <div className="mt-5 grid gap-4 rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5 sm:grid-cols-2 lg:grid-cols-4">
-                    {[
-                      ['Risk process owner', 'Health & Safety Manager'],
-                      ['Operational owner', 'Product Director'],
-                      ['Consultation', 'Completed 21 May'],
-                      ['Control status', 'Implemented · under review'],
-                      ['Worker feedback', 'Review scheduled'],
-                      ['Executive barrier', 'No additional budget required'],
-                      ['Effectiveness decision', 'Pending worker validation'],
-                      ['Sign-off', 'H&S and operational owner'],
-                    ].map(([label, value]) => (
-                      <div key={label}>
-                        <p className="text-caption font-bold uppercase tracking-wide text-[#64748B]">
-                          {label}
-                        </p>
-                        <p className="mt-2 text-caption font-semibold text-[#0F172A]">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <div className="mb-5 flex items-center gap-3">
-                    <ClipboardCheck className="h-6 w-6 text-brand" />
-                    <h2 className="text-lead font-bold text-[#0F172A]">
-                      Observation → interpretation → validation → action
-                    </h2>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {steps.map(([title, copy], index) => (
-                      <div
-                        key={title}
-                        className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-5"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-caption font-bold text-white">
-                            {index + 1}
-                          </span>
-                          <h3 className="font-bold text-[#0F172A]">{title}</h3>
-                        </div>
-                        <p className="mt-3 text-caption leading-6 text-[#475569]">{copy}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="grid gap-5 lg:grid-cols-2">
-                  <div className="rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-6">
-                    <h2 className="font-bold text-brand-hover">Worker consultation prompts</h2>
-                    <ul className="mt-4 space-y-3 text-caption leading-6 text-[#334155]">
-                      {[
-                        'What changed in the last three weeks?',
-                        'Which meetings or deadlines create avoidable demand?',
-                        'Where do people lack control over priorities or response times?',
-                        'What is one low-risk change the team wants to test?',
-                      ].map((item) => (
-                        <li key={item} className="flex gap-2">
-                          <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" />
-                          {item}
-                        </li>
                       ))}
-                    </ul>
-                  </div>
-                  <div className="rounded-container border border-brand-soft bg-brand-softer p-6">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-brand" />
-                      <h2 className="font-bold text-brand-hover">Data and use boundaries</h2>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="p-7">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  3. Possible workload migration
+                </p>
+                <h3 className="mt-3 text-lead font-bold text-[#0F172A]">
+                  Less meeting time did not automatically mean less coordination demand.
+                </h3>
+                <p className="mt-3 leading-7 text-[#475569]">
+                  Chat coordination rose after the meeting changes and remained elevated during the
+                  sustainability period. This does not prove that meetings caused the increase. It
+                  identifies a question that should be tested with workers and operational context.
+                </p>
+              </div>
+
+              <div className="border-y border-[#E2E8F0] bg-[#F8FAFC] p-7">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  4. Worker evidence
+                </p>
+                <div className="mt-4 space-y-3">
+                  {consultation.map((item) => (
+                    <div key={item} className="flex gap-3">
+                      <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-brand" />
+                      <p className="text-caption leading-6 text-[#334155]">{item}</p>
                     </div>
-                    <p className="mt-4 text-caption leading-6 text-[#334155]">
-                      Timing, duration, counts and mapped team membership contribute to this view.
-                      Message text, email bodies, recordings and individual productivity scores do
-                      not. Results below the minimum group threshold are suppressed.
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-7">
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  5. Review decision
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-container border border-[#E2E8F0] p-5">
+                    <p className="text-caption font-bold text-[#0F172A]">Decision</p>
+                    <p className="mt-2 text-caption leading-6 text-[#475569]">
+                      Maintain the meeting changes. Do not treat the control as complete.
                     </p>
                   </div>
-                </section>
+                  <div className="rounded-container border border-[#E2E8F0] p-5">
+                    <p className="text-caption font-bold text-[#0F172A]">Next action</p>
+                    <p className="mt-2 text-caption leading-6 text-[#475569]">
+                      Investigate workload allocation and late customer handovers. Review again in 6 weeks.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </article>
+
+              <div className="border-t border-[#E2E8F0] bg-[#FFF7ED] p-6">
+                <p className="text-caption leading-6 text-[#7C2D12]">
+                  <strong>Limits:</strong> SignalTrue does not diagnose psychological injury, declare
+                  that a psychosocial hazard legally exists, replace worker consultation or establish
+                  legal compliance. Work-pattern evidence supports the organisation's investigation
+                  and review decision.
+                </p>
+              </div>
+            </article>
+          </div>
         </section>
 
-        <section className="sample-report-no-print border-t border-[#E2E8F0] bg-white py-16 lg:py-20">
-          <div className="container mx-auto px-6">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                Apply the same review discipline to your workplace
-              </p>
-              <h2 className="mt-4 text-section font-bold text-[#0F172A] sm:text-display">
-                Bring one gap in your current psychosocial-risk process.
-              </h2>
-              <p className="mx-auto mt-5 max-w-2xl text-body leading-7 text-[#475569]">
-                In 20 minutes, we will discuss the evidence you already use, where visibility may be
-                missing between formal assessments, and whether a controlled pilot is justified.
-              </p>
-              <PrimaryCommercialCTA
-                ctaLocation="sample_report_bottom"
-                className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
-              >
-                Book a 20-minute visibility review <ArrowRight className="h-5 w-5" />
-              </PrimaryCommercialCTA>
-            </div>
+        <section className="sample-report-no-print bg-[#0F172A] py-16 text-white">
+          <div className="container mx-auto max-w-3xl px-6 text-center">
+            <h2 className="text-section font-bold">Have one real control you want to test?</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[#CBD5E1]">
+              The Australian validation pilot is free for selected organisations in exchange for
+              structured feedback on the method and report.
+            </p>
+            <PrimaryCommercialCTA
+              ctaLocation="sample_report_final"
+              className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
+            >
+              Apply for the free pilot <ArrowRight className="ml-2 h-4 w-4" />
+            </PrimaryCommercialCTA>
           </div>
         </section>
       </main>
