@@ -721,10 +721,16 @@ export async function triggerFullBackfill(orgId, daysBack = 28) {
  * Includes both IntegrationConnection-based and Organization.integrations-based
  */
 async function getActiveOrgs() {
-  // Get orgs with IntegrationConnection entries
-  const connectionOrgs = await IntegrationConnection.find({
+  // Get orgs with IntegrationConnection entries, then exclude retired organizations.
+  // A retired duplicate can otherwise keep syncing forever because IntegrationConnection
+  // records live outside the Organization document.
+  const connectionOrgCandidates = await IntegrationConnection.find({
     status: 'connected',
   }).distinct('orgId');
+  const connectionOrgs = await Organization.find({
+    ...ACTIVE_ORG_FILTER,
+    _id: { $in: connectionOrgCandidates },
+  }).distinct('_id');
 
   // Get orgs with core integrations (Slack, Microsoft, Google) stored directly
   const coreIntegrationOrgs = await Organization.find({
