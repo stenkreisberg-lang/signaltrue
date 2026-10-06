@@ -54,13 +54,13 @@ export function validateLeadFields(fields: LeadFields): LeadFieldErrors {
 
 export default function LeadForm({
   ctaLocation,
-  source = 'Website demo request',
-  tag = 'psychosocial-risk-visibility-review',
-  heading = 'Request your visibility review',
-  intro = 'Tell us who should join the 20-minute conversation. We normally reply within one business day.',
+  source = 'Website free control-review pilot request',
+  tag = 'psychosocial-control-review-pilot',
+  heading = 'Apply for a free control-review pilot',
+  intro = 'Tell us who you are and where you work. We will reply to check whether you have one real psychosocial control that fits the validation pilot.',
   submitLabel = PRIMARY_CTA_LABEL,
   plan,
-  intent = 'demo',
+  intent = 'au-pilot',
   formVersion = 'commercial_p0_v1',
 }: LeadFormProps) {
   const [fields, setFields] = useState(initialFields);
