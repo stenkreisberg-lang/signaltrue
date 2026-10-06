@@ -83,7 +83,7 @@ export default function Product() {
                 Product
               </p>
               <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
-                Observe changing work patterns. Record the control. Verify what changed.
+                Assessment identified the risk. SignalTrue helps you review whether the control changed the work.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue turns privacy-conscious team metadata into control-review evidence. Start
@@ -100,7 +100,7 @@ export default function Product() {
                   ctaLocation="product_hero"
                   className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
-                  Review one control <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
+                  Apply for a free pilot <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
                   ctaLocation="product_hero"
@@ -204,7 +204,7 @@ export default function Product() {
               <div className="rounded-container border border-[#334155] bg-[#1E293B] p-6">
                 {[
                   'Measured evidence stays separate from interpretation.',
-                  'The organisation records the control decision; SignalTrue does not require surveys or interviews.',
+                  'The organisation records the control decision; SignalTrue works alongside worker consultation rather than replacing it.',
                   'Every control has an owner and review date.',
                   'Executives see decisions and barriers; not individual data.',
                 ].map((item) => (
