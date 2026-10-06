@@ -66,13 +66,13 @@ const Navbar = () => {
                   to="/au/8-week-pilot"
                   className="inline-flex h-9 items-center rounded-control px-3 text-caption font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
                 >
-                  8-week pilot
+                  Free pilot
                 </Link>
                 <Link
                   to="/au/monitoring-gap-audit"
                   className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
                 >
-                  Run the audit
+                  Apply for free pilot
                 </Link>
               </>
             ) : (
@@ -124,7 +124,7 @@ const Navbar = () => {
                       className="flex w-full items-center justify-center rounded-control px-4 py-3 text-caption font-semibold text-[#475569]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      View the 8-week pilot
+                      View the free pilot
                     </Link>
                     <Link
                       to="/au/monitoring-gap-audit"
