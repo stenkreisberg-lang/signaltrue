@@ -5,15 +5,10 @@
  */
 
 import express from 'express';
-import User from '../models/user.js';
-import Organization from '../models/organizationModel.js';
 import Invite from '../models/invite.js';
 import ReminderEmail from '../models/reminderEmail.js';
 import {
-  sendUserFollowUpReminder,
   sendITAdminUrgentReminder,
-  sendUserWeek2Reminder,
-  sendUserWeek3Reminder,
   sendITAdminWeek2Reminder,
   sendITAdminWeek3Reminder,
 } from '../services/reminderEmailService.js';
@@ -327,7 +322,7 @@ router.post('/send-test', verifyCronSecret, async (req, res) => {
       default:
         return res.status(400).json({
           message:
-            'Invalid type. Use: new-user, followup, user-week2, user-week3, it-admin, it-admin-urgent, it-admin-week2, it-admin-week3',
+            'Invalid type. Use: it-admin, it-admin-urgent, it-admin-week2, it-admin-week3',
         });
     }
 
