@@ -190,7 +190,7 @@ import Team from './models/team.js';
 import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDiagnostic.js';
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
-import { triggerImmediateSync } from './services/integrationSyncScheduler.js';
+import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -216,12 +216,14 @@ async function main() {
         console.log('✅ MongoDB connected');
         await repairTehnopolCanonicalOrganization();
         await logTehnopolProductionDiagnostic();
+        // The one-time canonical data repair/backfill was completed on 2026-10-06.
+        // On startup, refresh only the saved HR dashboard brief from the canonical data.
+        // Do not re-run a multi-day backfill on every deploy.
         setTimeout(() => {
-          const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          void triggerImmediateSync(TEHNOPOL_CANONICAL_ORG_ID, { since, until: new Date() })
+          void generateWeeklyBrief(TEHNOPOL_CANONICAL_ORG_ID)
             .then(() => logTehnopolProductionDiagnostic())
             .catch((err) =>
-              console.error('[TehnopolRepair] canonical refresh failed:', err?.message || err)
+              console.error('[TehnopolRepair] canonical brief refresh failed:', err?.message || err)
             );
         }, 15_000);
         mongoose.connection.on('error', (err) => {
