@@ -65,7 +65,7 @@ export default function AustraliaPilot() {
               Australian pilot
             </p>
             <h1 className="mt-4 text-display font-bold text-[#0F172A] sm:text-display lg:text-display">
-              A free Australian pilot to review one psychosocial control against what changed in the work.
+              An AU$99 founding review of one psychosocial control against what changed in the work.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
               Selected Australian organisations can test SignalTrue on one real psychosocial control
@@ -79,9 +79,9 @@ export default function AustraliaPilot() {
               <Button asChild variant="outline" size="lg">
                 <PrimaryCommercialCTA
                   ctaLocation="au_pilot_hero"
-                  queryParams={{ intent: 'au-pilot' }}
+                  queryParams={{ intent: 'au-founding-review' }}
                 >
-                  Apply for the free pilot <ArrowRight className="ml-2 h-4 w-4" />
+                  Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
                 </PrimaryCommercialCTA>
               </Button>
             </div>
@@ -288,7 +288,7 @@ export default function AustraliaPilot() {
             <Button asChild size="lg" className="mt-8">
               <PrimaryCommercialCTA
                 ctaLocation="au_pilot_final"
-                queryParams={{ intent: 'au-pilot' }}
+                queryParams={{ intent: 'au-founding-review' }}
               >
                 Apply for the free Australian pilot <ArrowRight className="ml-2 h-4 w-4" />
               </PrimaryCommercialCTA>
