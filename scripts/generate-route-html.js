@@ -268,16 +268,16 @@ const BLOG_API_URL =
 
 function plainText(value) {
   return String(value || '')
-    .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, ' ')
-    .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/!?\\[([^\\]]*)\\]\\([^)]*\\)/g, '$1')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/[#*_~>]/g, ' ')
     .replace(/&nbsp;|&#160;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
-    .replace(/\\s+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -286,7 +286,7 @@ function truncate(value, maxLength) {
   if (text.length <= maxLength) return text;
   const cut = text.slice(0, maxLength + 1);
   const lastSpace = cut.lastIndexOf(' ');
-  return `${cut.slice(0, lastSpace > maxLength * 0.7 ? lastSpace : maxLength).trim()}…`;
+  return cut.slice(0, lastSpace > maxLength * 0.7 ? lastSpace : maxLength).trim() + '…';
 }
 
 async function fetchPublishedBlogPosts() {
@@ -300,7 +300,7 @@ async function fetchPublishedBlogPosts() {
     url.searchParams.set('limit', '100');
 
     const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (!response.ok) throw new Error(`Blog API returned ${response.status}`);
+    if (!response.ok) throw new Error('Blog API returned ' + response.status);
 
     const data = await response.json();
     posts.push(...(data.posts || []).filter((post) => post.status === 'published' && post.slug));
@@ -313,10 +313,7 @@ async function fetchPublishedBlogPosts() {
 
 function blogPostMeta(post) {
   const content = plainText(post.excerpt || post.content);
-  const description = truncate(
-    post.seo?.metaDescription || post.excerpt || content,
-    160
-  );
+  const description = truncate(post.seo?.metaDescription || post.excerpt || content, 160);
 
   return {
     title: post.seo?.metaTitle || post.title,
@@ -342,7 +339,7 @@ async function main() {
     if (route === '/') {
       fs.writeFileSync(SHELL, html);
     } else {
-      const dir = path.join(BUILD_DIR, route.replace(/^\\//, ''));
+      const dir = path.join(BUILD_DIR, route.replace(/^\/+/, ''));
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'index.html'), html);
     }
@@ -353,7 +350,7 @@ async function main() {
     const posts = await fetchPublishedBlogPosts();
     for (const post of posts) {
       if (!/^[a-z0-9-]+$/.test(post.slug)) continue;
-      const route = `/blog/${post.slug}`;
+      const route = '/blog/' + post.slug;
       if (ROUTE_META[route]) continue;
 
       const html = buildHtml(shell, route, blogPostMeta(post));
@@ -362,10 +359,10 @@ async function main() {
       fs.writeFileSync(path.join(dir, 'index.html'), html);
       written.push(route);
     }
-    console.log(`Wrote route HTML for ${written.length} routes, including published blog posts.`);
+    console.log('Wrote route HTML for ' + written.length + ' routes, including published blog posts.');
   } catch (error) {
-    console.warn(`[SEO] Could not pre-render published blog posts: ${error.message}`);
-    console.log(`Wrote route HTML for ${written.length} static routes.`);
+    console.warn('[SEO] Could not pre-render published blog posts: ' + error.message);
+    console.log('Wrote route HTML for ' + written.length + ' static routes.');
   }
 }
 
