@@ -31,5 +31,8 @@ test('publishes the psychosocial-risk controls article from the editorial brief'
 });
 
 test('gives every editorial post a featured image for the blog grid', () => {
-  expect(editorialBlogPosts.every((post) => Boolean(post.featuredImage?.url))).toBe(true);
+  const imageUrls = editorialBlogPosts.map((post) => post.featuredImage?.url);
+
+  expect(imageUrls.every(Boolean)).toBe(true);
+  expect(new Set(imageUrls).size).toBe(imageUrls.length);
 });

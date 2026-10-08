@@ -15,7 +15,7 @@ export const editorialBlogPosts = [
       name: 'SignalTrue Team',
     },
     featuredImage: {
-      url: '/images/hero-team.jpg',
+      url: '/images/blog/burnout-workload-psychosocial-risk-controls/featured.png',
       alt: 'SignalTrue team reviewing workload and work conditions',
     },
     tags: [
@@ -39,7 +39,8 @@ export const editorialBlogPosts = [
       metaDescription:
         'Burnout is an outcome, not a risk measure. Learn how to assess workload and work intensity, then test whether psychosocial controls changed exposure.',
       canonicalUrl: `https://www.signaltrue.ai/blog/${BURNOUT_WORKLOAD_CONTROLS_SLUG}`,
-      ogImage: 'https://www.signaltrue.ai/images/hero-team.jpg',
+      ogImage:
+        'https://www.signaltrue.ai/images/blog/burnout-workload-psychosocial-risk-controls/featured.png',
     },
     content: `
       <p><strong>How to assess whether workload and work intensity are creating psychosocial risk, and whether the controls introduced are changing exposure.</strong></p>
@@ -313,7 +314,7 @@ export const editorialBlogPosts = [
       'People at Work closes its online platform on 2 October 2026. The useful question is not which tool copies it, but how to build a stronger psychosocial risk evidence system around worker voice, controls and ongoing review.',
     author: { name: 'SignalTrue Team' },
     featuredImage: {
-      url: '/images/hero-team.jpg',
+      url: '/images/blog/people-at-work-decommissioning-what-next-australia/featured.png',
       alt: 'Team reviewing psychosocial risk evidence and work conditions',
     },
     tags: [
@@ -336,6 +337,8 @@ export const editorialBlogPosts = [
       metaDescription:
         'People at Work closes its online platform on 2 October 2026. See what Australian employers should preserve, replace and add to their psychosocial risk process.',
       canonicalUrl: `https://www.signaltrue.ai/blog/${PEOPLE_AT_WORK_SLUG}`,
+      ogImage:
+        'https://www.signaltrue.ai/images/blog/people-at-work-decommissioning-what-next-australia/featured.png',
     },
     content: `
       <p><strong>People at Work is not simply another software product disappearing. For many Australian organisations it has been a familiar way to collect structured worker-reported evidence about psychosocial risk.</strong></p>
@@ -437,7 +440,7 @@ export const editorialBlogPosts = [
       'Australian guidance recognises intrusive surveillance as a psychosocial hazard. Monitoring psychosocial risk therefore has a design problem: gather useful evidence without turning workers into individual scores.',
     author: { name: 'SignalTrue Team' },
     featuredImage: {
-      url: '/images/hero-team.jpg',
+      url: '/images/blog/psychosocial-risk-monitoring-without-employee-surveillance-australia/featured.png',
       alt: 'Team discussing privacy-conscious psychosocial risk monitoring',
     },
     tags: [
@@ -460,6 +463,8 @@ export const editorialBlogPosts = [
       metaDescription:
         'Australian guidance recognises intrusive surveillance as a psychosocial hazard. See how team-level work-pattern evidence can support WHS monitoring without individual productivity scoring.',
       canonicalUrl: `https://www.signaltrue.ai/blog/${NON_SURVEILLANCE_SLUG}`,
+      ogImage:
+        'https://www.signaltrue.ai/images/blog/psychosocial-risk-monitoring-without-employee-surveillance-australia/featured.png',
     },
     content: `
       <p><strong>There is an uncomfortable contradiction in psychosocial risk technology: a system intended to make work safer can make work worse if workers experience it as constant individual surveillance.</strong></p>
