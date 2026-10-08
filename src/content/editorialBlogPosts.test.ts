@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import {
   BURNOUT_WORKLOAD_CONTROLS_SLUG,
   editorialBlogPostBySlug,
+  editorialBlogPosts,
   UNREASONABLE_WORKLOAD_SLUG,
 } from './editorialBlogPosts';
 
@@ -27,4 +28,8 @@ test('publishes the psychosocial-risk controls article from the editorial brief'
   expect(post?.content).toContain('Use this six-part review');
   expect(post?.content).toContain('one source of work evidence');
   expect(post?.content).toContain('not as a mental-health assessment');
+});
+
+test('gives every editorial post a featured image for the blog grid', () => {
+  expect(editorialBlogPosts.every((post) => Boolean(post.featuredImage?.url))).toBe(true);
 });

@@ -14,6 +14,10 @@ export const editorialBlogPosts = [
     author: {
       name: 'SignalTrue Team',
     },
+    featuredImage: {
+      url: '/images/hero-team.jpg',
+      alt: 'SignalTrue team reviewing workload and work conditions',
+    },
     tags: [
       'psychosocial risk assessment',
       'workload risk at work',
@@ -308,6 +312,10 @@ export const editorialBlogPosts = [
     excerpt:
       'People at Work closes its online platform on 2 October 2026. The useful question is not which tool copies it, but how to build a stronger psychosocial risk evidence system around worker voice, controls and ongoing review.',
     author: { name: 'SignalTrue Team' },
+    featuredImage: {
+      url: '/images/hero-team.jpg',
+      alt: 'Team reviewing psychosocial risk evidence and work conditions',
+    },
     tags: [
       'People at Work',
       'psychosocial risk Australia',
@@ -428,6 +436,10 @@ export const editorialBlogPosts = [
     excerpt:
       'Australian guidance recognises intrusive surveillance as a psychosocial hazard. Monitoring psychosocial risk therefore has a design problem: gather useful evidence without turning workers into individual scores.',
     author: { name: 'SignalTrue Team' },
+    featuredImage: {
+      url: '/images/hero-team.jpg',
+      alt: 'Team discussing privacy-conscious psychosocial risk monitoring',
+    },
     tags: [
       'intrusive surveillance',
       'psychosocial risk Australia',

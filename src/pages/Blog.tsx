@@ -66,6 +66,18 @@ interface BlogResponse {
   };
 }
 
+const DEFAULT_FEATURED_IMAGE: FeaturedImage = {
+  url: '/images/hero-team.jpg',
+  alt: 'SignalTrue team reviewing work conditions',
+};
+
+const featuredImageForPost = (post: BlogPost): FeaturedImage =>
+  post.featuredImage?.url
+    ? post.featuredImage
+    : post.seo?.ogImage
+      ? { url: post.seo.ogImage, alt: post.title }
+      : DEFAULT_FEATURED_IMAGE;
+
 // Blog List Component
 const BlogList = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -244,19 +256,11 @@ const BlogList = () => {
                     <article className="h-full flex flex-col">
                       {/* Featured Image */}
                       <div className="aspect-[16/10] rounded-container overflow-hidden bg-secondary mb-4">
-                        {post.featuredImage?.url ? (
-                          <img
-                            src={post.featuredImage.url}
-                            alt={post.featuredImage.alt || post.title}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                            <span className="text-display font-display font-bold text-primary/40">
-                              ST
-                            </span>
-                          </div>
-                        )}
+                        <img
+                          src={featuredImageForPost(post).url}
+                          alt={featuredImageForPost(post).alt || post.title}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
                       </div>
 
                       {/* Meta */}
