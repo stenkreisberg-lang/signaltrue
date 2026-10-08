@@ -2,8 +2,142 @@ export const UNREASONABLE_WORKLOAD_SLUG = 'unreasonable-workload-psychosocial-ha
 export const PEOPLE_AT_WORK_SLUG = 'people-at-work-decommissioning-what-next-australia';
 export const NON_SURVEILLANCE_SLUG =
   'psychosocial-risk-monitoring-without-employee-surveillance-australia';
+export const BURNOUT_WORKLOAD_CONTROLS_SLUG = 'burnout-workload-psychosocial-risk-controls';
 
 export const editorialBlogPosts = [
+  {
+    _id: 'editorial-burnout-workload-psychosocial-risk-controls',
+    title: 'Burnout Is the Signal. Workload Is the Evidence.',
+    slug: BURNOUT_WORKLOAD_CONTROLS_SLUG,
+    excerpt:
+      'Burnout is an outcome, not a risk measure. Learn how to assess workload and work intensity, then test whether psychosocial controls changed exposure.',
+    author: {
+      name: 'SignalTrue Team',
+    },
+    tags: [
+      'psychosocial risk assessment',
+      'workload risk at work',
+      'work-related stress',
+      'psychosocial risk controls',
+      'work intensity',
+    ],
+    categories: ['Psychosocial risk at work'],
+    status: 'published',
+    publishedAt: '2026-10-08T07:00:00.000Z',
+    readingTime: 9,
+    viewCount: 0,
+    featured: true,
+    createdAt: '2026-10-08T07:00:00.000Z',
+    updatedAt: '2026-10-08T07:00:00.000Z',
+    seo: {
+      metaTitle:
+        'Burnout Is the Signal. Workload Is the Evidence. How to Evaluate Psychosocial Risk Controls',
+      metaDescription:
+        'Burnout is an outcome, not a risk measure. Learn how to assess workload and work intensity, then test whether psychosocial controls changed exposure.',
+      canonicalUrl: `https://www.signaltrue.ai/blog/${BURNOUT_WORKLOAD_CONTROLS_SLUG}`,
+      ogImage: 'https://www.signaltrue.ai/images/hero-team.jpg',
+    },
+    content: `
+      <p><strong>How to assess whether workload and work intensity are creating psychosocial risk, and whether the controls introduced are changing exposure.</strong></p>
+
+      <p>When burnout becomes visible, the first question is often personal: who needs support? That question matters, but it is not the whole risk assessment. The harder question is about the work: what demands, constraints and routines are people being exposed to, and what has changed since the organisation acted?</p>
+
+      <p><strong>Burnout is an outcome, not a hazard measure.</strong> Assess the conditions of work that may contribute to it, then test whether the controls changed those conditions and workers’ exposure to them.</p>
+
+      <h2>Why this distinction matters now</h2>
+
+      <p>The EU-OSHA OSH Pulse 2025 survey, based on 25,688 interviews across the EU27, found that 44% of workers reported severe time pressure or work overload. Another 29% reported poor communication or cooperation at work. These are not abstract wellbeing scores. They point toward conditions that can be examined in work design, staffing, coordination and decision-making.</p>
+
+      <p>The ILO’s 2026 global report places the psychosocial working environment inside occupational safety and health. It focuses on modifiable features of how jobs are designed, work is organised and managed, and workplace policies and practices operate. That changes the practical question from “How do we help people cope?” to “Which work conditions need to change, and how will we know they did?”</p>
+
+      <p>WHO describes burn-out in ICD-11 as an occupational phenomenon associated with chronic workplace stress that has not been successfully managed. That framing is about work-related experience. It does not make an organisation’s activity data a clinical test or a way to diagnose an individual.</p>
+
+      <h2>Start with exposure, not the label</h2>
+
+      <p>“Burnout” is a compelling headline, but it can blur the risk-management task. A psychosocial risk assessment asks what features of work may cause harm, who is exposed, under what circumstances, and what prevention or control measures are needed.</p>
+
+      <p>Potential factors include excessive demands, low control over pace or process, poor support, unclear roles, conflict, violence, insecurity and weak communication. The mix differs by job and workplace.</p>
+
+      <p>A team that is exhausted is a reason to investigate. It is not enough to identify the hazard. Nor does a high meeting count, late message or delayed reply prove that anyone is unwell. Those patterns may be useful prompts to ask better questions about staffing, dependencies, interruptions, deadlines and recovery time. Workers’ accounts and knowledge of the job are essential to interpreting them.</p>
+
+      <p>This also avoids a familiar category error: treating a support offer as proof that the underlying exposure has been controlled. Counselling, wellbeing sessions and manager training can have a place. Their existence says little by itself about whether workload, control, role clarity or exposure to harmful interactions improved.</p>
+
+      <h2>A practical test for psychosocial controls</h2>
+
+      <p>A control should have a clear connection to the hazard it is meant to reduce. If the risk is sustained overload, a mindfulness session is not evidence that workload has been reduced. If late work is driven by understaffing or unrealistic deadlines, a reminder to disconnect may leave the driver untouched.</p>
+
+      <p>Before action begins, write down what is expected to change. For a workload concern, that might mean fewer unplanned urgent assignments, more realistic capacity, protected recovery breaks or fewer repeated hand-offs. The exact measure depends on the work. The point is to make the proposed change testable.</p>
+
+      <h2>Use this six-part review</h2>
+
+      <ol>
+        <li><strong>Define the exposure.</strong> Name the work condition precisely: sustained overload, unpredictable demand, lack of control over pace or poor coordination. Identify which roles, teams, shifts or work periods may be affected.</li>
+        <li><strong>Ask workers what drives it.</strong> Consult the people doing the work. Where does demand arrive? What gets interrupted, delayed or pushed into evenings? Which constraints make the task harder? Compare views across roles without assuming one account represents everyone.</li>
+        <li><strong>Choose a control that reaches the source.</strong> Consider changes to work design, staffing, priorities, decision rights, hand-offs, schedules or procedures. Individual support can complement these measures, but it should not be used to make workers absorb an avoidable hazard.</li>
+        <li><strong>Set a baseline and a prediction.</strong> Record the relevant conditions before implementation. State what should change, for whom and by when. Include worker-reported evidence and suitable operational indicators; do not rely on a single proxy.</li>
+        <li><strong>Review exposure and experience.</strong> After implementation, check whether the work condition changed and whether workers experienced a meaningful difference. Look for unintended effects, such as work being shifted to another team or hidden in unpaid time.</li>
+        <li><strong>Adapt if the control missed.</strong> If exposure persists, the action may be too weak, poorly implemented or aimed at the wrong cause. Revisit the assessment with workers, adjust the control and document the reasoning.</li>
+      </ol>
+
+      <h2>Choose measures that fit the hazard</h2>
+
+      <p>Suppose a service team reports persistent overload. The assessment finds that urgent requests arrive through several channels, priorities change daily and routine work is repeatedly deferred. A response course for employees might improve coping skills, but it does not resolve those conditions.</p>
+
+      <p>A stronger control package could set a single triage route, define who can reprioritise work, cap simultaneous urgent assignments and add capacity during known peaks. Training may still help people use the process, but the work system is what the organisation must evaluate.</p>
+
+      <p>That example is illustrative, not a universal prescription. The right control follows from the specific risk assessment, applicable law, consultation and the realities of the task. Jurisdictional requirements differ. The principle is consistent: measures should address the source where practicable, and their implementation and effect should be reviewed.</p>
+
+      <h2>Measure change without pretending to diagnose</h2>
+
+      <p>A useful review combines evidence rather than turning one number into a verdict. Depending on the work, this may include worker consultation, roster and capacity data, workload or case volumes, overtime, schedule volatility, incident or complaint themes, and aggregated patterns in digital work systems. Each measure has limits. High activity can reflect a busy but well-supported period; low activity can have many explanations. No single indicator establishes a person’s mental health or proves causation.</p>
+
+      <p>Digital collaboration data can add one narrow evidence layer where work is mediated through calendars, email or chat. At team level, patterns such as repeated after-hours activity, meeting saturation, shrinking focus time or persistent coordination churn may help identify where to investigate.</p>
+
+      <p>They cannot explain why the pattern exists, establish that a worker is burned out or replace consultation. The organisation should be transparent about what is collected, why, how it is aggregated and who sees it.</p>
+
+      <p>SignalTrue is designed for that supporting role: surfacing longitudinal patterns in work activity that can help teams examine psychosocial exposure and review controls. It should be treated as one source of work evidence, not as a mental-health assessment. The assessment, interpretation and decisions remain with the organisation and its workers.</p>
+
+      <h2>The decision rule: what changed in the work?</h2>
+
+      <p>The most useful control review does not stop at “Was the training delivered?” or “Did we launch the new policy?” It checks whether the intended work condition changed, whether the people exposed experienced a difference and whether the change held over time.</p>
+
+      <p>Where it did not, the next step is to revisit the risk and improve the control, not to assume the workforce failed to become resilient enough.</p>
+
+      <p>A short review record can keep the reasoning honest:</p>
+
+      <ul>
+        <li><strong>Hazard:</strong> What work condition was assessed?</li>
+        <li><strong>Exposed group:</strong> Who encounters it, and when?</li>
+        <li><strong>Control:</strong> What changed in the work?</li>
+        <li><strong>Evidence:</strong> What did workers and relevant operational data show before and after?</li>
+        <li><strong>Decision:</strong> Keep, adapt or replace the control, and why?</li>
+      </ul>
+
+      <h2>Frequently asked questions</h2>
+
+      <h3>Does burnout prove that a workplace has a psychosocial hazard?</h3>
+
+      <p>It can be a prompt to investigate, but it does not identify the specific hazard or establish its cause. Assess the conditions of work and the exposure of relevant groups, with appropriate worker input.</p>
+
+      <h3>Can activity data measure burnout?</h3>
+
+      <p>No. Metadata can describe some patterns in digital work, such as timing or coordination. It does not reveal a person’s health state, explain why the pattern exists or replace validated assessment and consultation.</p>
+
+      <h3>How do we know a control worked?</h3>
+
+      <p>Define what should change before implementation. Then review both the condition the control targeted and workers’ experience of it. Check for displacement or unintended effects. If exposure remains, reassess and adapt.</p>
+
+      <h2>Sources</h2>
+
+      <ol>
+        <li>European Agency for Safety and Health at Work (EU-OSHA), <em>OSH Pulse 2025: Occupational safety and health in the era of climate and digital change</em>.</li>
+        <li>International Labour Organization (ILO), <em>The psychosocial working environment: Global developments and pathways for action</em>, 22 April 2026.</li>
+        <li>World Health Organization (WHO), <em>Burn-out an occupational phenomenon</em>, International Classification of Diseases.</li>
+      </ol>
+
+      <p><em>This article is general information, not legal advice. Psychosocial health and safety requirements differ by jurisdiction. Digital indicators should be treated as evidence for investigation and consultation, not as proof of an individual psychological condition.</em></p>
+    `,
+  },
   {
     _id: 'editorial-unreasonable-workload-australia',
     title: 'Unreasonable workload is a psychosocial hazard.',

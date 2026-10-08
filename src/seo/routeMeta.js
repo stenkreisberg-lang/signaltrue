@@ -686,6 +686,43 @@ const ROUTE_META = {
       },
     ],
   },
+  '/blog/burnout-workload-psychosocial-risk-controls': {
+    title:
+      'Burnout Is the Signal. Workload Is the Evidence. How to Evaluate Psychosocial Risk Controls',
+    headline: 'Burnout Is the Signal. Workload Is the Evidence.',
+    description:
+      'Burnout is an outcome, not a risk measure. Learn how to assess workload and work intensity, then test whether psychosocial controls changed exposure.',
+    summary:
+      'A practical guide to psychosocial risk assessment: define the work exposure, consult workers, choose a source-level control, set a baseline, review before-and-after evidence and adapt when exposure persists.',
+    type: 'article',
+    socialImage: `${SITE_URL}/images/hero-team.jpg`,
+    socialImageAlt: 'SignalTrue team work-pattern evidence dashboard illustration',
+    publishedAt: '2026-10-08T07:00:00.000Z',
+    keywords: [
+      'psychosocial risk assessment',
+      'workload risk at work',
+      'work-related stress',
+      'psychosocial risk controls',
+      'work intensity',
+    ],
+    faqs: [
+      {
+        question: 'Does burnout prove that a workplace has a psychosocial hazard?',
+        answer:
+          'It can be a prompt to investigate, but it does not identify the specific hazard or establish its cause. Assess the conditions of work and the exposure of relevant groups, with appropriate worker input.',
+      },
+      {
+        question: 'Can activity data measure burnout?',
+        answer:
+          'No. Metadata can describe some patterns in digital work, such as timing or coordination. It does not reveal a person’s health state, explain why the pattern exists or replace validated assessment and consultation.',
+      },
+      {
+        question: 'How do we know a control worked?',
+        answer:
+          'Define what should change before implementation, then review both the condition the control targeted and workers’ experience of it. Check for displacement or unintended effects. If exposure remains, reassess and adapt.',
+      },
+    ],
+  },
 };
 
 const DEFAULT_META = ROUTE_META['/'];

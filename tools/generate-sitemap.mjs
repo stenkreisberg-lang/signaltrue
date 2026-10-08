@@ -10,6 +10,10 @@ const OUTPUT_PATHS = [
 const CORE_LAST_MODIFIED = '2026-10-01';
 const STATIC_BLOG_ENTRIES = [
   {
+    url: `${SITE_URL}/blog/burnout-workload-psychosocial-risk-controls`,
+    lastModified: '2026-10-08',
+  },
+  {
     url: `${SITE_URL}/blog/unreasonable-workload-psychosocial-hazard-australia`,
     lastModified: '2026-08-30',
   },
