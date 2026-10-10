@@ -111,7 +111,7 @@ export default function Pricing() {
                   time.
                 </p>
                 <Link
-                  to="/did-the-control-work"
+                  to="/contact?intent=free-preview"
                   className="mt-5 inline-flex items-center font-bold text-brand hover:underline"
                 >
                   Get the free preview <ArrowRight className="ml-2 h-4 w-4" />

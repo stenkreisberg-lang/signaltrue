@@ -395,9 +395,9 @@ const ROUTE_META = {
   '/pricing': {
     title: 'Free Australian Psychosocial Control-Review Pilot | SignalTrue',
     description:
-      'Selected Australian organisations can run one psychosocial control-review pilot for AU$99 during the founding validation phase on the method and report.',
+      'Start with a free SignalTrue preview for one psychosocial control, then choose paid ongoing monitoring and evidence when it proves useful.',
     summary:
-      'The current Australian validation offer is an AU$99 founding review around one real psychosocial control. SignalTrue supplies the review method and report; the organisation supplies a real control, approved evidence and structured feedback.',
+      'SignalTrue gives interested organisations a useful first look at control effectiveness for free, then supports paid ongoing monitoring, evidence timelines and privacy-safe workflows.',
   },
   '/contact': {
     title: 'Discuss a Pilot | SignalTrue',
