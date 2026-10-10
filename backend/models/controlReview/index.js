@@ -8,6 +8,7 @@ export { default as WorkingSchedule } from './workingSchedule.js';
 export { default as TeamWorkPatternMetric } from './teamMetric.js';
 export { default as SignalObservation } from './signalObservation.js';
 export { default as PatternFinding } from './patternFinding.js';
+export { default as WorkPatternAnalysisRun } from './workPatternAnalysisRun.js';
 export { default as ConsultationRecord } from './consultationRecord.js';
 export { default as ControlIntervention } from './controlIntervention.js';
 export { default as InterventionEvaluation } from './interventionEvaluation.js';

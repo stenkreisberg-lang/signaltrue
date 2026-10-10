@@ -16,6 +16,7 @@ import {
   BASELINE_WEEKS_DEFAULT,
   BASELINE_WEEKS_MINIMUM,
   PATTERN_DEFAULTS,
+  DATA_QUALITY_RANK,
 } from '../../models/controlReview/constants.js';
 import { P0_METRIC_ORDER } from './workPatternMetricsService.js';
 
@@ -52,7 +53,12 @@ export function percentile(values, p) {
  * rather than presenting a thin comparison as settled.
  */
 export function buildBaseline(priorRows) {
-  const usable = priorRows.filter((row) => !row.suppressed && typeof row.value === 'number');
+  const usable = priorRows.filter(
+    (row) =>
+      !row.suppressed &&
+      typeof row.value === 'number' &&
+      DATA_QUALITY_RANK[row.dataQuality || 'ACCEPTABLE'] >= DATA_QUALITY_RANK.ACCEPTABLE
+  );
   const values = usable.map((row) => row.value);
 
   if (values.length < BASELINE_WEEKS_MINIMUM) {
@@ -164,7 +170,11 @@ export async function observeMetric({
     // organisation would raise the same finding.
     observation.status = 'AGGREGATED';
     observation.direction = 'FLAT';
-  } else if (!baseline.available || currentRow.value === null) {
+  } else if (
+    !baseline.available ||
+    currentRow.value === null ||
+    DATA_QUALITY_RANK[currentRow.dataQuality || 'ACCEPTABLE'] < DATA_QUALITY_RANK.ACCEPTABLE
+  ) {
     observation.status = 'INSUFFICIENT_DATA';
     observation.direction = 'FLAT';
   } else {
@@ -224,9 +234,19 @@ export async function countPersistence({
     .lean();
 
   let count = 1;
+  let previousPeriodStart = new Date(periodStart);
   for (const observation of prior) {
+    const gapDays = (previousPeriodStart - new Date(observation.periodStart)) / 86400000;
+    if (
+      gapDays > 8 ||
+      observation.dataQuality === 'LOW' ||
+      observation.dataQuality === 'INSUFFICIENT'
+    ) {
+      break;
+    }
     if (observation.direction === direction && observation.status === 'DEVIATION_OBSERVED') {
       count += 1;
+      previousPeriodStart = new Date(observation.periodStart);
     } else {
       break;
     }

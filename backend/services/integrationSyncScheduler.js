@@ -100,6 +100,17 @@ export function scheduleIntegrationJobs() {
   cron.schedule('0 5 * * 1', async () => {
     console.log('⏰ Computing weekly metric rollups...');
     await runWeeklyRollups();
+    try {
+      const { runAutomaticWorkPatternAnalysis } = await import(
+        './controlReview/automaticWorkPatternAnalysisService.js'
+      );
+      const result = await runAutomaticWorkPatternAnalysis();
+      if (!result.skipped) {
+        console.log(`✅ Automatic work-pattern analysis: ${result.processed} tenant(s)`);
+      }
+    } catch (error) {
+      console.error('❌ Automatic work-pattern analysis failed:', error.message);
+    }
   });
 
   console.log('✅ Integration jobs scheduled');

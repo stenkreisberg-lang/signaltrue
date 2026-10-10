@@ -100,3 +100,9 @@ services:
         sync: false
       - key: INTERNAL_SERVICE_TOKEN
         sync: false
+      # Controlled pilot: enable only for the named organization until two
+      # complete scheduled runs have been reviewed by HR/H&S.
+      - key: AUTOMATED_WORK_PATTERN_INSIGHTS_ENABLED
+        value: 'true'
+      - key: AUTOMATED_WORK_PATTERN_INSIGHTS_ORG_SLUG
+        value: 'tehnopol'

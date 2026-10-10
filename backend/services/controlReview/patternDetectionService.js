@@ -19,6 +19,7 @@ import {
   DATA_QUALITY_RANK,
   METRIC_LABELS,
   ALGORITHM_VERSION,
+  HIGHER_IS_MORE_DEMAND,
 } from '../../models/controlReview/constants.js';
 import { recordAudit } from './auditService.js';
 
@@ -45,6 +46,14 @@ function meetsQuality(observation, thresholds) {
   return (
     DATA_QUALITY_RANK[observation.dataQuality] >= DATA_QUALITY_RANK[thresholds.minimumDataQuality]
   );
+}
+
+export function isAdverse(observation, metricDirectionMap = HIGHER_IS_MORE_DEMAND) {
+  if (observation.status !== 'DEVIATION_OBSERVED') return false;
+  const highIsDemand = metricDirectionMap[observation.metric];
+  return highIsDemand === true
+    ? observation.direction === 'UP'
+    : highIsDemand === false && observation.direction === 'DOWN';
 }
 
 function formatChange(observation) {
@@ -91,7 +100,7 @@ export async function evaluateTeamPeriod({ tenantId, teamId, periodStart, actor 
 
   const qualifying = observations.filter(
     (observation) =>
-      observation.status === 'DEVIATION_OBSERVED' &&
+      isAdverse(observation) &&
       meetsQuality(observation, thresholds) &&
       observation.persistencePeriods >= thresholds.persistencePeriods
   );
@@ -103,7 +112,9 @@ export async function evaluateTeamPeriod({ tenantId, teamId, periodStart, actor 
     basis = 'MULTI_SIGNAL';
     contributing = qualifying;
   } else {
-    const severe = observations.find((observation) => isSevereSingleSignal(observation, thresholds));
+    const severe = observations.find(
+      (observation) => isAdverse(observation) && isSevereSingleSignal(observation, thresholds)
+    );
     if (severe) {
       basis = 'SEVERE_SINGLE_SIGNAL';
       contributing = [severe];
@@ -224,6 +235,7 @@ export async function dismissFinding({ tenantId, findingId, reason, actor }) {
 
 export default {
   CANDIDATE_SIGNALS,
+  isAdverse,
   resolveThresholds,
   evaluateTeamPeriod,
   dismissFinding,
