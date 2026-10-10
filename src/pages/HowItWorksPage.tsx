@@ -119,7 +119,7 @@ const HowItWorksPage = () => {
               </p>
               <Button asChild variant="hero" size="xl">
                 <PrimaryCommercialCTA ctaLocation="how_it_works_hero">
-                  Start the AU$99 founding review
+                  Get a free preview
                   <ArrowRight className="w-5 h-5" />
                 </PrimaryCommercialCTA>
               </Button>
@@ -331,7 +331,7 @@ const HowItWorksPage = () => {
                 </Button>
                 <Button asChild variant="hero-outline" size="lg">
                   <PrimaryCommercialCTA ctaLocation="how_it_works_diagnostic">
-                    Start the AU$99 founding review
+                    Get a free preview
                   </PrimaryCommercialCTA>
                 </Button>
               </div>
@@ -352,7 +352,7 @@ const HowItWorksPage = () => {
               </h2>
               <Button asChild variant="hero" size="xl">
                 <PrimaryCommercialCTA ctaLocation="how_it_works_final">
-                  Start the AU$99 founding review
+                  Get a free preview
                   <ArrowRight className="w-5 h-5" />
                 </PrimaryCommercialCTA>
               </Button>

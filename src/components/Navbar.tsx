@@ -80,7 +80,7 @@ const Navbar = () => {
                 ctaLocation="navbar_desktop"
                 className="inline-flex h-9 items-center rounded-control bg-brand px-4 text-caption font-semibold text-white shadow-sm hover:bg-brand-hover"
               >
-                Start the AU$99 founding review
+                Get a free preview
               </PrimaryCommercialCTA>
             )}
           </div>
@@ -124,14 +124,14 @@ const Navbar = () => {
                       className="flex w-full items-center justify-center rounded-control px-4 py-3 text-caption font-semibold text-[#475569]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      View the AU$99 founding review
+                      Get a free preview
                     </Link>
                     <Link
                       to="/au/monitoring-gap-audit"
                       className="flex w-full items-center justify-center rounded-control bg-brand px-4 py-3 text-center text-caption font-semibold text-white"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Start the AU$99 founding review
+                      Get a free preview
                     </Link>
                   </>
                 ) : (

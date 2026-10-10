@@ -4,37 +4,40 @@ import Footer from '../components/Footer';
 import PageMeta from '../components/PageMeta';
 import { Link } from 'react-router-dom';
 
-const includes = [
-  'One identified psychosocial risk',
-  'One defined work group or team',
-  'One control that has been implemented or is about to be implemented',
-  'Existing assessment and consultation context where available',
-  'Approved calendar or collaboration metadata where technically available',
-  'Baseline, after-period and sustainability comparison',
-  'Possible workload-migration review',
-  'Worker consultation evidence kept beside operational evidence',
-  'Final Psychosocial Control Review with explicit limitations and next action',
+const freePreview = [
+  'Two-minute control-effectiveness diagnostic',
+  'A practical preview using one real risk and one control',
+  'A sample evidence view and next-step recommendation',
+  'No employee data, integrations, payment or commitment',
+];
+
+const paidWorkspace = [
+  'Automatic work-pattern monitoring over time',
+  'Evidence timelines for control reviews and decisions',
+  'HR-only briefs with privacy-safe aggregation',
+  'Connectors, recurring reviews and team workflows',
 ];
 
 export default function Pricing() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PageMeta
-        title="SignalTrue Founding Control Review · AU$99"
-        description="Australian founding offer: one psychosocial risk, one control and one evidence-based control review for AU$99."
+        title="SignalTrue · Free psychosocial control preview"
+        description="See a useful SignalTrue preview for free, then choose a paid workspace when you are ready for ongoing monitoring and evidence."
         path="/pricing"
       />
       <Navbar />
       <main className="pt-20">
         <section className="border-b border-[#E2E8F0] bg-white py-16 lg:py-20">
           <div className="container mx-auto max-w-5xl px-6 text-center">
-            <p className="text-caption font-bold uppercase tracking-wider text-brand">Australian founding offer</p>
+            <p className="text-caption font-bold uppercase tracking-wider text-brand">Start free</p>
             <h1 className="mx-auto mt-4 max-w-4xl text-display font-bold text-[#0F172A]">
-              One psychosocial risk. One control. AU$99.
+              See useful value before you pay.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
-              The purpose of the founding review is to prove whether SignalTrue makes control-effectiveness
-              review easier and more useful. It is deliberately priced for validation, not margin.
+              Start with a free, no-obligation preview of how SignalTrue helps you investigate one
+              psychosocial risk, test one control and see what evidence is missing. Pay only when
+              you are ready to keep using it.
             </p>
           </div>
         </section>
@@ -43,25 +46,28 @@ export default function Pricing() {
           <div className="container mx-auto max-w-6xl px-6">
             <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <p className="text-caption font-bold uppercase tracking-wider text-brand">Founding Control Review</p>
-                <h2 className="mt-3 text-section font-bold text-[#0F172A]">AU$99</h2>
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  Free SignalTrue preview
+                </p>
+                <h2 className="mt-3 text-section font-bold text-[#0F172A]">$0 to start</h2>
                 <p className="mt-4 leading-7 text-[#475569]">
-                  Start with a risk your organisation has already identified and one control you need to review.
-                  SignalTrue structures the evidence around the question that matters: did the conditions of work
-                  actually change?
+                  Start with a risk your organisation has already identified and one control you
+                  need to review. SignalTrue structures a useful first look around the question that
+                  matters: did the conditions of work actually change?
                 </p>
                 <div className="mt-6 rounded-container border border-[#BFDBFE] bg-[#EFF6FF] p-5">
-                  <p className="text-caption font-bold text-[#1E3A8A]">Not another generic software trial.</p>
+                  <p className="text-caption font-bold text-[#1E3A8A]">Useful before you buy.</p>
                   <p className="mt-2 text-caption leading-6 text-[#1E40AF]">
-                    The review is useful only when there is a real risk, a real control and a real decision to make.
+                    Bring one real risk and one real control. We will help you see the next evidence
+                    step.
                   </p>
                 </div>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <Link
-                    to="/contact?intent=au-founding-review"
+                    to="/contact?intent=free-preview"
                     className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
                   >
-                    Start the AU$99 review <ArrowRight className="ml-2 h-4 w-4" />
+                    Get the free preview <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                   <Link
                     to="/did-the-control-work"
@@ -73,9 +79,11 @@ export default function Pricing() {
               </div>
 
               <div className="rounded-container border border-[#E2E8F0] bg-white p-7">
-                <p className="text-caption font-bold uppercase tracking-wider text-brand">What it includes</p>
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  Included for free
+                </p>
                 <div className="mt-5 space-y-3">
-                  {includes.map((item) => (
+                  {freePreview.map((item) => (
                     <div key={item} className="flex gap-3">
                       <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
                       <p className="text-caption leading-6 text-[#334155]">{item}</p>
@@ -91,23 +99,37 @@ export default function Pricing() {
           <div className="container mx-auto max-w-5xl px-6">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
-                <p className="text-caption font-bold uppercase tracking-wider text-brand">Before you buy</p>
-                <h2 className="mt-3 text-section font-bold text-[#0F172A]">See whether your review process actually has a gap.</h2>
-                <p className="mt-4 leading-7 text-[#475569]">
-                  Use the two-minute diagnostic first. It identifies missing baseline, outcome, evidence,
-                  migration and decision layers without requiring employee data or sign-up.
+                <p className="text-caption font-bold uppercase tracking-wider text-brand">
+                  When you are ready
                 </p>
-                <Link to="/did-the-control-work" className="mt-5 inline-flex items-center font-bold text-brand hover:underline">
-                  Run the diagnostic <ArrowRight className="ml-2 h-4 w-4" />
+                <h2 className="mt-3 text-section font-bold text-[#0F172A]">
+                  Keep the value with a paid workspace.
+                </h2>
+                <p className="mt-4 leading-7 text-[#475569]">
+                  After the free preview, paid SignalTrue usage adds ongoing monitoring, evidence
+                  timelines and privacy-safe workflows so your team can keep improving controls over
+                  time.
+                </p>
+                <Link
+                  to="/did-the-control-work"
+                  className="mt-5 inline-flex items-center font-bold text-brand hover:underline"
+                >
+                  Get the free preview <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </div>
               <div className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-6">
                 <ShieldCheck className="h-7 w-7 text-brand" />
-                <h3 className="mt-4 text-lead font-bold text-[#0F172A]">The boundary stays clear</h3>
-                <p className="mt-3 text-caption leading-6 text-[#475569]">
-                  SignalTrue does not replace psychosocial risk assessment, worker consultation or professional
-                  judgement. It adds structured operational evidence to the control-review process.
-                </p>
+                <h3 className="mt-4 text-lead font-bold text-[#0F172A]">
+                  Paid when it earns its place
+                </h3>
+                <div className="mt-3 space-y-2">
+                  {paidWorkspace.map((item) => (
+                    <div key={item} className="flex gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                      <p className="text-caption leading-6 text-[#475569]">{item}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

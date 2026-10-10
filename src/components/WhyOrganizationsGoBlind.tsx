@@ -4,19 +4,23 @@ import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 const gaps = [
   {
     name: 'Risk assessment',
-    problem: 'Identifies hazards and exposure, but does not by itself prove that a later control worked.',
+    problem:
+      'Identifies hazards and exposure, but does not by itself prove that a later control worked.',
   },
   {
     name: 'Worker survey',
-    problem: 'Captures lived experience at a point in time, but the work can change between survey rounds.',
+    problem:
+      'Captures lived experience at a point in time, but the work can change between survey rounds.',
   },
   {
     name: 'Absence and turnover',
-    problem: 'Useful outcomes, but usually too late to tell whether a preventive control should be changed now.',
+    problem:
+      'Useful outcomes, but usually too late to tell whether a preventive control should be changed now.',
   },
   {
     name: 'Workforce analytics',
-    problem: 'Shows meetings, focus time or after-hours activity, but usually stops before the WHS control decision.',
+    problem:
+      'Shows meetings, focus time or after-hours activity, but usually stops before the WHS control decision.',
   },
 ];
 
@@ -64,7 +68,8 @@ const WhyOrganizationsGoBlind = () => {
 
           <div className="max-w-3xl mx-auto text-center p-6 lg:p-8 rounded-container bg-brand-softer border border-brand-soft">
             <p className="text-lead text-[#0F172A] font-medium">
-              SignalTrue sits between assessment and the decision to maintain, modify or replace a control.
+              SignalTrue sits between assessment and the decision to maintain, modify or replace a
+              control.
             </p>
             <p className="text-[#334155] mt-2">
               Use the organisation's existing psychosocial assessment and worker consultation. Add
@@ -76,7 +81,7 @@ const WhyOrganizationsGoBlind = () => {
                 ctaLocation="homepage_problem"
                 className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-5 py-3 text-caption font-bold text-white hover:bg-brand-hover"
               >
-                Start the AU$99 founding review
+                Get a free preview
               </PrimaryCommercialCTA>
               <SampleReportCTA
                 ctaLocation="homepage_problem"

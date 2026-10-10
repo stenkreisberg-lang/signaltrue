@@ -6,11 +6,15 @@ import LeadForm from '../components/LeadForm';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 
-const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'au-founding-review']);
+const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'free-preview']);
+const INTENT_ALIASES: Record<string, string> = {
+  'au-founding-review': 'free-preview',
+};
 
 export function normalizeContactIntent(value: string | null) {
-  const normalized = (value || 'demo').split('?')[0].trim().toLowerCase();
-  return ALLOWED_INTENTS.has(normalized) ? normalized : 'demo';
+  const normalized = (value || 'free-preview').split('?')[0].trim().toLowerCase();
+  const canonical = INTENT_ALIASES[normalized] || normalized;
+  return ALLOWED_INTENTS.has(canonical) ? canonical : 'free-preview';
 }
 
 export default function Contact() {
@@ -65,7 +69,7 @@ export default function Contact() {
                 [Mail, 'General enquiries', 'hello@signaltrue.ai', 'mailto:hello@signaltrue.ai'],
                 [
                   Calendar,
-                  'AU$99 founding control review',
+                  'Free SignalTrue preview',
                   'Use the request form below',
                   '#commercial-lead-form',
                 ],

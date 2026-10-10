@@ -247,7 +247,7 @@ const About = () => {
                 </Button>
                 <Button asChild variant="hero" size="xl">
                   <PrimaryCommercialCTA ctaLocation="about_final">
-                    Start the AU$99 founding review
+                    Get a free preview
                     <ArrowRight className="w-5 h-5" />
                   </PrimaryCommercialCTA>
                 </Button>

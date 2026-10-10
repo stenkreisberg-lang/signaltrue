@@ -15,7 +15,9 @@ const Hero = () => {
             <div className="mb-4 flex flex-wrap gap-2">
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Eye className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
-                <span className="text-caption font-medium text-[#334155]">Psychosocial control evidence</span>
+                <span className="text-caption font-medium text-[#334155]">
+                  Psychosocial control evidence
+                </span>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Lock className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
@@ -32,10 +34,10 @@ const Hero = () => {
             </h1>
 
             <p className="mb-4 max-w-xl text-body text-[#334155]">
-              SignalTrue helps Health &amp; Safety teams review one implemented psychosocial control:
-              compare relevant work patterns before and after the change, check whether the result
-              lasted, identify possible workload migration, and combine the evidence with worker
-              consultation.
+              SignalTrue helps Health &amp; Safety teams review one implemented psychosocial
+              control: compare relevant work patterns before and after the change, check whether the
+              result lasted, identify possible workload migration, and combine the evidence with
+              worker consultation.
             </p>
 
             <p className="mb-5 text-caption text-[#475569]">
@@ -49,7 +51,7 @@ const Hero = () => {
                 ctaLocation="homepage_hero"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-brand px-6 py-3 text-center text-body font-bold text-white shadow-sm hover:bg-brand-hover sm:w-auto"
               >
-                Start the AU$99 founding review <ArrowRight className="h-5 w-5 shrink-0" />
+                Get a free preview <ArrowRight className="h-5 w-5 shrink-0" />
               </PrimaryCommercialCTA>
               <SampleReportCTA
                 ctaLocation="homepage_hero"
@@ -60,7 +62,7 @@ const Hero = () => {
             </div>
 
             <p className="mt-3 max-w-xl text-caption text-[#64748B]">
-              The Australian founding review is free for selected organisations in exchange for
+              The first SignalTrue preview is free for interested organisations in exchange for
               structured feedback on the method and final report.
             </p>
 

@@ -83,7 +83,8 @@ export default function Product() {
                 Product
               </p>
               <h1 className="text-display font-bold tracking-tight text-[#0F172A] sm:text-display lg:text-display">
-                Assessment identified the risk. SignalTrue helps you review whether the control changed the work.
+                Assessment identified the risk. SignalTrue helps you review whether the control
+                changed the work.
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
                 SignalTrue turns privacy-conscious team metadata into control-review evidence. Start
@@ -100,7 +101,7 @@ export default function Product() {
                   ctaLocation="product_hero"
                   className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 text-center font-bold text-white hover:bg-brand-hover"
                 >
-                  Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
+                  Get a free preview <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
                 </PrimaryCommercialCTA>
                 <SampleReportCTA
                   ctaLocation="product_hero"

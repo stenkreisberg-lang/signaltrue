@@ -63,7 +63,7 @@ export default function SampleReport() {
                 ctaLocation="sample_report_hero"
                 className="inline-flex min-h-12 items-center justify-center rounded-control bg-brand px-6 py-3 font-bold text-white hover:bg-brand-hover"
               >
-                Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
+                Get a free preview <ArrowRight className="ml-2 h-4 w-4" />
               </PrimaryCommercialCTA>
               <button
                 type="button"
@@ -99,12 +99,20 @@ export default function SampleReport() {
 
               <div className="grid gap-0 border-b border-[#E2E8F0] md:grid-cols-3">
                 {[
-                  ['Control', 'Remove three recurring status meetings and protect two weekly focus blocks.'],
+                  [
+                    'Control',
+                    'Remove three recurring status meetings and protect two weekly focus blocks.',
+                  ],
                   ['Implemented', '12 August 2026'],
                   ['Intended outcome', 'Reduce coordination burden and after-hours catch-up work.'],
                 ].map(([label, value]) => (
-                  <div key={label} className="border-b border-[#E2E8F0] p-6 last:border-0 md:border-b-0 md:border-r md:last:border-r-0">
-                    <p className="text-caption font-bold uppercase tracking-wide text-[#64748B]">{label}</p>
+                  <div
+                    key={label}
+                    className="border-b border-[#E2E8F0] p-6 last:border-0 md:border-b-0 md:border-r md:last:border-r-0"
+                  >
+                    <p className="text-caption font-bold uppercase tracking-wide text-[#64748B]">
+                      {label}
+                    </p>
                     <p className="mt-2 text-caption leading-6 text-[#0F172A]">{value}</p>
                   </div>
                 ))}
@@ -119,9 +127,9 @@ export default function SampleReport() {
                 </h3>
                 <p className="mt-3 max-w-3xl leading-7 text-[#475569]">
                   Meeting burden fell and focus availability improved, but the reduction in
-                  after-hours activity was not sustained. Coordination demand also increased in chat.
-                  The available evidence supports keeping the control in place while investigating
-                  workload allocation and late customer handovers.
+                  after-hours activity was not sustained. Coordination demand also increased in
+                  chat. The available evidence supports keeping the control in place while
+                  investigating workload allocation and late customer handovers.
                 </p>
               </div>
 
@@ -133,16 +141,26 @@ export default function SampleReport() {
                   <table className="min-w-full border-collapse text-left text-caption">
                     <thead>
                       <tr className="border-b border-[#CBD5E1] text-[#64748B]">
-                        {['Indicator', 'Baseline', 'After', 'Sustainability', 'Finding'].map((h) => (
-                          <th key={h} className="px-3 py-3 font-bold">{h}</th>
-                        ))}
+                        {['Indicator', 'Baseline', 'After', 'Sustainability', 'Finding'].map(
+                          (h) => (
+                            <th key={h} className="px-3 py-3 font-bold">
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody>
                       {evidenceRows.map((row) => (
                         <tr key={row[0]} className="border-b border-[#E2E8F0] last:border-0">
                           {row.map((cell, i) => (
-                            <td key={i} className={"px-3 py-3 " + (i === 0 ? 'font-semibold text-[#0F172A]' : 'text-[#475569]')}>
+                            <td
+                              key={i}
+                              className={
+                                'px-3 py-3 ' +
+                                (i === 0 ? 'font-semibold text-[#0F172A]' : 'text-[#475569]')
+                              }
+                            >
                               {cell}
                             </td>
                           ))}
@@ -195,7 +213,8 @@ export default function SampleReport() {
                   <div className="rounded-container border border-[#E2E8F0] p-5">
                     <p className="text-caption font-bold text-[#0F172A]">Next action</p>
                     <p className="mt-2 text-caption leading-6 text-[#475569]">
-                      Investigate workload allocation and late customer handovers. Review again in 6 weeks.
+                      Investigate workload allocation and late customer handovers. Review again in 6
+                      weeks.
                     </p>
                   </div>
                 </div>
@@ -203,10 +222,10 @@ export default function SampleReport() {
 
               <div className="border-t border-[#E2E8F0] bg-[#FFF7ED] p-6">
                 <p className="text-caption leading-6 text-[#7C2D12]">
-                  <strong>Limits:</strong> SignalTrue does not diagnose psychological injury, declare
-                  that a psychosocial hazard legally exists, replace worker consultation or establish
-                  legal compliance. Work-pattern evidence supports the organisation's investigation
-                  and review decision.
+                  <strong>Limits:</strong> SignalTrue does not diagnose psychological injury,
+                  declare that a psychosocial hazard legally exists, replace worker consultation or
+                  establish legal compliance. Work-pattern evidence supports the organisation's
+                  investigation and review decision.
                 </p>
               </div>
             </article>
@@ -217,14 +236,14 @@ export default function SampleReport() {
           <div className="container mx-auto max-w-3xl px-6 text-center">
             <h2 className="text-section font-bold">Have one real control you need to review?</h2>
             <p className="mx-auto mt-4 max-w-2xl text-[#CBD5E1]">
-              The Australian founding review is free for selected organisations in exchange for
+              The first SignalTrue preview is free for interested organisations in exchange for
               structured feedback on the method and report.
             </p>
             <PrimaryCommercialCTA
               ctaLocation="sample_report_final"
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
             >
-              Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
+              Get a free preview <ArrowRight className="ml-2 h-4 w-4" />
             </PrimaryCommercialCTA>
           </div>
         </section>

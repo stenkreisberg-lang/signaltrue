@@ -65,7 +65,7 @@ export default function AustraliaPilot() {
               Australian pilot
             </p>
             <h1 className="mt-4 text-display font-bold text-[#0F172A] sm:text-display lg:text-display">
-              An AU$99 founding review of one psychosocial control against what changed in the work.
+              A free preview of one psychosocial control against what changed in the work.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
               Selected Australian organisations can test SignalTrue on one real psychosocial control
@@ -79,9 +79,9 @@ export default function AustraliaPilot() {
               <Button asChild variant="outline" size="lg">
                 <PrimaryCommercialCTA
                   ctaLocation="au_pilot_hero"
-                  queryParams={{ intent: 'au-founding-review' }}
+                  queryParams={{ intent: 'free-preview' }}
                 >
-                  Start the AU$99 founding review <ArrowRight className="ml-2 h-4 w-4" />
+                  Get a free preview <ArrowRight className="ml-2 h-4 w-4" />
                 </PrimaryCommercialCTA>
               </Button>
             </div>
@@ -254,12 +254,18 @@ export default function AustraliaPilot() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ['One real control', 'A psychosocial or work-design control that has already been implemented or is about to be implemented.'],
+                  [
+                    'One real control',
+                    'A psychosocial or work-design control that has already been implemented or is about to be implemented.',
+                  ],
                   [
                     'Data sources',
                     'Approved calendar or collaboration systems and implementation effort.',
                   ],
-                  ['Feedback', 'A short structured review with the WHS owner on what was useful, unclear or missing.'],
+                  [
+                    'Feedback',
+                    'A short structured review with the WHS owner on what was useful, unclear or missing.',
+                  ],
                   [
                     'Deliverables',
                     'Evidence-pack format, review meetings and support requirements.',
@@ -288,7 +294,7 @@ export default function AustraliaPilot() {
             <Button asChild size="lg" className="mt-8">
               <PrimaryCommercialCTA
                 ctaLocation="au_pilot_final"
-                queryParams={{ intent: 'au-founding-review' }}
+                queryParams={{ intent: 'free-preview' }}
               >
                 Apply for the free Australian pilot <ArrowRight className="ml-2 h-4 w-4" />
               </PrimaryCommercialCTA>

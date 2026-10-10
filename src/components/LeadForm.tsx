@@ -54,13 +54,13 @@ export function validateLeadFields(fields: LeadFields): LeadFieldErrors {
 
 export default function LeadForm({
   ctaLocation,
-  source = 'Website AU$99 founding control review request',
-  tag = 'psychosocial-control-review-founding',
-  heading = 'Start the AU$99 founding review',
-  intro = 'Tell us who you are and where you work. We will check that you have one real psychosocial risk and one control that fit the AU$99 founding review.',
+  source = 'Website free SignalTrue preview request',
+  tag = 'signaltrue-free-preview',
+  heading = 'Get your free SignalTrue preview',
+  intro = 'Tell us who you are and where you work. We will show you how SignalTrue can turn one real psychosocial risk and control into useful evidence—free, with no payment or commitment.',
   submitLabel = PRIMARY_CTA_LABEL,
   plan,
-  intent = 'au-founding-review',
+  intent = 'free-preview',
   formVersion = 'commercial_p0_v1',
 }: LeadFormProps) {
   const [fields, setFields] = useState(initialFields);
