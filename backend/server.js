@@ -328,6 +328,10 @@ async function main() {
           status: 'ready',
           database: 'connected',
           version: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || null,
+          automaticWorkPatternInsights: {
+            enabled: process.env.AUTOMATED_WORK_PATTERN_INSIGHTS_ENABLED === 'true',
+            pilotOrganization: process.env.AUTOMATED_WORK_PATTERN_INSIGHTS_ORG_SLUG || null,
+          },
         });
       } catch {
         return res.status(503).json({ status: 'not-ready', database: 'unavailable' });
