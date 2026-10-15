@@ -472,6 +472,9 @@ export default function WorkNetwork() {
               <p className="mt-2 text-caption leading-6 text-amber-900">
                 This does not mean teams are not collaborating. No observed team pair met
                 the evidence and privacy rules for this reporting period.
+                {network.summary?.suppressedConnections > 0
+                  ? ` ${network.summary.suppressedConnections} observed connection(s) were excluded by reporting rules.`
+                  : ' No qualifying observed connection was available in the returned network evidence.'}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3 text-caption text-amber-950">
                 <p><strong>Eligible teams:</strong> {readiness.eligibleTeams ?? 'Not available'}</p>
