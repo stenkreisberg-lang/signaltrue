@@ -315,6 +315,51 @@ export default function LatestBrief() {
   const [contextTag, setContextTag] = useState('launch');
   const [contextDescription, setContextDescription] = useState('');
   const [savingContext, setSavingContext] = useState(false);
+  const [historyPeriod, setHistoryPeriod] = useState(4);
+  const [history, setHistory] = useState([]);
+  const [historyError, setHistoryError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/weekly-brief/history', { params: { limit: 53 } })
+      .then(({ data }) => { if (!cancelled) setHistory(data.snapshots || []); })
+      .catch(() => { if (!cancelled) setHistoryError('Historical reporting is temporarily unavailable.'); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const prioritizedFindings = useMemo(() => {
+    const observations = Array.isArray(brief?.observations) ? brief.observations : [];
+    const eligible = observations.filter((item) =>
+      item?.text && item.type !== 'data_quality' &&
+      item.evidenceGrade !== 'blocked' && item.evidenceGrade !== 'low'
+    );
+    const weight = (item) =>
+      (item.actionability === 'intervention' ? 4 : item.actionability === 'reversible_experiment' ? 3 : 1) +
+      (String(item.evidenceGrade).toLowerCase() === 'high' ? 2 : 0);
+    return [...eligible].sort((a, b) => weight(b) - weight(a)).slice(0, 3);
+  }, [brief]);
+
+  const historicalSeries = useMemo(() => {
+    const cutoff = Date.now() - historyPeriod * 31 * 24 * 60 * 60 * 1000;
+    return [...history].filter((snapshot) => {
+      const date = new Date(snapshot.periodEnd).getTime();
+      return Number.isFinite(date) && date >= cutoff;
+    }).sort((a, b) => new Date(a.periodEnd) - new Date(b.periodEnd))
+      .map((snapshot) => {
+        const getMetric = (key) => {
+          const metric = snapshot.metrics?.find((m) => m.key === key);
+          return metric?.available && Number.isFinite(Number(metric.current))
+            ? Number(metric.current) : null;
+        };
+        return {
+          date: new Date(snapshot.periodEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          meetingHours: getMetric('meeting_hours'),
+          afterHours: getMetric('after_hours'),
+          focusTime: getMetric('focus_time'),
+        };
+      });
+  }, [history, historyPeriod]);
+
 
   const loadBrief = useCallback(async () => {
     const context = await getAuthenticatedContext();
@@ -486,6 +531,80 @@ export default function LatestBrief() {
             <p>Evidence grades are rules, not confidence intervals or outcome probabilities.</p>
           </div>
         </div>
+      </section>
+
+
+      {brief.reportMode !== 'setup' && (
+        <section className="app-panel mb-6" aria-label="Most important weekly findings">
+          <div className="app-section-heading">
+            <div>
+              <h2>Top findings this week</h2>
+              <p>Up to three evidence-supported changes and what to do next. No findings are invented to fill a list.</p>
+            </div>
+          </div>
+          {prioritizedFindings.length ? (
+            <div className="grid gap-4 lg:grid-cols-3">
+              {prioritizedFindings.map((finding, index) => (
+                <article key={`${finding.text}-${index}`} className="rounded-container border border-slate-200 bg-white p-4">
+                  <p className="text-caption font-bold text-slate-500">Finding {index + 1}</p>
+                  <p className="mt-2 text-body font-bold text-slate-900">{finding.text}</p>
+                  {finding.interpretation && <p className="mt-2 text-caption text-slate-600">{finding.interpretation}</p>}
+                  <p className="mt-3 text-caption text-slate-700">
+                    <strong>{finding.actionability === 'diagnostic_question' ? 'Verify:' : 'Suggested next step:'}</strong>{' '}
+                    {finding.recommendedNextStep || 'Continue monitoring; no evidence-backed intervention is recommended.'}
+                  </p>
+                  <p className="mt-2 text-caption text-slate-500">Evidence: {finding.evidenceGrade || 'Not graded'}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <EmptyState>No evidence-supported priority problems were identified this week. This is not proof that psychosocial risk is absent. Check the coverage and evidence details below.</EmptyState>
+          )}
+        </section>
+      )}
+
+      <section className="app-panel mb-6" aria-label="Historical work-pattern trends">
+        <div className="app-section-heading">
+          <div>
+            <h2>How work patterns have changed</h2>
+            <p>Historical measurements from saved weekly reports. Missing measurements remain gaps, never zeros.</p>
+          </div>
+          <div className="flex flex-wrap gap-2" aria-label="Historical time range">
+            {[[1, '1 month'], [3, '3 months'], [6, '6 months'], [12, '1 year']].map(([months, label]) => (
+              <button key={months} type="button" onClick={() => setHistoryPeriod(months)}
+                aria-pressed={historyPeriod === months}
+                className={`rounded-control border px-3 py-2 text-caption font-bold ${historyPeriod === months ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {historyError && <p className="text-caption text-amber-800">{historyError}</p>}
+        {historicalSeries.length > 1 ? (
+          <div className="grid gap-5 lg:grid-cols-3">
+            {[
+              ['meetingHours', 'Meeting hours', '#2563eb'],
+              ['afterHours', 'After-hours activity', '#d97706'],
+              ['focusTime', 'Uninterrupted time', '#059669'],
+            ].map(([key, title, stroke]) => (
+              <div key={key} className="rounded-container border border-slate-200 p-4">
+                <h3 className="text-body font-bold text-slate-900">{title}</h3>
+                <div className="mt-3 h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={historicalSeries}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey={key} stroke={stroke} strokeWidth={2}
+                        connectNulls={false} dot={{ r: 3 }} name={title} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : <EmptyState>Not enough saved historical measurements for this range. Charts will grow as weekly reports accumulate.</EmptyState>}
       </section>
 
       {headlineMetrics.length > 0 && (
