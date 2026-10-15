@@ -546,42 +546,46 @@ export default function LatestBrief() {
                     />
                     <Tooltip />
                     <Legend />
-                    {trendSeries.some((series) => series.key === 'meeting_hours') && (\n{trendSeries.some((series) => series.key === 'focus_time') && (\n{trendSeries.some((series) => series.key === 'after_hours') && (\n{trendSeries.some((series) => series.key === 'fragmentation') && (\n<Line
-                      yAxisId="hours"
-                      type="monotone"
-                      dataKey="meetingHours"
-                      name="Meeting hours/person"
-                      stroke="#dc2626"
-                      strokeWidth={2}
-                      connectNulls
-                    />\n                     )}
-                    <Line
-                      yAxisId="hours"
-                      type="monotone"
-                      dataKey="focusHours"
-                      name="Uninterrupted hours/person"
-                      stroke="#059669"
-                      strokeWidth={2}
-                      connectNulls
-                    />\n                     )}
-                    <Line
-                      yAxisId="index"
-                      type="monotone"
-                      dataKey="afterHoursPct"
-                      name="After-hours messaging %"
-                      stroke="#d97706"
-                      strokeWidth={2}
-                      connectNulls
-                    />\n                     )}
-                    <Line
-                      yAxisId="index"
-                      type="monotone"
-                      dataKey="fragmentation"
-                      name="Fragmentation /100"
-                      stroke="#6366f1"
-                      strokeWidth={2}
-                      connectNulls
-                    />\n                     )}
+                    {trendSeries.some((series) => series.key === 'meeting_hours') && (
+                      <Line
+                        yAxisId="hours"
+                        type="monotone"
+                        dataKey="meetingHours"
+                        name="Meeting hours/person"
+                        stroke="#dc2626"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {trendSeries.some((series) => series.key === 'focus_time') && (
+                      <Line
+                        yAxisId="hours"
+                        type="monotone"
+                        dataKey="focusHours"
+                        name="Uninterrupted hours/person"
+                        stroke="#059669"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {trendSeries.some((series) => series.key === 'after_hours') && (
+                      <Line
+                        yAxisId="index"
+                        type="monotone"
+                        dataKey="afterHoursPct"
+                        name="After-hours messaging %"
+                        stroke="#d97706"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {trendSeries.some((series) => series.key === 'fragmentation') && (
+                      <Line
+                        yAxisId="index"
+                        type="monotone"
+                        dataKey="fragmentation"
+                        name="Fragmentation /100"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
