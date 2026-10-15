@@ -230,7 +230,14 @@ export default function Overview() {
       {calibrationStatus === null && (
         <div className="app-panel mb-4 text-caption text-amber-800">Calibration status unavailable. Data readiness cannot be confirmed right now.</div>
       )}
-      {calibrationStatus?.isInCalibration ? (
+      {calibrationStatus?.readinessStatus === 'setup_incomplete' && (
+        <section className="app-panel mb-4 border-amber-200 bg-amber-50 text-amber-950">
+          <h2 className="font-bold">Measurement setup needs attention</h2>
+          <p className="mt-1 text-caption">A connected account does not guarantee usable reporting. Check source permissions, employee mapping and incoming events before interpreting organizational trends.</p>
+          <Link to="/app/signal-coverage" className="mt-2 inline-block font-semibold underline">Review data coverage</Link>
+        </section>
+      )}
+      {calibrationStatus?.isInCalibration && calibrationStatus?.readinessStatus !== 'setup_incomplete' ? (
         <CalibrationProgress orgId={orgId} />
       ) : (
         <section className="app-dashboard-section">
