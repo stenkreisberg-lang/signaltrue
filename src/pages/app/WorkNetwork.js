@@ -589,28 +589,49 @@ export default function WorkNetwork() {
                 {network.period.days}-day window · {readiness.score}/100 data readiness
               </div>
             </div>
-            <div className="mt-5 flex flex-wrap gap-4 text-caption font-semibold text-slate-600">
-              <span>
-                <span className="mr-2 inline-block w-8 border-t-2 border-dashed border-slate-400" />
-                Formal
-              </span>
-              <span>
-                <span className="mr-2 inline-block h-1 w-8 rounded bg-teal-700" />
-                Aligned observed
-              </span>
-              <span>
-                <span className="mr-2 inline-block h-1 w-8 rounded bg-amber-600" />
-                Unmapped observed
-              </span>
-            </div>
-            <div className="mt-4">
-              <NetworkMap
-                nodes={network.nodes}
-                formalEdges={network.formalEdges}
-                actualEdges={network.actualEdges}
-                ready={readiness.ready}
-              />
-            </div>
+            {network.actualEdges?.length > 0 ? (
+              <>
+                <div className="mt-5 flex flex-wrap gap-4 text-caption font-semibold text-slate-600">
+                  <span>
+                    <span className="mr-2 inline-block w-8 border-t-2 border-dashed border-slate-400" />
+                    Formal
+                  </span>
+                  <span>
+                    <span className="mr-2 inline-block h-1 w-8 rounded bg-teal-700" />
+                    Aligned observed
+                  </span>
+                  <span>
+                    <span className="mr-2 inline-block h-1 w-8 rounded bg-amber-600" />
+                    Unmapped observed
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <NetworkMap
+                    nodes={network.nodes}
+                    formalEdges={network.formalEdges}
+                    actualEdges={network.actualEdges}
+                    ready={readiness.ready}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="mt-5 rounded-container border border-dashed border-amber-300 bg-amber-50/60 p-5">
+                <p className="text-caption font-bold uppercase tracking-wider text-amber-800">
+                  Coverage diagnostic
+                </p>
+                <p className="mt-2 text-caption leading-6 text-amber-950">
+                  The network is intentionally not rendered as a giant empty graph. Use the evidence
+                  above to resolve the limiting condition first.
+                </p>
+                {readiness.reasons?.length > 0 && (
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-caption text-amber-950">
+                    {readiness.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </section>
 
           {readiness.ready && (

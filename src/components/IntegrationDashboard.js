@@ -131,6 +131,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   const [setup, setSetup] = useState(null);
   const [healthIssues, setHealthIssues] = useState([]);
   const [microsoftCompanyAccess, setMicrosoftCompanyAccess] = useState(null);
+  const [microsoftDiagnostics, setMicrosoftDiagnostics] = useState(null);
   const [verifyingMicrosoft, setVerifyingMicrosoft] = useState(false);
   const [notice, setNotice] = useState(null);
   const [googleWorkspace, setGoogleWorkspace] = useState(null);
@@ -154,6 +155,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       setSetup(data.setup || null);
       setHealthIssues(data.healthIssues || []);
       setMicrosoftCompanyAccess(data.microsoftCompanyAccess || null);
+      setMicrosoftDiagnostics(data.microsoftDiagnostics || null);
       setIntegrations(
         (data.integrations || []).map((integration) => ({
           ...integration,
@@ -513,6 +515,12 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           </div>
         </div>
       )}
+      {microsoftDiagnostics && (
+        <MicrosoftDiagnosticsPanel
+          diagnostics={microsoftDiagnostics}
+          onRefresh={fetchIntegrations}
+        />
+      )}
       {googleWorkspace && (
         <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -816,6 +824,120 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           onDisconnect={() => disconnectIntegration(showConnectModal)}
         />
       )}
+    </div>
+  );
+}
+
+function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
+  const sources = Object.values(diagnostics.sources || {});
+  const date = (value) => (value ? new Date(value).toLocaleString() : 'Not recorded');
+  const number = (value) => Number(value || 0).toLocaleString();
+  return (
+    <section className="rounded-container border border-slate-200 bg-white p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="app-eyebrow">Microsoft 365 ingestion audit</p>
+          <h3 className="mt-1 text-lead font-bold text-slate-950">
+            Where Outlook and Teams data stands
+          </h3>
+          <p className="mt-2 max-w-3xl text-caption leading-6 text-slate-600">
+            This audit separates tenant consent, source sync, event arrival, and employee mapping. A
+            green connection alone does not mean the source is report-ready.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="rounded-control border border-slate-300 bg-white px-3 py-2 text-caption font-semibold text-slate-700"
+        >
+          Recheck status
+        </button>
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {sources.map((source) => (
+          <article key={source.source} className="rounded-container border border-slate-200 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-slate-900">{source.label}</h4>
+                <p className="mt-1 text-caption text-slate-500">
+                  Status: {String(source.status).replace(/_/g, ' ')}
+                </p>
+              </div>
+              <span
+                className={`rounded-full px-2.5 py-1 text-caption font-bold ${source.status === 'connected' ? 'bg-teal-50 text-teal-800' : source.status === 'error' ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800'}`}
+              >
+                {source.status}
+              </span>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3 text-caption">
+              <DiagnosticStat
+                label="Last successful sync"
+                value={date(source.lastSuccessfulSync)}
+              />
+              <DiagnosticStat
+                label="Latest event received"
+                value={date(source.latestEventReceived)}
+              />
+              <DiagnosticStat
+                label="Fetched / accepted / rejected"
+                value={`${number(source.fetched)} / ${number(source.accepted)} / ${number(source.rejected)}`}
+              />
+              <DiagnosticStat
+                label="Mapped people"
+                value={`${number(source.mappedUsers)} / ${number(source.totalUsers)}`}
+              />
+              {source.source === 'teams' && (
+                <DiagnosticStat
+                  label="Teams read / skipped"
+                  value={`${number(source.teamsRead)} / ${number(source.teamsSkipped)}`}
+                />
+              )}
+              {source.source === 'outlook' && (
+                <DiagnosticStat
+                  label="Mailboxes unavailable / failed"
+                  value={`${number(source.unavailableUsers)} / ${number(source.failedUsers)}`}
+                />
+              )}
+            </dl>
+            {source.missingRequirements?.length > 0 && (
+              <div className="mt-4 rounded-control bg-amber-50 p-3 text-caption text-amber-950">
+                <strong>Missing or blocked:</strong>
+                <ul className="mt-1 list-disc space-y-1 pl-5">
+                  {source.missingRequirements.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="mt-4 border-l-4 border-teal-600 pl-3 text-caption leading-5 text-slate-700">
+              <strong>Next action:</strong> {source.nextAction}
+            </p>
+            {source.lastSyncMessage && (
+              <p className="mt-2 text-caption text-slate-500">
+                Latest sync note: {source.lastSyncMessage}
+              </p>
+            )}
+          </article>
+        ))}
+      </div>
+      <details className="mt-4 rounded-control border border-slate-200 p-3 text-caption">
+        <summary className="cursor-pointer font-semibold text-slate-700">
+          Permissions inspected
+        </summary>
+        <p className="mt-2 text-slate-600">
+          Granted application roles:{' '}
+          {diagnostics.grantedRoles?.length ? diagnostics.grantedRoles.join(', ') : 'none recorded'}
+        </p>
+      </details>
+    </section>
+  );
+}
+
+function DiagnosticStat({ label, value }) {
+  return (
+    <div className="rounded-control bg-slate-50 p-3">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="mt-1 font-semibold text-slate-900">{value}</dd>
     </div>
   );
 }
