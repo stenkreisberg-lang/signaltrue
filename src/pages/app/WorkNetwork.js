@@ -70,6 +70,44 @@ function LeadershipQuestions({ questions = [] }) {
   );
 }
 
+function CollaborationMatrix({ edges = [] }) {
+  if (!edges.length) return null;
+  const names = [...new Set(edges.flatMap((edge) => [edge.teamAName, edge.teamBName]).filter(Boolean))].sort();
+  if (names.length < 2) return null;
+  const displayed = names.slice(0, 12);
+  const maxHours = Math.max(1, ...edges.map((edge) => Number(edge.meetingHours) || 0));
+  return (
+    <section className="app-panel">
+      <h2 className="text-lead font-bold text-slate-900">Cross-team meeting matrix</h2>
+      <p className="mt-2 text-caption text-slate-600">
+        Reportable team-pair meeting hours during this period. Blank cells mean no eligible pair
+        was returned, not proof that teams do not work together.
+      </p>
+      <div className="mt-4 overflow-x-auto">
+        <table className="border-collapse text-caption">
+          <thead><tr><th className="p-2 text-left">Team</th>{displayed.map((name) => <th key={name} className="p-2 text-left">{name}</th>)}</tr></thead>
+          <tbody>{displayed.map((row) => (
+            <tr key={row}>
+              <th className="border-t border-slate-200 p-2 text-left">{row}</th>
+              {displayed.map((col) => {
+                const edge = edges.find((item) =>
+                  (item.teamAName === row && item.teamBName === col) ||
+                  (item.teamAName === col && item.teamBName === row));
+                const value = edge?.meetingHours;
+                return <td key={col} className="border-t border-slate-200 p-1">
+                  {row === col ? <span className="block bg-slate-100 p-2 text-center">—</span> :
+                    value == null ? <span className="block p-2 text-center text-slate-400">·</span> :
+                    <span className="block rounded p-2 text-center font-semibold text-slate-900" style={{ backgroundColor: `rgba(13,148,136,${0.12 + 0.42 * (Number(value) / maxHours)})` }}>{value}h</span>}
+                </td>;
+              })}</tr>
+          ))}</tbody>
+        </table>
+      </div>
+      {names.length > displayed.length && <p className="mt-2 text-caption text-slate-600">Showing the first 12 eligible teams alphabetically.</p>}
+    </section>
+  );
+}
+
 function SourceCoveragePanel({ coverage }) {
   if (!coverage?.items?.length) return null;
   return (
@@ -493,6 +531,7 @@ export default function WorkNetwork() {
           <SourceCoveragePanel coverage={network.sourceCoverage || readiness.sourceCoverage} />
 
           {readiness.ready && <TeamDemandTable teams={network.teamDemand || []} />}
+          {readiness.ready && <CollaborationMatrix edges={network.actualEdges || []} />}
 
           <section className="app-panel">
             <div className="flex flex-wrap items-start justify-between gap-4">
