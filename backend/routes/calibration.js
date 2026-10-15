@@ -24,21 +24,34 @@ router.get('/status/:orgId', authenticateToken, requireOrganizationAccess(), asy
     const setup = await getOrganizationReadiness(org);
 
     // Calculate calibration day if in calibration
-    let currentDay = calibration.calibrationDay;
+    let currentDay = calibration.calibrationDay ?? 0;
     const effectiveStart = setup.activity.firstEventAt || calibration.calibrationStartDate;
     if (calibration.isInCalibration && effectiveStart && setup.readiness.reportingReady) {
       const daysSinceStart = Math.floor(
         (Date.now() - new Date(effectiveStart).getTime()) / (1000 * 60 * 60 * 24)
       );
-      currentDay = Math.min(daysSinceStart, 30);
-    } else if (!setup.readiness.reportingReady) {
-      currentDay = 0;
+      currentDay = Math.max(0, Math.min(daysSinceStart, 30));
     }
 
+    // Source readiness and historical baseline readiness are separate states.
+    // A completed baseline must not appear to restart when a connector needs attention.
+    const reportingReady = Boolean(setup.readiness.reportingReady);
+    const calibrationComplete = !calibration.isInCalibration && Boolean(calibration.featuresUnlocked);
+    const readinessStatus = !reportingReady
+      ? 'setup_incomplete'
+      : calibrationComplete
+        ? 'ready'
+        : calibration.isInCalibration
+          ? 'calibrating'
+          : 'not_started';
+
     res.json({
+      readinessStatus,
+      reportingReady,
+      calibrationComplete,
       isInCalibration: calibration.isInCalibration,
       calibrationDay: currentDay,
-      calibrationProgress: Math.floor((currentDay / 30) * 100),
+      calibrationProgress: Math.max(0, Math.min(100, Math.floor((currentDay / 30) * 100))),
       calibrationConfidence: calibration.calibrationConfidence,
       calibrationStartDate: effectiveStart,
       calibrationEndDate: calibration.calibrationEndDate,

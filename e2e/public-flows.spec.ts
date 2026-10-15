@@ -50,7 +50,7 @@ test('primary homepage navigation and CTA paths work', async ({ page }) => {
 
   await page.goto('/');
   await page
-    .getByRole('link', { name: /View the fictional sample review/i })
+    .getByRole('link', { name: /See the sample report/i })
     .first()
     .click();
   await expect(page).toHaveURL(/\/sample-report$/);
@@ -63,21 +63,18 @@ test('verification-led homepage keeps its primary action above the mobile fold',
   await page.goto('/');
 
   const heading = page.getByRole('heading', {
-    name: 'Can you show whether the control changed the work?',
+    name: 'Your psychosocial assessment found the risk. Did the control actually change the work?',
   });
   await expect(heading).toBeVisible();
-  await expect(page.getByText(/demand may simply have moved elsewhere/i)).toBeVisible();
-  await expect(page.getByText(/check whether the change lasted/i)).toBeVisible();
+  await expect(page.getByText(/No diagnosis\. No individual productivity scores/i)).toBeVisible();
 
   const lineCount = await heading.evaluate((element) => {
     const styles = window.getComputedStyle(element);
     return element.getBoundingClientRect().height / Number.parseFloat(styles.lineHeight);
   });
-  expect(lineCount).toBeLessThanOrEqual(3.1);
+  expect(lineCount).toBeLessThanOrEqual(4.1);
 
-  const primaryAction = page
-    .getByRole('link', { name: /Check one control for free/i })
-    .first();
+  const primaryAction = page.getByRole('link', { name: /Get a free preview/i }).first();
   const actionBox = await primaryAction.boundingBox();
   expect(actionBox).not.toBeNull();
   expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(812);
@@ -143,7 +140,7 @@ test('visibility-review form confirms only after a successful API response', asy
   await page.getByLabel('Name').fill('Synthetic Test User');
   await page.getByLabel('Work email').fill('synthetic@test.example');
   await page.getByLabel('Company').fill('Synthetic Test Organisation');
-  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
+  await page.getByRole('button', { name: /Get a free preview/i }).click();
   await expect(page.getByTestId('lead-confirmation')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Choose a meeting time' })).toBeVisible();
 });
@@ -163,7 +160,7 @@ test('visibility-review form preserves values and exposes a server failure', asy
   await page.getByLabel('Name').fill('Synthetic Failure User');
   await page.getByLabel('Work email').fill('synthetic@test.example');
   await page.getByLabel('Company').fill('Synthetic Test Organisation');
-  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
+  await page.getByRole('button', { name: /Get a free preview/i }).click();
 
   await expect(page.getByRole('alert')).toContainText('Synthetic server failure');
   await expect(page.getByLabel('Name')).toHaveValue('Synthetic Failure User');

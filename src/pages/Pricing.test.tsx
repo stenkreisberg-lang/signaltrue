@@ -21,25 +21,20 @@ beforeEach(() => vi.clearAllMocks());
 
 test('routes paid-plan interest through the review form with plan context', () => {
   renderPricing();
-  const link = screen.getByRole('link', { name: 'Discuss Team Signals' });
+  const link = screen.getAllByRole('link', { name: 'Get the free preview' })[0];
 
-  expect(link).toHaveAttribute('href', '/contact?intent=pricing&plan=visibility');
+  expect(link).toHaveAttribute('href', '/contact?intent=free-preview');
   expect(screen.queryByRole('link', { name: /create account/i })).not.toBeInTheDocument();
 
   fireEvent.click(link);
-  expect(trackFunnelEvent).toHaveBeenCalledWith('pricing_plan_click', {
-    cta_location: 'pricing_visibility',
-    plan: 'visibility',
-  });
-  expect(trackFunnelEvent).toHaveBeenCalledWith(
-    'primary_cta_click',
-    expect.objectContaining({ cta_location: 'pricing_visibility', plan: 'visibility' })
-  );
+  expect(trackFunnelEvent).not.toHaveBeenCalled();
 });
 
 test('publishes the entry price and includes the onboarding scan in Team Signals', () => {
   renderPricing();
-  expect(screen.getByText('€299')).toBeInTheDocument();
-  expect(screen.getByText('First-month onboarding scan')).toBeInTheDocument();
+  expect(screen.getByText('$0 to start')).toBeInTheDocument();
+  expect(
+    screen.getByText('No employee data, integrations, payment or commitment')
+  ).toBeInTheDocument();
   expect(screen.queryByText('Custom pilot price')).not.toBeInTheDocument();
 });

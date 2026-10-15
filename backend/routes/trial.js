@@ -253,15 +253,18 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
         .lean(),
     ]);
 
+    // Low-confidence observations are hypotheses, not qualified executive priorities.
+    const unqualifiedSignals = signals.filter((signal) => !['High', 'Medium'].includes(signal.confidence));
+    const qualifiedSignals = signals.filter((signal) => ['High', 'Medium'].includes(signal.confidence));
     const severityRank = { Critical: 3, Risk: 2, Informational: 1 };
-    signals.sort(
+    qualifiedSignals.sort(
       (a, b) =>
         (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0) ||
         new Date(b.lastUpdated || b.createdAt) - new Date(a.lastUpdated || a.createdAt)
     );
 
-    const criticalSignals = signals.filter((signal) => signal.severity === 'Critical');
-    const reviewSignals = signals.filter((signal) => signal.severity === 'Risk');
+    const criticalSignals = qualifiedSignals.filter((signal) => signal.severity === 'Critical');
+    const reviewSignals = qualifiedSignals.filter((signal) => signal.severity === 'Risk');
     const currentStatus =
       criticalSignals.length > 0
         ? 'Action required'
@@ -269,7 +272,7 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
           ? 'Review'
           : 'No qualified priority';
 
-    const topRisks = signals.slice(0, 5).map((signal) => ({
+    const topRisks = qualifiedSignals.slice(0, 5).map((signal) => ({
       id: signal._id,
       title: signal.title,
       teamName: signal.teamId?.name || 'Team',
@@ -299,11 +302,11 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
       (item) => item.consultation?.status === 'completed'
     );
 
-    const recentSignalCount = signals.filter((s) => {
+    const recentSignalCount = qualifiedSignals.filter((s) => {
       const age = Date.now() - new Date(s.createdAt).getTime();
       return age < 7 * 24 * 60 * 60 * 1000;
     }).length;
-    const olderSignalCount = signals.filter((s) => {
+    const olderSignalCount = qualifiedSignals.filter((s) => {
       const age = Date.now() - new Date(s.createdAt).getTime();
       return age >= 7 * 24 * 60 * 60 * 1000 && age < 14 * 24 * 60 * 60 * 1000;
     }).length;
@@ -327,7 +330,7 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
         decision: `${criticalSignals.length} critical team-level pattern${criticalSignals.length === 1 ? ' requires' : 's require'} a named operational owner and worker consultation.`,
       });
     }
-    if (signals.length > 0 && activeControls.length === 0) {
+    if (qualifiedSignals.length > 0 && activeControls.length === 0) {
       decisionPrompts.push({
         title: 'Require a documented control decision',
         decision:
@@ -341,12 +344,13 @@ router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
       trendDirection,
       decisionPrompts,
       evidenceSummary: {
-        openQualifiedSignals: signals.length,
+        unqualifiedObservations: unqualifiedSignals.length,
+        openQualifiedSignals: qualifiedSignals.length,
         criticalSignals: criticalSignals.length,
         teamsRequiringReview: new Set(
-          signals.map((signal) => String(signal.teamId?._id || signal.teamId))
+          qualifiedSignals.map((signal) => String(signal.teamId?._id || signal.teamId))
         ).size,
-        highConfidenceSignals: signals.filter((signal) => signal.confidence === 'High').length,
+        highConfidenceSignals: qualifiedSignals.filter((signal) => signal.confidence === 'High').length,
       },
       controlSummary: {
         active: activeControls.length,

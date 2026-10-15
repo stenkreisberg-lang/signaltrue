@@ -79,10 +79,10 @@ test('primary CTA completes the accepted-lead funnel exactly once', async ({ pag
 
   await page.goto('/');
   const primaryCta = page.locator('[data-primary-cta="true"]:visible').first();
-  await expect(primaryCta).toHaveAttribute('href', '/contact?intent=demo');
+  await expect(primaryCta).toHaveAttribute('href', '/contact?intent=free-preview');
   await primaryCta.click();
 
-  await expect(page).toHaveURL(/\/contact\?intent=demo$/);
+  await expect(page).toHaveURL(/\/contact\?intent=free-preview$/);
   await expect(page.locator('#commercial-lead-form')).toBeVisible();
   await expect(page.getByLabel('Work email')).toBeVisible();
   await expect(page.getByLabel('Company')).toBeVisible();
@@ -90,13 +90,13 @@ test('primary CTA completes the accepted-lead funnel exactly once', async ({ pag
   await expect(page.getByLabel('Role')).toHaveCount(0);
   await expect(page.getByLabel('Message')).toHaveCount(0);
 
-  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
+  await page.getByRole('button', { name: /Get a free preview/i }).click();
   await expect(page.getByText('Enter your work email.')).toBeVisible();
 
   await page.getByLabel('Work email').fill('synthetic@test.example');
   await page.getByLabel('Company').fill('Synthetic Test Organisation');
   await page.getByLabel('Name').fill('Synthetic Test User');
-  await page.getByRole('button', { name: /Book a 20-minute visibility review/i }).click();
+  await page.getByRole('button', { name: /Get a free preview/i }).click();
 
   await expect(page.getByTestId('lead-confirmation')).toBeVisible();
   const booking = page.getByRole('link', { name: 'Choose a meeting time' });
@@ -125,7 +125,10 @@ test('primary CTA completes the accepted-lead funnel exactly once', async ({ pag
   expect(count('page_view')).toBe(2);
 
   const pageViews = (events as CapturedEvent[]).filter((event) => event.eventName === 'page_view');
-  expect(pageViews.map((event) => event.params.page_path)).toEqual(['/', '/contact?intent=demo']);
+  expect(pageViews.map((event) => event.params.page_path)).toEqual([
+    '/',
+    '/contact?intent=free-preview',
+  ]);
   for (const event of pageViews) {
     expect(event.params.page_title).toEqual(expect.any(String));
     expect(String(event.params.page_title).length).toBeGreaterThan(0);

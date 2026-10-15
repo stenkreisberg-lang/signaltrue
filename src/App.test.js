@@ -52,6 +52,8 @@ test('renders the SignalTrue homepage with the approved moving customer band', a
   }));
   render(<App />);
   expect((await screen.findAllByText(/SignalTrue/i)).length).toBeGreaterThan(0);
-  expect(await screen.findByText('Measuring work health at')).toBeInTheDocument();
+  expect(
+    await screen.findByText('Organisations where SignalTrue has been used or evaluated')
+  ).toBeInTheDocument();
   expect(document.querySelector('.customer-track')).toBeInTheDocument();
 });

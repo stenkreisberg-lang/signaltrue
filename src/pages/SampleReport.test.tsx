@@ -28,18 +28,18 @@ test('tracks printing and offers a closing commercial action', () => {
     </MemoryRouter>
   );
 
-  fireEvent.click(screen.getByRole('button', { name: /Print or save PDF/i }));
+  fireEvent.click(screen.getByRole('button', { name: /Print sample/i }));
   expect(trackFunnelEvent).toHaveBeenCalledWith('sample_report_print', {
     cta_location: 'sample_report_hero',
   });
   expect(print).toHaveBeenCalledTimes(1);
   const closingSection = screen
-    .getByText(/Apply the same review discipline to your workplace/i)
+    .getByText(/Have one real control you need to review/i)
     .closest('section')!;
   const closingCta = within(closingSection).getByRole('link', {
-    name: /Book a 20-minute visibility review/i,
+    name: /Get a free preview/i,
   });
-  expect(closingCta).toHaveAttribute('href', '/contact?intent=demo');
-  expect(closingCta).toHaveAttribute('data-cta-location', 'sample_report_bottom');
+  expect(closingCta).toHaveAttribute('href', '/contact?intent=free-preview');
+  expect(closingCta).toHaveAttribute('data-cta-location', 'sample_report_final');
   print.mockRestore();
 });

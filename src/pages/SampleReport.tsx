@@ -67,7 +67,10 @@ export default function SampleReport() {
               </PrimaryCommercialCTA>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => {
+                  trackFunnelEvent('sample_report_print', { cta_location: 'sample_report_hero' });
+                  window.print();
+                }}
                 className="inline-flex min-h-12 items-center justify-center rounded-control border border-[#CBD5E1] bg-white px-6 py-3 font-bold text-[#0F172A]"
               >
                 Print sample <Printer className="ml-2 h-4 w-4" />
@@ -180,8 +183,9 @@ export default function SampleReport() {
                 </h3>
                 <p className="mt-3 leading-7 text-[#475569]">
                   Chat coordination rose after the meeting changes and remained elevated during the
-                  sustainability period. This does not prove that meetings caused the increase. It
-                  identifies a question that should be tested with workers and operational context.
+                  sustainability period. This does not prove that the meeting change caused the
+                  increase. It identifies a question that should be tested with workers and
+                  operational context.
                 </p>
               </div>
 

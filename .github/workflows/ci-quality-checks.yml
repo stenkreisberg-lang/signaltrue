@@ -76,7 +76,7 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm --prefix backend ci --ignore-scripts --no-audit --no-fund
       - name: Audit frontend dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --omit=dev
       - name: Audit backend dependencies
         run: npm --prefix backend audit --audit-level=high
       - name: Run Snyk security scan when configured

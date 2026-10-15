@@ -14,8 +14,8 @@ const SampleReportSection = () => (
           </h2>
           <p className="mb-6 text-body text-[#475569]">
             The sample follows one psychosocial control from intended outcome through baseline,
-            after-period, sustainability, possible workload migration, worker evidence and the
-            final review decision. All organisations and numbers in the example are fictional.
+            after-period, sustainability, possible workload migration, worker evidence and the final
+            review decision. All organisations and numbers in the example are fictional.
           </p>
           <SampleReportCTA
             ctaLocation="homepage_report_section"
