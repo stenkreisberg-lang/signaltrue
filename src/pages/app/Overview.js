@@ -36,7 +36,7 @@ export default function Overview() {
           const response = await api.get(`/calibration/status/${context.orgId}`);
           setCalibrationStatus(response.data);
         } catch {
-          setCalibrationStatus({ isInCalibration: false });
+          setCalibrationStatus(null);
         }
       } catch (loadError) {
         setError(loadError.message);
@@ -165,7 +165,7 @@ export default function Overview() {
                   Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  User mapping: {latestBrief.coverage?.mappingCoveragePct || 0}%
+                  User mapping: {latestBrief.coverage?.mappingCoveragePct ?? 'Unknown'}%
                 </span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
                   {latestBrief.reportMode === 'full' ? 'Full report' : 'Setup report'}
@@ -206,7 +206,7 @@ export default function Overview() {
                           </p>
                         ) : (
                           <p className="text-lead font-extrabold text-slate-900">
-                            {value || 'Not measured'}
+                            {value ?? 'Not measured'}
                           </p>
                         )}
                         <p className="mt-1 text-caption font-bold uppercase tracking-wide text-slate-500">
@@ -227,6 +227,9 @@ export default function Overview() {
         </section>
       )}
 
+      {calibrationStatus === null && (
+        <div className="app-panel mb-4 text-caption text-amber-800">Calibration status unavailable. Data readiness cannot be confirmed right now.</div>
+      )}
       {calibrationStatus?.isInCalibration ? (
         <CalibrationProgress orgId={orgId} />
       ) : (
