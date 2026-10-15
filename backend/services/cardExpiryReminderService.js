@@ -26,7 +26,7 @@ const emailTransporter =
 /**
  * Check for expiring cards and send reminders
  * Cards expiring within the next 30 days will trigger a reminder
- * Only sends one reminder per card (tracked via expiryReminderSent flag)
+ * Only sends one reminder per card (tracked via expiryReminderSent timestamp)
  */
 export const checkExpiringCards = async () => {
   try {
@@ -50,13 +50,17 @@ export const checkExpiringCards = async () => {
     const expiringOrgs = await Organization.find({
       'paymentMethod.expiryMonth': targetMonth,
       'paymentMethod.expiryYear': targetYear,
-      'paymentMethod.expiryReminderSent': { $ne: true },
+      // The schema stores the reminder as a Date. Do not compare it to a
+      // boolean: Mongoose casts query values against the Date path and would
+      // make the daily scheduler fail before it can inspect any cards.
+      'paymentMethod.expiryReminderSent': { $exists: false },
     }).lean();
 
     console.log(
       `[CardExpiryReminder] Found ${expiringOrgs.length} organizations with expiring cards`
     );
 
+    let reminded = 0;
     for (const org of expiringOrgs) {
       try {
         // Find the org admin to send the reminder
@@ -111,8 +115,9 @@ export const checkExpiringCards = async () => {
         // Mark reminder as sent
         await Organization.updateOne(
           { _id: org._id },
-          { $set: { 'paymentMethod.expiryReminderSent': true } }
+          { $set: { 'paymentMethod.expiryReminderSent': new Date() } }
         );
+        reminded++;
 
         console.log(
           `[CardExpiryReminder] Sent reminder to ${org.name} (${adminEmails.join(', ')})`
@@ -127,7 +132,7 @@ export const checkExpiringCards = async () => {
 
     return {
       checked: expiringOrgs.length,
-      reminded: expiringOrgs.length,
+      reminded,
     };
   } catch (error) {
     console.error('[CardExpiryReminder] Error checking expiring cards:', error);
@@ -143,7 +148,7 @@ export const resetExpiryReminder = async (orgId) => {
   try {
     await Organization.updateOne(
       { _id: orgId },
-      { $set: { 'paymentMethod.expiryReminderSent': false } }
+      { $unset: { 'paymentMethod.expiryReminderSent': 1 } }
     );
   } catch (error) {
     console.error('[CardExpiryReminder] Error resetting reminder flag:', error);

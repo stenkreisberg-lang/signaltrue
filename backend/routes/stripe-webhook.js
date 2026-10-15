@@ -162,7 +162,7 @@ router.post('/stripe/webhook', async (req, res) => {
                       'paymentMethod.brand': pm.card.brand,
                       'paymentMethod.expiryMonth': pm.card.exp_month,
                       'paymentMethod.expiryYear': pm.card.exp_year,
-                      'paymentMethod.expiryReminderSent': false, // Reset when card updated
+                      'paymentMethod.expiryReminderSent': undefined, // Reset when card updated
                     },
                   }
                 );
@@ -197,7 +197,7 @@ router.post('/stripe/webhook', async (req, res) => {
                   'paymentMethod.brand': pm.card.brand,
                   'paymentMethod.expiryMonth': pm.card.exp_month,
                   'paymentMethod.expiryYear': pm.card.exp_year,
-                  'paymentMethod.expiryReminderSent': false, // Reset reminder when new card added
+                  'paymentMethod.expiryReminderSent': undefined, // Reset reminder when new card added
                 },
               }
             );
