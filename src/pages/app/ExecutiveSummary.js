@@ -125,6 +125,15 @@ export default function ExecutiveSummary() {
             </div>
           </section>
 
+          {summary.evidenceSummary?.unqualifiedObservations > 0 && (
+            <div className="app-panel mb-5 border-amber-200 bg-amber-50 text-caption text-amber-950">
+              {summary.evidenceSummary.unqualifiedObservations} open observation(s) have insufficient
+              evidence confidence for an executive priority. They are excluded from the priority
+              status and should be reviewed as data-quality or verification questions rather
+              than presented as confirmed critical findings.
+            </div>
+          )}
+
           <section className="app-dashboard-section">
             <div className="app-section-heading">
               <div>
