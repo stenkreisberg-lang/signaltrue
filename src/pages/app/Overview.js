@@ -249,7 +249,7 @@ export default function Overview() {
           </div>
           <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
         </section>
-      )}
+      ) : null}
     </AppShell>
   );
 }
