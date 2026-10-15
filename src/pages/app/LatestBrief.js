@@ -410,6 +410,15 @@ export default function LatestBrief() {
     );
   }
 
+  // Only render trend series supported by actual measurements. Null data is not zero.
+  const trendMetricReady = (key) => brief.metrics?.some((metric) => metric.key === key && metric.available === true);
+  const trendSeries = [
+    { key: 'meeting_hours', field: 'meetingHours' },
+    { key: 'focus_time', field: 'focusHours' },
+    { key: 'after_hours', field: 'afterHoursPct' },
+    { key: 'fragmentation', field: 'fragmentation' },
+  ].filter(({ key, field }) => trendMetricReady(key) && brief.trend?.some((point) => point[field] != null));
+
   const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
   const roleActions = brief.actions?.roleBased || {};
   const allRoleActions = Object.values(roleActions).flat().filter(Boolean);
@@ -512,12 +521,12 @@ export default function LatestBrief() {
         </section>
       ) : (
         <>
-          {brief.trend?.length > 1 && (
+          {brief.trend?.length > 1 && trendSeries.length > 0 && (
             <section className="app-panel mb-6">
               <div className="app-section-heading">
                 <div>
                   <h2>Six-week movement</h2>
-                  <p>Direct comparisons use this organization’s own measured history.</p>
+                  <p>Only eligible, measured series are shown. Gaps represent missing observations, not zero activity.</p>
                 </div>
               </div>
               <div className="h-80 w-full" aria-label="Six-week work-pattern trend chart">
@@ -537,7 +546,7 @@ export default function LatestBrief() {
                     />
                     <Tooltip />
                     <Legend />
-                    <Line
+                    {trendSeries.some((series) => series.key === 'meeting_hours') && (\n{trendSeries.some((series) => series.key === 'focus_time') && (\n{trendSeries.some((series) => series.key === 'after_hours') && (\n{trendSeries.some((series) => series.key === 'fragmentation') && (\n<Line
                       yAxisId="hours"
                       type="monotone"
                       dataKey="meetingHours"
@@ -545,7 +554,7 @@ export default function LatestBrief() {
                       stroke="#dc2626"
                       strokeWidth={2}
                       connectNulls
-                    />
+                    />\n                     )}
                     <Line
                       yAxisId="hours"
                       type="monotone"
@@ -554,7 +563,7 @@ export default function LatestBrief() {
                       stroke="#059669"
                       strokeWidth={2}
                       connectNulls
-                    />
+                    />\n                     )}
                     <Line
                       yAxisId="index"
                       type="monotone"
@@ -563,7 +572,7 @@ export default function LatestBrief() {
                       stroke="#d97706"
                       strokeWidth={2}
                       connectNulls
-                    />
+                    />\n                     )}
                     <Line
                       yAxisId="index"
                       type="monotone"
@@ -572,7 +581,7 @@ export default function LatestBrief() {
                       stroke="#6366f1"
                       strokeWidth={2}
                       connectNulls
-                    />
+                    />\n                     )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
