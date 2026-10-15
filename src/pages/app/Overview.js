@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import CalibrationProgress from '../../components/CalibrationProgress';
 import { Card, Spinner } from '../../components/UIComponents';
 import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
@@ -49,6 +50,9 @@ export default function Overview() {
   }, []);
 
   const primaryAction = latestBrief?.actions?.primary?.action ? latestBrief.actions.primary : null;
+  const reportingReady = calibrationStatus?.readinessStatus === 'ready' && latestBrief?.reportMode === 'full';
+  const meetingMetric = latestBrief?.metrics?.find((metric) => metric.key === 'meeting_hours');
+  const meetingTrend = meetingMetric?.available && reportingReady ? (latestBrief?.trend || []).filter((point) => point.meetingHours != null) : [];
 
   if (loading) {
     return (
@@ -104,11 +108,10 @@ export default function Overview() {
         <div className="app-dashboard-hero-main">
           <p className="app-dashboard-eyebrow">This week</p>
           <h1 className="app-dashboard-title">
-            {latestBrief?.status?.label || 'Nothing needs your attention yet'}
+            {reportingReady ? (latestBrief?.status?.label || 'Measured overview') : 'Evidence not ready for conclusions'}
           </h1>
           <p className="app-dashboard-copy">
-            {latestBrief?.status?.summary ||
-              'Once a full week of activity has been measured, the pattern that most needs review appears here.'}
+            {reportingReady ? (latestBrief?.status?.summary || 'Review the available measurements below.') : 'Check source coverage and baseline readiness before interpreting workplace patterns.'}
           </p>
           {latestBrief && (
             <Link
@@ -120,7 +123,7 @@ export default function Overview() {
           )}
         </div>
 
-        {primaryAction ? (
+        {reportingReady && primaryAction ? (
           <div className="app-dashboard-hero-side">
             <p className="app-dashboard-eyebrow">Recommended next step</p>
             <p className="text-caption font-semibold leading-6 text-slate-900">
@@ -165,13 +168,29 @@ export default function Overview() {
                   Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  User mapping: {latestBrief.coverage?.mappingCoveragePct ?? 'Unknown'}%
+                  User mapping: {latestBrief.coverage?.mappingCoveragePct == null ? 'Unknown' : `${latestBrief.coverage.mappingCoveragePct}%`}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
                   {latestBrief.reportMode === 'full' ? 'Full report' : 'Setup report'}
                 </span>
               </div>
             </div>
+            {meetingTrend.length >= 2 && (
+              <div className="mt-5 rounded-container border border-slate-200 bg-white p-4">
+                <h3 className="font-bold text-slate-900">Meeting hours per person</h3>
+                <p className="mb-3 text-caption text-slate-600">Measured periods only. Missing observations are not treated as zero.</p>
+                <div className="h-60" role="img" aria-label="Meeting hours per person across measured reporting periods">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={meetingTrend}>
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="meetingHours" name="Meeting hours/person" stroke="#2563eb" strokeWidth={2} dot />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
             {latestBrief.metrics?.length > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {latestBrief.metrics
