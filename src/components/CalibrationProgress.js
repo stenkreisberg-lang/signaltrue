@@ -49,7 +49,7 @@ const CalibrationProgress = ({ orgId }) => {
   if (loading) {
     return (
       <Card>
-        <div className="text-center py-8 text-slate-400">Loading calibration status...</div>
+        <div className="text-center py-8 text-slate-600">Loading calibration status...</div>
       </Card>
     );
   }
@@ -57,7 +57,7 @@ const CalibrationProgress = ({ orgId }) => {
   if (error) {
     return (
       <Card>
-        <div className="text-center py-8 text-red-400">Error: {error}</div>
+        <div className="text-center py-8 text-red-700">Error: {error}</div>
       </Card>
     );
   }
@@ -93,8 +93,8 @@ const CalibrationProgress = ({ orgId }) => {
         : '/app/signal-coverage';
     return (
       <Card>
-        <h3 className="text-lead font-semibold text-slate-100 mb-2">Finish data setup</h3>
-        <p className="text-slate-400 text-caption mb-5">
+        <h3 className="text-lead font-semibold text-slate-900 mb-2">Finish data setup</h3>
+        <p className="text-slate-600 text-caption mb-5">
           The 30-day baseline starts only after company-wide access, team structure, and mapped
           activity are ready.
         </p>
@@ -104,8 +104,8 @@ const CalibrationProgress = ({ orgId }) => {
               key={label}
               className={`rounded-control border px-3 py-2 text-caption ${
                 complete
-                  ? 'border-emerald-700 bg-emerald-900/20 text-emerald-300'
-                  : 'border-amber-700 bg-amber-900/20 text-amber-200'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
               }`}
             >
               {complete ? '✓' : '○'} {label}
@@ -125,7 +125,7 @@ const CalibrationProgress = ({ orgId }) => {
   // If calibration is complete, show unlock message
   if (!isInCalibration && featuresUnlocked) {
     return (
-      <Card className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border-emerald-700">
+      <Card className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border-emerald-200">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
             <svg
@@ -143,10 +143,10 @@ const CalibrationProgress = ({ orgId }) => {
             </svg>
           </div>
           <div>
-            <h3 className="text-lead font-semibold text-emerald-400 mb-2">
+            <h3 className="text-lead font-semibold text-emerald-800 mb-2">
               Baseline Calibration Complete
             </h3>
-            <p className="text-slate-300 mb-4">
+            <p className="text-slate-700 mb-4">
               Signal Intelligence is now unlocked. You can now observe deviations, view risk
               signals, and receive decision guidance.
             </p>
@@ -167,10 +167,10 @@ const CalibrationProgress = ({ orgId }) => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lead font-semibold text-slate-100 mb-1">
+            <h3 className="text-lead font-semibold text-slate-900 mb-1">
               Baseline Calibration Period
             </h3>
-            <p className="text-slate-400 text-caption">
+            <p className="text-slate-600 text-caption">
               Calibration day {calibrationDay} of 30 • {daysRemaining} days remaining
             </p>
           </div>
@@ -198,24 +198,24 @@ const CalibrationProgress = ({ orgId }) => {
       </div>
 
       <div className="mb-6">
-        <h4 className="text-caption font-semibold text-slate-300 mb-3">Data Sources Connected</h4>
+        <h4 className="text-caption font-semibold text-slate-700 mb-3">Data Sources Connected</h4>
         <div className="grid grid-cols-2 gap-3">
-          {dataSourcesConnected.map((source) => (
+          {(dataSourcesConnected || []).map((source) => (
             <div
               key={source.source}
               className={`p-3 rounded-control border ${
                 source.status === 'measuring'
-                  ? 'bg-emerald-900/20 border-emerald-700'
+                  ? 'bg-emerald-50 border-emerald-200'
                   : source.status === 'needs_admin'
-                    ? 'bg-amber-900/20 border-amber-700'
-                    : 'bg-slate-700/50 border-slate-600'
+                    ? 'bg-amber-50 border-amber-200'
+                    : 'bg-slate-100 border-slate-200'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-caption font-medium text-slate-300">
+                <span className="text-caption font-medium text-slate-700">
                   {source.source.replaceAll('-', ' ')}
                 </span>
-                <span className="text-caption text-slate-400">
+                <span className="text-caption text-slate-600">
                   {source.status.replace('_', ' ')}
                 </span>
               </div>
@@ -224,12 +224,12 @@ const CalibrationProgress = ({ orgId }) => {
         </div>
       </div>
 
-      <div className="bg-slate-900/50 rounded-control p-4 border border-slate-700">
-        <h4 className="text-caption font-semibold text-slate-300 mb-3">
+      <div className="bg-slate-50 rounded-control p-4 border border-slate-200">
+        <h4 className="text-caption font-semibold text-slate-700 mb-3">
           What You'll Get After Calibration
         </h4>
         <ul className="space-y-2">
-          <li className="flex items-start gap-2 text-caption text-slate-400">
+          <li className="flex items-start gap-2 text-caption text-slate-600">
             <svg
               className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
               fill="none"
@@ -245,7 +245,7 @@ const CalibrationProgress = ({ orgId }) => {
             </svg>
             <span>Real-time signal observation for team health deviations</span>
           </li>
-          <li className="flex items-start gap-2 text-caption text-slate-400">
+          <li className="flex items-start gap-2 text-caption text-slate-600">
             <svg
               className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
               fill="none"
@@ -261,7 +261,7 @@ const CalibrationProgress = ({ orgId }) => {
             </svg>
             <span>Benchmarking vs. your internal baseline</span>
           </li>
-          <li className="flex items-start gap-2 text-caption text-slate-400">
+          <li className="flex items-start gap-2 text-caption text-slate-600">
             <svg
               className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
               fill="none"
@@ -277,7 +277,7 @@ const CalibrationProgress = ({ orgId }) => {
             </svg>
             <span>Prescriptive decision options with trade-off analysis</span>
           </li>
-          <li className="flex items-start gap-2 text-caption text-slate-400">
+          <li className="flex items-start gap-2 text-caption text-slate-600">
             <svg
               className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
               fill="none"
@@ -293,7 +293,7 @@ const CalibrationProgress = ({ orgId }) => {
             </svg>
             <span>Action tracking and outcome measurement</span>
           </li>
-          <li className="flex items-start gap-2 text-caption text-slate-400">
+          <li className="flex items-start gap-2 text-caption text-slate-600">
             <svg
               className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"
               fill="none"
@@ -313,7 +313,7 @@ const CalibrationProgress = ({ orgId }) => {
       </div>
 
       {calibrationProgress < 100 && (
-        <div className="mt-4 text-caption text-slate-400 text-center">
+        <div className="mt-4 text-caption text-slate-600 text-center">
           During calibration, we're establishing your baseline patterns. No recommendations will be
           shown until calibration is complete.
         </div>
