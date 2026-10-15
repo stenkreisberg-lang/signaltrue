@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import CalibrationProgress from '../../components/CalibrationProgress';
 import { Card, Spinner } from '../../components/UIComponents';
 import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
@@ -9,6 +19,102 @@ import EngagementStrainDashboard from '../../components/EngagementStrainDashboar
 import AppShell from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
+
+function TrendChart({ title, description, data, dataKey, color, unit, type = 'line' }) {
+  const measured = data.filter((point) => point[dataKey] != null);
+  if (measured.length < 2) {
+    return (
+      <div className="rounded-container border border-slate-200 bg-white p-4">
+        <h3 className="font-bold text-slate-900">{title}</h3>
+        <p className="mt-2 text-caption leading-5 text-slate-600">{description}</p>
+        <p className="mt-5 rounded-control bg-slate-50 p-3 text-caption text-slate-500">
+          Not enough measured periods to show a trend.
+        </p>
+      </div>
+    );
+  }
+  const Chart = type === 'bar' ? BarChart : LineChart;
+  return (
+    <div className="rounded-container border border-slate-200 bg-white p-4">
+      <h3 className="font-bold text-slate-900">{title}</h3>
+      <p className="mt-1 text-caption leading-5 text-slate-600">{description}</p>
+      <div className="mt-3 h-48" role="img" aria-label={`${title}, measured periods only`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <Chart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
+            <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip formatter={(value) => [`${value}${unit}`, title]} />
+            {type === 'bar' ? (
+              <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
+            ) : (
+              <Line
+                type="monotone"
+                dataKey={dataKey}
+                name={title}
+                stroke={color}
+                strokeWidth={2.5}
+                connectNulls={false}
+                dot
+              />
+            )}
+          </Chart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function EvidenceTrendGrid({ brief }) {
+  const data = brief?.trend || [];
+  if (!data.length) return null;
+  return (
+    <section className="app-dashboard-section">
+      <div className="app-section-heading">
+        <div>
+          <p className="app-dashboard-eyebrow">Measured movement</p>
+          <h2>What changed across the last six measured periods</h2>
+          <p>Missing values remain gaps. They are not converted into zero activity.</p>
+        </div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TrendChart
+          title="Meeting participant-hours per person"
+          description="Calendar load, compared across measured periods."
+          data={data}
+          dataKey="meetingHours"
+          color="#2563eb"
+          unit="h"
+        />
+        <TrendChart
+          title="Meetings per person"
+          description="Meeting instances, not attendee-expanded event rows."
+          data={data}
+          dataKey="meetings"
+          color="#0f766e"
+          unit=""
+          type="bar"
+        />
+        <TrendChart
+          title="Consecutive meeting blocks"
+          description="Blocks with less than five minutes between sessions."
+          data={data}
+          dataKey="backToBack"
+          color="#d97706"
+          unit=""
+        />
+        <TrendChart
+          title="Uninterrupted calendar availability"
+          description="Available work time per person where calendar coverage is eligible."
+          data={data}
+          dataKey="focusHours"
+          color="#7c3aed"
+          unit="h"
+        />
+      </div>
+    </section>
+  );
+}
 
 export default function Overview() {
   const [calibrationStatus, setCalibrationStatus] = useState(null);
@@ -53,10 +159,12 @@ export default function Overview() {
   const reportingReady =
     calibrationStatus?.readinessStatus === 'ready' && latestBrief?.reportMode === 'full';
   const meetingMetric = latestBrief?.metrics?.find((metric) => metric.key === 'meeting_hours');
-  const meetingTrend =
-    meetingMetric?.available && reportingReady
-      ? (latestBrief?.trend || []).filter((point) => point.meetingHours != null)
-      : [];
+  const meetingTrend = meetingMetric?.available
+    ? (latestBrief?.trend || []).filter((point) => point.meetingHours != null)
+    : [];
+  const hasMeasuredEvidence = (latestBrief?.trend || []).some((point) =>
+    ['meetingHours', 'meetings', 'backToBack', 'focusHours'].some((key) => point[key] != null)
+  );
 
   if (loading) {
     return (
@@ -112,14 +220,14 @@ export default function Overview() {
         <div className="app-dashboard-hero-main">
           <p className="app-dashboard-eyebrow">This week</p>
           <h1 className="app-dashboard-title">
-            {reportingReady
+            {reportingReady || hasMeasuredEvidence
               ? latestBrief?.status?.label || 'Measured overview'
-              : 'Evidence not ready for conclusions'}
+              : 'Measurement setup needs attention'}
           </h1>
           <p className="app-dashboard-copy">
-            {reportingReady
+            {reportingReady || hasMeasuredEvidence
               ? latestBrief?.status?.summary || 'Review the available measurements below.'
-              : 'Check source coverage and baseline readiness before interpreting workplace patterns.'}
+              : 'Reliable descriptive measurements will appear here as connected sources begin supplying usable events.'}
           </p>
           {latestBrief && (
             <Link
@@ -269,6 +377,8 @@ export default function Overview() {
           </div>
         </section>
       )}
+
+      {latestBrief && <EvidenceTrendGrid brief={latestBrief} />}
 
       {calibrationStatus === null && (
         <div className="app-panel mb-4 text-caption text-amber-800">
