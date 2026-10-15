@@ -7,11 +7,7 @@ import { fileURLToPath } from 'url';
 import { requireApiKey, isMasterAdmin } from '../middleware/auth.js';
 import { scanFile } from '../utils/virusScan.js';
 import { saveFileLocal, saveFileS3 } from '../utils/storage.js';
-import {
-  validateProjectCreation,
-  validateObjectId,
-  validateRequest,
-} from '../middleware/validation.js';
+import { validateProjectCreation } from '../middleware/validation.js';
 
 // Define allowed file types
 const ALLOWED_TYPES = [

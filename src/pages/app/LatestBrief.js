@@ -411,13 +411,16 @@ export default function LatestBrief() {
   }
 
   // Only render trend series supported by actual measurements. Null data is not zero.
-  const trendMetricReady = (key) => brief.metrics?.some((metric) => metric.key === key && metric.available === true);
+  const trendMetricReady = (key) =>
+    brief.metrics?.some((metric) => metric.key === key && metric.available === true);
   const trendSeries = [
     { key: 'meeting_hours', field: 'meetingHours' },
     { key: 'focus_time', field: 'focusHours' },
     { key: 'after_hours', field: 'afterHoursPct' },
     { key: 'fragmentation', field: 'fragmentation' },
-  ].filter(({ key, field }) => trendMetricReady(key) && brief.trend?.some((point) => point[field] != null));
+  ].filter(
+    ({ key, field }) => trendMetricReady(key) && brief.trend?.some((point) => point[field] != null)
+  );
 
   const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
   const roleActions = brief.actions?.roleBased || {};
@@ -526,7 +529,10 @@ export default function LatestBrief() {
               <div className="app-section-heading">
                 <div>
                   <h2>Six-week movement</h2>
-                  <p>Only eligible, measured series are shown. Gaps represent missing observations, not zero activity.</p>
+                  <p>
+                    Only eligible, measured series are shown. Gaps represent missing observations,
+                    not zero activity.
+                  </p>
                 </div>
               </div>
               <div className="h-80 w-full" aria-label="Six-week work-pattern trend chart">

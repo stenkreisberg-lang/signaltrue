@@ -1,5 +1,4 @@
 import { ArrowRight, Eye, Lock, Shield, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import DriftAlertCard from './DriftAlertCard';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
@@ -18,6 +17,10 @@ const Hero = () => {
                 <span className="text-caption font-medium text-[#334155]">
                   Psychosocial control evidence
                 </span>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
+                <Lock className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
+                <span className="text-caption font-medium text-[#334155]">No surveys required</span>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 shadow-sm">
                 <Lock className="h-3.5 w-3.5 text-brand" aria-hidden="true" />

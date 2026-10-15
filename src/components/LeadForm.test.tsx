@@ -128,7 +128,7 @@ describe('LeadForm', () => {
     for (const [, payload] of vi.mocked(trackFunnelEvent).mock.calls) {
       expect(JSON.stringify(payload)).not.toContain('Jane Smith');
       expect(JSON.stringify(payload)).not.toContain('jane@example.com');
-      expect(payload).toMatchObject({ form_version: 'commercial_p0_v1', intent: 'demo' });
+      expect(payload).toMatchObject({ form_version: 'commercial_p0_v1', intent: 'free-preview' });
     }
   });
 

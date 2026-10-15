@@ -127,10 +127,10 @@ export default function ExecutiveSummary() {
 
           {summary.evidenceSummary?.unqualifiedObservations > 0 && (
             <div className="app-panel mb-5 border-amber-200 bg-amber-50 text-caption text-amber-950">
-              {summary.evidenceSummary.unqualifiedObservations} open observation(s) have insufficient
-              evidence confidence for an executive priority. They are excluded from the priority
-              status and should be reviewed as data-quality or verification questions rather
-              than presented as confirmed critical findings.
+              {summary.evidenceSummary.unqualifiedObservations} open observation(s) have
+              insufficient evidence confidence for an executive priority. They are excluded from the
+              priority status and should be reviewed as data-quality or verification questions
+              rather than presented as confirmed critical findings.
             </div>
           )}
 
@@ -186,8 +186,8 @@ export default function ExecutiveSummary() {
                 <p className="font-bold text-slate-900">Follow-up</p>
                 <p className="mt-2 text-caption text-slate-700">
                   {summary.controlSummary?.due ?? 0} overdue review(s).
-                  {summary.controlSummary?.improved ?? 0} completed control(s) show improvement
-                  in the tracked measure. This alone does not prove causation.
+                  {summary.controlSummary?.improved ?? 0} completed control(s) show improvement in
+                  the tracked measure. This alone does not prove causation.
                 </p>
               </div>
             </div>

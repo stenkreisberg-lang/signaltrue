@@ -13,7 +13,7 @@ const router = express.Router();
 // POST /api/assessment/submit - Submit assessment with email
 router.post('/submit', async (req, res) => {
   try {
-    const { email, sessionId, result, inputs, consentGiven, timestamp } = req.body;
+    const { email, sessionId, result, inputs, consentGiven } = req.body;
 
     // Validate required fields
     if (!email || !sessionId || !result || !inputs) {
@@ -138,7 +138,6 @@ router.get('/submissions', async (req, res) => {
   }
 });
 
-
 const MATURITY_QUESTION_DIMENSIONS = {
   detection_1: 'detection',
   detection_2: 'detection',
@@ -194,7 +193,8 @@ function calculateMaturity(answers = []) {
     const questionId = cleanText(answer?.questionId, 80);
     const expectedDimension = MATURITY_QUESTION_DIMENSIONS[questionId];
     const value = Number(answer?.value);
-    if (!expectedDimension || seen.has(questionId)) throw new Error('Invalid assessment question set.');
+    if (!expectedDimension || seen.has(questionId))
+      throw new Error('Invalid assessment question set.');
     if (!Number.isInteger(value) || value < 0 || value > 3) {
       throw new Error('Assessment answer values must be integers from 0 to 3.');
     }
@@ -220,28 +220,38 @@ function calculateMaturity(answers = []) {
       Object.values(dimensions).length
   );
   const level =
-    score < 40 ? 'reactive' : score < 60 ? 'developing' : score < 80 ? 'structured' : 'review_ready';
+    score < 40
+      ? 'reactive'
+      : score < 60
+        ? 'developing'
+        : score < 80
+          ? 'structured'
+          : 'review_ready';
   const weakestDimension = Object.entries(dimensions).sort((a, b) => a[1] - b[1])[0][0];
 
   return { score, level, weakestDimension, dimensions, answers: sanitizedAnswers };
 }
 
 function maturityLevelLabel(level) {
-  return {
-    reactive: 'Reactive evidence',
-    developing: 'Developing evidence',
-    structured: 'Structured evidence',
-    review_ready: 'Review-ready evidence process',
-  }[level] || 'Control evidence';
+  return (
+    {
+      reactive: 'Reactive evidence',
+      developing: 'Developing evidence',
+      structured: 'Structured evidence',
+      review_ready: 'Review-ready evidence process',
+    }[level] || 'Control evidence'
+  );
 }
 
 function maturityDimensionLabel(dimension) {
-  return {
-    detection: 'Evidence visibility',
-    investigation: 'Investigation & context',
-    verification: 'Control verification',
-    governance: 'Governance & privacy',
-  }[dimension] || dimension;
+  return (
+    {
+      detection: 'Evidence visibility',
+      investigation: 'Investigation & context',
+      verification: 'Control verification',
+      governance: 'Governance & privacy',
+    }[dimension] || dimension
+  );
 }
 
 function getResendClient() {
@@ -256,7 +266,8 @@ async function sendControlMaturityEmails(submission) {
   const internal = process.env.WEBSITE_LEAD_NOTIFICATION_EMAIL || 'sten.kreisberg@signaltrue.ai';
   const weakest = maturityDimensionLabel(submission.weakestDimension);
   const level = maturityLevelLabel(submission.level);
-  const bookingUrl = 'https://www.signaltrue.ai/contact?intent=demo&cta=control_evidence_assessment';
+  const bookingUrl =
+    'https://www.signaltrue.ai/contact?intent=demo&cta=control_evidence_assessment';
 
   const userHtml = `<!doctype html>
 <html><body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#334155">
@@ -360,9 +371,11 @@ router.post('/control-maturity/claim', maturityClaimLimiter, async (req, res) =>
     const consentGiven = req.body?.consentGiven === true;
 
     if (!sessionId) return res.status(400).json({ message: 'sessionId is required.' });
-    if (!EMAIL_PATTERN.test(email)) return res.status(400).json({ message: 'Enter a valid work email.' });
+    if (!EMAIL_PATTERN.test(email))
+      return res.status(400).json({ message: 'Enter a valid work email.' });
     if (!organization) return res.status(400).json({ message: 'Enter your organisation.' });
-    if (!consentGiven) return res.status(400).json({ message: 'Consent is required to email the result.' });
+    if (!consentGiven)
+      return res.status(400).json({ message: 'Consent is required to email the result.' });
 
     const submission = await ControlMaturityAssessment.findOneAndUpdate(
       { sessionId },

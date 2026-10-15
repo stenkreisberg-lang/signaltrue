@@ -17,8 +17,8 @@ test('records the CTA location on the primary commercial action', () => {
   fireEvent.click(screen.getByRole('link'));
   expect(trackFunnelEvent).toHaveBeenCalledWith('primary_cta_click', {
     cta_location: 'homepage_problem',
-    cta_destination: '/contact?intent=demo',
-    intent: 'demo',
+    cta_destination: '/contact?intent=free-preview',
+    intent: 'free-preview',
   });
 });
 

@@ -43,16 +43,30 @@ const CustomerBand = () => {
   const track = [...customers, ...customers];
 
   return (
-    <section className="border-b border-border bg-background py-10" aria-labelledby="customer-band-label">
+    <section
+      className="border-b border-border bg-background py-10"
+      aria-labelledby="customer-band-label"
+    >
       <div className="mx-auto max-w-6xl px-4">
-        <p id="customer-band-label" className="mb-6 text-center text-caption uppercase tracking-[0.12em] text-muted-foreground">
+        <p
+          id="customer-band-label"
+          className="mb-6 text-center text-caption uppercase tracking-[0.12em] text-muted-foreground"
+        >
           Organisations where SignalTrue has been used or evaluated
         </p>
         <div className="customer-carousel" ref={carouselRef}>
           <ul className="customer-track">
             {track.map((customer, index) => (
-              <li className="customer-slide" key={`${customer.name}-${index}`} aria-hidden={index >= customers.length}>
-                {customer.logo ? <img src={customer.logo} alt={customer.name} loading="lazy" /> : <Wordmark customer={customer} />}
+              <li
+                className="customer-slide"
+                key={`${customer.name}-${index}`}
+                aria-hidden={index >= customers.length}
+              >
+                {customer.logo ? (
+                  <img src={customer.logo} alt={customer.name} loading="lazy" />
+                ) : (
+                  <Wordmark customer={customer} />
+                )}
               </li>
             ))}
           </ul>

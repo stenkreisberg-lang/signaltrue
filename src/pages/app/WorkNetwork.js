@@ -72,7 +72,9 @@ function LeadershipQuestions({ questions = [] }) {
 
 function CollaborationMatrix({ edges = [] }) {
   if (!edges.length) return null;
-  const names = [...new Set(edges.flatMap((edge) => [edge.teamAName, edge.teamBName]).filter(Boolean))].sort();
+  const names = [
+    ...new Set(edges.flatMap((edge) => [edge.teamAName, edge.teamBName]).filter(Boolean)),
+  ].sort();
   if (names.length < 2) return null;
   const displayed = names.slice(0, 12);
   const maxHours = Math.max(1, ...edges.map((edge) => Number(edge.meetingHours) || 0));
@@ -80,30 +82,61 @@ function CollaborationMatrix({ edges = [] }) {
     <section className="app-panel">
       <h2 className="text-lead font-bold text-slate-900">Cross-team meeting matrix</h2>
       <p className="mt-2 text-caption text-slate-600">
-        Reportable team-pair meeting hours during this period. Blank cells mean no eligible pair
-        was returned, not proof that teams do not work together.
+        Reportable team-pair meeting hours during this period. Blank cells mean no eligible pair was
+        returned, not proof that teams do not work together.
       </p>
       <div className="mt-4 overflow-x-auto">
         <table className="border-collapse text-caption">
-          <thead><tr><th className="p-2 text-left">Team</th>{displayed.map((name) => <th key={name} className="p-2 text-left">{name}</th>)}</tr></thead>
-          <tbody>{displayed.map((row) => (
-            <tr key={row}>
-              <th className="border-t border-slate-200 p-2 text-left">{row}</th>
-              {displayed.map((col) => {
-                const edge = edges.find((item) =>
-                  (item.teamAName === row && item.teamBName === col) ||
-                  (item.teamAName === col && item.teamBName === row));
-                const value = edge?.meetingHours;
-                return <td key={col} className="border-t border-slate-200 p-1">
-                  {row === col ? <span className="block bg-slate-100 p-2 text-center">—</span> :
-                    value == null ? <span className="block p-2 text-center text-slate-400">·</span> :
-                    <span className="block rounded p-2 text-center font-semibold text-slate-900" style={{ backgroundColor: `rgba(13,148,136,${0.12 + 0.42 * (Number(value) / maxHours)})` }}>{value}h</span>}
-                </td>;
-              })}</tr>
-          ))}</tbody>
+          <thead>
+            <tr>
+              <th className="p-2 text-left">Team</th>
+              {displayed.map((name) => (
+                <th key={name} className="p-2 text-left">
+                  {name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.map((row) => (
+              <tr key={row}>
+                <th className="border-t border-slate-200 p-2 text-left">{row}</th>
+                {displayed.map((col) => {
+                  const edge = edges.find(
+                    (item) =>
+                      (item.teamAName === row && item.teamBName === col) ||
+                      (item.teamAName === col && item.teamBName === row)
+                  );
+                  const value = edge?.meetingHours;
+                  return (
+                    <td key={col} className="border-t border-slate-200 p-1">
+                      {row === col ? (
+                        <span className="block bg-slate-100 p-2 text-center">—</span>
+                      ) : value == null ? (
+                        <span className="block p-2 text-center text-slate-400">·</span>
+                      ) : (
+                        <span
+                          className="block rounded p-2 text-center font-semibold text-slate-900"
+                          style={{
+                            backgroundColor: `rgba(13,148,136,${0.12 + 0.42 * (Number(value) / maxHours)})`,
+                          }}
+                        >
+                          {value}h
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
-      {names.length > displayed.length && <p className="mt-2 text-caption text-slate-600">Showing the first 12 eligible teams alphabetically.</p>}
+      {names.length > displayed.length && (
+        <p className="mt-2 text-caption text-slate-600">
+          Showing the first 12 eligible teams alphabetically.
+        </p>
+      )}
     </section>
   );
 }
@@ -506,22 +539,31 @@ export default function WorkNetwork() {
 
           {readiness.ready && (network.actualEdges || []).length === 0 && (
             <section className="app-panel border-amber-200 bg-amber-50">
-              <h2 className="text-lead font-bold text-amber-950">No reportable cross-team connections</h2>
+              <h2 className="text-lead font-bold text-amber-950">
+                No reportable cross-team connections
+              </h2>
               <p className="mt-2 text-caption leading-6 text-amber-900">
-                This does not mean teams are not collaborating. No observed team pair met
-                the evidence and privacy rules for this reporting period.
+                This does not mean teams are not collaborating. No observed team pair met the
+                evidence and privacy rules for this reporting period.
                 {network.summary?.suppressedConnections > 0
                   ? ` ${network.summary.suppressedConnections} observed connection(s) were excluded by reporting rules.`
                   : ' No qualifying observed connection was available in the returned network evidence.'}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3 text-caption text-amber-950">
-                <p><strong>Eligible teams:</strong> {readiness.eligibleTeams ?? 'Not available'}</p>
-                <p><strong>Observed interaction events:</strong> {readiness.interactionEvents ?? 'Not available'}</p>
-                <p><strong>Period:</strong> {network.period?.days ?? 'Unknown'} days</p>
+                <p>
+                  <strong>Eligible teams:</strong> {readiness.eligibleTeams ?? 'Not available'}
+                </p>
+                <p>
+                  <strong>Observed interaction events:</strong>{' '}
+                  {readiness.interactionEvents ?? 'Not available'}
+                </p>
+                <p>
+                  <strong>Period:</strong> {network.period?.days ?? 'Unknown'} days
+                </p>
               </div>
               <p className="mt-3 text-caption text-amber-900">
-                Check the source coverage immediately below. Calendar, Teams and email metadata
-                only contribute when ingested, mapped and supported by this analysis.
+                Check the source coverage immediately below. Calendar, Teams and email metadata only
+                contribute when ingested, mapped and supported by this analysis.
               </p>
             </section>
           )}

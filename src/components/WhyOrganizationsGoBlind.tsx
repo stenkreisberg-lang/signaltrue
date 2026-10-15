@@ -20,7 +20,7 @@ const gaps = [
   {
     name: 'Workforce analytics',
     problem:
-      'Shows meetings, focus time or after-hours activity, but usually stops before the WHS control decision.',
+      'Shows meetings, calendar availability or after-hours activity, but usually stops before the WHS control decision.',
   },
 ];
 
