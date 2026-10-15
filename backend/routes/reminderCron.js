@@ -6,8 +6,13 @@
 
 import express from 'express';
 import Invite from '../models/invite.js';
+import Organization from '../models/organizationModel.js';
+import User from '../models/user.js';
 import ReminderEmail from '../models/reminderEmail.js';
 import {
+  sendUserFollowUpReminder,
+  sendUserWeek2Reminder,
+  sendUserWeek3Reminder,
   sendITAdminUrgentReminder,
   sendITAdminWeek2Reminder,
   sendITAdminWeek3Reminder,
