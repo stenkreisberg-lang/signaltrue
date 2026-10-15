@@ -315,7 +315,7 @@ export default function LatestBrief() {
   const [contextTag, setContextTag] = useState('launch');
   const [contextDescription, setContextDescription] = useState('');
   const [savingContext, setSavingContext] = useState(false);
-  const [historyPeriod, setHistoryPeriod] = useState(4);
+  const [historyPeriod, setHistoryPeriod] = useState(3);
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
 
