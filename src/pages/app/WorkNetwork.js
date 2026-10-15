@@ -466,6 +466,25 @@ export default function WorkNetwork() {
 
           {!readiness.ready && <ReadinessNotice readiness={readiness} />}
 
+          {readiness.ready && (network.actualEdges || []).length === 0 && (
+            <section className="app-panel border-amber-200 bg-amber-50">
+              <h2 className="text-lead font-bold text-amber-950">No reportable cross-team connections</h2>
+              <p className="mt-2 text-caption leading-6 text-amber-900">
+                This does not mean teams are not collaborating. No observed team pair met
+                the evidence and privacy rules for this reporting period.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3 text-caption text-amber-950">
+                <p><strong>Eligible teams:</strong> {readiness.eligibleTeams ?? 'Not available'}</p>
+                <p><strong>Mapped events:</strong> {readiness.interactionEvents ?? 'Not available'}</p>
+                <p><strong>Period:</strong> {network.period?.days ?? 'Unknown'} days</p>
+              </div>
+              <p className="mt-3 text-caption text-amber-900">
+                Check the source coverage immediately below. Calendar, Teams and email metadata
+                only contribute when ingested, mapped and supported by this analysis.
+              </p>
+            </section>
+          )}
+
           {readiness.ready && <LeadershipQuestions questions={network.leadershipQuestions || []} />}
 
           <SourceCoveragePanel coverage={network.sourceCoverage || readiness.sourceCoverage} />
