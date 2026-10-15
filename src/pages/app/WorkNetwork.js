@@ -516,7 +516,7 @@ export default function WorkNetwork() {
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3 text-caption text-amber-950">
                 <p><strong>Eligible teams:</strong> {readiness.eligibleTeams ?? 'Not available'}</p>
-                <p><strong>Mapped events:</strong> {readiness.interactionEvents ?? 'Not available'}</p>
+                <p><strong>Observed interaction events:</strong> {readiness.interactionEvents ?? 'Not available'}</p>
                 <p><strong>Period:</strong> {network.period?.days ?? 'Unknown'} days</p>
               </div>
               <p className="mt-3 text-caption text-amber-900">
