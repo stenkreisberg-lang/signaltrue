@@ -107,7 +107,7 @@ router.post(
         },
       });
       await Promise.all(
-        ['google-calendar', 'google-chat'].map((integrationType) =>
+        ['google-calendar', 'google-chat', 'gmail', 'meet'].map((integrationType) =>
           IntegrationConnection.findOneAndUpdate(
             { orgId: req.user.orgId, integrationType },
             {
@@ -641,7 +641,10 @@ router.get(
     });
     const url = new URL('https://slack.com/oauth/v2/authorize');
     url.searchParams.set('client_id', clientId);
-    url.searchParams.set('scope', 'channels:history,channels:read,chat:write');
+    url.searchParams.set(
+      'scope',
+      'channels:history,channels:read,channels:join,groups:history,groups:read,users:read,users:read.email,chat:write'
+    );
     url.searchParams.set('user_scope', '');
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('state', state);

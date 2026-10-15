@@ -74,7 +74,9 @@ export async function fetchGraphCollection(
   }
 
   if (nextUrl) {
-    const error = new Error(`Microsoft Graph pagination exceeded the ${maxPages}-page safety limit`);
+    const error = new Error(
+      `Microsoft Graph pagination exceeded the ${maxPages}-page safety limit`
+    );
     error.code = 'MICROSOFT_GRAPH_PAGE_LIMIT';
     throw error;
   }
@@ -124,7 +126,10 @@ export function classifyMicrosoftSyncError(error) {
         : 'Microsoft administrator consent is required for this data source.',
     };
   }
-  if (error?.status === 403 || /Forbidden|Authorization_RequestDenied|ErrorAccessDenied/i.test(message)) {
+  if (
+    error?.status === 403 ||
+    /Forbidden|Authorization_RequestDenied|ErrorAccessDenied/i.test(message)
+  ) {
     return {
       kind: 'graph_access_denied',
       status: 'error',
@@ -996,7 +1001,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     };
 
     if (membershipReads === 0) {
-      throw lastMembershipError || new Error('No mapped user could be checked for Teams membership.');
+      throw (
+        lastMembershipError || new Error('No mapped user could be checked for Teams membership.')
+      );
     }
     if (teams.length > 0 && successfulTeamReads === 0) {
       throw lastTeamReadError || new Error('No visible Microsoft Team could be read for messages.');
@@ -1599,6 +1606,121 @@ export class GoogleChatAdapter extends OrgIntegrationAdapter {
 }
 
 // ============================================================
+// GOOGLE GMAIL ADAPTER (company-wide metadata via Workspace delegation)
+// ============================================================
+
+export class GoogleGmailAdapter extends OrgIntegrationAdapter {
+  constructor() {
+    super('gmail');
+  }
+
+  getIntegrationData(org) {
+    return org.integrations?.google;
+  }
+
+  async getAccessToken(orgId) {
+    const org = await Organization.findById(orgId).lean();
+    if (org?.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) return 'workspace-dwd';
+    return super.getAccessToken(orgId);
+  }
+
+  async fetchMailboxEvents(accessToken, since, until) {
+    const query = `after:${Math.floor(since.getTime() / 1000)} before:${Math.floor(until.getTime() / 1000)}`;
+    const messages = await fetchGoogleCollection(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=500`,
+      accessToken,
+      'messages'
+    );
+    return Promise.all(
+      messages.slice(0, 500).map(async (message) => {
+        const response = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?format=metadata&metadataHeaders=Date&metadataHeaders=From&metadataHeaders=To`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        return response.ok ? response.json() : null;
+      })
+    ).then((items) => items.filter(Boolean));
+  }
+
+  async fetchEvents(orgId, accessToken, since, until) {
+    if (accessToken !== 'workspace-dwd') return this.fetchMailboxEvents(accessToken, since, until);
+    const users = await User.find({ orgId, accountStatus: { $ne: 'inactive' }, email: { $ne: '' } })
+      .select('_id email')
+      .lean();
+    const events = [];
+    for (const user of users) {
+      try {
+        const auth = createGoogleWorkspaceAuth(user.email, [
+          'https://www.googleapis.com/auth/gmail.readonly',
+        ]);
+        const token = await auth.getAccessToken();
+        const mailboxEvents = await this.fetchMailboxEvents(token.token || token, since, until);
+        events.push(...mailboxEvents.map((event) => ({ ...event, signalTrueUserId: user._id })));
+      } catch (error) {
+        console.warn(
+          `[Gmail] Mailbox ${String(user._id).slice(-6)} skipped: ${String(error.message).slice(0, 200)}`
+        );
+      }
+    }
+    return events;
+  }
+
+  async transformToWorkEvents(rawEvents, orgId) {
+    return rawEvents.map((message) => {
+      const headers = Object.fromEntries(
+        (message.payload?.headers || []).map((header) => [header.name.toLowerCase(), header.value])
+      );
+      const timestamp = headers.date
+        ? new Date(headers.date)
+        : new Date(Number(message.internalDate));
+      const isSent = message.labelIds?.includes('SENT');
+      return {
+        orgId: new mongoose.Types.ObjectId(orgId),
+        source: 'gmail',
+        eventType: isSent ? 'email_sent' : 'email_received',
+        actorUserId: message.signalTrueUserId || null,
+        externalId: `gmail-${message.signalTrueUserId || 'user'}-${message.id}`,
+        timestamp,
+        metadata: {
+          threadIdHash: hashMetadata(orgId, message.threadId),
+          isAfterHours: timestamp.getHours() < 8 || timestamp.getHours() >= 18,
+          hasAttachment: (message.payload?.parts || []).some((part) => part.filename),
+          labelCount: message.labelIds?.length || 0,
+        },
+        raw: { id: message.id },
+      };
+    });
+  }
+}
+
+// ============================================================
+// GOOGLE MEET ADAPTER (conference-backed Calendar metadata)
+// ============================================================
+
+export class GoogleMeetAdapter extends GoogleCalendarAdapter {
+  constructor() {
+    super();
+    this.source = 'meet';
+  }
+
+  async fetchEvents(orgId, accessToken, since, until) {
+    const events = await super.fetchEvents(orgId, accessToken, since, until);
+    return events.filter((event) => event.conferenceData || event.hangoutLink);
+  }
+
+  async transformToWorkEvents(rawEvents, orgId) {
+    const events = await super.transformToWorkEvents(rawEvents, orgId);
+    return events.map((event) => ({
+      ...event,
+      source: 'meet',
+      eventType: 'meeting',
+      externalId: `meet-${event.externalId}`,
+      metadata: { ...event.metadata, provider: 'google-meet' },
+    }));
+  }
+}
+
+// ============================================================
 // SYNC ALL CORE INTEGRATIONS
 // ============================================================
 
@@ -1647,6 +1769,7 @@ export async function syncCoreIntegrations(orgId, since, until) {
   if (
     (org.integrations?.google?.accessToken ||
       org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt) &&
+    org.integrations?.google?.scope !== 'gmail' &&
     org.integrations?.google?.sync?.enabled !== false
   ) {
     try {
@@ -1655,6 +1778,36 @@ export async function syncCoreIntegrations(orgId, since, until) {
       results.push(result);
     } catch (error) {
       results.push({ success: false, source: 'google-calendar', error: error.message });
+    }
+  }
+
+  // Gmail metadata. Workspace delegation is company-wide; OAuth remains available
+  // for a single mailbox when the organization explicitly connected Gmail.
+  if (
+    (org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt ||
+      (org.integrations?.google?.accessToken && org.integrations?.google?.scope === 'gmail')) &&
+    org.integrations?.google?.sync?.enabled !== false
+  ) {
+    try {
+      const adapter = new GoogleGmailAdapter();
+      const result = await adapter.sync(orgId, since, until);
+      results.push(result);
+    } catch (error) {
+      results.push({ success: false, source: 'gmail', error: error.message });
+    }
+  }
+
+  // Google Meet metadata is derived from conference-backed calendar events.
+  if (
+    org.integrations?.googleWorkspace?.domainWideDelegationVerifiedAt &&
+    org.integrations?.google?.sync?.enabled !== false
+  ) {
+    try {
+      const adapter = new GoogleMeetAdapter();
+      const result = await adapter.sync(orgId, since, until);
+      results.push(result);
+    } catch (error) {
+      results.push({ success: false, source: 'meet', error: error.message });
     }
   }
 
@@ -1681,5 +1834,7 @@ export default {
   MicrosoftAdapter,
   GoogleCalendarAdapter,
   GoogleChatAdapter,
+  GoogleGmailAdapter,
+  GoogleMeetAdapter,
   syncCoreIntegrations,
 };

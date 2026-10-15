@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 export const GOOGLE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/admin.directory.user.readonly',
   'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/chat.spaces.readonly',
   'https://www.googleapis.com/auth/chat.messages.readonly',
 ];
@@ -31,7 +32,7 @@ export function createGoogleWorkspaceAuth(subject, scopes = GOOGLE_WORKSPACE_SCO
 }
 
 export async function verifyGoogleWorkspaceDelegation(subject) {
-  const auth = createGoogleWorkspaceAuth(subject, [GOOGLE_WORKSPACE_SCOPES[0]]);
+  const auth = createGoogleWorkspaceAuth(subject, GOOGLE_WORKSPACE_SCOPES);
   await auth.authorize();
   const admin = google.admin({ version: 'directory_v1', auth });
   const response = await admin.users.list({ customer: 'my_customer', maxResults: 1 });
