@@ -3,6 +3,7 @@ import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
+import WorkEvent from '../models/workEvent.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getOrganizationReadiness } from '../services/onboardingReadinessService.js';
 import { getOrganizationIntegrationHealth } from '../services/integrationHealthMonitorService.js';
@@ -159,12 +160,20 @@ router.get('/status', authenticateToken, async (req, res) => {
       sources: microsoftState.sources,
     };
 
+    const microsoftDiagnostics = await buildMicrosoftDiagnostics(
+      orgId,
+      microsoft,
+      connections,
+      microsoftState
+    );
+
     res.json({
       integrations,
       overallCoverage,
       setup,
       healthIssues,
       microsoftCompanyAccess,
+      microsoftDiagnostics,
       oauthBaseUrl: '/api/integrations',
     });
   } catch (err) {
@@ -172,6 +181,95 @@ router.get('/status', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch integration status' });
   }
 });
+
+async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsoftState) {
+  const sourceTypes = ['microsoft-outlook', 'microsoft-teams'];
+  const latestEvents = await WorkEvent.aggregate([
+    { $match: { orgId, source: { $in: sourceTypes } } },
+    { $sort: { timestamp: -1 } },
+    { $group: { _id: '$source', timestamp: { $first: '$timestamp' } } },
+  ]).catch(() => []);
+  const latestBySource = new Map(latestEvents.map((item) => [item._id, item.timestamp]));
+  const grantedRoles = microsoftState?.grantedRoles || [];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    tenantLinked: Boolean(microsoftState?.identityLinked),
+    tenantIdPresent: Boolean(microsoft?.tenantId),
+    grantedRoles,
+    sources: Object.fromEntries(
+      sourceTypes.map((type) => {
+        const name = type === 'microsoft-outlook' ? 'outlook' : 'teams';
+        const connection = connections.find((item) => item.integrationType === type);
+        const state = microsoftState?.sources?.[name] || {};
+        const coverage = connection?.coverage || {};
+        const sync = connection?.sync || {};
+        const fetched = Number(sync.lastSyncEventsCount ?? coverage.eventsCollected ?? 0);
+        const mappedUsers = Number(coverage.mappedUsers ?? coverage.syncedUsers ?? 0);
+        const totalUsers = Number(coverage.totalUsers ?? coverage.attemptedUsers ?? 0);
+        const accepted = Number(
+          coverage.eventsAccepted ?? coverage.mappedEvents ?? coverage.eventsCollected ?? fetched
+        );
+        const rejected = Math.max(0, fetched - accepted);
+        const latestEventReceived = latestBySource.get(type) || sync.lastEventTimestamp || null;
+        const missingPermissions = state.missingRoles || [];
+        const missingRequirements = [];
+        if (!microsoftState?.identityLinked) missingRequirements.push('Microsoft tenant sign-in');
+        missingPermissions.forEach((role) => missingRequirements.push(`Admin consent: ${role}`));
+        if (connection?.status === 'error' || sync.lastSyncStatus === 'failed') {
+          missingRequirements.push('A successful source sync');
+        } else if (!sync.lastSuccessfulSyncAt && !latestEventReceived) {
+          missingRequirements.push('First source sync and event arrival');
+        }
+        if (totalUsers > 0 && mappedUsers === 0) {
+          missingRequirements.push('Employee-to-directory identity mapping');
+        }
+        let nextAction = 'No action required; continue monitoring the next sync.';
+        if (missingPermissions.length)
+          nextAction =
+            'Ask a Microsoft tenant administrator to grant the missing application permissions.';
+        else if (connection?.status === 'error' || sync.lastSyncStatus === 'failed')
+          nextAction =
+            'Open the source error, correct the Graph or mailbox issue, then rerun verification.';
+        else if (!latestEventReceived)
+          nextAction = 'Run a manual sync and confirm that the source produces metadata events.';
+        else if (totalUsers > 0 && mappedUsers === 0)
+          nextAction = 'Map Microsoft directory identities to active SignalTrue employees.';
+
+        return [
+          name,
+          {
+            source: name,
+            label: name === 'outlook' ? 'Outlook calendar' : 'Teams collaboration',
+            status: state.status || connection?.status || 'disconnected',
+            connectionStatus: connection?.status || 'disconnected',
+            lastAttemptedSync: sync.lastSyncAt || null,
+            lastSuccessfulSync: sync.lastSuccessfulSyncAt || null,
+            lastSyncStatus: sync.lastSyncStatus || null,
+            lastSyncMessage: sync.lastSyncMessage || connection?.statusMessage || null,
+            latestEventReceived,
+            fetched,
+            accepted,
+            rejected,
+            totalUsers,
+            mappedUsers,
+            availableUsers: Number(coverage.availableUsers || 0),
+            unavailableUsers: Number(coverage.unavailableUsers || 0),
+            failedUsers: Number(coverage.failedUsers || 0),
+            teamsDiscovered: Number(coverage.teamsDiscovered || 0),
+            teamsRead: Number(coverage.teamsRead || 0),
+            teamsSkipped: Number(coverage.teamsSkipped || 0),
+            requiredPermissions: state.requiredRoles || [],
+            grantedPermissions: grantedRoles,
+            missingPermissions,
+            missingRequirements: [...new Set(missingRequirements)],
+            nextAction,
+          },
+        ];
+      })
+    ),
+  };
+}
 
 /**
  * GET /api/integration-dashboard/data-dictionary

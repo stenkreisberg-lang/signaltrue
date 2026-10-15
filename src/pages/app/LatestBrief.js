@@ -508,6 +508,61 @@ export default function LatestBrief() {
         </div>
       )}
 
+      <section className="app-panel mb-6 border-indigo-100 bg-indigo-50/40">
+        <div className="app-section-heading">
+          <div>
+            <p className="app-eyebrow">Leadership readout</p>
+            <h2>What to carry into the next review</h2>
+            <p>
+              Three evidence-led observations, one verification question, and one reversible next
+              step.
+            </p>
+          </div>
+          <StatusBadge tone={brief.reportMode === 'full' ? 'good' : 'review'}>
+            {brief.reportMode === 'full' ? 'Decision-ready with review' : 'Coverage first'}
+          </StatusBadge>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-container bg-white p-4">
+            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+              Top observations
+            </p>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-caption leading-5 text-slate-700">
+              {(brief.observations || []).slice(0, 3).map((item, index) => (
+                <li key={`${item.text}-${index}`}>
+                  {String(item.text).replace(/\.$/, '')} — summary
+                </li>
+              ))}
+              {!brief.observations?.length && <li>No material change was detected.</li>}
+            </ol>
+          </div>
+          <div className="rounded-container bg-white p-4">
+            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+              Verify before acting
+            </p>
+            <p className="mt-3 text-caption leading-6 text-slate-700">
+              {String(brief.questions?.[0] || DEFAULT_QUESTIONS[1]).replace(/\?$/, '')} — brief
+              prompt
+            </p>
+          </div>
+          <div className="rounded-container bg-white p-4">
+            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+              Reversible next step
+            </p>
+            <p className="mt-3 text-caption leading-6 text-slate-700">
+              Test:{' '}
+              {brief.actions?.primary?.action ||
+                'Keep observing for one more week and review the same evidence.'}
+            </p>
+            {brief.actions?.primary?.owner && (
+              <p className="mt-2 text-caption text-slate-500">
+                Owner: {brief.actions.primary.owner}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
       {brief.reportMode === 'setup' ? (
         <section className="app-dashboard-section">
           <div className="app-section-heading">
