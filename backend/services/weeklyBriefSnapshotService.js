@@ -52,7 +52,7 @@ export async function getLatestWeeklyBriefSnapshot(orgId) {
 }
 
 export async function getWeeklyBriefSnapshotHistory(orgId, limit = 12) {
-  const safeLimit = Math.min(26, Math.max(1, Number(limit) || 12));
+  const safeLimit = Math.min(53, Math.max(1, Number(limit) || 12));
   const snapshots = await WeeklyBriefSnapshot.find({ orgId })
     .sort({ periodEnd: -1, generatedAt: -1 })
     .limit(safeLimit)
