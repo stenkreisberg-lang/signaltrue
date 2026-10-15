@@ -165,6 +165,33 @@ export default function ExecutiveSummary() {
             </div>
           </section>
 
+          <section className="app-panel mb-6">
+            <h2 className="text-lead font-bold text-slate-900">What leadership can conclude</h2>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="font-bold text-slate-900">Measured priorities</p>
+                <p className="mt-2 text-caption text-slate-700">
+                  {summary.evidenceSummary?.openQualifiedSignals ?? 0} open findings with at least
+                  medium confidence. Review their evidence before assigning cause.
+                </p>
+              </div>
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="font-bold text-slate-900">Data limitations</p>
+                <p className="mt-2 text-caption text-slate-700">
+                  {summary.evidenceSummary?.unqualifiedObservations ?? 0} lower-confidence
+                  observation(s) are excluded from executive escalation.
+                </p>
+              </div>
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="font-bold text-slate-900">Follow-up</p>
+                <p className="mt-2 text-caption text-slate-700">
+                  {summary.controlSummary?.due ?? 0} overdue review(s).
+                  {summary.controlSummary?.improved ?? 0} completed control(s) show improvement
+                  in the tracked measure. This alone does not prove causation.
+                </p>
+              </div>
+            </div>
+          </section>
           <section className="app-dashboard-section grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
             <div className="app-panel">
               <div className="flex items-center gap-3">
