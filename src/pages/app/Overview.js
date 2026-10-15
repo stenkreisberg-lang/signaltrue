@@ -239,7 +239,7 @@ export default function Overview() {
       )}
       {calibrationStatus?.isInCalibration && calibrationStatus?.readinessStatus !== 'setup_incomplete' ? (
         <CalibrationProgress orgId={orgId} />
-      ) : (
+      ) : calibrationStatus?.readinessStatus === 'ready' ? (
         <section className="app-dashboard-section">
           <div className="app-section-heading">
             <div>
