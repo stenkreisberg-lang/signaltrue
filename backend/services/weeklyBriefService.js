@@ -1789,6 +1789,7 @@ export async function generateWeeklyBrief(orgId) {
     .sort((a, b) => a[0] - b[0])
     .map(([weekIdx, recs]) => ({
       weeksAgo: weekIdx + 1,
+      meetings: avgField(recs, 'meetingCount7d') / connectedUserCount,
       meetingHours:
         Math.round((avgField(recs, 'meetingDurationTotalHours7d') / connectedUserCount) * 10) / 10,
       backToBack: avgField(recs, 'backToBackMeetingBlocks') / connectedUserCount,
@@ -3216,7 +3217,9 @@ export async function generateWeeklyBrief(orgId) {
       return {
         weekStart: date,
         label: `${point.weeksAgo}w ago`,
+        meetings: isMetricEligible('meetings') ? roundValue(point.meetings, 1) : null,
         meetingHours: isMetricEligible('meeting_hours') ? roundValue(point.meetingHours, 1) : null,
+        backToBack: isMetricEligible('back_to_back') ? roundValue(point.backToBack, 1) : null,
         afterHoursPct: isMetricEligible('after_hours')
           ? roundValue(point.afterHoursRatioPct, 0)
           : null,
@@ -3231,7 +3234,9 @@ export async function generateWeeklyBrief(orgId) {
     {
       weekStart: thisWeekStart,
       label: 'Current',
+      meetings: isMetricEligible('meetings') ? roundValue(tw.meetings, 1) : null,
       meetingHours: isMetricEligible('meeting_hours') ? roundValue(tw.meetingHours, 1) : null,
+      backToBack: isMetricEligible('back_to_back') ? roundValue(tw.backToBack, 1) : null,
       afterHoursPct: isMetricEligible('after_hours')
         ? roundValue((tw.afterHoursRatio || 0) * 100, 0)
         : null,

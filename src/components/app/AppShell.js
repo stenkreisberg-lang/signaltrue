@@ -139,8 +139,10 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
       <aside className="app-sidebar">
         <div className="app-sidebar-inner">
           <Link to="/app/overview" className="app-brand">
-            <span className="app-brand-mark" />
-            SignalTrue
+            <span className="app-brand-mark" aria-hidden="true">
+              ST
+            </span>
+            <span className="font-display font-bold tracking-tight">SignalTrue</span>
           </Link>
           <nav ref={navigationRef} className="app-navigation" aria-label="Application navigation">
             {visibleLinks

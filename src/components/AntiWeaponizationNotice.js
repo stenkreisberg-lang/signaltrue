@@ -7,21 +7,21 @@ import React from 'react';
 const AntiWeaponizationNotice = ({ variant = 'default' }) => {
   const variants = {
     default: {
-      bg: 'bg-yellow-900/20',
-      border: 'border-yellow-700',
-      text: 'text-yellow-300',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      text: 'text-amber-950',
       icon: '⚠️',
     },
     info: {
-      bg: 'bg-blue-900/20',
-      border: 'border-blue-700',
-      text: 'text-blue-300',
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      text: 'text-blue-950',
       icon: 'ℹ️',
     },
     sticky: {
-      bg: 'bg-yellow-900/30',
-      border: 'border-yellow-700',
-      text: 'text-yellow-200',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      text: 'text-amber-950',
       icon: '⚠️',
     },
   };
@@ -33,7 +33,7 @@ const AntiWeaponizationNotice = ({ variant = 'default' }) => {
   return (
     <div
       className={`${config.bg} border ${config.border} rounded-control p-4 mb-6 ${
-        isSticky ? 'sticky top-0 z-50 shadow-lg backdrop-blur-sm bg-opacity-95' : ''
+        isSticky ? 'shadow-sm' : ''
       }`}
       role="alert"
       aria-live="polite"
