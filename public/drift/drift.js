@@ -36,7 +36,7 @@
     window.gtag =
       window.gtag ||
       function () {
-        window.dataLayer.push(Array.from(arguments));
+        window.dataLayer.push(arguments);
       };
     if (!document.getElementById('signaltrue-ga4')) {
       const script = document.createElement('script');

@@ -8,7 +8,7 @@ export interface AnalyticsTestEvent {
 
 declare global {
   interface Window {
-    dataLayer?: unknown[][];
+    dataLayer?: Array<unknown[] | IArguments>;
     gtag?: (...args: unknown[]) => void;
     __signaltrueAnalyticsTestEvents?: AnalyticsTestEvent[];
   }
@@ -377,9 +377,10 @@ export function initializeAnalytics() {
   window.dataLayer = window.dataLayer || [];
   window.gtag =
     window.gtag ||
-    ((...args: unknown[]) => {
-      window.dataLayer?.push(args);
-    });
+    function () {
+      // Google interprets gtag commands as Arguments objects, not ordinary arrays.
+      window.dataLayer?.push(arguments);
+    };
 
   if (!document.getElementById(ANALYTICS_SCRIPT_ID)) {
     const script = document.createElement('script');
