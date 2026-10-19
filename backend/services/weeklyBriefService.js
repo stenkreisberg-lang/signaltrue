@@ -660,7 +660,24 @@ export async function generateWeeklyBrief(orgId) {
     actorUserId: { $ne: null },
     timestamp: { $gte: thisWeekStart, $lte: now },
   });
-  const connectedUserCount = Math.max(usersWithDataThisWeek.length, 1); // avoid div-by-zero
+  // Use a period-specific denominator. Reusing this week's population for older
+  // periods changes historical per-person results when coverage changes.
+  const calendarActorsFor = (start, end) => WorkEvent.distinct('actorUserId', {
+    orgId: org._id,
+    source: { $in: ['microsoft-outlook', 'google-calendar'] },
+    eventType: 'meeting',
+    actorUserId: { $ne: null },
+    timestamp: { $gte: start, $lt: end },
+  });
+  const [usersWithDataLastWeek, usersWithDataBaseline] = await Promise.all([
+    calendarActorsFor(lastWeekStart, thisWeekStart),
+    calendarActorsFor(sixWeekStart, thisWeekStart),
+  ]);
+  const connectedUserCount = Math.max(usersWithDataThisWeek.length, 1);
+  const lastWeekConnectedUserCount = Math.max(usersWithDataLastWeek.length, 1);
+  // Baseline calculations still need per-week cohorts for exact historical
+  // comparability; do not call this pooled cohort a validated per-person baseline.
+  const baselineConnectedUserCount = Math.max(usersWithDataBaseline.length, 1);
   const coveragePct =
     totalUsers > 0 ? Math.round((usersWithDataThisWeek.length / totalUsers) * 100) : 0;
 
@@ -1094,17 +1111,17 @@ export async function generateWeeklyBrief(orgId) {
     recurringBurden: avgField(twOrgMetricsArr, 'recurringMeetingBurden'),
   };
   const lw = {
-    meetings: avgField(lwOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
-    meetingHours: avgField(lwOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
-    backToBack: avgField(lwOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
-    messages: avgField(lwOrgMetricsArr, 'messageCount7d') / connectedUserCount,
-    msgsPerDay: avgField(lwOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
-    afterHoursMsg: avgField(lwOrgMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+    meetings: avgField(lwOrgMetricsArr, 'meetingCount7d') / lastWeekConnectedUserCount,
+    meetingHours: avgField(lwOrgMetricsArr, 'meetingDurationTotalHours7d') / lastWeekConnectedUserCount,
+    backToBack: avgField(lwOrgMetricsArr, 'backToBackMeetingBlocks') / lastWeekConnectedUserCount,
+    messages: avgField(lwOrgMetricsArr, 'messageCount7d') / lastWeekConnectedUserCount,
+    msgsPerDay: avgField(lwOrgMetricsArr, 'messagesPerDay') / lastWeekConnectedUserCount,
+    afterHoursMsg: avgField(lwOrgMetricsArr, 'afterHoursMessageCount') / lastWeekConnectedUserCount,
     afterHoursRatio: avgField(lwOrgMetricsArr, 'afterHoursMessageRatio'),
     channels: avgField(lwOrgMetricsArr, 'uniqueChannels7d'),
     afterHoursEmail: avgField(lwOrgMetricsArr, 'afterHoursSentRatio'),
     focusTimeAvailability:
-      avgField(lwOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
+      avgField(lwOrgMetricsArr, 'focusTimeAvailabilityHours') / lastWeekConnectedUserCount,
     calendarFragmentation: avgField(lwOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(lwOrgMetricsArr, 'recurringMeetingBurden'),
   };
@@ -1117,18 +1134,18 @@ export async function generateWeeklyBrief(orgId) {
 
   // ─── 6-week baseline averages (per-person) ───
   const sixWeekAvg = {
-    meetings: avgField(sixWeekOrgMetricsArr, 'meetingCount7d') / connectedUserCount,
+    meetings: avgField(sixWeekOrgMetricsArr, 'meetingCount7d') / baselineConnectedUserCount,
     meetingHours:
-      avgField(sixWeekOrgMetricsArr, 'meetingDurationTotalHours7d') / connectedUserCount,
-    backToBack: avgField(sixWeekOrgMetricsArr, 'backToBackMeetingBlocks') / connectedUserCount,
-    messages: avgField(sixWeekOrgMetricsArr, 'messageCount7d') / connectedUserCount,
-    msgsPerDay: avgField(sixWeekOrgMetricsArr, 'messagesPerDay') / connectedUserCount,
-    afterHoursMsg: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageCount') / connectedUserCount,
+      avgField(sixWeekOrgMetricsArr, 'meetingDurationTotalHours7d') / baselineConnectedUserCount,
+    backToBack: avgField(sixWeekOrgMetricsArr, 'backToBackMeetingBlocks') / baselineConnectedUserCount,
+    messages: avgField(sixWeekOrgMetricsArr, 'messageCount7d') / baselineConnectedUserCount,
+    msgsPerDay: avgField(sixWeekOrgMetricsArr, 'messagesPerDay') / baselineConnectedUserCount,
+    afterHoursMsg: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageCount') / baselineConnectedUserCount,
     afterHoursRatio: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageRatio'),
     afterHoursRatioPct: avgField(sixWeekOrgMetricsArr, 'afterHoursMessageRatio') * 100,
     channels: avgField(sixWeekOrgMetricsArr, 'uniqueChannels7d'),
     focusTimeAvailability:
-      avgField(sixWeekOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
+      avgField(sixWeekOrgMetricsArr, 'focusTimeAvailabilityHours') / baselineConnectedUserCount,
     calendarFragmentation: avgField(sixWeekOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(sixWeekOrgMetricsArr, 'recurringMeetingBurden'),
   };
