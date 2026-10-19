@@ -115,6 +115,10 @@ const integrationConnectionSchema = new mongoose.Schema(
       teamsDiscovered: { type: Number, default: 0 },
       teamsRead: { type: Number, default: 0 },
       teamsSkipped: { type: Number, default: 0 },
+      chatAttemptedUsers: { type: Number, default: 0 },
+      chatSyncedUsers: { type: Number, default: 0 },
+      chatFailedUsers: { type: Number, default: 0 },
+      chatMessagesCollected: { type: Number, default: 0 },
       // Aggregate provider categories only. Never persist mailbox addresses,
       // meeting subjects, channel names, or message bodies here.
       errorCategories: { type: mongoose.Schema.Types.Mixed, default: {} },
