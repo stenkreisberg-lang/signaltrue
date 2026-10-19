@@ -695,7 +695,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                 : 'Microsoft Teams channel-message metadata only',
               statusMessage: fetchFailure?.message ||
                 (fetchSummary.coverage
-                  ? `Teams channel collection: ${fetchSummary.coverage.teamsRead || 0}/${fetchSummary.coverage.teamsDiscovered || 0} teams read, ${fetchSummary.coverage.syncedUsers || 0}/${fetchSummary.coverage.attemptedUsers || 0} membership checks succeeded; ${mappedUserCount} distinct channel-message authors observed in 42 days. Chat messages, meeting chats and calls are not included.`
+                  ? `Teams channel collection: ${fetchSummary.coverage.teamsRead || 0}/${fetchSummary.coverage.teamsDiscovered || 0} teams read, ${fetchSummary.coverage.syncedUsers || 0}/${fetchSummary.coverage.attemptedUsers || 0} membership checks succeeded; ${mappedUserCount} distinct observed message authors in 42 days. Chat reads: ${fetchSummary.coverage.chatSyncedUsers || 0}/${fetchSummary.coverage.chatAttemptedUsers || 0}; calls not included.`
                   : 'Teams channel messages only; chat messages and calls are not included.'),
             }
           : {}),
@@ -916,7 +916,6 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until, orgId);
     // Chat coverage is an independent, explicitly consented source. Do not
     // silently treat channel-author coverage as all Teams communication.
-    const appRoles = getMicrosoftTokenRoles(appToken);
     let chatMessages = [];
     if (appRoles.includes('Chat.Read.All')) {
       const orgUsers = await User.find({
