@@ -690,16 +690,20 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         'coverage.lastCoverageUpdatedAt': now,
         ...(sourceKey === 'teams'
           ? {
-              measurementScope: 'Microsoft Teams channel-message metadata only',
+              measurementScope: fetchSummary.coverage?.chatSyncedUsers > 0
+                ? 'Microsoft Teams channel and chat message metadata'
+                : 'Microsoft Teams channel-message metadata only',
               statusMessage: fetchFailure?.message ||
                 (fetchSummary.coverage
-                  ? `Teams channel collection: ${fetchSummary.coverage.teamsRead || 0}/${fetchSummary.coverage.teamsDiscovered || 0} teams read, ${fetchSummary.coverage.syncedUsers || 0}/${fetchSummary.coverage.attemptedUsers || 0} membership checks succeeded; ${mappedUserCount} distinct channel-message authors observed in 42 days. Chat messages, meeting chats and calls are not included.`
+                  ? `Teams channel collection: ${fetchSummary.coverage.teamsRead || 0}/${fetchSummary.coverage.teamsDiscovered || 0} teams read, ${fetchSummary.coverage.syncedUsers || 0}/${fetchSummary.coverage.attemptedUsers || 0} membership checks succeeded; ${mappedUserCount} distinct observed message authors in 42 days. Chat reads: ${fetchSummary.coverage.chatSyncedUsers || 0}/${fetchSummary.coverage.chatAttemptedUsers || 0}; calls not included.`
                   : 'Teams channel messages only; chat messages and calls are not included.'),
             }
           : {}),
 
         measurementScope: sourceKey === 'teams'
-          ? 'Microsoft Teams channel-message metadata only; excludes chats and calls'
+          ? (fetchSummary.coverage?.chatSyncedUsers > 0
+              ? 'Microsoft Teams channel and chat message metadata; excludes calls'
+              : 'Microsoft Teams channel-message metadata only; excludes chats and calls')
           : companyWideVerified
             ? 'organization-wide Microsoft calendar metadata'
             : 'calendar metadata only',
@@ -720,6 +724,10 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           setPayload['coverage.teamsDiscovered'] = fetchSummary.coverage.teamsDiscovered;
           setPayload['coverage.teamsRead'] = fetchSummary.coverage.teamsRead;
           setPayload['coverage.teamsSkipped'] = fetchSummary.coverage.teamsSkipped;
+          setPayload['coverage.chatAttemptedUsers'] = fetchSummary.coverage.chatAttemptedUsers ?? 0;
+          setPayload['coverage.chatSyncedUsers'] = fetchSummary.coverage.chatSyncedUsers ?? 0;
+          setPayload['coverage.chatFailedUsers'] = fetchSummary.coverage.chatFailedUsers ?? 0;
+          setPayload['coverage.chatMessagesCollected'] = fetchSummary.coverage.chatMessagesCollected ?? 0;
         }
       }
       if (sourceKey !== 'teams' && !fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
@@ -906,10 +914,60 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     if (!orgId) throw new Error('Organization is required for company-wide Teams collection.');
 
     const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until, orgId);
+    // Chat coverage is an independent, explicitly consented source. Do not
+    // silently treat channel-author coverage as all Teams communication.
+    let chatMessages = [];
+    if (appRoles.includes('Chat.Read.All')) {
+      const orgUsers = await User.find({
+        orgId,
+        'externalIds.microsoftUserId': { $exists: true, $ne: null },
+        accountStatus: { $ne: 'inactive' },
+      }).select('externalIds.microsoftUserId').lean();
+      const distinct = new Map();
+      let successfulReads = 0;
+      let failedReads = 0;
+      for (const user of orgUsers) {
+        try {
+          const userId = user.externalIds.microsoftUserId;
+          const filter = encodeURIComponent(
+            `lastModifiedDateTime gt ${since.toISOString()} and lastModifiedDateTime lt ${until.toISOString()}`
+          );
+          const messages = await fetchGraphCollection(
+            `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/chats/getAllMessages?$top=50&$filter=${filter}`,
+            appToken
+          );
+          successfulReads++;
+          for (const message of messages) {
+            if (message.messageType !== 'message') continue;
+            const created = new Date(message.createdDateTime);
+            if (!(created >= since && created < until)) continue;
+            const chatId = message.chatId || message.chatIdentity?.chatId;
+            if (!chatId || !message.id) continue;
+            const key = `${chatId}:${message.id}`;
+            distinct.set(key, { ...message, chatId, eventSource: 'teams-chat' });
+          }
+        } catch (error) {
+          failedReads++;
+          console.warn('[Microsoft][AppOnly] Teams chat read failed:', classifyMicrosoftSyncError(error).message);
+        }
+      }
+      chatMessages = [...distinct.values()];
+      if (this.pendingTeamsCoverage) {
+        Object.assign(this.pendingTeamsCoverage, {
+          chatAttemptedUsers: orgUsers.length,
+          chatSyncedUsers: successfulReads,
+          chatFailedUsers: failedReads,
+          chatMessagesCollected: chatMessages.length,
+        });
+      }
+      console.log(`[Microsoft][AppOnly] Teams chat coverage: ${successfulReads}/${orgUsers.length} checked; ${chatMessages.length} distinct chat messages`);
+    } else {
+      console.warn('[Microsoft][AppOnly] Teams chats unavailable: Chat.Read.All application consent is missing; only channel activity is measured.');
+    }
     console.log(
-      `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} tenant-wide channel messages`
+      `[Microsoft][AppOnly] Teams: fetched ${tenantMessages.length} channel messages and ${chatMessages.length} chat messages`
     );
-    return tenantMessages;
+    return [...tenantMessages, ...chatMessages];
   }
 
   async fetchTenantWideTeamsMessages(appToken, since, until, orgId) {
