@@ -651,6 +651,9 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           actorUserId: { $ne: null },
         }),
       ]);
+      // 'mappedUsers' means observed message authors, NOT Graph permission coverage.
+      // Teams chat, meeting chat, calls and presence are not covered by this
+      // channel-message-only adapter.
       const mappedUserCount = mappedUsers.length;
       const hasMappedHistory = mappedUserCount > 0;
       const fetchFailure = fetchSummary.success
@@ -685,9 +688,21 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
         'coverage.totalUsers': totalUsers,
         'coverage.mappedUsers': mappedUserCount,
         'coverage.lastCoverageUpdatedAt': now,
-        measurementScope: companyWideVerified
-          ? 'organization-wide Microsoft metadata'
-          : 'metadata only',
+        ...(sourceKey === 'teams'
+          ? {
+              measurementScope: 'Microsoft Teams channel-message metadata only',
+              statusMessage: fetchFailure?.message ||
+                (fetchSummary.coverage
+                  ? `Teams channel collection: ${fetchSummary.coverage.teamsRead || 0}/${fetchSummary.coverage.teamsDiscovered || 0} teams read, ${fetchSummary.coverage.syncedUsers || 0}/${fetchSummary.coverage.attemptedUsers || 0} membership checks succeeded; ${mappedUserCount} distinct channel-message authors observed in 42 days. Chat messages, meeting chats and calls are not included.`
+                  : 'Teams channel messages only; chat messages and calls are not included.'),
+            }
+          : {}),
+
+        measurementScope: sourceKey === 'teams'
+          ? 'Microsoft Teams channel-message metadata only; excludes chats and calls'
+          : companyWideVerified
+            ? 'organization-wide Microsoft calendar metadata'
+            : 'calendar metadata only',
       };
       if (fetchSummary.success) setPayload['sync.lastSuccessfulSyncAt'] = now;
       if (sourceKey === 'outlook' && fetchSummary.coverage) {
@@ -707,7 +722,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           setPayload['coverage.teamsSkipped'] = fetchSummary.coverage.teamsSkipped;
         }
       }
-      if (!fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
+      if (sourceKey !== 'teams' && !fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
         setPayload.statusMessage = companyWideVerified
           ? `Company-wide Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} access is verified; no activity was found in the coverage window.`
           : `Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} needs administrator consent for organization-wide coverage.`;

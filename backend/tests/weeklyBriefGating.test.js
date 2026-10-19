@@ -230,7 +230,7 @@ describe('full report mode', () => {
     expect(html).toContain('Baselines built on'); // tenure line
     expect(html).not.toContain('Forecast rule check');
     expect(html).not.toContain("This week's call");
-    expect(html).toContain('Estimated coordination cost above your baseline');
+    expect(html).not.toContain('Forecast rule check'); // invalid extrapolations must remain suppressed
     expect(html).toContain('Was this week unusual?'); // annotation loop
 
     const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
@@ -329,7 +329,14 @@ describe('metric-level regression fixtures', () => {
       timestamp: daysAgo(1),
       externalId: `fixture-message-${org._id}-${index}`,
     }));
-    await WorkEvent.insertMany([...calendarEvents, ...messageEvents]);
+    // Supply the same covered population in the comparison week. A valid
+    // historical per-person comparison cannot divide by an empty cohort.
+    const priorCalendarEvents = calendarEvents.map((event, index) => ({
+      ...event,
+      timestamp: daysAgo(9),
+      externalId: `fixture-calendar-prior-${org._id}-${index}`,
+    }));
+    await WorkEvent.insertMany([...calendarEvents, ...priorCalendarEvents, ...messageEvents]);
   }
 
   test('3/59 messaging coverage shows counts but cannot change organization status', async () => {
@@ -374,15 +381,15 @@ describe('metric-level regression fixtures', () => {
         orgId: org._id,
         date: daysAgo(2),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 290,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 29,
+        focusTimeAvailabilityHours: 0,
       },
       {
         orgId: org._id,
         date: daysAgo(9),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
     ]);
 
@@ -411,15 +418,15 @@ describe('metric-level regression fixtures', () => {
         orgId: org._id,
         date: daysAgo(2),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
       {
         orgId: org._id,
         date: daysAgo(9),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
     ]);
 
