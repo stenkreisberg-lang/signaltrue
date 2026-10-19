@@ -913,6 +913,13 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     }
     if (!orgId) throw new Error('Organization is required for company-wide Teams collection.');
 
+    // Role names only. Never log tokens, chat bodies, user IDs, or tenant secrets.
+    console.log('[Microsoft][AppOnly] Teams permission evidence', JSON.stringify({
+      orgId: String(orgId),
+      channelReadGranted: appRoles.includes('ChannelMessage.Read.All'),
+      chatReadGranted: appRoles.includes('Chat.Read.All'),
+      membershipReadGranted: appRoles.includes('User.Read.All'),
+    }));
     const tenantMessages = await this.fetchTenantWideTeamsMessages(appToken, since, until, orgId);
     // Chat coverage is an independent, explicitly consented source. Do not
     // silently treat channel-author coverage as all Teams communication.
