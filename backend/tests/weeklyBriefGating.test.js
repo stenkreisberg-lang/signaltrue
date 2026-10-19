@@ -329,7 +329,14 @@ describe('metric-level regression fixtures', () => {
       timestamp: daysAgo(1),
       externalId: `fixture-message-${org._id}-${index}`,
     }));
-    await WorkEvent.insertMany([...calendarEvents, ...messageEvents]);
+    // Supply the same covered population in the comparison week. A valid
+    // historical per-person comparison cannot divide by an empty cohort.
+    const priorCalendarEvents = calendarEvents.map((event, index) => ({
+      ...event,
+      timestamp: daysAgo(9),
+      externalId: `fixture-calendar-prior-${org._id}-${index}`,
+    }));
+    await WorkEvent.insertMany([...calendarEvents, ...priorCalendarEvents, ...messageEvents]);
   }
 
   test('3/59 messaging coverage shows counts but cannot change organization status', async () => {
