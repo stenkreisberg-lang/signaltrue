@@ -698,9 +698,11 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             }
           : {}),
 
-        measurementScope: companyWideVerified
-          ? 'organization-wide Microsoft metadata'
-          : 'metadata only',
+        measurementScope: sourceKey === 'teams'
+          ? 'Microsoft Teams channel-message metadata only; excludes chats and calls'
+          : companyWideVerified
+            ? 'organization-wide Microsoft calendar metadata'
+            : 'calendar metadata only',
       };
       if (fetchSummary.success) setPayload['sync.lastSuccessfulSyncAt'] = now;
       if (sourceKey === 'outlook' && fetchSummary.coverage) {
@@ -720,7 +722,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
           setPayload['coverage.teamsSkipped'] = fetchSummary.coverage.teamsSkipped;
         }
       }
-      if (!fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
+      if (sourceKey !== 'teams' && !fetchFailure && sourceEventCount === 0 && sourceEvents.length === 0) {
         setPayload.statusMessage = companyWideVerified
           ? `Company-wide Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} access is verified; no activity was found in the coverage window.`
           : `Microsoft ${sourceKey === 'teams' ? 'Teams' : 'Outlook'} needs administrator consent for organization-wide coverage.`;
