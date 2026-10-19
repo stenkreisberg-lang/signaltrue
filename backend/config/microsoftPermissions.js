@@ -22,6 +22,11 @@ export const MICROSOFT_TEAMS_APPLICATION_ROLES = [
   'User.Read.All',
 ];
 
+// Chat.Read.All is an additional consent grant, not a hard prerequisite for
+// existing channel and calendar sync. Never break a working connection while
+// a tenant administrator evaluates the extra scope.
+export const MICROSOFT_TEAMS_CHAT_APPLICATION_ROLES = ['Chat.Read.All'];
+
 export const REQUIRED_MICROSOFT_APPLICATION_ROLES = [
   ...new Set([...MICROSOFT_OUTLOOK_APPLICATION_ROLES, ...MICROSOFT_TEAMS_APPLICATION_ROLES]),
 ];
@@ -29,4 +34,9 @@ export const REQUIRED_MICROSOFT_APPLICATION_ROLES = [
 export function getMissingMicrosoftApplicationRoles(grantedRoles = []) {
   const granted = new Set(Array.isArray(grantedRoles) ? grantedRoles : []);
   return REQUIRED_MICROSOFT_APPLICATION_ROLES.filter((role) => !granted.has(role));
+}
+
+export function getMissingMicrosoftChatRoles(grantedRoles = []) {
+  const granted = new Set(Array.isArray(grantedRoles) ? grantedRoles : []);
+  return MICROSOFT_TEAMS_CHAT_APPLICATION_ROLES.filter((role) => !granted.has(role));
 }
