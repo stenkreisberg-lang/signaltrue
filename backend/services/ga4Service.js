@@ -437,6 +437,18 @@ function isAdminPermissionError(error) {
   return status === 401 || status === 403;
 }
 
+function adminInspectionDiagnostic(error, fallback) {
+  const message = errorMessage(error, fallback);
+  const status = Number(error?.response?.status || error?.response?.data?.error?.code || 0);
+  if (isAdminPermissionError(error)) {
+    return { type: 'ga4_admin_permission_error', message: `GA4 Admin authentication or access failed: ${message}` };
+  }
+  if (status === 404) {
+    return { type: 'ga4_admin_endpoint_unavailable', message: `GA4 Admin inspection endpoint returned 404. Verify API resource/version and availability before changing service-account permissions: ${message}` };
+  }
+  return { type: 'ga4_admin_inspection_unknown', message: `GA4 Admin inspection failed; configuration remains unknown: ${message}` };
+}
+
 export async function getDataFilterStatus(authClient, propertyId, diagnostics = []) {
   try {
     const response = await authClient.request({
@@ -456,12 +468,7 @@ export async function getDataFilterStatus(authClient, propertyId, diagnostics = 
     };
   } catch (error) {
     const message = errorMessage(error, 'Could not inspect GA4 data filters.');
-    diagnostics.push({
-      type: 'ga4_admin_permission_error',
-      message: isAdminPermissionError(error)
-        ? `Could not inspect GA4 data filters because GA4 Admin access failed: ${message}`
-        : `Could not inspect GA4 data filters: ${message}`,
-    });
+    diagnostics.push(adminInspectionDiagnostic(error, 'Could not inspect GA4 data filters.'));
     return {
       internalTraffic: configurationState(CONFIGURATION_STATES.UNKNOWN, message),
       developerTraffic: configurationState(CONFIGURATION_STATES.UNKNOWN, message),
