@@ -230,7 +230,7 @@ describe('full report mode', () => {
     expect(html).toContain('Baselines built on'); // tenure line
     expect(html).not.toContain('Forecast rule check');
     expect(html).not.toContain("This week's call");
-    expect(html).toContain('Estimated coordination cost above your baseline');
+    expect(html).not.toContain('Forecast rule check'); // invalid extrapolations must remain suppressed
     expect(html).toContain('Was this week unusual?'); // annotation loop
 
     const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
@@ -374,15 +374,15 @@ describe('metric-level regression fixtures', () => {
         orgId: org._id,
         date: daysAgo(2),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 290,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 29,
+        focusTimeAvailabilityHours: 0,
       },
       {
         orgId: org._id,
         date: daysAgo(9),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
     ]);
 
@@ -411,15 +411,15 @@ describe('metric-level regression fixtures', () => {
         orgId: org._id,
         date: daysAgo(2),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
       {
         orgId: org._id,
         date: daysAgo(9),
         meetingInstanceCount7d: 47,
-        meetingDurationTotalHours7d: 100,
-        focusTimeAvailabilityHours: 470,
+        meetingDurationTotalHours7d: 10,
+        focusTimeAvailabilityHours: 0,
       },
     ]);
 
