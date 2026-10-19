@@ -169,6 +169,18 @@ export const GA4_DIAGNOSTIC_ACTIONS = Object.freeze({
     action:
       'Give the configured service account sufficient GA4 Admin read access, then rerun verification.',
   },
+  ga4_admin_endpoint_unavailable: {
+    rank: 1,
+    title: 'Repair GA4 Admin inspection endpoint',
+    action:
+      'The GA4 Admin endpoint returned 404. Verify the supported resource and API version before altering access permissions. Keep filter state unknown until inspection succeeds.',
+  },
+  ga4_admin_inspection_unknown: {
+    rank: 1,
+    title: 'Investigate GA4 Admin inspection failure',
+    action:
+      'Review the returned API status and error, then rerun configuration verification. Do not infer that a filter is absent.',
+  },
   ga4_page_view_automation_unknown: {
     rank: 1,
     title: 'Verify browser-history page-view configuration',
