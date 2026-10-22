@@ -14,7 +14,7 @@ Implemented changes:
 
 Validation: 82 frontend tests passed across 26 files; production build passed; changed TypeScript/TSX files passed ESLint. New tests cover incomplete assessment, first start, repeated result clicks, answer edits and the free offer.
 
-Release status: code prepared and tested. Verify the resulting GitHub commit, deployment and public bundle separately. Vercel project inspection returned 403 for team `team_APYQ77oyGgV7CPO9VMBheK38`; do not bypass this restriction. The production build-version endpoint still returned `c42eefdb8ee76accdc4ff576457807e94fa7bb7f` before this release.
+Release status: LIVE VERIFIED. Code commit `2ce5c79f7c2bd00522ab05fbf046b3dd5c980f29`. Existing GitHub-to-Vercel deployment statuses reported success and the public build-version endpoint returned that commit. Chrome inspection confirmed the free-pilot copy and the corrected How It Works link to /did-the-control-work; no console errors were observed on the diagnostic page. Vercel's dashboard API still returned a team-scope 403, but the existing automatic deployment succeeded without changing permissions. Google completion-event receipt remains pending. This ledger-only update does not change the released application.
 
 Measurement baseline, 22 September to 19 October: six GA4 sessions, twelve page views, no diagnostic events. Basic collection resumed on 18 October after the prior queue repair. The preceding period is not a valid conversion comparison because of the collection interruption. Search: 21 clicks vs 20, 1,209 impressions vs 1,694.
 
