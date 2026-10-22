@@ -66,7 +66,7 @@ const Navbar = () => {
                   to="/au/8-week-pilot"
                   className="inline-flex h-9 items-center rounded-control px-3 text-caption font-semibold text-[#475569] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
                 >
-                  AU$99 review
+                  Free pilot
                 </Link>
                 <Link
                   to="/au/monitoring-gap-audit"

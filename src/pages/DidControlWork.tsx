@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -129,6 +129,8 @@ function scoreLabel(score: number) {
 export default function DidControlWork() {
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [showResult, setShowResult] = useState(false);
+  const started = useRef(false);
+  const completed = useRef(false);
 
   useEffect(() => {
     trackEvent('did_control_work_viewed', { campaign: 'people_at_work_transition' });
@@ -151,11 +153,14 @@ export default function DidControlWork() {
   const finish = () => {
     if (answeredCount !== QUESTIONS.length) return;
     setShowResult(true);
-    trackEvent('did_control_work_completed', {
-      score,
-      gap_count: gaps.length,
-      campaign: 'people_at_work_transition',
-    });
+    if (!completed.current) {
+      completed.current = true;
+      trackEvent('did_control_work_completed', {
+        score,
+        gap_count: gaps.length,
+        campaign: 'people_at_work_transition',
+      });
+    }
     window.setTimeout(() => {
       document.getElementById('diagnostic-result')?.scrollIntoView({ behavior: 'smooth' });
     }, 20);
@@ -229,6 +234,12 @@ export default function DidControlWork() {
                           key={option.label}
                           type="button"
                           onClick={() => {
+                            if (!started.current) {
+                              started.current = true;
+                              trackEvent('did_control_work_started', {
+                                campaign: 'people_at_work_transition',
+                              });
+                            }
                             setAnswers((current) => ({ ...current, [q.id]: option.value }));
                             setShowResult(false);
                           }}
@@ -353,10 +364,11 @@ export default function DidControlWork() {
             <p className="text-caption font-bold uppercase tracking-wider text-[#93C5FD]">
               Founding review
             </p>
-            <h2 className="mt-3 text-section font-bold">One risk. One control. AU$99.</h2>
+            <h2 className="mt-3 text-section font-bold">One risk. One control. A free pilot.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-[#CBD5E1]">
-              The aim is to validate whether this review is useful, not to maximise pilot revenue.
-              One team, one identified psychosocial risk, one control and one final evidence review.
+              Review one team, one identified psychosocial risk and one control in a free pilot.
+              Bring the evidence together for a final review of what changed and what needs
+              attention.
             </p>
             <Link
               to="/contact?intent=free-preview"

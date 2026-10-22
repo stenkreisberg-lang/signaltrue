@@ -41,6 +41,7 @@ export const FUNNEL_EVENT_NAMES = [
   'control_assessment_completed',
   'control_assessment_lead_confirmed',
   'did_control_work_viewed',
+  'did_control_work_started',
   'did_control_work_completed',
   'did_control_work_plan_copied',
   'diagnostic_started',

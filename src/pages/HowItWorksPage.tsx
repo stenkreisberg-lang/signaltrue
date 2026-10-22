@@ -317,15 +317,15 @@ const HowItWorksPage = () => {
                 See it for your organization
               </p>
               <h2 className="text-lead sm:text-section font-display font-bold text-[#0F172A] mb-3">
-                Which psychosocial risk concern should you investigate first?
+                Can you tell whether your psychosocial control worked?
               </h2>
               <p className="text-[#334155] mb-8 max-w-xl mx-auto">
-                Take the free diagnostic. 8 questions. 7 minutes. No integrations needed.
+                Check your control-review process. 8 questions. About two minutes.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild variant="hero" size="lg">
-                  <Link to="/drift-diagnostic">
-                    Take the free diagnostic
+                  <Link to="/did-the-control-work">
+                    Check your control-review gaps
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
@@ -336,8 +336,7 @@ const HowItWorksPage = () => {
                 </Button>
               </div>
               <p className="text-caption text-[#475569] mt-4">
-                No employee data. No message content. Work email requested only to unlock the
-                report.
+                No employee data, integrations, sign-up or email required to see your result.
               </p>
             </div>
           </div>

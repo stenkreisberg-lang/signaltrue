@@ -1,5 +1,6 @@
 import { Button } from '../components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PrimaryCommercialCTA, SampleReportCTA } from './CommercialCTA';
 
 const CTASection = () => {
@@ -15,8 +16,8 @@ const CTASection = () => {
             the baseline, after-period, sustainability, migration and worker-evidence review.
           </p>
           <p className="text-caption text-[#94A3B8] mb-10 max-w-xl mx-auto">
-            The AU$99 price is for the founding validation phase. We use the feedback to improve the
-            method and final report before standard commercial pricing.
+            The pilot is free. Use one team, one risk and one control to review whether the change
+            helped and what evidence is still missing.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -29,6 +30,14 @@ const CTASection = () => {
               <SampleReportCTA ctaLocation="homepage_final">See the sample report</SampleReportCTA>
             </Button>
           </div>
+          <p className="mt-6 text-caption text-[#CBD5E1]">
+            <Link
+              to="/did-the-control-work"
+              className="underline underline-offset-4 hover:text-white"
+            >
+              Check your control-review gaps: 8 questions, no sign-up
+            </Link>
+          </p>
         </div>
       </div>
     </section>
