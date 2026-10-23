@@ -25,3 +25,13 @@ Next checks:
 4. Tag legitimate distribution links with source, medium and campaign. Never infer unqualified or automated traffic from country or direct attribution alone.
 
 No commercial improvement or new customers are claimed by this release. Do not keep reporting these implemented repairs as new proposals.
+
+## 23 October 2026: collection and release follow-up
+
+Status: diagnostic page-view receipt CONFIRMED in GA4; completion receipt PENDING. GA4 properties/516781576 recorded did_control_work_viewed once on 20 October from www.signaltrue.ai. This precedes the 22 October repair and is not evidence of its effect. The started event was introduced on 22 October, so absence before that date cannot establish non-starting visitors.
+
+Latest settled window: 23 September to 20 October; baseline 26 August to 22 September. Ten sessions and zero recorded diagnostic completions. GA4 session comparison (10 vs 942) is not a performance comparison because tracking was interrupted. GSC 21 clicks vs 20 and 1,171 impressions vs 1,708. Sources: eight direct sessions, one Google organic and one chatgpt.com / ai-assistant. No qualified enquiry/customer outcome verified; downstream stages remain UNKNOWN.
+
+Release follow-up: public build-version returned ef4a39c13a1ae1983aa90cfccf56b79a90733745. GitHub comparison against application release 2ce5c79f7c2bd00522ab05fbf046b3dd5c980f29 showed only docs/CRO_EXECUTION.md and qa/last-control-review-qa.json changed. The application repair remains deployed. No application redesign or analytics setting change made in this follow-up.
+
+Next check: observe real completion receipt and the first settled days covering 22 October onward. Connected reporting tools do not offer Realtime/DebugView. Do not manufacture a production conversion. Safe separate-destination receipt validation remains unavailable. Monitor malformed landing path /ZGlkLXRoZS (two sessions) only as an investigation lead; no legitimate destination or source link was established, so do not add a guessed redirect.
