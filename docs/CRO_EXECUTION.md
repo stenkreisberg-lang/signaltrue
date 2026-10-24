@@ -35,3 +35,13 @@ Latest settled window: 23 September to 20 October; baseline 26 August to 22 Sept
 Release follow-up: public build-version returned ef4a39c13a1ae1983aa90cfccf56b79a90733745. GitHub comparison against application release 2ce5c79f7c2bd00522ab05fbf046b3dd5c980f29 showed only docs/CRO_EXECUTION.md and qa/last-control-review-qa.json changed. The application repair remains deployed. No application redesign or analytics setting change made in this follow-up.
 
 Next check: observe real completion receipt and the first settled days covering 22 October onward. Connected reporting tools do not offer Realtime/DebugView. Do not manufacture a production conversion. Safe separate-destination receipt validation remains unavailable. Monitor malformed landing path /ZGlkLXRoZS (two sessions) only as an investigation lead; no legitimate destination or source link was established, so do not add a guessed redirect.
+
+## 24 October 2026: observation continued; no unsupported redesign
+
+Settled GA4/GSC period: 24 September–21 October versus 27 August–23 September. GA4 12 sessions, 12 active users, 27 page views, one did_control_work_viewed, zero recorded did_control_work_started/completed and zero key events. Base collection resumed 18 October, so prior 869 sessions are not a valid like-for-like conversion comparison. The started event was introduced 22 October, outside this window; its absence is not abandonment. No cohort drop-off calculation warranted. GSC 21 clicks vs 20; 1,147 impressions vs 1,724; CTR 1.83% vs 1.16%; average position 7.77 vs 9.28. These pre-release observations cannot show the impact of the 22 October repairs.
+
+Public canonical homepage responded HTTP 200 on 24 October and references index-CIahB-ys.js. Application release remains the previously live-verified 2ce5c79f7c2bd00522ab05fbf046b3dd5c980f29; no new application code, analytics settings or production diagnostic submissions today. Google completion receipt remains pending; connected reports do not provide Realtime/DebugView. Successful report requests, delivery, qualified enquiries, conversations, pilots and customers remain UNKNOWN, not zero.
+
+Priority work today was the separate HybridWorkOS report-email response defect, corrected in that repository at d4ef5dd1fa046cebeafe526a7774e815ad3a0b14 with targeted tests passed. Its Supabase production function access was denied; do not mix that issue or its evidence into SignalTrue.
+
+Next check: settled post-22-October journey events and actual Google completion receipt, with matching denominators and verified downstream records. Continue observing the approved application changes before adding another redesign.
