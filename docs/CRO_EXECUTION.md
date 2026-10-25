@@ -45,3 +45,17 @@ Public canonical homepage responded HTTP 200 on 24 October and references index-
 Priority work today was the separate HybridWorkOS report-email response defect, corrected in that repository at d4ef5dd1fa046cebeafe526a7774e815ad3a0b14 with targeted tests passed. Its Supabase production function access was denied; do not mix that issue or its evidence into SignalTrue.
 
 Next check: settled post-22-October journey events and actual Google completion receipt, with matching denominators and verified downstream records. Continue observing the approved application changes before adding another redesign.
+
+## 25 October 2026: release and real page-view receipt revalidated
+
+Public /did-the-control-work HTTP 200, index-CIahB-ys.js. Public build-version returned 9b43694de4c4f4b49df7c56dd3ef4cd4f63e0553. GitHub compare against approved application release 2ce5c79f7c2bd00522ab05fbf046b3dd5c980f29 shows only docs/CRO_EXECUTION.md and qa/last-control-review-qa.json changed: application repairs remain deployed. No new frontend changes or unnecessary repeat tests today.
+
+GA4 settled window 25 September–22 October vs 28 August–24 September: 14 sessions, 13 active users, 34 page views, two did_control_work_viewed events from two users, zero recorded did_control_work_started/completed/key events. On 22 October one page-view event came from www.signaltrue.ai. This confirms Google receipt of a view, not completion or verified prospect intent. Started event was only introduced 22 October; aggregate lack of starts is not a valid abandonment measurement. Intraday timing relative to deployment not established; no uplift claim. Tracking resumed 18 October, so the 760 prior-period sessions are not a valid conversion-performance baseline.
+
+Sources: nine direct, one not-set, one chatgpt.com / ai-assistant, one facebook.com referral, one lm.facebook.com referral, one Google organic. Landing sessions include homepage five, /au two and /signals/coordination-overhead two; malformed /ZGlkLXRoZS still two, without a proven source or legitimate destination. No guessed redirect or exclusion.
+
+Latest GSC summary is settled through 23 October: 26 September–23 October vs 29 August–25 September, 22 clicks vs 20; 1,090 impressions vs 1,774; CTR 2.02% vs 1.13%; average position 7.67 vs 9.24. Query/page drill-down default used 25 September–22 October; signaltrue/homepage had 13 listed clicks, while top visible nonbrand rows had no clicks. The drill-down is truncated and cannot establish total nonbrand demand or source quality. Do not mix its date range with the summary as if identical.
+
+Separate primary work: prepared HybridWorkOS bounded backend-release procedure in that repository, commit fee1155a73f2bd45d0e0a328468486324497a014. Its function-access denial does not establish a SignalTrue defect.
+
+Status: existing application LIVE VERIFIED; real diagnostic view receipt VERIFIED; actual completion receipt PENDING. Report requests, delivery, qualified enquiries, commercial conversations, free pilots and customers UNKNOWN without source records. Continue observing eligible post-release activity and verify real completion receipt before another redesign.
