@@ -36,6 +36,14 @@ const Login = () => {
       localStorage.setItem('orgId', data.user.orgId);
       localStorage.setItem('teamId', data.user.teamId);
 
+      // Return to the invite claim flow after exact-identity sign-in.
+      // The single-use secret stays in sessionStorage; never put it in a
+      // redirect query string or server access log.
+      if (sessionStorage.getItem('signaltrue_manager_invite_token')) {
+        navigate('/app/manager/invite');
+        return;
+      }
+
       // Redirect based on role
       if (data.user.role === 'master_admin' && !data.user.orgId) {
         // Superadmin users go to superadmin dashboard
