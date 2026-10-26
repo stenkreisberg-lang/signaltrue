@@ -599,6 +599,19 @@ async function main() {
       // See backend/services/weeklyEmailScheduler.js for full documentation.
       const { initWeeklyEmailScheduler } = await import('./services/weeklyEmailScheduler.js');
       initWeeklyEmailScheduler();
+      // Manager Intelligence: poll local Monday 08:30 tenant windows. The
+      // delivery service enforces appointment, opt-in, coverage, privacy and
+      // idempotency; it remains disabled until explicitly feature-flagged.
+      cron.schedule('* * * * *', async () => {
+        if (process.env.MANAGER_INTELLIGENCE_EMAIL_ENABLED !== 'true') return;
+        try {
+          const { runScheduledManagerDigests } = await import('./services/managerWeeklyDeliveryService.js');
+          await runScheduledManagerDigests();
+        } catch (err) {
+          console.error('[ManagerIntelligence] Scheduled digest check failed:', err.message);
+        }
+      });
+
 
       // Monthly reports generation + email - 1st of month at 4:00 AM
       cron.schedule('0 4 1 * *', async () => {
