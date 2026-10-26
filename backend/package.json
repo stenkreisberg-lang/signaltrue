@@ -59,7 +59,8 @@
     "xss-clean": "^0.1.4"
   },
   "overrides": {
-    "proxy-addr": "^2.0.8"
+    "proxy-addr": "^2.0.8",
+    "follow-redirects": "^1.16.1"
   },
   "devDependencies": {
     "@emnapi/core": "^1.11.3",
