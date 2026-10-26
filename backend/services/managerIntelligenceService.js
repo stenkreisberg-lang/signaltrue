@@ -8,6 +8,7 @@ import Organization from '../models/organizationModel.js';
 import ManagerAssignment from '../models/managerAssignment.js';
 import ManagerAuditEvent from '../models/managerAuditEvent.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
+import ManagerTeamContext from '../models/managerTeamContext.js';
 import { buildReportTrendSeries, buildEligibleTeamTrends } from './reportTrendService.js';
 
 export const MANAGER_TERMS_VERSION = 'manager-intelligence-2026-10';
@@ -56,10 +57,12 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const floor = Math.max(8, Number(minimum) || 8);
   const teamId = team._id;
   const start = new Date(utcMonday(now).getTime() - 27 * 7 * DAY);
-  const [records, population] = await Promise.all([
+  const [records, roster] = await Promise.all([
     IntegrationMetricsDaily.find({ orgId, teamId, userId: null, date: { $gte: start, $lte: now } }).sort({date:1}).lean(),
-    User.countDocuments({orgId, teamId, accountStatus: { $ne: 'inactive' }}),
+    User.find({orgId,teamId,accountStatus:'active'}).select('_id').lean(),
   ]);
+  const population = roster.length;
+  const activeIds = new Set(roster.map(u => asId(u._id)));
   if (population < floor || (Number(team.metadata?.actualSize) > 0 && Number(team.metadata.actualSize) < floor))
     return { eligible: false, reason: 'Team does not meet the privacy threshold', minimum: floor };
   if (!records.length) return { eligible:false, reason:'Comparable historical data not available', minimum: floor };
@@ -77,13 +80,15 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
       timestamp: { $gte: from, $lt: new Date(obs.getTime() + DAY) },
     });
-    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = members.filter(Boolean).length;
+    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = members.filter(m => activeIds.has(asId(m))).length;
   }
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
     actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
   if (!eligible) return { eligible:false, reason:'Not enough comparable, privacy-eligible weekly measurements', minimum:floor };
-  const actions = await ManagerWorkAction.find({orgId,teamId}).select('title hypothesis metric direction baseline baselineWeek startDate due14 due28 status outcome14 outcome28 createdAt')
-    .sort({createdAt:-1}).limit(20).lean();
+  const [actions,contexts] = await Promise.all([
+    ManagerWorkAction.find({orgId,teamId}).select('title hypothesis metric direction baseline baselineWeek startDate due14 due28 status outcome14 outcome28 createdAt').sort({createdAt:-1}).limit(20).lean(),
+    ManagerTeamContext.find({orgId,teamId,weekStart:{$gte:start,$lte:now}}).select('weekStart tag note').sort({weekStart:-1}).limit(25).lean()
+  ]);
   // A single authorized team only. No organization array, no user data, no
   // neighboring teams, no individual actor information in response.
   return { eligible:true, teamId:asId(teamId), teamName:team.name, minimum:floor,
@@ -91,6 +96,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
     current:eligible.current, baseline:eligible.baseline, changePct:eligible.changePct,
     points:eligible.points.map(p=>({date:p.date,sampledOn:p.sampledOn,
       value:p.meetingsPerRepresentedPerson == null ? null : p.meetingsPerRepresentedPerson})),
+    contexts:contexts.map(c=>({weekStart:utcDay(c.weekStart),tag:c.tag,note:c.note})),
     actions:actions.map(a=>({id:asId(a._id),title:a.title,hypothesis:a.hypothesis,metric:a.metric,
       direction:a.direction,baseline:a.baseline,baselineWeek:a.baselineWeek,
       startDate:a.startDate,due14:a.due14,due28:a.due28,status:a.status,
