@@ -20,7 +20,9 @@ import BriefPrediction from '../models/briefPrediction.js';
 import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { ccSuperadmin } from './superadminNotifyService.js';
-import { upsertWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
+import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
+import { getReportTrendSeries } from './reportTrendService.js';
+import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
 import {
   ACTIONABILITY,
   determineActionability,
@@ -3485,6 +3487,20 @@ export async function generateWeeklyBrief(orgId) {
   return html;
 }
 
+// Public-facing email and authenticated preview use the same saved metrics and
+// timeline data. Keep the underlying detailed generator for audits/dashboard.
+export async function generateClientWeeklyEmail(orgId) {
+  await generateWeeklyBrief(orgId);
+  const [snapshot, trends] = await Promise.all([
+    getLatestWeeklyBriefSnapshot(orgId),
+    getReportTrendSeries(orgId),
+  ]);
+  if (!snapshot) throw new Error('Weekly snapshot was not persisted');
+  return renderVisualWeeklyEmail(snapshot, trends, {
+    appUrl: process.env.FRONTEND_URL || 'https://app.signaltrue.ai',
+  });
+}
+
 export async function sendWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error(`Organization ${orgId} not found`);
@@ -3497,7 +3513,7 @@ export async function sendWeeklyBrief(orgId) {
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
 
   // Always generate the brief first — we need it for the superadmin copy regardless
-  const html = await generateWeeklyBrief(orgId);
+  const html = await generateClientWeeklyEmail(orgId);
 
   // Automated SignalTrue reports are restricted to HR/admin account owners.
   // Employees, managers, executives and arbitrary override recipients must not receive them.
