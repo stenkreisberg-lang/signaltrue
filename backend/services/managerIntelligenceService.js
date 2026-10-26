@@ -70,23 +70,30 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const anchorDay = buildReportTrendSeries(records.map(r => ({...r, teamId:null})), now).anchorDay;
   const currentMonday = utcMonday(now);
   const actorWeeks = {};
+  const sourceWindowStart = new Date(currentMonday.getTime() - 26 * 7 * DAY +
+    ((anchorDay + 6) % 7) * DAY - 6 * DAY);
+  const weekStartDay = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][anchorDay];
+  const grouped = await WorkEvent.aggregate([
+    { $match: { orgId, teamId, actorUserId: { $ne: null }, eventType: 'meeting',
+      source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
+      timestamp: { $gte: sourceWindowStart, $lt: currentMonday } } },
+    { $group: { _id: { $dateTrunc: { date: '$timestamp', unit: 'week',
+      startOfWeek: weekStartDay, timezone: 'UTC' } }, actors: { $addToSet: '$actorUserId' } } },
+  ]);
+  const cohortsBySample = new Map(grouped.map(row => {
+    const weekEnd = new Date(new Date(row._id).getTime() + 6 * DAY);
+    const cohort = row.actors.filter(m => activeIds.has(asId(m))).map(asId).sort();
+    return [utcDay(weekEnd), cohort];
+  }));
   let previousCohort = null;
-  // Eligibility is counted over exactly the same rolling 7-day window
-  // ending on the source snapshot date, not an unrelated calendar week.
+  // The reporting denominator and metric cover the same 7-day sampled window.
+  // Suppress cohort changes, avoiding a one-person entry/exit subtraction attack.
   for(let back = 26; back >= 1; back--) {
     const startWeek = new Date(currentMonday.getTime() - back * 7 * DAY);
     const obs = new Date(startWeek.getTime() + ((anchorDay + 6) % 7) * DAY);
-    const from = new Date(obs.getTime() - 6 * DAY);
-    const members = await WorkEvent.distinct('actorUserId', {
-      orgId, teamId, actorUserId: { $ne: null }, eventType: 'meeting',
-      source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
-      timestamp: { $gte: from, $lt: new Date(obs.getTime() + DAY) },
-    });
-    const cohort = members.filter(m => activeIds.has(asId(m))).map(asId).sort();
+    const cohort = cohortsBySample.get(utcDay(obs)) || [];
     const comparable = !previousCohort || (cohort.length === previousCohort.length &&
       cohort.every((member,index) => member === previousCohort[index]));
-    // Avoid differencing when one individual joins/leaves the reporting set.
-    // A changed cohort creates a historical gap; never substitute another user.
     actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = comparable ? cohort.length : 0;
     previousCohort = cohort;
   }
