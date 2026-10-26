@@ -140,7 +140,7 @@ export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, ac
   for (const team of teams || []) {
     const key = id(team._id || team.id);
     const members = activeMemberCounts[key] || 0;
-    if (!team.isActive || team.analyticsEnabled === false || catchAll(team.name) ||
+    if (team.isActive === false || team.analyticsEnabled === false || catchAll(team.name) ||
       members < floor || (Number(team.metadata?.actualSize) > 0 && team.metadata.actualSize < floor)) continue;
     const teamRecords = allRecords.filter(r => id(r.teamId) === key);
     const weekly = buildWeekly(teamRecords, now, anchorDay, 26, (_record, weekStart) =>
