@@ -444,7 +444,11 @@ export default function LatestBrief() {
       <section className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={statusTone(brief.status?.label)}>{brief.status?.label}</StatusBadge>
+            <StatusBadge tone={brief.status?.blockedMetrics > 0 ? 'review' : statusTone(brief.status?.label)}>
+              {brief.status?.label === 'Stable' && brief.status?.blockedMetrics > 0
+                ? 'Observed activity stable · partial evidence'
+                : brief.status?.label}
+            </StatusBadge>
             <StatusBadge>
               Evidence grade: {brief.status?.evidenceGrade || 'Not available'}
             </StatusBadge>
@@ -453,7 +457,11 @@ export default function LatestBrief() {
             </StatusBadge>
           </div>
           <h1 className="app-dashboard-title mt-4">{brief.orgName}</h1>
-          <p className="app-dashboard-copy">{brief.status?.summary}</p>
+          <p className="app-dashboard-copy">
+            {brief.status?.label === 'Stable' && brief.status?.blockedMetrics > 0
+              ? 'Eligible measurements show no material negative movement. Other work patterns cannot yet be assessed because their sources lack sufficient coverage.'
+              : brief.status?.summary}
+          </p>
           {brief.status?.escalationAction && (
             <p className="mt-4 rounded-control border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
               <strong>Escalation rule:</strong> {brief.status.escalationAction}
@@ -905,7 +913,7 @@ export default function LatestBrief() {
         </div>
       )}
 
-      <section className="app-panel mb-6" id="context">
+      <section className="app-panel mb-6" id="weekly-brief-context">
         <div className="flex items-start gap-3">
           <CircleHelp className="mt-1 h-5 w-5 text-violet-700" />
           <div>
