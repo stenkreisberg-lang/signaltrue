@@ -187,7 +187,16 @@ const App = () => (
                   }
                 />
                 <Route path="/app/latest-brief" element={withHrAccess(<LatestBrief />)} />
-                <Route path="/app/admin/manager-reporting" element={<ProtectedRoute allowedRoles={['master_admin','admin','hr_admin','org_admin']}><ManagerReportingAdmin /></ProtectedRoute>} />
+                <Route
+                  path="/app/admin/manager-reporting"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={['master_admin', 'admin', 'hr_admin', 'org_admin']}
+                    >
+                      <ManagerReportingAdmin />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/app/manager" element={withAuthentication(<ManagerTeamDashboard />)} />
                 <Route path="/app/manager/invite" element={<ManagerInvitation />} />
                 <Route path="/app/insights" element={withHrAccess(<Insights />)} />
