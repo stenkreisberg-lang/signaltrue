@@ -444,7 +444,9 @@ export default function LatestBrief() {
       <section className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={brief.status?.blockedMetrics > 0 ? 'review' : statusTone(brief.status?.label)}>
+            <StatusBadge
+              tone={brief.status?.blockedMetrics > 0 ? 'review' : statusTone(brief.status?.label)}
+            >
               {brief.status?.label === 'Stable' && brief.status?.blockedMetrics > 0
                 ? 'Observed activity stable · partial evidence'
                 : brief.status?.label}
