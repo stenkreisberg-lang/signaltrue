@@ -1,0 +1,58 @@
+name: Refresh security dependency lockfiles
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/security-lockfile-refresh.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+      - name: Re-resolve dependency locks using npm registry
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm --prefix backend install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Verify patched versions locked in both apps
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const front = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const back = JSON.parse(fs.readFileSync('backend/package-lock.json', 'utf8'));
+          for (const [name, lock] of [['frontend', front], ['backend', back]]) {
+            const version = lock.packages?.['node_modules/follow-redirects']?.version;
+            if (!version || !/^1\.16\.([1-9]|[1-9][0-9]+)$/.test(version)) {
+              throw new Error(name + ' still has vulnerable follow-redirects: ' + version);
+            }
+            console.log(name + ' follow-redirects: ' + version);
+          }
+          const zod = front.packages?.['node_modules/zod']?.version;
+          if (!zod || Number(zod.split('.')[0]) < 4 || Number(zod.split('.')[1]) < 6 || (zod.startsWith('4.6.') && Number(zod.split('.')[2]) < 6)) {
+            throw new Error('Frontend has vulnerable zod: ' + zod);
+          }
+          console.log('frontend zod: ' + zod);
+          JS
+      - name: Commit lockfiles
+        run: |
+          git config user.name "signaltrue-security"
+          git config user.email "security@signaltrue.ai"
+          git add package-lock.json backend/package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "security: lock patched Zod and follow-redirects [skip ci]"
+            git push
+          fi
