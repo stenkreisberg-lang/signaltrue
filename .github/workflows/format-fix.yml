@@ -1,10 +1,16 @@
 name: Auto-format frontend
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/app/ReportTrendExplorer.jsx'
+      - 'src/pages/app/LatestBrief.js'
 permissions:
   contents: write
 jobs:
   format:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
