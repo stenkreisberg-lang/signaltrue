@@ -22,6 +22,16 @@ describe('visual weekly report data integrity', () => {
     expect(series.weekly.at(-1).after_hours).toBeNull();
     expect(series.currentPartial).toBeNull();
   });
+  test('does not switch observation weekday or silently fill missing weeks', () => {
+    const series = buildReportTrendSeries([
+      sample('2026-10-07', 88),
+      sample('2026-10-14', 89),
+      sample('2026-10-18', 999),
+    ], now);
+    expect(series.anchorDay).toBe(3); // Wednesday has more complete-week records
+    expect(series.weekly.at(-2).meetings).toBe(89);
+    expect(series.weekly.at(-1).meetings).toBeNull(); // not substituted from Sunday
+  });
   test('does not imply a full week from an incomplete one', () => {
     const series = buildReportTrendSeries([
       sample('2026-10-25', 685),
