@@ -12,16 +12,16 @@ describe('visual weekly reporting', () => {
     ], now);
     expect(series.weekly).toHaveLength(26);
     expect(series.daily).toHaveLength(7);
-    expect(series.weekly.at(-1).meetings).toBe(685);
-    expect(series.weekly.at(-1).after_hours).toBeNull(); // no messages; not 0%
-    expect(series.weekly.at(-2).meetings).toBe(750);
-    expect(series.weekly.at(-3).meetings).toBeNull(); // do not fabricate missing history
+    expect(series.weekly.at(-2).meetings).toBe(685);
+    expect(series.weekly.at(-2).after_hours).toBeNull(); // no messages; not 0%
+    expect(series.weekly.at(-3).meetings).toBe(750);
+    expect(series.weekly.at(-4).meetings).toBeNull(); // do not fabricate missing history
   });
   test('does not show attendee-expanded legacy count as comparable unique meetings', () => {
     const result = buildReportTrendSeries([
       { date: new Date('2026-10-20T00:00:00Z'), meetingInstanceCount7d: 0, meetingCount7d: 1000 },
     ], now);
-    expect(result.weekly.at(-1).meetings).toBeNull();
+    expect(result.weekly.at(-2).meetings).toBeNull();
   });
   test('client email shows visual history, evidence gaps and a concrete coverage action', () => {
     const snapshot = {
