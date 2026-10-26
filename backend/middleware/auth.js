@@ -50,6 +50,7 @@ export function requireApiKey(req, res, next) {
 
 import jwt from 'jsonwebtoken';
 import Team from '../models/team.js';
+import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 
 if (!process.env.JWT_SECRET) {
@@ -195,19 +196,19 @@ export function requireTeamAccess(paramName = 'teamId') {
       if (!team) {
         return res.status(404).json({ message: 'Team not found' });
       }
-      if (!canAccessOrg(req.user, team.orgId)) {
-        return res.status(403).json({ message: 'Forbidden: Team access denied' });
-      }
-      // Legacy team reports do not apply ManagerAssignment or an 8-person
-      // historical contributor gate. Do NOT expose them to managers.
-      // The dedicated /api/manager-intelligence endpoints enforce both.
+      // The JWT is not an authoritative authorization source once HR
+      // revokes or changes a role. Re-read the current employee record.
+      const current = req.user?.userId
+        ? await User.findById(req.user.userId).select('orgId role accountStatus isMasterAdmin').lean()
+        : null;
       const permitted = ['master_admin', 'admin', 'hr_admin', 'org_admin'];
-      if (!permitted.includes(req.user?.role)) {
+      const master = current?.role === 'master_admin' && current?.isMasterAdmin === true;
+      if (!current || current.accountStatus !== 'active' || !permitted.includes(current.role) ||
+          (!master && String(current.orgId || '') !== String(team.orgId))) {
         return res.status(403).json({
-          message: 'Forbidden: legacy team reports require HR authorization. Managers must use their scoped team intelligence endpoint.',
+          message: 'Forbidden: team report requires current HR authorization. Managers must use scoped manager intelligence.',
         });
       }
-
       req.team = team;
       return next();
     } catch (error) {
