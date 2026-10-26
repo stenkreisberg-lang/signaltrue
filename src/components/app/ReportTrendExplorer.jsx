@@ -1,3 +1,4 @@
+// Manager-only analytics are isolated in /app/manager; this chart remains HR-scoped.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
