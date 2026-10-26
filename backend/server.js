@@ -94,6 +94,7 @@ import invitesRoutes from './routes/invites.js';
 import playbookRoutes from './routes/playbook.js';
 import oneOnOneRoutes from './routes/oneOnOne.js';
 import weeklyBriefRoutes from './routes/weeklyBrief.js';
+import managerReportingRoutes from './routes/managerReporting.js';
 import workNetworkRoutes from './routes/workNetwork.js';
 import weekContextRoutes from './routes/weekContextRoutes.js';
 import authRoutes from './routes/auth.js';
@@ -367,6 +368,7 @@ async function main() {
     app.use('/api/oneonone', authenticateToken, oneOnOneRoutes);
     app.use('/api/playbook', playbookRoutes);
     app.use('/api/weekly-brief', authenticateToken, weeklyBriefRoutes);
+    app.use('/api/manager-reporting', authenticateToken, managerReportingRoutes);
     app.use('/api/week-context', weekContextRoutes);
     app.use('/api', oauthRoutes);
     app.use('/api/invites', invitesRoutes);
