@@ -59,6 +59,7 @@ const links = [
     secondary: true,
     adminOnly: true,
   },
+  { to: '/app/admin/manager-reporting', label: 'Manager reporting', group: 'Settings', secondary: true, roles: ['master_admin','admin','hr_admin','org_admin'] },
   { to: '/app/privacy', label: 'Data policy', group: 'Settings', secondary: true },
   {
     to: '/app/trust-pack',
