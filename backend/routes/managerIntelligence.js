@@ -42,7 +42,7 @@ const invitationEmail = (teamName, url) =>
 async function sendInvite(email, teamName, token) {
   if(!process.env.RESEND_API_KEY) throw new Error('Invitation email transport is not configured');
   const url=(process.env.FRONTEND_URL || 'https://www.signaltrue.ai').replace(/\/$/,'') +
-    '/app/manager/invite?token='+encodeURIComponent(token);
+    '/app/manager/invite#token='+encodeURIComponent(token);
   const resend=new Resend(process.env.RESEND_API_KEY);
   const response=await resend.emails.send({
     from:'SignalTrue <brief@signaltrue.ai>',to:email,subject:'SignalTrue team insight access invitation',
@@ -133,8 +133,8 @@ router.post('/admin/assignments/:assignmentId/revoke',requireAdmin,async(req,res
     teamId:assignment.teamId,assignmentId:assignment._id,action:'manager_access_revoked'});
   noStore(res).json({status:'revoked'});
 });
-router.get('/invitations/inspect',async(req,res)=>{
-  const user=await loadOrgUser(req),token=String(req.query.token||'');
+router.post('/invitations/inspect',async(req,res)=>{
+  const user=await loadOrgUser(req),token=String(req.body?.token||'');
   if(!user||token.length<32)return noStore(res).status(403).json({message:'Sign in using the invited company account'});
   const invitation=await ManagerInvitation.findOne({tokenHash:hashSecret(token),recipientUserId:user._id,
     usedAt:null,declinedAt:null,expiresAt:{$gt:new Date()}}).lean();
