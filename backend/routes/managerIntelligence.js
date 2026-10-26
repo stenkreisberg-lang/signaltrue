@@ -1,7 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { Resend } from 'resend';
-import crypto from 'node:crypto';
+import PDFDocument from 'pdfkit';
+import ManagerReportDelivery from '../models/managerReportDelivery.js';
+import ManagerTeamContext from '../models/managerTeamContext.js';
 import { authenticateToken } from '../middleware/auth.js';
 import User from '../models/user.js';
 import Team from '../models/team.js';
@@ -222,4 +224,67 @@ router.post('/teams/:teamId/actions/:actionId/review',async(req,res)=>{
   noStore(res).json({day,baseline:action.baseline,current:latest.value,status,
     note:'Observed before/after association with unchanged metric definition, not proof of causal improvement'});
 });
+
+router.patch('/admin/assignments/:assignmentId/permissions',requireAdmin,async(req,res)=>{
+  const allowed={};
+  if(typeof req.body?.exportEnabled==='boolean')allowed.exportEnabled=req.body.exportEnabled;
+  if(typeof req.body?.weeklyEmailEnabled==='boolean')allowed.weeklyEmailEnabled=req.body.weeklyEmailEnabled;
+  if(!Object.keys(allowed).length)return noStore(res).status(400).json({message:'Choose a permission to update'});
+  const assignment=await ManagerAssignment.findOneAndUpdate({_id:req.params.assignmentId,orgId:req.managerAdmin.orgId,
+    status:{$ne:'revoked'}},{$set:allowed},{new:true});
+  if(!assignment)return noStore(res).status(404).json({message:'No active assignment'});
+  await managerAudit({orgId:req.managerAdmin.orgId,actorUserId:req.managerAdmin._id,managerUserId:assignment.managerUserId,
+    teamId:assignment.teamId,assignmentId:assignment._id,action:'manager_permission_changed'});
+  noStore(res).json({exportEnabled:assignment.exportEnabled,weeklyEmailEnabled:assignment.weeklyEmailEnabled});
+});
+router.get('/me/deliveries',async(req,res)=>{
+  const user=await loadOrgUser(req);
+  if(!user)return noStore(res).status(403).json({message:'Account inactive'});
+  const records=await ManagerReportDelivery.find({orgId:user.orgId,managerUserId:user._id})
+    .select('weekKey status sentAt createdAt').sort({createdAt:-1}).limit(26).lean();
+  noStore(res).json({deliveries:records.map(d=>({weekKey:d.weekKey,status:d.status,sentAt:d.sentAt}))});
+});
+router.post('/teams/:teamId/context',async(req,res)=>{
+  const scope=await assertScopedManager(req,req.params.teamId);
+  if(!scope)return noStore(res).status(403).json({message:'Not authorized'});
+  const validTags=['launch','planning','offsite','holiday','deadline','reorganization','other'];
+  const tag=String(req.body?.tag||'');
+  const note=String(req.body?.note||'').trim();
+  const requested=new Date(req.body?.weekStart);
+  if(!validTags.includes(tag)||note.length>500||!Number.isFinite(requested.getTime())||
+    requested>new Date()||requested<new Date(Date.now()-190*86400000))
+    return noStore(res).status(400).json({message:'Valid recent week, context type and short note required'});
+  requested.setUTCHours(0,0,0,0);
+  requested.setUTCDate(requested.getUTCDate()-((requested.getUTCDay()+6)%7));
+  const context=await ManagerTeamContext.create({orgId:scope.user.orgId,teamId:scope.team._id,
+    createdBy:scope.user._id,weekStart:requested,tag,note});
+  await managerAudit({orgId:scope.user.orgId,actorUserId:scope.user._id,managerUserId:scope.user._id,
+    teamId:scope.team._id,action:'manager_context_added'});
+  noStore(res).status(201).json({id:id(context._id),tag,weekStart:requested});
+});
+router.get('/teams/:teamId/report.pdf',async(req,res)=>{
+  const scope=await assertScopedManager(req,req.params.teamId);
+  if(!scope||scope.assignment.exportEnabled!==true)
+    return noStore(res).status(403).json({message:'Export not authorized by HR'});
+  const {minimum}=await resolveOrgMinimum(scope.user.orgId);
+  const data=await getScopedTeamMeasurements({orgId:scope.user.orgId,team:scope.team,minimum});
+  if(!data.eligible)return noStore(res).status(409).json({message:'No privacy-eligible measurement available for export'});
+  noStore(res).type('application/pdf').set('Content-Disposition','attachment; filename="signaltrue-private-team-report.pdf"');
+  const pdf=new PDFDocument({size:'A4',margin:48,info:{Title:'SignalTrue - authorized team work-pattern report',
+    Author:'SignalTrue',Subject:'Privacy-gated manager intelligence'}});
+  pdf.pipe(res);
+  pdf.fillColor('#10223a').fontSize(20).text('SignalTrue | Team work-pattern intelligence');
+  pdf.moveDown(1).fontSize(14).text(data.teamName);
+  pdf.moveDown(1).fontSize(11).fillColor('#475569').text('Privacy minimum: '+minimum+' active mapped calendar contributors per comparable week.');
+  pdf.moveDown().fillColor('#10223a').text('Latest eligible complete-week value: '+String(data.current??'unavailable'));
+  pdf.text('Earlier median: '+String(data.baseline??'unavailable'));
+  pdf.moveDown().fontSize(12).text('Weekly data | meeting instances per mapped calendar contributor');
+  for(const p of data.points.slice(-13)){
+    pdf.fontSize(10).text(p.date+'   '+(p.value==null?'No eligible measurement':String(p.value)));
+  }
+  pdf.moveDown().fontSize(9).fillColor('#64748b').text(data.caveat);
+  pdf.text('Authorization was checked immediately before generating this file. Once downloaded, control access to your own local copy.');
+  pdf.end();
+});
+
 export default router;
