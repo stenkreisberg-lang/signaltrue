@@ -8,6 +8,7 @@ import {
 import { askWeeklyBrief } from '../services/weeklyBriefAssistantService.js';
 import WeekContext from '../models/weekContext.js';
 import User from '../models/user.js';
+import { getReportTrendSeries } from '../services/reportTrendService.js';
 
 const router = express.Router();
 const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin', 'executive'];
@@ -79,6 +80,28 @@ router.get('/history', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (
   } catch (err) {
     console.error('[WeeklyBrief] Failed to load snapshot history:', err.message);
     res.status(500).json({ message: 'Unable to load weekly brief history' });
+  }
+});
+
+// GET /api/weekly-brief/trends — tenant-scoped historical rolling snapshots.
+router.get('/trends', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (req, res) => {
+  try {
+    const [trends, snapshot] = await Promise.all([
+      getReportTrendSeries(req.user.orgId),
+      getLatestWeeklyBriefSnapshot(req.user.orgId),
+    ]);
+    const availability = Object.fromEntries((snapshot?.metrics || []).map(m => [
+      m.key, {
+        available: m.available === true,
+        represented: m.readiness?.mappedUsers ?? null,
+        population: m.readiness?.totalUsers ?? null,
+        reason: m.readiness?.reason ?? null,
+      },
+    ]));
+    res.json({ ...trends, availability });
+  } catch (err) {
+    console.error('[WeeklyBrief] Failed to load report trends:', err.message);
+    res.status(500).json({ message: 'Unable to load measured time series' });
   }
 });
 
