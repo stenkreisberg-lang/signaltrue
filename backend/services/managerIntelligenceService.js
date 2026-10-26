@@ -73,7 +73,8 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
     const obs = new Date(startWeek.getTime() + ((anchorDay + 6) % 7) * DAY);
     const from = new Date(obs.getTime() - 6 * DAY);
     const members = await WorkEvent.distinct('actorUserId', {
-      orgId, teamId, actorUserId: { $ne: null },
+      orgId, teamId, actorUserId: { $ne: null }, eventType: 'meeting',
+      source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
       timestamp: { $gte: from, $lt: new Date(obs.getTime() + DAY) },
     });
     actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = members.filter(Boolean).length;
