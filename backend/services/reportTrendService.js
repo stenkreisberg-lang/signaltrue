@@ -17,14 +17,14 @@ function rounded(value, digits = 1) {
 }
 function valueFor(record, key) {
   if (!record) return null;
-  const safe = (name) => Number.isFinite(Number(record[name])) ? Number(record[name]) : null;
+  const safe = (name) => record[name] != null && Number.isFinite(Number(record[name])) ? Number(record[name]) : null;
   switch (key) {
     case 'meetings': {
       const canonical = safe('meetingInstanceCount7d');
       const legacy = safe('meetingCount7d');
       // Historic documents may predate deduplication. Do not silently join
       // attendee-expanded meeting counts to deduplicated meeting-instance counts.
-      return canonical != null && canonical > 0 ? rounded(canonical, 0) : legacy != null && legacy > 0 ? rounded(legacy, 0) : canonical;
+      return canonical != null && canonical > 0 ? rounded(canonical, 0) : legacy != null && legacy > 0 ? null : canonical;
     }
     case 'meeting_hours': return rounded(safe('meetingDurationTotalHours7d'));
     case 'back_to_back': return rounded(safe('backToBackMeetingBlocks'), 0);
@@ -44,7 +44,7 @@ function dateKey(d) { return new Date(d).toISOString().slice(0, 10); }
 function point(date, record, lastDate) {
   const p = { date: dateKey(date), sourceDate: record ? dateKey(record.date) : null, measured: Boolean(record) };
   for (const m of METRICS) p[m.key] = valueFor(record, m.key);
-  p.meetingCountSource = record && (Number(record.meetingInstanceCount7d) > 0 ? 'unique_instances' : 'legacy_count');
+  p.meetingCountSource = record && (Number(record.meetingInstanceCount7d) > 0 ? 'unique_instances' : 'unverified_or_zero');
   p.stale = Boolean(record && lastDate && new Date(record.date) < lastDate);
   return p;
 }
