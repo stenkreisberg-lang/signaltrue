@@ -31,6 +31,9 @@ const DashboardRouter = lazy(() => import('./pages/DashboardRouter'));
 const Overview = lazy(() => import('./pages/app/Overview'));
 const ExecutiveSummary = lazy(() => import('./pages/app/ExecutiveSummary'));
 const LatestBrief = lazy(() => import('./pages/app/LatestBrief'));
+const ManagerReportingAdmin = lazy(() => import('./pages/app/ManagerReportingAdmin'));
+const ManagerInvitation = lazy(() => import('./pages/app/ManagerInvitation'));
+const ManagerTeamDashboard = lazy(() => import('./pages/app/ManagerTeamDashboard'));
 const Insights = lazy(() => import('./pages/app/Insights'));
 const Signals = lazy(() => import('./pages/app/Signals'));
 const ActiveMonitoring = lazy(() => import('./pages/app/ActiveMonitoring'));
@@ -184,6 +187,9 @@ const App = () => (
                   }
                 />
                 <Route path="/app/latest-brief" element={withHrAccess(<LatestBrief />)} />
+                <Route path="/app/admin/manager-reporting" element={<ProtectedRoute allowedRoles={['master_admin','admin','hr_admin','org_admin']}><ManagerReportingAdmin /></ProtectedRoute>} />
+                <Route path="/app/manager" element={withAuthentication(<ManagerTeamDashboard />)} />
+                <Route path="/app/manager/invite" element={<ManagerInvitation />} />
                 <Route path="/app/insights" element={withHrAccess(<Insights />)} />
                 <Route path="/app/insights/:teamId" element={withHrAccess(<Insights />)} />
                 <Route path="/app/signals" element={withHrAccess(<Signals />)} />
