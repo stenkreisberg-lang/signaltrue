@@ -11,17 +11,8 @@ import {
   Send,
   ShieldCheck,
 } from 'lucide-react';
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
+import ReportTrendExplorer from '../../components/app/ReportTrendExplorer';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
@@ -410,18 +401,6 @@ export default function LatestBrief() {
     );
   }
 
-  // Only render trend series supported by actual measurements. Null data is not zero.
-  const trendMetricReady = (key) =>
-    brief.metrics?.some((metric) => metric.key === key && metric.available === true);
-  const trendSeries = [
-    { key: 'meeting_hours', field: 'meetingHours' },
-    { key: 'focus_time', field: 'focusHours' },
-    { key: 'after_hours', field: 'afterHoursPct' },
-    { key: 'fragmentation', field: 'fragmentation' },
-  ].filter(
-    ({ key, field }) => trendMetricReady(key) && brief.trend?.some((point) => point[field] != null)
-  );
-
   const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
   const roleActions = brief.actions?.roleBased || {};
   const allRoleActions = Object.values(roleActions).flat().filter(Boolean);
@@ -563,6 +542,8 @@ export default function LatestBrief() {
         </div>
       </section>
 
+      <ReportTrendExplorer brief={brief} />
+
       {brief.reportMode === 'setup' ? (
         <section className="app-dashboard-section">
           <div className="app-section-heading">
@@ -579,80 +560,6 @@ export default function LatestBrief() {
         </section>
       ) : (
         <>
-          {brief.trend?.length > 1 && trendSeries.length > 0 && (
-            <section className="app-panel mb-6">
-              <div className="app-section-heading">
-                <div>
-                  <h2>Six-week movement</h2>
-                  <p>
-                    Only eligible, measured series are shown. Gaps represent missing observations,
-                    not zero activity.
-                  </p>
-                </div>
-              </div>
-              <div className="h-80 w-full" aria-label="Six-week work-pattern trend chart">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={brief.trend}
-                    margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <YAxis yAxisId="hours" tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <YAxis
-                      yAxisId="index"
-                      orientation="right"
-                      domain={[0, 100]}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                    />
-                    <Tooltip />
-                    <Legend />
-                    {trendSeries.some((series) => series.key === 'meeting_hours') && (
-                      <Line
-                        yAxisId="hours"
-                        type="monotone"
-                        dataKey="meetingHours"
-                        name="Meeting hours/person"
-                        stroke="#dc2626"
-                        strokeWidth={2}
-                      />
-                    )}
-                    {trendSeries.some((series) => series.key === 'focus_time') && (
-                      <Line
-                        yAxisId="hours"
-                        type="monotone"
-                        dataKey="focusHours"
-                        name="Uninterrupted hours/person"
-                        stroke="#059669"
-                        strokeWidth={2}
-                      />
-                    )}
-                    {trendSeries.some((series) => series.key === 'after_hours') && (
-                      <Line
-                        yAxisId="index"
-                        type="monotone"
-                        dataKey="afterHoursPct"
-                        name="After-hours messaging %"
-                        stroke="#d97706"
-                        strokeWidth={2}
-                      />
-                    )}
-                    {trendSeries.some((series) => series.key === 'fragmentation') && (
-                      <Line
-                        yAxisId="index"
-                        type="monotone"
-                        dataKey="fragmentation"
-                        name="Fragmentation /100"
-                        stroke="#6366f1"
-                        strokeWidth={2}
-                      />
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
-          )}
-
           <div className="mb-6 grid gap-6 lg:grid-cols-2">
             <section className="app-panel">
               <div className="flex items-center gap-2">
