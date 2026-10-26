@@ -273,7 +273,7 @@ export default function ReportTrendExplorer({ brief }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 p-1">
-          {Object.keys(WINDOWS).map((k) => (
+          {Object.keys(WINDOWS).filter(k => tab !== 'teams' || k !== '1W').map((k) => (
             <button
               type="button"
               key={k}
@@ -362,7 +362,7 @@ export default function ReportTrendExplorer({ brief }) {
               <button
                 type="button"
                 key={k}
-                onClick={() => setTab(k)}
+                onClick={() => { setTab(k); if (k === 'teams' && range === '1W') setRange('1M'); }}
                 aria-pressed={tab === k}
                 className={
                   'rounded-lg px-3 py-2 text-sm font-bold ' +
