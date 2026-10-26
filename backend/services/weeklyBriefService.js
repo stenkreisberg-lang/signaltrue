@@ -1392,7 +1392,7 @@ export async function generateWeeklyBrief(orgId) {
       html += `<div style="${S.recBox}"><p style="${S.p} margin:0;"><strong>${i + 1}. ${step.title}:</strong> ${step.detail}</p></div>`;
     });
     html += `<p style="${S.pSmall} margin-top:10px;">Full reporting resumes automatically when activity attribution is at least 80% and enough eligible teams have mapped activity.</p>`;
-    html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/employees" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Review team setup</a></div>`;
+    html += `<div style="text-align:center;margin-top:16px;"><a href="${process.env.FRONTEND_URL || 'https://www.signaltrue.ai'}/app/employees" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Review team setup</a></div>`;
     html += `</div>`;
 
     // Named team readiness — the mapping to-do list
@@ -2445,7 +2445,7 @@ export async function generateWeeklyBrief(orgId) {
   // CTA buttons. Reading the brief is not the outcome that matters — recording
   // what was decided is, because only a logged action can be measured against
   // this week's baseline in a later brief.
-  const appBase = process.env.FRONTEND_URL || 'https://app.signaltrue.ai';
+  const appBase = process.env.FRONTEND_URL || 'https://www.signaltrue.ai';
   html += `<div style="text-align:center; margin-top:16px;">`;
   html += `<a href="${appBase}/app/latest-brief" style="display:inline-block;background:#0f172a;color:white;padding:11px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Explore this brief</a>`;
   if (briefProposedAction) {
@@ -3065,7 +3065,7 @@ export async function generateWeeklyBrief(orgId) {
   // ─── 11d. Annotation loop — teach SignalTrue about unusual weeks ───
   html += `<div style="${S.card} border-left:4px solid #2563eb;">`;
   html += `<p style="${S.p} margin:0;"><strong>Was this week unusual?</strong> A launch, offsite, vacation period, or client crunch changes how these numbers should be read. Tag the week on the dashboard and future briefs will interpret your data with that context.</p>`;
-  html += `<p style="${S.pSmall} margin:6px 0 0 0;"><a href="${process.env.FRONTEND_URL || 'https://app.signaltrue.ai'}/app/latest-brief#context" style="color:#2563eb;font-weight:700;text-decoration:none;">Tag this week →</a></p>`;
+  html += `<p style="${S.pSmall} margin:6px 0 0 0;"><a href="${process.env.FRONTEND_URL || 'https://www.signaltrue.ai'}/app/latest-brief#context" style="color:#2563eb;font-weight:700;text-decoration:none;">Tag this week →</a></p>`;
   html += `</div>`;
 
   // ─── 12. Footer ───
@@ -3497,7 +3497,7 @@ export async function generateClientWeeklyEmail(orgId) {
   ]);
   if (!snapshot) throw new Error('Weekly snapshot was not persisted');
   return renderVisualWeeklyEmail(snapshot, trends, {
-    appUrl: process.env.FRONTEND_URL || 'https://app.signaltrue.ai',
+    appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai',
   });
 }
 
