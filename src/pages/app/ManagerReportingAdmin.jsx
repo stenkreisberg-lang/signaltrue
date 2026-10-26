@@ -11,6 +11,7 @@ export default function ManagerReportingAdmin(){
  const appoint=()=>run(()=>api.post('/manager-intelligence/admin/assignments',{managerUserId:person,teamId:team}),'Assignment approved. Now send the invitation.');
  const send=id=>run(()=>api.post('/manager-intelligence/admin/assignments/'+id+'/invite'),'Invitation sent to the approved company account.');
  const revoke=id=>run(()=>api.post('/manager-intelligence/admin/assignments/'+id+'/revoke'),'Access revoked. New API requests will be denied.');
+ const setExport=(id,enabled)=>run(()=>api.patch('/manager-intelligence/admin/assignments/'+id+'/permissions',{exportEnabled:enabled}),enabled?'Restricted PDF export enabled':'Restricted PDF export disabled');
  return <AppShell user={user()} section="Manager reporting"><PageHeader eyebrow="ADMIN · ACCESS MANAGEMENT" title="Team manager reporting"
  description="HR controls every appointment. Inviting never grants dashboard access until the exact employee accepts."/>
  <div className="app-panel space-y-5">
@@ -39,6 +40,8 @@ export default function ManagerReportingAdmin(){
      <p className="mt-1 text-xs text-slate-600">Status: {a.status} · Weekly email: {a.weeklyEmailEnabled?'Enabled after activation':'Off'}</p></div>
     <div className="flex gap-2">
      {['pending','invited'].includes(a.status)&&<button type="button" disabled={busy} onClick={()=>send(a.id)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">Send invitation</button>}
+     {a.status==='active'&&<button type="button" disabled={busy} onClick={()=>setExport(a.id,!a.exportEnabled)}
+      className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-bold">{a.exportEnabled?'Disable PDF':'Allow scoped PDF'}</button>}
      {a.status!=='revoked'&&<button type="button" disabled={busy} onClick={()=>revoke(a.id)} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700">Revoke</button>}
     </div>
    </div>})}</div>}
