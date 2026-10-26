@@ -273,20 +273,22 @@ export default function ReportTrendExplorer({ brief }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 p-1">
-          {Object.keys(WINDOWS).filter(k => tab !== 'teams' || k !== '1W').map((k) => (
-            <button
-              type="button"
-              key={k}
-              aria-pressed={range === k}
-              onClick={() => setRange(k)}
-              className={
-                'rounded-md px-3 py-2 text-xs font-bold ' +
-                (range === k ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-50')
-              }
-            >
-              {k}
-            </button>
-          ))}
+          {Object.keys(WINDOWS)
+            .filter((k) => tab !== 'teams' || k !== '1W')
+            .map((k) => (
+              <button
+                type="button"
+                key={k}
+                aria-pressed={range === k}
+                onClick={() => setRange(k)}
+                className={
+                  'rounded-md px-3 py-2 text-xs font-bold ' +
+                  (range === k ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-50')
+                }
+              >
+                {k}
+              </button>
+            ))}
         </div>
       </div>
       {error && <p className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
@@ -362,7 +364,10 @@ export default function ReportTrendExplorer({ brief }) {
               <button
                 type="button"
                 key={k}
-                onClick={() => { setTab(k); if (k === 'teams' && range === '1W') setRange('1M'); }}
+                onClick={() => {
+                  setTab(k);
+                  if (k === 'teams' && range === '1W') setRange('1M');
+                }}
                 aria-pressed={tab === k}
                 className={
                   'rounded-lg px-3 py-2 text-sm font-bold ' +
