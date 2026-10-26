@@ -23,10 +23,12 @@ export function isManagerDeliveryWindow(now,timezone){
  const clock=managerLocalClock(now,timezone);
  return clock?.weekday==='Mon'&&clock.hour===8&&clock.minute===30;
 }
-export function managerReportWeek(now){
- const d=new Date(now);d.setUTCHours(0,0,0,0);
- d.setUTCDate(d.getUTCDate() - ((d.getUTCDay()+6)%7) - 7);
- return d.toISOString().slice(0,10);
+export function managerReportWeek(now, timezone = 'UTC'){
+ const local=managerLocalClock(now,timezone);
+ if(!local)return null;
+ const localDate=new Date(Date.UTC(Number(local.year),Number(local.month)-1,Number(local.day)));
+ localDate.setUTCDate(localDate.getUTCDate() - ((localDate.getUTCDay()+6)%7) - 7);
+ return localDate.toISOString().slice(0,10);
 }
 function reportTable(data){
  const eligible=(data.points||[]).filter(p=>p.value!=null).slice(-6);
@@ -65,7 +67,7 @@ export async function deliverManagerDigestsForOrg(orgId, now=new Date(), options
    revokedAt:null,$or:[{expiresAt:null},{expiresAt:{$gt:now}}]}).lean();
  const byUser=new Map();
  for(const a of assignments){const key=id(a.managerUserId);byUser.set(key,[...(byUser.get(key)||[]),a])}
- const weekKey=managerReportWeek(now),results=[];
+ const weekKey=managerReportWeek(now,config.timezone),results=[];
  for(const [managerUserId,scopes] of byUser) {
   const user=await User.findOne({_id:managerUserId,orgId,accountStatus:'active'}).select('_id orgId email accountStatus').lean();
   if(!user?.email)continue;
