@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import WorkEvent from '../models/workEvent.js';
 import Team from '../models/team.js';
@@ -128,7 +129,6 @@ export function buildReportTrendSeries(records, now = new Date(), options = {}) 
 }
 const displayName = text => String(text || '').replace(/[<>]/g, '').slice(0, 80);
 const catchAll = name => /^(unassigned|general|other|default|no[ -]?team)$/i.test(String(name || '').trim());
-const inPeriod = (date, points) => points.some(p => p.date === dayKey(monday(date)));
 
 // Requiring a minimum number of DISTINCT mapped actors in each displayed week
 // prevents an undersized team becoming identifiable when members leave or sync drops.
@@ -186,22 +186,23 @@ export function buildTimelineAnnotations({ contexts = [], interventions = [], te
 }
 export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 8 } = {}) {
   const start = new Date(monday(now).getTime() - 27 * 7 * DAY);
+  const scopedOrgId = mongoose.isValidObjectId(orgId) ? new mongoose.Types.ObjectId(String(orgId)) : orgId;
   const [records, contexts] = await Promise.all([
-    IntegrationMetricsDaily.find({ orgId, date: { $gte: start, $lte: now }, userId: null }).sort({ date: 1 }).lean(),
-    WeekContext.find({ orgId, teamId: null, weekEnd: { $gte: start }, weekStart: { $lte: now } })
+    IntegrationMetricsDaily.find({ orgId: scopedOrgId, date: { $gte: start, $lte: now }, userId: null }).sort({ date: 1 }).lean(),
+    WeekContext.find({ orgId: scopedOrgId, teamId: null, weekEnd: { $gte: start }, weekStart: { $lte: now } })
       .select('tag weekStart weekEnd teamId').limit(100).lean(),
   ]);
   const org = buildReportTrendSeries(records, now);
   if (!includeTeams) return { ...org, annotations: buildTimelineAnnotations({ contexts, now }), teams: [] };
   const floor = Math.max(8, Number(minimumGroupSize) || 8);
   const [teams, members, actors, interventions] = await Promise.all([
-    Team.find({ orgId, isActive: { $ne: false }, analyticsEnabled: { $ne: false } }).select('name metadata.actualSize analyticsEnabled isActive').lean(),
-    User.aggregate([{ $match: { orgId, accountStatus: { $ne: 'inactive' }, teamId: { $ne: null } } },
+    Team.find({ orgId: scopedOrgId, isActive: { $ne: false }, analyticsEnabled: { $ne: false } }).select('name metadata.actualSize analyticsEnabled isActive').lean(),
+    User.aggregate([{ $match: { orgId: scopedOrgId, accountStatus: { $ne: 'inactive' }, teamId: { $ne: null } } },
       { $group: { _id: '$teamId', count: { $sum: 1 } } }]),
-    WorkEvent.aggregate([{ $match: { orgId, timestamp: { $gte: start, $lte: now }, teamId: { $ne: null }, actorUserId: { $ne: null } } },
+    WorkEvent.aggregate([{ $match: { orgId: scopedOrgId, timestamp: { $gte: start, $lte: now }, teamId: { $ne: null }, actorUserId: { $ne: null } } },
       { $group: { _id: { team: '$teamId', week: { $dateTrunc: { date: '$timestamp', unit: 'week', startOfWeek: 'monday', timezone: 'UTC' } } }, actors: { $addToSet: '$actorUserId' } } },
       { $project: { active: { $size: '$actors' } } }]),
-    Intervention.find({ orgId, source: { $ne: 'manager_coaching' }, privateToManager: { $ne: true },
+    Intervention.find({ orgId: scopedOrgId, source: { $ne: 'manager_coaching' }, privateToManager: { $ne: true },
       startDate: { $gte: start, $lte: now } }).select('teamId title interventionType startDate reviewDate recheckDate targetMetric expectedEffect successCriterion outcomeDelta reviews privateToManager').limit(100).lean(),
   ]);
   const memberCounts = Object.fromEntries(members.map(m => [id(m._id), m.count]));
