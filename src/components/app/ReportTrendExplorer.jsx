@@ -108,7 +108,7 @@ export default function ReportTrendExplorer({ brief }) {
         </div>
       </div>
       <div className="mb-4 rounded-control border border-blue-100 bg-blue-50 p-3 text-caption text-blue-950">
-        {range === '1W' ? 'Daily points are rolling seven-day snapshots, not daily meeting counts.' : 'Each weekly point is the latest recorded rolling seven-day snapshot for that UTC week.'} Historical source coverage can vary; the latest week’s evidence gate controls metric availability.
+        {range === '1W' ? 'Daily points are rolling seven-day snapshots, not daily meeting counts.' : 'Each weekly point is the latest recorded rolling seven-day snapshot for that UTC week.'} Historical source coverage can vary; the latest week’s evidence gate controls metric availability. No missing records are interpolated.
       </div>
       {!data && !error && <p className="flex items-center gap-2 text-caption text-slate-500"><RefreshCw className="h-4 w-4 animate-spin"/>Loading measured history…</p>}
       {error && <p className="rounded-control bg-amber-50 p-3 text-caption text-amber-950">{error}</p>}
