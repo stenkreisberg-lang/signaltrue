@@ -28,6 +28,8 @@ jobs:
         run: |
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           npm --prefix backend install --package-lock-only --ignore-scripts --no-audit --no-fund
+          # Apply supported non-breaking security updates to the API dependency tree.
+          npm --prefix backend audit fix --package-lock-only --ignore-scripts --no-fund
       - name: Verify patched versions locked in both apps
         run: |
           node --input-type=module <<'JS'
@@ -47,6 +49,10 @@ jobs:
           }
           console.log('frontend zod: ' + zod);
           JS
+      - name: Verify no high-severity production dependency vulnerabilities
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm --prefix backend audit --omit=dev --audit-level=high
       - name: Commit lockfiles
         run: |
           git config user.name "signaltrue-security"
