@@ -12,7 +12,7 @@ import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
 import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
-  managerAudit, normalizeEmail, resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
+  managerAudit, normalizeEmail, hashInvitedEmail, resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -110,7 +110,7 @@ router.post('/admin/assignments/:assignmentId/invite',requireAdmin,async(req,res
   // Invalidate previous links when a new invitation is issued.
   await ManagerInvitation.deleteMany({assignmentId:assignment._id,usedAt:null});
   const invite=await ManagerInvitation.create({orgId,assignmentId:assignment._id,
-    recipientUserId:user._id,recipientEmailHash:hashSecret(normalizeEmail(user.email)),
+    recipientUserId:user._id,recipientEmailHash:hashInvitedEmail(user.email),
     tokenHash,expiresAt:expires});
   try {
     await sendInvite(user.email,team.name,token);
@@ -141,7 +141,7 @@ router.post('/invitations/inspect',async(req,res)=>{
   const invitation=await ManagerInvitation.findOne({tokenHash:hashSecret(token),recipientUserId:user._id,
     usedAt:null,declinedAt:null,expiresAt:{$gt:new Date()}}).lean();
   if(!invitation||String(invitation.orgId)!==id(user.orgId)||
-    invitation.recipientEmailHash!==hashSecret(normalizeEmail(user.email)))
+    invitation.recipientEmailHash!==hashInvitedEmail(user.email))
     return noStore(res).status(403).json({message:'Invitation unavailable or identity mismatch'});
   const assignment=await ManagerAssignment.findOne({_id:invitation.assignmentId,orgId:user.orgId,
     managerUserId:user._id,status:'invited',revokedAt:null}).lean();
@@ -155,7 +155,7 @@ router.post('/invitations/inspect',async(req,res)=>{
 router.post('/invitations/respond',async(req,res)=>{
   const user=await loadOrgUser(req),token=String(req.body?.token||''),accept=req.body?.accept===true;
   if(!user||token.length<32)return noStore(res).status(403).json({message:'Invited verified account required'});
-  const filter={tokenHash:hashSecret(token),recipientUserId:user._id,recipientEmailHash:hashSecret(normalizeEmail(user.email)),
+  const filter={tokenHash:hashSecret(token),recipientUserId:user._id,recipientEmailHash:hashInvitedEmail(user.email),
     orgId:user.orgId,usedAt:null,declinedAt:null,expiresAt:{$gt:new Date()}};
   const invitation=await ManagerInvitation.findOne(filter);
   if(!invitation)return noStore(res).status(403).json({message:'Invitation unavailable'});
