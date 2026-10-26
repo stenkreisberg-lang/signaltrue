@@ -1,9 +1,9 @@
 {
-  "commit": "f90ca7bfa3709ab5976e3e8c2881c728296b5ce7",
-  "run_id": "40298687902",
-  "frontend_install": "success",
-  "frontend_build": "success",
-  "backend_install": "success",
-  "control_review_acceptance": "success",
-  "completed_at": "2026-10-26T09:21:01Z"
+  "commit": "7aa922d1ee9c1a043527952e5f8aab823bd0fa66",
+  "run_id": "40300167073",
+  "frontend_install": "failure",
+  "frontend_build": "skipped",
+  "backend_install": "failure",
+  "control_review_acceptance": "skipped",
+  "completed_at": "2026-10-26T09:31:17Z"
 }
