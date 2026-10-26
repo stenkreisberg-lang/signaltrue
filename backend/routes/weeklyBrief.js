@@ -86,10 +86,11 @@ router.get('/history', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (
 // GET /api/weekly-brief/trends — tenant-scoped historical rolling snapshots.
 router.get('/trends', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (req, res) => {
   try {
-    const [trends, snapshot] = await Promise.all([
-      getReportTrendSeries(req.user.orgId),
-      getLatestWeeklyBriefSnapshot(req.user.orgId),
-    ]);
+    const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
+    const trends = await getReportTrendSeries(req.user.orgId, new Date(), {
+      includeTeams: true,
+      minimumGroupSize: Math.max(8, Number(snapshot?.coverage?.minimumTeamSize) || 8),
+    });
     const availability = Object.fromEntries((snapshot?.metrics || []).map(m => [
       m.key, {
         available: m.available === true,
