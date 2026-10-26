@@ -60,13 +60,13 @@ router.get('/admin/directory',requireAdmin,async(req,res)=>{
     User.find({orgId,accountStatus:'active',email:{$exists:true,$ne:''}})
       .select('_id name email role').sort({name:1}).limit(250).lean(),
     Team.find({orgId,isActive:{$ne:false}}).select('_id name').sort({name:1}).lean(),
-    ManagerAssignment.find({orgId}).select('managerUserId teamId status weeklyEmailEnabled activatedAt invitedAt revokedAt').lean(),
+    ManagerAssignment.find({orgId}).select('managerUserId teamId status weeklyEmailEnabled exportEnabled activatedAt invitedAt revokedAt').lean(),
     Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean(),
   ]);
   noStore(res).json({users:users.map(u=>({id:id(u._id),name:u.name,email:u.email,role:u.role})),
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
-      status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
+      status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
     minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'});
 });
 router.post('/admin/assignments',requireAdmin,async(req,res)=>{
