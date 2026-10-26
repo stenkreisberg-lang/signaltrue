@@ -50,7 +50,7 @@ describe('manager digest confidentiality and scheduling',()=>{
   const html=renderManagerWeeklyDigest({reportWeek:'2026-10-19',eligible:[],missing:1});
   expect(html).toContain('no authorized team met');
   expect(html).not.toContain('Private small team');
-  expect(html).not.toContain('0%');
+  expect(html).not.toContain('Meeting instances per mapped team contributor');
  });
  test('email is HTML-only aggregate and link needs authentication',()=>{
   const html=renderManagerWeeklyDigest({reportWeek:'2026-10-19',
