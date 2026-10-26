@@ -23,6 +23,7 @@ const utcMonday = date => {
   return d;
 };
 export function hashSecret(token) { return crypto.createHash('sha256').update(String(token)).digest('hex'); }
+export function hashInvitedEmail(email) { return crypto.createHmac('sha256', process.env.JWT_SECRET).update(canonicalEmail(email)).digest('hex'); }
 export function secureToken() { return crypto.randomBytes(32).toString('base64url'); }
 export const normalizeEmail = canonicalEmail;
 export function validateTeamPermission({ user, assignment, team, orgId, teamId, now = new Date() }) {
