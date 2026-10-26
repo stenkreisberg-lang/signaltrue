@@ -70,6 +70,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const anchorDay = buildReportTrendSeries(records.map(r => ({...r, teamId:null})), now).anchorDay;
   const currentMonday = utcMonday(now);
   const actorWeeks = {};
+  let previousCohort = null;
   // Eligibility is counted over exactly the same rolling 7-day window
   // ending on the source snapshot date, not an unrelated calendar week.
   for(let back = 26; back >= 1; back--) {
@@ -81,7 +82,13 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
       timestamp: { $gte: from, $lt: new Date(obs.getTime() + DAY) },
     });
-    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = members.filter(m => activeIds.has(asId(m))).length;
+    const cohort = members.filter(m => activeIds.has(asId(m))).map(asId).sort();
+    const comparable = !previousCohort || (cohort.length === previousCohort.length &&
+      cohort.every((member,index) => member === previousCohort[index]));
+    // Avoid differencing when one individual joins/leaves the reporting set.
+    // A changed cohort creates a historical gap; never substitute another user.
+    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = comparable ? cohort.length : 0;
+    previousCohort = cohort;
   }
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
     actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
