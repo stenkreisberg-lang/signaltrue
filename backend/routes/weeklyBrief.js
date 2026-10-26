@@ -1,5 +1,5 @@
 import express from 'express';
-import { sendWeeklyBrief, generateWeeklyBrief } from '../services/weeklyBriefService.js';
+import { sendWeeklyBrief, generateWeeklyBrief, generateClientWeeklyEmail } from '../services/weeklyBriefService.js';
 import { requireHROrAdmin, requireOrganizationAccess, requireRoles } from '../middleware/auth.js';
 import {
   getLatestWeeklyBriefSnapshot,
@@ -155,7 +155,7 @@ router.post('/:orgId/send', requireHROrAdmin, requireOrganizationAccess(), async
 // GET /api/weekly-brief/:orgId/preview — preview the email content
 router.get('/:orgId/preview', requireHROrAdmin, requireOrganizationAccess(), async (req, res) => {
   try {
-    const html = await generateWeeklyBrief(req.params.orgId);
+    const html = await generateClientWeeklyEmail(req.params.orgId);
     res.send(html);
   } catch (err) {
     res.status(500).json({ message: err.message });
