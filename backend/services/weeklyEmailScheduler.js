@@ -484,6 +484,17 @@ export async function manualTriggerWeeklySiteAnalyticsReport() {
 
 export function initWeeklyEmailScheduler() {
   console.log('[WeeklyScheduler] 🚀 Initializing self-healing weekly email scheduler...');
+  // Manager intelligence is explicitly gated by MANAGER_INTELLIGENCE_EMAIL_ENABLED.
+  // Local tenant time is checked inside the job; never send by a fixed UTC 08:30.
+  cron.schedule('30 * * * *', async () => {
+    try {
+      const { runScheduledManagerDigests } = await import('./managerWeeklyDeliveryService.js');
+      await runScheduledManagerDigests();
+    } catch (error) {
+      console.error('[ManagerIntelligence] Scheduled digest failed:', error.message);
+    }
+  });
+
 
   // ── PRIMARY: Monday at 8:00 AM UTC ──
   cron.schedule('0 8 * * 1', async () => {
