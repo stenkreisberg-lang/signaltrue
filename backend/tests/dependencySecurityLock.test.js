@@ -19,6 +19,18 @@ describe('dependency security lockfile regression', () => {
     expect(semver.gte(version, '1.16.1')).toBe(true);
   });
 
+  test.each([
+    ['body-parser', '2.4.0'],
+    ['multer', '2.5.0'],
+    ['undici', '7.30.1'],
+    ['ip-address', '10.7.4'],
+    ['nodemailer', '10.1.4'],
+  ])('backend locks a patched %s', (name, minimum) => {
+    const version = backend.packages?.[`node_modules/${name}`]?.version;
+    expect(semver.valid(version)).not.toBeNull();
+    expect(semver.gte(version, minimum)).toBe(true);
+  });
+
   test('frontend locks patched Zod', () => {
     const version = frontend.packages?.['node_modules/zod']?.version;
     expect(semver.valid(version)).not.toBeNull();
