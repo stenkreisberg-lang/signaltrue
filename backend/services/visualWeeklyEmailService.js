@@ -39,7 +39,7 @@ function chartSection(name, key, snapshot, trends, unit) {
   const baseline = metric.baseline == null ? '' : ` · six-week baseline: ${format(metric.baseline,unit)}`;
   return `<div style="border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:14px;"><h3 style="font-size:15px;color:#0f172a;margin:0 0 5px;">${escapeHtml(name)}</h3><p style="font-size:11px;color:#64748b;margin:0 0 12px;">X: week · Y: ${escapeHtml(unit || 'count')} · last seven weekly source snapshots${escapeHtml(baseline)}</p>${chartTable(points,key,unit)}<p style="font-size:11px;color:#64748b;margin:11px 0 0;">Weekly bars use recorded rolling seven-day values. Missing records show as gaps.</p></div>`;
 }
-export function renderVisualWeeklyEmail(snapshot, trends, { appUrl = 'https://app.signaltrue.ai' } = {}) {
+export function renderVisualWeeklyEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai' } = {}) {
   if (!snapshot) throw new Error('Weekly report snapshot unavailable');
   const metrics = snapshot.metrics || [];
   const meetings = metrics.find(m => m.key === 'meetings');
