@@ -195,18 +195,25 @@ export async function getReportTrendSeries(orgId, now = new Date(), { includeTea
   const org = buildReportTrendSeries(records, now);
   if (!includeTeams) return { ...org, annotations: buildTimelineAnnotations({ contexts, now }), teams: [] };
   const floor = Math.max(8, Number(minimumGroupSize) || 8);
+  // The unique-person denominator must use the SAME rolling seven days as
+  // the sampled metric; grouping on calendar Mon–Sun would be wrong for a
+  // Wednesday or Friday source snapshot.
+  const actorWeekStart = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][org.anchorDay];
   const [teams, members, actors, interventions] = await Promise.all([
     Team.find({ orgId: scopedOrgId, isActive: { $ne: false }, analyticsEnabled: { $ne: false } }).select('name metadata.actualSize analyticsEnabled isActive').lean(),
     User.aggregate([{ $match: { orgId: scopedOrgId, accountStatus: { $ne: 'inactive' }, teamId: { $ne: null } } },
       { $group: { _id: '$teamId', count: { $sum: 1 } } }]),
     WorkEvent.aggregate([{ $match: { orgId: scopedOrgId, timestamp: { $gte: start, $lte: now }, teamId: { $ne: null }, actorUserId: { $ne: null } } },
-      { $group: { _id: { team: '$teamId', week: { $dateTrunc: { date: '$timestamp', unit: 'week', startOfWeek: 'monday', timezone: 'UTC' } } }, actors: { $addToSet: '$actorUserId' } } },
+      { $group: { _id: { team: '$teamId', week: { $dateTrunc: { date: '$timestamp', unit: 'week', startOfWeek: actorWeekStart, timezone: 'UTC' } } }, actors: { $addToSet: '$actorUserId' } } },
       { $project: { active: { $size: '$actors' } } }]),
     Intervention.find({ orgId: scopedOrgId, source: { $ne: 'manager_coaching' }, privateToManager: { $ne: true },
       startDate: { $gte: start, $lte: now } }).select('teamId title interventionType startDate reviewDate recheckDate targetMetric expectedEffect successCriterion outcomeDelta reviews privateToManager').limit(100).lean(),
   ]);
   const memberCounts = Object.fromEntries(members.map(m => [id(m._id), m.count]));
-  const actorsByWeek = Object.fromEntries(actors.map(a => [id(a._id.team) + ':' + dayKey(a._id.week), a.active]));
+  const actorsByWeek = Object.fromEntries(actors.map(a => {
+    const endDate = new Date(new Date(a._id.week).getTime() + 6 * DAY);
+    return [id(a._id.team) + ':' + dayKey(monday(endDate)), a.active];
+  }));
   const eligible = buildEligibleTeamTrends({ records, teams, activeMemberCounts: memberCounts, actorsByWeek, minimumGroupSize: floor,
     now, anchorDay: org.anchorDay });
   return { ...org, teams: eligible, annotations: buildTimelineAnnotations({ contexts, interventions, teams: eligible, now }),
