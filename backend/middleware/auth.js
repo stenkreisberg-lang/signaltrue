@@ -198,13 +198,14 @@ export function requireTeamAccess(paramName = 'teamId') {
       if (!canAccessOrg(req.user, team.orgId)) {
         return res.status(403).json({ message: 'Forbidden: Team access denied' });
       }
-      if (
-        req.user?.role === 'manager' &&
-        String(referenceId(req.user?.teamId) || '') !== String(team._id)
-      ) {
-        return res
-          .status(403)
-          .json({ message: 'Forbidden: Manager access is limited to their team' });
+      // Legacy team reports do not apply ManagerAssignment or an 8-person
+      // historical contributor gate. Do NOT expose them to managers.
+      // The dedicated /api/manager-intelligence endpoints enforce both.
+      const permitted = ['master_admin', 'admin', 'hr_admin', 'org_admin'];
+      if (!permitted.includes(req.user?.role)) {
+        return res.status(403).json({
+          message: 'Forbidden: legacy team reports require HR authorization. Managers must use their scoped team intelligence endpoint.',
+        });
       }
 
       req.team = team;
