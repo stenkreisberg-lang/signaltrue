@@ -150,6 +150,23 @@ export default function DidControlWork() {
     [answers]
   );
 
+  const copyReviewPlan = async () => {
+    const lines = [
+      'SignalTrue — control-review evidence checklist',
+      'Self-assessment only. Not a validated risk score, compliance determination or professional advice.',
+      'Readiness indication: ' + score + '/100 (eight self-reported questions).',
+      ...gaps.map((gap, index) => (index + 1) + '. ' + gap.gapTitle + ': ' + gap.gapCopy),
+      'Next step: document the control, intended change, baseline, worker consultation, evidence limitations and review decision.',
+      'https://www.signaltrue.ai/did-the-control-work',
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join('\\n'));
+      trackEvent('did_control_work_plan_copied', { gap_count: gaps.length });
+    } catch {
+      // Copy requires browser permission. The on-screen findings remain available.
+    }
+  };
+
   const finish = () => {
     if (answeredCount !== QUESTIONS.length) return;
     setShowResult(true);
@@ -169,8 +186,8 @@ export default function DidControlWork() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       <PageMeta
-        title="People at Work closed. Is your psychosocial control review ready? | SignalTrue"
-        description="A two-minute diagnostic for Australian organisations to find gaps between psychosocial risk assessment, the control introduced and the evidence needed to review whether it worked."
+        title="Psychosocial Control Review Checklist Australia | SignalTrue"
+        description="An eight-question Australian psychosocial control-review checklist. Identify evidence gaps, understand limitations and plan a practical review."
         path="/did-the-control-work"
       />
       <Navbar />
@@ -276,13 +293,13 @@ export default function DidControlWork() {
               <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
                 <aside className="rounded-container border border-[#E2E8F0] bg-[#F8FAFC] p-7">
                   <p className="text-caption font-bold uppercase tracking-wider text-brand">
-                    Your readiness score
+                    Your self-reported review readiness
                   </p>
                   <div className="mt-4 flex items-end gap-2">
                     <span className="text-[4.5rem] font-bold leading-none">{score}</span>
                     <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
                   </div>
-                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>
+                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>\n                  <p className="mt-3 text-caption leading-6 text-[#64748B]">Indicative checklist score only. Not a validated psychosocial risk assessment, effectiveness measure or compliance rating.</p>
                 </aside>
 
                 <div>
@@ -310,6 +327,12 @@ export default function DidControlWork() {
                 </div>
               </div>
 
+              <div className="mt-6 flex flex-wrap items-center gap-4">
+                <button type="button" onClick={copyReviewPlan} className="inline-flex min-h-11 items-center rounded-control border border-[#CBD5E1] px-5 py-2 font-semibold text-brand hover:bg-[#F8FAFC]">
+                  Copy my evidence review checklist
+                </button>
+                <Link to="/au/consultants" className="text-caption font-semibold text-brand underline underline-offset-4">For WHS consultants</Link>
+              </div>
               <div className="mt-10 rounded-container border border-brand-soft bg-brand-softer p-7 sm:p-8">
                 <p className="text-caption font-bold uppercase tracking-wider text-brand">
                   What if much of this evidence did not have to be assembled manually?
@@ -333,7 +356,7 @@ export default function DidControlWork() {
                     See the fictional sample report <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    to="/contact?intent=free-preview"
+                    to="/contact?intent=free-preview&cta=did_control_work"
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 font-bold text-brand hover:bg-white/70"
                   >
                     Get a free preview
@@ -371,7 +394,7 @@ export default function DidControlWork() {
               attention.
             </p>
             <Link
-              to="/contact?intent=free-preview"
+              to="/contact?intent=free-preview&cta=did_control_work"
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
             >
               Get the free SignalTrue preview <ArrowRight className="ml-2 h-4 w-4" />

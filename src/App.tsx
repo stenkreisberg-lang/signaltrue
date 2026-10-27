@@ -17,6 +17,7 @@ const About = lazy(() => import('./pages/About'));
 const Trust = lazy(() => import('./pages/Trust'));
 const AustraliaPsychosocialRisk = lazy(() => import('./pages/AustraliaPsychosocialRisk'));
 const AustraliaPilot = lazy(() => import('./pages/AustraliaPilot'));
+const AustraliaConsultants = lazy(() => import('./pages/AustraliaConsultants'));
 const AustraliaMonitoringGapAudit = lazy(() => import('./pages/AustraliaMonitoringGapAudit'));
 const AustraliaInformationPage = lazy(() => import('./pages/AustraliaInformationPage'));
 const AustraliaStandardsAssurance = lazy(() => import('./pages/AustraliaStandardsAssurance'));
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="/trust" element={<Trust />} />
                 <Route path="/au" element={<AustraliaPsychosocialRisk />} />
                 <Route path="/au/8-week-pilot" element={<AustraliaPilot />} />
+                <Route path="/au/consultants" element={<AustraliaConsultants />} />
                 <Route path="/au/monitoring-gap-audit" element={<AustraliaMonitoringGapAudit />} />
                 <Route path="/au/standards-assurance" element={<AustraliaStandardsAssurance />} />
                 {[

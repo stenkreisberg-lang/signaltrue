@@ -65,7 +65,7 @@ export default function AustraliaPilot() {
               Australian pilot
             </p>
             <h1 className="mt-4 text-display font-bold text-[#0F172A] sm:text-display lg:text-display">
-              A free preview of one psychosocial control against what changed in the work.
+              A free pilot to review one control and what changed at work.
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lead leading-8 text-[#475569]">
               Selected Australian organisations can test SignalTrue on one real psychosocial control
@@ -81,7 +81,7 @@ export default function AustraliaPilot() {
                   ctaLocation="au_pilot_hero"
                   queryParams={{ intent: 'free-preview' }}
                 >
-                  Get a free preview <ArrowRight className="ml-2 h-4 w-4" />
+                  Request a free pilot <ArrowRight className="ml-2 h-4 w-4" />
                 </PrimaryCommercialCTA>
               </Button>
             </div>
@@ -182,7 +182,7 @@ export default function AustraliaPilot() {
               ))}
             </div>
             <p className="mt-5 text-caption leading-6 text-[#64748B]">
-              Timing depends on historical data availability and implementation readiness.
+              The eight-week structure is illustrative; the actual scope and timing are agreed with the employer and depend on historical data availability and implementation readiness.
               SignalTrue will not enable production telemetry before required customer confirmations
               and deployment-specific controls are complete.
             </p>
