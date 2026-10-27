@@ -112,6 +112,37 @@ const ROUTE_META = {
     summary:
       'One evidence method across markets: define the control, observe, interpret, validate with people and support a review decision; local packs add jurisdiction-specific deployment context.',
   },
+  '/did-the-control-work': {
+    title: 'Psychosocial Control Review Checklist Australia | SignalTrue',
+    description: 'An eight-question Australian psychosocial control-review checklist. Identify evidence gaps, understand limitations and plan a practical review.',
+    summary: 'This free eight-question self-assessment helps Australian WHS leaders review the evidence needed after implementing a psychosocial or work-design control. It covers assessment, control intent, baseline, worker consultation, unintended effects and review decisions. The indicative checklist is not a validated risk score or compliance assessment.',
+    lang: 'en-AU',
+    schemaAbout: 'Psychosocial risk control review evidence checklist',
+    links: [
+      ['/au', 'Psychosocial risk monitoring Australia'],
+      ['/au/8-week-pilot', 'Explore the free pilot'],
+      ['/sample-report', 'Illustrative control review report'],
+      ['/au/consultants', 'For Australian WHS consultants'],
+    ],
+  },
+  '/au/consultants': {
+    title: 'For Australian Psychosocial Risk Consultants | SignalTrue',
+    description: 'Explore how approved, aggregated work-pattern evidence could complement psychosocial risk assessment and control reviews for employer clients.',
+    summary: 'SignalTrue can support Australian psychosocial-risk and WHS consultants with supplementary, aggregated work-pattern evidence when employer clients review controls. Professional assessment and worker consultation remain central. Client-authorised pilots are free and subject to privacy, security and success-criteria review.',
+    lang: 'en-AU',
+    schemaAbout: 'Australian WHS and psychosocial-risk consultant partnerships',
+    crawlerSections: [
+      { heading: 'Complement professional assessment', text: 'Consultants lead risk assessment, worker consultation, control design and interpretation. SignalTrue supplies an optional team-level work-pattern evidence layer where appropriate.' },
+      { heading: 'Review one control with a client', text: 'Agree a defined control and intended work change, examine baseline and follow-up evidence, discuss alternative explanations and document the client review decision.' },
+      { heading: 'Free, permission-based pilot', text: 'A pilot is free and requires employer permission, privacy and security review, eligible group sizes and agreed success criteria. Metadata cannot prove causation or compliance.' },
+    ],
+    links: [
+      ['/did-the-control-work', 'Control-review checklist'],
+      ['/sample-report', 'Illustrative sample report'],
+      ['/au/8-week-pilot', 'Free pilot process'],
+      ['/contact?intent=consultant-partnership', 'Consultant partnership enquiry'],
+    ],
+  },
   '/au': {
     title: 'Psychosocial Risk Monitoring Australia | SignalTrue',
     description:
