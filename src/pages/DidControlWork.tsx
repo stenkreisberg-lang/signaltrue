@@ -356,7 +356,7 @@ export default function DidControlWork() {
                     See the fictional sample report <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    to="/contact?intent=free-preview"
+                    to="/contact?intent=free-preview&cta=did_control_work"
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-brand bg-white px-6 py-3 font-bold text-brand hover:bg-white/70"
                   >
                     Get a free preview
@@ -394,7 +394,7 @@ export default function DidControlWork() {
               attention.
             </p>
             <Link
-              to="/contact?intent=free-preview"
+              to="/contact?intent=free-preview&cta=did_control_work"
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 py-3 font-bold text-[#0F172A] hover:bg-[#E2E8F0]"
             >
               Get the free SignalTrue preview <ArrowRight className="ml-2 h-4 w-4" />
