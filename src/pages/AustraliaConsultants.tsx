@@ -33,7 +33,7 @@ export default function AustraliaConsultants() {
               <Link className="inline-flex min-h-12 items-center gap-2 rounded-control bg-brand px-6 py-3 font-semibold text-white" to="/did-the-control-work">
                 Review the evidence gaps <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link className="inline-flex min-h-12 items-center rounded-control border border-[#CBD5E1] px-6 py-3 font-semibold" to="/contact?intent=consultant-partnership">
+              <Link className="inline-flex min-h-12 items-center rounded-control border border-[#CBD5E1] px-6 py-3 font-semibold" to="/contact?intent=consultant-partnership&cta=au_consultants">
                 Explore a partnership
               </Link>
             </div>
@@ -80,7 +80,7 @@ export default function AustraliaConsultants() {
           <div className="mt-7 flex flex-wrap gap-4">
             <Link className="font-semibold text-brand underline underline-offset-4" to="/au/8-week-pilot">Understand the free pilot</Link>
             <Link className="font-semibold text-brand underline underline-offset-4" to="/sample-report">See an illustrative report</Link>
-            <Link className="font-semibold text-brand underline underline-offset-4" to="/contact?intent=consultant-partnership">Ask about consultant collaboration</Link>
+            <Link className="font-semibold text-brand underline underline-offset-4" to="/contact?intent=consultant-partnership&cta=au_consultants">Ask about consultant collaboration</Link>
           </div>
         </section>
       </main>
