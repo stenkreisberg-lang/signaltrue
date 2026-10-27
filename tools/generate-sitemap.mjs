@@ -66,6 +66,7 @@ const staticPages = [
   ['/signals/coordination-overhead', 'monthly', '0.8'],
   ['/signals/manager-load', 'monthly', '0.8'],
   ['/au', 'weekly', '1.0'],
+  ['/au/consultants', 'weekly', '0.95'],
   ['/au/psychosocial-risk-monitoring', 'weekly', '0.95'],
   ['/au/psychosocial-control-effectiveness', 'weekly', '1.0'],
   ['/au/review-psychosocial-controls', 'weekly', '0.95'],
