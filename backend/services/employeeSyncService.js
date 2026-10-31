@@ -63,7 +63,7 @@ function pickCanonicalUser(users, eventCounts) {
 export async function mergeDuplicateEmployees(orgId, options = {}) {
   const { dryRun = false, protectedUserId = null } = options;
   const org = await Organization.findById(orgId);
-  const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
+  const minimumTeamSize = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
   const orgDomain = resolveOrgWorkDomain(org);
 
   const users = await User.find({ orgId, isMasterAdmin: { $ne: true } });
@@ -326,7 +326,7 @@ export async function remapWorkEventTeams(orgId) {
 export async function cleanupInvalidEmployees(orgId, options = {}) {
   const { protectedUserId = null, dryRun = false, sources = null } = options;
   const org = await Organization.findById(orgId);
-  const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
+  const minimumTeamSize = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
   const orgDomain = resolveOrgWorkDomain(org);
   const userQuery = { orgId, isMasterAdmin: { $ne: true } };
   if (Array.isArray(sources) && sources.length > 0) {

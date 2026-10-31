@@ -29,7 +29,7 @@ const links = [
   { to: '/app/active-monitoring', label: 'Pattern feed', group: 'Explore' },
   {
     to: '/app/work-network',
-    label: 'Work Network',
+    label: 'How teams work together',
     group: 'Explore',
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
   },
@@ -41,7 +41,7 @@ const links = [
   },
   {
     to: '/app/signal-coverage',
-    label: 'What is measured',
+    label: 'Data coverage',
     group: 'Settings',
     secondary: true,
   },
@@ -54,14 +54,14 @@ const links = [
   },
   {
     to: '/app/employees',
-    label: 'People and teams',
+    label: 'Organisation & teams',
     group: 'Settings',
     secondary: true,
     adminOnly: true,
   },
   {
     to: '/app/admin/manager-reporting',
-    label: 'Manager reporting',
+    label: 'Manager access',
     group: 'Settings',
     secondary: true,
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin'],

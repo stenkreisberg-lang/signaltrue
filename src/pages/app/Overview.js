@@ -220,14 +220,18 @@ export default function Overview() {
         <div className="app-dashboard-hero-main">
           <p className="app-dashboard-eyebrow">This week</p>
           <h1 className="app-dashboard-title">
-            {reportingReady || hasMeasuredEvidence
-              ? latestBrief?.status?.label || 'Measured overview'
-              : 'Measurement setup needs attention'}
+            {latestBrief?.status?.evidenceGrade === 'Low'
+              ? 'Limited evidence this week'
+              : reportingReady || hasMeasuredEvidence
+                ? latestBrief?.status?.label || 'Measured overview'
+                : 'Measurement setup needs attention'}
           </h1>
           <p className="app-dashboard-copy">
-            {reportingReady || hasMeasuredEvidence
-              ? latestBrief?.status?.summary || 'Review the available measurements below.'
-              : 'Reliable descriptive measurements will appear here as connected sources begin supplying usable events.'}
+            {latestBrief?.status?.evidenceGrade === 'Low'
+              ? 'Available data does not support an organisation-wide conclusion. Check coverage and eligible observations below.'
+              : reportingReady || hasMeasuredEvidence
+                ? latestBrief?.status?.summary || 'Review the available measurements below.'
+                : 'Reliable descriptive measurements will appear here as connected sources begin supplying usable events.'}
           </p>
           {latestBrief && (
             <Link

@@ -72,7 +72,7 @@ export default function ManagerReportingAdmin() {
     <AppShell user={user()} section="Manager reporting">
       <PageHeader
         eyebrow="ADMIN · ACCESS MANAGEMENT"
-        title="Team manager reporting"
+        title="Manager access"
         description="HR controls every appointment. Inviting never grants dashboard access until the exact employee accepts."
       />
       <div className="app-panel space-y-5">
@@ -94,7 +94,7 @@ export default function ManagerReportingAdmin() {
         <h2 className="text-lg font-bold">1. Approve a manager</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm font-semibold">
-            Verified organization employee
+            Employee with an active SignalTrue account
             <select
               className="mt-2 w-full rounded-lg border border-slate-300 p-3"
               value={person}
@@ -130,7 +130,7 @@ export default function ManagerReportingAdmin() {
           onClick={appoint}
           className="rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white disabled:opacity-50"
         >
-          Approve scoped appointment
+          Approve manager access
         </button>
         <hr className="border-slate-200" />
         <h2 className="text-lg font-bold">2. Invitations and current authorizations</h2>

@@ -60,7 +60,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const start = new Date(utcMonday(now).getTime() - 27 * 7 * DAY);
   const [records, roster] = await Promise.all([
     IntegrationMetricsDaily.find({ orgId, teamId, userId: null, date: { $gte: start, $lte: now } }).sort({date:1}).lean(),
-    User.find({orgId,teamId,accountStatus:'active'}).select('_id').lean(),
+    User.find({orgId,teamId,accountStatus:{$ne:'inactive'}}).select('_id').lean(),
   ]);
   const population = roster.length;
   const activeIds = new Set(roster.map(u => asId(u._id)));

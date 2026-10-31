@@ -35,17 +35,20 @@ export async function buildDashboard({ tenantId, hsRole = 'HS_ADMIN', userId = n
   const now = new Date();
 
   const caseScope = { tenantId };
+  const functionLeader = hsRole === 'FUNCTION_LEADER';
+  const allowedTeams = functionLeader && Array.isArray(permittedTeamIds) ? permittedTeamIds : [];
   if (hsRole === 'CASE_OWNER' && userId) caseScope.caseOwner = userId;
-  if (hsRole === 'FUNCTION_LEADER' && permittedTeamIds.length) {
-    caseScope.teamIds = { $in: permittedTeamIds };
-  }
+  // An empty or absent team scope must deny, not expose all tenant cases.
+  if (functionLeader) caseScope.teamIds = { $in: allowedTeams };
 
   const [openCases, interventions, patternFindings] = await Promise.all([
     ControlReviewCase.find({ ...caseScope, status: { $in: OPEN_STATUSES } })
       .sort({ updatedAt: -1 })
       .lean(),
-    ControlIntervention.find({ tenantId, status: { $ne: 'CANCELLED' } }).lean(),
-    PatternFinding.find({ tenantId, status: 'REVIEW_RECOMMENDED' })
+    ControlIntervention.find({ tenantId, status: { $ne: 'CANCELLED' },
+      ...(functionLeader ? { affectedTeamIds: { $in: allowedTeams } } : {}) }).lean(),
+    PatternFinding.find({ tenantId, status: 'REVIEW_RECOMMENDED',
+      ...(functionLeader ? { teamId: { $in: allowedTeams } } : {}) })
       .sort({ periodStart: -1 })
       .limit(20)
       .lean(),
@@ -55,7 +58,8 @@ export async function buildDashboard({ tenantId, hsRole = 'HS_ADMIN', userId = n
   const interventionIds = interventions.map((i) => i._id);
 
   const [migrations, evaluations, consultations] = await Promise.all([
-    MigrationFinding.find({ tenantId, status: { $in: ['OPEN', 'UNDER_INVESTIGATION'] } })
+    MigrationFinding.find({ tenantId, status: { $in: ['OPEN', 'UNDER_INVESTIGATION'] },
+      ...(functionLeader ? { affectedTeamIds: { $in: allowedTeams } } : {}) })
       .sort({ createdAt: -1 })
       .lean(),
     interventionIds.length

@@ -395,27 +395,21 @@ function serializeTeamReadiness(item) {
 }
 
 async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payload }) {
-  try {
-    const validated = validateWeeklyBriefConsistency(payload);
-    if (!validated.valid) {
-      console.error('[WeeklyBrief] Consistency diagnostics', JSON.stringify(validated.diagnostics));
-    }
-    validated.brief.dataQuality = {
-      ...(validated.brief.dataQuality || {}),
-      consistencyDiagnostics: validated.diagnostics,
-    };
-    await upsertWeeklyBriefSnapshot({
-      orgId: org._id,
-      orgName: org.name,
-      periodStart,
-      periodEnd,
-      reportMode,
-      generatedAt: periodEnd,
-      payload: validated.brief,
-    });
-  } catch (error) {
-    console.error('[WeeklyBrief] Failed to persist dashboard snapshot:', error.message);
+  const validated = validateWeeklyBriefConsistency(payload);
+  if (!validated.valid) {
+    console.error('[WeeklyBrief] Consistency diagnostics', JSON.stringify(validated.diagnostics));
+    // Incorrect measurements must not be delivered as a fresh report.
+    throw new Error('Weekly report consistency validation failed; delivery blocked.');
   }
+  validated.brief.dataQuality = {
+    ...(validated.brief.dataQuality || {}),
+    consistencyDiagnostics: validated.diagnostics,
+  };
+  // Never swallow persistence errors or use an older snapshot as a fallback.
+  await upsertWeeklyBriefSnapshot({
+    orgId: org._id, orgName: org.name, periodStart, periodEnd, reportMode,
+    generatedAt: periodEnd, payload: validated.brief,
+  });
 }
 
 const STALE_SYNC_DAYS = 7;
@@ -639,7 +633,7 @@ function generateManagerPrompts({ tw, lw, sixWeekAvg, orgStatus, teamBDIData, tw
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
-  const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
+  const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
   const teams = await Team.find({ orgId });
   const now = new Date();
 
@@ -3520,7 +3514,7 @@ export async function sendWeeklyBrief(orgId) {
   const orgUsers = await User.find({
     orgId,
     role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
-    accountStatus: { $ne: 'inactive' },
+    accountStatus: 'active',
     email: { $exists: true, $ne: null },
   });
   const recipients = [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
@@ -3558,21 +3552,17 @@ export async function sendWeeklyBrief(orgId) {
       console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }
   } else {
-    console.warn(
-      `[WeeklyBrief] No client recipients configured for org ${org.name} — skipping client send but still copying superadmin`
-    );
+    throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
   }
 
-  // Always CC superadmin (sten.kreisberg@gmail.com) — even when no client recipients exist,
-  // so the report can be reviewed and any delivery issues caught early.
-  await ccSuperadmin({
-    subject,
-    html,
-    originalRecipient:
-      recipients.length > 0 ? recipients.join(', ') : '(none — no client recipients configured)',
-    reportType: 'Weekly Intelligence Brief',
-    orgName: org.name,
-  });
+  // Do not send client reporting data to personal superadmin mailboxes by default.
+  // A tenant-approved operational copy requires explicit configuration.
+  if (process.env.WEEKLY_BRIEF_SUPERADMIN_COPY_ENABLED === 'true') {
+    await ccSuperadmin({
+      subject, html, originalRecipient: recipients.join(', '),
+      reportType: 'Weekly Intelligence Brief', orgName: org.name,
+    });
+  }
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };
