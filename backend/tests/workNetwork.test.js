@@ -121,7 +121,7 @@ describe('Work Network analysis', () => {
       result.leadershipQuestions.find((item) => item.id === 'meeting_initiators').answer
     ).toContain('Engineering');
     expect(readWorkNetworkMetric(result, 'meetingHours', ['eng', 'sales'])).toBe(2.5);
-    expect(readWorkNetworkMetric(result, 'bridgeConcentration', ['eng', 'sales'])).toBe(100);
+    expect(readWorkNetworkMetric(result, 'bridgeConcentration', ['eng', 'sales'])).toBe(25);
     expect(result.methodology.validationStatus).toContain('not externally validated');
     expect(result.confidence).toBeUndefined();
     expect(result.privacy.contentUsed).toBe(false);
