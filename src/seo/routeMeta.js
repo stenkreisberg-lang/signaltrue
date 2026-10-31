@@ -114,8 +114,10 @@ const ROUTE_META = {
   },
   '/did-the-control-work': {
     title: 'Psychosocial Control Review Checklist Australia | SignalTrue',
-    description: 'An eight-question Australian psychosocial control-review checklist. Identify evidence gaps, understand limitations and plan a practical review.',
-    summary: 'This free eight-question self-assessment helps Australian WHS leaders review the evidence needed after implementing a psychosocial or work-design control. It covers assessment, control intent, baseline, worker consultation, unintended effects and review decisions. The indicative checklist is not a validated risk score or compliance assessment.',
+    description:
+      'An eight-question Australian psychosocial control-review checklist. Identify evidence gaps, understand limitations and plan a practical review.',
+    summary:
+      'This free eight-question self-assessment helps Australian WHS leaders review the evidence needed after implementing a psychosocial or work-design control. It covers assessment, control intent, baseline, worker consultation, unintended effects and review decisions. The indicative checklist is not a validated risk score or compliance assessment.',
     lang: 'en-AU',
     schemaAbout: 'Psychosocial risk control review evidence checklist',
     links: [
@@ -127,14 +129,25 @@ const ROUTE_META = {
   },
   '/au/consultants': {
     title: 'For Australian Psychosocial Risk Consultants | SignalTrue',
-    description: 'Explore how approved, aggregated work-pattern evidence could complement psychosocial risk assessment and control reviews for employer clients.',
-    summary: 'SignalTrue can support Australian psychosocial-risk and WHS consultants with supplementary, aggregated work-pattern evidence when employer clients review controls. Professional assessment and worker consultation remain central. Client-authorised pilots are free and subject to privacy, security and success-criteria review.',
+    description:
+      'Explore how approved, aggregated work-pattern evidence could complement psychosocial risk assessment and control reviews for employer clients.',
+    summary:
+      'SignalTrue can support Australian psychosocial-risk and WHS consultants with supplementary, aggregated work-pattern evidence when employer clients review controls. Professional assessment and worker consultation remain central. Client-authorised pilots are free and subject to privacy, security and success-criteria review.',
     lang: 'en-AU',
     schemaAbout: 'Australian WHS and psychosocial-risk consultant partnerships',
     crawlerSections: [
-      { heading: 'Complement professional assessment', text: 'Consultants lead risk assessment, worker consultation, control design and interpretation. SignalTrue supplies an optional team-level work-pattern evidence layer where appropriate.' },
-      { heading: 'Review one control with a client', text: 'Agree a defined control and intended work change, examine baseline and follow-up evidence, discuss alternative explanations and document the client review decision.' },
-      { heading: 'Free, permission-based pilot', text: 'A pilot is free and requires employer permission, privacy and security review, eligible group sizes and agreed success criteria. Metadata cannot prove causation or compliance.' },
+      {
+        heading: 'Complement professional assessment',
+        text: 'Consultants lead risk assessment, worker consultation, control design and interpretation. SignalTrue supplies an optional team-level work-pattern evidence layer where appropriate.',
+      },
+      {
+        heading: 'Review one control with a client',
+        text: 'Agree a defined control and intended work change, examine baseline and follow-up evidence, discuss alternative explanations and document the client review decision.',
+      },
+      {
+        heading: 'Free, permission-based pilot',
+        text: 'A pilot is free and requires employer permission, privacy and security review, eligible group sizes and agreed success criteria. Metadata cannot prove causation or compliance.',
+      },
     ],
     links: [
       ['/did-the-control-work', 'Control-review checklist'],

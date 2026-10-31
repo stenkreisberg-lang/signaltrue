@@ -155,7 +155,7 @@ export default function DidControlWork() {
       'SignalTrue — control-review evidence checklist',
       'Self-assessment only. Not a validated risk score, compliance determination or professional advice.',
       'Readiness indication: ' + score + '/100 (eight self-reported questions).',
-      ...gaps.map((gap, index) => (index + 1) + '. ' + gap.gapTitle + ': ' + gap.gapCopy),
+      ...gaps.map((gap, index) => index + 1 + '. ' + gap.gapTitle + ': ' + gap.gapCopy),
       'Next step: document the control, intended change, baseline, worker consultation, evidence limitations and review decision.',
       'https://www.signaltrue.ai/did-the-control-work',
     ];
@@ -299,7 +299,11 @@ export default function DidControlWork() {
                     <span className="text-[4.5rem] font-bold leading-none">{score}</span>
                     <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
                   </div>
-                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>\n                  <p className="mt-3 text-caption leading-6 text-[#64748B]">Indicative checklist score only. Not a validated psychosocial risk assessment, effectiveness measure or compliance rating.</p>
+                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>\n{' '}
+                  <p className="mt-3 text-caption leading-6 text-[#64748B]">
+                    Indicative checklist score only. Not a validated psychosocial risk assessment,
+                    effectiveness measure or compliance rating.
+                  </p>
                 </aside>
 
                 <div>
@@ -328,10 +332,19 @@ export default function DidControlWork() {
               </div>
 
               <div className="mt-6 flex flex-wrap items-center gap-4">
-                <button type="button" onClick={copyReviewPlan} className="inline-flex min-h-11 items-center rounded-control border border-[#CBD5E1] px-5 py-2 font-semibold text-brand hover:bg-[#F8FAFC]">
+                <button
+                  type="button"
+                  onClick={copyReviewPlan}
+                  className="inline-flex min-h-11 items-center rounded-control border border-[#CBD5E1] px-5 py-2 font-semibold text-brand hover:bg-[#F8FAFC]"
+                >
                   Copy my evidence review checklist
                 </button>
-                <Link to="/au/consultants" className="text-caption font-semibold text-brand underline underline-offset-4">For WHS consultants</Link>
+                <Link
+                  to="/au/consultants"
+                  className="text-caption font-semibold text-brand underline underline-offset-4"
+                >
+                  For WHS consultants
+                </Link>
               </div>
               <div className="mt-10 rounded-container border border-brand-soft bg-brand-softer p-7 sm:p-8">
                 <p className="text-caption font-bold uppercase tracking-wider text-brand">

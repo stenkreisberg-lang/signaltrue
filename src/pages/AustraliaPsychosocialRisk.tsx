@@ -100,7 +100,16 @@ export default function AustraliaPsychosocialRisk() {
                 See a fictional control review from baseline to decision{' '}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-              <p className="mt-5 text-caption text-[#475569]">Supporting employer clients? <Link className="font-semibold text-brand underline underline-offset-4" to="/au/consultants">Explore SignalTrue for Australian WHS consultants</Link>.</p>
+              <p className="mt-5 text-caption text-[#475569]">
+                Supporting employer clients?{' '}
+                <Link
+                  className="font-semibold text-brand underline underline-offset-4"
+                  to="/au/consultants"
+                >
+                  Explore SignalTrue for Australian WHS consultants
+                </Link>
+                .
+              </p>
               <p className="mx-auto mt-5 max-w-3xl text-caption leading-6 text-[#64748B]">
                 Designed to support an ISO 45003-informed psychosocial risk process within an ISO
                 45001 OH&amp;S context. Alignment does not mean certification or establish WHS

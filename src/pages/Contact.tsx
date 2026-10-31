@@ -6,7 +6,14 @@ import LeadForm from '../components/LeadForm';
 import Navbar from '../components/Navbar';
 import PageMeta from '../components/PageMeta';
 
-const ALLOWED_INTENTS = new Set(['demo', 'pilot', 'pricing', 'security-review', 'free-preview', 'consultant-partnership']);
+const ALLOWED_INTENTS = new Set([
+  'demo',
+  'pilot',
+  'pricing',
+  'security-review',
+  'free-preview',
+  'consultant-partnership',
+]);
 const INTENT_ALIASES: Record<string, string> = {
   'au-founding-review': 'free-preview',
 };
@@ -105,11 +112,29 @@ export default function Contact() {
               <LeadForm
                 ctaLocation={ctaLocation}
                 intent={intent}
-                source={intent === 'consultant-partnership' ? 'Australian consultant partnership enquiry' : undefined}
-                tag={intent === 'consultant-partnership' ? 'signaltrue-consultant-partnership' : undefined}
-                heading={intent === 'consultant-partnership' ? 'Explore consultant collaboration' : undefined}
-                intro={intent === 'consultant-partnership' ? 'Tell us about your consultancy and the types of psychosocial-risk projects you support. We can explore whether supplementary team-level evidence would be relevant to a client-authorised FREE pilot.' : undefined}
-                submitLabel={intent === 'consultant-partnership' ? 'Send partnership enquiry' : undefined}
+                source={
+                  intent === 'consultant-partnership'
+                    ? 'Australian consultant partnership enquiry'
+                    : undefined
+                }
+                tag={
+                  intent === 'consultant-partnership'
+                    ? 'signaltrue-consultant-partnership'
+                    : undefined
+                }
+                heading={
+                  intent === 'consultant-partnership'
+                    ? 'Explore consultant collaboration'
+                    : undefined
+                }
+                intro={
+                  intent === 'consultant-partnership'
+                    ? 'Tell us about your consultancy and the types of psychosocial-risk projects you support. We can explore whether supplementary team-level evidence would be relevant to a client-authorised FREE pilot.'
+                    : undefined
+                }
+                submitLabel={
+                  intent === 'consultant-partnership' ? 'Send partnership enquiry' : undefined
+                }
                 plan={plan}
                 formVersion="contact_p0_v1"
               />
