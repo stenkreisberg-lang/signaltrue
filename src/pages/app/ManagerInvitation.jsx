@@ -70,7 +70,11 @@ export default function ManagerInvitation() {
       <div className="mx-auto mt-16 max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-bold tracking-widest text-blue-700">SIGNALTRUE · TEAM ACCESS</p>
         <h1 className="mt-4 text-2xl font-extrabold">Your team insights invitation</h1>
-        {!localStorage.getItem('token') ? (
+        {!token ? (
+          <p className="mt-4 text-sm text-slate-600">
+            This invitation link is missing. Ask HR to send a new invitation.
+          </p>
+        ) : !localStorage.getItem('token') ? (
           <div className="mt-4 space-y-4">
             {claimed ? (
               <p className="rounded-lg bg-green-50 p-4 text-sm">

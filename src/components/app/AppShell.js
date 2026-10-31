@@ -159,7 +159,12 @@ export default function AppShell({ children, user, section, width = 'wide', mode
                   )}
                   <NavLink
                     to={link.to}
-                    className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
+                    className={({ isActive }) => {
+                      const active = mode === 'manager'
+                        ? location.hash === (link.to.includes('#') ? '#' + link.to.split('#')[1] : '')
+                        : isActive;
+                      return 'app-nav-link ' + (active ? 'is-active' : '');
+                    }}
                   >
                     {link.label}
                   </NavLink>

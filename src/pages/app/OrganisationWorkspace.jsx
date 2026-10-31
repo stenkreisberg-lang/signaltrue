@@ -197,6 +197,14 @@ export default function OrganisationWorkspace() {
                   <p className="text-sm text-slate-600">
                     {team.memberCount} active workforce records. {team.measurementStatus}.
                   </p>
+                  <p className="text-sm text-slate-600">
+                    {team.reportingEligibleBySize
+                      ? 'Meets the size requirement. Source coverage must still be verified.'
+                      : 'Below the minimum cohort or team reporting disabled. Analytics remain suppressed.'}
+                  </p>
+                  <Link className="text-sm font-semibold underline" to={'/app/insights/' + team.id}>
+                    Open team investigation
+                  </Link>
                   <label className="block text-sm font-semibold">
                     Parent department or team
                     <select
