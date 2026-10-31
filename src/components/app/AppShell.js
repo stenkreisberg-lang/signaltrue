@@ -7,29 +7,71 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
  */
 const links = [
   { to: '/app/overview', label: 'Overview', group: 'Start' },
-  { to: '/app/employees', label: 'Organisation & teams', group: 'Start',
-    roles: ['master_admin', 'admin', 'hr_admin'] },
-  { to: '/app/control-reviews', label: 'Actions & reviews', group: 'Start',
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive'] },
-  { to: '/app/latest-brief', label: 'Reports', group: 'Start',
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'] },
+  {
+    to: '/app/employees',
+    label: 'Organisation & teams',
+    group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin'],
+  },
+  {
+    to: '/app/control-reviews',
+    label: 'Actions & reviews',
+    group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive'],
+  },
+  {
+    to: '/app/latest-brief',
+    label: 'Reports',
+    group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+  },
   { to: '/app/signal-coverage', label: 'Settings & access', group: 'Start' },
   { to: '/app/signals', label: 'Work-pattern evidence', group: 'Explore', secondary: true },
   { to: '/app/active-monitoring', label: 'Pattern history', group: 'Explore', secondary: true },
   { to: '/app/actions', label: 'Action records', group: 'Explore', secondary: true },
-  { to: '/app/work-network', label: 'How teams work together', group: 'Explore', secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'] },
-  { to: '/app/executive-summary', label: 'Leadership summary', group: 'Explore', secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'] },
-  { to: '/integrations', label: 'Microsoft and other connections', group: 'Settings', secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'] },
-  { to: '/app/admin/manager-reporting', label: 'Manager access & invitations', group: 'Settings',
-    secondary: true, roles: ['master_admin', 'admin', 'hr_admin', 'org_admin'] },
+  {
+    to: '/app/work-network',
+    label: 'How teams work together',
+    group: 'Explore',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
+  },
+  {
+    to: '/app/executive-summary',
+    label: 'Leadership summary',
+    group: 'Explore',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+  },
+  {
+    to: '/integrations',
+    label: 'Microsoft and other connections',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
+  },
+  {
+    to: '/app/admin/manager-reporting',
+    label: 'Manager access & invitations',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin'],
+  },
   { to: '/app/privacy', label: 'Data policy', group: 'Settings', secondary: true },
-  { to: '/app/trust-pack', label: 'Trust pack', group: 'Settings', secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'it_admin', 'compliance'] },
-  { to: '/app/site-analytics', label: 'Site analytics', group: 'Settings',
-    secondary: true, roles: ['master_admin'] },
+  {
+    to: '/app/trust-pack',
+    label: 'Trust pack',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'it_admin', 'compliance'],
+  },
+  {
+    to: '/app/site-analytics',
+    label: 'Site analytics',
+    group: 'Settings',
+    secondary: true,
+    roles: ['master_admin'],
+  },
 ];
 const managerLinks = [
   { to: '/app/manager', label: 'My team', group: 'Start' },
@@ -58,7 +100,9 @@ export default function AppShell({ children, user, section, width = 'wide', mode
 
   const visibleLinks = (mode === 'manager' ? managerLinks : links).filter(
     (link) =>
-      (mode === 'manager' || !link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
+      (mode === 'manager' ||
+        !link.adminOnly ||
+        ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
       (mode === 'manager' || !link.roles || link.roles.includes(user?.role))
   );
   const secondaryLinks = visibleLinks.filter((link) => link.secondary);
@@ -124,7 +168,9 @@ export default function AppShell({ children, user, section, width = 'wide', mode
 
             {mode !== 'manager' && secondaryLinks.length > 0 && (
               <details className="app-nav-secondary" open={isOnSecondaryPage}>
-                <summary className="app-nav-group app-nav-summary">Additional tools and settings</summary>
+                <summary className="app-nav-group app-nav-summary">
+                  Additional tools and settings
+                </summary>
                 {/* A details element slots everything after the summary into a
                     single anonymous box, so flex on the details itself does not
                     reach these links. They need their own container. */}

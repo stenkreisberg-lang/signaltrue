@@ -34,10 +34,21 @@ export default function Employees() {
         <div className="space-y-4">
           <OrganisationWorkspace />
           <section className="app-panel">
-            <button type="button" className="font-semibold text-slate-900 underline" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}>
-              {advanced ? 'Hide directory import and advanced mapping tools' : 'Open directory import and advanced mapping tools'}
+            <button
+              type="button"
+              className="font-semibold text-slate-900 underline"
+              aria-expanded={advanced}
+              onClick={() => setAdvanced(!advanced)}
+            >
+              {advanced
+                ? 'Hide directory import and advanced mapping tools'
+                : 'Open directory import and advanced mapping tools'}
             </button>
-            {advanced && <div className="mt-4"><EmployeeDirectory /></div>}
+            {advanced && (
+              <div className="mt-4">
+                <EmployeeDirectory />
+              </div>
+            )}
           </section>
         </div>
       ) : (

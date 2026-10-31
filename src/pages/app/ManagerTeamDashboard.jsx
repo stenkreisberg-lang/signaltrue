@@ -12,7 +12,13 @@ import {
 } from 'recharts';
 import api from '../../utils/api';
 import AppShell from '../../components/app/AppShell';
-const currentUser = () => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } };
+const currentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null');
+  } catch {
+    return null;
+  }
+};
 export default function ManagerTeamDashboard() {
   const [teams, setTeams] = useState([]),
     [team, setTeam] = useState(''),
