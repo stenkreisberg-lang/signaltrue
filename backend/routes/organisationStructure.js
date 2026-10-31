@@ -38,7 +38,7 @@ router.get('/', async (req, res, next) => {
         .select('_id name isActive analyticsEnabled structure metadata.sourceDepartment')
         .sort({ name: 1 }).lean(),
       User.find({ orgId, accountStatus: { $ne: 'inactive' } })
-        .select('_id name email teamId accountStatus profile.department hrStructure.teamVerifiedAt').sort({ name: 1 }).limit(1000).lean(),
+        .select('_id name email role teamId accountStatus profile.department hrStructure.teamVerifiedAt').sort({ name: 1 }).limit(1000).lean(),
       OrgUnit.find({ orgId, effectiveTo: null, source: { $in: ['hris','directory','manual'] } })
         .select('userId managerUserId teamId source effectiveFrom').sort({ effectiveFrom: -1 }).lean(),
     ]);
@@ -64,7 +64,7 @@ router.get('/', async (req, res, next) => {
       })),
       people: people.map(p => ({
         id: ident(p._id), name: p.name, email: p.email, teamId: ident(p.teamId),
-        accountStatus: p.accountStatus, directoryDepartment: p.profile?.department || '',
+        accountStatus: p.accountStatus, role: p.role, directoryDepartment: p.profile?.department || '',
         verifiedTeam: Boolean(p.hrStructure?.teamVerifiedAt),
         managerUserId: recentByUser.get(ident(p._id))?.managerUserId
           ? ident(recentByUser.get(ident(p._id)).managerUserId) : null,
