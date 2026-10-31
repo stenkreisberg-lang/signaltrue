@@ -3512,13 +3512,23 @@ export async function sendWeeklyBrief(orgId) {
 
   // Automated SignalTrue reports are restricted to HR/admin account owners.
   // Employees, managers, executives and arbitrary override recipients must not receive them.
+  // Organisation-wide reports are not sent to every admin by default. HR may
+  // approve explicit active administrator addresses; otherwise only hr_admin
+  // accounts receive the brief. An approved empty list pauses delivery.
+  const configured = Boolean(org.settings?.weeklyBriefRecipientsApprovedAt);
+  const approved = new Set((org.settings?.weeklyBriefRecipients || [])
+    .map(email => String(email).trim().toLowerCase()));
   const orgUsers = await User.find({
     orgId,
-    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
+    role: { $in: configured
+      ? ['master_admin', 'hr_admin', 'admin', 'org_admin']
+      : ['hr_admin'] },
     accountStatus: 'active',
     email: { $exists: true, $ne: null },
   });
-  const recipients = [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
+  const recipients = [...new Set(orgUsers
+    .map(u => String(u.email || '').trim().toLowerCase())
+    .filter(email => email && (!configured || approved.has(email))))];
 
   if (recipients.length > 0) {
     console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);

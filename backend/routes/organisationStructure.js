@@ -33,7 +33,7 @@ router.get('/', async (req, res, next) => {
   try {
     const orgId = req.structureAdmin.orgId;
     const [org, teams, people, units] = await Promise.all([
-      Organization.findById(orgId).select('name settings.minTeamSize settings.timezone').lean(),
+      Organization.findById(orgId).select('name settings.minTeamSize settings.timezone settings.weeklyBriefRecipients settings.weeklyBriefRecipientsApprovedAt').lean(),
       Team.find({ orgId, isActive: { $ne: false } })
         .select('_id name isActive analyticsEnabled structure metadata.sourceDepartment')
         .sort({ name: 1 }).lean(),
@@ -50,7 +50,9 @@ router.get('/', async (req, res, next) => {
     for (const person of people) memberCounts.set(ident(person.teamId), (memberCounts.get(ident(person.teamId)) || 0) + 1);
     const minimum = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
     return privacy(res).json({
-      organisation: { name: org?.name || '', timezone: org?.settings?.timezone || 'UTC', minimum },
+      organisation: { name: org?.name || '', timezone: org?.settings?.timezone || 'UTC', minimum,
+        approvedReportRecipients: org?.settings?.weeklyBriefRecipients || [],
+        recipientsReviewedAt: org?.settings?.weeklyBriefRecipientsApprovedAt || null },
       teams: teams.map(t => ({
         id: ident(t._id), name: t.name, parentTeamId: t.structure?.parentTeamId ? ident(t.structure.parentTeamId) : null,
         formalManagerUserId: t.structure?.managerUserId ? ident(t.structure.managerUserId) : null,
@@ -172,6 +174,35 @@ router.patch('/people/:userId', async (req, res, next) => {
     // Historical WorkEvent team attribution remains unchanged. This preserves
     // the period in which the underlying work actually happened.
     return privacy(res).json({ status: 'verified', employeeId: ident(person._id), effectiveAt: effective });
+  } catch (error) { next(error); }
+});
+
+
+// Only named, active, organisation-authorised administrators may receive a
+// full weekly HR report. This is a separate permission from manager team access.
+router.put('/report-recipients', async (req, res, next) => {
+  try {
+    const orgId = req.structureAdmin.orgId;
+    const emails = req.body?.emails;
+    if (!Array.isArray(emails) || emails.length > 30 ||
+      emails.some(email => typeof email !== 'string' || email.length > 254)) {
+      return privacy(res).status(400).json({ message: 'Provide a list of approved work email addresses' });
+    }
+    const unique = [...new Set(emails.map(email => email.trim().toLowerCase()))];
+    const eligible = await User.find({
+      orgId, accountStatus: 'active',
+      role: { $in: ['hr_admin', 'admin', 'org_admin', 'master_admin'] },
+      email: { $in: unique },
+    }).select('email').lean();
+    if (eligible.length !== unique.length) {
+      return privacy(res).status(400).json({ message: 'Every recipient must be an active approved organisation administrator' });
+    }
+    await Organization.updateOne({ _id: orgId }, { $set: {
+      'settings.weeklyBriefRecipients': unique,
+      'settings.weeklyBriefRecipientsApprovedAt': new Date(),
+      'settings.weeklyBriefRecipientsApprovedBy': req.structureAdmin._id,
+    } });
+    return privacy(res).json({ status: 'approved', recipients: unique, paused: unique.length === 0 });
   } catch (error) { next(error); }
 });
 
