@@ -640,6 +640,8 @@ function bridgeConcentration(edge) {
 function makeOfficialEdges(units, userTeam, eligibleTeams) {
   const formal = new Map();
   for (const unit of units) {
+    // Inferred collaboration/organizer links are not legal reporting lines.
+    if (unit.source === 'inferred') continue;
     const userId = id(unit.userId);
     const managerId = id(unit.managerUserId);
     const fromTeamId = userId ? userTeam.get(userId) : null;
@@ -1439,8 +1441,8 @@ export async function getWorkNetworkMap(orgId, options = {}) {
     User.find({ orgId, accountStatus: { $ne: 'inactive' } })
       .select('_id email teamId accountStatus')
       .lean(),
-    OrgUnit.find({ orgId, effectiveTo: null })
-      .select('userId managerUserId teamId effectiveTo')
+    OrgUnit.find({ orgId, effectiveTo: null, source: { $in: ['hris', 'directory', 'manual'] } })
+      .select('userId managerUserId teamId source effectiveTo')
       .lean(),
     WorkEvent.find({ orgId, timestamp: { $gte: previousStart, $lt: currentEnd } })
       .select(
