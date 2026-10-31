@@ -295,7 +295,7 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
 }
 
 /**
- * Keep historical event attribution aligned with current directory teams.
+ * Backfill missing team attribution without rewriting historical source evidence.
  */
 export async function remapWorkEventTeams(orgId) {
   const users = await User.find({ orgId, teamId: { $ne: null } })
@@ -318,7 +318,9 @@ export async function remapWorkEventTeams(orgId) {
   let modified = 0;
   for (const [teamId, userIds] of usersByTeam) {
     const result = await WorkEvent.updateMany(
-      { orgId, actorUserId: { $in: userIds }, teamId: { $ne: teamId } },
+      // Source events are append-only: never rewrite an already attributed
+      // historical event when the current directory department changes.
+      { orgId, actorUserId: { $in: userIds }, teamId: null },
       { $set: { teamId } }
     );
     matched += result.matchedCount || 0;
