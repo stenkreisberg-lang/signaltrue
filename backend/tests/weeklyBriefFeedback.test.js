@@ -9,7 +9,7 @@ import Team from '../models/team.js';
 import User from '../models/user.js';
 import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 import WeeklyBriefFeedback from '../models/weeklyBriefFeedback.js';
-import { authenticateToken } from '../middleware/auth.js';
+
 
 jest.setTimeout(120000);
 const SECRET = 'weekly-feedback-test-secret';
@@ -21,6 +21,7 @@ beforeAll(async () => {
   process.env.JWT_SECRET = SECRET;
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
+  const { authenticateToken } = await import('../middleware/auth.js');
   const routes = (await import('../routes/weeklyBrief.js')).default;
   app = express();
   app.use(express.json());
