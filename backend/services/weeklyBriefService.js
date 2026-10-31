@@ -409,7 +409,9 @@ async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payloa
   // Never swallow persistence errors or use an older snapshot as a fallback.
   await upsertWeeklyBriefSnapshot({
     orgId: org._id, orgName: org.name, periodStart, periodEnd, reportMode,
-    generatedAt: periodEnd, payload: validated.brief,
+    // A completed week ends at periodEnd, but the report was generated now.
+    // Do not mark a newly validated report stale just because the week closed earlier.
+    generatedAt: new Date(), payload: validated.brief,
   });
 }
 
