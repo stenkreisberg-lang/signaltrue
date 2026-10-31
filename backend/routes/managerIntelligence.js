@@ -209,7 +209,7 @@ router.post('/invitations/respond',async(req,res)=>{
   const when=new Date();
   const status=accept?'active':'declined';
   const updated=await ManagerAssignment.findOneAndUpdate({_id:assignment._id,status:'invited',revokedAt:null,expiresAt:{$gt:when}},
-    {$set:{status,...(accept?{acceptedAt:when,activatedAt:when,acceptedTermsVersion:MANAGER_TERMS_VERSION}:{weeklyEmailEnabled:false})}},
+    {$set:{status,...(accept?{acceptedAt:when,activatedAt:when,expiresAt:null,acceptedTermsVersion:MANAGER_TERMS_VERSION}:{weeklyEmailEnabled:false})}},
     {new:true});
   if(!updated)return noStore(res).status(409).json({message:'Authorization changed; contact HR'});
   await managerAudit({orgId:user.orgId,actorUserId:user._id,managerUserId:user._id,

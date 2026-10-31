@@ -50,6 +50,14 @@ describe('manager invitation and exact team scope',()=>{
   await request(app).post('/api/manager-intelligence/invitations/inspect').set(bearer(invited)).send({token}).expect(200);
   await request(app).post('/api/manager-intelligence/invitations/respond').set(bearer(invited)).send({token,accept:true}).expect(200);
   await request(app).post('/api/manager-intelligence/invitations/respond').set(bearer(invited)).send({token,accept:true}).expect(403);
+  const activated=await ManagerAssignment.findById(assignment._id).lean();
+  expect(activated.status).toBe('active');
+  expect(activated.expiresAt).toBeNull();
+  // Seven days applies to *unaccepted invitations*, not an ongoing HR approval.
+  // Eight days after acceptance, a role still requires explicit revocation.
+  const {validateTeamPermission}=await import('../services/managerIntelligenceService.js');
+  expect(validateTeamPermission({user:invited,assignment:activated,team,
+    orgId:org._id,teamId:team._id,now:new Date(Date.now()+8*86400000)})).toBe(true);
   const list=await request(app).get('/api/manager-intelligence/me/teams').set(bearer(invited)).expect(200);
   expect(list.body.teams.map(x=>x.teamId)).toEqual([team.id]);
   await request(app).get('/api/manager-intelligence/teams/'+other.id+'/trends').set(bearer(invited)).expect(403);
