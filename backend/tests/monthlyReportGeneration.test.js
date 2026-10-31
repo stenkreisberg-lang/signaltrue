@@ -33,7 +33,7 @@ async function seedOrganization(mappedPeople) {
   const org = await Organization.create({ name: 'Monthly Test Org', industry: 'Technology' });
   const team = await Team.create({ name: 'Engineering', orgId: org._id });
   const users = await User.insertMany(
-    Array.from({ length: 5 }, (_, index) => ({
+    Array.from({ length: 8 }, (_, index) => ({
       name: `Employee ${index}`,
       email: `monthly-${mappedPeople}-${index}@example.com`,
       accountStatus: 'pending',
@@ -76,12 +76,12 @@ describe('monthly generation readiness gate', () => {
     const report = await generateMonthlyReportForOrg(org._id);
 
     expect(report.reportMode).toBe('setup');
-    expect(report.dataReadiness.userCoveragePct).toBe(60);
+    expect(report.dataReadiness.userCoveragePct).toBe(38);
     expect(report.dataReadiness.weeklySnapshots).toBeGreaterThanOrEqual(3);
   });
 
   test('creates a decision brief only with representative users, teams, and history', async () => {
-    const org = await seedOrganization(5);
+    const org = await seedOrganization(8);
     const team = await Team.findOne({ orgId: org._id });
     const createdBy = await User.findOne({ orgId: org._id });
     await Intervention.create({

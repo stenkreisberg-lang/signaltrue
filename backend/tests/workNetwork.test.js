@@ -64,9 +64,9 @@ function channelMessage(channelHash, actorUserId, index) {
 function baseData() {
   const teams = [team('eng', 'Engineering'), team('product', 'Product'), team('sales', 'Sales')];
   const users = [
-    ...Array.from({ length: 5 }, (_, index) => user(`e${index + 1}`, 'eng')),
-    ...Array.from({ length: 5 }, (_, index) => user(`p${index + 1}`, 'product')),
-    ...Array.from({ length: 5 }, (_, index) => user(`s${index + 1}`, 'sales')),
+    ...Array.from({ length: 8 }, (_, index) => user(`e${index + 1}`, 'eng')),
+    ...Array.from({ length: 8 }, (_, index) => user(`p${index + 1}`, 'product')),
+    ...Array.from({ length: 8 }, (_, index) => user(`s${index + 1}`, 'sales')),
   ];
   const units = users.map((item) => ({ userId: item._id, teamId: item.teamId, effectiveTo: null }));
   units.find((item) => item.userId === 'p1').managerUserId = 'e1';
@@ -88,8 +88,8 @@ function analyze(overrides = {}) {
 
 describe('Work Network analysis', () => {
   test('overlays formal links and identifies hidden, concentrated operating dependencies', () => {
-    const formalParticipants = ['e1', 'e2', 'e3', 'p1', 'p2'];
-    const hiddenParticipants = ['e1', 's1', 's2', 's3', 's4'];
+    const formalParticipants = ['e1', 'e2', 'e3', 'e4', 'p1', 'p2', 'p3', 'p4'];
+    const hiddenParticipants = ['e1', 'e2', 'e3', 'e4', 's1', 's2', 's3', 's4'];
     const currentEvents = [
       ...meetingCopies('formal-1', formalParticipants),
       ...meetingCopies('formal-2', formalParticipants),
@@ -115,7 +115,7 @@ describe('Work Network analysis', () => {
     );
     const engineeringDemand = result.teamDemand.find((item) => item.name === 'Engineering');
     const salesDemand = result.teamDemand.find((item) => item.name === 'Sales');
-    expect(engineeringDemand.sentAttendeeHours).toBe(12);
+    expect(engineeringDemand.sentAttendeeHours).toBe(14);
     expect(salesDemand.receivedAttendeeHours).toBe(10);
     expect(
       result.leadershipQuestions.find((item) => item.id === 'meeting_initiators').answer
@@ -129,7 +129,7 @@ describe('Work Network analysis', () => {
   });
 
   test('answers meeting demand and decline-friction questions at team level', () => {
-    const participants = ['e1', 's1', 's2', 's3', 's4', 's5'];
+    const participants = ['e1', 's1', 's2', 's3', 's4', 's5', 's6', 's7'];
     const responses = Object.fromEntries(
       participants.slice(1).map((participant) => [participant, 'declined'])
     );
@@ -144,9 +144,9 @@ describe('Work Network analysis', () => {
     const edge = result.actualEdges.find((item) => item.teamBName === 'Sales');
 
     expect(result.readiness.ready).toBe(true);
-    expect(engineeringDemand.sentInviteCount).toBe(10);
-    expect(engineeringDemand.sentAttendeeHours).toBe(5);
-    expect(salesDemand.receivedInviteCount).toBe(10);
+    expect(engineeringDemand.sentInviteCount).toBe(14);
+    expect(engineeringDemand.sentAttendeeHours).toBe(7);
+    expect(salesDemand.receivedInviteCount).toBe(14);
     expect(salesDemand.declineRate).toBe(1);
     expect(edge.dominantDirection).toMatchObject({
       fromTeamName: 'Engineering',
@@ -184,7 +184,7 @@ describe('Work Network analysis', () => {
 
   test('suppresses the observed map when user-to-team coverage is below 80%', () => {
     const data = baseData();
-    const unmapped = Array.from({ length: 5 }, (_, index) => user(`u${index + 1}`, null));
+    const unmapped = Array.from({ length: 8 }, (_, index) => user(`u${index + 1}`, null));
     const result = analyze({
       ...data,
       users: [...data.users, ...unmapped],
@@ -201,7 +201,7 @@ describe('Work Network analysis', () => {
     expect(readWorkNetworkMetric(result, 'outsideTeamShare', ['eng'])).toBeNull();
   });
 
-  test('suppresses team-pair measurements with fewer than five contributors', () => {
+  test('suppresses team-pair measurements with fewer than eight contributors', () => {
     const participants = ['e1', 'e2', 'p1', 'p2'];
     const currentEvents = [
       ...meetingCopies('small-1', participants),

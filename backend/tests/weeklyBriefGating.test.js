@@ -135,7 +135,7 @@ describe('hard readiness gate (setup mode)', () => {
 
   test('partial represented users can still produce a full report when events are attributed', async () => {
     const { org, teamA, users } = await seedOrg();
-    await seedMeetingEvents(org, teamA, users, 5);
+    await seedMeetingEvents(org, teamA, users, 8);
 
     const html = await generateWeeklyBrief(org._id);
 
@@ -145,7 +145,7 @@ describe('hard readiness gate (setup mode)', () => {
     const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
     expect(snapshot.reportMode).toBe('full');
     expect(snapshot.payload.coverage.mappingCoveragePct).toBe(100);
-    expect(snapshot.payload.coverage.userActivityCoveragePct).toBe(50);
+    expect(snapshot.payload.coverage.userActivityCoveragePct).toBe(80);
   });
 });
 
