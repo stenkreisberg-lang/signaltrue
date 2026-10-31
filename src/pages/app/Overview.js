@@ -222,14 +222,18 @@ export default function Overview() {
         <div className="app-dashboard-hero-main">
           <p className="app-dashboard-eyebrow">Latest completed reporting period</p>
           <h1 className="app-dashboard-title">
-            {latestBrief?.status?.evidenceGrade === 'Low'
+            {latestBrief?.freshness?.refreshFailed
+              ? 'Saved report only · refresh unavailable'
+              : latestBrief?.status?.evidenceGrade === 'Low'
               ? 'Limited evidence this week'
               : reportingReady || hasMeasuredEvidence
                 ? latestBrief?.status?.label || 'Measured overview'
                 : 'Measurement setup needs attention'}
           </h1>
           <p className="app-dashboard-copy">
-            {latestBrief?.status?.evidenceGrade === 'Low'
+            {latestBrief?.freshness?.refreshFailed
+              ? 'This is an older saved period. Current data could not be recalculated, so no new conclusion should be drawn from it.'
+              : latestBrief?.status?.evidenceGrade === 'Low'
               ? 'Available data does not support an organisation-wide conclusion. Check coverage and eligible observations below.'
               : reportingReady || hasMeasuredEvidence
                 ? latestBrief?.status?.summary || 'Review the available measurements below.'

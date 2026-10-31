@@ -32,9 +32,10 @@ async function loadOrGenerateLatest(orgId) {
     } catch (err) {
       if (!snapshot) throw err;
       console.warn(
-        '[WeeklyBrief] Returning stale dashboard snapshot after refresh failed:',
+        '[WeeklyBrief] Saved report refresh failed; explicitly marking the prior period as stale:',
         err.message
       );
+      snapshot = { ...snapshot, refreshFailed: true };
     }
   }
   return snapshot;
@@ -55,6 +56,8 @@ async function addSnapshotFreshness(orgId, snapshot) {
       snapshotTotalUsers,
       directoryDelta,
       userCountChanged: snapshotTotalUsers > 0 && directoryDelta !== 0,
+      refreshFailed: snapshot.refreshFailed === true,
+      stale: Boolean(snapshot.refreshFailed) || new Date(snapshot.generatedAt).getTime() < Date.now() - SNAPSHOT_MAX_AGE_MS,
       generatedAt: snapshot.generatedAt,
     },
   };
