@@ -433,10 +433,13 @@ export default function LatestBrief() {
       )}
 
       {brief.freshness?.refreshFailed && (
-        <div role="alert" className="mb-4 rounded-control border border-amber-200 bg-amber-50 p-4 text-caption text-amber-950">
+        <div
+          role="alert"
+          className="mb-4 rounded-control border border-amber-200 bg-amber-50 p-4 text-caption text-amber-950"
+        >
           <strong>This is a saved historical report, not a fresh measurement.</strong>
-          The latest recalculation did not complete. Check source health before using these
-          figures to make a new decision.
+          The latest recalculation did not complete. Check source health before using these figures
+          to make a new decision.
         </div>
       )}
       {brief.freshness?.userCountChanged && (
