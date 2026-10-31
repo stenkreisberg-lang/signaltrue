@@ -153,7 +153,7 @@ export default function DidControlWork() {
   const copyReviewPlan = async () => {
     const lines = [
       'SignalTrue — control-review evidence checklist',
-      'Self-assessment only. Not a validated risk score, compliance determination or professional advice.',
+      'Self-assessment only. Does not measure workplace psychosocial risk, establish legal compliance or replace professional advice.',
       'Readiness indication: ' + score + '/100 (eight self-reported questions).',
       ...gaps.map((gap, index) => index + 1 + '. ' + gap.gapTitle + ': ' + gap.gapCopy),
       'Next step: document the control, intended change, baseline, worker consultation, evidence limitations and review decision.',
