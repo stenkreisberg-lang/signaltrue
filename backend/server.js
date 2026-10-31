@@ -134,6 +134,7 @@ import costOfDriftRoutes from './routes/costOfDrift.js';
 import blogRoutes from './routes/blog.js';
 import managerCoachingRoutes from './routes/managerCoaching.js';
 import managerIntelligenceRoutes from './routes/managerIntelligence.js';
+import organisationStructureRoutes from './routes/organisationStructure.js';
 import driftDiagnosticRoutes from './routes/drift.js';
 import teamStateRoutes from './routes/teamStateRoutes.js';
 import reminderCronRoutes from './routes/reminderCron.js';
@@ -454,6 +455,7 @@ async function main() {
     // --- Manager Coaching Routes ---
     app.use('/api/manager-coaching', managerCoachingRoutes);
     app.use('/api/manager-intelligence', managerIntelligenceRoutes);
+    app.use('/api/organisation-structure', organisationStructureRoutes);
 
     // --- Category-King Integration Routes ---
     app.use('/api/integrations-v2', categoryKingIntegrationsRoutes);

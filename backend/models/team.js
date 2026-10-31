@@ -4,6 +4,15 @@ const teamSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     isActive: { type: Boolean, default: true, index: true },
+    // Formal company structure is HR-verified. It is never inferred from
+    // channel membership, message counts or meeting organisers.
+    structure: {
+      parentTeamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+      managerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      verifiedAt: { type: Date, default: null },
+      verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      source: { type: String, enum: ['unverified', 'hr', 'directory'], default: 'unverified' },
+    },
     orgId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',

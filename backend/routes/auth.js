@@ -337,6 +337,11 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(404).json({ message: 'No account found with that email address.' });
     }
 
+    // Synced but unclaimed users and departed employees must never receive
+    // authenticated sessions, regardless of any placeholder password.
+    if (user.accountStatus !== 'active') {
+      return res.status(403).json({ message: 'This account is not active. Use your HR invitation or contact your administrator.' });
+    }
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {

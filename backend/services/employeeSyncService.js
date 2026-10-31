@@ -1085,9 +1085,11 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
           const currentTeam = user.teamId ? teamById.get(String(user.teamId)) : null;
           const isUnassigned = String(user.teamId || '') === String(unassignedTeam._id);
           const canFollowDirectory =
-            !user.teamId ||
-            isUnassigned ||
-            currentTeam?.metadata?.autoCreatedFromDirectory === true;
+            !user.hrStructure?.teamVerifiedAt && (
+              !user.teamId ||
+              isUnassigned ||
+              currentTeam?.metadata?.autoCreatedFromDirectory === true
+            );
           if (canFollowDirectory && String(user.teamId || '') !== String(desiredTeam._id)) {
             user.teamId = desiredTeam._id;
             updated = true;

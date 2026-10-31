@@ -356,7 +356,7 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       existing.name = identity.name;
       existing.firstName = identity.firstName;
       existing.lastName = identity.lastName;
-      existing.teamId = team._id;
+      if (!existing.hrStructure?.teamVerifiedAt) existing.teamId = team._id;
       existing.profile = profile;
       await existing.save();
       stats.updated++;
