@@ -96,7 +96,7 @@ export default function ManagerTeamDashboard() {
   const setPref = async (checked) => {
     setEmail(checked);
     try {
-      await api.patch('/manager-intelligence/me/preferences', { weeklyEmailEnabled: checked });
+      await api.patch('/manager-intelligence/me/preferences', { teamId: team, weeklyEmailEnabled: checked });
     } catch {
       setEmail(!checked);
       setError('Preference not saved');

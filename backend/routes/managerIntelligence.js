@@ -220,10 +220,17 @@ router.get('/me/teams',async(req,res)=>noStore(res).json({teams:await loadManage
 router.patch('/me/preferences',async(req,res)=>{
   const user=await loadOrgUser(req);
   const on=req.body?.weeklyEmailEnabled;
-  if(!user||typeof on!=='boolean')return noStore(res).status(400).json({message:'Valid email preference required'});
-  const changed=await ManagerAssignment.updateMany({orgId:user.orgId,managerUserId:user._id,status:'active'},
-    {$set:{weeklyEmailEnabled:on,preferenceUpdatedAt:new Date()}});
-  noStore(res).json({weeklyEmailEnabled:on,updated:changed.modifiedCount});
+  const teamId=String(req.body?.teamId||'');
+  if(!user||typeof on!=='boolean'||!validId(teamId))
+    return noStore(res).status(400).json({message:'Valid team and email preference required'});
+  const changed=await ManagerAssignment.findOneAndUpdate({
+    orgId:user.orgId,managerUserId:user._id,teamId,
+    status:'active',revokedAt:null,acceptedAt:{$ne:null},
+  },{$set:{weeklyEmailEnabled:on,preferenceUpdatedAt:new Date()}},{new:true});
+  if(!changed)return noStore(res).status(403).json({message:'No active manager assignment for this team'});
+  await managerAudit({orgId:user.orgId,actorUserId:user._id,managerUserId:user._id,
+    teamId,assignmentId:changed._id,action:'manager_email_preference_changed'});
+  noStore(res).json({teamId,weeklyEmailEnabled:changed.weeklyEmailEnabled});
 });
 router.get('/teams/:teamId/trends',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
