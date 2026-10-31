@@ -273,6 +273,23 @@ export default function OrganisationWorkspace() {
               )}
             </section>
           </div>
+          <section className="app-panel" aria-label="Formal organisation compared with coordination patterns">
+            <h2 className="text-xl font-bold">Formal structure vs. how teams coordinate</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Formal reporting relationships come from HR verification. A separate work-network
+              view can show privacy-eligible links based on meetings and available message metadata.
+              It does not infer who reports to whom, and an absent link does not mean that teams
+              never collaborate.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link to="/app/work-network" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">
+                Review measured cross-team coordination
+              </Link>
+              <Link to="/app/signal-coverage" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">
+                Check messaging and calendar coverage
+              </Link>
+            </div>
+          </section>
           <section className="app-panel space-y-3" aria-label="HR weekly report recipients">
             <h2 className="text-xl font-bold">Who receives the weekly HR report?</h2>
             <p className="text-sm text-slate-600">
