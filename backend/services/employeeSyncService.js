@@ -299,12 +299,17 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
  */
 export async function remapWorkEventTeams(orgId) {
   const users = await User.find({ orgId, teamId: { $ne: null } })
-    .select('_id teamId')
+    .select('_id teamId hrStructure.teamVerifiedAt')
     .lean();
   const usersByTeam = new Map();
+  const manuallyVerified = [];
 
   for (const user of users) {
     const teamId = String(user.teamId);
+    if (user.hrStructure?.teamVerifiedAt) {
+      manuallyVerified.push(user);
+      continue;
+    }
     if (!usersByTeam.has(teamId)) usersByTeam.set(teamId, []);
     usersByTeam.get(teamId).push(user._id);
   }
@@ -315,6 +320,18 @@ export async function remapWorkEventTeams(orgId) {
     const result = await WorkEvent.updateMany(
       { orgId, actorUserId: { $in: userIds }, teamId: { $ne: teamId } },
       { $set: { teamId } }
+    );
+    matched += result.matchedCount || 0;
+    modified += result.modifiedCount || 0;
+  }
+  // HR overrides are effective-dated. Only post-approval source events may
+  // inherit the current team; rewriting earlier events would falsify history.
+  for (const user of manuallyVerified) {
+    const result = await WorkEvent.updateMany(
+      { orgId, actorUserId: user._id,
+        timestamp: { $gte: user.hrStructure.teamVerifiedAt },
+        teamId: { $ne: user.teamId } },
+      { $set: { teamId: user.teamId } }
     );
     matched += result.matchedCount || 0;
     modified += result.modifiedCount || 0;
