@@ -2,9 +2,8 @@ name: Auto-format frontend
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'release/signaltrue-integrity-2026-10-31']
+    branches: [main]
     paths:
-      - '.github/workflows/format-fix.yml'
       - 'src/components/app/ReportTrendExplorer.jsx'
       - 'src/pages/app/LatestBrief.js'
 permissions:
