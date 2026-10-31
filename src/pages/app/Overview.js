@@ -389,27 +389,51 @@ export default function Overview() {
         <div className="app-section-heading">
           <div>
             <h2>From observation to a documented decision</h2>
-            <p>Three steps for HR. Only source-supported measurements should influence the decision.</p>
+            <p>
+              Three steps for HR. Only source-supported measurements should influence the decision.
+            </p>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="app-panel space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">1 · Verify</p>
             <h3 className="font-semibold">Check the evidence</h3>
-            <p className="text-sm text-slate-600">Confirm the reporting period, eligible employees, and source coverage before drawing conclusions.</p>
-            <Link className="inline-block text-sm font-semibold underline" to="/app/signal-coverage">Review source coverage</Link>
+            <p className="text-sm text-slate-600">
+              Confirm the reporting period, eligible employees, and source coverage before drawing
+              conclusions.
+            </p>
+            <Link
+              className="inline-block text-sm font-semibold underline"
+              to="/app/signal-coverage"
+            >
+              Review source coverage
+            </Link>
           </div>
           <div className="app-panel space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">2 · Investigate</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              2 · Investigate
+            </p>
             <h3 className="font-semibold">Ask what explains the change</h3>
-            <p className="text-sm text-slate-600">Discuss context with the relevant team. Digital metadata alone does not establish cause, strain or wellbeing.</p>
-            <Link className="inline-block text-sm font-semibold underline" to="/app/signals">See work-pattern evidence</Link>
+            <p className="text-sm text-slate-600">
+              Discuss context with the relevant team. Digital metadata alone does not establish
+              cause, strain or wellbeing.
+            </p>
+            <Link className="inline-block text-sm font-semibold underline" to="/app/signals">
+              See work-pattern evidence
+            </Link>
           </div>
           <div className="app-panel space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">3 · Review</p>
             <h3 className="font-semibold">Record and remeasure</h3>
-            <p className="text-sm text-slate-600">Document a management action and review comparable measurements after implementation.</p>
-            <Link className="inline-block text-sm font-semibold underline" to="/app/control-reviews">Open actions & reviews</Link>
+            <p className="text-sm text-slate-600">
+              Document a management action and review comparable measurements after implementation.
+            </p>
+            <Link
+              className="inline-block text-sm font-semibold underline"
+              to="/app/control-reviews"
+            >
+              Open actions & reviews
+            </Link>
           </div>
         </div>
       </section>
@@ -441,9 +465,9 @@ export default function Overview() {
               Advanced descriptive indices · experimental
             </summary>
             <p className="mt-3 text-sm text-slate-600">
-              These models are supplementary exploratory measures. They do not diagnose
-              mental health, establish psychosocial risk, or replace source-level evidence
-              and worker consultation.
+              These models are supplementary exploratory measures. They do not diagnose mental
+              health, establish psychosocial risk, or replace source-level evidence and worker
+              consultation.
             </p>
             <div className="mt-4">
               <EngagementStrainDashboard orgId={orgId} initialLimit={5} />

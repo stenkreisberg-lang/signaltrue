@@ -86,12 +86,18 @@ export default function OrganisationWorkspace() {
     setPersonTeam(person.teamId || '');
     setPersonManager(person.managerUserId || '');
   }, [personId, data]);
-  const eligibleRecipients = people.filter(p => p.accountStatus === 'active' &&
-    ['hr_admin', 'admin', 'org_admin', 'master_admin'].includes(p.role));
-  const saveRecipients = () => execute(() => api.put('/organisation-structure/report-recipients',
-    { emails: recipientEmails }), recipientEmails.length
-    ? 'HR weekly report recipients approved.'
-    : 'Weekly organisation report delivery paused.');
+  const eligibleRecipients = people.filter(
+    (p) =>
+      p.accountStatus === 'active' &&
+      ['hr_admin', 'admin', 'org_admin', 'master_admin'].includes(p.role)
+  );
+  const saveRecipients = () =>
+    execute(
+      () => api.put('/organisation-structure/report-recipients', { emails: recipientEmails }),
+      recipientEmails.length
+        ? 'HR weekly report recipients approved.'
+        : 'Weekly organisation report delivery paused.'
+    );
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return people.filter(
@@ -268,39 +274,55 @@ export default function OrganisationWorkspace() {
             </section>
           </div>
           <section className="app-panel space-y-3" aria-label="HR weekly report recipients">
-          <h2 className="text-xl font-bold">Who receives the weekly HR report?</h2>
-          <p className="text-sm text-slate-600">
-            Only the approved, active organisation administrators selected here receive the
-            organisation-wide report. Team managers receive separate team-only emails after
-            accepting a specific assignment. This permission does not carry over.
-          </p>
-          <div className="grid gap-2 md:grid-cols-2">
-            {eligibleRecipients.map(person => <label key={person.id}
-              className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-              <input type="checkbox" checked={recipientEmails.includes(person.email.toLowerCase())}
-                onChange={event => {
-                  const email = person.email.toLowerCase();
-                  setRecipientEmails(previous => event.target.checked
-                    ? [...new Set([...previous, email])]
-                    : previous.filter(value => value !== email));
-                }}/>
-              <span><strong>{person.name}</strong><span className="block text-xs text-slate-600">{person.email}</span></span>
-            </label>)}
-          </div>
-          {!eligibleRecipients.length && <p className="text-sm text-amber-800">
-            No active administrative accounts are eligible. Confirm HR access before enabling delivery.
-          </p>}
-          <p className="text-xs text-slate-600">
-            {data.organisation.recipientsReviewedAt
-              ? 'Recipients reviewed ' + new Date(data.organisation.recipientsReviewedAt).toLocaleDateString('en-GB')
-              : 'Not explicitly reviewed. Delivery falls back to active HR administrator accounts only.'}
-            {' '}Saving an empty approved list pauses automatic organisation email.
-          </p>
-          <button type="button" className={action} disabled={busy} onClick={saveRecipients}>
-            Save approved recipients
-          </button>
-        </section>
-        <section className="app-panel space-y-3" aria-label="HR employee mapping">
+            <h2 className="text-xl font-bold">Who receives the weekly HR report?</h2>
+            <p className="text-sm text-slate-600">
+              Only the approved, active organisation administrators selected here receive the
+              organisation-wide report. Team managers receive separate team-only emails after
+              accepting a specific assignment. This permission does not carry over.
+            </p>
+            <div className="grid gap-2 md:grid-cols-2">
+              {eligibleRecipients.map((person) => (
+                <label
+                  key={person.id}
+                  className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={recipientEmails.includes(person.email.toLowerCase())}
+                    onChange={(event) => {
+                      const email = person.email.toLowerCase();
+                      setRecipientEmails((previous) =>
+                        event.target.checked
+                          ? [...new Set([...previous, email])]
+                          : previous.filter((value) => value !== email)
+                      );
+                    }}
+                  />
+                  <span>
+                    <strong>{person.name}</strong>
+                    <span className="block text-xs text-slate-600">{person.email}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {!eligibleRecipients.length && (
+              <p className="text-sm text-amber-800">
+                No active administrative accounts are eligible. Confirm HR access before enabling
+                delivery.
+              </p>
+            )}
+            <p className="text-xs text-slate-600">
+              {data.organisation.recipientsReviewedAt
+                ? 'Recipients reviewed ' +
+                  new Date(data.organisation.recipientsReviewedAt).toLocaleDateString('en-GB')
+                : 'Not explicitly reviewed. Delivery falls back to active HR administrator accounts only.'}{' '}
+              Saving an empty approved list pauses automatic organisation email.
+            </p>
+            <button type="button" className={action} disabled={busy} onClick={saveRecipients}>
+              Save approved recipients
+            </button>
+          </section>
+          <section className="app-panel space-y-3" aria-label="HR employee mapping">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold">Employee mapping</h2>
