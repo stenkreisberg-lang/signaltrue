@@ -228,8 +228,8 @@ export default function ManagerTeamDashboard() {
                 <>
                   <div className="grid gap-4 sm:grid-cols-3">
                     {[
-                      ['Latest complete week', report.current],
-                      ['Earlier six-week median', report.baseline],
+                      ['Latest eligible seven-day observation', report.current],
+                      ['Earlier eligible-window median', report.baseline],
                       ['Evidence gate', report.minimum + ' mapped people minimum'],
                     ].map(([k, v]) => (
                       <div key={k} className="rounded-xl border bg-white p-5">
@@ -262,7 +262,7 @@ export default function ManagerTeamDashboard() {
                       </div>
                     </div>
                     <p className="my-3 text-sm text-slate-600">
-                      X-axis: completed week · Y-axis: meeting instances per mapped team
+                      X-axis: sampled seven-day window · Y-axis: meeting instances per mapped team
                       contributor. No individual attendance is inferred.
                     </p>
                     <div className="h-72">
