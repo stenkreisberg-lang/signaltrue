@@ -157,7 +157,7 @@ router.get('/feedback/latest', requireHROrAdmin, requireOrgContext, async (req, 
     const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
     if (!snapshot) return res.status(404).json({ message: 'No saved report available' });
     const entry = await WeeklyBriefFeedback.findOne({
-      orgId: req.user.orgId, userId: req.user.userId, snapshotId: snapshot._id,
+      orgId: req.user.orgId, userId: req.user.userId, snapshotId: snapshot.id,
     }).select('useful novel action note updatedAt').lean();
     return res.json({ feedback: entry || null });
   } catch (error) {

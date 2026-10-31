@@ -402,12 +402,12 @@ export default function LatestBrief() {
 
   const saveFeedback = async (event) => {
     event.preventDefault();
-    if (!brief?._id) return;
+    if (!brief?.id) return;
     setFeedbackBusy(true);
     setFeedbackMessage('');
     try {
       await api.post('/weekly-brief/feedback', {
-        snapshotId: brief._id, useful: feedbackUseful,
+        snapshotId: brief.id, useful: feedbackUseful,
         novel: feedbackNovel, action: feedbackAction, note: feedbackNote,
       });
       setFeedbackMessage('Thanks. Your review was saved with this report.');
@@ -958,7 +958,7 @@ export default function LatestBrief() {
         </div>
       )}
 
-      {canRefresh && brief?._id && (
+      {canRefresh && brief?.id && (
         <section className="app-panel mb-6" aria-label="Report usefulness and decisions">
           <h2 className="text-lg font-bold">Was this report useful?</h2>
           <p className="mt-1 text-sm text-slate-600">
