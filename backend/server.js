@@ -260,7 +260,9 @@ async function main() {
         if (process.env.NODE_ENV !== 'production' || !origin || whitelist.has(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          const denied = new Error('Request origin not authorised');
+          denied.statusCode = 403;
+          callback(denied);
         }
       },
     };
