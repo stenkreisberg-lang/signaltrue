@@ -23,6 +23,7 @@ import { ccSuperadmin } from './superadminNotifyService.js';
 import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 import { getReportTrendSeries } from './reportTrendService.js';
 import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
+import { completedReportingWeek } from '../utils/reportingPeriods.js';
 import {
   ACTIONABILITY,
   determineActionability,
@@ -637,14 +638,14 @@ export async function generateWeeklyBrief(orgId) {
   const teams = await Team.find({ orgId });
   const now = new Date();
 
-  // ─── Date windows ───
-  const thisWeekStart = new Date(now);
-  thisWeekStart.setDate(now.getDate() - 7);
-  thisWeekStart.setHours(0, 0, 0, 0);
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-  const sixWeekStart = new Date(thisWeekStart);
-  sixWeekStart.setDate(sixWeekStart.getDate() - 42); // 6 full weeks before this week
+  // ─── Completed, tenant-local Monday–Sunday window ───
+  const reportingTimeZone = org.settings?.timezone || 'UTC';
+  const {
+    periodStart: thisWeekStart,
+    periodEnd: reportEnd,
+    previousStart: lastWeekStart,
+    baselineStart: sixWeekStart,
+  } = completedReportingWeek(now, reportingTimeZone);
 
   // ─── Data coverage: active directory size and measured activity this week ───
   const activeUserQuery = { orgId: org._id, accountStatus: { $ne: 'inactive' } };
@@ -654,7 +655,7 @@ export async function generateWeeklyBrief(orgId) {
     source: { $in: ['microsoft-outlook', 'google-calendar'] },
     eventType: 'meeting',
     actorUserId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   // Use a period-specific denominator. Reusing this week's population for older
   // periods changes historical per-person results when coverage changes.
@@ -695,7 +696,7 @@ export async function generateWeeklyBrief(orgId) {
     recentEngagementSuppressions,
   ] = await Promise.all([
     WorkEvent.aggregate([
-      { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
+      { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lt: reportEnd } } },
       {
         $group: {
           _id: { source: '$source', eventType: '$eventType' },
@@ -714,7 +715,7 @@ export async function generateWeeklyBrief(orgId) {
     ]),
     IntegrationMetricsDaily.find({
       orgId: org._id,
-      date: { $gte: thisWeekStart, $lte: now },
+      date: { $gte: thisWeekStart, $lt: reportEnd },
     }).lean(),
     IntegrationMetricsDaily.find({
       orgId: org._id,
@@ -724,7 +725,7 @@ export async function generateWeeklyBrief(orgId) {
       orgId: org._id,
       date: { $gte: sixWeekStart, $lt: thisWeekStart },
     }).lean(),
-    Signal.find({ orgId: org._id, firstDetected: { $gte: thisWeekStart, $lte: now } })
+    Signal.find({ orgId: org._id, firstDetected: { $gte: thisWeekStart, $lt: reportEnd } })
       .populate('teamId', 'name')
       .lean(),
     Signal.find({ orgId: org._id, firstDetected: { $gte: lastWeekStart, $lt: thisWeekStart } })
@@ -732,7 +733,7 @@ export async function generateWeeklyBrief(orgId) {
       .lean(),
     CategoryKingSignal.find({
       orgId: org._id,
-      detectedAt: { $gte: thisWeekStart, $lte: now },
+      detectedAt: { $gte: thisWeekStart, $lt: reportEnd },
     }).lean(),
     CategoryKingSignal.find({
       orgId: org._id,
@@ -740,7 +741,7 @@ export async function generateWeeklyBrief(orgId) {
     }).lean(),
     WeekContext.find({
       orgId: org._id,
-      weekStart: { $lte: now },
+      weekStart: { $lt: reportEnd },
       weekEnd: { $gte: thisWeekStart },
     }).lean(),
     // Engagement Strain: current-period records that pass the privacy floor.
@@ -984,22 +985,22 @@ export async function generateWeeklyBrief(orgId) {
   const mappedActorCount = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
     actorUserId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const mappedTeamCount = await WorkEvent.distinct('teamId', {
     orgId: org._id,
     teamId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const unmappedActorEvents = await WorkEvent.countDocuments({
     orgId: org._id,
     $or: [{ actorUserId: null }, { actorUserId: { $exists: false } }],
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const unmappedTeamEvents = await WorkEvent.countDocuments({
     orgId: org._id,
     $or: [{ teamId: null }, { teamId: { $exists: false } }],
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const totalActivityEvents = twEvents.reduce((sum, event) => sum + event.count, 0);
   const mappedActorEventCount = Math.max(totalActivityEvents - unmappedActorEvents, 0);
@@ -1017,7 +1018,7 @@ export async function generateWeeklyBrief(orgId) {
       $match: {
         orgId: org._id,
         teamId: { $ne: null },
-        timestamp: { $gte: thisWeekStart, $lte: now },
+        timestamp: { $gte: thisWeekStart, $lt: reportEnd },
       },
     },
     { $group: { _id: '$teamId', events: { $sum: 1 }, activeUsers: { $addToSet: '$actorUserId' } } },
@@ -1416,7 +1417,7 @@ export async function generateWeeklyBrief(orgId) {
     await persistSnapshot({
       org,
       periodStart: thisWeekStart,
-      periodEnd: now,
+      periodEnd: reportEnd,
       reportMode,
       payload: {
         status: {
@@ -3292,7 +3293,7 @@ export async function generateWeeklyBrief(orgId) {
   await persistSnapshot({
     org,
     periodStart: thisWeekStart,
-    periodEnd: now,
+    periodEnd: reportEnd,
     reportMode,
     payload: {
       status: {
