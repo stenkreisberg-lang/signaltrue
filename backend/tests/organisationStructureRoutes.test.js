@@ -82,4 +82,25 @@ describe('verified organisation structure and analytics separation', () => {
   expect(historical[0].effectiveTo).toBeTruthy();
   expect(historical[1].managerUserId).toBeNull();
  });
+ test('HR can explicitly restrict or pause weekly organisation recipients', async () => {
+  const org = await Organization.create({ name: 'Recipient Tenant' });
+  const team = await Team.create({ name: 'Ops', orgId: org.id });
+  const hr = await user(org, team, 'Hr Recipient', 'hr_admin');
+  const admin = await user(org, team, 'Other Admin', 'admin');
+  const worker = await user(org, team, 'Ordinary Worker');
+  await request(app).put('/api/organisation-structure/report-recipients')
+    .set(bearer(worker)).send({ emails: [worker.email] }).expect(403);
+  await request(app).put('/api/organisation-structure/report-recipients')
+    .set(bearer(hr)).send({ emails: [worker.email] }).expect(400);
+  const selected = await request(app).put('/api/organisation-structure/report-recipients')
+    .set(bearer(hr)).send({ emails: [admin.email] }).expect(200);
+  expect(selected.body.recipients).toEqual([admin.email]);
+  const saved = await Organization.findById(org.id).lean();
+  expect(saved.settings.weeklyBriefRecipientsApprovedAt).toBeTruthy();
+  expect(saved.settings.weeklyBriefRecipients).toEqual([admin.email]);
+  const stopped = await request(app).put('/api/organisation-structure/report-recipients')
+    .set(bearer(hr)).send({ emails: [] }).expect(200);
+  expect(stopped.body.paused).toBe(true);
+ });
+
 });

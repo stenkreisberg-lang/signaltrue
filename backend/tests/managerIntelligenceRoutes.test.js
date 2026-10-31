@@ -138,3 +138,23 @@ describe('directory-synced manager onboarding', () => {
   expect((await User.findById(pending.id)).accountStatus).toBe('pending');
  });
 });
+
+
+ test('manager email preferences affect only the explicitly authorised team', async () => {
+  const org = await Organization.create({ name: 'Two Teams' });
+  const first = await Team.create({ name: 'First', orgId: org.id });
+  const second = await Team.create({ name: 'Second', orgId: org.id });
+  const manager = await employee(org.id,first.id,'two-team-manager@example.com');
+  const admin = await employee(org.id,first.id,'two-team-hr@example.com','hr_admin');
+  const valid = { orgId: org.id, managerUserId: manager.id, invitedBy: admin.id,
+    status: 'active', acceptedAt: new Date(), activatedAt: new Date(),
+    weeklyEmailEnabled: true };
+  await ManagerAssignment.create([{ ...valid, teamId: first.id },{ ...valid, teamId: second.id }]);
+  await request(app).patch('/api/manager-intelligence/me/preferences')
+    .set(bearer(manager)).send({ weeklyEmailEnabled: false }).expect(400);
+  await request(app).patch('/api/manager-intelligence/me/preferences')
+    .set(bearer(manager)).send({ teamId: first.id, weeklyEmailEnabled: false }).expect(200);
+  const appointments = await ManagerAssignment.find({ orgId: org.id }).sort({ teamId: 1 }).lean();
+  expect(appointments.find(a => String(a.teamId) === first.id).weeklyEmailEnabled).toBe(false);
+  expect(appointments.find(a => String(a.teamId) === second.id).weeklyEmailEnabled).toBe(true);
+ });
