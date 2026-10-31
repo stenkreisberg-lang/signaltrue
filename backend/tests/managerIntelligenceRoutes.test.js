@@ -77,3 +77,64 @@ describe('manager invitation and exact team scope',()=>{
   expect(scope.body.teams).toEqual([]);
  });
 });
+
+
+describe('directory-synced manager onboarding', () => {
+ test('HR can appoint a pending directory account, which must claim and accept before access', async () => {
+  const org = await Organization.create({ name: 'Example HR' });
+  const team = await Team.create({ name: 'Delivery', orgId: org._id });
+  const hr = await employee(org.id,team.id,'hr-claim@example.com','hr_admin');
+  const pending = await User.create({
+    name: 'Invited Manager', email: 'pending-manager@example.com', orgId: org._id,
+    teamId: team._id, role: 'team_member', accountStatus: 'pending', source: 'microsoft',
+  });
+  const listing = await request(app).get('/api/manager-intelligence/admin/directory')
+    .set(bearer(hr)).expect(200);
+  expect(listing.body.users.find(u => u.id === pending.id)?.accountStatus).toBe('pending');
+  const approved = await request(app).post('/api/manager-intelligence/admin/assignments')
+    .set(bearer(hr)).send({ managerUserId: pending.id, teamId: team.id, weeklyEmailEnabled: false }).expect(201);
+  const token = 'secure-manager-claim-token-'.repeat(3);
+  const expires = new Date(Date.now() + 86400000);
+  await ManagerAssignment.updateOne({ _id: approved.body.id }, { $set: { status: 'invited', expiresAt: expires } });
+  await ManagerInvitation.create({
+    orgId: org.id, assignmentId: approved.body.id, recipientUserId: pending.id,
+    recipientEmailHash: hashInvitedEmail(pending.email), tokenHash: hashSecret(token), expiresAt: expires,
+  });
+  await request(app).get('/api/manager-intelligence/me/teams').set(bearer(pending)).expect(200)
+    .then(r => expect(r.body.teams).toEqual([]));
+  await request(app).post('/api/manager-intelligence/invitations/claim')
+    .send({ token, password: 'short' }).expect(400);
+  await request(app).post('/api/manager-intelligence/invitations/claim')
+    .send({ token, password: 'long-safe-invitation-password-2026' }).expect(200);
+  const claimed = await User.findById(pending._id).select('+password');
+  expect(claimed.accountStatus).toBe('active');
+  expect(await claimed.comparePassword('long-safe-invitation-password-2026')).toBe(true);
+  await request(app).post('/api/manager-intelligence/invitations/claim')
+    .send({ token, password: 'another-long-password-2026' }).expect(409);
+  await request(app).get('/api/manager-intelligence/teams/' + team.id + '/trends')
+    .set(bearer(claimed)).expect(403);
+  await request(app).post('/api/manager-intelligence/invitations/respond')
+    .set(bearer(claimed)).send({ token, accept: true }).expect(200);
+  const teams = await request(app).get('/api/manager-intelligence/me/teams').set(bearer(claimed)).expect(200);
+  expect(teams.body.teams.map(t => t.teamId)).toEqual([team.id]);
+  const assignment = await ManagerAssignment.findById(approved.body.id);
+  expect(assignment.weeklyEmailEnabled).toBe(false);
+ });
+ test('revoked invitation cannot activate a pending user', async () => {
+  const org = await Organization.create({ name: 'Revoked' });
+  const team = await Team.create({ name: 'People', orgId: org._id });
+  const hr = await employee(org.id,team.id,'hr-revoked@example.com','hr_admin');
+  const pending = await User.create({ name: 'Pending', email: 'pending-revoked@example.com', orgId: org.id,
+    teamId: team.id, accountStatus: 'pending', source: 'microsoft' });
+  const assignment = await ManagerAssignment.create({ orgId: org.id, managerUserId: pending.id,
+    teamId: team.id, invitedBy: hr.id, status: 'revoked', revokedAt: new Date(),
+    expiresAt: new Date(Date.now() + 86400000) });
+  const token = 'revoked-claim-token-'.repeat(4);
+  await ManagerInvitation.create({ orgId: org.id, assignmentId: assignment.id, recipientUserId: pending.id,
+    recipientEmailHash: hashInvitedEmail(pending.email), tokenHash: hashSecret(token),
+    expiresAt: new Date(Date.now() + 86400000) });
+  await request(app).post('/api/manager-intelligence/invitations/claim')
+    .send({ token, password: 'long-safe-invitation-password-2026' }).expect(403);
+  expect((await User.findById(pending.id)).accountStatus).toBe('pending');
+ });
+});
