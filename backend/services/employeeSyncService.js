@@ -63,7 +63,7 @@ function pickCanonicalUser(users, eventCounts) {
 export async function mergeDuplicateEmployees(orgId, options = {}) {
   const { dryRun = false, protectedUserId = null } = options;
   const org = await Organization.findById(orgId);
-  const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
+  const minimumTeamSize = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
   const orgDomain = resolveOrgWorkDomain(org);
 
   const users = await User.find({ orgId, isMasterAdmin: { $ne: true } });
@@ -295,16 +295,21 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
 }
 
 /**
- * Keep historical event attribution aligned with current directory teams.
+ * Backfill missing team attribution without rewriting historical source evidence.
  */
 export async function remapWorkEventTeams(orgId) {
   const users = await User.find({ orgId, teamId: { $ne: null } })
-    .select('_id teamId')
+    .select('_id teamId hrStructure.teamVerifiedAt')
     .lean();
   const usersByTeam = new Map();
+  const manuallyVerified = [];
 
   for (const user of users) {
     const teamId = String(user.teamId);
+    if (user.hrStructure?.teamVerifiedAt) {
+      manuallyVerified.push(user);
+      continue;
+    }
     if (!usersByTeam.has(teamId)) usersByTeam.set(teamId, []);
     usersByTeam.get(teamId).push(user._id);
   }
@@ -313,8 +318,22 @@ export async function remapWorkEventTeams(orgId) {
   let modified = 0;
   for (const [teamId, userIds] of usersByTeam) {
     const result = await WorkEvent.updateMany(
-      { orgId, actorUserId: { $in: userIds }, teamId: { $ne: teamId } },
+      // Source events are append-only: never rewrite an already attributed
+      // historical event when the current directory department changes.
+      { orgId, actorUserId: { $in: userIds }, teamId: null },
       { $set: { teamId } }
+    );
+    matched += result.matchedCount || 0;
+    modified += result.modifiedCount || 0;
+  }
+  // HR overrides are effective-dated. Only post-approval source events may
+  // inherit the current team; rewriting earlier events would falsify history.
+  for (const user of manuallyVerified) {
+    const result = await WorkEvent.updateMany(
+      { orgId, actorUserId: user._id,
+        timestamp: { $gte: user.hrStructure.teamVerifiedAt },
+        teamId: { $ne: user.teamId } },
+      { $set: { teamId: user.teamId } }
     );
     matched += result.matchedCount || 0;
     modified += result.modifiedCount || 0;
@@ -326,7 +345,7 @@ export async function remapWorkEventTeams(orgId) {
 export async function cleanupInvalidEmployees(orgId, options = {}) {
   const { protectedUserId = null, dryRun = false, sources = null } = options;
   const org = await Organization.findById(orgId);
-  const minimumTeamSize = Math.max(5, org?.settings?.minTeamSize ?? 5);
+  const minimumTeamSize = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
   const orgDomain = resolveOrgWorkDomain(org);
   const userQuery = { orgId, isMasterAdmin: { $ne: true } };
   if (Array.isArray(sources) && sources.length > 0) {
@@ -1085,9 +1104,11 @@ export async function syncEmployeesFromMicrosoft(orgId, accessTokenOverride = nu
           const currentTeam = user.teamId ? teamById.get(String(user.teamId)) : null;
           const isUnassigned = String(user.teamId || '') === String(unassignedTeam._id);
           const canFollowDirectory =
-            !user.teamId ||
-            isUnassigned ||
-            currentTeam?.metadata?.autoCreatedFromDirectory === true;
+            !user.hrStructure?.teamVerifiedAt && (
+              !user.teamId ||
+              isUnassigned ||
+              currentTeam?.metadata?.autoCreatedFromDirectory === true
+            );
           if (canFollowDirectory && String(user.teamId || '') !== String(desiredTeam._id)) {
             user.teamId = desiredTeam._id;
             updated = true;

@@ -80,14 +80,14 @@ describe('tenant authorization', () => {
 });
 
 describe('privacy enforcement', () => {
-  test('never permits an organization override below five', async () => {
+  test('never permits an organization override below eight', async () => {
     jest.spyOn(Organization, 'findById').mockReturnValue({
       select: jest.fn().mockReturnValue({
         lean: jest.fn().mockResolvedValue({ settings: { minTeamSize: 1 } }),
       }),
     });
 
-    await expect(resolveMinimumTeamSize('org-a')).resolves.toBe(5);
+    await expect(resolveMinimumTeamSize('org-a')).resolves.toBe(8);
   });
 
   test('returns a suppression body with HTTP 200', async () => {
@@ -110,7 +110,7 @@ describe('privacy enforcement', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ suppressed: true, minRequired: 5 })
+      expect.objectContaining({ suppressed: true, minRequired: 8 })
     );
   });
 

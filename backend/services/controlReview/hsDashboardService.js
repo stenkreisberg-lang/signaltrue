@@ -35,27 +35,40 @@ export async function buildDashboard({ tenantId, hsRole = 'HS_ADMIN', userId = n
   const now = new Date();
 
   const caseScope = { tenantId };
-  if (hsRole === 'CASE_OWNER' && userId) caseScope.caseOwner = userId;
-  if (hsRole === 'FUNCTION_LEADER' && permittedTeamIds.length) {
-    caseScope.teamIds = { $in: permittedTeamIds };
+  const functionLeader = hsRole === 'FUNCTION_LEADER';
+  const caseOwner = hsRole === 'CASE_OWNER';
+  const allowedTeams = functionLeader && Array.isArray(permittedTeamIds) ? permittedTeamIds : [];
+  // Never expand a missing case-owner identity or empty team scope to the tenant.
+  if (caseOwner) {
+    if (userId) caseScope.caseOwner = userId;
+    else caseScope._id = { $in: [] };
   }
+  if (functionLeader) caseScope.teamIds = { $in: allowedTeams };
 
-  const [openCases, interventions, patternFindings] = await Promise.all([
-    ControlReviewCase.find({ ...caseScope, status: { $in: OPEN_STATUSES } })
-      .sort({ updatedAt: -1 })
-      .lean(),
-    ControlIntervention.find({ tenantId, status: { $ne: 'CANCELLED' } }).lean(),
-    PatternFinding.find({ tenantId, status: 'REVIEW_RECOMMENDED' })
+  const openCases = await ControlReviewCase.find({ ...caseScope, status: { $in: OPEN_STATUSES } })
+    .sort({ updatedAt: -1 })
+    .lean();
+  const caseIds = openCases.map((c) => c._id);
+  // Cases are the authority for case-owner access; all related records
+  // must use the same scope before they reach module assembly.
+  const caseOwnerScope = caseOwner ? { caseId: { $in: caseIds } } : {};
+  const [interventions, patternFindings] = await Promise.all([
+    ControlIntervention.find({ tenantId, status: { $ne: 'CANCELLED' },
+      ...caseOwnerScope,
+      ...(functionLeader ? { affectedTeamIds: { $in: allowedTeams } } : {}) }).lean(),
+    PatternFinding.find({ tenantId, status: 'REVIEW_RECOMMENDED',
+      ...caseOwnerScope,
+      ...(functionLeader ? { teamId: { $in: allowedTeams } } : {}) })
       .sort({ periodStart: -1 })
       .limit(20)
       .lean(),
   ]);
-
-  const caseIds = openCases.map((c) => c._id);
   const interventionIds = interventions.map((i) => i._id);
 
   const [migrations, evaluations, consultations] = await Promise.all([
-    MigrationFinding.find({ tenantId, status: { $in: ['OPEN', 'UNDER_INVESTIGATION'] } })
+    MigrationFinding.find({ tenantId, status: { $in: ['OPEN', 'UNDER_INVESTIGATION'] },
+      ...caseOwnerScope,
+      ...(functionLeader ? { affectedTeamIds: { $in: allowedTeams } } : {}) })
       .sort({ createdAt: -1 })
       .lean(),
     interventionIds.length

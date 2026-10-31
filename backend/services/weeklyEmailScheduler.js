@@ -1,13 +1,13 @@
 /**
  * Weekly Email Scheduler — Self-Healing, Persistent, Zero-Maintenance
  *
- * GUARANTEES weekly emails get sent every Monday, no matter what:
+ * Attempts weekly HR emails on or after the configured safe Monday window:
  *
- *  1. PRIMARY:  node-cron fires every Monday at 8:00 AM UTC
+ *  1. PRIMARY:  node-cron polls the 07:30 Europe/Tallinn Monday window
  *  2. WATCHDOG: Every hour, checks if this week's emails were sent.
- *               If it's Monday (or later) and they haven't → sends immediately.
+ *               If the Tallinn Monday window opened and they haven't → sends.
  *  3. STARTUP:  On every server boot, checks if this week's emails were sent.
- *               If Monday has passed and they haven't → sends immediately.
+ *               If the Tallinn Monday window opened and they haven't → sends.
  *  4. PERSIST:  Every send is logged in MongoDB (CronLog) with a unique
  *               week key (e.g., '2026-W12'), preventing duplicate sends.
  *  5. RETRY:    If an org fails, only that org is retried — others are not re-sent.
@@ -35,11 +35,21 @@ function getWeekKey() {
   return CronLog.getCurrentWeekKey();
 }
 
-function isMondayOrLater() {
-  // Monday = 1, Sunday = 0
-  // We want to send on Monday or any day after if missed
-  const day = new Date().getUTCDay();
-  return day >= 1; // Mon(1) through Sat(6) — but not Sunday(0) since reports generate Sunday night
+export function isMondayOrLater(date = new Date()) {
+  // Never dispatch a Monday HR email before 07:30 in Tallinn.
+  // Use IANA timezone rules to account for EU daylight saving changes.
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Tallinn',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value;
+  const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
+  if (day <= 0) return false;
+  if (day > 1) return true;
+  return Number(get('hour')) * 60 + Number(get('minute')) >= 7 * 60 + 30;
 }
 
 function isSundayNightOrLater() {
@@ -496,16 +506,18 @@ export function initWeeklyEmailScheduler() {
   });
 
 
-  // ── PRIMARY: Monday at 8:00 AM UTC ──
-  cron.schedule('0 8 * * 1', async () => {
-    console.log('[WeeklyScheduler] ⏰ Monday 8 AM cron triggered');
+  // ── PRIMARY: Monday at 07:30 Europe/Tallinn, DST-aware ──
+  // Poll at 04:30 and 05:30 UTC to cover both summer/winter local time.
+  cron.schedule('30 4,5,6,7,8 * * 1', async () => {
+    if (!isMondayOrLater()) return;
+    console.log('[WeeklyScheduler] Monday Tallinn-local delivery window opened');
     try {
       await executeWeeklyEmails('cron');
     } catch (err) {
       console.error('[WeeklyScheduler] Cron execution error:', err.message);
     }
   });
-  console.log('[WeeklyScheduler] ⏰ Primary cron: Monday 8:00 AM UTC');
+  console.log('[WeeklyScheduler] Primary cron: Monday 07:30 Europe/Tallinn, DST-aware');
 
   // ── REPORT GENERATION: Sunday at 11:30 PM UTC ──
   cron.schedule('30 23 * * 0', async () => {

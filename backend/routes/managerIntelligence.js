@@ -15,6 +15,47 @@ import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, has
   managerAudit, normalizeEmail, hashInvitedEmail, resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
 const router = express.Router();
+
+// A directory-synced employee can claim an account only with a high-entropy,
+// single-use token delivered to the HR-approved company mailbox. Claiming the
+// account does not grant any manager access until the user signs in and accepts.
+router.post('/invitations/claim', async (req, res) => {
+  const token = String(req.body?.token || '');
+  const password = String(req.body?.password || '');
+  if (token.length < 32 || password.length < 12 || password.length > 128) {
+    return noStore(res).status(400).json({ message: 'A valid invitation and password of at least 12 characters are required' });
+  }
+  try {
+    const invitation = await ManagerInvitation.findOne({
+      tokenHash: hashSecret(token), usedAt: null, declinedAt: null,
+      expiresAt: { $gt: new Date() },
+    }).lean();
+    if (!invitation) return noStore(res).status(403).json({ message: 'Invitation unavailable or expired' });
+    const assignment = await ManagerAssignment.findOne({
+      _id: invitation.assignmentId, orgId: invitation.orgId,
+      managerUserId: invitation.recipientUserId, status: 'invited', revokedAt: null,
+      expiresAt: { $gt: new Date() },
+    }).lean();
+    if (!assignment) return noStore(res).status(403).json({ message: 'Invitation is no longer authorised' });
+    const user = await User.findOne({
+      _id: invitation.recipientUserId, orgId: invitation.orgId, accountStatus: 'pending',
+    });
+    if (!user) return noStore(res).status(409).json({ message: 'Account already active or unavailable. Sign in using the invited account.' });
+    if (invitation.recipientEmailHash !== hashInvitedEmail(user.email)) {
+      return noStore(res).status(403).json({ message: 'Invitation identity mismatch' });
+    }
+    user.password = password;
+    user.accountStatus = 'active';
+    await user.save();
+    await managerAudit({ orgId: user.orgId, actorUserId: user._id,
+      managerUserId: user._id, teamId: assignment.teamId,
+      assignmentId: assignment._id, action: 'manager_account_claimed' });
+    return noStore(res).json({ status: 'account_claimed', message: 'Account ready. Sign in with your company email and accept the invitation.' });
+  } catch (error) {
+    console.error('[ManagerInvitation] Claim failed:', error.message);
+    return noStore(res).status(500).json({ message: 'Account setup could not be completed' });
+  }
+});
 router.use(authenticateToken);
 const ADMIN_ROLES = new Set(['master_admin','admin','hr_admin','org_admin']);
 const id = x => String(x?._id || x || '');
@@ -39,7 +80,7 @@ const invitationEmail = (teamName, url) =>
   '<h2>Invitation to view team work-pattern insights</h2><p>An authorized organization administrator invited you to view aggregated trends for ' +
   escapeHtml(teamName) + '.</p><p>No individual conversations, employee rankings or personal scores are included.</p>' +
   '<p><a href="'+escapeHtml(url)+'" style="display:inline-block;padding:13px 18px;background:#10223a;color:white;text-decoration:none;border-radius:6px;">Verify identity and review invitation</a></p>' +
-  '<p>The invitation expires in seven days. Signing in as the exact invited account is required before acceptance.</p>' +
+  '<p>The invitation expires in seven days. If you have not created a SignalTrue password yet, use the link to claim your company account. You must sign in and accept before seeing any team information.</p>' +
   '<p>If this invitation was unexpected, do not use the link; contact HR.</p></div>';
 async function sendInvite(email, teamName, token) {
   if(!process.env.RESEND_API_KEY) throw new Error('Invitation email transport is not configured');
@@ -57,13 +98,13 @@ async function sendInvite(email, teamName, token) {
 router.get('/admin/directory',requireAdmin,async(req,res)=>{
   const orgId=req.managerAdmin.orgId;
   const [users,teams,assignments,org] = await Promise.all([
-    User.find({orgId,accountStatus:'active',email:{$exists:true,$ne:''}})
-      .select('_id name email role').sort({name:1}).limit(250).lean(),
+    User.find({orgId,accountStatus:{$in:['active','pending']},email:{$exists:true,$ne:''}})
+      .select('_id name email role accountStatus teamId').sort({name:1}).limit(250).lean(),
     Team.find({orgId,isActive:{$ne:false}}).select('_id name').sort({name:1}).lean(),
     ManagerAssignment.find({orgId}).select('managerUserId teamId status weeklyEmailEnabled exportEnabled activatedAt invitedAt revokedAt').lean(),
     Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean(),
   ]);
-  noStore(res).json({users:users.map(u=>({id:id(u._id),name:u.name,email:u.email,role:u.role})),
+  noStore(res).json({users:users.map(u=>({id:id(u._id),name:u.name,email:u.email,role:u.role,accountStatus:u.accountStatus,teamId:id(u.teamId)})),
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
       status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
@@ -75,7 +116,7 @@ router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   if(!validId(managerUserId)||!validId(teamId))return noStore(res).status(400).json({message:'Choose an existing employee and team'});
   const orgId=req.managerAdmin.orgId;
   const [user,team]=await Promise.all([
-    User.findOne({_id:managerUserId,orgId,accountStatus:'active'}).select('_id email').lean(),
+    User.findOne({_id:managerUserId,orgId,accountStatus:{$in:['active','pending']}}).select('_id email').lean(),
     Team.findOne({_id:teamId,orgId,isActive:{$ne:false}}).select('_id name').lean()
   ]);
   if(!user?.email||!team)return noStore(res).status(400).json({message:'Inactive or cross-organization employee/team'});
@@ -102,10 +143,10 @@ router.post('/admin/assignments/:assignmentId/invite',requireAdmin,async(req,res
   if(assignment.lastInviteSentAt && Date.now()-new Date(assignment.lastInviteSentAt)<60000)
     return noStore(res).status(429).json({message:'Please allow at least one minute between invitations'});
   const [user,team]=await Promise.all([
-    User.findOne({_id:assignment.managerUserId,orgId,accountStatus:'active'}).select('_id email').lean(),
+    User.findOne({_id:assignment.managerUserId,orgId,accountStatus:{$in:['active','pending']}}).select('_id email').lean(),
     Team.findOne({_id:assignment.teamId,orgId,isActive:{$ne:false}}).select('name').lean(),
   ]);
-  if(!user?.email||!team)return noStore(res).status(409).json({message:'Recipient or team no longer active'});
+  if(!user?.email||!team)return noStore(res).status(409).json({message:'Recipient is no longer employed or team is inactive'});
   const token=secureToken(), tokenHash=hashSecret(token), expires=new Date(Date.now()+7*86400000);
   // Invalidate previous links when a new invitation is issued.
   await ManagerInvitation.deleteMany({assignmentId:assignment._id,usedAt:null});
@@ -168,7 +209,7 @@ router.post('/invitations/respond',async(req,res)=>{
   const when=new Date();
   const status=accept?'active':'declined';
   const updated=await ManagerAssignment.findOneAndUpdate({_id:assignment._id,status:'invited',revokedAt:null,expiresAt:{$gt:when}},
-    {$set:{status,...(accept?{acceptedAt:when,activatedAt:when,acceptedTermsVersion:MANAGER_TERMS_VERSION}:{weeklyEmailEnabled:false})}},
+    {$set:{status,...(accept?{acceptedAt:when,activatedAt:when,expiresAt:null,acceptedTermsVersion:MANAGER_TERMS_VERSION}:{weeklyEmailEnabled:false})}},
     {new:true});
   if(!updated)return noStore(res).status(409).json({message:'Authorization changed; contact HR'});
   await managerAudit({orgId:user.orgId,actorUserId:user._id,managerUserId:user._id,
@@ -179,10 +220,17 @@ router.get('/me/teams',async(req,res)=>noStore(res).json({teams:await loadManage
 router.patch('/me/preferences',async(req,res)=>{
   const user=await loadOrgUser(req);
   const on=req.body?.weeklyEmailEnabled;
-  if(!user||typeof on!=='boolean')return noStore(res).status(400).json({message:'Valid email preference required'});
-  const changed=await ManagerAssignment.updateMany({orgId:user.orgId,managerUserId:user._id,status:'active'},
-    {$set:{weeklyEmailEnabled:on,preferenceUpdatedAt:new Date()}});
-  noStore(res).json({weeklyEmailEnabled:on,updated:changed.modifiedCount});
+  const teamId=String(req.body?.teamId||'');
+  if(!user||typeof on!=='boolean'||!validId(teamId))
+    return noStore(res).status(400).json({message:'Valid team and email preference required'});
+  const changed=await ManagerAssignment.findOneAndUpdate({
+    orgId:user.orgId,managerUserId:user._id,teamId,
+    status:'active',revokedAt:null,acceptedAt:{$ne:null},
+  },{$set:{weeklyEmailEnabled:on,preferenceUpdatedAt:new Date()}},{new:true});
+  if(!changed)return noStore(res).status(403).json({message:'No active manager assignment for this team'});
+  await managerAudit({orgId:user.orgId,actorUserId:user._id,managerUserId:user._id,
+    teamId,assignmentId:changed._id,action:'manager_email_preference_changed'});
+  noStore(res).json({teamId,weeklyEmailEnabled:changed.weeklyEmailEnabled});
 });
 router.get('/teams/:teamId/trends',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);

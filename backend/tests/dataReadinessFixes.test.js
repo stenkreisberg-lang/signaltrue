@@ -113,12 +113,13 @@ describe('integration completion employee counting', () => {
 });
 
 describe('small-team configuration', () => {
-  test('enforces the five-person operational privacy floor by default', () => {
-    expect(MIN_TEAM_SIZE).toBe(5);
-    expect(MIN_METRIC_CONTRIBUTORS).toBe(5);
+  test('enforces the eight-person operational privacy floor by default', () => {
+    expect(MIN_TEAM_SIZE).toBe(8);
+    expect(MIN_METRIC_CONTRIBUTORS).toBe(8);
     expect(checkTeamSize(1)).toBe(false);
     expect(checkTeamSize(4)).toBe(false);
-    expect(checkTeamSize(5)).toBe(true);
+    expect(checkTeamSize(5)).toBe(false);
+    expect(checkTeamSize(8)).toBe(true);
     expect(suppressMetricIfTooFew(4)).toBe(true);
   });
 

@@ -19,10 +19,10 @@ import Intervention from '../models/intervention.js';
 import BriefPrediction from '../models/briefPrediction.js';
 import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
-import { ccSuperadmin } from './superadminNotifyService.js';
 import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 import { getReportTrendSeries } from './reportTrendService.js';
 import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
+import { completedReportingWeek } from '../utils/reportingPeriods.js';
 import {
   ACTIONABILITY,
   determineActionability,
@@ -395,27 +395,23 @@ function serializeTeamReadiness(item) {
 }
 
 async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payload }) {
-  try {
-    const validated = validateWeeklyBriefConsistency(payload);
-    if (!validated.valid) {
-      console.error('[WeeklyBrief] Consistency diagnostics', JSON.stringify(validated.diagnostics));
-    }
-    validated.brief.dataQuality = {
-      ...(validated.brief.dataQuality || {}),
-      consistencyDiagnostics: validated.diagnostics,
-    };
-    await upsertWeeklyBriefSnapshot({
-      orgId: org._id,
-      orgName: org.name,
-      periodStart,
-      periodEnd,
-      reportMode,
-      generatedAt: periodEnd,
-      payload: validated.brief,
-    });
-  } catch (error) {
-    console.error('[WeeklyBrief] Failed to persist dashboard snapshot:', error.message);
+  const validated = validateWeeklyBriefConsistency(payload);
+  if (!validated.valid) {
+    console.error('[WeeklyBrief] Consistency diagnostics', JSON.stringify(validated.diagnostics));
+    // Incorrect measurements must not be delivered as a fresh report.
+    throw new Error('Weekly report consistency validation failed; delivery blocked.');
   }
+  validated.brief.dataQuality = {
+    ...(validated.brief.dataQuality || {}),
+    consistencyDiagnostics: validated.diagnostics,
+  };
+  // Never swallow persistence errors or use an older snapshot as a fallback.
+  await upsertWeeklyBriefSnapshot({
+    orgId: org._id, orgName: org.name, periodStart, periodEnd, reportMode,
+    // A completed week ends at periodEnd, but the report was generated now.
+    // Do not mark a newly validated report stale just because the week closed earlier.
+    generatedAt: new Date(), payload: validated.brief,
+  });
 }
 
 const STALE_SYNC_DAYS = 7;
@@ -639,18 +635,18 @@ function generateManagerPrompts({ tw, lw, sixWeekAvg, orgStatus, teamBDIData, tw
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
-  const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
+  const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
   const teams = await Team.find({ orgId });
   const now = new Date();
 
-  // ─── Date windows ───
-  const thisWeekStart = new Date(now);
-  thisWeekStart.setDate(now.getDate() - 7);
-  thisWeekStart.setHours(0, 0, 0, 0);
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-  const sixWeekStart = new Date(thisWeekStart);
-  sixWeekStart.setDate(sixWeekStart.getDate() - 42); // 6 full weeks before this week
+  // ─── Completed, tenant-local Monday–Sunday window ───
+  const reportingTimeZone = org.settings?.timezone || 'UTC';
+  const {
+    periodStart: thisWeekStart,
+    periodEnd: reportEnd,
+    previousStart: lastWeekStart,
+    baselineStart: sixWeekStart,
+  } = completedReportingWeek(now, reportingTimeZone);
 
   // ─── Data coverage: active directory size and measured activity this week ───
   const activeUserQuery = { orgId: org._id, accountStatus: { $ne: 'inactive' } };
@@ -660,7 +656,7 @@ export async function generateWeeklyBrief(orgId) {
     source: { $in: ['microsoft-outlook', 'google-calendar'] },
     eventType: 'meeting',
     actorUserId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   // Use a period-specific denominator. Reusing this week's population for older
   // periods changes historical per-person results when coverage changes.
@@ -701,7 +697,7 @@ export async function generateWeeklyBrief(orgId) {
     recentEngagementSuppressions,
   ] = await Promise.all([
     WorkEvent.aggregate([
-      { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lte: now } } },
+      { $match: { orgId: org._id, timestamp: { $gte: thisWeekStart, $lt: reportEnd } } },
       {
         $group: {
           _id: { source: '$source', eventType: '$eventType' },
@@ -720,7 +716,7 @@ export async function generateWeeklyBrief(orgId) {
     ]),
     IntegrationMetricsDaily.find({
       orgId: org._id,
-      date: { $gte: thisWeekStart, $lte: now },
+      date: { $gte: thisWeekStart, $lt: reportEnd },
     }).lean(),
     IntegrationMetricsDaily.find({
       orgId: org._id,
@@ -730,7 +726,7 @@ export async function generateWeeklyBrief(orgId) {
       orgId: org._id,
       date: { $gte: sixWeekStart, $lt: thisWeekStart },
     }).lean(),
-    Signal.find({ orgId: org._id, firstDetected: { $gte: thisWeekStart, $lte: now } })
+    Signal.find({ orgId: org._id, firstDetected: { $gte: thisWeekStart, $lt: reportEnd } })
       .populate('teamId', 'name')
       .lean(),
     Signal.find({ orgId: org._id, firstDetected: { $gte: lastWeekStart, $lt: thisWeekStart } })
@@ -738,7 +734,7 @@ export async function generateWeeklyBrief(orgId) {
       .lean(),
     CategoryKingSignal.find({
       orgId: org._id,
-      detectedAt: { $gte: thisWeekStart, $lte: now },
+      detectedAt: { $gte: thisWeekStart, $lt: reportEnd },
     }).lean(),
     CategoryKingSignal.find({
       orgId: org._id,
@@ -746,7 +742,7 @@ export async function generateWeeklyBrief(orgId) {
     }).lean(),
     WeekContext.find({
       orgId: org._id,
-      weekStart: { $lte: now },
+      weekStart: { $lt: reportEnd },
       weekEnd: { $gte: thisWeekStart },
     }).lean(),
     // Engagement Strain: current-period records that pass the privacy floor.
@@ -990,22 +986,22 @@ export async function generateWeeklyBrief(orgId) {
   const mappedActorCount = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
     actorUserId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const mappedTeamCount = await WorkEvent.distinct('teamId', {
     orgId: org._id,
     teamId: { $ne: null },
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const unmappedActorEvents = await WorkEvent.countDocuments({
     orgId: org._id,
     $or: [{ actorUserId: null }, { actorUserId: { $exists: false } }],
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const unmappedTeamEvents = await WorkEvent.countDocuments({
     orgId: org._id,
     $or: [{ teamId: null }, { teamId: { $exists: false } }],
-    timestamp: { $gte: thisWeekStart, $lte: now },
+    timestamp: { $gte: thisWeekStart, $lt: reportEnd },
   });
   const totalActivityEvents = twEvents.reduce((sum, event) => sum + event.count, 0);
   const mappedActorEventCount = Math.max(totalActivityEvents - unmappedActorEvents, 0);
@@ -1023,7 +1019,7 @@ export async function generateWeeklyBrief(orgId) {
       $match: {
         orgId: org._id,
         teamId: { $ne: null },
-        timestamp: { $gte: thisWeekStart, $lte: now },
+        timestamp: { $gte: thisWeekStart, $lt: reportEnd },
       },
     },
     { $group: { _id: '$teamId', events: { $sum: 1 }, activeUsers: { $addToSet: '$actorUserId' } } },
@@ -1310,7 +1306,7 @@ export async function generateWeeklyBrief(orgId) {
     html += `<div style="background:#0f172a;padding:30px 34px 24px;color:white;">`;
     html += `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;margin-bottom:8px;">Weekly Brief — Setup Required</div>`;
     html += `<h1 style="margin:0 0 6px 0;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>`;
-    html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
+    html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric' })} – ${new Date(reportEnd.getTime() - 1).toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
     html += `</div>`;
 
     // Verdict: honest, short, no scores
@@ -1422,7 +1418,7 @@ export async function generateWeeklyBrief(orgId) {
     await persistSnapshot({
       org,
       periodStart: thisWeekStart,
-      periodEnd: now,
+      periodEnd: reportEnd,
       reportMode,
       payload: {
         status: {
@@ -2203,7 +2199,7 @@ export async function generateWeeklyBrief(orgId) {
   html += `<div style="background:#0f172a;padding:30px 34px 24px;color:white;">`;
   html += `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.6px;font-weight:800;margin-bottom:8px;">Weekly Intelligence Brief</div>`;
   html += `<h1 style="margin:0 0 6px 0;font-size:26px;font-weight:750;letter-spacing:-.3px;">${org.name}</h1>`;
-  html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
+  html += `<p style="margin:0;font-size:13px;color:#cbd5e1;">${thisWeekStart.toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric' })} – ${new Date(reportEnd.getTime() - 1).toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric', year: 'numeric' })}</p>`;
   html += `</div>`;
 
   // ─── 1. Verdict Banner (status + confidence + summary) ───
@@ -3074,7 +3070,7 @@ export async function generateWeeklyBrief(orgId) {
   const coverageColor = coveragePct >= 80 ? '#16a34a' : coveragePct >= 40 ? '#d97706' : '#dc2626';
   html += `<p style="${S.pSmall}"><strong>Data coverage:</strong> <span style="color:${coverageColor}; font-weight:700;">${usersWithDataThisWeek.length} of ${totalUsers} employees (${coveragePct}%)</span> have calendar data this week. Per-person figures are based on connected accounts only.</p>`;
   html += `<p style="${S.pSmall}">Data sources: ${connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}</p>`;
-  html += `<p style="${S.pSmall}">Report period: ${thisWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} compared with ${lastWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(thisWeekStart.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>`;
+  html += `<p style="${S.pSmall}">Report period: ${thisWeekStart.toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric' })} – ${new Date(reportEnd.getTime() - 1).toLocaleDateString('en-US', { timeZone: reportingTimeZone, month: 'short', day: 'numeric', year: 'numeric' })} compared with ${lastWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(thisWeekStart.getTime() - 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>`;
   html += `<p style="${S.pSmall}">Generated by <strong>SignalTrue</strong> at ${now.toLocaleString()} · Status: ${verdictText} (${verdictConfidence} rule-based evidence grade)</p>`;
   html += `</div>`;
 
@@ -3298,7 +3294,7 @@ export async function generateWeeklyBrief(orgId) {
   await persistSnapshot({
     org,
     periodStart: thisWeekStart,
-    periodEnd: now,
+    periodEnd: reportEnd,
     reportMode,
     payload: {
       status: {
@@ -3517,13 +3513,23 @@ export async function sendWeeklyBrief(orgId) {
 
   // Automated SignalTrue reports are restricted to HR/admin account owners.
   // Employees, managers, executives and arbitrary override recipients must not receive them.
+  // Organisation-wide reports are not sent to every admin by default. HR may
+  // approve explicit active administrator addresses; otherwise only hr_admin
+  // accounts receive the brief. An approved empty list pauses delivery.
+  const configured = Boolean(org.settings?.weeklyBriefRecipientsApprovedAt);
+  const approved = new Set((org.settings?.weeklyBriefRecipients || [])
+    .map(email => String(email).trim().toLowerCase()));
   const orgUsers = await User.find({
     orgId,
-    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
-    accountStatus: { $ne: 'inactive' },
+    role: { $in: configured
+      ? ['master_admin', 'hr_admin', 'admin', 'org_admin']
+      : ['hr_admin'] },
+    accountStatus: 'active',
     email: { $exists: true, $ne: null },
   });
-  const recipients = [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
+  const recipients = [...new Set(orgUsers
+    .map(u => String(u.email || '').trim().toLowerCase())
+    .filter(email => email && (!configured || approved.has(email))))];
 
   if (recipients.length > 0) {
     console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);
@@ -3558,21 +3564,11 @@ export async function sendWeeklyBrief(orgId) {
       console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }
   } else {
-    console.warn(
-      `[WeeklyBrief] No client recipients configured for org ${org.name} — skipping client send but still copying superadmin`
-    );
+    throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
   }
 
-  // Always CC superadmin (sten.kreisberg@gmail.com) — even when no client recipients exist,
-  // so the report can be reviewed and any delivery issues caught early.
-  await ccSuperadmin({
-    subject,
-    html,
-    originalRecipient:
-      recipients.length > 0 ? recipients.join(', ') : '(none — no client recipients configured)',
-    reportType: 'Weekly Intelligence Brief',
-    orgName: org.name,
-  });
+  // Organisation-wide reports are delivered only to the approved client recipients.
+  // Never copy customer evidence to a separate personal superadmin mailbox.
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };

@@ -45,7 +45,7 @@ const monthlyReportSchema = new mongoose.Schema(
       eligibleTeams: { type: Number, default: 0 },
       teamCoveragePct: { type: Number, default: 0 },
       weeklySnapshots: { type: Number, default: 0 },
-      minimumTeamSize: { type: Number, default: 5 },
+      minimumTeamSize: { type: Number, default: 8 },
     },
     actionOutcomes: {
       measured: { type: Number, default: 0 },

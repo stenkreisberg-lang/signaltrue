@@ -18,7 +18,7 @@ import Organization from '../models/organizationModel.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_OPERATIONAL_TEAM_SIZE = 5;
+export const MIN_OPERATIONAL_TEAM_SIZE = 8;
 export const MIN_HEALTH_SAFETY_TEAM_SIZE = 8;
 export const MIN_TEAM_SIZE = MIN_OPERATIONAL_TEAM_SIZE;
 export const MIN_METRIC_CONTRIBUTORS = MIN_OPERATIONAL_TEAM_SIZE;

@@ -133,10 +133,12 @@ export default function Overview() {
         if (!context.orgId) throw new Error('No organization is associated with this account.');
 
         if (['master_admin', 'admin', 'hr_admin', 'executive'].includes(context.user?.role)) {
-          api
-            .get('/weekly-brief/latest')
-            .then((response) => setLatestBrief(response.data))
-            .catch(() => setLatestBrief(null));
+          try {
+            const response = await api.get('/weekly-brief/latest');
+            setLatestBrief(response.data);
+          } catch {
+            setLatestBrief(null);
+          }
         }
 
         try {
@@ -172,7 +174,7 @@ export default function Overview() {
         <div className="app-panel flex min-h-64 items-center justify-center">
           <Spinner size="large" />
           <span className="ml-3 text-caption text-slate-600">
-            Preparing the workplace risk overview…
+            Preparing the verified work-pattern overview…
           </span>
         </div>
       </AppShell>
@@ -218,16 +220,24 @@ export default function Overview() {
           in trouble. */}
       <div className="app-dashboard-hero">
         <div className="app-dashboard-hero-main">
-          <p className="app-dashboard-eyebrow">This week</p>
+          <p className="app-dashboard-eyebrow">Latest completed reporting period</p>
           <h1 className="app-dashboard-title">
-            {reportingReady || hasMeasuredEvidence
-              ? latestBrief?.status?.label || 'Measured overview'
-              : 'Measurement setup needs attention'}
+            {latestBrief?.freshness?.refreshFailed
+              ? 'Saved report only · refresh unavailable'
+              : latestBrief?.status?.evidenceGrade === 'Low'
+                ? 'Limited evidence this week'
+                : reportingReady || hasMeasuredEvidence
+                  ? latestBrief?.status?.label || 'Measured overview'
+                  : 'Measurement setup needs attention'}
           </h1>
           <p className="app-dashboard-copy">
-            {reportingReady || hasMeasuredEvidence
-              ? latestBrief?.status?.summary || 'Review the available measurements below.'
-              : 'Reliable descriptive measurements will appear here as connected sources begin supplying usable events.'}
+            {latestBrief?.freshness?.refreshFailed
+              ? 'This is an older saved period. Current data could not be recalculated, so no new conclusion should be drawn from it.'
+              : latestBrief?.status?.evidenceGrade === 'Low'
+                ? 'Available data does not support an organisation-wide conclusion. Check coverage and eligible observations below.'
+                : reportingReady || hasMeasuredEvidence
+                  ? latestBrief?.status?.summary || 'Review the available measurements below.'
+                  : 'Reliable descriptive measurements will appear here as connected sources begin supplying usable events.'}
           </p>
           {latestBrief && (
             <Link
@@ -255,10 +265,10 @@ export default function Overview() {
                 .join(' · ')}
             </p>
             <Link
-              to="/app/signals?status=Open"
+              to="/app/control-reviews"
               className="mt-3 inline-block rounded-control border border-slate-900 px-4 py-2 text-caption font-bold text-slate-900 no-underline"
             >
-              Log this action
+              Review and document
             </Link>
           </div>
         ) : (
@@ -284,7 +294,7 @@ export default function Overview() {
                   Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  User mapping:{' '}
+                  Employee mapping:{' '}
                   {latestBrief.coverage?.mappingCoveragePct == null
                     ? 'Unknown'
                     : `${latestBrief.coverage.mappingCoveragePct}%`}
@@ -379,6 +389,58 @@ export default function Overview() {
       )}
 
       {latestBrief && <EvidenceTrendGrid brief={latestBrief} />}
+      <section className="app-dashboard-section">
+        <div className="app-section-heading">
+          <div>
+            <h2>From observation to a documented decision</h2>
+            <p>
+              Three steps for HR. Only source-supported measurements should influence the decision.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="app-panel space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">1 · Verify</p>
+            <h3 className="font-semibold">Check the evidence</h3>
+            <p className="text-sm text-slate-600">
+              Confirm the reporting period, eligible employees, and source coverage before drawing
+              conclusions.
+            </p>
+            <Link
+              className="inline-block text-sm font-semibold underline"
+              to="/app/signal-coverage"
+            >
+              Review source coverage
+            </Link>
+          </div>
+          <div className="app-panel space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              2 · Investigate
+            </p>
+            <h3 className="font-semibold">Ask what explains the change</h3>
+            <p className="text-sm text-slate-600">
+              Discuss context with the relevant team. Digital metadata alone does not establish
+              cause, strain or wellbeing.
+            </p>
+            <Link className="inline-block text-sm font-semibold underline" to="/app/signals">
+              See work-pattern evidence
+            </Link>
+          </div>
+          <div className="app-panel space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">3 · Review</p>
+            <h3 className="font-semibold">Record and remeasure</h3>
+            <p className="text-sm text-slate-600">
+              Document a management action and review comparable measurements after implementation.
+            </p>
+            <Link
+              className="inline-block text-sm font-semibold underline"
+              to="/app/control-reviews"
+            >
+              Open actions & reviews
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {calibrationStatus === null && (
         <div className="app-panel mb-4 text-caption text-amber-800">
@@ -402,13 +464,19 @@ export default function Overview() {
         <CalibrationProgress orgId={orgId} />
       ) : calibrationStatus?.readinessStatus === 'ready' ? (
         <section className="app-dashboard-section">
-          <div className="app-section-heading">
-            <div>
-              <h2>Work-pattern deviation</h2>
-              <p>An internal descriptive index shown with data readiness and team-level drivers.</p>
+          <details className="app-panel">
+            <summary className="cursor-pointer font-semibold text-slate-900">
+              Advanced descriptive indices · experimental
+            </summary>
+            <p className="mt-3 text-sm text-slate-600">
+              These models are supplementary exploratory measures. They do not diagnose mental
+              health, establish psychosocial risk, or replace source-level evidence and worker
+              consultation.
+            </p>
+            <div className="mt-4">
+              <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
             </div>
-          </div>
-          <EngagementStrainDashboard orgId={orgId} initialLimit={5} />
+          </details>
         </section>
       ) : null}
     </AppShell>

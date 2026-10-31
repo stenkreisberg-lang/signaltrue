@@ -1656,6 +1656,25 @@ describe('the product is not Australia-only', () => {
 });
 
 describe('§7 — the dashboard answers the five operational questions', () => {
+  it('fails closed when a case owner has no authenticated identity', async () => {
+    const dashboard = await dashboardService.buildDashboard({
+      tenantId, hsRole: 'CASE_OWNER', userId: null,
+    });
+    for (const module of Object.values(dashboard.modules)) {
+      expect(module.items).toEqual([]);
+    }
+    expect(dashboard.reviewRecommendations).toEqual([]);
+  });
+
+  it('fails closed for a function leader without approved team scope', async () => {
+    const dashboard = await dashboardService.buildDashboard({
+      tenantId, hsRole: 'FUNCTION_LEADER', permittedTeamIds: [],
+    });
+    for (const module of Object.values(dashboard.modules)) {
+      expect(module.items).toEqual([]);
+    }
+    expect(dashboard.reviewRecommendations).toEqual([]);
+  });
   it('returns exactly the five modules', async () => {
     const dashboard = await dashboardService.buildDashboard({ tenantId });
 

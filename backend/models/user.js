@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema(
       // 'active' = has set password and can log in
       // 'inactive' = deactivated or left company
     },
+    // HR corrections persist through future directory/roster imports.
+    hrStructure: {
+      teamVerifiedAt: { type: Date, default: null },
+      verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    },
     // Source of user creation
     source: {
       type: String,

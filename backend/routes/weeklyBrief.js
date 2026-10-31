@@ -8,6 +8,9 @@ import {
 import { askWeeklyBrief } from '../services/weeklyBriefAssistantService.js';
 import WeekContext from '../models/weekContext.js';
 import User from '../models/user.js';
+import mongoose from 'mongoose';
+import WeeklyBriefFeedback from '../models/weeklyBriefFeedback.js';
+import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 import { getReportTrendSeries } from '../services/reportTrendService.js';
 
 const router = express.Router();
@@ -32,9 +35,10 @@ async function loadOrGenerateLatest(orgId) {
     } catch (err) {
       if (!snapshot) throw err;
       console.warn(
-        '[WeeklyBrief] Returning stale dashboard snapshot after refresh failed:',
+        '[WeeklyBrief] Saved report refresh failed; explicitly marking the prior period as stale:',
         err.message
       );
+      snapshot = { ...snapshot, refreshFailed: true };
     }
   }
   return snapshot;
@@ -55,6 +59,8 @@ async function addSnapshotFreshness(orgId, snapshot) {
       snapshotTotalUsers,
       directoryDelta,
       userCountChanged: snapshotTotalUsers > 0 && directoryDelta !== 0,
+      refreshFailed: snapshot.refreshFailed === true,
+      stale: Boolean(snapshot.refreshFailed) || new Date(snapshot.generatedAt).getTime() < Date.now() - SNAPSHOT_MAX_AGE_MS,
       generatedAt: snapshot.generatedAt,
     },
   };
@@ -140,6 +146,49 @@ router.post('/ask', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (req
   } catch (err) {
     console.error('[WeeklyBrief] Follow-up analysis failed:', err.message);
     res.status(500).json({ message: 'Unable to answer from the latest weekly brief' });
+  }
+});
+
+
+// HR feedback is tied to a real saved snapshot. It is not treated as source
+// telemetry and cannot overwrite factual measurements.
+router.get('/feedback/latest', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
+    if (!snapshot) return res.status(404).json({ message: 'No saved report available' });
+    const entry = await WeeklyBriefFeedback.findOne({
+      orgId: req.user.orgId, userId: req.user.userId, snapshotId: snapshot.id,
+    }).select('useful novel action note updatedAt').lean();
+    return res.json({ feedback: entry || null });
+  } catch (error) {
+    console.error('[WeeklyFeedback] Read failed:', error.message);
+    return res.status(500).json({ message: 'Could not load report feedback' });
+  }
+});
+
+router.post('/feedback', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const snapshotId = req.body?.snapshotId;
+    const useful = req.body?.useful;
+    const novel = req.body?.novel;
+    const action = req.body?.action;
+    const note = String(req.body?.note || '').trim();
+    if (!mongoose.isValidObjectId(snapshotId) ||
+      !['yes', 'no', 'unclear'].includes(useful) ||
+      typeof novel !== 'boolean' ||
+      !['investigate', 'record', 'none'].includes(action) || note.length > 500) {
+      return res.status(400).json({ message: 'Select usefulness, novelty, action and an optional short note' });
+    }
+    const saved = await WeeklyBriefSnapshot.findOne({ _id: snapshotId, orgId: req.user.orgId })
+      .select('_id').lean();
+    if (!saved) return res.status(404).json({ message: 'Report does not belong to your organisation' });
+    const entry = await WeeklyBriefFeedback.findOneAndUpdate({
+      orgId: req.user.orgId, userId: req.user.userId, snapshotId: saved._id,
+    }, { $set: { useful, novel, action, note } }, { upsert: true, new: true, runValidators: true });
+    return res.json({ status: 'recorded', updatedAt: entry.updatedAt });
+  } catch (error) {
+    console.error('[WeeklyFeedback] Save failed:', error.message);
+    return res.status(500).json({ message: 'Could not save report feedback' });
   }
 });
 

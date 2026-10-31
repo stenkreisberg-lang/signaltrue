@@ -182,7 +182,8 @@ export default function AustraliaPilot() {
               ))}
             </div>
             <p className="mt-5 text-caption leading-6 text-[#64748B]">
-              The eight-week structure is illustrative; the actual scope and timing are agreed with the employer and depend on historical data availability and implementation readiness.
+              The eight-week structure is illustrative; the actual scope and timing are agreed with
+              the employer and depend on historical data availability and implementation readiness.
               SignalTrue will not enable production telemetry before required customer confirmations
               and deployment-specific controls are complete.
             </p>

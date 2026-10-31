@@ -53,7 +53,7 @@ beforeEach(() => {
   connectionLean.mockResolvedValue([]);
   teamLean.mockResolvedValue([{ _id: teamId, name: 'Product' }]);
   userLean.mockResolvedValue(
-    Array.from({ length: 5 }, (_, index) => ({
+    Array.from({ length: 8 }, (_, index) => ({
       _id: `507f1f77bcf86cd79943902${index}`,
       source: 'microsoft',
       teamId,
@@ -91,7 +91,7 @@ describe('canonical onboarding readiness', () => {
       {
         _id: 'microsoft-outlook',
         events: 60,
-        mappedUserIds: Array.from({ length: 5 }, (_, index) => `507f1f77bcf86cd79943902${index}`),
+        mappedUserIds: Array.from({ length: 8 }, (_, index) => `507f1f77bcf86cd79943902${index}`),
         firstEventAt: new Date('2026-07-01T08:00:00Z'),
         lastEventAt: new Date('2026-07-31T08:00:00Z'),
       },
@@ -100,7 +100,7 @@ describe('canonical onboarding readiness', () => {
     countDocuments.mockResolvedValueOnce(60).mockResolvedValueOnce(60);
     distinct
       .mockResolvedValueOnce(
-        Array.from({ length: 5 }, (_, index) => `507f1f77bcf86cd79943902${index}`)
+        Array.from({ length: 8 }, (_, index) => `507f1f77bcf86cd79943902${index}`)
       )
       .mockResolvedValueOnce([teamId]);
 
@@ -146,7 +146,7 @@ describe('canonical onboarding readiness', () => {
       })
     );
 
-    expect(setup.activity.contributorCoveragePct).toBe(20);
+    expect(setup.activity.contributorCoveragePct).toBe(13);
     expect(setup.readiness.contributorCoverageReady).toBe(false);
     expect(setup.readiness.reportingReady).toBe(false);
     expect(setup.readiness.setupComplete).toBe(false);

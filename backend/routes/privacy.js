@@ -62,7 +62,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    const minimumTeamSize = Math.max(5, Number(org.settings?.minTeamSize) || 5);
+    const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
 
     // Return public explainer content
     res.json({

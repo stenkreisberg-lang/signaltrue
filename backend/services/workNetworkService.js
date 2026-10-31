@@ -640,6 +640,8 @@ function bridgeConcentration(edge) {
 function makeOfficialEdges(units, userTeam, eligibleTeams) {
   const formal = new Map();
   for (const unit of units) {
+    // Inferred collaboration/organizer links are not legal reporting lines.
+    if (unit.source === 'inferred') continue;
     const userId = id(unit.userId);
     const managerId = id(unit.managerUserId);
     const fromTeamId = userId ? userTeam.get(userId) : null;
@@ -1001,7 +1003,7 @@ function buildLeadershipQuestions(teamDemand, edges, nodes, sourceCoverage) {
           question: 'Where are meeting invites being declined most?',
           answer: 'Invite response data is not yet strong enough to compare teams.',
           evidence: [
-            'Response-status metrics are suppressed until at least five invitees and five responses are measured.',
+            'Response-status metrics are suppressed until at least eight invitees and eight responses are measured.',
           ],
           sourceBasis: calendarBasis,
           severity: 'low',
@@ -1376,7 +1378,7 @@ export function analyzeWorkNetwork({
         'active partner teams',
       ],
       internalRules: [
-        'five-contributor privacy minimum',
+        'eight-contributor privacy minimum',
         '80% mapping readiness',
         'within-company percentile review rules',
       ],
@@ -1439,8 +1441,8 @@ export async function getWorkNetworkMap(orgId, options = {}) {
     User.find({ orgId, accountStatus: { $ne: 'inactive' } })
       .select('_id email teamId accountStatus')
       .lean(),
-    OrgUnit.find({ orgId, effectiveTo: null })
-      .select('userId managerUserId teamId effectiveTo')
+    OrgUnit.find({ orgId, effectiveTo: null, source: { $in: ['hris', 'directory', 'manual'] } })
+      .select('userId managerUserId teamId source effectiveTo')
       .lean(),
     WorkEvent.find({ orgId, timestamp: { $gte: previousStart, $lt: currentEnd } })
       .select(

@@ -231,7 +231,7 @@ export async function getOrganizationReadiness(orgOrId) {
     if (teamId) activeUsersByTeam.set(teamId, (activeUsersByTeam.get(teamId) || 0) + 1);
   }
 
-  const minTeamSize = Math.max(5, Number(org.settings?.minTeamSize || 5));
+  const minTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
   const namedTeams = teams.filter((team) => !CATCH_ALL_TEAMS.has(String(team.name).toLowerCase()));
   const eligibleTeams = namedTeams.filter(
     (team) => (activeUsersByTeam.get(id(team)) || 0) >= minTeamSize
