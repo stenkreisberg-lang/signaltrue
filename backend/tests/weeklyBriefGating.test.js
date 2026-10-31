@@ -18,6 +18,7 @@ import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import BriefPrediction from '../models/briefPrediction.js';
 import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 import { generateWeeklyBrief } from '../services/weeklyBriefService.js';
+import { completedReportingWeek } from '../utils/reportingPeriods.js';
 
 jest.setTimeout(120000);
 
@@ -38,7 +39,8 @@ beforeEach(async () => {
   await Promise.all(Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})));
 });
 
-const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+// Fixture dates belong to the latest COMPLETE week, not the test runner's partial week.
+const daysAgo = n => new Date(completedReportingWeek(new Date(), 'UTC').periodEnd.getTime() - n * 24 * 60 * 60 * 1000);
 
 async function seedOrg() {
   const org = await Organization.create({

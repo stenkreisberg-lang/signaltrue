@@ -1001,7 +1001,7 @@ function buildLeadershipQuestions(teamDemand, edges, nodes, sourceCoverage) {
           question: 'Where are meeting invites being declined most?',
           answer: 'Invite response data is not yet strong enough to compare teams.',
           evidence: [
-            'Response-status metrics are suppressed until at least five invitees and five responses are measured.',
+            'Response-status metrics are suppressed until at least eight invitees and eight responses are measured.',
           ],
           sourceBasis: calendarBasis,
           severity: 'low',
@@ -1376,7 +1376,7 @@ export function analyzeWorkNetwork({
         'active partner teams',
       ],
       internalRules: [
-        'five-contributor privacy minimum',
+        'eight-contributor privacy minimum',
         '80% mapping readiness',
         'within-company percentile review rules',
       ],

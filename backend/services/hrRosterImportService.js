@@ -378,7 +378,7 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     }
   }
 
-  await refreshTeamSizes(orgId, Math.max(5, org.settings?.minTeamSize ?? 5));
+  await refreshTeamSizes(orgId, Math.max(8, Number(org.settings?.minTeamSize) || 8));
   const eventRemap = await remapWorkEventTeams(orgId);
 
   return {
