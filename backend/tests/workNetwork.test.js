@@ -87,7 +87,7 @@ function analyze(overrides = {}) {
 }
 
 describe('Work Network analysis', () => {
-  test('overlays formal links and identifies hidden, concentrated operating dependencies', () => {
+  test('overlays formal links and identifies cross-team dependencies without inventing concentration', () => {
     const formalParticipants = ['e1', 'e2', 'e3', 'e4', 'p1', 'p2', 'p3', 'p4'];
     const hiddenParticipants = ['e1', 'e2', 'e3', 'e4', 's1', 's2', 's3', 's4'];
     const currentEvents = [
@@ -109,7 +109,7 @@ describe('Work Network analysis', () => {
       true
     );
     expect(result.insights.some((item) => item.type === 'hidden_dependency')).toBe(true);
-    expect(result.insights.some((item) => item.type === 'connector_concentration')).toBe(true);
+    expect(result.insights.some((item) => item.type === 'connector_concentration')).toBe(false);
     expect(result.insights.find((item) => item.type === 'hidden_dependency').metric.name).toBe(
       'meetingHours'
     );
@@ -129,7 +129,7 @@ describe('Work Network analysis', () => {
   });
 
   test('answers meeting demand and decline-friction questions at team level', () => {
-    const participants = ['e1', 's1', 's2', 's3', 's4', 's5', 's6', 's7'];
+    const participants = ['e1', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
     const responses = Object.fromEntries(
       participants.slice(1).map((participant) => [participant, 'declined'])
     );
@@ -144,9 +144,9 @@ describe('Work Network analysis', () => {
     const edge = result.actualEdges.find((item) => item.teamBName === 'Sales');
 
     expect(result.readiness.ready).toBe(true);
-    expect(engineeringDemand.sentInviteCount).toBe(14);
-    expect(engineeringDemand.sentAttendeeHours).toBe(7);
-    expect(salesDemand.receivedInviteCount).toBe(14);
+    expect(engineeringDemand.sentInviteCount).toBe(16);
+    expect(engineeringDemand.sentAttendeeHours).toBe(8);
+    expect(salesDemand.receivedInviteCount).toBe(16);
     expect(salesDemand.declineRate).toBe(1);
     expect(edge.dominantDirection).toMatchObject({
       fromTeamName: 'Engineering',
