@@ -3568,14 +3568,8 @@ export async function sendWeeklyBrief(orgId) {
     throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
   }
 
-  // Do not send client reporting data to personal superadmin mailboxes by default.
-  // A tenant-approved operational copy requires explicit configuration.
-  if (process.env.WEEKLY_BRIEF_SUPERADMIN_COPY_ENABLED === 'true') {
-    await ccSuperadmin({
-      subject, html, originalRecipient: recipients.join(', '),
-      reportType: 'Weekly Intelligence Brief', orgName: org.name,
-    });
-  }
+  // Organisation-wide reports are delivered only to the approved client recipients.
+  // Never copy customer evidence to a separate personal superadmin mailbox.
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };
