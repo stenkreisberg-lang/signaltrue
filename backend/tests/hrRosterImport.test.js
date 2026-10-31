@@ -7,6 +7,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
+import WorkEvent from '../models/workEvent.js';
+import { remapWorkEventTeams } from '../services/employeeSyncService.js';
 import {
   importHrRosterRows,
   parseHrRosterFile,
@@ -190,5 +192,43 @@ describe('HR roster import', () => {
     expect(await User.findOne({ email: 'former@example.com' })).toMatchObject({
       accountStatus: 'inactive',
     });
+  });
+});
+
+describe('historical evidence preservation during workforce remapping', () => {
+  test('a later team change does not rewrite an already attributed historical meeting', async () => {
+    const org = await Organization.create({name:'Historic attribution'});
+    const first = await Team.create({name:'Original', orgId:org._id});
+    const second = await Team.create({name:'Current', orgId:org._id});
+    const employee = await User.create({name:'Test Employee', email:'historical@example.test',
+      accountStatus:'pending', source:'microsoft', orgId:org._id, teamId:first._id});
+    const recorded = await WorkEvent.create({orgId:org._id, actorUserId:employee._id,
+      teamId:first._id, source:'microsoft-outlook', eventType:'meeting',
+      timestamp:new Date('2026-09-10T10:00:00Z')});
+    const unattributed = await WorkEvent.create({orgId:org._id, actorUserId:employee._id,
+      source:'microsoft-outlook', eventType:'meeting',timestamp:new Date('2026-09-11T10:00:00Z')});
+    await User.updateOne({_id:employee._id},{$set:{teamId:second._id}});
+    await remapWorkEventTeams(org._id);
+    expect(String((await WorkEvent.findById(recorded._id)).teamId)).toBe(String(first._id));
+    expect(String((await WorkEvent.findById(unattributed._id)).teamId)).toBe(String(second._id));
+  });
+
+  test('HR-verified effective date is respected for meeting attribution', async () => {
+    const org = await Organization.create({name:'HR dates'});
+    const first = await Team.create({name:'Former', orgId:org._id});
+    const second = await Team.create({name:'New', orgId:org._id});
+    const effective = new Date('2026-10-15T09:00:00Z');
+    const employee = await User.create({name:'Verified Employee', email:'verified@example.test',
+      accountStatus:'pending', source:'microsoft', orgId:org._id, teamId:second._id,
+      hrStructure:{teamVerifiedAt:effective}});
+    const oldEvent=await WorkEvent.create({orgId:org._id, actorUserId:employee._id,
+      teamId:first._id,source:'microsoft-outlook',eventType:'meeting',
+      timestamp:new Date('2026-10-14T10:00:00Z')});
+    const newEvent=await WorkEvent.create({orgId:org._id, actorUserId:employee._id,
+      teamId:first._id,source:'microsoft-outlook',eventType:'meeting',
+      timestamp:new Date('2026-10-16T10:00:00Z')});
+    await remapWorkEventTeams(org._id);
+    expect(String((await WorkEvent.findById(oldEvent._id)).teamId)).toBe(String(first._id));
+    expect(String((await WorkEvent.findById(newEvent._id)).teamId)).toBe(String(second._id));
   });
 });
