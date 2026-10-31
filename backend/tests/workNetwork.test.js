@@ -87,6 +87,17 @@ function analyze(overrides = {}) {
 }
 
 describe('Work Network analysis', () => {
+  test('inferred relationships never appear as official reporting lines', () => {
+    const data = baseData();
+    const inferred = { userId: 's1', managerUserId: 'e1', teamId: 'sales',
+      source: 'inferred', effectiveTo: null };
+    const report = analyze({ ...data, units: [...data.units, inferred] });
+    expect(report.formalEdges).toHaveLength(1);
+    expect(report.formalEdges.some(edge =>
+      edge.teamAId === 'sales' || edge.teamBId === 'sales')).toBe(false);
+  });
+
+
   test('overlays formal links and identifies cross-team dependencies without inventing concentration', () => {
     const formalParticipants = ['e1', 'e2', 'e3', 'e4', 'p1', 'p2', 'p3', 'p4'];
     const hiddenParticipants = ['e1', 'e2', 'e3', 'e4', 's1', 's2', 's3', 's4'];
