@@ -306,12 +306,29 @@ export default function LatestBrief() {
   const [contextTag, setContextTag] = useState('launch');
   const [contextDescription, setContextDescription] = useState('');
   const [savingContext, setSavingContext] = useState(false);
+  const [feedbackUseful, setFeedbackUseful] = useState('unclear');
+  const [feedbackNovel, setFeedbackNovel] = useState(false);
+  const [feedbackAction, setFeedbackAction] = useState('none');
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
 
   const loadBrief = useCallback(async () => {
     const context = await getAuthenticatedContext();
     setUser(context.user);
     const { data } = await api.get('/weekly-brief/latest');
     setBrief(data);
+    if (data?._id) {
+      try {
+        const response = await api.get('/weekly-brief/feedback/latest');
+        if (response.data.feedback) {
+          setFeedbackUseful(response.data.feedback.useful);
+          setFeedbackNovel(response.data.feedback.novel);
+          setFeedbackAction(response.data.feedback.action);
+          setFeedbackNote(response.data.feedback.note || '');
+        }
+      } catch { /* feedback is optional and never blocks viewing evidence */ }
+    }
     try {
       const response = await api.get('/week-context', {
         params: { weekStart: data.periodStart },
@@ -381,6 +398,22 @@ export default function LatestBrief() {
     } finally {
       setSavingContext(false);
     }
+  };
+
+  const saveFeedback = async (event) => {
+    event.preventDefault();
+    if (!brief?._id) return;
+    setFeedbackBusy(true);
+    setFeedbackMessage('');
+    try {
+      await api.post('/weekly-brief/feedback', {
+        snapshotId: brief._id, useful: feedbackUseful,
+        novel: feedbackNovel, action: feedbackAction, note: feedbackNote,
+      });
+      setFeedbackMessage('Thanks. Your review was saved with this report.');
+    } catch (failure) {
+      setFeedbackMessage(failure.response?.data?.message || 'Feedback was not saved');
+    } finally { setFeedbackBusy(false); }
   };
 
   if (loading) {
@@ -925,6 +958,51 @@ export default function LatestBrief() {
         </div>
       )}
 
+      {canRefresh && brief?._id && (
+        <section className="app-panel mb-6" aria-label="Report usefulness and decisions">
+          <h2 className="text-lg font-bold">Was this report useful?</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Tell SignalTrue whether the measured evidence helped you identify a new question or
+            record a decision. This feedback never changes the measured results.
+          </p>
+          <form className="mt-4 space-y-3" onSubmit={saveFeedback}>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm font-semibold">Did the report help?
+                <select className="mt-1 block w-full rounded-lg border p-2"
+                  value={feedbackUseful} onChange={e => setFeedbackUseful(e.target.value)}>
+                  <option value="yes">Yes, useful evidence</option>
+                  <option value="unclear">Not yet clear</option>
+                  <option value="no">No, not relevant</option>
+                </select>
+              </label>
+              <label className="text-sm font-semibold">What did you do?
+                <select className="mt-1 block w-full rounded-lg border p-2"
+                  value={feedbackAction} onChange={e => setFeedbackAction(e.target.value)}>
+                  <option value="none">No action yet</option>
+                  <option value="investigate">Started investigating</option>
+                  <option value="record">Recorded a management decision</option>
+                </select>
+              </label>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={feedbackNovel}
+                onChange={e => setFeedbackNovel(e.target.checked)} />
+              This report highlighted something I had not noticed before.
+            </label>
+            <label className="block text-sm font-semibold">Optional context for the product team
+              <textarea className="mt-1 block w-full rounded-lg border p-3" rows={2}
+                maxLength={500} value={feedbackNote}
+                onChange={e => setFeedbackNote(e.target.value)}
+                placeholder="Which finding was useful, unclear or misleading?" />
+            </label>
+            <button disabled={feedbackBusy} type="submit"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+              Save report feedback
+            </button>
+            {feedbackMessage && <p role="status" className="text-sm text-slate-700">{feedbackMessage}</p>}
+          </form>
+        </section>
+      )}
       <section className="app-panel mb-6" id="weekly-brief-context">
         <div className="flex items-start gap-3">
           <CircleHelp className="mt-1 h-5 w-5 text-violet-700" />
