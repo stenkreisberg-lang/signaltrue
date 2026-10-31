@@ -143,7 +143,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
     <div className="app-shell">
       <aside className="app-sidebar">
         <div className="app-sidebar-inner">
-          <Link to={mode === "manager" ? "/app/manager" : "/app/overview"} className="app-brand">
+          <Link to={mode === 'manager' ? '/app/manager' : '/app/overview'} className="app-brand">
             <span className="app-brand-mark" aria-hidden="true">
               ST
             </span>
@@ -227,7 +227,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
             <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates
             observed work patterns from interpretation. Worker consultation and human judgement
             remain part of the review; the product does not diagnose health or establish cause.
-            <Link to={mode === "manager" ? "/privacy" : "/app/privacy"}>View data policy</Link>
+            <Link to={mode === 'manager' ? '/privacy' : '/app/privacy'}>View data policy</Link>
           </div>
           {children}
         </main>
