@@ -7,6 +7,8 @@ export default function ManagerInvitation() {
   const [invite, setInvite] = useState(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState('');
+  const [claimed, setClaimed] = useState(false);
   const [token] = useState(() => {
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const value = fragment.get('token');
@@ -35,6 +37,20 @@ export default function ManagerInvitation() {
       alive = false;
     };
   }, [token]);
+  const claim = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await api.post('/manager-intelligence/invitations/claim', { token, password });
+      setClaimed(true);
+      setPassword('');
+    } catch (e) {
+      setError(e.response?.data?.message || 'Account setup was unsuccessful');
+    } finally {
+      setBusy(false);
+    }
+  };
   const respond = async (accept) => {
     setBusy(true);
     setError('');
@@ -53,21 +69,45 @@ export default function ManagerInvitation() {
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto mt-16 max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-bold tracking-widest text-blue-700">
-          SIGNALTRUE · MANAGER INTELLIGENCE
+          SIGNALTRUE · TEAM ACCESS
         </p>
         <h1 className="mt-4 text-2xl font-extrabold">Your team insights invitation</h1>
         {!localStorage.getItem('token') ? (
-          <div className="mt-4">
-            <p>
-              You must sign in using the exact company account invited by HR before any team data
-              becomes available.
-            </p>
-            <Link
-              to="/login"
-              className="mt-5 inline-block rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white"
-            >
-              Sign in to verify identity
+          <div className="mt-4 space-y-4">
+            {claimed ? (
+              <p className="rounded-lg bg-green-50 p-4 text-sm">
+                Your company account is ready. Sign in with your company email and the password
+                you just created. Return to this invitation to accept manager access.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm">
+                  If you already use SignalTrue, sign in using the company account HR invited.
+                  If HR imported your employee record but you have never signed in, create a
+                  password below. This will not grant team access until you accept the invitation.
+                </p>
+                <form onSubmit={claim} className="space-y-3">
+                  <label className="block text-sm font-semibold">
+                    New password for your invited company account
+                    <input type="password" autoComplete="new-password" minLength={12}
+                      maxLength={128} required value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="mt-2 block w-full rounded-lg border p-3" />
+                  </label>
+                  <button type="submit" disabled={busy || password.length < 12}
+                    className="rounded-lg border px-4 py-2 text-sm font-bold disabled:opacity-50">
+                    Create my company account
+                  </button>
+                </form>
+              </>
+            )}
+            <Link to="/login" className="inline-block rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white">
+              Sign in with invited account
             </Link>
+            <p className="text-xs text-slate-500">
+              The one-time invitation remains tied to the HR-nominated email. Return to this page
+              after signing in to accept the team assignment.
+            </p>
           </div>
         ) : invite ? (
           <div className="mt-5 space-y-4">

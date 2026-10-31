@@ -11,6 +11,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import api from '../../utils/api';
+import AppShell from '../../components/app/AppShell';
+const currentUser = () => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } };
 export default function ManagerTeamDashboard() {
   const [teams, setTeams] = useState([]),
     [team, setTeam] = useState(''),
@@ -139,14 +141,14 @@ export default function ManagerTeamDashboard() {
     s ? new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
   const points = (report?.points || []).slice(-weeks).map((p) => ({ ...p, label: date(p.date) }));
   return (
-    <main className="min-h-screen bg-slate-50 p-4 sm:p-8">
+    <AppShell user={currentUser()} mode="manager" section="My team">
       <div className="mx-auto max-w-6xl space-y-5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold tracking-widest text-blue-700">
               SIGNALTRUE / TEAM MANAGER
             </p>
-            <h1 className="mt-2 text-3xl font-bold">My team intelligence</h1>
+            <h1 className="mt-2 text-3xl font-bold">My team</h1>
             <p className="mt-2 text-sm text-slate-600">
               Private, aggregated work-pattern evidence and management actions.
             </p>
@@ -339,7 +341,7 @@ export default function ManagerTeamDashboard() {
                       </button>
                     </div>
                   </section>
-                  <section className="rounded-xl border bg-white p-5">
+                  <section id="actions" className="rounded-xl border bg-white p-5">
                     <h2 className="text-xl font-bold">Record a management decision</h2>
                     <p className="mt-2 text-sm text-slate-600">
                       Create a work-design action and review comparable measurements after 14 and 28
@@ -420,7 +422,7 @@ export default function ManagerTeamDashboard() {
             )}
           </>
         )}
-        <section className="rounded-xl border bg-white p-5">
+        <section id="reports" className="rounded-xl border bg-white p-5">
           <h2 className="text-lg font-bold">My weekly delivery history</h2>
           {deliveries.length ? (
             deliveries.slice(0, 8).map((d, i) => (
@@ -437,6 +439,6 @@ export default function ManagerTeamDashboard() {
           small-cohort data is not shown.
         </p>
       </div>
-    </main>
+    </AppShell>
   );
 }
