@@ -2,85 +2,39 @@ import React, { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 /**
- * Navigation is ordered by the week's actual sequence: read what changed,
- * investigate it, review the control, then document the decision.
- *
- * Labels avoid near-duplicates: "Priority Signals" beside "All Signals", or
- * "Coverage" beside "Data Sources", asks the reader to work out a distinction
- * instead of pointing somewhere. Configuration is marked secondary and tucked
- * below, because it is visited during setup and rarely afterwards.
+ * Five customer tasks, with specialised evidence tools placed behind a
+ * secondary disclosure. Route guards remain authoritative for access.
  */
 const links = [
-  { to: '/app/overview', label: 'Overview', group: 'This week' },
-  {
-    to: '/app/latest-brief',
-    label: 'Weekly Brief',
-    group: 'This week',
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
-  },
-  { to: '/app/signals', label: 'Work-pattern evidence', group: 'Review' },
-  {
-    to: '/app/control-reviews',
-    label: 'Control reviews',
-    group: 'Review',
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive'],
-  },
-  { to: '/app/actions', label: 'Actions', group: 'Act' },
-  { to: '/app/active-monitoring', label: 'Pattern feed', group: 'Explore' },
-  {
-    to: '/app/work-network',
-    label: 'How teams work together',
-    group: 'Explore',
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
-  },
-  {
-    to: '/app/executive-summary',
-    label: 'For leadership',
-    group: 'Explore',
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
-  },
-  {
-    to: '/app/signal-coverage',
-    label: 'Data coverage',
-    group: 'Settings',
-    secondary: true,
-  },
-  {
-    to: '/integrations',
-    label: 'Connections',
-    group: 'Settings',
-    secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'],
-  },
-  {
-    to: '/app/employees',
-    label: 'Organisation & teams',
-    group: 'Settings',
-    secondary: true,
-    adminOnly: true,
-  },
-  {
-    to: '/app/admin/manager-reporting',
-    label: 'Manager access',
-    group: 'Settings',
-    secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin'],
-  },
+  { to: '/app/overview', label: 'Overview', group: 'Start' },
+  { to: '/app/employees', label: 'Organisation & teams', group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin'] },
+  { to: '/app/control-reviews', label: 'Actions & reviews', group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'compliance', 'executive'] },
+  { to: '/app/latest-brief', label: 'Reports', group: 'Start',
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'] },
+  { to: '/app/signal-coverage', label: 'Settings & access', group: 'Start' },
+  { to: '/app/signals', label: 'Work-pattern evidence', group: 'Explore', secondary: true },
+  { to: '/app/active-monitoring', label: 'Pattern history', group: 'Explore', secondary: true },
+  { to: '/app/actions', label: 'Action records', group: 'Explore', secondary: true },
+  { to: '/app/work-network', label: 'How teams work together', group: 'Explore', secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'] },
+  { to: '/app/executive-summary', label: 'Leadership summary', group: 'Explore', secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'] },
+  { to: '/integrations', label: 'Microsoft and other connections', group: 'Settings', secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'it_admin'] },
+  { to: '/app/admin/manager-reporting', label: 'Manager access & invitations', group: 'Settings',
+    secondary: true, roles: ['master_admin', 'admin', 'hr_admin', 'org_admin'] },
   { to: '/app/privacy', label: 'Data policy', group: 'Settings', secondary: true },
-  {
-    to: '/app/trust-pack',
-    label: 'Trust pack',
-    group: 'Settings',
-    secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'it_admin', 'compliance'],
-  },
-  {
-    to: '/app/site-analytics',
-    label: 'Site analytics',
-    group: 'Settings',
-    secondary: true,
-    roles: ['master_admin'],
-  },
+  { to: '/app/trust-pack', label: 'Trust pack', group: 'Settings', secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'it_admin', 'compliance'] },
+  { to: '/app/site-analytics', label: 'Site analytics', group: 'Settings',
+    secondary: true, roles: ['master_admin'] },
+];
+const managerLinks = [
+  { to: '/app/manager', label: 'My team', group: 'Start' },
+  { to: '/app/manager#actions', label: 'Actions & reviews', group: 'Start' },
+  { to: '/app/manager#reports', label: 'Reports', group: 'Start' },
 ];
 
 export function PageHeader({ eyebrow, title, description, action }) {
@@ -96,16 +50,16 @@ export function PageHeader({ eyebrow, title, description, action }) {
   );
 }
 
-export default function AppShell({ children, user, section, width = 'wide' }) {
+export default function AppShell({ children, user, section, width = 'wide', mode = 'hr' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const navigationRef = useRef(null);
   const isImpersonating = Boolean(localStorage.getItem('impersonation_token'));
 
-  const visibleLinks = links.filter(
+  const visibleLinks = (mode === 'manager' ? managerLinks : links).filter(
     (link) =>
-      (!link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
-      (!link.roles || link.roles.includes(user?.role))
+      (mode === 'manager' || !link.adminOnly || ['master_admin', 'admin', 'hr_admin'].includes(user?.role)) &&
+      (mode === 'manager' || !link.roles || link.roles.includes(user?.role))
   );
   const secondaryLinks = visibleLinks.filter((link) => link.secondary);
   // Keep the settings group open when the current page lives inside it, so the
@@ -168,9 +122,9 @@ export default function AppShell({ children, user, section, width = 'wide' }) {
                 </React.Fragment>
               ))}
 
-            {secondaryLinks.length > 0 && (
+            {mode !== 'manager' && secondaryLinks.length > 0 && (
               <details className="app-nav-secondary" open={isOnSecondaryPage}>
-                <summary className="app-nav-group app-nav-summary">Settings</summary>
+                <summary className="app-nav-group app-nav-summary">Additional tools and settings</summary>
                 {/* A details element slots everything after the summary into a
                     single anonymous box, so flex on the details itself does not
                     reach these links. They need their own container. */}
