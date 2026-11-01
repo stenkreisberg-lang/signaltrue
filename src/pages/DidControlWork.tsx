@@ -160,7 +160,7 @@ export default function DidControlWork() {
       'https://www.signaltrue.ai/did-the-control-work',
     ];
     try {
-      await navigator.clipboard.writeText(lines.join('\\n'));
+      await navigator.clipboard.writeText(lines.join('\n'));
       trackEvent('did_control_work_plan_copied', { gap_count: gaps.length });
     } catch {
       // Copy requires browser permission. The on-screen findings remain available.
@@ -299,7 +299,7 @@ export default function DidControlWork() {
                     <span className="text-[4.5rem] font-bold leading-none">{score}</span>
                     <span className="pb-2 text-body font-semibold text-[#64748B]">/100</span>
                   </div>
-                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>\n{' '}
+                  <p className="mt-4 text-lead font-bold">{scoreLabel(score)}</p>
                   <p className="mt-3 text-caption leading-6 text-[#64748B]">
                     Indicative checklist score only. Not a validated psychosocial risk assessment,
                     effectiveness measure or compliance rating.
