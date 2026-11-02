@@ -1104,6 +1104,7 @@ export async function generateWeeklyBrief(orgId) {
     afterHoursRatio: avgField(twOrgMetricsArr, 'afterHoursMessageRatio'), // already a ratio, no division
     channels: avgField(twOrgMetricsArr, 'uniqueChannels7d'),
     afterHoursEmail: avgField(twOrgMetricsArr, 'afterHoursSentRatio'),
+    afterHoursMeetingStarts: avgField(twOrgMetricsArr, 'afterHoursMeetingCount7d'),
     focusTimeAvailability:
       avgField(twOrgMetricsArr, 'focusTimeAvailabilityHours') / connectedUserCount,
     calendarFragmentation: avgField(twOrgMetricsArr, 'calendarFragmentationScore'),
@@ -1659,28 +1660,38 @@ export async function generateWeeklyBrief(orgId) {
     }
   }
 
-  // Focus time analysis (new metric)
+  // Calendar-based evidence stands on its own even without Teams chat access.
+  if (
+    !isMetricBlocked('meeting_hours') &&
+    tw.afterHoursMeetingStarts > 0
+  ) {
+    observations.push({
+      text: `${Math.round(tw.afterHoursMeetingStarts)} observed meeting starts fell outside the configured working schedule. This does not establish overtime or duration; confirm local time zones and working arrangements.`,
+      confidence: 'Low',
+    });
+  }
+
+  // Observed meeting-free calendar gaps (not proof of focus or recovery)
   if (
     !isMetricBlocked('focus_time') &&
     tw.focusTimeAvailability != null &&
     tw.focusTimeAvailability > 0
   ) {
-    const focusPerDay = tw.focusTimeAvailability / 5;
     if (
       sixWeekAvg.focusTimeAvailability > 0 &&
       tw.focusTimeAvailability < sixWeekAvg.focusTimeAvailability * 0.85
     ) {
       const conf = obsConfidence([
-        focusPerDay < 1.5,
+        tw.focusTimeAvailability < 7.5,
         tw.calendarFragmentation > 60,
         tw.backToBack > 5,
       ]);
       observations.push({
-        text: `Measured uninterrupted time is ${fmtNum(focusPerDay, 1)} hrs/day (${fmtNum(tw.focusTimeAvailability, 1)}h this week), below the organization's ${fmtNum(sixWeekAvg.focusTimeAvailability, 1)}h weekly baseline.`,
+        text: `Observed gaps of at least 90 minutes between meetings total ${fmtNum(tw.focusTimeAvailability, 1)} hours across calendars with events (a lower bound; not evidence of focus or rest), below the organization's ${fmtNum(sixWeekAvg.focusTimeAvailability, 1)}h weekly baseline.`,
         confidence: conf,
       });
       risks.push(
-        'Protected uninterrupted time moved below baseline. Check whether meeting load, short gaps, or a planned high-coordination week explains the change.'
+        'Observed long gaps between meetings fell below baseline. Verify source coverage and meeting patterns before interpreting this change.'
       );
     }
   }
