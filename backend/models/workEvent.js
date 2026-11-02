@@ -178,6 +178,7 @@ const workEventSchema = new mongoose.Schema(
       isAllHands: Boolean, // company/all-hands event
       isRecurring: Boolean, // recurring series
       isCancelled: Boolean, // cancelled before it ran
+      isFreeCalendarEvent: Boolean, // Outlook event is marked free
       isRescheduled: Boolean, // rescheduled from original time
       attendeeCount: Number, // total attendee count
       internalAttendeeCount: Number, // internal-only attendees
