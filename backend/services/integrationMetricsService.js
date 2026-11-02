@@ -100,7 +100,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
   const emailMetrics = computeEmailMetrics(events, date, workSchedule);
 
   // Compute meeting metrics (Google Meet/Calendar/Microsoft Outlook)
-  const meetingMetrics = computeMeetingMetrics(events, date);
+  const meetingMetrics = computeMeetingMetrics(events, date, workSchedule);
 
   // Compute Notion metrics
   const notionMetrics = computeNotionMetrics(events, date, notionHistoryEvents);
@@ -178,7 +178,7 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
 
   const taskMetrics = computeTaskMetrics(events, date);
   const emailMetrics = computeEmailMetrics(events, date, workSchedule);
-  const meetingMetrics = computeMeetingMetrics(events, date);
+  const meetingMetrics = computeMeetingMetrics(events, date, workSchedule);
   const notionMetrics = computeNotionMetrics(events, date, notionHistoryEvents);
   const crmMetrics = computeCRMMetrics(events, date);
   const basecampMetrics = computeBasecampMetrics(events, date);
@@ -416,7 +416,7 @@ function getEventDurationMinutes(event) {
   return 0;
 }
 
-export function computeMeetingMetrics(events, date) {
+export function computeMeetingMetrics(events, date, workSchedule = {}) {
   // Include all calendar/meeting sources: Google Calendar, Microsoft Outlook, Meet
   const meetEvents = events.filter(
     (e) =>
@@ -432,9 +432,20 @@ export function computeMeetingMetrics(events, date) {
   const events7d = meetEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   // Meeting count and duration — support both legacy (meet_started) and core adapters (meeting)
-  const meetingStarts = events7d.filter(
-    (e) => e.eventType === 'meet_started' || e.eventType === 'meeting'
-  );
+  const seen = new Set();
+  const meetingStarts = events7d.filter((e) => {
+    if (e.eventType !== 'meet_started' && e.eventType !== 'meeting') return false;
+    if (
+      e.metadata?.isCancelled === true ||
+      e.metadata?.isAllDay === true ||
+      e.metadata?.isFreeCalendarEvent === true ||
+      e.metadata?.attendeeResponseStatus === 'declined'
+    ) return false;
+    const key = `${String(e.actorUserId || 'aggregate')}:${getMeetingInstanceKey(e)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   const meetingCount7d = new Set(meetingStarts.map(getMeetingInstanceKey)).size;
 
   // New calendar rows are attendee-expanded. For legacy aggregate rows, use the
@@ -505,6 +516,86 @@ export function computeMeetingMetrics(events, date) {
     meetingFragmentationIndex,
     avgGapBetweenMeetingsMins,
     meetingsWithExternalParticipants,
+    ...calculateObservedMeetingGaps(meetingStarts, workSchedule),
+    recurringMeetingHours:
+      meetingStarts.filter((e) => e.metadata?.isRecurring).reduce(
+        (sum, e) => sum + getEventDurationMinutes(e), 0
+      ) / 60,
+    recurringMeetingBurden:
+      meetingDurationTotalHours7d > 0
+        ? meetingStarts.filter((e) => e.metadata?.isRecurring).reduce(
+            (sum, e) => sum + getEventDurationMinutes(e), 0
+          ) / 60 / meetingDurationTotalHours7d
+        : null,
+    afterHoursMeetingCount7d: meetingStarts.filter((e) =>
+      isOutsideWorkingHours(e.metadata?.startTime || e.timestamp, workSchedule)
+    ).length,
+  };
+}
+
+// Observed gaps only: never infer free time before the first or after the
+// last sampled meeting, and never interpret a gap as proven focus or rest.
+function calculateObservedMeetingGaps(meetings, schedule) {
+  const zone = schedule.timezone || 'UTC';
+  const perDay = new Map();
+  for (const event of meetings) {
+    if (!event.actorUserId) continue;
+    const start = new Date(event.metadata?.startTime || event.timestamp);
+    const duration = getEventDurationMinutes(event);
+    if (!Number.isFinite(start.getTime()) || duration <= 0) continue;
+    let day;
+    try {
+      day = new Intl.DateTimeFormat('en-CA', {
+        timeZone: zone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(start);
+    } catch {
+      day = start.toISOString().slice(0, 10);
+    }
+    const key = `${String(event.actorUserId)}:${day}`;
+    if (!perDay.has(key)) perDay.set(key, []);
+    perDay.get(key).push([start.getTime(), start.getTime() + duration * 60000]);
+  }
+  let availableMins = 0;
+  let blocks = 0;
+  let shortGaps = 0;
+  let transitions = 0;
+  let shortMeetings = 0;
+  let daySpan = 0;
+  for (const events of perDay.values()) {
+    const sorted = events.sort((a, b) => a[0] - b[0]);
+    let lastEnd = null;
+    for (const [start, end] of sorted) {
+      if (end - start < 30 * 60000) shortMeetings++;
+      if (lastEnd !== null && start > lastEnd) {
+        const gap = (start - lastEnd) / 60000;
+        transitions++;
+        if (gap < 30) shortGaps++;
+        if (gap >= 90) {
+          availableMins += gap;
+          blocks++;
+        }
+      }
+      lastEnd = Math.max(lastEnd ?? end, end);
+    }
+    if (sorted.length > 1) daySpan += (lastEnd - sorted[0][0]) / 3600000;
+  }
+  return {
+    focusTimeAvailabilityHours: perDay.size
+      ? Number((availableMins / 60).toFixed(2))
+      : null,
+    focusTimeBlocks: blocks,
+    calendarDaysObserved: perDay.size,
+    calendarFragmentationScore: transitions
+      ? Math.round((100 * shortGaps) / transitions)
+      : null,
+    calendarFragComponents: {
+      shortMeetingCount: shortMeetings,
+      sub30MinGaps: shortGaps,
+      dailyMeetingSpanHours: Number(daySpan.toFixed(2)),
+    },
   };
 }
 
