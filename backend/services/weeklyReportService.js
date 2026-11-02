@@ -29,7 +29,7 @@ export async function generateWeeklyReportForTeam(teamId) {
 
     // Get current and previous TeamState
     const teamStates = await TeamState.find({ teamId })
-      .sort({ weekEnd: -1 })
+      .sort({ weekStart: -1 })
       .limit(2)
       .populate('teamId');
 
@@ -41,10 +41,21 @@ export async function generateWeeklyReportForTeam(teamId) {
     const currentState = teamStates[0];
     const previousState = teamStates.length > 1 ? teamStates[1] : null;
 
-    // Calculate period
-    const periodEnd = currentState.weekEnd;
-    const periodStart = new Date(periodEnd);
-    periodStart.setDate(periodStart.getDate() - 7);
+    // Legacy TeamState stores weekStart, not weekEnd or a validated BDI.
+    // A missing score must never be presented as a genuinely healthy zero.
+    if (!Number.isFinite(currentState.bdi)) {
+      console.warn(
+        '[WeeklyReport] Skipping legacy team BDI report: TeamState has no measured BDI'
+      );
+      return null;
+    }
+
+    const periodStart = new Date(currentState.weekStart);
+    if (!Number.isFinite(periodStart.getTime())) {
+      console.warn('[WeeklyReport] Skipping legacy team report: invalid weekStart');
+      return null;
+    }
+    const periodEnd = new Date(periodStart.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // Calculate BDI delta
     const bdiCurrent = currentState.bdi || 0;
@@ -62,7 +73,7 @@ export async function generateWeeklyReportForTeam(teamId) {
     // Get active or resolved crises (last 7 days)
     const crises = await CrisisEvent.find({
       teamId,
-      detectedAt: { $gte: periodStart, $lte: periodEnd },
+      detectedAt: { $gte: periodStart, $lt: periodEnd },
     }).sort({ detectedAt: -1 });
 
     const activeCrises = crises.map((crisis) => ({
