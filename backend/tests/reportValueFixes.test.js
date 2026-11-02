@@ -122,6 +122,33 @@ describe('meeting semantics', () => {
     expect(result.afterHoursMeetingCount7d).toBe(0);
   });
 
+  test('excludes evenings and weekends from observed meeting-free work gaps', () => {
+    const date = new Date('2026-11-02T12:00:00Z');
+    const meeting = (id, start, end) => ({
+      source: 'microsoft-outlook',
+      eventType: 'meeting',
+      actorUserId: objectId('01'),
+      externalId: `outlook-${id}`,
+      timestamp: new Date(start),
+      metadata: {
+        meetingInstanceIdHash: id,
+        startTime: new Date(start),
+        endTime: new Date(end),
+      },
+    });
+    const result = computeMeetingMetrics(
+      [
+        meeting('early', '2026-11-02T05:00:00Z', '2026-11-02T06:00:00Z'),
+        meeting('late', '2026-11-02T17:00:00Z', '2026-11-02T18:00:00Z'),
+      ],
+      date,
+      { timezone: 'Europe/Tallinn', workdayStart: '09:00', workdayEnd: '17:00' }
+    );
+    expect(result.focusTimeAvailabilityHours).toBe(8);
+    expect(result.focusTimeBlocks).toBe(1);
+    expect(result.afterHoursMeetingCount7d).toBe(2);
+  });
+
   test('uses the configured IANA timezone and working hours', () => {
     const timestamp = '2026-01-05T07:30:00.000Z';
     expect(
