@@ -829,7 +829,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
     const allEvents = [];
     this.pendingOutlookCoverage = null;
     const select =
-      '$select=id,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,recurrence,seriesMasterId,isCancelled,type&$top=100';
+      '$select=id,iCalUId,start,end,organizer,attendees,isOnlineMeeting,isAllDay,showAs,recurrence,seriesMasterId,isCancelled,type&$top=100';
     const roles = getMicrosoftTokenRoles(appToken);
     const requiredRoles = ['Calendars.Read', 'User.Read.All'];
     const missingRoles = requiredRoles.filter((role) => !roles.includes(role));
@@ -1228,8 +1228,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
             timestamp: start,
             duration: durationMinutes,
             metadata: {
-              meetingIdHash: hashMetadata(orgId, event.id),
-              meetingInstanceIdHash: hashMetadata(orgId, event.id),
+              meetingIdHash: hashMetadata(orgId, event.iCalUId || event.id),
+              meetingInstanceIdHash: hashMetadata(orgId, event.iCalUId || event.id),
               attendeeCount,
               internalAttendeeCount: userId ? 1 : internalParticipants.length,
               externalAttendeeCount: Math.max(0, attendeeCount - internalParticipants.length),
@@ -1246,6 +1246,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
                 event.type === 'exception'
               ),
               isCancelled: event.isCancelled === true,
+              isFreeCalendarEvent: event.showAs === 'free',
               is1to1: isOneOnOne,
               meetingType,
               durationMinutes,
@@ -1300,7 +1301,7 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
               isReply: Boolean(event.replyToId),
               mentionedUserHashes: mentionedIds.map((id) => hashMetadata(orgId, id)),
               reactionCount: event.reactions?.length || 0,
-              messageLengthBucket: getMessageLengthBucket(event.body?.content),
+              // Do not access or process Teams message bodies.
               messageType: event.messageType,
               hasAttachment: (event.attachments?.length || 0) > 0,
             },
