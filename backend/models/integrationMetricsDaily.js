@@ -125,7 +125,9 @@ const integrationMetricsDailySchema = new mongoose.Schema(
 
     // Focus Time Availability — sum of uninterrupted blocks >= 90 min during working hours
     focusTimeAvailabilityHours: { type: Number, default: 0 },
-    focusTimeBlocks: { type: Number, default: 0 }, // count of 90+ min uninterrupted blocks
+    focusTimeBlocks: { type: Number, default: 0 }, // observed long gaps between meetings
+    calendarDaysObserved: { type: Number, default: 0 },
+    afterHoursMeetingCount7d: { type: Number, default: 0 },
 
     // Calendar Fragmentation Score (0-100, higher = more fragmented)
     // Formula: (short_meeting_count * 1.0) + (b2b_blocks * 1.5) + (sub_30_min_gaps * 1.2) + (daily_meeting_span_hours * 0.5), normalized
