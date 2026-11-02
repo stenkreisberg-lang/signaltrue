@@ -22,6 +22,7 @@ import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 import { getReportTrendSeries } from './reportTrendService.js';
 import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
+import { buildWeeklyBriefEnvelope } from './weeklyBriefDeliveryEnvelope.js';
 import { completedReportingWeek } from '../utils/reportingPeriods.js';
 import {
   ACTIONABILITY,
@@ -3531,6 +3532,10 @@ export async function sendWeeklyBrief(orgId) {
     .map(u => String(u.email || '').trim().toLowerCase())
     .filter(email => email && (!configured || approved.has(email))))];
 
+  // A single customer email transaction contains the QA copy as BCC.
+  // This preserves precisely the same report, rather than re-rendering it.
+  const envelope = buildWeeklyBriefEnvelope({ recipients, subject, html });
+
   if (recipients.length > 0) {
     console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);
 
@@ -3539,9 +3544,10 @@ export async function sendWeeklyBrief(orgId) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { data, error } = await resend.emails.send({
         from: 'SignalTrue <brief@signaltrue.ai>',
-        to: recipients,
-        subject,
-        html,
+        to: envelope.to,
+        bcc: envelope.bcc,
+        subject: envelope.subject,
+        html: envelope.html,
         // Tags come back on delivery/open/click webhooks, which is what makes
         // engagement attributable to an organization.
         tags: [
@@ -3557,9 +3563,10 @@ export async function sendWeeklyBrief(orgId) {
     } else {
       await transporter.sendMail({
         from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
-        to: recipients.join(','),
-        subject,
-        html,
+        to: envelope.to.join(','),
+        bcc: envelope.bcc.join(','),
+        subject: envelope.subject,
+        html: envelope.html,
       });
       console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }
@@ -3567,8 +3574,8 @@ export async function sendWeeklyBrief(orgId) {
     throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
   }
 
-  // Organisation-wide reports are delivered only to the approved client recipients.
-  // Never copy customer evidence to a separate personal superadmin mailbox.
+  // The superadmin receives the customer's identical report as BCC.
+  // No separate admin HTML, recalculation, or unapproved customer recipient.
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };
