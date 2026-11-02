@@ -66,6 +66,62 @@ describe('meeting semantics', () => {
     expect(result.backToBackMeetingBlocks).toBe(1);
   });
 
+  test('excludes cancelled, declined and free meetings and duplicate mailbox rows', () => {
+    const date = new Date('2026-11-02T12:00:00Z');
+    const meeting = (id, metadata = {}) => ({
+      source: 'microsoft-outlook',
+      eventType: 'meeting',
+      actorUserId: objectId('01'),
+      externalId: `outlook-${id}`,
+      timestamp: new Date('2026-11-02T08:00:00Z'),
+      metadata: { meetingInstanceIdHash: id, durationMinutes: 60, ...metadata },
+    });
+    const result = computeMeetingMetrics(
+      [
+        meeting('same'),
+        meeting('same'),
+        meeting('declined', { attendeeResponseStatus: 'declined' }),
+        meeting('cancelled', { isCancelled: true }),
+        meeting('free', { isFreeCalendarEvent: true }),
+      ],
+      date
+    );
+    expect(result.meetingCount7d).toBe(1);
+    expect(result.meetingParticipantHours7d).toBe(1);
+  });
+
+  test('reports only observed meeting-free gaps and recurring load', () => {
+    const date = new Date('2026-11-02T12:00:00Z');
+    const meeting = (id, start, end, metadata = {}) => ({
+      source: 'microsoft-outlook',
+      eventType: 'meeting',
+      actorUserId: objectId('01'),
+      externalId: `outlook-${id}`,
+      timestamp: new Date(start),
+      metadata: {
+        meetingInstanceIdHash: id,
+        startTime: new Date(start),
+        endTime: new Date(end),
+        ...metadata,
+      },
+    });
+    const result = computeMeetingMetrics(
+      [
+        meeting('a', '2026-11-02T07:00:00Z', '2026-11-02T08:00:00Z'),
+        meeting('b', '2026-11-02T10:00:00Z', '2026-11-02T11:00:00Z', {
+          isRecurring: true,
+        }),
+      ],
+      date,
+      { timezone: 'Europe/Tallinn', workdayStart: '09:00', workdayEnd: '17:00' }
+    );
+    expect(result.focusTimeAvailabilityHours).toBe(2);
+    expect(result.focusTimeBlocks).toBe(1);
+    expect(result.calendarDaysObserved).toBe(1);
+    expect(result.recurringMeetingBurden).toBeCloseTo(0.5);
+    expect(result.afterHoursMeetingCount7d).toBe(0);
+  });
+
   test('uses the configured IANA timezone and working hours', () => {
     const timestamp = '2026-01-05T07:30:00.000Z';
     expect(
