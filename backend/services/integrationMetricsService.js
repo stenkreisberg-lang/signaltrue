@@ -527,9 +527,13 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
             (sum, e) => sum + getEventDurationMinutes(e), 0
           ) / 60 / meetingDurationTotalHours7d
         : null,
-    afterHoursMeetingCount7d: meetingStarts.filter((e) =>
-      isOutsideWorkingHours(e.metadata?.startTime || e.timestamp, workSchedule)
-    ).length,
+    afterHoursMeetingCount7d: new Set(
+      meetingStarts
+        .filter((e) =>
+          isOutsideWorkingHours(e.metadata?.startTime || e.timestamp, workSchedule)
+        )
+        .map(getMeetingInstanceKey)
+    ).size,
   };
 }
 
