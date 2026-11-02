@@ -570,12 +570,27 @@ function calculateObservedMeetingGaps(meetings, schedule) {
     for (const [start, end] of sorted) {
       if (end - start < 30 * 60000) shortMeetings++;
       if (lastEnd !== null && start > lastEnd) {
-        const gap = (start - lastEnd) / 60000;
-        transitions++;
-        if (gap < 30) shortGaps++;
-        if (gap >= 90) {
-          availableMins += gap;
-          blocks++;
+        const startParts = localDateParts(new Date(lastEnd), zone);
+        const endParts = localDateParts(new Date(start), zone);
+        const localStart = Number(startParts.hour) * 60 + Number(startParts.minute);
+        const localEnd = Number(endParts.hour) * 60 + Number(endParts.minute);
+        const workStart = parseClock(schedule.workdayStart, 9 * 60);
+        const workEnd = parseClock(schedule.workdayEnd, 17 * 60);
+        // Bound a measured gap to the configured workday; overnight time
+        // and weekends must never be counted as work availability.
+        const workingGap =
+          startParts.weekday === 'Sat' ||
+          startParts.weekday === 'Sun' ||
+          start - lastEnd > 24 * 3600000
+            ? 0
+            : Math.max(0, Math.min(localEnd, workEnd) - Math.max(localStart, workStart));
+        if (workingGap > 0) {
+          transitions++;
+          if (workingGap < 30) shortGaps++;
+          if (workingGap >= 90) {
+            availableMins += workingGap;
+            blocks++;
+          }
         }
       }
       lastEnd = Math.max(lastEnd ?? end, end);
