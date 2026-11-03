@@ -164,6 +164,11 @@ export default function LeadForm({
       setConfirmed(true);
       if (!confirmedEventRef.current) {
         confirmedEventRef.current = true;
+        if (intent === 'consultant-partnership') {
+          trackFunnelEvent('consultant_enquiry_submitted', { cta_location: ctaLocation, form_version: formVersion });
+        } else if (intent === 'pilot' || intent === 'free-preview') {
+          trackFunnelEvent('pilot_request_submitted', { cta_location: ctaLocation, form_version: formVersion });
+        }
         trackFunnelEvent('lead_confirmed', {
           cta_location: ctaLocation,
           form_id: 'commercial-lead-form',
