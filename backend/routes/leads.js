@@ -106,6 +106,14 @@ export function buildAttributedCalendarLink(lead, calendarLink = CALENDAR_LINK) 
   }
 }
 
+function isWebsiteEnquiry(source) {
+  return [
+    'Website demo request',
+    'Website free SignalTrue preview request',
+    'Australian consultant partnership enquiry',
+  ].includes(source);
+}
+
 function generateWebsiteClientEmailHTML(lead) {
   const firstName = extractFirstName(lead.name);
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
@@ -128,7 +136,7 @@ function generateWebsiteClientEmailHTML(lead) {
         </td></tr>
         <tr><td style="padding:36px;color:#334155;font-size:16px;line-height:1.7;">
           <p style="margin:0 0 20px;font-weight:600;color:#0f172a;">${greeting}</p>
-          <p style="margin:0 0 20px;">Thanks for requesting a SignalTrue demo or workload review. We received your details and will contact you with the next step.</p>
+          <p style="margin:0 0 20px;">Thanks for contacting SignalTrue. We received your request and will reply with the next step. Any SignalTrue pilot is free, with no payment or commitment.</p>
           <p style="margin:0 0 28px;">You can also choose a time directly:</p>
           <p style="margin:0 0 28px;"><a href="${calendarLink || CALENDAR_LINK}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;">Schedule a call</a></p>
           <p style="margin:0;padding-top:24px;border-top:1px solid #e2e8f0;font-size:14px;color:#64748b;">SignalTrue uses work metadata only. No message content and no individual productivity scoring.</p>
@@ -144,7 +152,7 @@ function generateWebsiteClientEmailHTML(lead) {
  * Generate Estonian thank-you email with insights about meeting overload
  */
 function generateClientEmailHTML(lead) {
-  if (lead.source === 'Website demo request') {
+  if (isWebsiteEnquiry(lead.source)) {
     return generateWebsiteClientEmailHTML(lead);
   }
 
@@ -261,7 +269,7 @@ function generateClientEmailHTML(lead) {
  * Generate internal notification email for the sales team
  */
 function generateInternalNotificationHTML(lead) {
-  const isWebsiteDemo = lead.source === 'Website demo request';
+  const isWebsiteDemo = isWebsiteEnquiry(lead.source);
   const safeName = escapeHtml(lead.name);
   const safeTitle = escapeHtml(lead.title || (isWebsiteDemo ? 'Not provided' : 'Pole määratud'));
   const safeOrganization = escapeHtml(
@@ -383,8 +391,8 @@ export async function sendLeadEmails(lead, resend = getResendClient()) {
       from: FROM_EMAIL,
       to: lead.email,
       subject:
-        lead.source === 'Website demo request'
-          ? 'We received your SignalTrue demo request'
+        isWebsiteEnquiry(lead.source)
+          ? 'We received your SignalTrue request'
           : 'Täname registreerimise eest – SignalTrue',
       html: generateClientEmailHTML(lead),
     });
