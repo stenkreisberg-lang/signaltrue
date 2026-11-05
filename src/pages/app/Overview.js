@@ -345,8 +345,8 @@ export default function Overview() {
             )}
             {messagingUnavailable && (
               <div className="mt-4 rounded-container border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
-                <strong>Cross-channel workload migration: unavailable.</strong>{' '}
-                Missing messaging evidence prevents a reliable workload comparison.
+                <strong>Cross-channel workload migration: unavailable.</strong> Missing messaging
+                evidence prevents a reliable workload comparison.
               </div>
             )}
             {latestBrief.metrics?.length > 0 && (
