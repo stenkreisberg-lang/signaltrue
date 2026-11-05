@@ -130,8 +130,10 @@ export function formatPercent(value) {
   return `${pct > 0 ? '+' : ''}${pct}%`;
 }
 
-export function formatNumber(value) {
-  if (value === null || value === undefined) return 'suppressed';
+export function formatNumber(value, availabilityStatus = 'UNAVAILABLE') {
+  if (value === null || value === undefined) {
+    return availabilityStatus === 'SUPPRESSED' ? 'Suppressed' : 'Unavailable';
+  }
   return Number(value).toFixed(2);
 }
 
