@@ -167,7 +167,13 @@ export default function Overview() {
   const hasMeasuredEvidence = (latestBrief?.trend || []).some((point) =>
     ['meetingHours', 'meetings', 'backToBack', 'focusHours'].some((key) => point[key] != null)
   );
-  const overviewMetricKeys = 'meeting_hours after_hours focus_time messages active_alerts'.split(' ');
+  const overviewMetricKeys = [
+    'meeting_hours',
+    'after_hours',
+    'focus_time',
+    'messages',
+    'active_alerts',
+  ];
   const messagingUnavailable = latestBrief?.metrics?.some(
     (metric) => metric.key === 'messages' && metric.available !== true
   );
