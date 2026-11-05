@@ -48,7 +48,7 @@ router.get('/', async (req, res, next) => {
     }
     const memberCounts = new Map();
     for (const person of people) memberCounts.set(ident(person.teamId), (memberCounts.get(ident(person.teamId)) || 0) + 1);
-    const minimum = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
+    const minimum = Math.max(2, Number(org?.settings?.minTeamSize) || 2);
     return privacy(res).json({
       organisation: { name: org?.name || '', timezone: org?.settings?.timezone || 'UTC', minimum,
         approvedReportRecipients: org?.settings?.weeklyBriefRecipients || [],
@@ -169,7 +169,7 @@ router.patch('/people/:userId', async (req, res, next) => {
       person.teamId = teamId;
       person.hrStructure = { teamVerifiedAt: effective, verifiedBy: req.structureAdmin._id };
       await person.save();
-      await refreshTeamSizes(orgId, Math.max(8, Number((await Organization.findById(orgId).select('settings.minTeamSize').lean())?.settings?.minTeamSize) || 8));
+      await refreshTeamSizes(orgId, Math.max(2, Number((await Organization.findById(orgId).select('settings.minTeamSize').lean())?.settings?.minTeamSize) || 2));
     }
     // Historical WorkEvent team attribution remains unchanged. This preserves
     // the period in which the underlying work actually happened.
