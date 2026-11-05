@@ -1,7 +1,8 @@
 /**
  * Minimum group size enforcement (spec §22.1).
  *
- * Default MIN_GROUP_SIZE = 8, recommended deployment target 10. This is a
+ * Default reporting minimum is 2, with a higher setting available per tenant.
+ * Two-person aggregates can be identifiable. Do not describe them as anonymous. This is a
  * product privacy and trust control, not a claim about legal sufficiency.
  *
  * The gate has to hold at every boundary — metrics, drilldowns, exports and the
