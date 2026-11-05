@@ -4,15 +4,15 @@ import { MIN_TEAM_SIZE, MIN_METRIC_CONTRIBUTORS, MIN_HEALTH_SAFETY_TEAM_SIZE,
 import { validateWeeklyBriefConsistency } from '../services/weeklyBriefEvidenceService.js';
 
 describe('privacy floor for team reporting', () => {
-  test('team and per-metric reporting require at least eight people', () => {
-    expect(MIN_TEAM_SIZE).toBe(8);
-    expect(MIN_METRIC_CONTRIBUTORS).toBe(8);
-    expect(MIN_HEALTH_SAFETY_TEAM_SIZE).toBe(8);
-    expect(checkTeamSize(7)).toBe(false);
-    expect(checkTeamSize(8)).toBe(true);
-    expect(suppressMetricIfTooFew(7)).toBe(true);
-    expect(suppressMetricIfTooFew(8)).toBe(false);
-    expect(shouldRollUpToDepartment(5).rollUp).toBe(true);
+  test('team and per-metric reporting begin at two people', () => {
+    expect(MIN_TEAM_SIZE).toBe(2);
+    expect(MIN_METRIC_CONTRIBUTORS).toBe(2);
+    expect(MIN_HEALTH_SAFETY_TEAM_SIZE).toBe(2);
+    expect(checkTeamSize(1)).toBe(false);
+    expect(checkTeamSize(2)).toBe(true);
+    expect(suppressMetricIfTooFew(1)).toBe(true);
+    expect(suppressMetricIfTooFew(2)).toBe(false);
+    expect(shouldRollUpToDepartment(1).rollUp).toBe(true);
   });
 });
 
