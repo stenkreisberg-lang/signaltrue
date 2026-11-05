@@ -378,92 +378,50 @@ describe('§36.2 — a case can be created from a PatternFinding after human app
   });
 });
 
-describe('§36.3 / §37 — a team below MIN_GROUP_SIZE is suppressed everywhere', () => {
-  it('never reports a small team against its own members', async () => {
+describe('§36.3 / §37 — two-person reporting and configurable floors', () => {
+  it('reports a named six-person team as its own team under the two-person default', async () => {
     const rows = await TeamWorkPatternMetric.find({ tenantId, teamId: teams.small.team._id }).lean();
     expect(rows.length).toBeGreaterThan(0);
-
-    // The six-person team is never the reporting group; every figure describes
-    // a group at or above the minimum (§22.1).
-    for (const row of rows) {
-      expect(row.reportingGroup.scope).not.toBe('TEAM');
-      if (!row.suppressed) {
-        expect(row.groupSize).toBeGreaterThanOrEqual(MIN_GROUP_SIZE_DEFAULT);
-      }
-    }
+    expect(rows.every((r) => r.reportingGroup.scope === 'TEAM')).toBe(true);
+    expect(rows.some((r) => r.metric === 'MEETING_LOAD' && r.value > 0)).toBe(true);
   });
 
-  it('aggregates upward rather than showing a small team nothing', async () => {
-    const row = await TeamWorkPatternMetric.findOne({
-      tenantId,
-      teamId: teams.small.team._id,
-      metric: 'MEETING_LOAD',
-      suppressed: false,
-    }).lean();
-
-    // Blanking is the lazy half of the rule; a customer who sees nothing
-    // concludes the product does nothing.
-    expect(row).toBeTruthy();
-    expect(row.value).toBeGreaterThan(0);
-    expect(String(row.reportingGroup.aggregatedFrom)).toBe(String(teams.small.team._id));
-    expect(row.reportingGroup.note).toMatch(/smaller than the reporting minimum/);
-  });
-
-  it('reports nothing at all when the whole organisation is under the minimum', async () => {
-    const tinyOrg = await Organization.create({ name: 'Five Person Startup' });
-    const tinyTeam = await Team.create({
-      name: 'Everyone',
-      orgId: tinyOrg._id,
-      metadata: { actualSize: 5 },
-    });
-    for (let i = 0; i < 5; i += 1) {
-      const user = await User.create({
-        email: `tiny${i}@test.local`,
-        name: `Tiny ${i}`,
-        role: 'team_member',
-        orgId: tinyOrg._id,
-        teamId: tinyTeam._id,
-        password: 'test-password-not-used',
-      });
-      await OrgUnit.create({
-        orgId: tinyOrg._id,
-        userId: user._id,
-        teamId: tinyTeam._id,
-        effectiveFrom: new Date(Date.now() - 200 * DAY_MS),
-        effectiveTo: null,
-      });
-    }
-
+  it('reports a two-person team when supported calendar observations are available', async () => {
+    const two = await makeTeam('Two Person Team', 2);
+    const period = periods[periods.length - 2];
+    await WorkEvent.insertMany(two.memberIds.map((userId, index) =>
+      meetingEvent({ teamId: two.team._id, userId, at: atLocalHour(period.periodStart, 10 + index) })
+    ));
     const rows = await metricsService.computeTeamMetricsForPeriod({
-      tenantId: tinyOrg._id,
-      teamId: tinyTeam._id,
-      periodStart: periods[periods.length - 2].periodStart,
-      periodEnd: periods[periods.length - 2].periodEnd,
+      tenantId, teamId: two.team._id, ...period,
     });
-
-    // There is no group large enough to describe, and that is said plainly.
-    expect(rows.every((r) => r.suppressed)).toBe(true);
-    expect(rows[0].suppressionReason).toMatch(/fewer than 8 people/);
-    expect(rows.every((r) => r.value === null)).toBe(true);
+    const meeting = rows.find((r) => r.metric === 'MEETING_LOAD');
+    expect(meeting.suppressed).toBe(false);
+    expect(meeting.reportingGroup.scope).toBe('TEAM');
+    expect(meeting.groupSize).toBe(2);
+    expect(meeting.value).toBeGreaterThan(0);
   });
 
-  it('defaults the threshold to 8 and refuses to be configured lower', async () => {
-    expect(MIN_GROUP_SIZE_DEFAULT).toBe(8);
+  it('does not present a one-person team as a standalone team aggregate', async () => {
+    const one = await makeTeam('One Person Team', 1);
+    const period = periods[periods.length - 2];
+    const rows = await metricsService.computeTeamMetricsForPeriod({
+      tenantId, teamId: one.team._id, ...period,
+    });
+    expect(rows.every((r) => r.reportingGroup.scope !== 'TEAM')).toBe(true);
+  });
 
-    await trustService.updateConfiguration({ tenantId, actor, updates: { minGroupSize: 3 } });
+  it('defaults to two people, allows a higher customer floor, and refuses one', async () => {
+    expect(MIN_GROUP_SIZE_DEFAULT).toBe(2);
+    await trustService.updateConfiguration({ tenantId, actor, updates: { minGroupSize: 1 } });
     const config = await HsDeploymentConfig.findOne({ tenantId }).lean();
-    expect(config.minGroupSize).toBe(8);
-
-    await trustService.updateConfiguration({ tenantId, actor, updates: { minGroupSize: 10 } });
-    const raised = await HsDeploymentConfig.findOne({ tenantId }).lean();
-    expect(raised.minGroupSize).toBe(10);
+    expect(config.minGroupSize).toBe(2);
     await trustService.updateConfiguration({ tenantId, actor, updates: { minGroupSize: 8 } });
-  });
-
-  it('reports a group that drops below the threshold mid-period as not allowed', async () => {
-    const result = await checkGroup({ tenantId, teamId: teams.small.team._id, groupSize: 7 });
-    expect(result.allowed).toBe(false);
-    expect(result.minGroupSize).toBe(8);
+    expect((await HsDeploymentConfig.findOne({ tenantId }).lean()).minGroupSize).toBe(8);
+    await trustService.updateConfiguration({ tenantId, actor, updates: { minGroupSize: 2 } });
+    const result = await checkGroup({ tenantId, teamId: teams.small.team._id, groupSize: 2 });
+    expect(result.allowed).toBe(true);
+    expect(result.minGroupSize).toBe(2);
   });
 });
 
