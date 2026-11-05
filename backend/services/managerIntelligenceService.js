@@ -55,7 +55,7 @@ export async function managerAudit({ orgId, actorUserId, managerUserId, teamId, 
   await ManagerAuditEvent.create({ orgId, actorUserId, managerUserId, teamId, assignmentId, action });
 }
 export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 8 }) {
-  const floor = Math.max(8, Number(minimum) || 8);
+  const floor = Math.max(2, Number(minimum) || 2);
   const teamId = team._id;
   const start = new Date(utcMonday(now).getTime() - 27 * 7 * DAY);
   const [records, roster] = await Promise.all([
@@ -153,5 +153,5 @@ export async function loadManagerRoster(req) {
 }
 export async function resolveOrgMinimum(orgId) {
   const org = await Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean();
-  return {minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'};
+  return {minimum:Math.max(2, Number(org?.settings?.minTeamSize) || 2),timezone:org?.settings?.timezone||'UTC'};
 }
