@@ -271,7 +271,7 @@ function buildEmployeeExplanation(config) {
       'To check whether an action the organisation took to reduce a psychosocial work risk actually changed how work happens, whether the change lasted, and whether the demand moved somewhere else.',
     whoCanSeeIt:
       'Health and safety staff and named case owners see team-level patterns. No one ;  at any level ;  can see an individual’s figures, because the product does not produce them.',
-    minimumGroupRule: `Nothing is reported for a group smaller than ${config.minGroupSize} people. Below that threshold the output is suppressed or rolled up into a larger group.`,
+    minimumGroupRule: `Reporting starts at ${config.minGroupSize} people. Teams of two may be identifiable from their combined activity; this is not an anonymity guarantee. The organisation must explain access and lawful use before enabling small-group reporting.`,
     notUsedFor:
       'This data is not used for performance management, disciplinary processes or individual assessment.',
   };
