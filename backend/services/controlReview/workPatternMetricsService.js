@@ -564,6 +564,21 @@ export async function computeTeamMetricsForPeriod({
   ];
 
   return rows.map((row) => {
+    // Contributor protection is per metric, not merely per team. A team with
+    // eight members and only two measured meeting calendars is not an
+    // eight-person measurement. This also protects downstream component detail.
+    const metricContributors = [...perPerson.values()].filter((person) => {
+      if (row.metric === 'MEETING_LOAD' || row.metric === 'UNINTERRUPTED_CALENDAR_AVAILABILITY') {
+        return person.meetingCount > 0;
+      }
+      if (row.metric === 'UNINTERRUPTED_WORK_WINDOW') {
+        return person.meetingCount > 0 && (person.chatEvents + person.emailEvents) > 0;
+      }
+      if (row.metric === 'MANAGEMENT_LAYER_COORDINATION_LOAD') return false;
+      return person.hasAnyEvent;
+    }).length;
+    const observedContributors = row.metric === 'MANAGEMENT_LAYER_COORDINATION_LOAD'
+      ? managerCount : metricContributors;
     const requiresCalendar = [
       'MEETING_LOAD', 'UNINTERRUPTED_CALENDAR_AVAILABILITY',
       'UNINTERRUPTED_WORK_WINDOW', 'AFTER_HOURS_ACTIVITY',
@@ -589,7 +604,12 @@ export async function computeTeamMetricsForPeriod({
       (channelDependent && !hasMessaging) || dataCoverage < 0.8 ||
       (channelDependent && hasMessaging) // Observed messages do not prove full-channel capture.
     );
-    const availabilityStatus = unavailable ? 'UNAVAILABLE' : partial ? 'PARTIAL' : 'AVAILABLE';
+    const privacySuppressed = !unavailable && observedContributors < threshold;
+    const privacyReason = privacySuppressed
+      ? `Metric suppressed because only ${observedContributors} of the required ${threshold} contributors were observed.`
+      : '';
+    const availabilityStatus = unavailable
+      ? 'UNAVAILABLE' : privacySuppressed ? 'SUPPRESSED' : partial ? 'PARTIAL' : 'AVAILABLE';
     if (partial && !unavailableReason) {
       unavailableReason = calendarOnly
         ? 'Calendar-only observation. Message activity, including Teams chats, is unavailable and is not treated as zero.'
@@ -597,17 +617,17 @@ export async function computeTeamMetricsForPeriod({
     }
     return {
       ...row,
-      value: unavailable ? null : row.value,
-      components: unavailable ? { unavailableReason } : row.components,
-      contributorCount,
+      value: unavailable || privacySuppressed ? null : row.value,
+      components: privacySuppressed ? {} : unavailable ? { unavailableReason } : row.components,
+      contributorCount: privacySuppressed ? null : observedContributors,
       dataCoverage,
       // Do not promote calendar-only coordination totals into a psychosocial
       // pattern or workload-migration conclusion. They remain descriptive.
-      dataQuality: unavailable ? 'INSUFFICIENT' : calendarOnly ? 'LOW' : dataQuality,
-      suppressed: false,
-      suppressionReason: '',
+      dataQuality: unavailable || privacySuppressed ? 'INSUFFICIENT' : calendarOnly ? 'LOW' : dataQuality,
+      suppressed: privacySuppressed,
+      suppressionReason: privacyReason,
       availabilityStatus,
-      unavailableReason,
+      unavailableReason: privacyReason || unavailableReason,
       sourceScope,
       sources: sourceList,
     };
