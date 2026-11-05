@@ -10,6 +10,8 @@
  *             metric value, surface "concentrated pattern detected" without
  *             identifying the person.
  *
+ * Two-person aggregates are potentially identifiable. This threshold is a
+ * minimum reporting population, not a guarantee of anonymity.
  * Never expose individual identities. All checks operate on counts or
  * anonymous value arrays.
  */
@@ -18,8 +20,8 @@ import Organization from '../models/organizationModel.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_OPERATIONAL_TEAM_SIZE = 8;
-export const MIN_HEALTH_SAFETY_TEAM_SIZE = 8;
+export const MIN_OPERATIONAL_TEAM_SIZE = 2;
+export const MIN_HEALTH_SAFETY_TEAM_SIZE = 2;
 export const MIN_TEAM_SIZE = MIN_OPERATIONAL_TEAM_SIZE;
 export const MIN_METRIC_CONTRIBUTORS = MIN_OPERATIONAL_TEAM_SIZE;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
