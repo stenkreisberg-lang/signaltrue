@@ -184,7 +184,7 @@ export const HS_ROLES = [
 ];
 
 // §22.1 — privacy/trust control. Not a statement of legal sufficiency.
-export const MIN_GROUP_SIZE_DEFAULT = 8;
+export const MIN_GROUP_SIZE_DEFAULT = 2;
 export const MIN_GROUP_SIZE_RECOMMENDED = 10;
 
 // §11.2 — baseline defaults.
