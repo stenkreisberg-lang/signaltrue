@@ -167,6 +167,10 @@ export default function Overview() {
   const hasMeasuredEvidence = (latestBrief?.trend || []).some((point) =>
     ['meetingHours', 'meetings', 'backToBack', 'focusHours'].some((key) => point[key] != null)
   );
+  const overviewMetricKeys = 'meeting_hours after_hours focus_time messages active_alerts'.split(' ');
+  const messagingUnavailable = latestBrief?.metrics?.some(
+    (metric) => metric.key === 'messages' && metric.available !== true
+  );
 
   if (loading) {
     return (
@@ -333,29 +337,24 @@ export default function Overview() {
                 </div>
               </div>
             )}
-            {latestBrief.metrics?.some(
-              (metric) => metric.key === 'messages' && metric.available !== true
-            ) && (
+            {messagingUnavailable && (
               <div className="mt-4 rounded-container border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
                 <strong>Cross-channel workload migration: unavailable.</strong>{' '}
-                No comparison between meeting changes and messaging changes can be made until
-                messaging coverage is verified. Missing messages are not zero activity.
+                Missing messaging evidence prevents a reliable workload comparison.
               </div>
             )}
             {latestBrief.metrics?.length > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {latestBrief.metrics
-                  .filter((metric) =>
-                    [
-                      'meeting_hours',
-                      'after_hours',
-                      'focus_time',
-                      'messages',
-                      'active_alerts',
-                    ].includes(metric.key)
-                  )
+                  .filter((metric) => overviewMetricKeys.includes(metric.key))
                   .map((metric) => {
                     const measured = metric.available && metric.current != null;
+                    const availabilityNote =
+                      metric.readiness?.reason ||
+                      metric.note ||
+                      'Source data is unavailable for this reporting period.';
+                    const showReadinessWarning =
+                      measured && metric.readiness?.readiness !== 'usable';
                     const suffix = metric.unit === '%' ? '%' : metric.unit === 'hours' ? 'h' : '';
                     const value = measured ? `${metric.current}${suffix}` : null;
                     // A drift product is about movement, so the change against
@@ -388,16 +387,12 @@ export default function Overview() {
                         </p>
                         {!measured && (
                           <p className="mt-2 text-caption text-slate-600" role="status">
-                            {metric.readiness?.reason ||
-                              metric.note ||
-                              'Source data for this metric is unavailable for the reporting period.'}
+                            {availabilityNote}
                           </p>
                         )}
-                        {measured &&
-                          metric.readiness?.readiness &&
-                          !['usable'].includes(metric.readiness.readiness) && (
+                        {showReadinessWarning && (
                           <p className="mt-2 text-caption text-amber-800">
-                            {metric.readiness.reason}
+                            {metric.readiness?.reason || 'Partial source coverage.'}
                           </p>
                         )}
                         {hasChange && (
