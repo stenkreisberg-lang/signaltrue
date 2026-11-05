@@ -108,7 +108,7 @@ router.get('/admin/directory',requireAdmin,async(req,res)=>{
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
       status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
-    minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'});
+    minimum:Math.max(2, Number(org?.settings?.minTeamSize) || 2),timezone:org?.settings?.timezone||'UTC'});
 });
 router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   const managerUserId=String(req.body?.managerUserId||'');
