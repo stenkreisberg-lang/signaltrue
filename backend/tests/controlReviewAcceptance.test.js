@@ -552,7 +552,7 @@ describe('§36.5 — calendar-only deployments use Uninterrupted Calendar Availa
     // Either it is produced with a stated methodology, or it is withheld with a
     // stated reason. It is never produced silently under the calendar name.
     if (row.value === null) {
-      expect(row.components.unavailableReason).toMatch(/coverage/i);
+      expect(row.components.unavailableReason).toMatch(/coverage|messaging/i);
     } else {
       expect(row.components.methodology).toMatch(/chat, email or call/i);
     }
@@ -579,16 +579,44 @@ describe('§36.6 — P0 metrics are calculated from content-free events', () => 
     expect(byMetric.COORDINATION_CHANNEL_LOAD.components.byChannelPerPerson).toHaveProperty('meetings');
   });
 
-  it('aggregates the management layer only when more than one manager exists', async () => {
+  it('suppresses identifiable management-layer figures when fewer than eight managers contribute', async () => {
     const row = await TeamWorkPatternMetric.findOne({
       tenantId,
       teamId: teams.clean.team._id,
       metric: 'MANAGEMENT_LAYER_COORDINATION_LOAD',
-      suppressed: false,
     }).lean();
 
-    expect(row.components.managerCount).toBeGreaterThanOrEqual(2);
-    expect(row.components).not.toHaveProperty('perManager');
+    expect(row.suppressed).toBe(true);
+    expect(row.value).toBeNull();
+    expect(row.components).toEqual({});
+    expect(row.availabilityStatus).toBe('SUPPRESSED');
+  });
+
+  it('does not publish a group metric when only two of eight members contributed', async () => {
+    const smallEvidenceTeam = await makeTeam('Low Coverage Team', 8);
+    const period = periods[periods.length - 2];
+    await WorkEvent.insertMany(smallEvidenceTeam.memberIds.slice(0, 2).map((userId, index) =>
+      meetingEvent({ teamId: smallEvidenceTeam.team._id, userId, at: atLocalHour(period.periodStart, 10 + index) })
+    ));
+    const rows = await metricsService.computeTeamMetricsForPeriod({
+      tenantId, teamId: smallEvidenceTeam.team._id, ...period,
+    });
+    const meeting = rows.find((row) => row.metric === 'MEETING_LOAD');
+    expect(meeting.value).toBeNull();
+    expect(meeting.components).toEqual({});
+    expect(meeting.availabilityStatus).toBe('SUPPRESSED');
+  });
+
+  it('marks missing calendar and messaging data unavailable rather than zero', async () => {
+    const empty = await makeTeam('No Data Team', 8);
+    const period = periods[periods.length - 2];
+    const rows = await metricsService.computeTeamMetricsForPeriod({
+      tenantId, teamId: empty.team._id, ...period,
+    });
+    const workWindow = rows.find((row) => row.metric === 'UNINTERRUPTED_WORK_WINDOW');
+    expect(workWindow.value).toBeNull();
+    expect(workWindow.availabilityStatus).toBe('UNAVAILABLE');
+    expect(workWindow.unavailableReason).toMatch(/messaging/i);
   });
 
   it('stores no message or email content on any work event', async () => {
