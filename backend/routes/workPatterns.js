@@ -66,8 +66,12 @@ router.get(
       byMetric[row.metric].periods.push({
         periodStart: row.periodStart,
         periodEnd: row.periodEnd,
-        value: row.value,
-        components: row.components,
+        value: row.suppressed || row.availabilityStatus === 'UNAVAILABLE' ? null : row.value,
+        components: row.suppressed || row.availabilityStatus === 'UNAVAILABLE' ? {} : row.components,
+        availabilityStatus: row.suppressed ? 'SUPPRESSED' : row.availabilityStatus || (row.value == null ? 'UNAVAILABLE' : 'PARTIAL'),
+        unavailableReason: row.suppressionReason || row.unavailableReason || '',
+        sourceScope: row.sourceScope || '',
+        sources: row.sources || [],
         dataQuality: row.dataQuality,
         dataCoverage: row.dataCoverage,
         suppressed: row.suppressed,
@@ -83,6 +87,7 @@ router.get(
     res.json({
       teamId,
       minGroupSize: await resolveMinGroupSize(tenantId),
+      smallGroupNotice: 'Two-person work-pattern totals may be identifiable. These figures are not anonymous or evidence of individual wellbeing.',
       metrics: Object.values(byMetric),
     });
   })
