@@ -580,18 +580,30 @@ export async function computeTeamMetricsForPeriod({
     else if (missingCalendar) unavailableReason = 'No validated calendar observations for this reporting period.';
     else if (missingCoordination) unavailableReason = 'No validated coordination source for this reporting period.';
     else if (unavailable) unavailableReason = row.components?.unavailableReason || 'Insufficient source evidence.';
+    const channelDependent = [
+      'AFTER_HOURS_ACTIVITY', 'COORDINATION_CHANNEL_LOAD',
+      'MANAGEMENT_LAYER_COORDINATION_LOAD', 'UNINTERRUPTED_WORK_WINDOW',
+    ].includes(row.metric);
+    const calendarOnly = hasCalendar && !hasMessaging && channelDependent;
     const partial = !unavailable && (
-      !hasMessaging || dataCoverage < 0.8 ||
-      ['AFTER_HOURS_ACTIVITY', 'COORDINATION_CHANNEL_LOAD', 'MANAGEMENT_LAYER_COORDINATION_LOAD'].includes(row.metric)
+      (channelDependent && !hasMessaging) || dataCoverage < 0.8 ||
+      (channelDependent && hasMessaging) // Observed messages do not prove full-channel capture.
     );
     const availabilityStatus = unavailable ? 'UNAVAILABLE' : partial ? 'PARTIAL' : 'AVAILABLE';
+    if (partial && !unavailableReason) {
+      unavailableReason = calendarOnly
+        ? 'Calendar-only observation. Message activity, including Teams chats, is unavailable and is not treated as zero.'
+        : 'Source and population coverage are partial; confirm collection before comparing with another period.';
+    }
     return {
       ...row,
       value: unavailable ? null : row.value,
       components: unavailable ? { unavailableReason } : row.components,
       contributorCount,
       dataCoverage,
-      dataQuality: unavailable ? 'INSUFFICIENT' : dataQuality,
+      // Do not promote calendar-only coordination totals into a psychosocial
+      // pattern or workload-migration conclusion. They remain descriptive.
+      dataQuality: unavailable ? 'INSUFFICIENT' : calendarOnly ? 'LOW' : dataQuality,
       suppressed: false,
       suppressionReason: '',
       availabilityStatus,
