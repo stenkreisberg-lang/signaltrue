@@ -95,7 +95,7 @@ router.get('/trends', requireRoles(DASHBOARD_ROLES), requireOrgContext, async (r
     const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
     const trends = await getReportTrendSeries(req.user.orgId, new Date(), {
       includeTeams: true,
-      minimumGroupSize: Math.max(8, Number(snapshot?.coverage?.minimumTeamSize) || 8),
+      minimumGroupSize: Math.max(2, Number(snapshot?.coverage?.minimumTeamSize) || 2),
     });
     const availability = Object.fromEntries((snapshot?.metrics || []).map(m => [
       m.key, {
