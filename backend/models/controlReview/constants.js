@@ -227,7 +227,7 @@ export const DEFAULT_JURISDICTION = 'GLOBAL';
 export const DEFAULT_TIMEZONE = 'UTC';
 
 // Stamped onto every stored calculation so historical output stays interpretable.
-export const ALGORITHM_VERSION = 'au-control-verification-1.0.0';
+export const ALGORITHM_VERSION = 'au-control-verification-1.1.0';
 
 // §20.1 — required disclaimer, rendered verbatim in UI and Evidence Pack.
 export const REQUIRED_DISCLAIMER =
