@@ -338,17 +338,21 @@ export default function Overview() {
             ) && (
               <div className="mt-4 rounded-container border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
                 <strong>Cross-channel workload migration: unavailable.</strong>{' '}
-                No comparison between meeting changes and messaging changes can be made
-                until messaging coverage is verified. Missing messages are not zero activity.
+                No comparison between meeting changes and messaging changes can be made until
+                messaging coverage is verified. Missing messages are not zero activity.
               </div>
             )}
             {latestBrief.metrics?.length > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {latestBrief.metrics
                   .filter((metric) =>
-                    ['meeting_hours', 'after_hours', 'focus_time', 'messages', 'active_alerts'].includes(
-                      metric.key
-                    )
+                    [
+                      'meeting_hours',
+                      'after_hours',
+                      'focus_time',
+                      'messages',
+                      'active_alerts',
+                    ].includes(metric.key)
                   )
                   .map((metric) => {
                     const measured = metric.available && metric.current != null;
@@ -384,11 +388,13 @@ export default function Overview() {
                         </p>
                         {!measured && (
                           <p className="mt-2 text-caption text-slate-600" role="status">
-                            {metric.readiness?.reason || metric.note ||
+                            {metric.readiness?.reason ||
+                              metric.note ||
                               'Source data for this metric is unavailable for the reporting period.'}
                           </p>
                         )}
-                        {measured && metric.readiness?.readiness &&
+                        {measured &&
+                          metric.readiness?.readiness &&
                           !['usable'].includes(metric.readiness.readiness) && (
                           <p className="mt-2 text-caption text-amber-800">
                             {metric.readiness.reason}
