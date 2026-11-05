@@ -37,6 +37,10 @@ const teamMetricSchema = new mongoose.Schema(
     dataCoverage: { type: Number, default: 0 },
     dataQuality: { type: String, enum: DATA_QUALITY, default: 'INSUFFICIENT' },
 
+    availabilityStatus: { type: String, enum: ['AVAILABLE', 'PARTIAL', 'UNAVAILABLE', 'SUPPRESSED', 'STALE'], default: 'UNAVAILABLE' },
+    unavailableReason: { type: String, default: '' },
+    sourceScope: { type: String, default: '' },
+
     suppressed: { type: Boolean, default: false, index: true },
     suppressionReason: { type: String, default: '' },
 
