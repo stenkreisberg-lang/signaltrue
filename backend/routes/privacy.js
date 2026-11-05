@@ -62,7 +62,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
-    const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
+    const minimumTeamSize = Math.max(2, Number(org.settings?.minTeamSize) || 2);
 
     // Return public explainer content
     res.json({
@@ -84,9 +84,7 @@ router.get('/explainer/:orgSlug', async (req, res) => {
         ],
         howWeProtect: [
           `All data reported at team level (organization minimum: ${minimumTeamSize})`,
-          minimumTeamSize < 3
-            ? 'Small-team reporting is enabled by the organization and may allow team results to be inferred'
-            : 'Team-size thresholds reduce the risk of individual inference',
+          'Two-person team reporting can reveal patterns attributable to specific people and is not anonymous. Access, consultation and permitted use must be reviewed.',
           'GDPR compliant data handling and storage',
           'OAuth-only access (read-only permissions)',
           'End-to-end encryption for all data in transit and at rest',
@@ -134,7 +132,7 @@ router.get('/policy', async (req, res) => {
         {
           title: 'Aggregation Thresholds',
           content:
-            'Each organization may raise the minimum reporting team size, but it can never be lower than five people. Individual rankings and content are never displayed.',
+            'Each organization may raise the minimum reporting team size, but it can never be lower than two people. Two-person team totals are not anonymous and may identify individual activity. Individual rankings and content are never displayed.',
         },
         {
           title: 'Data Retention',
