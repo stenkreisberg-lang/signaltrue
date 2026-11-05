@@ -133,8 +133,8 @@ const catchAll = name => /^(unassigned|general|other|default|no[ -]?team)$/i.tes
 // Requiring a minimum number of DISTINCT mapped actors in each displayed week
 // prevents an undersized team becoming identifiable when members leave or sync drops.
 export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, actorsByWeek,
-  minimumGroupSize = 8, now = new Date(), anchorDay = 0, availability = {} }) {
-  const floor = Math.max(8, Number(minimumGroupSize) || 8);
+  minimumGroupSize = 2, now = new Date(), anchorDay = 0, availability = {} }) {
+  const floor = Math.max(2, Number(minimumGroupSize) || 2);
   const allRecords = normalizeRecords(records).filter(r => r.teamId && !r.userId);
   const results = [];
   for (const team of teams || []) {
@@ -184,7 +184,7 @@ export function buildTimelineAnnotations({ contexts = [], interventions = [], te
     });
   return [...events, ...actions].filter(e => new Date(e.date) <= now).sort((a, b) => a.date.localeCompare(b.date)).slice(-30);
 }
-export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 8 } = {}) {
+export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 2 } = {}) {
   const start = new Date(monday(now).getTime() - 27 * 7 * DAY);
   const scopedOrgId = mongoose.isValidObjectId(orgId) ? new mongoose.Types.ObjectId(String(orgId)) : orgId;
   const [records, contexts] = await Promise.all([
@@ -194,7 +194,7 @@ export async function getReportTrendSeries(orgId, now = new Date(), { includeTea
   ]);
   const org = buildReportTrendSeries(records, now);
   if (!includeTeams) return { ...org, annotations: buildTimelineAnnotations({ contexts, now }), teams: [] };
-  const floor = Math.max(8, Number(minimumGroupSize) || 8);
+  const floor = Math.max(2, Number(minimumGroupSize) || 2);
   // The unique-person denominator must use the SAME rolling seven days as
   // the sampled metric; grouping on calendar Mon–Sun would be wrong for a
   // Wednesday or Friday source snapshot.
