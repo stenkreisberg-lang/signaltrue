@@ -300,7 +300,7 @@ router.put(
       );
 
       const org = await Organization.findById(user.orgId).select('settings.minTeamSize').lean();
-      const minTeamSize = Math.max(8, Number(org?.settings?.minTeamSize) || 8);
+      const minTeamSize = Math.max(2, Number(org?.settings?.minTeamSize) || 2);
       await refreshTeamSizes(user.orgId, minTeamSize);
 
       res.json({
