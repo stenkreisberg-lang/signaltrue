@@ -47,6 +47,7 @@ router.get(
     const tenantId = tenantOf(req);
     const { teamId } = req.params;
     const weeks = Math.min(Number(req.query.weeks) || 12, 52);
+    const minGroupSize = await resolveMinGroupSize(tenantId);
 
     const rows = await TeamWorkPatternMetric.find({ tenantId, teamId })
       .sort({ periodStart: -1 })
@@ -55,6 +56,24 @@ router.get(
 
     const byMetric = {};
     for (const row of rows) {
+      // Existing stored metrics may predate the per-metric contributor gate.
+      // Never expose a legacy value without recalculating it under the current
+      // algorithm; changing a calculation function does not rewrite history.
+      const outdated = !row.availabilityStatus;
+      const tooFewContributors =
+        !Number.isFinite(row.contributorCount) ||
+        row.contributorCount < minGroupSize ||
+        !Number.isFinite(row.groupSize) ||
+        row.groupSize < minGroupSize;
+      const privacySuppressed = row.suppressed === true || tooFewContributors;
+      const unverified = outdated || row.availabilityStatus === 'UNAVAILABLE';
+      const availabilityStatus = privacySuppressed
+        ? 'SUPPRESSED' : unverified ? 'UNAVAILABLE' : row.availabilityStatus;
+      const unavailableReason = privacySuppressed
+        ? `Insufficient represented contributors for the minimum of ${minGroupSize}.`
+        : outdated
+          ? 'This historical metric predates current evidence validation and must be recalculated.'
+          : row.unavailableReason || '';
       if (!byMetric[row.metric]) {
         byMetric[row.metric] = {
           metric: row.metric,
@@ -66,15 +85,15 @@ router.get(
       byMetric[row.metric].periods.push({
         periodStart: row.periodStart,
         periodEnd: row.periodEnd,
-        value: row.suppressed || row.availabilityStatus === 'UNAVAILABLE' ? null : row.value,
-        components: row.suppressed || row.availabilityStatus === 'UNAVAILABLE' ? {} : row.components,
-        availabilityStatus: row.suppressed ? 'SUPPRESSED' : row.availabilityStatus || (row.value == null ? 'UNAVAILABLE' : 'PARTIAL'),
-        unavailableReason: row.suppressionReason || row.unavailableReason || '',
+        value: privacySuppressed || unverified ? null : row.value,
+        components: privacySuppressed || unverified ? {} : row.components,
+        availabilityStatus,
+        unavailableReason,
         sourceScope: row.sourceScope || '',
         sources: row.sources || [],
         dataQuality: row.dataQuality,
         dataCoverage: row.dataCoverage,
-        suppressed: row.suppressed,
+        suppressed: privacySuppressed,
         suppressionReason: row.suppressionReason,
         reportingGroup: row.reportingGroup,
       });
@@ -86,7 +105,7 @@ router.get(
 
     res.json({
       teamId,
-      minGroupSize: await resolveMinGroupSize(tenantId),
+      minGroupSize,
       smallGroupNotice: 'Two-person work-pattern totals may be identifiable. These figures are not anonymous or evidence of individual wellbeing.',
       metrics: Object.values(byMetric),
     });
