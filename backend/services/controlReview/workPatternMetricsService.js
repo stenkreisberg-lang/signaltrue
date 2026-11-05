@@ -22,6 +22,7 @@ import {
 } from './workingScheduleService.js';
 import { resolveMinGroupSize, resolveParentTeamId } from './hsPrivacyService.js';
 import Team from '../../models/team.js';
+import User from '../../models/user.js';
 
 const MEETING_EVENT_TYPES = ['meeting', 'meet_started'];
 const CHAT_EVENT_TYPES = ['message'];
@@ -120,7 +121,20 @@ export async function getTeamMembership({ tenantId, teamId, periodStart, periodE
     seen.add(key);
     members.push(unit);
   }
-  return members;
+  return filterCurrentEmployees(tenantId, members);
+}
+
+// Directory account state is authoritative for whether a person is still in
+// the reporting population. Historic team assignments remain effective-dated.
+async function filterCurrentEmployees(tenantId, members) {
+  if (!members.length) return [];
+  const allowed = await User.find({
+    orgId: tenantId,
+    _id: { $in: members.map((member) => member.userId) },
+    accountStatus: { $ne: 'inactive' },
+  }).select('_id').lean();
+  const ids = new Set(allowed.map((user) => String(user._id)));
+  return members.filter((member) => ids.has(String(member.userId)));
 }
 
 /** Active membership across a set of teams, de-duplicated. */
@@ -142,7 +156,7 @@ export async function getGroupMembership({ tenantId, teamIds, periodStart, perio
     seen.add(key);
     members.push(unit);
   }
-  return members;
+  return filterCurrentEmployees(tenantId, members);
 }
 
 /**
@@ -251,6 +265,8 @@ export async function computeTeamMetricsForPeriod({
       suppressionReason: `This organisation has fewer than ${threshold} people, so no team-level figure can be reported without describing individuals.`,
       reportingGroup: { scope: 'NONE', aggregatedFrom: String(teamId) },
       sources: [],
+      availabilityStatus: 'SUPPRESSED',
+      unavailableReason: `Fewer than ${threshold} eligible people in the reporting population.`,
     }));
   }
 
@@ -446,6 +462,13 @@ export async function computeTeamMetricsForPeriod({
   const crossChannelCoverageMet =
     hasCalendar && hasMessaging && dataCoverage >= CROSS_CHANNEL_COVERAGE_THRESHOLD;
 
+  // A source appearing as connected is not proof that every channel was
+  // collected for this reporting period. A missing channel is not a zero.
+  const sourceScope = hasCalendar
+    ? (hasMessaging ? 'calendar-and-observed-messaging' : 'calendar-only')
+    : (hasMessaging ? 'observed-messaging-only' : 'no-observed-source');
+  const crossChannelReason =
+    'Comparable calendar and messaging history has not been verified for this period. Missing Teams chats are not zero activity.';
   const rows = [
     {
       ...base,
@@ -540,15 +563,43 @@ export async function computeTeamMetricsForPeriod({
     },
   ];
 
-  return rows.map((row) => ({
-    ...row,
-    contributorCount,
-    dataCoverage,
-    dataQuality: row.value === null ? 'INSUFFICIENT' : dataQuality,
-    suppressed: false,
-    suppressionReason: '',
-    sources: sourceList,
-  }));
+  return rows.map((row) => {
+    const requiresCalendar = [
+      'MEETING_LOAD', 'UNINTERRUPTED_CALENDAR_AVAILABILITY',
+      'UNINTERRUPTED_WORK_WINDOW', 'AFTER_HOURS_ACTIVITY',
+    ].includes(row.metric);
+    const requiresCoordination = [
+      'COORDINATION_CHANNEL_LOAD', 'MANAGEMENT_LAYER_COORDINATION_LOAD',
+    ].includes(row.metric);
+    const missingCalendar = requiresCalendar && !hasCalendar;
+    const missingCoordination = requiresCoordination && !hasCalendar && !hasMessaging;
+    const missingCrossChannel = row.metric === 'UNINTERRUPTED_WORK_WINDOW' && !crossChannelCoverageMet;
+    const unavailable = row.value === null || missingCalendar || missingCoordination || missingCrossChannel;
+    let unavailableReason = '';
+    if (missingCrossChannel) unavailableReason = crossChannelReason;
+    else if (missingCalendar) unavailableReason = 'No validated calendar observations for this reporting period.';
+    else if (missingCoordination) unavailableReason = 'No validated coordination source for this reporting period.';
+    else if (unavailable) unavailableReason = row.components?.unavailableReason || 'Insufficient source evidence.';
+    const partial = !unavailable && (
+      !hasMessaging || dataCoverage < 0.8 ||
+      ['AFTER_HOURS_ACTIVITY', 'COORDINATION_CHANNEL_LOAD', 'MANAGEMENT_LAYER_COORDINATION_LOAD'].includes(row.metric)
+    );
+    const availabilityStatus = unavailable ? 'UNAVAILABLE' : partial ? 'PARTIAL' : 'AVAILABLE';
+    return {
+      ...row,
+      value: unavailable ? null : row.value,
+      components: unavailable ? { unavailableReason } : row.components,
+      contributorCount,
+      dataCoverage,
+      dataQuality: unavailable ? 'INSUFFICIENT' : dataQuality,
+      suppressed: false,
+      suppressionReason: '',
+      availabilityStatus,
+      unavailableReason,
+      sourceScope,
+      sources: sourceList,
+    };
+  });
 }
 
 export const P0_METRIC_ORDER = [
