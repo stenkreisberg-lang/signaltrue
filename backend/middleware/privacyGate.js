@@ -2,7 +2,7 @@
  * Privacy Gate Middleware
  *
  * Enforces the minimum-team-size rule before any analytics endpoint returns data.
- * If a team's actualSize is below the org-configured minimum (floor: 5),
+ * If a team's actualSize is below the org-configured minimum (default floor: 2; an organisation may configure a higher floor),
  * the request is suppressed with a structured response.
  *
  * Usage:
