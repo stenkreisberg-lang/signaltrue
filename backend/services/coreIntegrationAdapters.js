@@ -933,30 +933,54 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
       const distinct = new Map();
       let successfulReads = 0;
       let failedReads = 0;
-      for (const user of orgUsers) {
-        try {
-          const userId = user.externalIds.microsoftUserId;
-          const filter = encodeURIComponent(
-            `lastModifiedDateTime gt ${since.toISOString()} and lastModifiedDateTime lt ${until.toISOString()}`
-          );
-          const messages = await fetchGraphCollection(
-            `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/chats/getAllMessages?$top=50&$filter=${filter}`,
-            appToken
-          );
+      // Avoid serially requesting one large historical feed per employee.
+      // Cap concurrency to protect the Microsoft tenant from API throttling.
+      const MAX_CHAT_READ_CONCURRENCY = 4;
+      const filter = encodeURIComponent(
+        'lastModifiedDateTime gt ' + since.toISOString() +
+        ' and lastModifiedDateTime lt ' + until.toISOString()
+      );
+      for (let offset = 0; offset < orgUsers.length; offset += MAX_CHAT_READ_CONCURRENCY) {
+        const batch = orgUsers.slice(offset, offset + MAX_CHAT_READ_CONCURRENCY);
+        const outcomes = await Promise.all(batch.map(async (user) => {
+          try {
+            const userId = user.externalIds.microsoftUserId;
+            const url =
+              'https://graph.microsoft.com/v1.0/users/' +
+              encodeURIComponent(userId) +
+              '/chats/getAllMessages?$top=50&$filter=' + filter;
+            const messages = await fetchGraphCollection(url, appToken);
+            return { success: true, messages };
+          } catch (error) {
+            console.warn(
+              '[Microsoft][AppOnly] Teams chat read failed:',
+              classifyMicrosoftSyncError(error).message
+            );
+            return { success: false, messages: [] };
+          }
+        }));
+        for (const outcome of outcomes) {
+          if (!outcome.success) {
+            failedReads++;
+            continue;
+          }
           successfulReads++;
-          for (const message of messages) {
+          for (const message of outcome.messages) {
             if (message.messageType !== 'message') continue;
             const created = new Date(message.createdDateTime);
             if (!(created >= since && created < until)) continue;
             const chatId = message.chatId || message.chatIdentity?.chatId;
             if (!chatId || !message.id) continue;
-            const key = `${chatId}:${message.id}`;
+            const key = chatId + ':' + message.id;
             distinct.set(key, { ...message, chatId, eventSource: 'teams-chat' });
           }
-        } catch (error) {
-          failedReads++;
-          console.warn('[Microsoft][AppOnly] Teams chat read failed:', classifyMicrosoftSyncError(error).message);
         }
+        // Aggregate progress only: no chat text, sender, tenant or user IDs.
+        console.log(
+          '[Microsoft][AppOnly] Chat progress: ' +
+            Math.min(offset + batch.length, orgUsers.length) + '/' + orgUsers.length +
+            ' users checked; ' + successfulReads + ' succeeded, ' + failedReads + ' failed'
+        );
       }
       chatMessages = [...distinct.values()];
       if (this.pendingTeamsCoverage) {
