@@ -78,6 +78,39 @@ export async function logTehnopolProductionDiagnostic() {
       const employeeCandidates = rosterUsers.filter((u) =>
         classifyEmployeeCandidate({ email: u.email, name: u.name, displayName: u.displayName }, { orgDomain: org.domain }).ok
       );
+      // A global mapping percentage can conceal a completely unmapped chat
+      // source. Log aggregate counts only, never message bodies or identities.
+      const recentChat = await WorkEvent.aggregate([
+        {
+          $match: {
+            orgId,
+            source: 'microsoft-teams',
+            externalId: /^teams-chat-/,
+            timestamp: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            actorMapped: { $sum: { $cond: [{ $ne: ['$actorUserId', null] }, 1, 0] } },
+            teamMapped: { $sum: { $cond: [{ $ne: ['$teamId', null] }, 1, 0] } },
+            hasSenderMicrosoftId: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $ne: ['$metadata.microsoftUserId', null] },
+                    { $ne: ['$metadata.microsoftUserId', ''] },
+                  ] },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]);
+      const chat = recentChat[0] || { total: 0, actorMapped: 0, teamMapped: 0, hasSenderMicrosoftId: 0 };
       const summary = {
         orgId: String(orgId),
         name: org.name,
@@ -104,6 +137,12 @@ export async function logTehnopolProductionDiagnostic() {
           last7dTotal: recentEventTotal,
           last7dActorMappingPct: recentEventTotal ? Math.round((recentActorMapped / recentEventTotal) * 100) : 0,
           last7dTeamMappingPct: recentEventTotal ? Math.round((recentTeamMapped / recentEventTotal) * 100) : 0,
+        },
+        chatAttribution: {
+          last7dMessages: chat.total,
+          actorMapped: chat.actorMapped,
+          teamMapped: chat.teamMapped,
+          withMicrosoftSenderId: chat.hasSenderMicrosoftId,
         },
         metrics: {
           dailyRows: metricRows,
