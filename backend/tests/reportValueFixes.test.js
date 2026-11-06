@@ -1,4 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
+import { buildWorkConfig } from '../services/engagementDailyAggregationService.js';
+
 import {
   computeMeetingMetrics,
   computeMessagingMetrics,
@@ -41,6 +43,28 @@ describe('messaging metric correctness', () => {
     expect(resolveTeamWorkSchedule({ workConfig: {} }, org)).toEqual(org);
     const override = resolveTeamWorkSchedule({ timezone: 'Europe/Helsinki', workConfig: { workdayStart: '10:00' } }, org);
     expect(override).toEqual({ timezone: 'Europe/Helsinki', workdayStart: '10:00', workdayEnd: '17:30' });
+  });
+});
+
+describe('engagement metric timezone', () => {
+  test('inherits confirmed Tallinn timezone from organisation when team carries UTC schema default', () => {
+    const config = buildWorkConfig(
+      { timezone: 'UTC', workConfig: { workdayStart: '09:00', workdayEnd: '17:00' } },
+      { timezone: 'Europe/Tallinn' }
+    );
+    expect(config.timezone).toBe('Europe/Tallinn');
+    expect(config.workStartMinute).toBe(540);
+    expect(config.workEndMinute).toBe(1020);
+  });
+
+  test('preserves explicit team timezone and minute-precision schedule', () => {
+    const config = buildWorkConfig(
+      { timezone: 'Europe/Helsinki', workConfig: { workdayStart: '08:30', workdayEnd: '16:45' } },
+      { timezone: 'Europe/Tallinn' }
+    );
+    expect(config.timezone).toBe('Europe/Helsinki');
+    expect(config.workStartMinute).toBe(510);
+    expect(config.workEndMinute).toBe(1005);
   });
 });
 

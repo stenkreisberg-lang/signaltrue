@@ -1,5 +1,6 @@
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
+import Team from '../models/team.js';
 
 export const TEHNOPOL_CANONICAL_ORG_ID = '6a509c2e85ba56cdc945b3c7';
 export const TEHNOPOL_DUPLICATE_ORG_ID = '6aaa75e4f457f5b1015dd4d7';
@@ -38,8 +39,18 @@ export async function repairTehnopolCanonicalOrganization() {
     $set: {
       lifecycleStatus: 'active',
       'integrations.microsoft.sync.enabled': true,
+      // Customer confirmed all Tehnopol reporting uses Tallinn local time.
+      'settings.timezone': 'Europe/Tallinn',
+      'settings.timezoneConfirmedAt': new Date(),
     },
   });
+
+  // Historical team records often carry Mongoose's default UTC. Correct the
+  // canonical tenant only; do not change membership, managers or work hours.
+  const teamTimezoneUpdate = await Team.updateMany(
+    { orgId: TEHNOPOL_CANONICAL_ORG_ID, timezone: { $ne: 'Europe/Tallinn' } },
+    { $set: { timezone: 'Europe/Tallinn' } }
+  );
 
   await Organization.findByIdAndUpdate(TEHNOPOL_DUPLICATE_ORG_ID, {
     $set: {
@@ -67,6 +78,7 @@ export async function repairTehnopolCanonicalOrganization() {
     canonicalOrgId: TEHNOPOL_CANONICAL_ORG_ID,
     retiredDuplicateOrgId: TEHNOPOL_DUPLICATE_ORG_ID,
     disabledConnections: connectionResult.modifiedCount || 0,
+    teamsTimezoneCorrected: teamTimezoneUpdate.modifiedCount || 0,
   });
 
   return {

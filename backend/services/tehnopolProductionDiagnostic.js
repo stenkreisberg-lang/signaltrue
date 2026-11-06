@@ -113,6 +113,28 @@ export async function logTehnopolProductionDiagnostic() {
         },
       ]);
       const chat = recentChat[0] || { total: 0, actorMapped: 0, teamMapped: 0, hasSenderMicrosoftId: 0 };
+      // Determine whether unmapped Teams-chat sender IDs match any known
+      // internal directory identity. Do not emit IDs, addresses or messages.
+      const unmatchedChatSenderIds = await WorkEvent.distinct('metadata.microsoftUserId', {
+        orgId,
+        source: 'microsoft-teams',
+        externalId: /^teams-chat-/,
+        timestamp: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        $or: [{ actorUserId: null }, { actorUserId: { $exists: false } }],
+        'metadata.microsoftUserId': { $exists: true, $nin: ['', null] },
+      });
+      const directoryMatches = unmatchedChatSenderIds.length
+        ? await User.find({
+            orgId,
+            'externalIds.microsoftUserId': { $in: unmatchedChatSenderIds },
+          }).select('externalIds.microsoftUserId accountStatus teamId').lean()
+        : [];
+      const matchedIds = new Set(directoryMatches.map(user => String(user.externalIds?.microsoftUserId)));
+      const unrecognizedSenderCount = unmatchedChatSenderIds.filter(userId => !matchedIds.has(String(userId))).length;
+      const latestOrgMetric = await IntegrationMetricsDaily.findOne({ orgId, teamId: null, userId: null })
+        .sort({ date: -1 })
+        .select('date messageCount7d afterHoursMessageRatio uniqueChannels7d meetingCount7d meetingInstanceCount7d')
+        .lean();
       const summary = {
         orgId: String(orgId),
         name: org.name,
@@ -126,6 +148,13 @@ export async function logTehnopolProductionDiagnostic() {
           weeklyBriefRecipientCount: Array.isArray(org.settings?.weeklyBriefRecipients)
             ? org.settings.weeklyBriefRecipients.length
             : 0,
+        },
+        reportingConfig: {
+          timezone: org.settings?.timezone || null,
+          timezoneFallback: !org.settings?.timezone,
+          workdayStart: org.settings?.workdayStart || null,
+          workdayEnd: org.settings?.workdayEnd || null,
+          minTeamSize: org.settings?.minTeamSize ?? null,
         },
         roster: { activeUsers, inactiveUsers, adminUsers: admins, activeHrAdminRecipients: activeHrAdmins, realInternalEmployeeCandidates: employeeCandidates.length },
         teams: { activeCount: teams.length, names: teams.map((t) => t.name) },
@@ -146,8 +175,19 @@ export async function logTehnopolProductionDiagnostic() {
           actorMapped: chat.actorMapped,
           teamMapped: chat.teamMapped,
           withMicrosoftSenderId: chat.hasSenderMicrosoftId,
+          unmappedDistinctSenderIds: unmatchedChatSenderIds.length,
+          unmappedKnownDirectoryIds: matchedIds.size,
+          unmappedUnknownDirectoryIds: unrecognizedSenderCount,
+          // An ID absent from our directory may be an external guest or a
+          // missing roster identity. Do not classify it as external by default.
+          unrecognizedClassification: 'unconfirmed_not_in_directory',
         },
         metrics: {
+          latestOrgMetricDate: iso(latestOrgMetric?.date),
+          latestOrgMessageCount7d: latestOrgMetric?.messageCount7d ?? null,
+          latestOrgAfterHoursMessageRatio: latestOrgMetric?.afterHoursMessageRatio ?? null,
+          latestOrgUniqueChannels7d: latestOrgMetric?.uniqueChannels7d ?? null,
+          latestOrgMeetingInstanceCount7d: latestOrgMetric?.meetingInstanceCount7d ?? null,
           dailyRows: metricRows,
           latestDailyAt: iso(latestMetric?.date),
           latestDailyMappedToTeam: Boolean(latestMetric?.teamId),
