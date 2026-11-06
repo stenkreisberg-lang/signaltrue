@@ -761,8 +761,4 @@ function toDateStr(date) {
   return d.toISOString().split('T')[0];
 }
 
-function startOfDayUTC(date) {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
+
