@@ -15,7 +15,7 @@ import { generateWeeklyBrief } from './weeklyBriefService.js';
 import { TEHNOPOL_CANONICAL_ORG_ID } from './tehnopolCanonicalRepair.js';
 
 const DAY = 86400000;
-const RECOVERY_KEY = 'tehnopol-tallinn-chat-metrics-v1';
+const RECOVERY_KEY = 'tehnopol-tallinn-chat-metrics-v2-parallel';
 const MAX_LEASE_MS = 45 * 60 * 1000;
 const SOURCE_BACKFILL_DAYS = 21;
 const METRIC_RECALC_DAYS = 14;
