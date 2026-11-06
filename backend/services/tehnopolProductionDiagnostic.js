@@ -32,6 +32,7 @@ export async function logTehnopolProductionDiagnostic() {
         activeUsers,
         inactiveUsers,
         admins,
+        activeHrAdmins,
         teams,
         totalEvents,
         recentEvents,
@@ -54,6 +55,7 @@ export async function logTehnopolProductionDiagnostic() {
         User.countDocuments({ orgId, accountStatus: { $ne: 'inactive' } }),
         User.countDocuments({ orgId, accountStatus: 'inactive' }),
         User.countDocuments({ orgId, role: { $in: ADMIN_ROLES }, accountStatus: { $ne: 'inactive' } }),
+        User.countDocuments({ orgId, role: 'hr_admin', accountStatus: 'active' }),
         Team.find({ orgId, isActive: { $ne: false } }).select('_id name size memberCount').lean(),
         WorkEvent.countDocuments({ orgId }),
         WorkEvent.countDocuments({ orgId, timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }),
@@ -120,11 +122,12 @@ export async function logTehnopolProductionDiagnostic() {
           hasMicrosoftRefreshToken: Boolean(microsoft.refreshToken),
           microsoftTenantId: microsoft.tenantId || null,
           microsoftLastSync: iso(microsoft.lastSync || microsoft.lastSyncAt || microsoft.lastSuccessfulSync),
+          weeklyBriefRecipientsApproved: Boolean(org.settings?.weeklyBriefRecipientsApprovedAt),
           weeklyBriefRecipientCount: Array.isArray(org.settings?.weeklyBriefRecipients)
             ? org.settings.weeklyBriefRecipients.length
             : 0,
         },
-        roster: { activeUsers, inactiveUsers, adminUsers: admins, realInternalEmployeeCandidates: employeeCandidates.length },
+        roster: { activeUsers, inactiveUsers, adminUsers: admins, activeHrAdminRecipients: activeHrAdmins, realInternalEmployeeCandidates: employeeCandidates.length },
         teams: { activeCount: teams.length, names: teams.map((t) => t.name) },
         workEvents: {
           total: totalEvents,
