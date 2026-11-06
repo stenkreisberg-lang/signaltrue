@@ -1,7 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
 import {
   computeMeetingMetrics,
+  computeMessagingMetrics,
   isOutsideWorkingHours,
+  resolveTeamWorkSchedule,
 } from '../services/integrationMetricsService.js';
 import {
   extractPublicTeamPage,
@@ -15,6 +17,32 @@ import {
 } from '../services/monthlyReportService.js';
 
 const objectId = (suffix) => `507f1f77bcf86cd7994390${suffix}`;
+
+describe('messaging metric correctness', () => {
+  test('counts hashed conversations without needing channel names or message bodies', () => {
+    const date = new Date('2026-11-06T20:00:00Z');
+    const events = [
+      { source: 'microsoft-teams', eventType: 'message', timestamp: new Date('2026-11-06T08:00:00Z'), metadata: { channelHash: 'conversation-a' } },
+      { source: 'microsoft-teams', eventType: 'message', timestamp: new Date('2026-11-06T09:00:00Z'), metadata: { channelHash: 'conversation-a' } },
+      { source: 'microsoft-teams', eventType: 'message', timestamp: new Date('2026-11-06T16:00:00Z'), metadata: { channelHash: 'conversation-b' } },
+    ];
+    const result = computeMessagingMetrics(events, date, {
+      timezone: 'Europe/Tallinn',
+      workdayStart: '09:00',
+      workdayEnd: '17:00',
+    });
+    expect(result.messageCount7d).toBe(3);
+    expect(result.uniqueChannels7d).toBe(2);
+    expect(result.afterHoursMessageCount).toBe(1);
+  });
+
+  test('inherits the organisation timezone and hours when team overrides are absent', () => {
+    const org = { timezone: 'Europe/Tallinn', workdayStart: '08:30', workdayEnd: '17:30' };
+    expect(resolveTeamWorkSchedule({ workConfig: {} }, org)).toEqual(org);
+    const override = resolveTeamWorkSchedule({ timezone: 'Europe/Helsinki', workConfig: { workdayStart: '10:00' } }, org);
+    expect(override).toEqual({ timezone: 'Europe/Helsinki', workdayStart: '10:00', workdayEnd: '17:30' });
+  });
+});
 
 describe('meeting semantics', () => {
   test('deduplicates attendee-expanded meetings and detects back-to-back blocks per person', () => {

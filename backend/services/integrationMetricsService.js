@@ -58,7 +58,7 @@ export async function computeDailyMetrics(orgId, date = new Date()) {
 
   // Compute team-level metrics
   for (const team of teams) {
-    await computeTeamMetrics(orgId, team, normalizedDate, startOfDay, endOfDay, dataCoverage);
+    await computeTeamMetrics(orgId, team, normalizedDate, startOfDay, endOfDay, dataCoverage, orgWorkSchedule);
   }
 
   console.log(`Daily metrics computation complete for org ${orgId}`);
@@ -67,7 +67,15 @@ export async function computeDailyMetrics(orgId, date = new Date()) {
 /**
  * Compute metrics for a specific team
  */
-async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataCoverage) {
+export function resolveTeamWorkSchedule(team = {}, orgWorkSchedule = {}) {
+  return {
+    timezone: team.timezone || orgWorkSchedule.timezone || 'UTC',
+    workdayStart: team.workConfig?.workdayStart || orgWorkSchedule.workdayStart || '09:00',
+    workdayEnd: team.workConfig?.workdayEnd || orgWorkSchedule.workdayEnd || '17:00',
+  };
+}
+
+async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataCoverage, orgWorkSchedule) {
   const teamId = team._id;
   // Get events for this team in the date range (7-day window for rolling metrics)
   const window7dStart = new Date(date);
@@ -92,11 +100,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
   const taskMetrics = computeTaskMetrics(events, date);
 
   // Compute email metrics (Gmail)
-  const workSchedule = {
-    timezone: team.timezone || 'UTC',
-    workdayStart: team.workConfig?.workdayStart || '09:00',
-    workdayEnd: team.workConfig?.workdayEnd || '17:00',
-  };
+  const workSchedule = resolveTeamWorkSchedule(team, orgWorkSchedule);
   const emailMetrics = computeEmailMetrics(events, date, workSchedule);
 
   // Compute meeting metrics (Google Meet/Calendar/Microsoft Outlook)
@@ -837,9 +841,14 @@ export function computeMessagingMetrics(events, date, workSchedule = {}) {
   // Unique channels/conversations
   const channels = new Set();
   for (const e of events7d) {
-    if (e.metadata?.channel) channels.add(e.metadata.channel);
-    if (e.metadata?.channelName) channels.add(e.metadata.channelName);
-    if (e.metadata?.conversationId) channels.add(e.metadata.conversationId);
+    // Messaging adapters intentionally store hashed conversation identifiers,
+    // not channel names or message content. Count one identifier per event.
+    const conversation =
+      e.metadata?.channelHash ||
+      e.metadata?.channel ||
+      e.metadata?.conversationId ||
+      e.metadata?.channelName;
+    if (conversation) channels.add(conversation);
   }
   const uniqueChannels7d = channels.size;
 
