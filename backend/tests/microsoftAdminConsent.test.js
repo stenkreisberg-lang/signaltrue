@@ -105,7 +105,7 @@ describe('Microsoft company-wide access verification', () => {
     const requestedUrls = global.fetch.mock.calls.map(([url]) => url);
     expect(requestedUrls[2]).toBe('https://graph.microsoft.com/v1.0/users/ms-user-1/joinedTeams');
     expect(requestedUrls[3]).toBe(
-      'https://graph.microsoft.com/v1.0/teams/team-1/channels?$select=id'
+      'https://graph.microsoft.com/v1.0/teams/team-1/allChannels?$select=id'
     );
     expect(requestedUrls[3]).not.toContain('$top');
     expect(requestedUrls[4]).toBe(
@@ -422,10 +422,10 @@ describe('Microsoft company-wide access verification', () => {
 
     expect(result.verified).toBe(true);
     expect(global.fetch.mock.calls[3][0]).toBe(
-      'https://graph.microsoft.com/v1.0/teams/team-1/channels?$select=id'
+      'https://graph.microsoft.com/v1.0/teams/team-1/allChannels?$select=id'
     );
     expect(global.fetch.mock.calls[4][0]).toBe(
-      'https://graph.microsoft.com/v1.0/teams/team-2/channels?$select=id'
+      'https://graph.microsoft.com/v1.0/teams/team-2/allChannels?$select=id'
     );
   });
 
