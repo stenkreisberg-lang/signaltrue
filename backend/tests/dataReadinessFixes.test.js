@@ -33,6 +33,7 @@ import Team from '../models/team.js';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
+import WorkEvent from '../models/workEvent.js';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -126,6 +127,25 @@ describe('small-team configuration', () => {
   test('new teams are active by default', () => {
     const team = new Team({ name: 'Nobel team', orgId: '507f1f77bcf86cd799439011' });
     expect(team.isActive).toBe(true);
+  });
+});
+
+describe('Teams chat source attribution metadata', () => {
+  test('preserves channel-vs-chat source without persisting chat content', () => {
+    const event = new WorkEvent({
+      orgId: '507f1f77bcf86cd799439001',
+      source: 'microsoft-teams',
+      eventType: 'message',
+      externalId: 'teams-chat-chat-id-message-id',
+      timestamp: new Date('2026-11-06T07:00:00Z'),
+      metadata: {
+        eventSource: 'teams-chat',
+        microsoftUserId: 'sender-guid',
+        body: 'Never store this text',
+      },
+    });
+    expect(event.metadata.eventSource).toBe('teams-chat');
+    expect(event.toObject().metadata).not.toHaveProperty('body');
   });
 });
 
