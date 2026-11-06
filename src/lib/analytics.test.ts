@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   captureOriginalAttribution,
   isAutomatedAnalyticsTraffic,
@@ -28,6 +28,41 @@ describe('commercial analytics boundaries', () => {
     expect(first.source).toBe('partner');
     expect(second).toEqual(first);
     expect(second.originalLandingPage).toContain('utm_campaign=review');
+  });
+
+  test('returns current campaign attribution when session storage reads are blocked', () => {
+    const read = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Storage denied', 'SecurityError');
+    });
+    try {
+      expect(captureOriginalAttribution()).toMatchObject({ source: 'partner', campaign: 'review' });
+    } finally {
+      read.mockRestore();
+    }
+  });
+
+  test('retains the stored campaign when the storage write fails', () => {
+    const first = captureOriginalAttribution();
+    window.history.pushState({}, '', '/contact');
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage full', 'QuotaExceededError');
+    });
+    try {
+      expect(captureOriginalAttribution()).toEqual(first);
+    } finally {
+      write.mockRestore();
+    }
+  });
+
+  test('keeps fresh attribution usable when storage cannot persist it', () => {
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage full', 'QuotaExceededError');
+    });
+    try {
+      expect(captureOriginalAttribution()).toMatchObject({ source: 'partner', campaign: 'review' });
+    } finally {
+      write.mockRestore();
+    }
   });
 
   test('normalises acquisition values already stored by an older release', () => {
