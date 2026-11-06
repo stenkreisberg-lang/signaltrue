@@ -70,8 +70,6 @@ const RECOVERY_EARLY_HOUR = 8; // first activity before 08:00 local
  */
 export async function computeAndSaveTeamDay(orgId, teamId, date) {
   const dateStr = toDateStr(date);
-  const dayStart = startOfDayUTC(date);
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   // Load team config (timezone, working hours) and integration coverage
   const [team, connections, minimumTeamSize, organization] = await Promise.all([
@@ -82,6 +80,7 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   ]);
 
   const workConfig = buildWorkConfig(team, organization?.settings);
+  const { start: dayStart, end: dayEnd } = buildLocalDayWindow(dateStr, workConfig.timezone);
   const coverage = buildCoverage(connections);
 
   // Fetch all WorkEvents for this team on this day
@@ -535,6 +534,39 @@ function buildPersonCalendars(meetings) {
   return personCalendars;
 }
 
+// Convert a local calendar day/clock into an absolute instant. Re-evaluate the
+// UTC offset around DST transitions rather than assuming UTC or a fixed offset.
+function localClockToUtc(dateStr, minuteOfDay, timezone = 'UTC') {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const target = Date.UTC(year, month - 1, day, Math.floor(minuteOfDay / 60), minuteOfDay % 60);
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  });
+  let guess = target;
+  for (let i = 0; i < 5; i++) {
+    const parts = Object.fromEntries(
+      formatter.formatToParts(new Date(guess)).map(part => [part.type, part.value])
+    );
+    const observed = Date.UTC(
+      Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+      Number(parts.hour), Number(parts.minute)
+    );
+    const difference = target - observed;
+    guess += difference;
+    if (difference === 0) break;
+  }
+  return guess;
+}
+
+export function buildLocalDayWindow(dateStr, timezone = 'UTC') {
+  const start = localClockToUtc(dateStr, 0, timezone);
+  const nextLocalDate = new Date(Date.parse(dateStr + 'T00:00:00Z') + 86400000)
+    .toISOString().slice(0, 10);
+  const end = localClockToUtc(nextLocalDate, 0, timezone);
+  return { start: new Date(start), end: new Date(end) };
+}
+
 // ── Helper: Focus Block Computation ───────────────────────────────────────────
 
 /**
@@ -545,47 +577,43 @@ function buildPersonCalendars(meetings) {
  * @param {Object} workConfig     — { workStartHour, workEndHour, workDays, timezone }
  * @param {string} dateStr        — YYYY-MM-DD
  */
-function computeFocusBlocks(sortedMeetings, workConfig, dateStr) {
-  const { workStartHour, workEndHour } = workConfig;
+export function computeFocusBlocks(sortedMeetings, workConfig, dateStr) {
+  // The input from buildSortedTimeline already contains epoch timestamps;
+  // treating those rows as raw calendar events previously produced NaN gaps.
+  const workStart = localClockToUtc(
+    dateStr,
+    workConfig.workStartMinute ?? workConfig.workStartHour * 60,
+    workConfig.timezone
+  );
+  const workEnd = localClockToUtc(
+    dateStr,
+    workConfig.workEndMinute ?? workConfig.workEndHour * 60,
+    workConfig.timezone
+  );
+  const fullMinutes = Math.max(0, (workEnd - workStart) / 60000);
 
-  // Construct working-day start and end as ms offsets (using UTC as proxy)
-  const dayDate = new Date(dateStr + 'T00:00:00Z');
-  const workStart = new Date(dayDate);
-  workStart.setUTCHours(workStartHour, 0, 0, 0);
-  const workEnd = new Date(dayDate);
-  workEnd.setUTCHours(workEndHour, 0, 0, 0);
-
-  if (sortedMeetings.length === 0) {
-    // Entire working day is a focus block
-    const totalWorkMinutes = (workEndHour - workStartHour) * 60;
-    return totalWorkMinutes >= FOCUS_BLOCK_MIN_MINUTES ? [totalWorkMinutes] : [];
+  if (!sortedMeetings.length) {
+    return fullMinutes >= FOCUS_BLOCK_MIN_MINUTES ? [fullMinutes] : [];
   }
 
   const blocks = [];
-  let cursor = workStart.getTime();
-
+  let cursor = workStart;
   for (const meeting of sortedMeetings) {
-    const mStart = new Date(meeting.metadata?.startTime || meeting.timestamp).getTime();
-    const mEnd = new Date(
-      meeting.metadata?.endTime || new Date(mStart + resolveDurationMinutes(meeting) * 60 * 1000)
-    ).getTime();
-
-    // Gap before this meeting
-    const gapMinutes = (Math.min(mStart, workEnd.getTime()) - cursor) / (1000 * 60);
-    if (gapMinutes >= FOCUS_BLOCK_MIN_MINUTES) {
-      blocks.push(Math.floor(gapMinutes));
-    }
-
-    cursor = Math.max(cursor, mEnd);
-    if (cursor >= workEnd.getTime()) break;
+    const start = Number.isFinite(meeting.startMs)
+      ? meeting.startMs
+      : new Date(meeting.metadata?.startTime || meeting.timestamp).getTime();
+    const end = Number.isFinite(meeting.endMs)
+      ? meeting.endMs
+      : new Date(meeting.metadata?.endTime).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+    if (end <= workStart || start >= workEnd) continue;
+    const gapMinutes = (Math.min(start, workEnd) - cursor) / 60000;
+    if (gapMinutes >= FOCUS_BLOCK_MIN_MINUTES) blocks.push(Math.floor(gapMinutes));
+    cursor = Math.max(cursor, end);
+    if (cursor >= workEnd) break;
   }
-
-  // Gap after last meeting until end of working day
-  const finalGapMinutes = (workEnd.getTime() - cursor) / (1000 * 60);
-  if (finalGapMinutes >= FOCUS_BLOCK_MIN_MINUTES) {
-    blocks.push(Math.floor(finalGapMinutes));
-  }
-
+  const finalGapMinutes = (workEnd - cursor) / 60000;
+  if (finalGapMinutes >= FOCUS_BLOCK_MIN_MINUTES) blocks.push(Math.floor(finalGapMinutes));
   return blocks;
 }
 
@@ -733,8 +761,4 @@ function toDateStr(date) {
   return d.toISOString().split('T')[0];
 }
 
-function startOfDayUTC(date) {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
+

@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
-import { buildWorkConfig } from '../services/engagementDailyAggregationService.js';
+import { buildWorkConfig, buildLocalDayWindow, computeFocusBlocks } from '../services/engagementDailyAggregationService.js';
+import { getTehnopolRecoveryDays, isEligibleTehnopolRecovery } from '../services/tehnopolMeasurementRecovery.js';
 
 import {
   computeMeetingMetrics,
@@ -43,6 +44,53 @@ describe('messaging metric correctness', () => {
     expect(resolveTeamWorkSchedule({ workConfig: {} }, org)).toEqual(org);
     const override = resolveTeamWorkSchedule({ timezone: 'Europe/Helsinki', workConfig: { workdayStart: '10:00' } }, org);
     expect(override).toEqual({ timezone: 'Europe/Helsinki', workdayStart: '10:00', workdayEnd: '17:30' });
+  });
+});
+
+describe('Tehnopol bounded reporting recovery', () => {
+  test('accepts only canonical active Tallinn tenant with both Microsoft sources', () => {
+    const good = {
+      _id: '6a509c2e85ba56cdc945b3c7',
+      domain: 'tehnopol.ee',
+      lifecycleStatus: 'active',
+      settings: { timezone: 'Europe/Tallinn' },
+      integrations: { microsoft: { tenantId: 'tenant-id', scope: 'both' } },
+    };
+    expect(isEligibleTehnopolRecovery(good)).toBe(true);
+    expect(isEligibleTehnopolRecovery({ ...good, settings: { timezone: 'UTC' } })).toBe(false);
+    expect(isEligibleTehnopolRecovery({ ...good, _id: '6aaa75e4f457f5b1015dd4d7' })).toBe(false);
+    expect(isEligibleTehnopolRecovery({ ...good, lifecycleStatus: 'retired' })).toBe(false);
+  });
+
+  test('uses 21 days of source evidence for 14 days of rolling metrics', () => {
+    const range = getTehnopolRecoveryDays(new Date('2026-11-06T09:00:00Z'));
+    expect(range.sourceSince.toISOString()).toBe('2026-10-16T00:00:00.000Z');
+    expect(range.firstDay.toISOString()).toBe('2026-10-23T00:00:00.000Z');
+    expect(range.lastDay.toISOString()).toBe('2026-11-05T00:00:00.000Z');
+  });
+});
+
+describe('engagement local-day windows and focus gaps', () => {
+  test('local day query uses Tallinn day boundaries across winter and summer', () => {
+    const winter = buildLocalDayWindow('2026-11-02', 'Europe/Tallinn');
+    expect(winter.start.toISOString()).toBe('2026-11-01T22:00:00.000Z');
+    expect(winter.end.toISOString()).toBe('2026-11-02T22:00:00.000Z');
+    const summer = buildLocalDayWindow('2026-07-02', 'Europe/Tallinn');
+    expect(summer.start.toISOString()).toBe('2026-07-01T21:00:00.000Z');
+    expect(summer.end.toISOString()).toBe('2026-07-02T21:00:00.000Z');
+    const dst = buildLocalDayWindow('2026-10-25', 'Europe/Tallinn');
+    expect((dst.end - dst.start) / 3600000).toBe(25);
+  });
+
+  test('focus gaps use the sorted timeline and Tallinn clock rather than UTC', () => {
+    const config = buildWorkConfig({ timezone: 'Europe/Tallinn', workConfig: {
+      workdayStart: '09:00', workdayEnd: '17:00',
+    } });
+    const blocks = computeFocusBlocks([
+      { startMs: Date.parse('2026-11-02T08:00:00Z'), endMs: Date.parse('2026-11-02T09:00:00Z') },
+      { startMs: Date.parse('2026-11-02T11:00:00Z'), endMs: Date.parse('2026-11-02T12:00:00Z') },
+    ], config, '2026-11-02');
+    expect(blocks).toEqual([120, 180]);
   });
 });
 
