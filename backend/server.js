@@ -193,6 +193,7 @@ import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDiagnostic.js';
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
+import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -228,6 +229,14 @@ async function main() {
               console.error('[TehnopolRepair] canonical brief refresh failed:', err?.message || err)
             );
         }, 15_000);
+        // Recover the newly granted Teams chat baseline and re-evaluate
+        // local-time measurements exactly once, guarded by an atomic DB lease.
+        // This updates saved metrics/report snapshots only, never sends emails.
+        setTimeout(() => {
+          void runTehnopolMeasurementRecovery().catch(() => {
+            console.error('[TehnopolRecovery] Unexpected job error');
+          });
+        }, 35_000);
         mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });
