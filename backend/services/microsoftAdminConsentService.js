@@ -313,9 +313,11 @@ export async function inspectMicrosoftCompanyWideAccess(orgId) {
         for (const probeTeam of probeTeams) {
           let channels;
           try {
-            // List channels supports $select and $filter, but not $top.
+            // Probe the same allChannels endpoint used by the live Teams
+            // collector. /channels can fail for shared-channel configurations
+            // even when collection through /allChannels is available.
             channels = await graphProbe(
-              `https://graph.microsoft.com/v1.0/teams/${encodeURIComponent(probeTeam.id)}/channels?$select=id`,
+              `https://graph.microsoft.com/v1.0/teams/${encodeURIComponent(probeTeam.id)}/allChannels?$select=id`,
               appToken,
               'Company-wide Teams channels'
             );
