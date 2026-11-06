@@ -238,6 +238,9 @@ const workEventSchema = new mongoose.Schema(
 
       // --- Engagement Strain: messaging enrichment fields ---
       // Populated at ingestion time by messaging adapters (Slack, Teams, Google Chat)
+      // Preserve the Teams channel-vs-chat distinction for reliable source coverage.
+      // This is metadata only and never contains message text.
+      eventSource: { type: String, enum: ['teams', 'teams-chat'] },
       channelType: {
         // public / private / dm / group_dm
         type: String,
