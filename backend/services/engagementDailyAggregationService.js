@@ -30,6 +30,7 @@
 import WorkEvent from '../models/workEvent.js';
 import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import Team from '../models/team.js';
+import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import {
   checkTeamSize,
@@ -73,13 +74,14 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   // Load team config (timezone, working hours) and integration coverage
-  const [team, connections, minimumTeamSize] = await Promise.all([
+  const [team, connections, minimumTeamSize, organization] = await Promise.all([
     Team.findById(teamId).lean(),
     IntegrationConnection.find({ orgId, status: 'connected' }).lean(),
     resolveMinimumTeamSize(orgId).then((m) => Math.max(m, MIN_ENGAGEMENT_TEAM_SIZE)),
+    Organization.findById(orgId).select('settings.timezone settings.workdayStart settings.workdayEnd').lean(),
   ]);
 
-  const workConfig = buildWorkConfig(team);
+  const workConfig = buildWorkConfig(team, organization?.settings);
   const coverage = buildCoverage(connections);
 
   // Fetch all WorkEvents for this team on this day
@@ -623,34 +625,52 @@ function isAfterHours(timestamp, workConfig) {
   // Convert to local time in the team's timezone using Intl
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
-    hour: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
     weekday: 'short',
     hour12: false,
   }).formatToParts(d);
 
   const hourStr = parts.find((p) => p.type === 'hour')?.value ?? '0';
+  const minuteStr = parts.find((p) => p.type === 'minute')?.value ?? '0';
   const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? 'Mon';
 
   const hour = parseInt(hourStr, 10);
+  const minute = parseInt(minuteStr, 10);
   const WEEKDAY_MAP = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   const dayOfWeek = WEEKDAY_MAP[weekdayStr] ?? d.getUTCDay();
 
   const isWorkDay = workConfig.workDays.has(dayOfWeek);
-  const isDuringHours = hour >= workConfig.workStartHour && hour < workConfig.workEndHour;
+  const minuteOfDay = hour * 60 + minute;
+  const isDuringHours = minuteOfDay >= (workConfig.workStartMinute ?? workConfig.workStartHour * 60)
+    && minuteOfDay < (workConfig.workEndMinute ?? workConfig.workEndHour * 60);
 
   return !isWorkDay || !isDuringHours;
 }
 
-function buildWorkConfig(team) {
+export function buildWorkConfig(team, orgSettings = {}) {
+  // Team timezone defaults to UTC in the schema, so a default-UTC team
+  // must inherit its organisation's confirmed non-UTC timezone.
+  const timezone = team?.timezone && team.timezone !== 'UTC'
+    ? team.timezone
+    : orgSettings.timezone || team?.timezone || 'UTC';
+  const start = team?.workConfig?.workdayStart || orgSettings.workdayStart || '09:00';
+  const end = team?.workConfig?.workdayEnd || orgSettings.workdayEnd || '17:00';
+  const clockMinutes = (clock, fallback) => {
+    const match = /^(\\d{1,2}):(\\d{2})$/.exec(String(clock));
+    return match && Number(match[1]) <= 23 && Number(match[2]) <= 59
+      ? Number(match[1]) * 60 + Number(match[2])
+      : fallback;
+  };
+  const workStartMinute = clockMinutes(start, DEFAULT_WORK_START_HOUR * 60);
+  const workEndMinute = clockMinutes(end, DEFAULT_WORK_END_HOUR * 60);
   return {
-    workStartHour: team?.workConfig?.workdayStart
-      ? parseInt(team.workConfig.workdayStart.split(':')[0], 10)
-      : DEFAULT_WORK_START_HOUR,
-    workEndHour: team?.workConfig?.workdayEnd
-      ? parseInt(team.workConfig.workdayEnd.split(':')[0], 10)
-      : DEFAULT_WORK_END_HOUR,
+    workStartHour: Math.floor(workStartMinute / 60),
+    workEndHour: Math.floor(workEndMinute / 60),
+    workStartMinute,
+    workEndMinute,
     workDays: DEFAULT_WORK_DAYS,
-    timezone: team?.timezone ?? 'UTC',
+    timezone,
   };
 }
 
