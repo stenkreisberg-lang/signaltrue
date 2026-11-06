@@ -657,7 +657,7 @@ export function buildWorkConfig(team, orgSettings = {}) {
   const start = team?.workConfig?.workdayStart || orgSettings.workdayStart || '09:00';
   const end = team?.workConfig?.workdayEnd || orgSettings.workdayEnd || '17:00';
   const clockMinutes = (clock, fallback) => {
-    const match = /^(\\d{1,2}):(\\d{2})$/.exec(String(clock));
+    const match = /^(\d{1,2}):(\d{2})$/.exec(String(clock));
     return match && Number(match[1]) <= 23 && Number(match[2]) <= 59
       ? Number(match[1]) * 60 + Number(match[2])
       : fallback;
