@@ -226,9 +226,18 @@ export function safeAnalyticsPath(path: string) {
   }
 }
 
+function tryAttributionStorage<T>(operation: (storage: Storage) => T): T | undefined {
+  try {
+    const storage = safeSessionStorage();
+    return storage ? operation(storage) : undefined;
+  } catch {
+    // Storage can deny individual reads and writes even when the object is accessible.
+    return undefined;
+  }
+}
+
 export function captureOriginalAttribution(): OriginalAttribution {
-  const storage = safeSessionStorage();
-  const stored = storage?.getItem(ATTRIBUTION_KEY);
+  const stored = tryAttributionStorage((storage) => storage.getItem(ATTRIBUTION_KEY));
   if (stored) {
     try {
       const attribution = JSON.parse(stored) as OriginalAttribution;
@@ -238,10 +247,12 @@ export function captureOriginalAttribution(): OriginalAttribution {
         source: normalized.source,
         medium: normalized.medium,
       };
-      storage?.setItem(ATTRIBUTION_KEY, JSON.stringify(normalizedAttribution));
+      tryAttributionStorage((storage) =>
+        storage.setItem(ATTRIBUTION_KEY, JSON.stringify(normalizedAttribution))
+      );
       return normalizedAttribution;
     } catch {
-      storage?.removeItem(ATTRIBUTION_KEY);
+      tryAttributionStorage((storage) => storage.removeItem(ATTRIBUTION_KEY));
     }
   }
 
@@ -262,7 +273,7 @@ export function captureOriginalAttribution(): OriginalAttribution {
     anonymousSessionId: createSessionId(),
   };
 
-  storage?.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
+  tryAttributionStorage((storage) => storage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)));
   return attribution;
 }
 
