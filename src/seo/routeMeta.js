@@ -21,6 +21,31 @@ const SOCIAL_IMAGE = `${SITE_URL}/social-preview-v2.png`;
  * visitor cannot see, so the two never diverge.
  */
 const ROUTE_META = {
+  '/blog/psychosocial-control-effectiveness-after-assessment': {
+    title: 'Psychosocial Control Review: Did It Work? | SignalTrue',
+    description: 'Already assessed psychosocial hazards? See how to review a control, test whether workload moved elsewhere and record the next WHS decision.',
+    summary: 'Once an Australian organisation has assessed a psychosocial hazard and implemented a control, it should review whether the work condition actually changed. This practical guide compares implementation evidence with outcome evidence, sets a baseline, separates the rollout period, reviews changes and side effects, and documents the next WHS decision. A fictional 18-person service team example shows meeting hours falling while after-hours activity rises; worker consultation is essential to interpreting that pattern.',
+    type: 'article',
+    lang: 'en-AU',
+    publishedAt: '2026-11-08T12:00:00.000Z',
+    keywords: 'psychosocial risk control effectiveness, review psychosocial control measures, WHS control review, excessive workload, after-hours work, Australian psychosocial hazards',
+    socialImage: 'https://www.signaltrue.ai/images/hero-team.jpg',
+    socialImageAlt: 'Colleagues discussing how work is organised',
+    crawlerSections: [
+      { heading: 'An effective control changes exposure, not only policy', text: 'Publishing a new policy or cancelling meetings is evidence that the control was introduced. Review whether the relevant hazard exposure appears lower, whether the effect lasted and what workers say. Activity metadata cannot diagnose distress or determine compliance.' },
+      { heading: 'Five steps to review a control', text: 'Name the control and intended effect; set a fair baseline; allow rollout to settle; compare the result and unintended effects; then decide whether to maintain, modify, investigate or replace the control. Document the owner and next review date.' },
+      { heading: 'Worked example: fewer meetings, more evening work', text: 'In a clearly fictional service team of 18, meeting hours per person fell from 11.2 to 7.4 per week, while team workdays with after-hours activity rose from 18 to 25 percent. That could mean workload moved rather than disappeared. Consult workers and investigate deadlines, staffing and urgent requests before concluding.' },
+      { heading: 'Keep work-pattern data in its proper role', text: 'Comparable team-level calendar and collaboration metadata can support a WHS review where permissions, coverage and privacy safeguards are in place. It cannot prove psychological harm, establish why an individual worked late, or replace worker consultation or risk management.' },
+      { heading: 'Document the control-review decision', text: 'Maintain a control when evidence supports a sustained reduction in exposure; modify it for partial improvement; investigate uncertain or conflicting evidence; replace ineffective controls through the employer WHS process.' },
+    ],
+    links: [
+      ['/did-the-control-work', 'Free two-minute control-review check'],
+      ['/sample-report', 'Clearly fictional sample control-review report'],
+      ['/au/8-week-pilot', 'Free Australian pilot for one defined control'],
+      ['/signals/meeting-overload', 'Meeting-load work-pattern guide'],
+      ['/au', 'Australian psychosocial risk context'],
+    ],
+  },
   '/': {
     title: 'Psychosocial Control Effectiveness Evidence | SignalTrue',
     description:
