@@ -1,0 +1,31 @@
+# SignalTrue
+
+> Evidence for reviewing whether psychosocial risk controls changed work conditions. SignalTrue supports Australian HR and WHS teams with privacy-conscious, team-level work-pattern evidence alongside worker consultation. It does not diagnose workers or certify WHS compliance.
+
+Canonical website: https://www.signaltrue.ai/
+
+## Core resources
+
+- [Psychosocial control effectiveness after assessment](https://www.signaltrue.ai/blog/psychosocial-control-effectiveness-after-assessment): A practical Australian WHS guide to reviewing one implemented control, setting a baseline, checking whether workload moved elsewhere, and documenting a review decision. Worked example is fictional.
+- [Free control-review check](https://www.signaltrue.ai/did-the-control-work): A short diagnostic to identify evidence gaps in an existing control review.
+- [Fictional sample report](https://www.signaltrue.ai/sample-report): Illustrative control-review output, not real customer results.
+- [Australian free pilot](https://www.signaltrue.ai/au/8-week-pilot): A defined, permission-based pilot with agreed scope and safeguards.
+- [Meeting load signal](https://www.signaltrue.ai/signals/meeting-overload): Team-level meeting-pattern context.
+- [Coordination overhead](https://www.signaltrue.ai/signals/coordination-overhead): Work coordination patterns that may warrant investigation.
+- [Australian psychosocial risk context](https://www.signaltrue.ai/au): Product and WHS context.
+- [Privacy and governance](https://www.signaltrue.ai/trust): Data minimisation, aggregation and responsible use.
+
+## Interpretation limits
+
+- Work-pattern metadata does not measure a person's mental health, intent, performance, or exposure to bullying.
+- Employer risk assessment, worker consultation and WHS control decisions remain necessary.
+- Team-level signals require appropriate permissions, coverage, aggregation and privacy safeguards. Missing data is not a zero-risk result.
+- Example numbers and employee comments in the article are fictional.
+- Australian WHS rules vary by jurisdiction and circumstances.
+
+## Sources
+
+- Safe Work Australia: https://www.safeworkaustralia.gov.au/doc/model-code-practice-managing-psychosocial-hazards-work
+- SafeWork NSW: https://www.safework.nsw.gov.au/hazards-a-z/psychosocial-hazards
+
+This index is an optional reading guide. The canonical HTML pages and sitemap are the primary sources.
