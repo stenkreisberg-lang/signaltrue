@@ -1,3 +1,4 @@
+import { psychosocialControlReviewPost } from './psychosocialControlReviewPost';
 export const UNREASONABLE_WORKLOAD_SLUG = 'unreasonable-workload-psychosocial-hazard-australia';
 export const PEOPLE_AT_WORK_SLUG = 'people-at-work-decommissioning-what-next-australia';
 export const NON_SURVEILLANCE_SLUG =
@@ -5,6 +6,7 @@ export const NON_SURVEILLANCE_SLUG =
 export const BURNOUT_WORKLOAD_CONTROLS_SLUG = 'burnout-workload-psychosocial-risk-controls';
 
 export const editorialBlogPosts = [
+  psychosocialControlReviewPost,
   {
     _id: 'editorial-burnout-workload-psychosocial-risk-controls',
     title: 'Burnout Is the Signal. Workload Is the Evidence.',

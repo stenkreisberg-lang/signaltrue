@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+<title id="title">Four stages of a psychosocial control review</title><desc id="desc">Baseline, settling period, after-change comparison and a later sustainability check.</desc>
+<rect width="1200" height="280" rx="24" fill="#f4f8f5"/>
+<text x="48" y="44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#18342b">Compare like with like</text>
+<text x="48" y="72" font-family="Arial, sans-serif" font-size="15" fill="#52695f">Separate the transition period from the evidence used to judge the result.</text>
+<g font-family="Arial, sans-serif">
+<rect x="40" y="102" width="262" height="136" rx="15" fill="#103f31"/>
+<rect x="326" y="102" width="262" height="136" rx="15" fill="#deebe2"/>
+<rect x="612" y="102" width="262" height="136" rx="15" fill="#b8ecd1"/>
+<rect x="898" y="102" width="262" height="136" rx="15" fill="#cff87c"/>
+<text x="60" y="141" font-size="15" font-weight="700" fill="#aefb7a">01  BEFORE</text><text x="60" y="174" font-size="22" font-weight="700" fill="#ffffff">Baseline</text><text x="60" y="204" font-size="14" fill="#dcebe5">What was happening?</text>
+<text x="346" y="141" font-size="15" font-weight="700" fill="#234f3b">02  BUFFER</text><text x="346" y="174" font-size="22" font-weight="700" fill="#153b2e">Settle</text><text x="346" y="204" font-size="14" fill="#40594d">Keep rollout separate</text>
+<text x="632" y="141" font-size="15" font-weight="700" fill="#234f3b">03  AFTER</text><text x="632" y="174" font-size="22" font-weight="700" fill="#153b2e">Compare</text><text x="632" y="204" font-size="14" fill="#40594d">What changed?</text>
+<text x="918" y="141" font-size="15" font-weight="700" fill="#234f3b">04  LATER</text><text x="918" y="174" font-size="22" font-weight="700" fill="#153b2e">Check again</text><text x="918" y="204" font-size="14" fill="#40594d">Did it hold?</text>
+</g></svg>
