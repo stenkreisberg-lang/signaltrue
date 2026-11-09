@@ -21,7 +21,7 @@ import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 import { getReportTrendSeries } from './reportTrendService.js';
-import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
+import { renderVisualWeeklyEmail, renderVisualWeeklyEmailPackage } from './visualWeeklyEmailService.js';
 import { buildWeeklyBriefEnvelope } from './weeklyBriefDeliveryEnvelope.js';
 import { completedReportingWeek } from '../utils/reportingPeriods.js';
 import {
@@ -3497,16 +3497,17 @@ export async function generateWeeklyBrief(orgId) {
 
 // Public-facing email and authenticated preview use the same saved metrics and
 // timeline data. Keep the underlying detailed generator for audits/dashboard.
-export async function generateClientWeeklyEmail(orgId) {
+export async function generateClientWeeklyEmail(orgId, { withAssets = false } = {}) {
   await generateWeeklyBrief(orgId);
   const [snapshot, trends] = await Promise.all([
     getLatestWeeklyBriefSnapshot(orgId),
     getReportTrendSeries(orgId),
   ]);
   if (!snapshot) throw new Error('Weekly snapshot was not persisted');
-  return renderVisualWeeklyEmail(snapshot, trends, {
-    appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai',
-  });
+  const options = { appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai' };
+  return withAssets
+    ? renderVisualWeeklyEmailPackage(snapshot, trends, options)
+    : renderVisualWeeklyEmail(snapshot, trends, options);
 }
 
 export async function sendWeeklyBrief(orgId) {
@@ -3521,7 +3522,7 @@ export async function sendWeeklyBrief(orgId) {
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
 
   // Always generate the brief first — we need it for the superadmin copy regardless
-  const html = await generateClientWeeklyEmail(orgId);
+  const { html, attachments } = await generateClientWeeklyEmail(orgId, { withAssets: true });
 
   // Automated SignalTrue reports are restricted to HR/admin account owners.
   // Employees, managers, executives and arbitrary override recipients must not receive them.
@@ -3559,6 +3560,9 @@ export async function sendWeeklyBrief(orgId) {
         bcc: envelope.bcc,
         subject: envelope.subject,
         html: envelope.html,
+        attachments: attachments.map(({ filename, content, contentId }) => ({
+          filename, content, contentId,
+        })),
         // Tags come back on delivery/open/click webhooks, which is what makes
         // engagement attributable to an organization.
         tags: [
@@ -3578,6 +3582,12 @@ export async function sendWeeklyBrief(orgId) {
         bcc: envelope.bcc.join(','),
         subject: envelope.subject,
         html: envelope.html,
+        attachments: attachments.map(({ filename, content, contentId }) => ({
+          filename,
+          content: Buffer.from(content, 'base64'),
+          contentType: 'image/png',
+          cid: contentId,
+        })),
       });
       console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }
