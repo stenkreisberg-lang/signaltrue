@@ -14,6 +14,9 @@ const number = (v, unit = '') => v == null || !Number.isFinite(Number(v)) ? 'Not
 const day = v => v ? new Date(v).toLocaleDateString('en-GB', {
   day: 'numeric', month: 'short', timeZone: 'UTC',
 }) : '—';
+const localDay = (v, timeZone = 'UTC') => v ? new Date(v).toLocaleDateString('en-GB', {
+  day: 'numeric', month: 'short', timeZone,
+}) : '—';
 const isAvailable = m => m?.available === true && Number.isFinite(Number(m.current));
 const metricByKey = (metrics, key) => metrics.find(m => m.key === key);
 const PRIORITY = [
@@ -173,8 +176,10 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
     '<tr><td style="background:#10223a;padding:24px 20px;color:white;">' +
     '<div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#93c5fd;">SIGNALTRUE · WORK-PATTERN EVIDENCE</div>' +
     '<h1 style="font-size:23px;line-height:1.25;margin:10px 0 5px;color:white;">' + esc(snapshot.orgName) + '</h1>' +
-    '<div style="font-size:12px;color:#cbd5e1;">Completed period ' + esc(day(snapshot.periodStart)) +
-    ' – ' + esc(day(snapshot.periodEnd)) + '</div></td></tr>' +
+    '<div style="font-size:12px;color:#cbd5e1;">Completed period ' +
+    esc(localDay(snapshot.periodStart, snapshot.reportTimeZone)) + ' – ' +
+    esc(localDay(new Date(snapshot.periodEnd).getTime() - 1, snapshot.reportTimeZone)) +
+    '</div></td></tr>' +
     '<tr><td style="padding:20px 16px;">' +
     '<div style="font-size:12px;color:#64748b;font-weight:bold;">THE ONE-MINUTE READ</div>' +
     '<h2 style="font-size:19px;margin:7px 0 5px;color:#10223a;">' + esc(label) + '</h2>' +
