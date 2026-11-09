@@ -1,0 +1,38 @@
+name: Verify weekly reporting changes
+on:
+  push:
+    branches:
+      - fix/weekly-evidence-graphics-2026-11-09
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/weekly-report-check.yml'
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+      - name: Syntax-check changed services
+        working-directory: backend
+        run: |
+          node --check services/weeklyChartPng.js
+          node --check services/visualWeeklyEmailService.js
+          node --check services/weeklyBriefService.js
+          node --check services/reportTrendService.js
+          node --check services/integrationMetricsService.js
+          node --check services/weeklySchedulerService.js
+          node --check services/weeklyEmailScheduler.js
+          node --check services/historicalMetricRebuildService.js
+          node --check server.js
+      - name: Run targeted regression tests
+        working-directory: backend
+        run: npm test -- --runInBand tests/visualWeeklyReport.test.js tests/weeklyDispatchTimezone.test.js

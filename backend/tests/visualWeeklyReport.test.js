@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import { buildReportTrendSeries, buildEligibleTeamTrends, buildTimelineAnnotations } from '../services/reportTrendService.js';
-import { renderVisualWeeklyEmail, emailTimeline } from '../services/visualWeeklyEmailService.js';
+import { renderVisualWeeklyEmail, renderVisualWeeklyEmailPackage, emailTimeline } from '../services/visualWeeklyEmailService.js';
 const now = new Date('2026-10-26T12:00:00.000Z');
 const sample = (date, n, more = {}) => ({ date: new Date(date + 'T00:00:00Z'),
   meetingInstanceCount7d: n, meetingCount7d: n + 2, messageCount7d: 0, ...more });
@@ -96,12 +96,17 @@ describe('visual weekly report data integrity', () => {
       sample('2026-10-11', 750), sample('2026-10-18', 720), sample('2026-10-25',685),
     ],now);
     const html = renderVisualWeeklyEmail(snapshot, history);
-    expect(html).toContain('Meeting count over time');
-    expect(html).toContain('No organization-wide trend is inferred');
-    expect(html).toContain('verify Microsoft Teams permissions');
-    expect(html).toContain('Not all work patterns can be assessed');
+    expect(html).toContain('Meetings · historical pattern');
+    expect(html).toContain('Full measurement inventory');
+    expect(html).toContain('Unavailable');
+    expect(html).toContain('No validated observations');
     expect(html).toContain('/app/latest-brief');
     expect(html).not.toContain('No action recommended this week');
-    expect(emailTimeline(history.weekly.slice(-4),'meetings','meetings')).toContain('No data');
+    expect(emailTimeline(history.weekly.slice(-4),'meetings','meetings')).toContain('—');
+    const bundle = renderVisualWeeklyEmailPackage(snapshot, history);
+    expect(bundle.attachments).toHaveLength(1);
+    expect(bundle.html).toContain('cid:st-weekly-meetings');
+    const decoded = Buffer.from(bundle.attachments[0].content, 'base64');
+    expect([...decoded.subarray(0, 8)]).toEqual([137,80,78,71,13,10,26,10]);
   });
 });

@@ -21,7 +21,7 @@ import { generateWeeklyAIAnalysis } from './weeklyAIAnalysisService.js';
 import { calculateTeamStatus, STATUS_LEVELS } from './escalationService.js';
 import { upsertWeeklyBriefSnapshot, getLatestWeeklyBriefSnapshot } from './weeklyBriefSnapshotService.js';
 import { getReportTrendSeries } from './reportTrendService.js';
-import { renderVisualWeeklyEmail } from './visualWeeklyEmailService.js';
+import { renderVisualWeeklyEmail, renderVisualWeeklyEmailPackage } from './visualWeeklyEmailService.js';
 import { buildWeeklyBriefEnvelope } from './weeklyBriefDeliveryEnvelope.js';
 import { completedReportingWeek } from '../utils/reportingPeriods.js';
 import {
@@ -411,7 +411,7 @@ async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payloa
     orgId: org._id, orgName: org.name, periodStart, periodEnd, reportMode,
     // A completed week ends at periodEnd, but the report was generated now.
     // Do not mark a newly validated report stale just because the week closed earlier.
-    generatedAt: new Date(), payload: validated.brief,
+    generatedAt: new Date(), payload: { ...validated.brief, reportTimeZone: org.settings?.timezone || 'UTC' },
   });
 }
 
@@ -982,7 +982,50 @@ export async function generateWeeklyBrief(orgId) {
 
   const twOrgMetricsArr = chooseLatestMetricRecords(twMetricsArr);
   const lwOrgMetricsArr = chooseLatestMetricRecords(lwMetricsArr);
-  const sixWeekOrgMetricsArr = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
+  const sixWeekOrgMetricsArrRaw = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
+  const correctedHistoryExists = sixWeekOrgMetricsArrRaw.some(
+    record => record.calculationWindowVersion === 'rolling7-calendar-days-v2'
+  );
+  const sixWeekOrgMetricsArr = correctedHistoryExists
+    ? sixWeekOrgMetricsArrRaw.filter(record =>
+      record.calculationWindowVersion === 'rolling7-calendar-days-v2')
+    : sixWeekOrgMetricsArrRaw;
+  // Historic per-person trends must use each historical week's own population,
+  // not the current-week count or a pooled six-week actor set.
+  const historicalWeekWindows = Array.from({ length: 6 }, (_, i) =>
+    completedReportingWeek(
+      new Date(thisWeekStart.getTime() + 6 * 3600000 - i * 7 * 86400000),
+      reportingTimeZone
+    )
+  );
+  const historicalCalendarCohorts = await Promise.all(
+    historicalWeekWindows.map(({ periodStart, periodEnd }) => calendarActorsFor(periodStart, periodEnd))
+  );
+  const historyPeople = historicalCalendarCohorts.map(users => users.length);
+  const recordWeekIndex = record => Math.floor(
+    (thisWeekStart.getTime() - new Date(record.date).getTime()) / (7 * 86400000)
+  );
+  const historicalMetricPerPerson = (weekIndex, records, field) => {
+    const denominator = historyPeople[weekIndex] || 0;
+    return denominator > 0 && records.length
+      ? avgField(records, field) / denominator
+      : null;
+  };
+  const sixWeekBuckets = new Map();
+  for (const record of sixWeekOrgMetricsArr) {
+    const weekIndex = recordWeekIndex(record);
+    if (weekIndex < 0 || weekIndex >= 6) continue;
+    if (!sixWeekBuckets.has(weekIndex)) sixWeekBuckets.set(weekIndex, []);
+    sixWeekBuckets.get(weekIndex).push(record);
+  }
+  const historicalMeanPerPerson = field => {
+    const values = [...sixWeekBuckets.entries()]
+      .map(([weekIndex, records]) => historicalMetricPerPerson(weekIndex, records, field))
+      .filter(Number.isFinite);
+    return values.length >= 4
+      ? values.reduce((total, value) => total + value, 0) / values.length
+      : null;
+  };
 
   const mappedActorCount = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
@@ -1149,6 +1192,13 @@ export async function generateWeeklyBrief(orgId) {
     calendarFragmentation: avgField(sixWeekOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(sixWeekOrgMetricsArr, 'recurringMeetingBurden'),
   };
+  // Replace pooled-denominator approximations with comparable weekly cohorts.
+  // Missing historical population produces null, never a manufactured zero.
+  sixWeekAvg.meetings = historicalMeanPerPerson('meetingCount7d');
+  sixWeekAvg.meetingHours = historicalMeanPerPerson('meetingDurationTotalHours7d');
+  sixWeekAvg.backToBack = historicalMeanPerPerson('backToBackMeetingBlocks');
+  sixWeekAvg.focusTimeAvailability = historicalMeanPerPerson('focusTimeAvailabilityHours');
+
   // Prefer deduplicated calendar-instance metrics. Raw WorkEvent counts are
   // attendee-expanded and therefore are not a truthful meeting count.
   twMeetings = Math.round(
@@ -1816,14 +1866,12 @@ export async function generateWeeklyBrief(orgId) {
     .sort((a, b) => a[0] - b[0])
     .map(([weekIdx, recs]) => ({
       weeksAgo: weekIdx + 1,
-      meetings: avgField(recs, 'meetingCount7d') / connectedUserCount,
-      meetingHours:
-        Math.round((avgField(recs, 'meetingDurationTotalHours7d') / connectedUserCount) * 10) / 10,
-      backToBack: avgField(recs, 'backToBackMeetingBlocks') / connectedUserCount,
+      meetings: historicalMetricPerPerson(weekIdx, recs, 'meetingCount7d'),
+      meetingHours: historicalMetricPerPerson(weekIdx, recs, 'meetingDurationTotalHours7d'),
+      backToBack: historicalMetricPerPerson(weekIdx, recs, 'backToBackMeetingBlocks'),
       afterHoursRatio: avgField(recs, 'afterHoursMessageRatio'),
       afterHoursRatioPct: Math.round(avgField(recs, 'afterHoursMessageRatio') * 100),
-      focusTimeAvailability:
-        Math.round((avgField(recs, 'focusTimeAvailabilityHours') / connectedUserCount) * 10) / 10,
+      focusTimeAvailability: historicalMetricPerPerson(weekIdx, recs, 'focusTimeAvailabilityHours'),
       calendarFragmentation: avgField(recs, 'calendarFragmentationScore'),
     }));
 
@@ -3497,16 +3545,17 @@ export async function generateWeeklyBrief(orgId) {
 
 // Public-facing email and authenticated preview use the same saved metrics and
 // timeline data. Keep the underlying detailed generator for audits/dashboard.
-export async function generateClientWeeklyEmail(orgId) {
+export async function generateClientWeeklyEmail(orgId, { withAssets = false } = {}) {
   await generateWeeklyBrief(orgId);
   const [snapshot, trends] = await Promise.all([
     getLatestWeeklyBriefSnapshot(orgId),
     getReportTrendSeries(orgId),
   ]);
   if (!snapshot) throw new Error('Weekly snapshot was not persisted');
-  return renderVisualWeeklyEmail(snapshot, trends, {
-    appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai',
-  });
+  const options = { appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai' };
+  return withAssets
+    ? renderVisualWeeklyEmailPackage(snapshot, trends, options)
+    : renderVisualWeeklyEmail(snapshot, trends, options);
 }
 
 export async function sendWeeklyBrief(orgId) {
@@ -3521,7 +3570,7 @@ export async function sendWeeklyBrief(orgId) {
   const subject = `Weekly Intelligence Brief — ${org.name} — ${weekLabel}`;
 
   // Always generate the brief first — we need it for the superadmin copy regardless
-  const html = await generateClientWeeklyEmail(orgId);
+  const { html, attachments } = await generateClientWeeklyEmail(orgId, { withAssets: true });
 
   // Automated SignalTrue reports are restricted to HR/admin account owners.
   // Employees, managers, executives and arbitrary override recipients must not receive them.
@@ -3559,6 +3608,9 @@ export async function sendWeeklyBrief(orgId) {
         bcc: envelope.bcc,
         subject: envelope.subject,
         html: envelope.html,
+        attachments: attachments.map(({ filename, content, contentId }) => ({
+          filename, content, contentId,
+        })),
         // Tags come back on delivery/open/click webhooks, which is what makes
         // engagement attributable to an organization.
         tags: [
@@ -3578,6 +3630,12 @@ export async function sendWeeklyBrief(orgId) {
         bcc: envelope.bcc.join(','),
         subject: envelope.subject,
         html: envelope.html,
+        attachments: attachments.map(({ filename, content, contentId }) => ({
+          filename,
+          content: Buffer.from(content, 'base64'),
+          contentType: 'image/png',
+          cid: contentId,
+        })),
       });
       console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
     }

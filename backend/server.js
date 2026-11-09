@@ -194,6 +194,7 @@ import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDi
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
+import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -237,6 +238,13 @@ async function main() {
             console.error('[TehnopolRecovery] Unexpected job error');
           });
         }, 35_000);
+        // One-off historical calculation correction after the rolling 7-day fix.
+        // Resumable in MongoDB, does not send emails or expose client measurements.
+        setTimeout(() => {
+          void rebuildSevenDayReportHistory().catch((err) =>
+            console.error('[HistoryRebuild] Unhandled error:', err.message)
+          );
+        }, 150_000);
         mongoose.connection.on('error', (err) => {
           console.error('Mongoose connection error:', err);
         });

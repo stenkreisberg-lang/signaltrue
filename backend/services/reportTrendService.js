@@ -14,6 +14,8 @@ export const TREND_METRICS = [
   { key: 'meeting_hours', label: 'Meeting participant-hours', unit: 'hours', direction: 'context' },
   { key: 'back_to_back', label: 'Back-to-back meetings', unit: 'blocks', direction: 'context' },
   { key: 'after_hours', label: 'After-hours messaging', unit: '%', direction: 'context' },
+  { key: 'messages', label: 'Observed messaging volume', unit: 'messages', direction: 'context' },
+  { key: 'recurring_load', label: 'Recurring meeting share', unit: '%', direction: 'context' },
   { key: 'focus_time', label: 'Uninterrupted calendar availability', unit: 'hours', direction: 'context' },
   { key: 'fragmentation', label: 'Calendar fragmentation', unit: '/100', direction: 'context' },
 ];
@@ -44,8 +46,15 @@ export function metricValue(record, key) {
     case 'after_hours': return safe(record, 'messageCount7d') > 0
       ? fixed(safe(record, 'afterHoursMessageRatio') == null ? NaN : safe(record, 'afterHoursMessageRatio') * 100)
       : null;
-    case 'focus_time': return fixed(safe(record, 'focusTimeAvailabilityHours'));
-    case 'fragmentation': return fixed(safe(record, 'calendarFragmentationScore'));
+    case 'messages': return safe(record, 'messageCount7d') > 0
+      ? fixed(safe(record, 'messageCount7d'), 0) : null;
+    case 'recurring_load': return safe(record, 'meetingParticipantHours7d') > 0
+      ? fixed(safe(record, 'recurringMeetingBurden') == null ? NaN : safe(record, 'recurringMeetingBurden') * 100)
+      : null;
+    case 'focus_time': return safe(record, 'calendarDaysObserved') > 0
+      ? fixed(safe(record, 'focusTimeAvailabilityHours')) : null;
+    case 'fragmentation': return safe(record, 'calendarDaysObserved') > 0
+      ? fixed(safe(record, 'calendarFragmentationScore')) : null;
     default: return null;
   }
 }
@@ -107,7 +116,13 @@ function signalFor(points, key) {
 }
 export function buildReportTrendSeries(records, now = new Date(), options = {}) {
   const currentMonday = monday(now);
-  const org = normalizeRecords(records).filter(r => !r.teamId && !r.userId);
+  const orgRecords = normalizeRecords(records).filter(r => !r.teamId && !r.userId);
+  // Never mix the corrected seven-day definition with legacy eight-date snapshots.
+  // Older, unversioned data remain usable in isolated legacy tests, but once any
+  // corrected data exist, only corrected samples can support the trend.
+  const hasCorrected = orgRecords.some(r => r.calculationWindowVersion === 'rolling7-calendar-days-v2');
+  const org = hasCorrected ? orgRecords.filter(r =>
+    r.calculationWindowVersion === 'rolling7-calendar-days-v2') : orgRecords;
   const anchorDay = options.anchorDay ?? chooseAnchor(org, currentMonday);
   const weekly = buildWeekly(org, now, anchorDay);
   const byDate = new Map(org.map(r => [dayKey(r.date), r]));
@@ -187,12 +202,47 @@ export function buildTimelineAnnotations({ contexts = [], interventions = [], te
 export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 8 } = {}) {
   const start = new Date(monday(now).getTime() - 27 * 7 * DAY);
   const scopedOrgId = mongoose.isValidObjectId(orgId) ? new mongoose.Types.ObjectId(String(orgId)) : orgId;
-  const [records, contexts] = await Promise.all([
+  const [records, contexts, actorDays] = await Promise.all([
     IntegrationMetricsDaily.find({ orgId: scopedOrgId, date: { $gte: start, $lte: now }, userId: null }).sort({ date: 1 }).lean(),
     WeekContext.find({ orgId: scopedOrgId, teamId: null, weekEnd: { $gte: start }, weekStart: { $lte: now } })
       .select('tag weekStart weekEnd teamId').limit(100).lean(),
+    WorkEvent.aggregate([
+      { $match: { orgId: scopedOrgId, timestamp: { $gte: start, $lte: now },
+        actorUserId: { $ne: null }, eventType: 'meeting',
+        source: { $in: ['microsoft-outlook', 'google-calendar'] } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d',
+        date: '$timestamp', timezone: 'UTC' } }, actors: { $addToSet: '$actorUserId' } } },
+    ]),
   ]);
   const org = buildReportTrendSeries(records, now);
+  // Normalise aggregate participant-hours and calendar windows using the people
+  // actually represented in EACH sampled seven-day observation, never today's
+  // actor population or the pooled six-week population.
+  const actorMap = new Map(actorDays.map(r => [r._id, r.actors.map(id)]));
+  const countActors = sampled => {
+    if (!sampled) return 0;
+    const end = new Date(sampled + 'T00:00:00Z');
+    if (!Number.isFinite(end.getTime())) return 0;
+    const seen = new Set();
+    for (let back = 0; back < 7; back++) {
+      const key = dayKey(new Date(end.getTime() - back * DAY));
+      for (const actor of actorMap.get(key) || []) seen.add(actor);
+    }
+    return seen.size;
+  };
+  const normalise = point => {
+    if (!point) return point;
+    const actors = countActors(point.sampledOn || point.sourceDate);
+    return { ...point, representedCalendarActors: actors,
+      meeting_hours: actors > 0 && Number.isFinite(point.meeting_hours) ? fixed(point.meeting_hours / actors) : null,
+      focus_time: actors > 0 && Number.isFinite(point.focus_time) ? fixed(point.focus_time / actors) : null };
+  };
+  org.weekly = org.weekly.map(normalise);
+  org.daily = org.daily.map(normalise);
+  org.currentPartial = normalise(org.currentPartial);
+  org.insights = TREND_METRICS.map(m => signalFor(org.weekly, m.key)).filter(Boolean)
+    .sort((a, b) => Number(b.sustained) - Number(a.sustained) || Math.abs(b.deltaPct) - Math.abs(a.deltaPct));
+  org.method += ' Participant-hours and calendar-availability hours are divided by distinct represented calendar actors in each same seven-day window. Legacy and corrected calculation versions are never mixed.';
   if (!includeTeams) return { ...org, annotations: buildTimelineAnnotations({ contexts, now }), teams: [] };
   const floor = Math.max(8, Number(minimumGroupSize) || 8);
   // The unique-person denominator must use the SAME rolling seven days as

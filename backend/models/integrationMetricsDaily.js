@@ -31,6 +31,10 @@ const integrationMetricsDailySchema = new mongoose.Schema(
       index: true,
     },
 
+    // Versioned measurement window. Unversioned historical snapshots used an
+    // eight-date window and must not be silently mixed with corrected seven-day data.
+    calculationWindowVersion: { type: String, default: null },
+
     // Date (normalized to 00:00 UTC)
     date: {
       type: Date,
