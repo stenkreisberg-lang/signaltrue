@@ -983,6 +983,42 @@ export async function generateWeeklyBrief(orgId) {
   const twOrgMetricsArr = chooseLatestMetricRecords(twMetricsArr);
   const lwOrgMetricsArr = chooseLatestMetricRecords(lwMetricsArr);
   const sixWeekOrgMetricsArr = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
+  // Historic per-person trends must use each historical week's own population,
+  // not the current-week count or a pooled six-week actor set.
+  const historicalWeekWindows = Array.from({ length: 6 }, (_, i) =>
+    completedReportingWeek(
+      new Date(thisWeekStart.getTime() + 6 * 3600000 - i * 7 * 86400000),
+      reportingTimeZone
+    )
+  );
+  const historicalCalendarCohorts = await Promise.all(
+    historicalWeekWindows.map(({ periodStart, periodEnd }) => calendarActorsFor(periodStart, periodEnd))
+  );
+  const historyPeople = historicalCalendarCohorts.map(users => users.length);
+  const recordWeekIndex = record => Math.floor(
+    (thisWeekStart.getTime() - new Date(record.date).getTime()) / (7 * 86400000)
+  );
+  const historicalMetricPerPerson = (weekIndex, records, field) => {
+    const denominator = historyPeople[weekIndex] || 0;
+    return denominator > 0 && records.length
+      ? avgField(records, field) / denominator
+      : null;
+  };
+  const sixWeekBuckets = new Map();
+  for (const record of sixWeekOrgMetricsArr) {
+    const weekIndex = recordWeekIndex(record);
+    if (weekIndex < 0 || weekIndex >= 6) continue;
+    if (!sixWeekBuckets.has(weekIndex)) sixWeekBuckets.set(weekIndex, []);
+    sixWeekBuckets.get(weekIndex).push(record);
+  }
+  const historicalMeanPerPerson = field => {
+    const values = [...sixWeekBuckets.entries()]
+      .map(([weekIndex, records]) => historicalMetricPerPerson(weekIndex, records, field))
+      .filter(Number.isFinite);
+    return values.length >= 4
+      ? values.reduce((total, value) => total + value, 0) / values.length
+      : null;
+  };
 
   const mappedActorCount = await WorkEvent.distinct('actorUserId', {
     orgId: org._id,
@@ -1149,6 +1185,13 @@ export async function generateWeeklyBrief(orgId) {
     calendarFragmentation: avgField(sixWeekOrgMetricsArr, 'calendarFragmentationScore'),
     recurringBurden: avgField(sixWeekOrgMetricsArr, 'recurringMeetingBurden'),
   };
+  // Replace pooled-denominator approximations with comparable weekly cohorts.
+  // Missing historical population produces null, never a manufactured zero.
+  sixWeekAvg.meetings = historicalMeanPerPerson('meetingCount7d');
+  sixWeekAvg.meetingHours = historicalMeanPerPerson('meetingDurationTotalHours7d');
+  sixWeekAvg.backToBack = historicalMeanPerPerson('backToBackMeetingBlocks');
+  sixWeekAvg.focusTimeAvailability = historicalMeanPerPerson('focusTimeAvailabilityHours');
+
   // Prefer deduplicated calendar-instance metrics. Raw WorkEvent counts are
   // attendee-expanded and therefore are not a truthful meeting count.
   twMeetings = Math.round(
@@ -1816,14 +1859,12 @@ export async function generateWeeklyBrief(orgId) {
     .sort((a, b) => a[0] - b[0])
     .map(([weekIdx, recs]) => ({
       weeksAgo: weekIdx + 1,
-      meetings: avgField(recs, 'meetingCount7d') / connectedUserCount,
-      meetingHours:
-        Math.round((avgField(recs, 'meetingDurationTotalHours7d') / connectedUserCount) * 10) / 10,
-      backToBack: avgField(recs, 'backToBackMeetingBlocks') / connectedUserCount,
+      meetings: historicalMetricPerPerson(weekIdx, recs, 'meetingCount7d'),
+      meetingHours: historicalMetricPerPerson(weekIdx, recs, 'meetingDurationTotalHours7d'),
+      backToBack: historicalMetricPerPerson(weekIdx, recs, 'backToBackMeetingBlocks'),
       afterHoursRatio: avgField(recs, 'afterHoursMessageRatio'),
       afterHoursRatioPct: Math.round(avgField(recs, 'afterHoursMessageRatio') * 100),
-      focusTimeAvailability:
-        Math.round((avgField(recs, 'focusTimeAvailabilityHours') / connectedUserCount) * 10) / 10,
+      focusTimeAvailability: historicalMetricPerPerson(weekIdx, recs, 'focusTimeAvailabilityHours'),
       calendarFragmentation: avgField(recs, 'calendarFragmentationScore'),
     }));
 
