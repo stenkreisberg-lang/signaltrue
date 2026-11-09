@@ -4,6 +4,7 @@
  */
 
 import Team from '../models/team.js';
+import CronLog from '../models/cronLog.js';
 import {
   calculateOverloadRisk,
   calculateExecutionRisk,
@@ -262,6 +263,34 @@ async function diagnoseSingleTeam(teamId, weekStart = null) {
  * Schedule the weekly job (call this on server startup)
  * Runs every Monday at 5:30 AM, after daily ingestion and aggregation.
  */
+// One shared promise prevents the Monday scheduler and the email watchdog
+// from starting competing scoring runs inside the production server.
+let weeklyCyclePromise = null;
+export async function ensureWeeklyCycleComplete() {
+  const weekKey = CronLog.getCurrentWeekKey();
+  const jobName = 'weekly-measurement-cycle';
+  if (await CronLog.hasRunForWeek(jobName, weekKey)) return { alreadyCompleted: true };
+  if (!weeklyCyclePromise) {
+    weeklyCyclePromise = (async () => {
+      const started = Date.now();
+      const cycle = await runWeeklyCycle();
+      const failed = (cycle.diagnosis?.errors?.length || 0) +
+        (cycle.engagement?.errors || 0) + (cycle.managerOverload?.errors || 0);
+      // The cycle must complete before customer report generation. Source-specific
+      // failures are visible and individually validated by the brief service.
+      await CronLog.findOneAndUpdate(
+        { jobName, weekKey },
+        { $set: { status: failed ? 'partial' : 'success',
+          executedAt: new Date(), durationMs: Date.now() - started,
+          trigger: 'cron', failedCount: failed } },
+        { upsert: true, new: true }
+      );
+      console.info('[WeeklyCycle] Completed before customer delivery', { weekKey, failed });
+      return { alreadyCompleted: false, failed };
+    })().finally(() => { weeklyCyclePromise = null; });
+  }
+  return weeklyCyclePromise;
+}
 function scheduleWeeklyJob() {
   function scheduleNext() {
     const nextRun = getNextWeeklyRun();
@@ -270,7 +299,11 @@ function scheduleWeeklyJob() {
     console.log(`[Scheduler] Next weekly diagnosis scheduled for ${nextRun.toISOString()}`);
 
     setTimeout(async () => {
-      await runWeeklyCycle();
+      try {
+        await ensureWeeklyCycleComplete();
+      } catch (error) {
+        console.error('[WeeklyCycle] Pre-report scoring failed:', error.message);
+      }
       scheduleNext(); // Schedule next run
     }, delay);
   }
