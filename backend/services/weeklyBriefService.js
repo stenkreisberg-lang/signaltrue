@@ -982,7 +982,14 @@ export async function generateWeeklyBrief(orgId) {
 
   const twOrgMetricsArr = chooseLatestMetricRecords(twMetricsArr);
   const lwOrgMetricsArr = chooseLatestMetricRecords(lwMetricsArr);
-  const sixWeekOrgMetricsArr = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
+  const sixWeekOrgMetricsArrRaw = chooseWeeklyMetricSnapshots(sixWeekMetricsArr);
+  const correctedHistoryExists = sixWeekOrgMetricsArrRaw.some(
+    record => record.calculationWindowVersion === 'rolling7-calendar-days-v2'
+  );
+  const sixWeekOrgMetricsArr = correctedHistoryExists
+    ? sixWeekOrgMetricsArrRaw.filter(record =>
+      record.calculationWindowVersion === 'rolling7-calendar-days-v2')
+    : sixWeekOrgMetricsArrRaw;
   // Historic per-person trends must use each historical week's own population,
   // not the current-week count or a pooled six-week actor set.
   const historicalWeekWindows = Array.from({ length: 6 }, (_, i) =>
