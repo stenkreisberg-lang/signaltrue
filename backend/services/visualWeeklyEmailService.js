@@ -67,7 +67,7 @@ function evidenceTable(metrics) {
       esc(metric.label) + '</td><td align="right" style="border-bottom:1px solid #e2e8f0;padding:7px 2px;font-size:12px;font-weight:bold;color:#10223a;">' +
       esc(isAvailable(metric) ? number(metric.current, metric.unit) : 'Unavailable') +
       '</td></tr>' + (!isAvailable(metric) ? '<tr><td colspan="2" style="padding:3px 2px 8px;color:#9a3412;font-size:11px;">' +
-      esc(metric.readiness?.reason || metric.note || 'No validated observations') + '</td></tr>' : '')).join('') + '</table>';
+      esc(metric.display || metric.readiness?.reason || metric.note || 'No validated observations') + '</td></tr>' : '')).join('') + '</table>';
 }
 function dateSeries(points, key, unit) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;border-collapse:collapse;"><tr>' +
@@ -189,6 +189,15 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
         '. Verify context and record any intervention before concluding what caused a change.')) +
     chartKeys.map(m => chartSection(m, trends, HIST_KEYS[m.key], embeddedKeys.includes(m.key))).join('') +
     teamSection(snapshot) + outcomeSection(snapshot) +
+    section('Team coverage and missing evidence', (snapshot.teamReadiness || []).length
+      ? '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">' +
+        snapshot.teamReadiness.map(team =>
+          '<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 2px;font-size:11px;color:#334155;">' +
+          esc(team.teamName) + '</td><td align="right" style="border-bottom:1px solid #e2e8f0;padding:6px 2px;font-size:11px;color:#475569;">' +
+          esc(team.status) + '</td></tr>' +
+          (team.reason ? '<tr><td colspan="2" style="padding:2px 2px 6px;color:#64748b;font-size:10px;">' +
+          esc(team.reason) + '</td></tr>' : '')).join('') + '</table>'
+      : p('Team coverage diagnostics have not been provided yet. No team-level conclusion can be inferred.')) +
     section('Full measurement inventory', evidenceTable(metrics) +
       mild('Unavailable means missing, insufficient or inconsistent observations, not a measured zero. ' +
         'Calendar availability does not prove focused work or rest. Source mapping and team privacy rules apply.')) +
