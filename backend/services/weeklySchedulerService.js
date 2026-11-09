@@ -220,10 +220,13 @@ async function runEngagementStrainCycle(weekStart) {
       results.suppressed += result.suppressed ?? 0;
       results.errors += result.errors?.length ?? 0;
 
-      // Send weekly email digest after scoring — non-fatal if it fails
-      sendWeeklyEngagementReport(orgId, weekStart.toISOString().split('T')[0]).catch((err) =>
-        console.error(`[EngagementStrain] Email send failed for org ${orgId}:`, err.message)
-      );
+      // The consolidated HR brief already includes eligible team patterns.
+      // Do not send a second legacy manager/admin digest by default.
+      if (process.env.LEGACY_ENGAGEMENT_EMAIL_ENABLED === 'true') {
+        sendWeeklyEngagementReport(orgId, weekStart.toISOString().split('T')[0]).catch((err) =>
+          console.error(`[EngagementStrain] Legacy email send failed for org ${orgId}:`, err.message)
+        );
+      }
     } catch (err) {
       console.error(`[EngagementStrain] Error processing org ${orgId}:`, err.message);
       results.errors++;
