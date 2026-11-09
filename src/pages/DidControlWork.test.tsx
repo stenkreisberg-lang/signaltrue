@@ -81,3 +81,25 @@ test('offers a free pilot and does not complete a partially answered assessment'
   expect(screen.getByText('One risk. One control. A free pilot.')).toBeInTheDocument();
   expect(screen.queryByText(/AU\$99/)).not.toBeInTheDocument();
 });
+
+test('offers a selectable checklist if the browser denies clipboard access', async () => {
+  const writeText = vi.fn().mockRejectedValue(new Error('Clipboard denied'));
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+  render(<MemoryRouter><DidControlWork /></MemoryRouter>);
+  const questions = screen.getAllByRole('heading', { level: 3 });
+  for (const heading of questions) {
+    fireEvent.click(within(heading.parentElement!).getAllByRole('button')[0]);
+  }
+  const resultButton = screen.getByRole('button', { name: /show my control-review gaps/i });
+  fireEvent.click(resultButton);
+  fireEvent.click(screen.getByRole('button', { name: /copy my evidence review checklist/i }));
+  const fallback = await screen.findByRole('textbox', { name: 'Evidence review checklist' });
+  expect(fallback).toHaveAttribute('readonly');
+  expect(fallback).toHaveValue(writeText.mock.calls[0][0]);
+  expect(screen.getByRole('status')).toHaveTextContent(/select and copy/i);
+  expect(trackEvent).not.toHaveBeenCalledWith('did_control_work_plan_copied', expect.anything());
+  fireEvent.click(within(questions[0].parentElement!).getAllByRole('button')[2]);
+  fireEvent.click(resultButton);
+  expect(screen.queryByRole('textbox', { name: 'Evidence review checklist' })).not.toBeInTheDocument();
+  expect(vi.mocked(trackEvent).mock.calls.filter(([name]) => name === 'did_control_work_completed')).toHaveLength(1);
+});

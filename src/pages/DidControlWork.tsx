@@ -129,6 +129,8 @@ function scoreLabel(score: number) {
 export default function DidControlWork() {
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [showResult, setShowResult] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<'copied' | 'manual' | null>(null);
+  const copyRequest = useRef(0);
   const started = useRef(false);
   const completed = useRef(false);
 
@@ -150,21 +152,26 @@ export default function DidControlWork() {
     [answers]
   );
 
-  const copyReviewPlan = async () => {
-    const lines = [
+  const reviewPlan = () =>
+    [
       'SignalTrue — control-review evidence checklist',
       'Self-assessment only. Does not measure workplace psychosocial risk, establish legal compliance or replace professional advice.',
       'Readiness indication: ' + score + '/100 (eight self-reported questions).',
       ...gaps.map((gap, index) => index + 1 + '. ' + gap.gapTitle + ': ' + gap.gapCopy),
       'Next step: document the control, intended change, baseline, worker consultation, evidence limitations and review decision.',
       'https://www.signaltrue.ai/did-the-control-work',
-    ];
+    ].join('\n');
+
+  const copyReviewPlan = async () => {
+    const request = ++copyRequest.current;
     try {
-      await navigator.clipboard.writeText(lines.join('\n'));
-      trackEvent('did_control_work_plan_copied', { gap_count: gaps.length });
+      await navigator.clipboard.writeText(reviewPlan());
     } catch {
-      // Copy requires browser permission. The on-screen findings remain available.
+      if (request === copyRequest.current) setCopyFeedback('manual');
+      return;
     }
+    if (request === copyRequest.current) setCopyFeedback('copied');
+    trackEvent('did_control_work_plan_copied', { gap_count: gaps.length });
   };
 
   const finish = () => {
@@ -259,6 +266,8 @@ export default function DidControlWork() {
                             }
                             setAnswers((current) => ({ ...current, [q.id]: option.value }));
                             setShowResult(false);
+                            copyRequest.current += 1;
+                            setCopyFeedback(null);
                           }}
                           className={
                             'rounded-control border px-4 py-3 text-left text-caption font-semibold transition ' +
@@ -346,6 +355,19 @@ export default function DidControlWork() {
                   For WHS consultants
                 </Link>
               </div>
+              <p role="status" className={copyFeedback ? 'mt-3 text-caption text-[#475569]' : 'sr-only'}>
+                {copyFeedback === 'copied' && 'Checklist copied.'}
+                {copyFeedback === 'manual' && 'Automatic copy is unavailable. Select and copy the checklist below.'}
+              </p>
+              {copyFeedback === 'manual' && (
+                <textarea
+                  aria-label="Evidence review checklist"
+                  readOnly
+                  rows={6}
+                  value={reviewPlan()}
+                  className="mt-3 w-full rounded-control border border-[#CBD5E1] bg-white p-3 text-caption"
+                />
+              )}
               <div className="mt-10 rounded-container border border-brand-soft bg-brand-softer p-7 sm:p-8">
                 <p className="text-caption font-bold uppercase tracking-wider text-brand">
                   What if much of this evidence did not have to be assembled manually?
