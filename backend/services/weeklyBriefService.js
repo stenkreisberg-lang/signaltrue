@@ -411,7 +411,7 @@ async function persistSnapshot({ org, periodStart, periodEnd, reportMode, payloa
     orgId: org._id, orgName: org.name, periodStart, periodEnd, reportMode,
     // A completed week ends at periodEnd, but the report was generated now.
     // Do not mark a newly validated report stale just because the week closed earlier.
-    generatedAt: new Date(), payload: validated.brief,
+    generatedAt: new Date(), payload: { ...validated.brief, reportTimeZone: org.settings?.timezone || 'UTC' },
   });
 }
 
