@@ -79,7 +79,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
   const teamId = team._id;
   // Get events for this team in the date range (7-day window for rolling metrics)
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
 
   const events = await WorkEvent.find({
     orgId,
@@ -154,6 +154,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
           dataCoverage,
         },
         sources,
+        calculationWindowVersion: 'rolling7-calendar-days-v2',
         eventsProcessed: events.length,
         confidence,
       },
@@ -167,7 +168,7 @@ async function computeTeamMetrics(orgId, team, date, startOfDay, endOfDay, dataC
  */
 async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage, workSchedule) {
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
 
   const events = await WorkEvent.find({
     orgId,
@@ -217,6 +218,7 @@ async function computeOrgMetrics(orgId, date, startOfDay, endOfDay, dataCoverage
           dataCoverage,
         },
         sources,
+        calculationWindowVersion: 'rolling7-calendar-days-v2',
         eventsProcessed: events.length,
         confidence,
       },
@@ -233,7 +235,7 @@ function computeTaskMetrics(events, date) {
   const taskEvents = events.filter((e) => ['jira', 'asana'].includes(e.source));
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
 
   const events7d = taskEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
@@ -265,7 +267,7 @@ function computeTaskMetrics(events, date) {
 
   // Calculate previous 7d for comparison
   const window14dStart = new Date(date);
-  window14dStart.setDate(window14dStart.getDate() - 14);
+  window14dStart.setDate(window14dStart.getDate() - 13);
   const eventsPrev7d = taskEvents.filter(
     (e) => new Date(e.timestamp) >= window14dStart && new Date(e.timestamp) < window7dStart
   );
@@ -346,7 +348,7 @@ function computeEmailMetrics(events, date, workSchedule = {}) {
   const emailEvents = events.filter((e) => e.source === 'gmail');
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = emailEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   // Volume
@@ -432,7 +434,7 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
   );
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = meetEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   // Meeting count and duration — support both legacy (meet_started) and core adapters (meeting)
@@ -631,7 +633,7 @@ function computeNotionMetrics(events, date, historyEvents = events) {
   const notionHistoryEvents = historyEvents.filter((e) => e.source === 'notion');
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = notionEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   // Edit churn (edits per page)
@@ -693,7 +695,7 @@ function computeCRMMetrics(events, date) {
   const crmEvents = events.filter((e) => ['hubspot', 'pipedrive'].includes(e.source));
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = crmEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   // Deals with multiple stage changes
@@ -754,7 +756,7 @@ function computeBasecampMetrics(events, date) {
   const basecampEvents = events.filter((e) => e.source === 'basecamp');
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = basecampEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   const postsCreated7d = events7d.filter((e) => e.eventType === 'post_created').length;
@@ -826,7 +828,7 @@ export function computeMessagingMetrics(events, date, workSchedule = {}) {
   );
 
   const window7dStart = new Date(date);
-  window7dStart.setDate(window7dStart.getDate() - 7);
+  window7dStart.setDate(window7dStart.getDate() - 6);
   const events7d = messagingEvents.filter((e) => new Date(e.timestamp) >= window7dStart);
 
   const messageCount7d = events7d.length;
