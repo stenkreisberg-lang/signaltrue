@@ -60,8 +60,9 @@ function anthropicAdapter() {
   };
 }
 
-export default function getProvider() {
-  const provider = (process.env.AI_PROVIDER || 'openai').toLowerCase();
+export default function getProvider(providerOverride = null) {
+  // Resolve per request without changing process.env for parallel requests.
+  const provider = (providerOverride || process.env.AI_PROVIDER || 'openai').toLowerCase();
   if (provider === 'openai') return openaiAdapter();
   if (provider === 'anthropic' || provider === 'claude') return anthropicAdapter();
   throw new Error(`Unsupported AI provider: ${provider}`);
