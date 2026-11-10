@@ -9,7 +9,7 @@ import { Resend } from 'resend';
 import { claimNotification, completeNotificationClaim } from './notificationClaimService.js';
 
 // Superadmin email for receiving all report copies
-const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL || 'sten.kreisberg@gmail.com';
+const SUPERADMIN_EMAIL = process.env.SUPERADMIN_EMAIL;
 
 // Get Resend client
 function getResendClient() {
@@ -29,6 +29,12 @@ function getResendClient() {
  * @param {string} options.orgName - Organization name for context
  */
 export async function ccSuperadmin({ subject, html, originalRecipient, reportType, orgName }) {
+  // No personal mailbox fallback, no customer-content copies without explicit approval.
+  if (process.env.CLIENT_REPORT_QA_COPIES_ENABLED !== 'true') return null;
+  if (!SUPERADMIN_EMAIL || !SUPERADMIN_EMAIL.trim().toLowerCase().endsWith('@signaltrue.ai')) {
+    console.warn('[Superadmin CC] Customer-copy QA recipient not approved; copy skipped');
+    return null;
+  }
   const resend = getResendClient();
   if (!resend) {
     console.log('[Superadmin CC] Resend not configured, skipping superadmin copy');
@@ -81,6 +87,7 @@ export async function ccSuperadmin({ subject, html, originalRecipient, reportTyp
  * @param {Object} options.data - Additional data to include
  */
 export async function notifySuperadmin({ title, message, type, data = {} }) {
+  if (!SUPERADMIN_EMAIL) return null;
   const resend = getResendClient();
   if (!resend) {
     console.log('[Superadmin Notify] Resend not configured, skipping notification');
