@@ -1,3 +1,4 @@
+import { hasValidAdminApiKey } from '../middleware/auth.js';
 import express from 'express';
 import crypto from 'crypto';
 import DriftSession from '../models/driftSession.js';
@@ -216,7 +217,7 @@ router.get('/report/:sessionId', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(adminKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
