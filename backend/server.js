@@ -725,7 +725,12 @@ async function main() {
                 .reduce((a, b) => a + b, 0),
             0
           );
-          console.log(`✅ Retention purge completed. Total records removed: ${total}`);
+          const incomplete = results.filter((row) => row.status !== 'success');
+          if (incomplete.length) {
+            console.warn('[RetentionPurge] Retention verification or errors remain for',
+              incomplete.length, 'scope(s). Raw WorkEvent purge may require backlog approval.');
+          }
+          console.log(`Retention purge finished: ${total} deletions; ${incomplete.length} scopes require attention.`);
         } catch (err) {
           console.error('❌ Retention purge failed:', err.message);
         }
