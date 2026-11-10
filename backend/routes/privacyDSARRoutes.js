@@ -294,6 +294,55 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * Manual verification is required before legal erasure or rectification is
+ * recorded as completed. Attestation cannot substitute for underlying evidence.
+ */
+export function dsarVerificationRequirements(type) {
+  if (type === 'delete') return [
+    'activeSystemsChecked', 'derivedDataReviewed', 'backupRetentionDocumented',
+    'subprocessorsReviewed', 'retentionExceptionsReviewed',
+  ];
+  if (type === 'rectify') return ['fieldsCorrected', 'requesterNotified'];
+  return [];
+}
+
+router.post('/dsar/:requestId/verify-completion', authenticateToken, async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: true, code: 'FORBIDDEN' });
+  try {
+    const request = await DSARRequest.findById(req.params.requestId).lean();
+    if (!request) return res.status(404).json({ error: true, code: 'NOT_FOUND' });
+    if (!isMasterAdmin(req.user) && String(request.orgId || '') !== String(req.user.orgId || '')) {
+      return res.status(403).json({ error: true, code: 'FORBIDDEN' });
+    }
+    if (request.status !== 'awaiting_manual') {
+      return res.status(409).json({ error: true, code: 'NOT_AWAITING_MANUAL_VERIFICATION' });
+    }
+    const required = dsarVerificationRequirements(request.requestType);
+    if (!required.length || !required.every((item) => req.body?.verification?.[item] === true)) {
+      return res.status(400).json({ error: true, code: 'INCOMPLETE_VERIFICATION',
+        requiredChecklist: required });
+    }
+    const completedAt = new Date();
+    const updated = await DSARRequest.findOneAndUpdate(
+      { _id: request._id, status: 'awaiting_manual' },
+      { $set: {
+        status: 'completed', completedAt,
+        'summary.manualVerification': {
+          checks: Object.fromEntries(required.map((item) => [item, true])),
+          verifiedBy: String(req.user.userId), verifiedAt: completedAt,
+        },
+      } },
+      { new: true }
+    );
+    if (!updated) return res.status(409).json({ error: true, code: 'STATE_CHANGED' });
+    return res.json({ data: { requestId: request._id, status: 'completed' } });
+  } catch (error) {
+    console.error('[DSAR verification]', error.message);
+    return res.status(500).json({ error: true, code: 'VERIFICATION_FAILED' });
+  }
+});
+
 // ── GET /api/privacy/consent/:userId ─────────────────────────────────────────
 // Admin: get a user's consent record
 
