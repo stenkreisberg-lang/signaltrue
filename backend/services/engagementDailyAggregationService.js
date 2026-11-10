@@ -60,6 +60,13 @@ const FRAGMENTED_BTB_SEQUENCES = 3;
 const RECOVERY_LATE_HOUR = 20; // last activity after 20:00 local
 const RECOVERY_EARLY_HOUR = 8; // first activity before 08:00 local
 
+// Source events with no mapped current employee are not contributors.
+export function candidateMappedActorIds(events = []) {
+  return [...new Set(events
+    .map((event) => String(event.actorUserId || ''))
+    .filter((id) => mongoose.isValidObjectId(id)))];
+}
+
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 /**
@@ -95,9 +102,7 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   // Only validated active workforce identities contribute to a team metric.
   // String(undefined) previously counted as a real person and departed employees
   // could inflate the group-size gate.
-  const actorIds = [...new Set(events
-    .map((event) => String(event.actorUserId || ''))
-    .filter((id) => mongoose.isValidObjectId(id)))];
+  const actorIds = candidateMappedActorIds(events);
   const currentMembers = actorIds.length
     ? await User.find({ _id: { $in: actorIds }, orgId, teamId,
       accountStatus: { $ne: 'inactive' } }).select('_id').lean()
