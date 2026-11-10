@@ -39,6 +39,11 @@ describe('source evidence status never confuses absence with zero activity', () 
       ...diagnostic, lastSyncStatus: 'failed',
     }, now)).toMatchObject({ state: 'sync_error', verified: false });
   });
+  test('old source events are not proof of current weekly activity', () => {
+    expect(deriveSourceMeasurementStatus(source, {
+      ...diagnostic, latestEventReceived: '2026-10-20T14:00:00Z',
+    }, now)).toMatchObject({ state: 'stale_evidence', verified: false });
+  });
   test('unmapped employees do not produce verified coverage', () => {
     expect(deriveSourceMeasurementStatus(source, {
       ...diagnostic, mappedUsers: 0,
