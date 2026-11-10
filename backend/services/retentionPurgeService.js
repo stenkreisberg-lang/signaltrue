@@ -1,161 +1,124 @@
 /**
- * Retention Purge Service
- *
- * Purges data older than the configured retention window for each collection.
- * Reads per-org retention policy from the RetentionPolicy collection.
- * Falls back to conservative defaults if no policy exists for an org.
- *
- * Called by:
- *   - Sunday 03:00 UTC cron (all orgs)
- *   - POST /api/privacy/purge/:orgId  (admin on-demand)
- *   - DSAR delete handler
+ * Tenant-scoped retention enforcement.
+ * Raw WorkEvent deletion is intentionally preview-first after correcting the
+ * legacy "occurredAt" typo: enabling it may remove a historical backlog.
  */
-
-import mongoose from 'mongoose';
-
 import RetentionPolicy from '../models/retentionPolicy.js';
 import Organization from '../models/organizationModel.js';
+import WorkEvent from '../models/workEvent.js';
+import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
+import MetricsDaily from '../models/metricsDaily.js';
+import ScoringAuditLog from '../models/scoringAuditLog.js';
+import ChatLog from '../models/chatLog.js';
 
-// Default retention windows (days) — used when no org policy exists
-/**
- * Get or create the retention policy for an org.
- */
+const DAY_MS = 24 * 60 * 60 * 1000;
+export const GLOBAL_PUBLIC_CHAT_RETENTION_DAYS = 30;
+
 async function getPolicy(orgId) {
-  let policy = await RetentionPolicy.findOne({ orgId }).lean();
-  if (!policy) {
-    // Create a default policy so it can be viewed/edited in admin
+  const existing = await RetentionPolicy.findOne({ orgId }).lean();
+  if (existing) return existing;
+  try {
     const created = await RetentionPolicy.create({ orgId });
-    policy = created.toObject();
+    return created.toObject();
+  } catch (error) {
+    if (error?.code === 11000) return RetentionPolicy.findOne({ orgId }).lean();
+    throw error;
   }
-  return policy;
 }
 
-/**
- * Build a cutoff Date given a retention window in days.
- */
-function cutoff(days) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d;
+function cutoff(days, now) {
+  if (!Number.isFinite(days) || days < 1) throw new Error('Invalid retention window');
+  return new Date(now.getTime() - Math.floor(days) * DAY_MS);
 }
 
-/**
- * Purge data for a single org according to its retention policy.
- * Returns a summary object: { collection: deletedCount, ... }
- */
-export async function purgeOrgData(orgId) {
+export function buildTenantRetentionFilters(orgId, policy, now = new Date()) {
+  if (!orgId || !policy) throw new Error('Tenant and retention policy are required');
+  return {
+    // WorkEvent uses timestamp, not the nonexistent occurredAt field.
+    WorkEvent: { orgId, timestamp: { $lt: cutoff(policy.rawEventRetentionDays, now) } },
+    IntegrationMetricsDaily: { orgId, date: { $lt: cutoff(policy.rawEventRetentionDays, now) } },
+    MetricsDaily: { orgId, date: { $lt: cutoff(policy.metricsRetentionDays, now) } },
+    ScoringAuditLog: { orgId, runAt: { $lt: cutoff(policy.auditLogRetentionDays, now) } },
+  };
+}
+
+export async function purgeOrgData(orgId, { dryRun = false, now = new Date() } = {}) {
   const policy = await getPolicy(orgId);
-  const summary = { orgId: orgId.toString(), purgedAt: new Date() };
+  const filters = buildTenantRetentionFilters(orgId, policy, now);
+  const summary = {
+    orgId: String(orgId), purgedAt: now, dryRun,
+    WorkEvent: 0, IntegrationMetricsDaily: 0, MetricsDaily: 0, ScoringAuditLog: 0,
+    candidateCounts: {}, errors: [], deferred: [],
+  };
+  const models = { WorkEvent, IntegrationMetricsDaily, MetricsDaily, ScoringAuditLog };
 
-  // ── WorkEvent ──────────────────────────────────────────────────────────────
-  try {
-    const WorkEvent = mongoose.models.WorkEvent;
-    if (WorkEvent) {
-      const result = await WorkEvent.deleteMany({
-        orgId,
-        occurredAt: { $lt: cutoff(policy.rawEventRetentionDays) },
-      });
-      summary.WorkEvent = result.deletedCount;
+  for (const [name, model] of Object.entries(models)) {
+    try {
+      const candidates = await model.countDocuments(filters[name]);
+      summary.candidateCounts[name] = candidates;
+      if (dryRun) { summary.deferred.push(name); continue; }
+      if (name === 'WorkEvent' && process.env.WORK_EVENT_RETENTION_ENFORCEMENT !== 'true') {
+        // Do not unexpectedly purge years of raw events on the first corrected deploy.
+        summary.deferred.push('WorkEvent: requires validated deletion preview');
+        continue;
+      }
+      const result = await model.deleteMany(filters[name]);
+      summary[name] = result.deletedCount || 0;
+    } catch (error) {
+      console.error('[RetentionPurge] Collection purge failed:', name, error.message);
+      summary.errors.push(name);
     }
-  } catch (err) {
-    console.error(`[purge] WorkEvent error for org ${orgId}:`, err.message);
-    summary.WorkEvent = 'error';
   }
 
-  // ── IntegrationMetricsDaily ────────────────────────────────────────────────
-  try {
-    const IMD = mongoose.models.IntegrationMetricsDaily;
-    if (IMD) {
-      const result = await IMD.deleteMany({
-        orgId,
-        date: { $lt: cutoff(policy.rawEventRetentionDays) },
-      });
-      summary.IntegrationMetricsDaily = result.deletedCount;
-    }
-  } catch (err) {
-    console.error(`[purge] IntegrationMetricsDaily error for org ${orgId}:`, err.message);
-    summary.IntegrationMetricsDaily = 'error';
+  // Anonymous ChatLog has no orgId and must NEVER be purged by an individual
+  // customer's retention endpoint. It has its own global retention job.
+  summary.status = summary.errors.length
+    ? 'partial_failure'
+    : summary.deferred.length ? 'verification_required' : 'success';
+
+  if (!dryRun) {
+    const nextScheduledPurgeAt = new Date(now.getTime() + 7 * DAY_MS);
+    const update = {
+      nextScheduledPurgeAt, lastPurgeSummary: summary,
+    };
+    if (summary.status === 'success') update.lastPurgeAt = now;
+    await RetentionPolicy.findOneAndUpdate({ orgId }, { $set: update }, { upsert: true });
   }
 
-  // ── MetricsDaily ───────────────────────────────────────────────────────────
-  try {
-    const MetricsDaily = mongoose.models.MetricsDaily;
-    if (MetricsDaily) {
-      const result = await MetricsDaily.deleteMany({
-        orgId,
-        date: { $lt: cutoff(policy.metricsRetentionDays) },
-      });
-      summary.MetricsDaily = result.deletedCount;
-    }
-  } catch (err) {
-    console.error(`[purge] MetricsDaily error for org ${orgId}:`, err.message);
-    summary.MetricsDaily = 'error';
-  }
-
-  // ── ScoringAuditLog ────────────────────────────────────────────────────────
-  try {
-    const SAL = mongoose.models.ScoringAuditLog;
-    if (SAL) {
-      const result = await SAL.deleteMany({
-        orgId,
-        runAt: { $lt: cutoff(policy.auditLogRetentionDays) },
-      });
-      summary.ScoringAuditLog = result.deletedCount;
-    }
-  } catch (err) {
-    console.error(`[purge] ScoringAuditLog error for org ${orgId}:`, err.message);
-    summary.ScoringAuditLog = 'error';
-  }
-
-  // ── ChatLog ────────────────────────────────────────────────────────────────
-  // ChatLog has no orgId — purge globally by age
-  try {
-    const ChatLog = mongoose.models.ChatLog;
-    if (ChatLog) {
-      const result = await ChatLog.deleteMany({
-        createdAt: { $lt: cutoff(policy.chatLogRetentionDays) },
-      });
-      summary.ChatLog = result.deletedCount;
-    }
-  } catch (err) {
-    console.error(`[purge] ChatLog error:`, err.message);
-    summary.ChatLog = 'error';
-  }
-
-  // ── Update policy record ───────────────────────────────────────────────────
-  const nextPurge = new Date();
-  nextPurge.setDate(nextPurge.getDate() + 7); // next Sunday
-
-  await RetentionPolicy.findOneAndUpdate(
-    { orgId },
-    {
-      lastPurgeAt: new Date(),
-      nextScheduledPurgeAt: nextPurge,
-      lastPurgeSummary: summary,
-    },
-    { upsert: true }
-  );
-
-  console.log(`[RetentionPurge] Org ${orgId} complete:`, summary);
+  console.info('[RetentionPurge] Org cleanup outcome:', {
+    orgId: String(orgId), status: summary.status, errors: summary.errors.length,
+    deferred: summary.deferred.length,
+  });
   return summary;
 }
 
-/**
- * Purge all orgs — called by the Sunday cron job.
- */
+export async function purgeGlobalPublicChatLogs({ dryRun = false, now = new Date() } = {}) {
+  // These public chat logs are not tenant-owned. Apply the fixed public-chat
+  // retention once per scheduled global job, rather than once for every tenant.
+  const filter = { createdAt: { $lt: cutoff(GLOBAL_PUBLIC_CHAT_RETENTION_DAYS, now) } };
+  const candidates = await ChatLog.countDocuments(filter);
+  if (dryRun) return { status: 'dry_run', candidateCount: candidates, deletedCount: 0 };
+  const result = await ChatLog.deleteMany(filter);
+  return { status: 'success', candidateCount: candidates, deletedCount: result.deletedCount || 0 };
+}
+
 export async function purgeAllOrgs() {
   const orgs = await Organization.find({}).select('_id').lean();
   const results = [];
-
   for (const org of orgs) {
     try {
-      const summary = await purgeOrgData(org._id);
-      results.push(summary);
-    } catch (err) {
-      console.error(`[RetentionPurge] Failed for org ${org._id}:`, err.message);
-      results.push({ orgId: org._id.toString(), error: err.message });
+      results.push(await purgeOrgData(org._id));
+    } catch (error) {
+      console.error('[RetentionPurge] Failed:', String(org._id), error.message);
+      results.push({ orgId: String(org._id), status: 'failed', errors: [error.message] });
     }
   }
-
+  try {
+    const globalChat = await purgeGlobalPublicChatLogs();
+    results.push({ orgId: 'public-chat', status: globalChat.status, ChatLog: globalChat.deletedCount });
+  } catch (error) {
+    console.error('[RetentionPurge] Global public chat cleanup failed:', error.message);
+    results.push({ orgId: 'public-chat', status: 'failed', errors: [error.message] });
+  }
   return results;
 }
