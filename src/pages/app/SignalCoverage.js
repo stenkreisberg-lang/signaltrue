@@ -89,7 +89,8 @@ export default function SignalCoverage() {
         <div className="app-panel">
           <h2>Source verification</h2>
           <p className="app-muted">
-            Connection alone does not confirm usable activity. Missing, stale or unmapped data must never be treated as zero work.
+            Connection alone does not confirm usable activity. Missing, stale or unmapped data must
+            never be treated as zero work.
           </p>
           {status.sources.length === 0 ? (
             <p className="coverage-empty">No connected sources are available yet.</p>
