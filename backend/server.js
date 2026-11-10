@@ -563,6 +563,19 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: integration health monitor hourly');
 
+      // Approved privacy jobs are durable. Recover those interrupted by a restart.
+      const recoverDSAR = async () => {
+        try {
+          const { recoverStaleDSARRequests } = await import('./routes/privacyDSARRoutes.js');
+          const result = await recoverStaleDSARRequests();
+          if (result.recovered) console.log('DSAR work recovered:', result.recovered);
+        } catch (error) {
+          console.error('DSAR recovery failed:', error.message);
+        }
+      };
+      cron.schedule('20,50 * * * *', recoverDSAR);
+      void recoverDSAR();
+
       // Alert on uncertain report sends. No automatic replay of a potentially delivered email.
       cron.schedule('12 * * * *', async () => {
         try {
