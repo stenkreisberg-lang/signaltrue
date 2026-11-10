@@ -43,6 +43,8 @@ const engagementTeamDailySchema = new mongoose.Schema(
     // ── Calendar metrics ──────────────────────────────────────────────────────
     calendar: {
       // Total internal meeting minutes across all team members
+      meetingCount: { type: Number, default: 0, min: 0 },
+      afterHoursMeetingCount: { type: Number, default: 0, min: 0 },
       meetingHoursTotal: { type: Number, default: 0 },
       // Average per active person
       meetingHoursPerPerson: { type: Number, default: 0 },
@@ -121,6 +123,12 @@ const engagementTeamDailySchema = new mongoose.Schema(
     },
 
     // Which integrations contributed data on this day
+    measurementEvidence: {
+      calendarEventCount: { type: Number, default: 0 },
+      messagingEventCount: { type: Number, default: 0 },
+      emailEventCount: { type: Number, default: 0 },
+      excludedUnmappedOrInactiveEvents: { type: Number, default: 0 },
+    },
     integrationCoverage: {
       hasCalendar: { type: Boolean, default: false },
       hasMessaging: { type: Boolean, default: false },
