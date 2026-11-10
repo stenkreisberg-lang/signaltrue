@@ -637,7 +637,8 @@ function generateManagerPrompts({ tw, lw, sixWeekAvg, orgStatus, teamBDIData, tw
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
-  const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
+  const minimumTeamSize = Math.max(2, Number(org.settings?.minTeamSize) || 2);
+  const sensitiveReportMinimum = Math.max(8, minimumTeamSize);
   const teams = await Team.find({ orgId });
   const now = new Date();
 
@@ -754,7 +755,7 @@ export async function generateWeeklyBrief(orgId) {
           orgId: org._id,
           scoringVersion: '2.1.0',
           weekStart: { $gte: thisWeekStart.toISOString().slice(0, 10) },
-          activePeopleCount: { $gte: minimumTeamSize },
+          activePeopleCount: { $gte: sensitiveReportMinimum },
         },
       },
       { $sort: { teamId: 1, weekStart: -1 } },
@@ -826,7 +827,7 @@ export async function generateWeeklyBrief(orgId) {
       return (
         !isCatchAllTeam(doc.teamName) &&
         team?.analyticsEnabled !== false &&
-        (knownSize == null || knownSize >= minimumTeamSize)
+        (knownSize == null || knownSize >= sensitiveReportMinimum)
       );
     });
   const engagementDriverLabel = (driver) =>
@@ -1093,7 +1094,10 @@ export async function generateWeeklyBrief(orgId) {
     }
     if (memberCount < minimumTeamSize) {
       status = 'Suppressed';
-      reason = `Team has ${memberCount} member(s); the organization requires ${minimumTeamSize} for engagement scoring.`;
+      reason = `Team has ${memberCount} member(s); at least ${minimumTeamSize} are required for team recognition.`;
+    } else if (memberCount < sensitiveReportMinimum) {
+      status = 'Operational team (sensitive metrics withheld)';
+      reason = `This is a valid team, but sensitive engagement scores require at least ${sensitiveReportMinimum} active people.`;
     } else if (eventInfo.activeUsers < minimumTeamSize) {
       status = 'Not enough mapped activity';
       reason = `${eventInfo.activeUsers} active mapped user(s) this week; ${minimumTeamSize} required.`;
