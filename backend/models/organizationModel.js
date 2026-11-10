@@ -196,8 +196,8 @@ const organizationSchema = new mongoose.Schema(
     },
     settings: {
       onboardingComplete: { type: Boolean, default: false },
-      // Organizations may raise the reporting threshold, but never lower the privacy floor.
-      minTeamSize: { type: Number, default: 8, min: 8 },
+      // Minimum formal team size (2+); sensitive metric disclosure remains gated separately.
+      minTeamSize: { type: Number, default: 2, min: 2 },
       timezone: { type: String, default: 'UTC' },
       timezoneConfirmedAt: { type: Date },
       workdayStart: { type: String, default: '09:00' },
