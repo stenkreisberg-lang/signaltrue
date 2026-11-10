@@ -32,6 +32,8 @@ import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import Team from '../models/team.js';
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
+import User from '../models/user.js';
+import mongoose from 'mongoose';
 import {
   checkTeamSize,
   resolveMinimumTeamSize,
@@ -90,9 +92,20 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
     timestamp: { $gte: dayStart, $lt: dayEnd },
   }).lean();
 
-  // Distinct active users on this day (using actorUserId as proxy for person)
-  const activeUsers = new Set(events.map((e) => String(e.actorUserId)).filter(Boolean));
-  const activePeopleCount = activeUsers.size;
+  // Only validated active workforce identities contribute to a team metric.
+  // String(undefined) previously counted as a real person and departed employees
+  // could inflate the group-size gate.
+  const actorIds = [...new Set(events
+    .map((event) => String(event.actorUserId || ''))
+    .filter((id) => mongoose.isValidObjectId(id)))];
+  const currentMembers = actorIds.length
+    ? await User.find({ _id: { $in: actorIds }, orgId, teamId,
+      accountStatus: { $ne: 'inactive' } }).select('_id').lean()
+    : [];
+  const activeIds = new Set(currentMembers.map((user) => String(user._id)));
+  const activeEvents = events.filter((event) =>
+    event.actorUserId && activeIds.has(String(event.actorUserId)));
+  const activePeopleCount = activeIds.size;
 
   // Privacy gate — do not write if below minimum
   if (!checkTeamSize(activePeopleCount, minimumTeamSize)) {
@@ -104,9 +117,27 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   }
 
   // ── Segment events by type ─────────────────────────────────────────────────
-  const calendarEvents = events.filter((e) => CALENDAR_SOURCES.has(e.source));
-  const messagingEvents = events.filter((e) => MESSAGING_SOURCES.has(e.source));
-  const emailEvents = events.filter((e) => EMAIL_SOURCES.has(e.source));
+  const calendarEvents = activeEvents.filter((e) => CALENDAR_SOURCES.has(e.source));
+  const messagingEvents = activeEvents.filter((e) => MESSAGING_SOURCES.has(e.source));
+  const emailEvents = activeEvents.filter((e) => EMAIL_SOURCES.has(e.source));
+  const meetingEvents = calendarEvents.filter((e) =>
+    e.eventType === 'meeting' || e.eventType === 'meet_started');
+  const messageEvents = messagingEvents.filter((e) => e.eventType === 'message');
+  const sentEmailEvents = emailEvents.filter((e) => e.eventType === 'email_sent');
+  const observedCoverage = {
+    ...coverage,
+    // Consent, a connected OAuth token or source mapping alone cannot prove
+    // that we observed activity in this period.
+    hasCalendar: coverage.hasCalendar && meetingEvents.length > 0,
+    hasMessaging: coverage.hasMessaging && messageEvents.length > 0,
+    hasEmail: coverage.hasEmail && sentEmailEvents.length > 0,
+  };
+  const measurementEvidence = {
+    calendarEventCount: meetingEvents.length,
+    messagingEventCount: messageEvents.length,
+    emailEventCount: sentEmailEvents.length,
+    excludedUnmappedOrInactiveEvents: events.length - activeEvents.length,
+  };
 
   // ── Compute metric blocks ──────────────────────────────────────────────────
   const calendarMetrics = computeCalendarMetrics(
@@ -130,7 +161,8 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
         calendar: calendarMetrics,
         messaging: messagingMetrics,
         email: emailMetrics,
-        integrationCoverage: coverage,
+        integrationCoverage: observedCoverage,
+        measurementEvidence,
       },
     },
     { upsert: true, returnDocument: 'after' }
@@ -266,6 +298,8 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
   );
 
   return {
+    meetingCount: meetings.length,
+    afterHoursMeetingCount: meetings.filter((e) => isAfterHours(e.metadata?.startTime || e.timestamp, workConfig)).length,
     meetingHoursTotal: round2(meetingHoursTotal),
     meetingHoursPerPerson: round2(meetingHoursPerPerson),
     attendeeHoursTotal: round2(attendeeHoursTotal),
