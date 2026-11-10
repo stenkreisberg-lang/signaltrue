@@ -1,3 +1,4 @@
+import { hasValidAdminApiKey } from '../middleware/auth.js';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { generateChatResponse, captureLeadFromChat } from '../services/chatService.js';
@@ -112,7 +113,7 @@ router.post('/index', async (req, res) => {
     // For now, check for a simple API key
     const apiKey = req.headers['x-admin-key'];
 
-    if (process.env.NODE_ENV === 'production' && apiKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(apiKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -143,7 +144,7 @@ router.get('/stats', async (req, res) => {
     // In production, add authentication check here
     const apiKey = req.headers['x-admin-key'];
 
-    if (process.env.NODE_ENV === 'production' && apiKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(apiKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 

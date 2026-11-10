@@ -355,9 +355,13 @@ export default function DidControlWork() {
                   For WHS consultants
                 </Link>
               </div>
-              <p role="status" className={copyFeedback ? 'mt-3 text-caption text-[#475569]' : 'sr-only'}>
+              <p
+                role="status"
+                className={copyFeedback ? 'mt-3 text-caption text-[#475569]' : 'sr-only'}
+              >
                 {copyFeedback === 'copied' && 'Checklist copied.'}
-                {copyFeedback === 'manual' && 'Automatic copy is unavailable. Select and copy the checklist below.'}
+                {copyFeedback === 'manual' &&
+                  'Automatic copy is unavailable. Select and copy the checklist below.'}
               </p>
               {copyFeedback === 'manual' && (
                 <textarea

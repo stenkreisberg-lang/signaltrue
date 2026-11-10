@@ -10,6 +10,7 @@ import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import CeoSummary from '../models/ceoSummary.js';
 import CronLog from '../models/cronLog.js';
+import WeeklyBriefDispatch from '../models/weeklyBriefDispatch.js';
 import { buildBriefResponseUrl } from '../routes/briefResponse.js';
 import WeekContext from '../models/weekContext.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
@@ -636,7 +637,8 @@ function generateManagerPrompts({ tw, lw, sixWeekAvg, orgStatus, teamBDIData, tw
 export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
-  const minimumTeamSize = Math.max(8, Number(org.settings?.minTeamSize) || 8);
+  const minimumTeamSize = Math.max(2, Number(org.settings?.minTeamSize) || 2);
+  const sensitiveReportMinimum = Math.max(8, minimumTeamSize);
   const teams = await Team.find({ orgId });
   const now = new Date();
 
@@ -753,7 +755,7 @@ export async function generateWeeklyBrief(orgId) {
           orgId: org._id,
           scoringVersion: '2.1.0',
           weekStart: { $gte: thisWeekStart.toISOString().slice(0, 10) },
-          activePeopleCount: { $gte: minimumTeamSize },
+          activePeopleCount: { $gte: sensitiveReportMinimum },
         },
       },
       { $sort: { teamId: 1, weekStart: -1 } },
@@ -825,7 +827,7 @@ export async function generateWeeklyBrief(orgId) {
       return (
         !isCatchAllTeam(doc.teamName) &&
         team?.analyticsEnabled !== false &&
-        (knownSize == null || knownSize >= minimumTeamSize)
+        (knownSize == null || knownSize >= sensitiveReportMinimum)
       );
     });
   const engagementDriverLabel = (driver) =>
@@ -1092,7 +1094,10 @@ export async function generateWeeklyBrief(orgId) {
     }
     if (memberCount < minimumTeamSize) {
       status = 'Suppressed';
-      reason = `Team has ${memberCount} member(s); the organization requires ${minimumTeamSize} for engagement scoring.`;
+      reason = `Team has ${memberCount} member(s); at least ${minimumTeamSize} are required for team recognition.`;
+    } else if (memberCount < sensitiveReportMinimum) {
+      status = 'Operational team (sensitive metrics withheld)';
+      reason = `This is a valid team, but sensitive engagement scores require at least ${sensitiveReportMinimum} active people.`;
     } else if (eventInfo.activeUsers < minimumTeamSize) {
       status = 'Not enough mapped activity';
       reason = `${eventInfo.activeUsers} active mapped user(s) this week; ${minimumTeamSize} required.`;
@@ -3592,14 +3597,29 @@ export async function sendWeeklyBrief(orgId) {
     .map(u => String(u.email || '').trim().toLowerCase())
     .filter(email => email && (!configured || approved.has(email))))];
 
-  // A single customer email transaction contains the QA copy as BCC.
-  // This preserves precisely the same report, rather than re-rendering it.
+  if (!recipients.length) {
+    throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
+  }
+
+  const { periodStart } = completedReportingWeek(new Date(), org.settings?.timezone || 'UTC');
+  const dispatchId = 'weekly:' + String(org._id) + ':' + periodStart.toISOString();
   const envelope = buildWeeklyBriefEnvelope({ recipients, subject, html });
+  try {
+    // The _id unique constraint prevents parallel and repeated sends.
+    await WeeklyBriefDispatch.create({
+      _id: dispatchId, orgId: org._id, periodStart,
+      status: 'sending', recipientCount: recipients.length,
+    });
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    const existing = await WeeklyBriefDispatch.findById(dispatchId).lean();
+    if (existing?.status === 'sent') return { skipped: true, reason: 'already_sent', dispatchId };
+    throw new Error('Previous weekly send may be in progress or unconfirmed. Reconcile dispatch ' + dispatchId);
+  }
 
-  if (recipients.length > 0) {
-    console.log(`[WeeklyBrief] Sending brief for ${org.name} to: ${recipients.join(', ')}`);
-
-    // Send to client recipients
+  let providerMessageId;
+  try {
+    console.log('[WeeklyBrief] Sending authorised report for org ' + String(org._id));
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { data, error } = await resend.emails.send({
@@ -3611,20 +3631,15 @@ export async function sendWeeklyBrief(orgId) {
         attachments: attachments.map(({ filename, content, contentId }) => ({
           filename, content, contentId,
         })),
-        // Tags come back on delivery/open/click webhooks, which is what makes
-        // engagement attributable to an organization.
         tags: [
           { name: 'email_type', value: 'weekly-brief' },
           { name: 'org_id', value: String(orgId) },
         ],
       });
-      if (error) {
-        console.error(`[WeeklyBrief] ❌ Resend error:`, JSON.stringify(error));
-        throw new Error(`Resend failed: ${error.message || error.name}`);
-      }
-      console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} (id: ${data?.id})`);
+      if (error) throw new Error('Report email provider returned an error');
+      providerMessageId = data?.id;
     } else {
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: process.env.SMTP_FROM || 'noreply@signaltrue.ai',
         to: envelope.to.join(','),
         bcc: envelope.bcc.join(','),
@@ -3637,14 +3652,20 @@ export async function sendWeeklyBrief(orgId) {
           cid: contentId,
         })),
       });
-      console.log(`[WeeklyBrief] ✅ Sent to ${recipients.join(', ')} via SMTP`);
+      providerMessageId = info?.messageId;
     }
-  } else {
-    throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
+    await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
+      $set: { status: 'sent', sentAt: new Date(), providerMessageId },
+    });
+    return { sent: true, dispatchId, providerMessageId };
+  } catch (error) {
+    // Email may have been accepted before the failure. Never automatically send it again.
+    await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
+      $set: { status: 'unknown', lastError: String(error?.message || 'send_failed').slice(0, 200) },
+    }).catch(() => {});
+    throw error;
   }
 
-  // The superadmin receives the customer's identical report as BCC.
-  // No separate admin HTML, recalculation, or unapproved customer recipient.
 }
 
 export default { sendWeeklyBrief, generateWeeklyBrief };

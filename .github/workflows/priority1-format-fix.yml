@@ -1,0 +1,29 @@
+name: Format Priority 1 review branch
+on:
+  push:
+    branches:
+      - fix/priority1-security-reporting-20261110
+permissions:
+  contents: write
+jobs:
+  format-pr:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Fix existing frontend formatting debt reported by CI
+        run: npx prettier --write src/content/psychosocialControlReviewPost.test.ts src/content/psychosocialControlReviewPost.ts src/pages/DidControlWork.test.tsx src/pages/DidControlWork.tsx src/seo/routeMeta.js
+      - name: Commit formatting correction
+        run: |
+          git config user.name "signaltrue-format"
+          git config user.email "format@signaltrue.ai"
+          git add src/content/psychosocialControlReviewPost.test.ts src/content/psychosocialControlReviewPost.ts src/pages/DidControlWork.test.tsx src/pages/DidControlWork.tsx src/seo/routeMeta.js
+          git diff --cached --quiet || git commit -m "chore: format existing frontend files [skip ci]"
+          git push

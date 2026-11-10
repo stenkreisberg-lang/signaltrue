@@ -1,12 +1,14 @@
 import express from 'express';
 import Team from '../models/team.js';
-import { requireApiKey } from '../middleware/auth.js';
+import { requireApiKey, requireCurrentUserRoles } from '../middleware/auth.js';
 import { getExpandedEnergyIndex } from '../services/energyIndexService.js';
 import getProvider from '../utils/aiProvider.js';
 import { incrementUsage, readUsage } from '../utils/aiUsage.js';
 import { isMasterAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+// /api/teams has JWT authentication at the server mount; refuse inactive and revoked accounts.
+router.use(requireCurrentUserRoles());
 
 function teamFilter(req, teamId) {
   const filter = teamId ? { _id: teamId } : {};
@@ -16,7 +18,7 @@ function teamFilter(req, teamId) {
 
 // PATCH /api/teams/:teamId/drivers
 // Update driverWeights and seasonalityFlags for a team
-router.patch('/:teamId/drivers', async (req, res) => {
+router.patch('/:teamId/drivers', requireCurrentUserRoles(['master_admin','admin','hr_admin','org_admin']), async (req, res) => {
   try {
     const { teamId } = req.params;
     const { driverWeights, seasonalityFlags } = req.body;

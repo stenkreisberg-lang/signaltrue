@@ -1,6 +1,6 @@
 import express from 'express';
 import Stripe from 'stripe';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireCurrentUserRoles } from '../middleware/auth.js';
 import Analytics from '../models/analytics.js';
 
 const router = express.Router();
@@ -20,7 +20,7 @@ function getStripe() {
  *   - visibility: €299/month
  *   - interpretation: €499/month
  */
-router.post('/billing/create-checkout-session', authenticateToken, async (req, res) => {
+router.post('/billing/create-checkout-session', authenticateToken, requireCurrentUserRoles(['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive']), async (req, res) => {
   try {
     const stripe = getStripe();
     if (!stripe) {
@@ -128,7 +128,7 @@ router.post('/billing/create-checkout-session', authenticateToken, async (req, r
  * POST /api/billing/portal-session
  * Creates Stripe Customer Portal for managing subscription
  */
-router.post('/billing/portal-session', authenticateToken, async (req, res) => {
+router.post('/billing/portal-session', authenticateToken, requireCurrentUserRoles(['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive']), async (req, res) => {
   try {
     const stripe = getStripe();
     if (!stripe) {
@@ -158,7 +158,7 @@ router.post('/billing/portal-session', authenticateToken, async (req, res) => {
  * GET /api/billing/status
  * Get current subscription status for the user's org
  */
-router.get('/billing/status', authenticateToken, async (req, res) => {
+router.get('/billing/status', authenticateToken, requireCurrentUserRoles(), async (req, res) => {
   try {
     const { default: Organization } = await import('../models/organizationModel.js');
     const org = await Organization.findById(req.user.orgId);

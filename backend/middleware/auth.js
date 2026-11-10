@@ -49,6 +49,7 @@ export function requireApiKey(req, res, next) {
  */
 
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 import Team from '../models/team.js';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
@@ -105,6 +106,53 @@ export function authenticateTokenFromHeaderOrQuery(req, res, next) {
       error: error.message,
     });
   }
+}
+
+/**
+ * Fail closed for internal administrative keys in every environment.
+ * Never compare an absent header with an absent environment value.
+ */
+export function hasValidAdminApiKey(candidate) {
+  const expected = process.env.ADMIN_API_KEY;
+  if (typeof expected !== 'string' || expected.length < 32 ||
+      typeof candidate !== 'string' || candidate.length === 0) return false;
+  const a = Buffer.from(candidate, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * Re-check the current account before any sensitive operation.
+ * JWT claims are identity hints; role, account status and tenant come from DB.
+ */
+export function requireCurrentUserRoles(allowedRoles = []) {
+  return async (req, res, next) => {
+    try {
+      if (!req.user?.userId) return res.status(401).json({ message: 'Authentication required' });
+      const current = await User.findById(req.user.userId)
+        .select('_id role orgId accountStatus isMasterAdmin teamId').lean();
+      if (!current || current.accountStatus !== 'active') {
+        return res.status(403).json({ message: 'Account inactive or revoked' });
+      }
+      if (req.user.orgId && String(current.orgId || '') !== String(req.user.orgId)) {
+        return res.status(403).json({ message: 'Organization membership changed. Sign in again.' });
+      }
+      if (allowedRoles.length && !allowedRoles.includes(current.role)) {
+        return res.status(403).json({ message: 'Insufficient current role' });
+      }
+      if (current.role === 'master_admin' && current.isMasterAdmin !== true) {
+        return res.status(403).json({ message: 'Master administrator privileges not verified' });
+      }
+      req.user = {
+        ...req.user,
+        role: current.role,
+        orgId: current.orgId,
+        teamId: current.teamId,
+        isMasterAdmin: current.isMasterAdmin === true,
+      };
+      return next();
+    } catch (error) { return next(error); }
+  };
 }
 
 // Require admin role

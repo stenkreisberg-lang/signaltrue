@@ -7,10 +7,9 @@
 import express from 'express';
 import Organization from '../models/organizationModel.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
-import MonthlyReport from '../models/monthlyReport.js';
 import accessControlService from '../services/accessControlService.js';
 import { PLAN_DEFINITIONS } from '../utils/subscriptionConstants.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireCurrentUserRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -107,179 +106,32 @@ router.get('/current', async (req, res) => {
  * PUT /api/subscriptions/upgrade
  * Upgrade organization to a higher plan
  */
-router.put('/upgrade', async (req, res) => {
-  try {
-    const organization = req.organization;
-    const { targetPlanId, backfillMonths = 3 } = req.body;
-
-    if (!organization) {
-      return res.status(400).json({ error: 'Organization context required' });
-    }
-
-    // Check if user has permission to change subscription (admin only)
-    if (!['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'].includes(req.user.role)) {
-      return res.status(403).json({
-        error: 'Only HR admins and CEOs can change subscriptions',
-      });
-    }
-
-    const currentPlanId = organization.subscriptionPlanId;
-
-    // Validate upgrade
-    const upgradeCheck = accessControlService.canUpgrade(currentPlanId, targetPlanId);
-
-    if (!upgradeCheck.allowed) {
-      return res.status(400).json({
-        error: upgradeCheck.reason,
-      });
-    }
-
-    // Get feature changes
-    const changes = accessControlService.getFeatureChanges(currentPlanId, targetPlanId);
-
-    // Perform upgrade
-    organization.subscriptionPlanId = targetPlanId;
-
-    // Add to history
-    organization.subscriptionHistory = organization.subscriptionHistory || [];
-    organization.subscriptionHistory.push({
-      planId: targetPlanId,
-      changedAt: new Date(),
-      changedBy: req.user._id,
-      action: 'upgrade',
-    });
-
-    await organization.save();
-
-    // Handle backfill for leadership reports if upgrading to leadership/custom
-    let backfillResult = null;
-    if (targetPlanId === 'leadership' || targetPlanId === 'custom') {
-      if (changes.gained.includes('monthlyReportsLeadership')) {
-        // Trigger backfill (implementation depends on report generation service)
-        backfillResult = {
-          status: 'not-scheduled',
-          months: backfillMonths,
-          available: false,
-          message: 'Historical leadership report backfill is not currently available.',
-        };
-      }
-    }
-
-    res.json({
-      success: true,
-      upgrade: {
-        from: currentPlanId,
-        to: targetPlanId,
-        featuresGained: changes.gained,
-        featuresLost: changes.lost,
-      },
-      backfill: backfillResult,
-      organization: {
-        subscriptionPlanId: organization.subscriptionPlanId,
-        customFeatures: organization.customFeatures,
-      },
-    });
-  } catch (error) {
-    console.error('Error upgrading subscription:', error);
-    res.status(500).json({
-      error: 'Failed to upgrade subscription',
-      message: error.message,
-    });
-  }
+router.put('/upgrade', requireCurrentUserRoles(['master_admin','admin','hr_admin','org_admin','executive']), (req, res) => {
+  const targetPlanId = req.body?.targetPlanId;
+  if (!PLAN_DEFINITIONS[targetPlanId]) return res.status(400).json({ error: 'Unknown target plan' });
+  const checkoutPlan = targetPlanId === 'leadership' ? 'interpretation'
+    : targetPlanId === 'team' ? 'visibility' : null;
+  return res.status(409).json({
+    error: 'Payment verification required; subscription has not been changed.',
+    code: 'CHECKOUT_REQUIRED',
+    checkoutPath: checkoutPlan ? '/api/billing/create-checkout-session' : null,
+    checkoutPlan,
+    guidance: checkoutPlan
+      ? 'Create a Stripe checkout session, then await the verified subscription webhook.'
+      : 'Contact billing to arrange the enterprise plan.',
+  });
 });
 
 /**
  * PUT /api/subscriptions/downgrade
  * Downgrade organization to a lower plan
  */
-router.put('/downgrade', async (req, res) => {
-  try {
-    const organization = req.organization;
-    const { targetPlanId, archiveLeadershipReports = true } = req.body;
-
-    if (!organization) {
-      return res.status(400).json({ error: 'Organization context required' });
-    }
-
-    // Check permissions
-    if (!['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'].includes(req.user.role)) {
-      return res.status(403).json({
-        error: 'Only HR admins and CEOs can change subscriptions',
-      });
-    }
-
-    const currentPlanId = organization.subscriptionPlanId;
-
-    // Validate downgrade
-    const downgradeCheck = accessControlService.canDowngrade(currentPlanId, targetPlanId);
-
-    if (!downgradeCheck.allowed) {
-      return res.status(400).json({
-        error: downgradeCheck.reason,
-      });
-    }
-
-    // Get feature changes
-    const changes = accessControlService.getFeatureChanges(currentPlanId, targetPlanId);
-
-    // Perform downgrade
-    organization.subscriptionPlanId = targetPlanId;
-
-    // Add to history
-    organization.subscriptionHistory = organization.subscriptionHistory || [];
-    organization.subscriptionHistory.push({
-      planId: targetPlanId,
-      changedAt: new Date(),
-      changedBy: req.user._id,
-      action: 'downgrade',
-    });
-
-    await organization.save();
-
-    // Handle leadership report archival if downgrading from leadership
-    let archivalResult = null;
-    if (changes.lost.includes('monthlyReportsLeadership') && archiveLeadershipReports) {
-      const archivedAt = new Date();
-      const result = await MonthlyReport.updateMany(
-        { orgId: organization._id, accessStatus: { $ne: 'archived' } },
-        {
-          $set: {
-            accessStatus: 'archived',
-            archivedAt,
-            archiveReason: `Plan downgrade from ${currentPlanId} to ${targetPlanId}`,
-          },
-        }
-      );
-      archivalResult = {
-        status: 'archived',
-        archivedCount: result.modifiedCount,
-        archivedAt,
-        message: 'Leadership reports archived and retained as read-only records.',
-      };
-    }
-
-    res.json({
-      success: true,
-      downgrade: {
-        from: currentPlanId,
-        to: targetPlanId,
-        featuresGained: changes.gained,
-        featuresLost: changes.lost,
-      },
-      archival: archivalResult,
-      organization: {
-        subscriptionPlanId: organization.subscriptionPlanId,
-        customFeatures: organization.customFeatures,
-      },
-      warning: changes.lost.length > 0 ? 'Some features will no longer be accessible' : null,
-    });
-  } catch (error) {
-    console.error('Error downgrading subscription:', error);
-    res.status(500).json({
-      error: 'Failed to downgrade subscription',
-      message: error.message,
-    });
-  }
+router.put('/downgrade', requireCurrentUserRoles(['master_admin','admin','hr_admin','org_admin','executive']), (_req, res) => {
+  return res.status(409).json({
+    error: 'Manage the subscription in the billing portal; no local plan change was made.',
+    code: 'BILLING_PORTAL_REQUIRED',
+    billingPortalPath: '/api/billing/portal-session',
+  });
 });
 
 /**
