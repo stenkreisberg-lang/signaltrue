@@ -68,8 +68,8 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
     avgAttendeeCount: wMean(days, 'calendar.avgAttendeeCount'),
     backToBackMeetingCount: sumField(days, 'calendar.backToBackMeetingCount'),
     fragmentedDayRatio: wMean(days, 'calendar.fragmentedDayRatio'),
-    focusHoursAvailablePerPerson: wMean(days, 'calendar.focusHoursAvailablePerPerson'),
-    focusBlocks90mCountPerPerson: perPerson(days, 'calendar.focusBlocks90mCount'),
+    focusHoursAvailablePerPerson: wMeanOrNull(days, 'calendar.focusHoursAvailablePerPerson'),
+    focusBlocks90mCountPerPerson: perPersonOrNull(days, 'calendar.focusBlocks90mCount'),
     manager1to1MinutesPerPerson: wMean(days, 'calendar.manager1to1MinutesPerPerson'),
     cancelled1to1Count: sumField(days, 'calendar.cancelled1to1Count'),
     afterHoursMeetingMinutes: sumField(days, 'calendar.afterHoursMeetingMinutes'),
@@ -200,6 +200,16 @@ function countActivitySpikeDays(days) {
 /**
  * Weighted mean of a field across days, weighted by activePeopleCount.
  */
+function wMeanOrNull(days, field) {
+  const observed = days.filter((item) => Number.isFinite(getField(item, field)));
+  return observed.length ? wMean(observed, field) : null;
+}
+
+function perPersonOrNull(days, field) {
+  const observed = days.filter((item) => Number.isFinite(getField(item, field)));
+  return observed.length ? perPerson(observed, field) : null;
+}
+
 function wMean(days, field) {
   return round4(weightedMean(days, field, 'activePeopleCount'));
 }
