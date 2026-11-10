@@ -41,23 +41,18 @@ export default function SignalCoverage() {
 
   const connected = status.sources.filter((source) => source.status === 'connected').length;
   const measuredSources = status.sources.filter(
-    (source) => (source.coverage?.mapped || 0) > 0
+    (source) => source.measurementStatus?.verified === true
   ).length;
 
   const getSourceStatus = (source) => {
-    if (source.status === 'connected' && (source.coverage?.mapped || 0) > 0) {
-      return { label: 'Measuring', className: 'status-ok' };
+    const measurement = source.measurementStatus;
+    if (measurement?.verified) {
+      return { label: measurement.label, className: 'status-ok' };
     }
-    if (source.status === 'connected') {
-      return { label: 'Connected, unmapped', className: 'status-warn' };
+    if (measurement?.state === 'disconnected') {
+      return { label: 'Not connected', className: 'status-muted' };
     }
-    if (source.status === 'needs_admin') {
-      return { label: 'Needs admin', className: 'status-warn' };
-    }
-    if (source.status === 'error') {
-      return { label: 'Verification error', className: 'status-warn' };
-    }
-    return { label: 'Not connected', className: 'status-muted' };
+    return { label: measurement?.label || 'Not verified', className: 'status-warn' };
   };
 
   return (
@@ -79,22 +74,23 @@ export default function SignalCoverage() {
           <ShieldCheck size={20} />
           <div>
             <strong>{status.loading ? '...' : measuredSources}</strong>
-            <span>Sources with mapped coverage</span>
+            <span>Sources with verified events</span>
           </div>
         </div>
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>Team level</strong>
-            <span>Visibility threshold</span>
+            <strong>8 contributors</strong>
+            <span>Sensitive metric threshold</span>
           </div>
         </div>
       </section>
       <section className="coverage-grid">
         <div className="app-panel">
-          <h2>Connected sources</h2>
+          <h2>Source verification</h2>
           <p className="app-muted">
-            Only timing, counts and collaboration metadata contribute to analysis.
+            Connection alone does not confirm usable activity. Missing, stale or unmapped data must
+            never be treated as zero work.
           </p>
           {status.sources.length === 0 ? (
             <p className="coverage-empty">No connected sources are available yet.</p>
@@ -115,6 +111,9 @@ export default function SignalCoverage() {
                           : ''}
                       </small>
                       {source.statusMessage && <small>{source.statusMessage}</small>}
+                      {source.measurementStatus?.reason && (
+                        <small>{source.measurementStatus.reason}</small>
+                      )}
                     </div>
                     <span className={sourceStatus.className}>{sourceStatus.label}</span>
                   </div>

@@ -1121,7 +1121,8 @@ export class MicrosoftAdapter extends OrgIntegrationAdapter {
 
   async transformToWorkEvents(rawEvents, orgId) {
     // Build email → internal userId lookup for fallback matching
-    const orgUsers = await User.find({ orgId }).select('_id email teamId externalIds').lean();
+    const orgUsers = await User.find({ orgId, accountStatus: { $ne: 'inactive' } })
+      .select('_id email teamId externalIds').lean();
     const userByEmail = new Map(
       orgUsers.filter((u) => u.email).map((u) => [u.email.toLowerCase(), u])
     );

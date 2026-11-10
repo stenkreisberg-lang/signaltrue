@@ -11,12 +11,79 @@
 
 import express from 'express';
 import mongoose from 'mongoose';
-import { authenticateToken, isMasterAdmin, requireOrganizationAccess } from '../middleware/auth.js';
+import { authenticateToken, isMasterAdmin, requireOrganizationAccess, requireCurrentUserRoles } from '../middleware/auth.js';
 import DSARRequest from '../models/dsarRequest.js';
 import User from '../models/user.js';
 import { purgeOrgData } from '../services/retentionPurgeService.js';
 
 const router = express.Router();
+const DSAR_LEASE_MS = 6 * 60 * 60 * 1000;
+
+// Re-evaluate the current employee account. Old JWT role claims are not authoritative.
+router.use(authenticateToken, requireCurrentUserRoles());
+
+async function processApprovedDSAR(request) {
+  try {
+    let summary = {};
+    if (request.requestType === 'delete') {
+      summary = await deleteUserData(request.userId);
+    } else if (request.requestType === 'export') {
+      summary = await exportUserData(request.userId);
+    } else if (request.requestType === 'rectify') {
+      summary = { note: 'Manual rectification is required; the request remains open.' };
+    }
+    // A database-only deletion is not proof of full GDPR erasure across
+    // processors, backups, derived artifacts and audit retention exceptions.
+    // Keep deletion and rectification open for documented human verification.
+    const requiresManualVerification =
+      request.requestType === 'rectify' || request.requestType === 'delete';
+    if (request.requestType === 'delete') {
+      summary.verificationRequired =
+        'Confirm affected collections, connected providers, backups and contractual retention exceptions.';
+    }
+    await DSARRequest.updateOne({ _id: request._id, status: 'processing' }, {
+      $set: {
+        status: requiresManualVerification ? 'awaiting_manual' : 'completed',
+        summary,
+        completedAt: requiresManualVerification ? null : new Date(),
+        processingLeaseUntil: null,
+      },
+    });
+  } catch (error) {
+    console.error('[DSAR worker]', error.message);
+    await DSARRequest.updateOne({ _id: request._id, status: 'processing' }, {
+      $set: { status: 'failed', errorMessage: String(error.message).slice(0, 300),
+        processingLeaseUntil: null },
+    });
+  }
+}
+
+/**
+ * Recover only approved operations with an expired processing lease.
+ * Pending requests still require a human approval; manual rectification
+ * is deliberately not auto-completed.
+ */
+export async function recoverStaleDSARRequests(now = new Date()) {
+  const expiryFilter = { $or: [
+    { processingLeaseUntil: { $lte: now } },
+    { processingLeaseUntil: null, updatedAt: { $lte: new Date(now.getTime() - DSAR_LEASE_MS) } },
+  ] };
+  const expired = await DSARRequest.find({
+    status: 'processing', ...expiryFilter,
+  }).select('_id').limit(20).lean();
+  let resumed = 0;
+  for (const candidate of expired) {
+    const request = await DSARRequest.findOneAndUpdate({
+      _id: candidate._id, status: 'processing', ...expiryFilter,
+    }, { $set: { processingLeaseUntil: new Date(now.getTime() + DSAR_LEASE_MS) },
+      $inc: { processingAttempts: 1 } }, { new: true });
+    if (!request) continue;
+    resumed++;
+    await processApprovedDSAR(request);
+  }
+  return { recovered: resumed };
+}
+
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
@@ -199,40 +266,24 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
       });
     }
 
-    request.status = 'processing';
     if (!isMasterAdmin(req.user) && request.orgId?.toString() !== req.user.orgId?.toString()) {
       return res.status(403).json({ error: true, message: 'Forbidden', code: 'FORBIDDEN' });
     }
-    request.processedBy = req.user.userId;
-    await request.save();
-
-    // Execute asynchronously — respond immediately
-    setImmediate(async () => {
-      try {
-        let summary = {};
-
-        if (request.requestType === 'delete') {
-          summary = await deleteUserData(request.userId);
-        } else if (request.requestType === 'export') {
-          summary = await exportUserData(request.userId);
-          request.exportUrl = summary.exportUrl || null;
-          request.exportUrlExpiresAt = summary.exportUrlExpiresAt || null;
-        } else if (request.requestType === 'rectify') {
-          // Rectification is manual — mark complete and flag for admin follow-up
-          summary = { note: 'Manual rectification required — please contact the user.' };
-        }
-
-        request.status = 'completed';
-        request.completedAt = new Date();
-        request.summary = summary;
-        await request.save();
-      } catch (procErr) {
-        console.error('[DSAR process] Failed:', procErr.message);
-        request.status = 'failed';
-        request.errorMessage = procErr.message;
-        await request.save();
-      }
-    });
+    // Atomic claim prevents concurrent admin submissions from processing twice.
+    const approved = await DSARRequest.findOneAndUpdate(
+      { _id: request._id, status: 'pending' },
+      { $set: { status: 'processing', processedBy: String(req.user.userId),
+        processingLeaseUntil: new Date(Date.now() + DSAR_LEASE_MS),
+        errorMessage: null }, $inc: { processingAttempts: 1 } },
+      { new: true }
+    );
+    if (!approved) {
+      return res.status(409).json({ error: true, code: 'REQUEST_ALREADY_CLAIMED' });
+    }
+    // Processing is recoverable from MongoDB even if the server exits here.
+    setImmediate(() => { void processApprovedDSAR(approved).catch((err) => {
+      console.error('[DSAR unexpected worker error]', err.message);
+    }); });
 
     return res.json({
       data: { requestId: request._id, status: 'processing', message: 'Processing started.' },
@@ -240,6 +291,55 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('[DSAR process]', err.message);
     return res.status(500).json({ error: true, message: err.message });
+  }
+});
+
+/**
+ * Manual verification is required before legal erasure or rectification is
+ * recorded as completed. Attestation cannot substitute for underlying evidence.
+ */
+export function dsarVerificationRequirements(type) {
+  if (type === 'delete') return [
+    'activeSystemsChecked', 'derivedDataReviewed', 'backupRetentionDocumented',
+    'subprocessorsReviewed', 'retentionExceptionsReviewed',
+  ];
+  if (type === 'rectify') return ['fieldsCorrected', 'requesterNotified'];
+  return [];
+}
+
+router.post('/dsar/:requestId/verify-completion', authenticateToken, async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: true, code: 'FORBIDDEN' });
+  try {
+    const request = await DSARRequest.findById(req.params.requestId).lean();
+    if (!request) return res.status(404).json({ error: true, code: 'NOT_FOUND' });
+    if (!isMasterAdmin(req.user) && String(request.orgId || '') !== String(req.user.orgId || '')) {
+      return res.status(403).json({ error: true, code: 'FORBIDDEN' });
+    }
+    if (request.status !== 'awaiting_manual') {
+      return res.status(409).json({ error: true, code: 'NOT_AWAITING_MANUAL_VERIFICATION' });
+    }
+    const required = dsarVerificationRequirements(request.requestType);
+    if (!required.length || !required.every((item) => req.body?.verification?.[item] === true)) {
+      return res.status(400).json({ error: true, code: 'INCOMPLETE_VERIFICATION',
+        requiredChecklist: required });
+    }
+    const completedAt = new Date();
+    const updated = await DSARRequest.findOneAndUpdate(
+      { _id: request._id, status: 'awaiting_manual' },
+      { $set: {
+        status: 'completed', completedAt,
+        'summary.manualVerification': {
+          checks: Object.fromEntries(required.map((item) => [item, true])),
+          verifiedBy: String(req.user.userId), verifiedAt: completedAt,
+        },
+      } },
+      { new: true }
+    );
+    if (!updated) return res.status(409).json({ error: true, code: 'STATE_CHANGED' });
+    return res.json({ data: { requestId: request._id, status: 'completed' } });
+  } catch (error) {
+    console.error('[DSAR verification]', error.message);
+    return res.status(500).json({ error: true, code: 'VERIFICATION_FAILED' });
   }
 });
 

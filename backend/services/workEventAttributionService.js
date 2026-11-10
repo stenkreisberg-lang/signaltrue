@@ -53,7 +53,7 @@ function extractExternalIds(event) {
 }
 
 export async function buildUserAttributionMaps(orgId) {
-  const users = await User.find({ orgId })
+  const users = await User.find({ orgId, accountStatus: { $ne: 'inactive' } })
     .select('_id email teamId externalIds profile.department')
     .lean();
 

@@ -10,6 +10,7 @@ import { getOrganizationIntegrationHealth } from '../services/integrationHealthM
 import { triggerManualSync } from '../services/integrationSyncScheduler.js';
 import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
 import { deriveMicrosoftIntegrationStatus } from '../services/microsoftIntegrationStatusService.js';
+import { deriveSourceMeasurementStatus } from '../services/sourceMeasurementStatus.js';
 
 const router = express.Router();
 
@@ -167,8 +168,25 @@ router.get('/status', authenticateToken, async (req, res) => {
       microsoftState
     );
 
+    const measuredIntegrations = integrations.map((integration) => {
+      const sourceKey = integration.type === 'microsoft-outlook'
+        ? 'outlook' : integration.type === 'microsoft-teams' ? 'teams' : null;
+      const diagnostic = sourceKey ? microsoftDiagnostics.sources?.[sourceKey] : null;
+      return {
+        ...integration,
+        measurementStatus: deriveSourceMeasurementStatus(integration, diagnostic),
+      };
+    });
+    const evidenceSummary = {
+      verifiedSources: measuredIntegrations.filter((item) => item.measurementStatus.verified).length,
+      unverifiedSources: measuredIntegrations.filter((item) =>
+        item.status === 'connected' && !item.measurementStatus.verified).length,
+      generatedAt: new Date().toISOString(),
+    };
+
     res.json({
-      integrations,
+      integrations: measuredIntegrations,
+      evidenceSummary,
       overallCoverage,
       setup,
       healthIssues,

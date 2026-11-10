@@ -26,7 +26,7 @@ const sections = [
   ],
   [
     '6. Service providers and locations',
-    'SignalTrue uses infrastructure, authentication, communications, monitoring and other service providers. The applicable subprocessor list, storage locations, processing locations and support-access arrangements are confirmed for each deployment. SignalTrue does not make an Australian data-residency guarantee unless that deployment has been verified in writing.',
+    'SignalTrue uses infrastructure, authentication, communications, monitoring and other service providers. The current shared API hosting region is Oregon, United States, while the database, backup and support-access locations require deployment-specific verification. Applicable subprocessors, locations and international-transfer safeguards must be described in each customer agreement. SignalTrue does not make an EU-only or Australian data-residency guarantee without written deployment evidence.',
   ],
   [
     '7. Retention and deletion',

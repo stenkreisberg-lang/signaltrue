@@ -30,7 +30,7 @@ const dsarRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'failed'],
+      enum: ['pending', 'processing', 'awaiting_manual', 'completed', 'failed'],
       default: 'pending',
       index: true,
     },
@@ -42,6 +42,9 @@ const dsarRequestSchema = new mongoose.Schema(
     completedAt: {
       type: Date,
     },
+    // Lease used to recover approved work after a process restart.
+    processingLeaseUntil: { type: Date, default: null, index: true },
+    processingAttempts: { type: Number, default: 0 },
     // Signed URL to the exported data package (export requests only)
     exportUrl: {
       type: String,

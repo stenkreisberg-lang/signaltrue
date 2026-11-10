@@ -53,37 +53,35 @@ Only metadata is extracted:
 
 ### What security certifications does SignalTrue have?
 
-- SOC 2 Type II certified
-- GDPR compliant
-- Regular third-party penetration testing
-- ISO 27001 aligned practices
+- Do not claim SOC 2 Type II certification without a current independent audit report.
+- GDPR readiness depends on the verified deployment, DPA, data processing, transfer basis and effective technical controls.
+- Third-party penetration testing and ISO 27001 certification have not been verified in this repository audit.
+- Provide only independently evidenced certificates, reports and controls in customer security questionnaires.
 
 ### How is data encrypted?
 
-- In transit: TLS 1.3
-- At rest: AES-256
-- Key management: AWS KMS or Google Cloud KMS
+- TLS encryption protects network connections; exact versions and termination settings must be checked per deployment.
+- Database and backup encryption at rest must be verified in their actual provider settings.
+- Key management and rotation cannot be represented as AWS KMS or Google Cloud KMS unless those configurations are evidenced.
 
 ### Where is data stored?
 
-- Primary: AWS EU (Frankfurt) or Google Cloud EU
-- US data residency available upon request
-- No data stored outside contracted regions
+- The shared production API presently runs on Render in Oregon, United States (verified 10 November 2026).
+- The location of primary database storage and backups must be verified from actual provider configuration.
+- Do not claim EU-only processing or a specific EU data-residency guarantee until all subprocessors and transfer safeguards have been checked and contractually documented.
+- Customer-specific residency may require a separately verified infrastructure deployment.
 
 ### How long is data retained?
 
-Default retention:
-- Raw metadata: 90 days
-- Aggregated signals: 24 months
-- Configurable based on requirements
+Retention is defined in the applicable customer agreement and implemented by the live purge configuration. Do not assume raw-data or aggregate retention periods without verifying actual jobs, backups, third-party copies and deletion tests.
 
 ### Can we perform a security audit?
 
 Yes. Enterprise customers can:
-- Review our SOC 2 report
-- Request security questionnaire completion
-- Discuss penetration test results
-- Request additional documentation
+- Request the current security control inventory and signed DPA
+- Request a security questionnaire supported by real configuration evidence
+- Ask which independent test reports are available, rather than assuming certification
+- Review current data locations, subprocessors, transfer safeguards and retention/deletion evidence
 
 ## Integration Process
 

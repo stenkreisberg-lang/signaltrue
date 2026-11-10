@@ -40,40 +40,6 @@ const analyzeRate = new Map();
 const ANALYZE_LIMIT = Number(process.env.ANALYZE_LIMIT || 6); // calls per window
 const ANALYZE_WINDOW_MS = Number(process.env.ANALYZE_WINDOW_MS || 60_000); // 1 minute default
 
-// Helper to generate mock teams if DB empty
-async function seedMockTeams() {
-  const count = await Team.countDocuments();
-  if (count === 0) {
-    const mock = [
-      {
-        name: 'Marketing',
-        zone: 'Watch',
-        bdi: 46,
-        trend: -8,
-        favorite: true,
-        slackSignals: { messageCount: 120, avgResponseDelayHours: 3.2, sentiment: -0.2 },
-      },
-      {
-        name: 'Engineering',
-        zone: 'Stable',
-        bdi: 62,
-        trend: 4,
-        favorite: false,
-        slackSignals: { messageCount: 85, avgResponseDelayHours: 6.1, sentiment: 0.1 },
-      },
-      {
-        name: 'Customer Success',
-        zone: 'Surge',
-        bdi: 30,
-        trend: -12,
-        favorite: false,
-        slackSignals: { messageCount: 200, avgResponseDelayHours: 1.5, sentiment: -0.5 },
-      },
-    ];
-    await Team.insertMany(mock);
-  }
-}
-
 // GET /api/teams
 router.get('/', async (req, res) => {
   try {
@@ -132,21 +98,10 @@ router.post('/analyze', async (req, res) => {
 
     const prompt = `You are an expert org coach. Write a concise playbook for the team based on context:\n${context}`;
 
-    // Temporarily set AI_PROVIDER to match effective provider
-    const originalProvider = process.env.AI_PROVIDER;
-    process.env.AI_PROVIDER = effectiveProvider;
-
-    // Use provider adapter
-    const providerClient = getProvider();
+    // Select the provider per request, avoiding process-global configuration mutation.
+    const providerClient = getProvider(effectiveProvider);
     const completion = await providerClient.generate({ prompt, model, max_tokens: 400 });
     playbook = completion.choices?.[0]?.message?.content || completion.choices?.[0]?.text || '';
-
-    // Restore original provider env
-    if (originalProvider !== undefined) {
-      process.env.AI_PROVIDER = originalProvider;
-    } else {
-      delete process.env.AI_PROVIDER;
-    }
 
     // Log usage if available
     try {
