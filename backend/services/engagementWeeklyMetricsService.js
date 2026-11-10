@@ -54,6 +54,11 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
     .sort({ date: 1 })
     .lean();
 
+  const calendarDays = days.filter((d) => d.integrationCoverage?.hasCalendar === true);
+  const messagingDays = days.filter((d) => d.integrationCoverage?.hasMessaging === true);
+  const emailDays = days.filter((d) => d.integrationCoverage?.hasEmail === true);
+  const prevCalendarDays = prevDays.filter((d) => d.integrationCoverage?.hasCalendar === true);
+  const prevMessagingDays = prevDays.filter((d) => d.integrationCoverage?.hasMessaging === true);
   const activePeopleCount = Math.round(weightedMean(days, 'activePeopleCount', null));
 
   return {
@@ -62,58 +67,70 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
     activePeopleCount,
 
     // ── Calendar ──────────────────────────────────────────────────────────────
-    meetingHoursPerPerson: wMean(days, 'calendar.meetingHoursPerPerson'),
-    attendeeHoursPerPerson: wMean(days, 'calendar.attendeeHoursPerPerson'),
-    recurringMeetingRatio: wMean(days, 'calendar.recurringMeetingRatio'),
-    avgAttendeeCount: wMean(days, 'calendar.avgAttendeeCount'),
-    backToBackMeetingCount: sumField(days, 'calendar.backToBackMeetingCount'),
-    fragmentedDayRatio: wMean(days, 'calendar.fragmentedDayRatio'),
-    focusHoursAvailablePerPerson: wMeanOrNull(days, 'calendar.focusHoursAvailablePerPerson'),
-    focusBlocks90mCountPerPerson: perPersonOrNull(days, 'calendar.focusBlocks90mCount'),
-    manager1to1MinutesPerPerson: wMean(days, 'calendar.manager1to1MinutesPerPerson'),
-    cancelled1to1Count: sumField(days, 'calendar.cancelled1to1Count'),
-    afterHoursMeetingMinutes: sumField(days, 'calendar.afterHoursMeetingMinutes'),
+    meetingHoursPerPerson: sourceMean(calendarDays, 'calendar.meetingHoursPerPerson'),
+    attendeeHoursPerPerson: sourceMean(calendarDays, 'calendar.attendeeHoursPerPerson'),
+    recurringMeetingRatio: sourceMean(calendarDays, 'calendar.recurringMeetingRatio'),
+    avgAttendeeCount: sourceMean(calendarDays, 'calendar.avgAttendeeCount'),
+    backToBackMeetingCount: sourceSum(calendarDays, 'calendar.backToBackMeetingCount'),
+    fragmentedDayRatio: sourceMean(calendarDays, 'calendar.fragmentedDayRatio'),
+    focusHoursAvailablePerPerson: sourceMean(calendarDays, 'calendar.focusHoursAvailablePerPerson'),
+    focusBlocks90mCountPerPerson: perPersonOrNull(calendarDays, 'calendar.focusBlocks90mCount'),
+    manager1to1MinutesPerPerson: sourceMean(calendarDays, 'calendar.manager1to1MinutesPerPerson'),
+    cancelled1to1Count: sourceSum(calendarDays, 'calendar.cancelled1to1Count'),
+    afterHoursMeetingMinutes: sourceSum(calendarDays, 'calendar.afterHoursMeetingMinutes'),
 
     // Derived: after_hours_meeting_ratio (for Recovery Debt)
     afterHoursMeetingRatio: derivedAfterHoursMeetingRatio(days),
 
     // ── Messaging ─────────────────────────────────────────────────────────────
-    messagesSentPerPerson: wMean(days, 'messaging.messagesSentPerPerson'),
-    afterHoursMessageRatio: wMean(days, 'messaging.afterHoursMessageRatio'),
-    medianResponseMinutes: medianOfMedians(days, 'messaging.medianResponseMinutes'),
-    p90ResponseMinutes: medianOfMedians(days, 'messaging.p90ResponseMinutes'),
-    uniqueCollaboratorsPerPerson: wMean(days, 'messaging.uniqueCollaboratorsPerPerson'),
-    publicChannelRatio: wMean(days, 'messaging.publicChannelRatio'),
-    dmRatio: wMean(days, 'messaging.dmRatio'),
-    threadParticipationRate: wMean(days, 'messaging.threadParticipationRate'),
-    reciprocityRatio: wMean(days, 'messaging.reciprocityRatio'),
+    messagesSentPerPerson: sourceMean(messagingDays, 'messaging.messagesSentPerPerson'),
+    afterHoursMessageRatio: sourceMean(messagingDays, 'messaging.afterHoursMessageRatio'),
+    medianResponseMinutes: medianOfMedians(messagingDays, 'messaging.medianResponseMinutes'),
+    p90ResponseMinutes: medianOfMedians(messagingDays, 'messaging.p90ResponseMinutes'),
+    uniqueCollaboratorsPerPerson: sourceMean(messagingDays, 'messaging.uniqueCollaboratorsPerPerson'),
+    publicChannelRatio: sourceMean(messagingDays, 'messaging.publicChannelRatio'),
+    dmRatio: sourceMean(messagingDays, 'messaging.dmRatio'),
+    threadParticipationRate: sourceMean(messagingDays, 'messaging.threadParticipationRate'),
+    reciprocityRatio: sourceMean(messagingDays, 'messaging.reciprocityRatio'),
 
     // ── Email ─────────────────────────────────────────────────────────────────
-    afterHoursEmailRatio: wMean(days, 'email.afterHoursEmailRatio'),
-    medianReplyMinutes: medianOfMedians(days, 'email.medianReplyMinutes'),
+    afterHoursEmailRatio: sourceMean(emailDays, 'email.afterHoursEmailRatio'),
+    medianReplyMinutes: medianOfMedians(emailDays, 'email.medianReplyMinutes'),
 
     // ── After-hours composite (all sources) for Recovery Debt ─────────────────
     afterHoursActivityRatio: derivedAfterHoursActivityRatio(days),
 
     // ── Workload Volatility inputs (week-over-week) ───────────────────────────
     weekOverWeekMeetingLoadChange: weekOverWeekChange(
-      days,
-      prevDays,
+      calendarDays,
+      prevCalendarDays,
       'calendar.meetingHoursPerPerson'
     ),
     weekOverWeekMessageVolumeChange: weekOverWeekChange(
-      days,
-      prevDays,
+      messagingDays,
+      prevMessagingDays,
       'messaging.messagesSentPerPerson'
     ),
     weekOverWeekAfterHoursChange: weekOverWeekChange(
-      days,
-      prevDays,
+      calendarDays,
+      prevCalendarDays,
       'calendar.afterHoursMeetingMinutes'
     ),
-    newRecurringMeetingsCount: estimateNewRecurringMeetings(days, prevDays),
-    activitySpikeDays: countActivitySpikeDays(days),
+    newRecurringMeetingsCount: estimateNewRecurringMeetings(calendarDays, prevCalendarDays),
+    activitySpikeDays: countActivitySpikeDays(days.filter((day) => day.integrationCoverage?.hasCalendar || day.integrationCoverage?.hasMessaging)),
 
+    // Evidence provenance for HR and engineering checks. Missing source days
+    // remain unavailable, never a synthetic zero-activity measurement.
+    measurementEvidence: {
+      dailySnapshots: days.length,
+      calendarObservedDays: calendarDays.length,
+      messagingObservedDays: messagingDays.length,
+      emailObservedDays: emailDays.length,
+      calendarEventCount: sourceSum(calendarDays, 'measurementEvidence.calendarEventCount') ?? 0,
+      messagingEventCount: sourceSum(messagingDays, 'measurementEvidence.messagingEventCount') ?? 0,
+      emailEventCount: sourceSum(emailDays, 'measurementEvidence.emailEventCount') ?? 0,
+      excludedUnmappedOrInactiveEvents: sumField(days, 'measurementEvidence.excludedUnmappedOrInactiveEvents'),
+    },
     // Integration coverage — majority vote across the week
     integrationCoverage: {
       hasCalendar: majorityTrue(days, 'integrationCoverage.hasCalendar'),
@@ -132,28 +149,41 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
  *   after_hours_events / total_events
  */
 function derivedAfterHoursActivityRatio(days) {
-  if (days.length === 0) return 0;
-  const ratios = days.map((d) => {
-    const msgRatio = d.messaging?.afterHoursMessageRatio ?? 0;
-    const emailRatio = d.email?.afterHoursEmailRatio ?? 0;
-    const meetRatio =
-      d.calendar?.afterHoursMeetingMinutes > 0
-        ? d.calendar.afterHoursMeetingMinutes / Math.max(d.calendar.meetingHoursTotal * 60, 1)
-        : 0;
-    // Simple average of the three source ratios (equal weight)
-    return (msgRatio + emailRatio + meetRatio) / 3;
-  });
-  return round4(median(ratios));
+  let observed = 0;
+  let afterHours = 0;
+  for (const day of days) {
+    const cal = day.integrationCoverage?.hasCalendar && Number.isFinite(day.calendar?.meetingCount);
+    const msg = day.integrationCoverage?.hasMessaging && Number.isFinite(day.messaging?.messagesSentTotal);
+    const email = day.integrationCoverage?.hasEmail && Number.isFinite(day.email?.emailsSentTotal);
+    if (cal) {
+      observed += day.calendar.meetingCount;
+      afterHours += Math.max(0, Number(day.calendar.afterHoursMeetingCount) || 0);
+    }
+    if (msg) {
+      const count = day.messaging.messagesSentTotal;
+      observed += count;
+      afterHours += count * (day.messaging.afterHoursMessageRatio || 0);
+    }
+    if (email) {
+      const count = day.email.emailsSentTotal;
+      observed += count;
+      afterHours += count * (day.email.afterHoursEmailRatio || 0);
+    }
+  }
+  return observed > 0 ? round4(afterHours / observed) : null;
 }
 
 function derivedAfterHoursMeetingRatio(days) {
-  if (days.length === 0) return 0;
-  const values = days.map((d) => {
-    const totalMins = (d.calendar?.meetingHoursTotal ?? 0) * 60;
-    const ahMins = d.calendar?.afterHoursMeetingMinutes ?? 0;
-    return totalMins > 0 ? ahMins / totalMins : 0;
-  });
-  return round4(mean(values.filter((v) => v > 0)));
+  let minutes = 0;
+  let afterHours = 0;
+  for (const day of days) {
+    if (!day.integrationCoverage?.hasCalendar) continue;
+    const total = Number(day.calendar?.meetingHoursTotal || 0) * 60;
+    if (total <= 0) continue;
+    minutes += total;
+    afterHours += Number(day.calendar?.afterHoursMeetingMinutes || 0);
+  }
+  return minutes > 0 ? round4(afterHours / minutes) : null;
 }
 
 // ── Week-over-week Change ──────────────────────────────────────────────────────
@@ -163,9 +193,10 @@ function derivedAfterHoursMeetingRatio(days) {
  * Returns 0 if no prior data.
  */
 function weekOverWeekChange(days, prevDays, field) {
-  const current = wMean(days, field);
-  const previous = wMean(prevDays, field);
-  if (previous === 0 || previous === null) return 0;
+  if (days.length === 0 || prevDays.length === 0) return null;
+  const current = sourceMean(days, field);
+  const previous = sourceMean(prevDays, field);
+  if (current === null || previous === null || previous === 0) return null;
   return round4((current - previous) / previous);
 }
 
@@ -200,6 +231,14 @@ function countActivitySpikeDays(days) {
 /**
  * Weighted mean of a field across days, weighted by activePeopleCount.
  */
+function sourceMean(observedDays, field) {
+  return observedDays.length ? wMeanOrNull(observedDays, field) : null;
+}
+
+function sourceSum(observedDays, field) {
+  return observedDays.length ? sumField(observedDays, field) : null;
+}
+
 function wMeanOrNull(days, field) {
   const observed = days.filter((item) => Number.isFinite(getField(item, field)));
   return observed.length ? wMean(observed, field) : null;

@@ -32,6 +32,8 @@ import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import Team from '../models/team.js';
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
+import User from '../models/user.js';
+import mongoose from 'mongoose';
 import {
   checkTeamSize,
   resolveMinimumTeamSize,
@@ -57,6 +59,13 @@ const FRAGMENTED_MEETING_COUNT = 5;
 const FRAGMENTED_BTB_SEQUENCES = 3;
 const RECOVERY_LATE_HOUR = 20; // last activity after 20:00 local
 const RECOVERY_EARLY_HOUR = 8; // first activity before 08:00 local
+
+// Source events with no mapped current employee are not contributors.
+export function candidateMappedActorIds(events = []) {
+  return [...new Set(events
+    .map((event) => String(event.actorUserId || ''))
+    .filter((id) => mongoose.isValidObjectId(id)))];
+}
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -90,9 +99,18 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
     timestamp: { $gte: dayStart, $lt: dayEnd },
   }).lean();
 
-  // Distinct active users on this day (using actorUserId as proxy for person)
-  const activeUsers = new Set(events.map((e) => String(e.actorUserId)).filter(Boolean));
-  const activePeopleCount = activeUsers.size;
+  // Only validated active workforce identities contribute to a team metric.
+  // String(undefined) previously counted as a real person and departed employees
+  // could inflate the group-size gate.
+  const actorIds = candidateMappedActorIds(events);
+  const currentMembers = actorIds.length
+    ? await User.find({ _id: { $in: actorIds }, orgId, teamId,
+      accountStatus: { $ne: 'inactive' } }).select('_id').lean()
+    : [];
+  const activeIds = new Set(currentMembers.map((user) => String(user._id)));
+  const activeEvents = events.filter((event) =>
+    event.actorUserId && activeIds.has(String(event.actorUserId)));
+  const activePeopleCount = activeIds.size;
 
   // Privacy gate — do not write if below minimum
   if (!checkTeamSize(activePeopleCount, minimumTeamSize)) {
@@ -104,9 +122,27 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
   }
 
   // ── Segment events by type ─────────────────────────────────────────────────
-  const calendarEvents = events.filter((e) => CALENDAR_SOURCES.has(e.source));
-  const messagingEvents = events.filter((e) => MESSAGING_SOURCES.has(e.source));
-  const emailEvents = events.filter((e) => EMAIL_SOURCES.has(e.source));
+  const calendarEvents = activeEvents.filter((e) => CALENDAR_SOURCES.has(e.source));
+  const messagingEvents = activeEvents.filter((e) => MESSAGING_SOURCES.has(e.source));
+  const emailEvents = activeEvents.filter((e) => EMAIL_SOURCES.has(e.source));
+  const meetingEvents = calendarEvents.filter((e) =>
+    e.eventType === 'meeting' || e.eventType === 'meet_started');
+  const messageEvents = messagingEvents.filter((e) => e.eventType === 'message');
+  const sentEmailEvents = emailEvents.filter((e) => e.eventType === 'email_sent');
+  const observedCoverage = {
+    ...coverage,
+    // Consent, a connected OAuth token or source mapping alone cannot prove
+    // that we observed activity in this period.
+    hasCalendar: coverage.hasCalendar && meetingEvents.length > 0,
+    hasMessaging: coverage.hasMessaging && messageEvents.length > 0,
+    hasEmail: coverage.hasEmail && sentEmailEvents.length > 0,
+  };
+  const measurementEvidence = {
+    calendarEventCount: meetingEvents.length,
+    messagingEventCount: messageEvents.length,
+    emailEventCount: sentEmailEvents.length,
+    excludedUnmappedOrInactiveEvents: events.length - activeEvents.length,
+  };
 
   // ── Compute metric blocks ──────────────────────────────────────────────────
   const calendarMetrics = computeCalendarMetrics(
@@ -130,7 +166,8 @@ export async function computeAndSaveTeamDay(orgId, teamId, date) {
         calendar: calendarMetrics,
         messaging: messagingMetrics,
         email: emailMetrics,
-        integrationCoverage: coverage,
+        integrationCoverage: observedCoverage,
+        measurementEvidence,
       },
     },
     { upsert: true, returnDocument: 'after' }
@@ -266,6 +303,8 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
   );
 
   return {
+    meetingCount: meetings.length,
+    afterHoursMeetingCount: meetings.filter((e) => isAfterHours(e.metadata?.startTime || e.timestamp, workConfig)).length,
     meetingHoursTotal: round2(meetingHoursTotal),
     meetingHoursPerPerson: round2(meetingHoursPerPerson),
     attendeeHoursTotal: round2(attendeeHoursTotal),
@@ -284,20 +323,24 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
 }
 
 function zeroCalendarMetrics() {
+  // A missing source is not an observed zero. Keep counts in measurementEvidence,
+  // and keep metrics unavailable until source events are actually verified.
   return {
-    meetingHoursTotal: 0,
-    meetingHoursPerPerson: 0,
-    attendeeHoursTotal: 0,
-    attendeeHoursPerPerson: 0,
-    recurringMeetingRatio: 0,
-    avgAttendeeCount: 0,
-    backToBackMeetingCount: 0,
-    fragmentedDayRatio: 0,
-    focusHoursAvailablePerPerson: 0,
-    focusBlocks90mCount: 0,
-    manager1to1MinutesPerPerson: 0,
-    cancelled1to1Count: 0,
-    afterHoursMeetingMinutes: 0,
+    meetingCount: 0,
+    afterHoursMeetingCount: 0,
+    meetingHoursTotal: null,
+    meetingHoursPerPerson: null,
+    attendeeHoursTotal: null,
+    attendeeHoursPerPerson: null,
+    recurringMeetingRatio: null,
+    avgAttendeeCount: null,
+    backToBackMeetingCount: null,
+    fragmentedDayRatio: null,
+    focusHoursAvailablePerPerson: null,
+    focusBlocks90mCount: null,
+    manager1to1MinutesPerPerson: null,
+    cancelled1to1Count: null,
+    afterHoursMeetingMinutes: null,
   };
 }
 
@@ -368,15 +411,15 @@ function computeMessagingMetrics(events, activePeopleCount, workConfig) {
 
 function zeroMessagingMetrics() {
   return {
-    messagesSentTotal: 0,
-    messagesSentPerPerson: 0,
-    afterHoursMessageRatio: 0,
+    messagesSentTotal: 0, // provenance count, not a verified zero
+    messagesSentPerPerson: null,
+    afterHoursMessageRatio: null,
     medianResponseMinutes: null,
     p90ResponseMinutes: null,
-    uniqueCollaboratorsPerPerson: 0,
-    publicChannelRatio: 0,
-    dmRatio: 0,
-    threadParticipationRate: 0,
+    uniqueCollaboratorsPerPerson: null,
+    publicChannelRatio: null,
+    dmRatio: null,
+    threadParticipationRate: null,
     reciprocityRatio: null,
   };
 }
@@ -388,10 +431,10 @@ function computeEmailMetrics(events, activePeopleCount, workConfig) {
 
   if (sent.length === 0) {
     return {
-      emailsSentTotal: 0,
-      afterHoursEmailRatio: 0,
+      emailsSentTotal: 0, // provenance count, not a verified zero
+      afterHoursEmailRatio: null,
       medianReplyMinutes: null,
-      internalEmailRatio: 0,
+      internalEmailRatio: null,
     };
   }
 
