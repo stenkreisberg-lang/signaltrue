@@ -60,9 +60,9 @@ Only metadata is extracted:
 
 ### How is data encrypted?
 
-- In transit: TLS 1.3
-- At rest: AES-256
-- Key management: AWS KMS or Google Cloud KMS
+- TLS encryption protects network connections; exact versions and termination settings must be checked per deployment.
+- Database and backup encryption at rest must be verified in their actual provider settings.
+- Key management and rotation cannot be represented as AWS KMS or Google Cloud KMS unless those configurations are evidenced.
 
 ### Where is data stored?
 
@@ -73,10 +73,7 @@ Only metadata is extracted:
 
 ### How long is data retained?
 
-Default retention:
-- Raw metadata: 90 days
-- Aggregated signals: 24 months
-- Configurable based on requirements
+Retention is defined in the applicable customer agreement and implemented by the live purge configuration. Do not assume raw-data or aggregate retention periods without verifying actual jobs, backups, third-party copies and deletion tests.
 
 ### Can we perform a security audit?
 
