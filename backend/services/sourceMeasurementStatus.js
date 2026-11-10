@@ -48,6 +48,11 @@ export function deriveSourceMeasurementStatus(source = {}, diagnostic = null, no
     return { state: 'no_observed_events', label: 'No verified activity', verified: false,
       reason: 'No accepted source events are available; this is not a zero-activity measurement.' };
   }
+  const evidenceTime = new Date(diagnostic.latestEventReceived).getTime();
+  if (!Number.isFinite(evidenceTime) || now.getTime() - evidenceTime > 7 * 24 * 60 * 60 * 1000) {
+    return { state: 'stale_evidence', label: 'No recent verified events', verified: false,
+      reason: 'The stored source evidence is older than seven days; current activity is unverified.' };
+  }
   if (mappedUsers === 0) {
     return { state: 'unmapped', label: 'No employees mapped', verified: false,
       reason: 'Events exist but cannot be assigned to active employee teams.' };
