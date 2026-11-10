@@ -1,3 +1,4 @@
+import { hasValidAdminApiKey } from '../middleware/auth.js';
 import express from 'express';
 import multer from 'multer';
 import { authenticateToken, requireRoles } from '../middleware/auth.js';
@@ -290,7 +291,7 @@ router.post(
 router.post('/admin/set-domain-and-cleanup', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(adminKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -363,7 +364,7 @@ router.post('/admin/set-domain-and-cleanup', async (req, res) => {
 router.post('/admin/cleanup-invalid', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(adminKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
