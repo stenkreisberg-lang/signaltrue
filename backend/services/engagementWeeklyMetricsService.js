@@ -119,6 +119,18 @@ export async function aggregateWeeklyMetrics(teamId, weekStart) {
     newRecurringMeetingsCount: estimateNewRecurringMeetings(calendarDays, prevCalendarDays),
     activitySpikeDays: countActivitySpikeDays(days.filter((day) => day.integrationCoverage?.hasCalendar || day.integrationCoverage?.hasMessaging)),
 
+    // Evidence provenance for HR and engineering checks. Missing source days
+    // remain unavailable, never a synthetic zero-activity measurement.
+    measurementEvidence: {
+      dailySnapshots: days.length,
+      calendarObservedDays: calendarDays.length,
+      messagingObservedDays: messagingDays.length,
+      emailObservedDays: emailDays.length,
+      calendarEventCount: sourceSum(calendarDays, 'measurementEvidence.calendarEventCount') ?? 0,
+      messagingEventCount: sourceSum(messagingDays, 'measurementEvidence.messagingEventCount') ?? 0,
+      emailEventCount: sourceSum(emailDays, 'measurementEvidence.emailEventCount') ?? 0,
+      excludedUnmappedOrInactiveEvents: sumField(days, 'measurementEvidence.excludedUnmappedOrInactiveEvents'),
+    },
     // Integration coverage — majority vote across the week
     integrationCoverage: {
       hasCalendar: majorityTrue(days, 'integrationCoverage.hasCalendar'),
