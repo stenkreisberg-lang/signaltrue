@@ -32,12 +32,20 @@ async function processApprovedDSAR(request) {
     } else if (request.requestType === 'rectify') {
       summary = { note: 'Manual rectification is required; the request remains open.' };
     }
-    const manual = request.requestType === 'rectify';
+    // A database-only deletion is not proof of full GDPR erasure across
+    // processors, backups, derived artifacts and audit retention exceptions.
+    // Keep deletion and rectification open for documented human verification.
+    const requiresManualVerification =
+      request.requestType === 'rectify' || request.requestType === 'delete';
+    if (request.requestType === 'delete') {
+      summary.verificationRequired =
+        'Confirm affected collections, connected providers, backups and contractual retention exceptions.';
+    }
     await DSARRequest.updateOne({ _id: request._id, status: 'processing' }, {
       $set: {
-        status: manual ? 'awaiting_manual' : 'completed',
+        status: requiresManualVerification ? 'awaiting_manual' : 'completed',
         summary,
-        completedAt: manual ? null : new Date(),
+        completedAt: requiresManualVerification ? null : new Date(),
         processingLeaseUntil: null,
       },
     });
@@ -56,14 +64,17 @@ async function processApprovedDSAR(request) {
  * is deliberately not auto-completed.
  */
 export async function recoverStaleDSARRequests(now = new Date()) {
+  const expiryFilter = { $or: [
+    { processingLeaseUntil: { $lte: now } },
+    { processingLeaseUntil: null, updatedAt: { $lte: new Date(now.getTime() - DSAR_LEASE_MS) } },
+  ] };
   const expired = await DSARRequest.find({
-    status: 'processing', processingLeaseUntil: { $lte: now },
+    status: 'processing', ...expiryFilter,
   }).select('_id').limit(20).lean();
   let resumed = 0;
   for (const candidate of expired) {
     const request = await DSARRequest.findOneAndUpdate({
-      _id: candidate._id, status: 'processing',
-      processingLeaseUntil: { $lte: now },
+      _id: candidate._id, status: 'processing', ...expiryFilter,
     }, { $set: { processingLeaseUntil: new Date(now.getTime() + DSAR_LEASE_MS) },
       $inc: { processingAttempts: 1 } }, { new: true });
     if (!request) continue;
