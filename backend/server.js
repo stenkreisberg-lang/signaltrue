@@ -563,6 +563,20 @@ async function main() {
       });
       console.log('⏰ Cron job scheduled: integration health monitor hourly');
 
+      // Alert on uncertain report sends. No automatic replay of a potentially delivered email.
+      cron.schedule('12 * * * *', async () => {
+        try {
+          const { runReportDeliveryHealthMonitor } =
+            await import('./services/reportDeliveryHealthService.js');
+          const result = await runReportDeliveryHealthMonitor();
+          if (result.notificationsCreated) {
+            console.log('Report delivery alerts:', result.notificationsCreated);
+          }
+        } catch (error) {
+          console.error('Report delivery monitor failed:', error.message);
+        }
+      });
+
       if (process.env.CALENDLY_ACCESS_TOKEN) {
         const runCalendlyCommercialSync = async () => {
           try {
