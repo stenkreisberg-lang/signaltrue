@@ -17,7 +17,7 @@ describe('durable privacy-request processing', () => {
     await expect(recoverStaleDSARRequests(now)).resolves.toEqual({ recovered: 1 });
     expect(claim).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'processing',
-        processingLeaseUntil: { $lte: now } }),
+        $or: expect.arrayContaining([{ processingLeaseUntil: { $lte: now } }]) }),
       expect.objectContaining({ $inc: { processingAttempts: 1 } }),
       expect.any(Object)
     );
