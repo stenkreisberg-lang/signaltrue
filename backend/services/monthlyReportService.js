@@ -17,6 +17,7 @@ import WorkEvent from '../models/workEvent.js';
 import Intervention from '../models/intervention.js';
 import { Resend } from 'resend';
 import { ccSuperadmin } from './superadminNotifyService.js';
+import WeeklyBriefDispatch from '../models/weeklyBriefDispatch.js';
 import { resolveMinimumTeamSize } from '../utils/privacyGate.js';
 
 /**
@@ -1082,20 +1083,40 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
       `[MonthlyReport] No RESEND_API_KEY — skipping client send for ${org.name}, but copying superadmin`
     );
   } else if (recipients.length > 0) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error } = await resend.emails.send({
-      from: 'SignalTrue <reports@signaltrue.ai>',
-      to: recipients,
-      subject,
-      html,
-    });
-    if (error) {
-      console.error(`[MonthlyReport] ❌ Resend error for ${org.name}:`, JSON.stringify(error));
-    } else {
-      console.log(`[MonthlyReport] ✅ Sent to ${recipients.join(', ')} for ${org.name}`);
+    const dispatchId = 'monthly:' + String(org._id) + ':' + new Date(report.periodEnd).toISOString();
+    try {
+      await WeeklyBriefDispatch.create({
+        _id: dispatchId, orgId: org._id,
+        periodStart: new Date(report.periodEnd),
+        status: 'sending', recipientCount: recipients.length,
+      });
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+      const existing = await WeeklyBriefDispatch.findById(dispatchId).lean();
+      if (existing?.status === 'sent') return { skipped: true, reason: 'already_sent', dispatchId };
+      throw new Error('Monthly email send requires delivery reconciliation: ' + dispatchId);
+    }
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const { data, error } = await resend.emails.send({
+        from: 'SignalTrue <reports@signaltrue.ai>',
+        to: recipients,
+        subject,
+        html,
+      });
+      if (error) throw new Error('Monthly report provider returned an error');
       report.emailSentAt = new Date();
       report.emailRecipients = recipients;
-      await report.save().catch(() => {}); // non-fatal
+      await report.save();
+      await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
+        $set: { status: 'sent', providerMessageId: data?.id, sentAt: new Date() },
+      });
+      console.log('[MonthlyReport] Sent report for org ' + String(org._id));
+    } catch (error) {
+      await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
+        $set: { status: 'unknown', lastError: String(error?.message || 'send_failed').slice(0, 200) },
+      }).catch(() => {});
+      throw error;
     }
   } else {
     console.warn(`[MonthlyReport] No client recipients for ${org.name} — skipping client send`);
