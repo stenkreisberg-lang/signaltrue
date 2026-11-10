@@ -1040,16 +1040,21 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
   const subject = `${previewOnly ? 'PREVIEW - ' : ''}${report.reportMode === 'setup' ? 'Monthly Setup Brief' : 'Monthly Decision Brief'} - ${org.name} - ${periodLabel}`;
   const html = generateMonthlyEmailHTML({ org, report });
 
-  // Automated reports are restricted to active HR/admin account owners.
+  // Match the HR-approved organisation-wide weekly report recipient policy.
+  const configured = Boolean(org.settings?.weeklyBriefRecipientsApprovedAt);
+  const approved = new Set((org.settings?.weeklyBriefRecipients || [])
+    .map(value => String(value).trim().toLowerCase()));
   const orgUsers = await User.find({
     orgId,
-    role: { $in: ['master_admin', 'hr_admin', 'admin', 'org_admin'] },
-    accountStatus: { $ne: 'inactive' },
+    role: { $in: configured
+      ? ['master_admin', 'hr_admin', 'admin', 'org_admin']
+      : ['hr_admin'] },
+    accountStatus: 'active',
     email: { $exists: true, $ne: null },
   }).select('email');
-  const recipients = previewOnly
-    ? []
-    : [...new Set(orgUsers.map((u) => u.email).filter(Boolean))];
+  const recipients = previewOnly ? [] : [...new Set(orgUsers
+    .map(user => String(user.email || '').trim().toLowerCase())
+    .filter(email => email && (!configured || approved.has(email))))];
 
   // ── Data quality gate: never send all-zero report to clients ──────────────
   const hasData = reportHasRealData(report);
