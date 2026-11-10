@@ -9,18 +9,21 @@ export function buildWeeklyBriefEnvelope({
   recipients,
   subject,
   html,
-  superadminEmail = process.env.SUPERADMIN_EMAIL || 'sten.kreisberg@gmail.com',
+  superadminEmail = process.env.SUPERADMIN_EMAIL,
 }) {
   const to = [...new Set((recipients || [])
     .map((email) => String(email || '').trim().toLowerCase())
     .filter(Boolean))];
 
   const admin = String(superadminEmail || '').trim().toLowerCase();
-  if (!admin) throw new Error('SUPERADMIN_EMAIL must be set for weekly report oversight');
+  const qaEnabled = process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
+  if (qaEnabled && (!admin || !admin.endsWith('@signaltrue.ai'))) {
+    throw new Error('An explicitly configured @signaltrue.ai QA mailbox is required for client report copies');
+  }
 
   return {
     to,
-    bcc: to.includes(admin) ? [] : [admin],
+    bcc: qaEnabled && !to.includes(admin) ? [admin] : [],
     subject,
     html,
   };
