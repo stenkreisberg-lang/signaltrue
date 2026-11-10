@@ -50,5 +50,7 @@ describe('daily work-pattern aggregation source evidence', () => {
     expect(result.measurementEvidence.excludedUnmappedOrInactiveEvents).toBe(2);
     expect(result.integrationCoverage.hasCalendar).toBe(true);
     expect(result.integrationCoverage.hasMessaging).toBe(false);
+    expect(result.messaging.afterHoursMessageRatio).toBeNull();
+    expect(result.email.afterHoursEmailRatio).toBeNull();
   });
 });
