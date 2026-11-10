@@ -18,10 +18,12 @@ import Organization from '../models/organizationModel.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const MIN_OPERATIONAL_TEAM_SIZE = 8;
+export const MIN_TEAM_DEFINITION_SIZE = 2;
+export const MIN_OPERATIONAL_TEAM_SIZE = MIN_TEAM_DEFINITION_SIZE;
 export const MIN_HEALTH_SAFETY_TEAM_SIZE = 8;
-export const MIN_TEAM_SIZE = MIN_OPERATIONAL_TEAM_SIZE;
-export const MIN_METRIC_CONTRIBUTORS = MIN_OPERATIONAL_TEAM_SIZE;
+// Aggregate reporting privacy remains stricter than the minimum valid team size.
+export const MIN_TEAM_SIZE = MIN_HEALTH_SAFETY_TEAM_SIZE;
+export const MIN_METRIC_CONTRIBUTORS = MIN_HEALTH_SAFETY_TEAM_SIZE;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
 // Engagement Strain / Manager-overload pipeline uses the stricter H&S floor by default.
