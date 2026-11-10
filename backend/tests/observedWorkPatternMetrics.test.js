@@ -48,6 +48,9 @@ describe('observed work-pattern metrics', () => {
     expect(result.afterHoursMeetingRatio).toBeCloseTo(1 / 3, 3);
     expect(result.meetingHoursPerPerson).toBe(0.375);
     expect(result.messagesSentPerPerson).toBe(1.25);
+    expect(result.measurementEvidence.calendarObservedDays).toBe(1);
+    expect(result.measurementEvidence.messagingObservedDays).toBe(1);
+    expect(result.measurementEvidence.emailObservedDays).toBe(1);
     expect(result.weekOverWeekMeetingLoadChange).toBeNull();
   });
 
@@ -66,5 +69,7 @@ describe('observed work-pattern metrics', () => {
     expect(result.afterHoursActivityRatio).toBeNull();
     expect(result.afterHoursMeetingRatio).toBeNull();
     expect(result.integrationCoverage.hasCalendar).toBe(false);
+    expect(result.measurementEvidence.calendarObservedDays).toBe(0);
+    expect(result.measurementEvidence.messagingObservedDays).toBe(0);
   });
 });
