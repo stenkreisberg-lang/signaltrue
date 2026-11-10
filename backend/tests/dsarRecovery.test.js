@@ -1,10 +1,20 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import DSARRequest from '../models/dsarRequest.js';
-import { recoverStaleDSARRequests } from '../routes/privacyDSARRoutes.js';
+import { recoverStaleDSARRequests, dsarVerificationRequirements } from '../routes/privacyDSARRoutes.js';
 
 afterEach(() => jest.restoreAllMocks());
 
 describe('durable privacy-request processing', () => {
+  test('lists the data stores that must be verified before closure', () => {
+    expect(dsarVerificationRequirements('delete')).toEqual([
+      'activeSystemsChecked', 'derivedDataReviewed', 'backupRetentionDocumented',
+      'subprocessorsReviewed', 'retentionExceptionsReviewed',
+    ]);
+    expect(dsarVerificationRequirements('rectify')).toEqual([
+      'fieldsCorrected', 'requesterNotified',
+    ]);
+  });
+
   test('reclaims only expired approved processing work', async () => {
     const now = new Date('2026-11-10T16:00:00Z');
     jest.spyOn(DSARRequest, 'find').mockReturnValue({
