@@ -155,7 +155,8 @@ const teamSchema = new mongoose.Schema(
     },
 
     // ── Privacy gate flags ────────────────────────────────────────────────────
-    analyticsEnabled: { type: Boolean, default: true }, // false when actualSize is below the org minimum
+    analyticsEnabled: { type: Boolean, default: true }, // sensitive reporting gate, never below 8
+    operationalTeamEligible: { type: Boolean, default: false }, // formal team has >= 2 active members
     privacyGateFiredAt: { type: Date },
   },
   { timestamps: true }
