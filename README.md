@@ -437,6 +437,10 @@ When backend is deployed (or running locally), these jobs run automatically:
 
 ---
 
+## Priority 1 release verification
+
+This change must pass the GitHub quality gate, including lint, tests, coverage, browser flow checks and dependency security audit. A successful Vercel preview does not prove that the Render API has deployed. Confirm the Render backend commit, `/api/health/ready`, billing rejection, cross-tenant access denial, permitted email recipients, and per-period send idempotency before declaring production ready.
+
 ## Release readiness and known audit issues
 
 The application has implemented routes and features, but **implementation is not proof of production readiness**. Before additional enterprise rollout, verify or remediate:
