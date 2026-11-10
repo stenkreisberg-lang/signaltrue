@@ -4,7 +4,7 @@
 
 SignalTrue is an early-warning platform that detects behavioral drift and engagement strain risk in teams, explains why it matters, and recommends safe, reversible actions before capacity, delivery, or retention are impacted. Built from aggregated metadata only — no message content, no individual surveillance, team-level signals only.
 
-![SignalTrue Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![SignalTrue audit status](https://img.shields.io/badge/Release%20status-Security%20and%20data%20verification%20required-orange)
 ![React](https://img.shields.io/badge/React-19.2.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-24.11-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-8.19-success)
@@ -22,7 +22,7 @@ Passive, metadata-only detection of team work-pattern strain risk. Grounded in J
 - **Pattern detection**: 6 named patterns (hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre)
 - **AI explanations**: `gpt-4o-mini` narrative generation with deterministic fallback
 - **Weekly email reports**: Inline HTML digest with score bars, urgent actions banner, team breakdown
-- **Privacy-first**: Team minimum 8, per-metric minimum 5 contributors, 40% concentration detection
+- **Team-size policy**: Two active people may constitute a team. Reporting for two-person teams is a target requirement, not yet implemented in the deployed analytics gates; see [Team-size and reporting policy](#team-size-and-reporting-policy).
 - **Scoring version**: `2.0.0` — fully auditable per record
 
 👉 API: `/api/engagement-strain/*` — see [API Endpoints](#-api-endpoints) below.
@@ -50,6 +50,24 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 
 ---
 
+## Team-size and reporting policy
+
+**Requested product requirement (not yet shipped): a team may have as few as two active people.** A two-person team must be recognised in the organisation hierarchy, included in workforce and source-coverage reconciliation, and be eligible for *appropriately authorised team-level work-pattern reporting*. The earlier blanket eight-person team-size cutoff must not be mistaken for the minimum valid team definition.
+
+Reporting eligibility and privacy are separate decisions:
+
+1. **Team membership:** 2+ active employees defines a reportable team in the target product specification. Inactive, departed, duplicate, and non-employee accounts do not count.
+2. **Source availability:** A team may appear in organisation structure even when Microsoft 365 or another integration has not supplied usable activity. Display `unavailable`, not zero, for missing measurements.
+3. **Metric eligibility:** For the target two-person reporting mode, publish a team-level metric only when its required contributors are present, the denominator and historical comparison are valid, the metric does not disclose an identifiable individual's behaviour, and the recipient is explicitly authorised. A one-person contribution must not masquerade as a two-person aggregate. Identifying or sensitive small-group metrics remain unavailable or are rolled into a larger authorised group.
+4. **Access and privacy:** No person-level behavioral scoring or employee surveillance. Two-person aggregates are **not inherently anonymous**; aggregation alone does not rule out re-identification. Before releasing small-team behavioral reporting, document the lawful basis and privacy risk assessment, approve the metric-level disclosure policy, and test manager/HR permissions and cross-team inference.
+5. **Truthful reporting:** Do not present unavailable or privacy-suppressed metrics as `0`, healthy, or compliant.
+
+**Current implementation as of 10 November 2026:** `backend/utils/privacyGate.js` still sets `MIN_OPERATIONAL_TEAM_SIZE = 8`, `MIN_HEALTH_SAFETY_TEAM_SIZE = 8`, and `MIN_METRIC_CONTRIBUTORS = 8`; `resolveMinimumTeamSize()` enforces an eight-person floor. `backend/routes/organisationStructure.js` also calculates an eight-person minimum. Other aggregation, weekly scoring, manager and reporting pipelines have related guards. **Changing this README does not change backend behavior or enable two-person analytics.**
+
+**Implementation checklist:** Introduce a configurable minimum team size of 2 for the relevant team/reporting pathways; audit every hardcoded floor and contributor gate; independently enforce metric-level privacy, active-person counting and source coverage; update HR/manager report views; verify that two-person teams produce only approved team-level values; test 1-person suppression, 2-person eligibility, inactive staff exclusion, overlapping groups, cross-tenant requests, exports and email recipients. Only describe the capability as available after tests and an approved release.
+
+---
+
 ### ✨ Features
 
 ### 🔥 **Engagement Strain Risk Model** *(v2.0.0)*
@@ -59,7 +77,7 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 - **Named patterns**: hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre
 - **AI-generated explanations** via `gpt-4o-mini`, deterministic fallback when unavailable
 - **Weekly digest email** with per-team score bars, urgent action banners, privacy footer
-- **Privacy gates**: 8-person team minimum, 5-contributor per-metric minimum, concentration detection
+- **Privacy gates (current code)**: Minimum 8 active people per reported team and 8 contributors per metric in the shared privacy utility. Two-person team reporting is pending implementation and privacy review; see [Team-size and reporting policy](#team-size-and-reporting-policy).
 - **Frontend**: Executive summary tile (Overview + Executive Summary pages), full detail page with sparklines, subscore bars, pattern cards, alert banners
 
 ### 📈 **Behavioral Drift Index (BDI)**
@@ -118,7 +136,7 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 22–24 and npm
 - MongoDB (local or Atlas)
 - OpenAI API key or Anthropic API key
 
@@ -144,10 +162,11 @@ cp .env.example .env
 # Edit .env and add your MongoDB URI and API keys
 ```
 
-**Minimum required in `.env`:**
+**Minimum required in `.env` for database-backed startup:**
 ```bash
 MONGO_URI=mongodb://localhost:27017/signaltrue
-OPENAI_API_KEY=sk-...
+JWT_SECRET=replace-with-a-strong-random-secret
+# OPENAI_API_KEY is optional for AI-generated explanations; deterministic fallback is available.
 ```
 
 ### 3. Start Development Servers
@@ -166,7 +185,7 @@ npm start
 
 ### 4. Access Dashboard
 
-Open http://localhost:3000 in your browser. You'll see 3 mock teams pre-loaded.
+Open the URL printed by the Vite development server (typically http://localhost:5173). Real teams require a configured database and onboarding; the source contains a legacy mock-team helper, but mock teams are not automatically provisioned on normal startup.
 
 ---
 
@@ -286,7 +305,7 @@ vercel --prod
 
 ### Teams
 - `GET /api/teams` - List all teams
-- `POST /api/analyze` - Generate AI playbook
+- `POST /api/teams/analyze` - Generate AI playbook (requires authentication)
 
 ### Data Refresh
 - `POST /api/slack/refresh` - Refresh Slack data
@@ -414,7 +433,21 @@ When backend is deployed (or running locally), these jobs run automatically:
 - Rate limiting on AI analysis endpoint (6 req/min per IP)
 - HTTPS enforced in production
 - Environment variables for secrets
-- Auth middleware ready for JWT/Clerk
+- JWT authentication is active; authorization and session revocation still require the remediation described below
+
+---
+
+## Release readiness and known audit issues
+
+The application has implemented routes and features, but **implementation is not proof of production readiness**. Before additional enterprise rollout, verify or remediate:
+
+- Paid entitlements must not be granted directly by `PUT /api/subscriptions/upgrade` without verified Stripe payment or an audited internal override.
+- All administrator-key checks must fail closed when a secret is missing; destructive operations require strong authorization and audit records.
+- All employee, team, analytics, report and export endpoints must enforce current-user role checks and tenant ownership.
+- Weekly and monthly report recipients must be explicitly authorised. Do not use an implicit personal-mailbox fallback for client data. Prevent duplicates across retries and manual triggers.
+- Reconcile Microsoft 365 source events, active employee identities, team assignments and coverage to stored work events, weekly snapshots, dashboard totals and delivered reports.
+- Implement and test the two-person team reporting requirement above while preserving metric-level privacy.
+- Require a passed build/test/security gate and source-to-report acceptance evidence before claiming a release is production-ready.
 
 ---
 
