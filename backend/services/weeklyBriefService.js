@@ -3603,6 +3603,7 @@ export async function sendWeeklyBrief(orgId) {
 
   const { periodStart } = completedReportingWeek(new Date(), org.settings?.timezone || 'UTC');
   const dispatchId = 'weekly:' + String(org._id) + ':' + periodStart.toISOString();
+  const envelope = buildWeeklyBriefEnvelope({ recipients, subject, html });
   try {
     // The _id unique constraint prevents parallel and repeated sends.
     await WeeklyBriefDispatch.create({
@@ -3616,7 +3617,6 @@ export async function sendWeeklyBrief(orgId) {
     throw new Error('Previous weekly send may be in progress or unconfirmed. Reconcile dispatch ' + dispatchId);
   }
 
-  const envelope = buildWeeklyBriefEnvelope({ recipients, subject, html });
   let providerMessageId;
   try {
     console.log('[WeeklyBrief] Sending authorised report for org ' + String(org._id));
