@@ -275,8 +275,8 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
     backToBackMeetingCount,
     fragmentedDayRatio: round4(fragmentedDayRatio),
     focusHoursAvailablePerPerson:
-      focusHoursAvailablePerPerson !== null ? round2(focusHoursAvailablePerPerson) : 0,
-    focusBlocks90mCount: focusBlocks90mCount ?? 0,
+      focusHoursAvailablePerPerson !== null ? round2(focusHoursAvailablePerPerson) : null,
+    focusBlocks90mCount,
     manager1to1MinutesPerPerson: round2(manager1to1MinutesPerPerson),
     cancelled1to1Count,
     afterHoursMeetingMinutes: round2(afterHoursMeetingMinutes),
