@@ -7,7 +7,6 @@
 import express from 'express';
 import Organization from '../models/organizationModel.js';
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
-import MonthlyReport from '../models/monthlyReport.js';
 import accessControlService from '../services/accessControlService.js';
 import { PLAN_DEFINITIONS } from '../utils/subscriptionConstants.js';
 import { authenticateToken, requireCurrentUserRoles } from '../middleware/auth.js';
