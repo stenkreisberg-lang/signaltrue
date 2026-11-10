@@ -2,11 +2,14 @@ import express from 'express';
 import User from '../models/user.js';
 import WorkEvent from '../models/workEvent.js';
 import Organization from '../models/organizationModel.js';
-import { authenticateToken, requireAdmin, requireRoles } from '../middleware/auth.js';
+import { authenticateToken, requireAdmin, requireRoles, requireCurrentUserRoles } from '../middleware/auth.js';
 import { refreshTeamSizes } from '../services/employeeSyncService.js';
 import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
 
 const router = express.Router();
+
+// All employee-directory operations require a currently active organisation account.
+router.use(authenticateToken, requireCurrentUserRoles());
 const ORG_ADMIN_ROLES = ['hr_admin', 'admin', 'org_admin', 'super_admin', 'master_admin'];
 const ACTIVITY_LOOKBACK_DAYS = 90;
 const MEASURED_EVENT_TYPES = [
@@ -30,12 +33,13 @@ router.get('/', authenticateToken, async (req, res) => {
       query = { orgId };
     } else {
       // Regular users see only their own team
-      query = { teamId };
+      if (!orgId || !teamId) return res.status(403).json({ message: 'Team membership required' });
+      query = { orgId, teamId };
     }
 
-    const members = await User.find(query).select('-password').sort({ role: -1, name: 1 }).lean(); // Admins first, then alphabetically
+    const members = await User.find(query).select('_id name firstName lastName email role teamId orgId accountStatus source profile.department createdAt').sort({ role: -1, name: 1 }).lean(); // Admins first, then alphabetically
     const memberIds = members.map((member) => member._id);
-    const activityOrgId = members[0]?.orgId || orgId;
+    const activityOrgId = isOrgAdmin ? orgId : null;
     const since = new Date(Date.now() - ACTIVITY_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
     const activityRows =
       activityOrgId && memberIds.length
@@ -65,9 +69,11 @@ router.get('/', authenticateToken, async (req, res) => {
         const activity = activityByUser.get(String(member._id));
         return {
           ...member,
-          activityEventCount: activity?.count || 0,
-          lastMeasuredActivityAt: activity?.lastMeasuredActivityAt || null,
-          measuredSourceTypes: activity?.sources || [],
+          ...(isOrgAdmin ? {
+            activityEventCount: activity?.count || 0,
+            lastMeasuredActivityAt: activity?.lastMeasuredActivityAt || null,
+            measuredSourceTypes: activity?.sources || [],
+          } : {}),
         };
       })
     );
@@ -144,7 +150,7 @@ router.put('/:userId', authenticateToken, requireAdmin, async (req, res) => {
     const teamId = req.user.teamId;
 
     // Find user and verify they're in the same team
-    const user = await User.findOne({ _id: userId, teamId });
+    const user = await User.findOne({ _id: userId, orgId: req.user.orgId, teamId });
     if (!user) {
       return res.status(404).json({ message: 'User not found or not in your team' });
     }
