@@ -52,7 +52,7 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 
 ## Team-size and reporting policy
 
-**Requested product requirement (not yet shipped): a team may have as few as two active people.** A two-person team must be recognised in the organisation hierarchy, included in workforce and source-coverage reconciliation, and be eligible for *appropriately authorised team-level work-pattern reporting*. The earlier blanket eight-person team-size cutoff must not be mistaken for the minimum valid team definition.
+**Implemented on the Priority 1 fix branch (not yet production-verified): a team may have as few as two active people.** A two-person team must be recognised in the organisation hierarchy, included in workforce and source-coverage reconciliation, and be eligible for *appropriately authorised team-level work-pattern reporting*. The earlier blanket eight-person team-size cutoff must not be mistaken for the minimum valid team definition.
 
 Reporting eligibility and privacy are separate decisions:
 
@@ -62,7 +62,7 @@ Reporting eligibility and privacy are separate decisions:
 4. **Access and privacy:** No person-level behavioral scoring or employee surveillance. Two-person aggregates are **not inherently anonymous**; aggregation alone does not rule out re-identification. Before releasing small-team behavioral reporting, document the lawful basis and privacy risk assessment, approve the metric-level disclosure policy, and test manager/HR permissions and cross-team inference.
 5. **Truthful reporting:** Do not present unavailable or privacy-suppressed metrics as `0`, healthy, or compliant.
 
-**Current implementation as of 10 November 2026:** `backend/utils/privacyGate.js` still sets `MIN_OPERATIONAL_TEAM_SIZE = 8`, `MIN_HEALTH_SAFETY_TEAM_SIZE = 8`, and `MIN_METRIC_CONTRIBUTORS = 8`; `resolveMinimumTeamSize()` enforces an eight-person floor. `backend/routes/organisationStructure.js` also calculates an eight-person minimum. Other aggregation, weekly scoring, manager and reporting pipelines have related guards. **Changing this README does not change backend behavior or enable two-person analytics.**
+**Target implementation (pending CI and deployment):** `MIN_TEAM_DEFINITION_SIZE = 2` and organisation/employee sync recognise two-person teams. The privacy middleware and sensitive behavioural/health-safety metric gates still require at least eight people/contributors. A two-person team is structurally valid, but **sensitive individual-inferable analytics are not enabled at size two**. Full two-person metric reporting needs a separate approved privacy specification and tests.
 
 **Implementation checklist:** Introduce a configurable minimum team size of 2 for the relevant team/reporting pathways; audit every hardcoded floor and contributor gate; independently enforce metric-level privacy, active-person counting and source coverage; update HR/manager report views; verify that two-person teams produce only approved team-level values; test 1-person suppression, 2-person eligibility, inactive staff exclusion, overlapping groups, cross-tenant requests, exports and email recipients. Only describe the capability as available after tests and an approved release.
 
@@ -77,7 +77,7 @@ Reporting eligibility and privacy are separate decisions:
 - **Named patterns**: hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre
 - **AI-generated explanations** via `gpt-4o-mini`, deterministic fallback when unavailable
 - **Weekly digest email** with per-team score bars, urgent action banners, privacy footer
-- **Privacy gates (current code)**: Minimum 8 active people per reported team and 8 contributors per metric in the shared privacy utility. Two-person team reporting is pending implementation and privacy review; see [Team-size and reporting policy](#team-size-and-reporting-policy).
+- **Team and privacy thresholds**: Two active people define a valid team; sensitive engagement metrics keep an eight-person reporting and contributor floor pending separate privacy approval.
 - **Frontend**: Executive summary tile (Overview + Executive Summary pages), full detail page with sparklines, subscore bars, pattern cards, alert banners
 
 ### 📈 **Behavioral Drift Index (BDI)**
@@ -444,9 +444,9 @@ The application has implemented routes and features, but **implementation is not
 - Paid entitlements must not be granted directly by `PUT /api/subscriptions/upgrade` without verified Stripe payment or an audited internal override.
 - All administrator-key checks must fail closed when a secret is missing; destructive operations require strong authorization and audit records.
 - All employee, team, analytics, report and export endpoints must enforce current-user role checks and tenant ownership.
-- Weekly and monthly report recipients must be explicitly authorised. Do not use an implicit personal-mailbox fallback for client data. Prevent duplicates across retries and manual triggers.
+- Weekly and monthly report recipients must be explicitly authorised. Internal copies require `CLIENT_REPORT_QA_COPIES_ENABLED=true` and a configured @signaltrue.ai `SUPERADMIN_EMAIL`. Never use an implicit personal-mailbox fallback. Customer deliveries have atomic per-org/per-period claims; inspect ambiguous delivery states before retries.
 - Reconcile Microsoft 365 source events, active employee identities, team assignments and coverage to stored work events, weekly snapshots, dashboard totals and delivered reports.
-- Implement and test the two-person team reporting requirement above while preserving metric-level privacy.
+- Verify two-person team recognition in production; separately assess and approve which metrics, if any, are suitable for two-person disclosure.
 - Require a passed build/test/security gate and source-to-report acceptance evidence before claiming a release is production-ready.
 
 ---
