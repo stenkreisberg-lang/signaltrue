@@ -323,20 +323,24 @@ function computeCalendarMetrics(events, activePeopleCount, workConfig, dateStr) 
 }
 
 function zeroCalendarMetrics() {
+  // A missing source is not an observed zero. Keep counts in measurementEvidence,
+  // and keep metrics unavailable until source events are actually verified.
   return {
-    meetingHoursTotal: 0,
-    meetingHoursPerPerson: 0,
-    attendeeHoursTotal: 0,
-    attendeeHoursPerPerson: 0,
-    recurringMeetingRatio: 0,
-    avgAttendeeCount: 0,
-    backToBackMeetingCount: 0,
-    fragmentedDayRatio: 0,
-    focusHoursAvailablePerPerson: 0,
-    focusBlocks90mCount: 0,
-    manager1to1MinutesPerPerson: 0,
-    cancelled1to1Count: 0,
-    afterHoursMeetingMinutes: 0,
+    meetingCount: 0,
+    afterHoursMeetingCount: 0,
+    meetingHoursTotal: null,
+    meetingHoursPerPerson: null,
+    attendeeHoursTotal: null,
+    attendeeHoursPerPerson: null,
+    recurringMeetingRatio: null,
+    avgAttendeeCount: null,
+    backToBackMeetingCount: null,
+    fragmentedDayRatio: null,
+    focusHoursAvailablePerPerson: null,
+    focusBlocks90mCount: null,
+    manager1to1MinutesPerPerson: null,
+    cancelled1to1Count: null,
+    afterHoursMeetingMinutes: null,
   };
 }
 
@@ -407,15 +411,15 @@ function computeMessagingMetrics(events, activePeopleCount, workConfig) {
 
 function zeroMessagingMetrics() {
   return {
-    messagesSentTotal: 0,
-    messagesSentPerPerson: 0,
-    afterHoursMessageRatio: 0,
+    messagesSentTotal: 0, // provenance count, not a verified zero
+    messagesSentPerPerson: null,
+    afterHoursMessageRatio: null,
     medianResponseMinutes: null,
     p90ResponseMinutes: null,
-    uniqueCollaboratorsPerPerson: 0,
-    publicChannelRatio: 0,
-    dmRatio: 0,
-    threadParticipationRate: 0,
+    uniqueCollaboratorsPerPerson: null,
+    publicChannelRatio: null,
+    dmRatio: null,
+    threadParticipationRate: null,
     reciprocityRatio: null,
   };
 }
@@ -427,10 +431,10 @@ function computeEmailMetrics(events, activePeopleCount, workConfig) {
 
   if (sent.length === 0) {
     return {
-      emailsSentTotal: 0,
-      afterHoursEmailRatio: 0,
+      emailsSentTotal: 0, // provenance count, not a verified zero
+      afterHoursEmailRatio: null,
       medianReplyMinutes: null,
-      internalEmailRatio: 0,
+      internalEmailRatio: null,
     };
   }
 
