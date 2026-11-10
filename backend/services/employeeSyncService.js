@@ -300,7 +300,7 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
  * Backfill missing team attribution without rewriting historical source evidence.
  */
 export async function remapWorkEventTeams(orgId) {
-  const users = await User.find({ orgId, teamId: { $ne: null } })
+  const users = await User.find({ orgId, accountStatus: { $ne: 'inactive' }, teamId: { $ne: null } })
     .select('_id teamId hrStructure.teamVerifiedAt')
     .lean();
   const usersByTeam = new Map();
