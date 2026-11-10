@@ -132,21 +132,10 @@ router.post('/analyze', async (req, res) => {
 
     const prompt = `You are an expert org coach. Write a concise playbook for the team based on context:\n${context}`;
 
-    // Temporarily set AI_PROVIDER to match effective provider
-    const originalProvider = process.env.AI_PROVIDER;
-    process.env.AI_PROVIDER = effectiveProvider;
-
-    // Use provider adapter
-    const providerClient = getProvider();
+    // Select the provider per request, avoiding process-global configuration mutation.
+    const providerClient = getProvider(effectiveProvider);
     const completion = await providerClient.generate({ prompt, model, max_tokens: 400 });
     playbook = completion.choices?.[0]?.message?.content || completion.choices?.[0]?.text || '';
-
-    // Restore original provider env
-    if (originalProvider !== undefined) {
-      process.env.AI_PROVIDER = originalProvider;
-    } else {
-      delete process.env.AI_PROVIDER;
-    }
 
     // Log usage if available
     try {
