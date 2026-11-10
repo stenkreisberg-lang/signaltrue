@@ -393,19 +393,24 @@ router.post('/purge/:orgId', authenticateToken, requireOrganizationAccess(), asy
   try {
     const { orgId } = req.params;
 
-    // Fire-and-forget; respond immediately
-    setImmediate(async () => {
-      try {
-        await purgeOrgData(orgId);
-        console.log(`[Privacy Purge] Completed for org ${orgId}`);
-      } catch (err) {
-        console.error(`[Privacy Purge] Failed for org ${orgId}:`, err.message);
-      }
-    });
-
-    return res.json({
-      data: { message: `Retention purge triggered for org ${orgId}. Processing in background.` },
-    });
+    // Process synchronously so the API reports the actual outcome. Dry run
+    // provides a non-destructive candidate-count preview for the raw-event
+    // migration. No private worker state can disappear after HTTP 200.
+    const dryRun = req.body?.dryRun === true;
+    const summary = await purgeOrgData(orgId, { dryRun });
+    return res.json({ data: {
+      status: summary.status,
+      dryRun: summary.dryRun,
+      deletedCounts: {
+        WorkEvent: summary.WorkEvent,
+        IntegrationMetricsDaily: summary.IntegrationMetricsDaily,
+        MetricsDaily: summary.MetricsDaily,
+        ScoringAuditLog: summary.ScoringAuditLog,
+      },
+      candidateCounts: summary.candidateCounts,
+      deferred: summary.deferred,
+      errors: summary.errors,
+    } });
   } catch (err) {
     console.error('[purge POST]', err.message);
     return res.status(500).json({ error: true, message: err.message });
