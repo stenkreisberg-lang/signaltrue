@@ -1,8 +1,6 @@
 import { expect, test } from 'vitest';
 import { editorialBlogPostBySlug } from './editorialBlogPosts';
-import {
-  PSYCHOSOCIAL_CONTROL_REVIEW_SLUG,
-} from './psychosocialControlReviewPost';
+import { PSYCHOSOCIAL_CONTROL_REVIEW_SLUG } from './psychosocialControlReviewPost';
 
 test('publishes one distinct practical control-review article', () => {
   const post = editorialBlogPostBySlug(PSYCHOSOCIAL_CONTROL_REVIEW_SLUG);

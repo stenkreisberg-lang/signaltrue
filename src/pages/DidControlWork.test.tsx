@@ -85,7 +85,11 @@ test('offers a free pilot and does not complete a partially answered assessment'
 test('offers a selectable checklist if the browser denies clipboard access', async () => {
   const writeText = vi.fn().mockRejectedValue(new Error('Clipboard denied'));
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-  render(<MemoryRouter><DidControlWork /></MemoryRouter>);
+  render(
+    <MemoryRouter>
+      <DidControlWork />
+    </MemoryRouter>
+  );
   const questions = screen.getAllByRole('heading', { level: 3 });
   for (const heading of questions) {
     fireEvent.click(within(heading.parentElement!).getAllByRole('button')[0]);
@@ -100,6 +104,10 @@ test('offers a selectable checklist if the browser denies clipboard access', asy
   expect(trackEvent).not.toHaveBeenCalledWith('did_control_work_plan_copied', expect.anything());
   fireEvent.click(within(questions[0].parentElement!).getAllByRole('button')[2]);
   fireEvent.click(resultButton);
-  expect(screen.queryByRole('textbox', { name: 'Evidence review checklist' })).not.toBeInTheDocument();
-  expect(vi.mocked(trackEvent).mock.calls.filter(([name]) => name === 'did_control_work_completed')).toHaveLength(1);
+  expect(
+    screen.queryByRole('textbox', { name: 'Evidence review checklist' })
+  ).not.toBeInTheDocument();
+  expect(
+    vi.mocked(trackEvent).mock.calls.filter(([name]) => name === 'did_control_work_completed')
+  ).toHaveLength(1);
 });
