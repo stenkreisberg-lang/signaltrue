@@ -1,3 +1,4 @@
+import { hasValidAdminApiKey } from '../middleware/auth.js';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { Resend } from 'resend';
@@ -72,7 +73,7 @@ router.post('/submit', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(adminKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -121,7 +122,7 @@ router.get('/stats', async (req, res) => {
 router.get('/submissions', async (req, res) => {
   try {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(adminKey)) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -407,7 +408,7 @@ router.post('/control-maturity/claim', maturityClaimLimiter, async (req, res) =>
 // GET /api/assessment/control-maturity/stats - aggregate only, admin key protected
 router.get('/control-maturity/stats', async (req, res) => {
   try {
-    if (req.headers['x-admin-key'] !== process.env.ADMIN_API_KEY) {
+    if (!hasValidAdminApiKey(req.headers['x-admin-key'])) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
