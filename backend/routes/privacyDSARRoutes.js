@@ -11,12 +11,68 @@
 
 import express from 'express';
 import mongoose from 'mongoose';
-import { authenticateToken, isMasterAdmin, requireOrganizationAccess } from '../middleware/auth.js';
+import { authenticateToken, isMasterAdmin, requireOrganizationAccess, requireCurrentUserRoles } from '../middleware/auth.js';
 import DSARRequest from '../models/dsarRequest.js';
 import User from '../models/user.js';
 import { purgeOrgData } from '../services/retentionPurgeService.js';
 
 const router = express.Router();
+const DSAR_LEASE_MS = 6 * 60 * 60 * 1000;
+
+// Re-evaluate the current employee account. Old JWT role claims are not authoritative.
+router.use(authenticateToken, requireCurrentUserRoles());
+
+async function processApprovedDSAR(request) {
+  try {
+    let summary = {};
+    if (request.requestType === 'delete') {
+      summary = await deleteUserData(request.userId);
+    } else if (request.requestType === 'export') {
+      summary = await exportUserData(request.userId);
+    } else if (request.requestType === 'rectify') {
+      summary = { note: 'Manual rectification is required; the request remains open.' };
+    }
+    const manual = request.requestType === 'rectify';
+    await DSARRequest.updateOne({ _id: request._id, status: 'processing' }, {
+      $set: {
+        status: manual ? 'awaiting_manual' : 'completed',
+        summary,
+        completedAt: manual ? null : new Date(),
+        processingLeaseUntil: null,
+      },
+    });
+  } catch (error) {
+    console.error('[DSAR worker]', error.message);
+    await DSARRequest.updateOne({ _id: request._id, status: 'processing' }, {
+      $set: { status: 'failed', errorMessage: String(error.message).slice(0, 300),
+        processingLeaseUntil: null },
+    });
+  }
+}
+
+/**
+ * Recover only approved operations with an expired processing lease.
+ * Pending requests still require a human approval; manual rectification
+ * is deliberately not auto-completed.
+ */
+export async function recoverStaleDSARRequests(now = new Date()) {
+  const expired = await DSARRequest.find({
+    status: 'processing', processingLeaseUntil: { $lte: now },
+  }).select('_id').limit(20).lean();
+  let resumed = 0;
+  for (const candidate of expired) {
+    const request = await DSARRequest.findOneAndUpdate({
+      _id: candidate._id, status: 'processing',
+      processingLeaseUntil: { $lte: now },
+    }, { $set: { processingLeaseUntil: new Date(now.getTime() + DSAR_LEASE_MS) },
+      $inc: { processingAttempts: 1 } }, { new: true });
+    if (!request) continue;
+    resumed++;
+    await processApprovedDSAR(request);
+  }
+  return { recovered: resumed };
+}
+
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
@@ -199,40 +255,24 @@ router.post('/dsar/:requestId/process', authenticateToken, async (req, res) => {
       });
     }
 
-    request.status = 'processing';
     if (!isMasterAdmin(req.user) && request.orgId?.toString() !== req.user.orgId?.toString()) {
       return res.status(403).json({ error: true, message: 'Forbidden', code: 'FORBIDDEN' });
     }
-    request.processedBy = req.user.userId;
-    await request.save();
-
-    // Execute asynchronously — respond immediately
-    setImmediate(async () => {
-      try {
-        let summary = {};
-
-        if (request.requestType === 'delete') {
-          summary = await deleteUserData(request.userId);
-        } else if (request.requestType === 'export') {
-          summary = await exportUserData(request.userId);
-          request.exportUrl = summary.exportUrl || null;
-          request.exportUrlExpiresAt = summary.exportUrlExpiresAt || null;
-        } else if (request.requestType === 'rectify') {
-          // Rectification is manual — mark complete and flag for admin follow-up
-          summary = { note: 'Manual rectification required — please contact the user.' };
-        }
-
-        request.status = 'completed';
-        request.completedAt = new Date();
-        request.summary = summary;
-        await request.save();
-      } catch (procErr) {
-        console.error('[DSAR process] Failed:', procErr.message);
-        request.status = 'failed';
-        request.errorMessage = procErr.message;
-        await request.save();
-      }
-    });
+    // Atomic claim prevents concurrent admin submissions from processing twice.
+    const approved = await DSARRequest.findOneAndUpdate(
+      { _id: request._id, status: 'pending' },
+      { $set: { status: 'processing', processedBy: String(req.user.userId),
+        processingLeaseUntil: new Date(Date.now() + DSAR_LEASE_MS),
+        errorMessage: null }, $inc: { processingAttempts: 1 } },
+      { new: true }
+    );
+    if (!approved) {
+      return res.status(409).json({ error: true, code: 'REQUEST_ALREADY_CLAIMED' });
+    }
+    // Processing is recoverable from MongoDB even if the server exits here.
+    setImmediate(() => { void processApprovedDSAR(approved).catch((err) => {
+      console.error('[DSAR unexpected worker error]', err.message);
+    }); });
 
     return res.json({
       data: { requestId: request._id, status: 'processing', message: 'Processing started.' },
