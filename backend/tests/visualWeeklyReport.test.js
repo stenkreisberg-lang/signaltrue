@@ -93,7 +93,13 @@ describe('visual weekly report data integrity', () => {
         {key:'meeting_hours',label:'Meeting hours',unit:'hours',available:true,current:12,previous:10,changePct:20,readiness:{mappedUsers:2,totalUsers:42}},
         {key:'after_hours',label:'After-hours messaging',unit:'%',available:false,readiness:{mappedUsers:2,totalUsers:42}},
         {key:'focus_time',label:'Uninterrupted time',unit:'hours',available:false},
-      ],observations:[],actions:{primary:null}
+      ],
+      trend:[
+        {weekStart:'2026-10-11',label:'2w ago',meetingHours:8},
+        {weekStart:'2026-10-18',label:'1w ago',meetingHours:9},
+        {weekStart:'2026-10-25',label:'Current',meetingHours:12},
+      ],
+      observations:[],actions:{primary:null}
     };
     const history = buildReportTrendSeries([
       sample('2026-10-11', 750), sample('2026-10-18', 720), sample('2026-10-25',685),
