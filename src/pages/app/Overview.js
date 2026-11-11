@@ -121,7 +121,7 @@ export default function Overview() {
 
   // Existing international customers retain the English report until the\n  // redesigned dashboard has a complete English translation.\n  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {\n    return <OverviewEnglish />;\n  }\n\n  if (loading) {
     return (
-      <AppShell user={user} section="Ülevaade">
+      <AppShell user={user} section="Ülevaade" locale="et">
         <div className="app-panel flex min-h-64 items-center justify-center">
           <Spinner size="large" />
           <span className="ml-3 text-sm text-slate-600">Laadin töökorralduse ülevaadet…</span>
@@ -131,7 +131,7 @@ export default function Overview() {
   }
 
   return (
-    <AppShell user={user} section="Ülevaade">
+    <AppShell user={user} section="Ülevaade" locale="et">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
           SignalTrue / Töökorralduse mõõtmine
