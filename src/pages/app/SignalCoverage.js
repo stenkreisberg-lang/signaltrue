@@ -111,6 +111,17 @@ export default function SignalCoverage() {
                           : ''}
                       </small>
                       {source.statusMessage && <small>{source.statusMessage}</small>}
+                      {source.sourceEvidence && !source.sourceEvidence.evidenceQueryFailed && (
+                        <small>
+                          Last seven days: {Number(source.sourceEvidence.storedEvents7d || 0).toLocaleString()}
+                          {' '}stored events,{' '}
+                          {Number(source.sourceEvidence.attributedEvents7d || 0).toLocaleString()}
+                          {' '}assigned to employees
+                          {source.sourceEvidence.lastEventReceived
+                            ? ` · latest ${new Date(source.sourceEvidence.lastEventReceived).toLocaleDateString()}`
+                            : ''}
+                        </small>
+                      )}
                       {source.measurementStatus?.reason && (
                         <small>{source.measurementStatus.reason}</small>
                       )}
