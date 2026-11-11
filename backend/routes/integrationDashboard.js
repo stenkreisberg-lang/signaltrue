@@ -176,6 +176,12 @@ router.get('/status', authenticateToken, async (req, res) => {
       return {
         ...integration,
         measurementStatus: deriveSourceMeasurementStatus(integration, diagnostic),
+        sourceEvidence: diagnostic ? {
+          storedEvents7d: diagnostic.storedEvents7d,
+          attributedEvents7d: diagnostic.attributedEvents7d,
+          lastEventReceived: diagnostic.latestEventReceived,
+          evidenceQueryFailed: diagnostic.evidenceQueryFailed,
+        } : null,
       };
     });
     const evidenceSummary = {
