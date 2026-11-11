@@ -1571,6 +1571,7 @@ export async function generateWeeklyBrief(orgId) {
         ),
         teamReadiness: teamReadiness.map(serializeTeamReadiness),
         dataQuality: {
+          comparability: { calendar: calendarComparison, messaging: messagingComparison },
           anomalies: dataAnomalies,
           suspectMetrics: [...suspectMetrics],
           coverageRegressed,
@@ -1603,7 +1604,7 @@ export async function generateWeeklyBrief(orgId) {
   // Meeting analysis
   // Track meeting trend so downstream checks can avoid contradictory advice
   let meetDeltaPct = 0;
-  if (!isMetricBlocked('meetings') && (twMeetings > 0 || lwMeetings > 0)) {
+  if (!isMetricBlocked('meetings') && calendarComparison.comparable && (twMeetings > 0 || lwMeetings > 0)) {
     meetDeltaPct = lwMeetings > 0 ? ((twMeetings - lwMeetings) / lwMeetings) * 100 : 0;
     const aboveSixWeek = sixWeekAvg.meetings > 0 && twMeetings > sixWeekAvg.meetings * 1.15;
     if (meetDeltaPct > 15) {
@@ -1630,7 +1631,7 @@ export async function generateWeeklyBrief(orgId) {
   // Meeting duration + back-to-back
   // Only flag meeting-load issues when meetings are NOT already trending down (avoid contradictory advice)
   const meetingsTrending = meetDeltaPct; // positive = up, negative = down
-  if (!isMetricBlocked('meeting_hours') && tw.meetingHours > 0) {
+  if (!isMetricBlocked('meeting_hours') && calendarComparison.comparable && tw.meetingHours > 0) {
     const hoursPerDay = tw.meetingHours / 5;
     const meetingHoursAboveBaseline =
       sixWeekAvg.meetingHours > 0 && tw.meetingHours > sixWeekAvg.meetingHours * 1.15;
@@ -1660,7 +1661,7 @@ export async function generateWeeklyBrief(orgId) {
       });
     }
   }
-  if (!isMetricBlocked('back_to_back') && tw.backToBack > 5) {
+  if (!isMetricBlocked('back_to_back') && calendarComparison.comparable && tw.backToBack > 5) {
     const b2bDelta =
       lw.backToBack > 0 ? ((tw.backToBack - lw.backToBack) / lw.backToBack) * 100 : 100;
     const conf = obsConfidence([tw.backToBack > 8, b2bDelta > 20, tw.afterHoursRatio > 0.2]);
@@ -1680,7 +1681,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Messaging analysis
-  if (!isMetricBlocked('messages') && (twMessages > 0 || lwMessages > 0)) {
+  if (!isMetricBlocked('messages') && messagingComparison.comparable && (twMessages > 0 || lwMessages > 0)) {
     const msgDelta = lwMessages > 0 ? ((twMessages - lwMessages) / lwMessages) * 100 : 0;
     if (msgDelta > 25) {
       const conf = obsConfidence([msgDelta > 40, twMeetings >= lwMeetings]);
@@ -1737,7 +1738,7 @@ export async function generateWeeklyBrief(orgId) {
         confidence: 'Low',
       });
     }
-    if (tw.afterHoursRatio > lw.afterHoursRatio && lw.afterHoursRatio > 0) {
+    if (messagingComparison.comparable && tw.afterHoursRatio > lw.afterHoursRatio && lw.afterHoursRatio > 0) {
       const afterHoursDrift = Math.round(
         ((tw.afterHoursRatio - lw.afterHoursRatio) / lw.afterHoursRatio) * 100
       );
@@ -1763,7 +1764,7 @@ export async function generateWeeklyBrief(orgId) {
 
   // Observed meeting-free calendar gaps (not proof of focus or recovery)
   if (
-    !isMetricBlocked('focus_time') &&
+    !isMetricBlocked('focus_time') && calendarComparison.comparable &&
     tw.focusTimeAvailability != null &&
     tw.focusTimeAvailability > 0
   ) {
@@ -1787,7 +1788,7 @@ export async function generateWeeklyBrief(orgId) {
   }
 
   // Calendar fragmentation (new metric)
-  if (!isMetricBlocked('fragmentation') && tw.calendarFragmentation > 60) {
+  if (!isMetricBlocked('fragmentation') && calendarComparison.comparable && tw.calendarFragmentation > 60) {
     const conf = obsConfidence([
       tw.calendarFragmentation > 75,
       tw.backToBack > 5,
@@ -1819,11 +1820,13 @@ export async function generateWeeklyBrief(orgId) {
     })[signalType] || null;
   const eligibleTwSignals = twSignals.filter((signal) => {
     const key = signalReadinessKey(signal.signalType);
-    return !key || isMetricEligible(key);
+    return !key || (isMetricEligible(key) &&
+      (['after_hours', 'messages'].includes(key) ? messagingComparison : calendarComparison).comparable);
   });
   const eligibleTwCKSignals = twCKSignals.filter((signal) => {
     const key = signalReadinessKey(signal.signalType);
-    return !key || isMetricEligible(key);
+    return !key || (isMetricEligible(key) &&
+      (['after_hours', 'messages'].includes(key) ? messagingComparison : calendarComparison).comparable);
   });
 
   // Signals analysis. Any signal backed by a blocked metric is excluded from alerts and status.
