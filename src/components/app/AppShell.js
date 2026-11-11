@@ -109,7 +109,14 @@ export function PageHeader({ eyebrow, title, description, action }) {
   );
 }
 
-export default function AppShell({ children, user, section, width = 'wide', mode = 'hr', locale = 'en' }) {
+export default function AppShell({
+  children,
+  user,
+  section,
+  width = 'wide',
+  mode = 'hr',
+  locale = 'en',
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const navigationRef = useRef(null);
@@ -229,8 +236,11 @@ export default function AppShell({ children, user, section, width = 'wide', mode
           <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-700 px-5 py-2.5 text-caption font-semibold text-white">
             <span>
               {et ? 'Vaatad organisatsiooni ' : 'Viewing as '}
-              {localStorage.getItem('impersonation_org') || (et ? 'klient' : 'client organization')}.
-              {et ? ' Superadmini testvaade ei kinnita tiimijuhi tegelikke ligipääsuõigusi.' : ' Superadmin impersonation is active.'}
+              {localStorage.getItem('impersonation_org') || (et ? 'klient' : 'client organization')}
+              .
+              {et
+                ? ' Superadmini testvaade ei kinnita tiimijuhi tegelikke ligipääsuõigusi.'
+                : ' Superadmin impersonation is active.'}
             </span>
             <button
               type="button"
@@ -245,9 +255,9 @@ export default function AppShell({ children, user, section, width = 'wide', mode
           <div className="app-privacy-bar">
             {et ? (
               <>
-                <strong>Tiimide töömustrite mõõtmine, mitte töötajate hindamine.</strong>{' '}
-                Näitajaid tuleb tõlgendada koos tiimi enda selgitustega. SignalTrue ei määra
-                terviseseisundit ega kinnita muutuse põhjust.{' '}
+                <strong>Tiimide töömustrite mõõtmine, mitte töötajate hindamine.</strong> Näitajaid
+                tuleb tõlgendada koos tiimi enda selgitustega. SignalTrue ei määra terviseseisundit
+                ega kinnita muutuse põhjust.{' '}
                 <Link to={mode === 'manager' ? '/privacy' : '/app/privacy'}>
                   Andmekasutuse põhimõtted
                 </Link>
