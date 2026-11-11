@@ -5,6 +5,23 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
  * Five customer tasks, with specialised evidence tools placed behind a
  * secondary disclosure. Route guards remain authoritative for access.
  */
+const ESTONIAN_NAVIGATION = {
+  Overview: 'Ülevaade',
+  'Organisation & teams': 'Organisatsioon ja tiimid',
+  'Actions & reviews': 'Tegevused ja järelkontroll',
+  Reports: 'Aruanded',
+  'Settings & access': 'Seaded ja ligipääs',
+  'Work-pattern evidence': 'Töömustri mõõtmised',
+  'Pattern history': 'Muutused ajas',
+  'Action records': 'Salvestatud tegevused',
+  'How teams work together': 'Tiimide koostöö',
+  'Leadership summary': 'Juhtkonna kokkuvõte',
+  'Microsoft and other connections': 'Microsofti ja muud ühendused',
+  'Manager access & invitations': 'Tiimijuhtide ligipääsud',
+  'Data policy': 'Andmekasutuse põhimõtted',
+  'Trust pack': 'Usaldusmaterjalid',
+  'Site analytics': 'Veebilehe statistika',
+};
 const links = [
   { to: '/app/overview', label: 'Overview', group: 'Start' },
   {
@@ -92,11 +109,12 @@ export function PageHeader({ eyebrow, title, description, action }) {
   );
 }
 
-export default function AppShell({ children, user, section, width = 'wide', mode = 'hr' }) {
+export default function AppShell({ children, user, section, width = 'wide', mode = 'hr', locale = 'en' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const navigationRef = useRef(null);
   const isImpersonating = Boolean(localStorage.getItem('impersonation_token'));
+  const et = locale === 'et';
 
   const visibleLinks = (mode === 'manager' ? managerLinks : links).filter(
     (link) =>
@@ -155,7 +173,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
               .map((link, index, primaryLinks) => (
                 <React.Fragment key={link.to}>
                   {(index === 0 || primaryLinks[index - 1]?.group !== link.group) && (
-                    <span className="app-nav-group">{link.group}</span>
+                    <span className="app-nav-group">{et ? 'ALUSTA' : link.group}</span>
                   )}
                   <NavLink
                     to={link.to}
@@ -168,7 +186,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
                       return 'app-nav-link ' + (active ? 'is-active' : '');
                     }}
                   >
-                    {link.label}
+                    {et ? ESTONIAN_NAVIGATION[link.label] || link.label : link.label}
                   </NavLink>
                 </React.Fragment>
               ))}
@@ -176,7 +194,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
             {mode !== 'manager' && secondaryLinks.length > 0 && (
               <details className="app-nav-secondary" open={isOnSecondaryPage}>
                 <summary className="app-nav-group app-nav-summary">
-                  Additional tools and settings
+                  {et ? 'Täiendavad tööriistad ja seaded' : 'Additional tools and settings'}
                 </summary>
                 {/* A details element slots everything after the summary into a
                     single anonymous box, so flex on the details itself does not
@@ -188,7 +206,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
                       to={link.to}
                       className={({ isActive }) => `app-nav-link ${isActive ? 'is-active' : ''}`}
                     >
-                      {link.label}
+                      {et ? ESTONIAN_NAVIGATION[link.label] || link.label : link.label}
                     </NavLink>
                   ))}
                 </div>
@@ -200,7 +218,7 @@ export default function AppShell({ children, user, section, width = 'wide', mode
             {user && <span className="app-user-name">{user.name || user.email}</span>}
             {user && (
               <button type="button" className="app-logout" onClick={logout}>
-                Log out
+                {et ? 'Logi välja' : 'Log out'}
               </button>
             )}
           </div>
@@ -210,24 +228,38 @@ export default function AppShell({ children, user, section, width = 'wide', mode
         {isImpersonating && (
           <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-700 px-5 py-2.5 text-caption font-semibold text-white">
             <span>
-              Viewing as {localStorage.getItem('impersonation_org') || 'client organization'}.
-              Superadmin impersonation is active.
+              {et ? 'Vaatad organisatsiooni ' : 'Viewing as '}
+              {localStorage.getItem('impersonation_org') || (et ? 'klient' : 'client organization')}.
+              {et ? ' Superadmini testvaade ei kinnita tiimijuhi tegelikke ligipääsuõigusi.' : ' Superadmin impersonation is active.'}
             </span>
             <button
               type="button"
               className="rounded-control bg-white px-3 py-1.5 text-caption font-bold text-amber-800"
               onClick={returnToSuperadmin}
             >
-              Return to Superadmin
+              {et ? 'Tagasi superadmini vaatesse' : 'Return to Superadmin'}
             </button>
           </div>
         )}
         <main className={`app-main app-main-${width}`}>
           <div className="app-privacy-bar">
-            <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates
-            observed work patterns from interpretation. Worker consultation and human judgement
-            remain part of the review; the product does not diagnose health or establish cause.
-            <Link to={mode === 'manager' ? '/privacy' : '/app/privacy'}>View data policy</Link>
+            {et ? (
+              <>
+                <strong>Tiimide töömustrite mõõtmine, mitte töötajate hindamine.</strong>{' '}
+                Näitajaid tuleb tõlgendada koos tiimi enda selgitustega. SignalTrue ei määra
+                terviseseisundit ega kinnita muutuse põhjust.{' '}
+                <Link to={mode === 'manager' ? '/privacy' : '/app/privacy'}>
+                  Andmekasutuse põhimõtted
+                </Link>
+              </>
+            ) : (
+              <>
+                <strong>Team-level evidence, not employee scoring.</strong> SignalTrue separates
+                observed work patterns from interpretation. Worker consultation and human judgement
+                remain part of the review; the product does not diagnose health or establish cause.{' '}
+                <Link to={mode === 'manager' ? '/privacy' : '/app/privacy'}>View data policy</Link>
+              </>
+            )}
           </div>
           {children}
         </main>
