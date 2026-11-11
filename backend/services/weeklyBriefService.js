@@ -1,3 +1,4 @@
+import WeeklyWorkReview from '../models/weeklyWorkReview.js';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import Organization from '../models/organizationModel.js';
@@ -3427,6 +3428,11 @@ export async function generateWeeklyBrief(orgId) {
     }),
   ];
 
+  // Include completed or pending HR work-design reviews in the same frozen
+  // snapshot as dashboard metrics and weekly email. No separate report-only math.
+  const trackedWorkReviews = await WeeklyWorkReview.find({ orgId: org._id })
+    .sort({ updatedAt: -1 }).limit(10).lean();
+
   await persistSnapshot({
     org,
     periodStart: thisWeekStart,
@@ -3560,7 +3566,8 @@ export async function generateWeeklyBrief(orgId) {
           bdi.recommendedPlaybooks?.[0]?.title ||
           null,
       })),
-      actionOutcomes: recentInterventions.map((intervention) => ({
+      actionOutcomes: [
+        ...recentInterventions.map((intervention) => ({
         title:
           intervention.title ||
           intervention.actionTaken ||
@@ -3603,6 +3610,26 @@ export async function generateWeeklyBrief(orgId) {
               }
             : null,
       })),
+        ...trackedWorkReviews.map((item) => {
+          const latest = item.reviews?.at(-1) || null;
+          return {
+            title: item.title, teamName: item.teamName, status: item.status,
+            targetMetric: item.metricKey, baseline: item.baselineValue,
+            successCriterion: item.successCondition, startedAt: item.startDate,
+            reviewAt: item.reviewDate, ownerName: item.ownerName,
+            sourceReportVersion: item.reportVersion,
+            outcome: latest ? {
+              metricBefore: item.baselineValue,
+              metricAfter: latest.comparability === 'measured' ? latest.currentValue : null,
+              result: latest.comparability === 'measured'
+                ? 'Juhi hinnang vajalik'
+                : latest.reason || 'Võrdlus ei ole kinnitatud',
+              measuredAt: latest.measuredPeriod,
+              summary: latest.note || 'Mõõdetud muutus ei tõenda põhjuslikku seost.',
+            } : null,
+          };
+        }),
+      ],
       integrations: integrationConnections.map((item) =>
         serializeIntegration(item, staleConnectors)
       ),
