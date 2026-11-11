@@ -4,7 +4,7 @@
  * 5 API endpoints for the Engagement Strain Risk system.
  *
  * All routes require authentication (authenticateToken middleware).
- * All routes enforce team-size privacy (8-person minimum) before returning data.
+ * All routes require at least two mapped active contributors before returning team data.
  *
  * ─── Endpoints ────────────────────────────────────────────────────────────────
  *

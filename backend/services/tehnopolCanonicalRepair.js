@@ -1,6 +1,7 @@
 import Organization from '../models/organizationModel.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import Team from '../models/team.js';
+import HsDeploymentConfig from '../models/controlReview/deploymentConfig.js';
 
 export const TEHNOPOL_CANONICAL_ORG_ID = '6a509c2e85ba56cdc945b3c7';
 export const TEHNOPOL_DUPLICATE_ORG_ID = '6aaa75e4f457f5b1015dd4d7';
@@ -42,14 +43,20 @@ export async function repairTehnopolCanonicalOrganization() {
       // Customer confirmed all Tehnopol reporting uses Tallinn local time.
       'settings.timezone': 'Europe/Tallinn',
       'settings.timezoneConfirmedAt': new Date(),
-      // Two active people define a structural team. Sensitive score disclosure
-      // remains independently protected by the eight-person contributor gate.
+      // The same reporting and metric-contributor floor applies to all teams
+      // with two or more mapped active people.
       'settings.minTeamSize': 2,
     },
   });
 
   // Historical team records often carry Mongoose's default UTC. Correct the
   // canonical tenant only; do not change membership, managers or work hours.
+  // An old default eight-person control-review configuration must not
+  // silently override the product's same-two-person reporting rule.
+  await HsDeploymentConfig.updateMany(
+    { tenantId: TEHNOPOL_CANONICAL_ORG_ID, minGroupSize: 8 },
+    { $set: { minGroupSize: 2 } }
+  );
   const teamTimezoneUpdate = await Team.updateMany(
     { orgId: TEHNOPOL_CANONICAL_ORG_ID, timezone: { $ne: 'Europe/Tallinn' } },
     { $set: { timezone: 'Europe/Tallinn' } }

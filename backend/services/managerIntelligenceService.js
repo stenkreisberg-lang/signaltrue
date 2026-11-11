@@ -63,7 +63,7 @@ export async function managerAudit({ orgId, actorUserId, managerUserId, teamId, 
  * an integration produced measurements. Seven-day results are deliberately
  * marked partial unless all seven days contain verified source evidence.
  */
-export function summarizeObservedTeamDays(daily = [], floor = 8) {
+export function summarizeObservedTeamDays(daily = [], floor = 2) {
   const eligible = daily.filter(day => Number(day.activePeopleCount) >= floor);
   const calendar = eligible.filter(day =>
     day.integrationCoverage?.hasCalendar && day.measurementEvidence?.calendarEventCount > 0);
@@ -114,8 +114,39 @@ export function summarizeObservedTeamDays(daily = [], floor = 8) {
   };
 }
 
-export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 8 }) {
-  const floor = Math.max(8, Number(minimum) || 8);
+/**
+ * Count actual mapped contributors for each snapshot's exact rolling window.
+ * The logic is identical for every team size. Missing periods remain absent,
+ * and composition changes suppress unreliable week-to-week comparisons.
+ */
+export function buildRollingActorCohorts({ grouped = [], activeIds, teamId,
+  now = new Date(), anchorDay = 0, count = 26 }) {
+  const dayActors = new Map(grouped.map(row => [
+    String(row._id), new Set(row.actors.map(asId).filter(id => activeIds.has(id))),
+  ]));
+  const result = {};
+  const currentMonday = utcMonday(now);
+  let previous = null;
+  for (let back = count; back >= 1; back--) {
+    const weekStart = new Date(currentMonday.getTime() - back * 7 * DAY);
+    const sampledOn = new Date(weekStart.getTime() + ((anchorDay + 6) % 7) * DAY);
+    const union = new Set();
+    for (let dayOffset = -6; dayOffset <= 0; dayOffset++) {
+      const key = utcDay(new Date(sampledOn.getTime() + dayOffset * DAY));
+      for (const actor of dayActors.get(key) || []) union.add(actor);
+    }
+    const cohort = [...union].sort();
+    const comparable = !previous ||
+      (previous.length === cohort.length && cohort.every((id, i) => id === previous[i]));
+    result[asId(teamId) + ':' + utcDay(weekStart)] =
+      cohort.length && comparable ? cohort.length : 0;
+    if (cohort.length) previous = cohort;
+  }
+  return result;
+}
+
+export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 2 }) {
+  const floor = Math.max(2, Number(minimum) || 2);
   const teamId = team._id;
   const start = new Date(utcMonday(now).getTime() - 27 * 7 * DAY);
   const [records, roster] = await Promise.all([
@@ -129,34 +160,23 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   if (!records.length) return { eligible:false, reason:'Comparable historical data not available', minimum: floor };
   const anchorDay = buildReportTrendSeries(records.map(r => ({...r, teamId:null})), now).anchorDay;
   const currentMonday = utcMonday(now);
-  const actorWeeks = {};
-  const sourceWindowStart = new Date(currentMonday.getTime() - 26 * 7 * DAY +
-    ((anchorDay + 6) % 7) * DAY - 6 * DAY);
-  const weekStartDay = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][anchorDay];
+  // Each weekly point is a rolling seven-day snapshot sampled on the same
+  // weekday. Count distinct active contributors in that exact window, not an
+  // arbitrary calendar week with a different anchor.
+  const sourceWindowStart = new Date(currentMonday.getTime() - 26 * 7 * DAY - 6 * DAY);
   const grouped = await WorkEvent.aggregate([
-    { $match: { orgId, teamId, actorUserId: { $ne: null }, eventType: 'meeting',
-      source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] },
+    { $match: { orgId, teamId, actorUserId: { $ne: null },
+      eventType: { $in: ['meeting', 'message', 'email_sent'] },
       timestamp: { $gte: sourceWindowStart, $lt: currentMonday } } },
-    { $group: { _id: { $dateTrunc: { date: '$timestamp', unit: 'week',
-      startOfWeek: weekStartDay, timezone: 'UTC' } }, actors: { $addToSet: '$actorUserId' } } },
+    { $group: {
+      _id: { $dateToString: { format: '%Y-%m-%d',
+        date: '$timestamp', timezone: 'UTC' } },
+      actors: { $addToSet: '$actorUserId' },
+    } },
   ]);
-  const cohortsBySample = new Map(grouped.map(row => {
-    const weekEnd = new Date(new Date(row._id).getTime() + 6 * DAY);
-    const cohort = row.actors.filter(m => activeIds.has(asId(m))).map(asId).sort();
-    return [utcDay(weekEnd), cohort];
-  }));
-  let previousCohort = null;
-  // The reporting denominator and metric cover the same 7-day sampled window.
-  // Suppress cohort changes, avoiding a one-person entry/exit subtraction attack.
-  for(let back = 26; back >= 1; back--) {
-    const startWeek = new Date(currentMonday.getTime() - back * 7 * DAY);
-    const obs = new Date(startWeek.getTime() + ((anchorDay + 6) % 7) * DAY);
-    const cohort = cohortsBySample.get(utcDay(obs)) || [];
-    const comparable = !previousCohort || (cohort.length === previousCohort.length &&
-      cohort.every((member,index) => member === previousCohort[index]));
-    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = comparable ? cohort.length : 0;
-    previousCohort = cohort;
-  }
+  const actorWeeks = buildRollingActorCohorts({
+    grouped, activeIds, teamId, now, anchorDay,
+  });
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
     actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
   if (!eligible) return { eligible:false, reason:'Not enough comparable, privacy-eligible weekly measurements', minimum:floor };
@@ -168,10 +188,69 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       .select('date activePeopleCount calendar messaging measurementEvidence integrationCoverage')
       .sort({date:1}).lean(),
   ]);
-  const workPatternEvidence = summarizeObservedTeamDays(observedDaily, floor);
+  let workPatternEvidence = summarizeObservedTeamDays(observedDaily, floor);
+  const trendDimensions = [
+    { key: 'meetings', label: 'Meeting instances per represented person', unit: 'meetings/person' },
+    { key: 'meeting_hours', label: 'Participant meeting hours per represented person', unit: 'hours/person' },
+    { key: 'messages', label: 'Messages per represented person', unit: 'messages/person' },
+    { key: 'after_hours', label: 'After-hours message share', unit: '%' },
+    { key: 'focus_time', label: 'Available calendar hours per represented person', unit: 'hours/person' },
+    { key: 'recurring_load', label: 'Recurring meeting share', unit: '%' },
+  ];
+  const perPerson = new Set(['meetings', 'meeting_hours', 'messages', 'focus_time']);
+  const trendSeries = trendDimensions.map(dimension => ({
+    ...dimension,
+    points: eligible.points.map(point => {
+      const denominator = Number(point.actors || 0);
+      const measured = point.measured && denominator >= floor;
+      const raw = Number.isFinite(point[dimension.key]) ? point[dimension.key] : null;
+      const value = measured && raw !== null
+        ? (perPerson.has(dimension.key) ? Math.round(raw / denominator * 100) / 100 : raw)
+        : null;
+      return { date: point.date, sampledOn: point.sampledOn, value,
+        verified: value !== null };
+    }),
+  }));
+  const representedWeeks = trendSeries.find(series => series.key === 'meetings')
+    ?.points.filter(point => point.verified).length || 0;
+  // The ordinary EngagementTeamDaily pipeline keeps the stricter anonymous
+  // eight-person threshold. For a controller-approved identifiable two-person
+  // view, derive the same metrics from the canonical seven-day rolling
+  // IntegrationMetricsDaily team snapshots, never from fabricated zeroes.
+  if (workPatternEvidence.provenance.calendarObservedDays === 0) {
+    const latest = eligible.points.filter(point => point.measured &&
+      Number(point.actors) >= floor).at(-1);
+    if (latest) {
+      const fields = [
+        ['meeting_hours', 'Meeting participant-hours per represented person', 'meeting_hours', 'hours', true],
+        ['focus_availability', 'Uninterrupted calendar availability per represented person', 'focus_time', 'hours', true],
+        ['fragmented_days', 'Calendar fragmentation score', 'fragmentation', '/100', false],
+        ['after_hours_meetings', 'After-hours meeting share', null, '%', false],
+        ['teams_messages', 'Observed team messages', 'messages', 'events', false],
+        ['after_hours_messages', 'After-hours message share', 'after_hours', '%', false],
+      ];
+      const metrics = fields.map(([key, label, property, unit, normalize]) => {
+        const value = property && Number.isFinite(latest[property])
+          ? (normalize ? Math.round(latest[property] / latest.actors * 100) / 100 : latest[property])
+          : null;
+        return { key, label, value, unit, observedDays: null, available: value !== null };
+      });
+      workPatternEvidence = {
+        provenance: {
+          source: 'rolling7_team_snapshots',
+          sampledOn: latest.sampledOn,
+          calendarObservedDays: null,
+          messagingObservedDays: null,
+          explanation: 'Observed seven-day rolling team snapshot. Daily source completeness is not independently established; unavailable metrics are not zero.',
+        },
+        metrics,
+      };
+    }
+  }
   // A single authorized team only. No organization array, no user data, no
   // neighboring teams, no individual actor information in response.
   return { eligible:true, teamId:asId(teamId), teamName:team.name, minimum:floor,
+    trendSeries, representedWeeks,
     workPatternEvidence,
     methodology:eligible.note, metric:'meetingsPerRepresentedPerson',
     current:eligible.current, baseline:eligible.baseline, changePct:eligible.changePct,
@@ -221,5 +300,5 @@ export async function loadManagerRoster(req) {
 }
 export async function resolveOrgMinimum(orgId) {
   const org = await Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean();
-  return {minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'};
+  return {minimum:Math.max(2,Number(org?.settings?.minTeamSize)||2),timezone:org?.settings?.timezone||'UTC'};
 }

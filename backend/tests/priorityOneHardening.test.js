@@ -72,10 +72,10 @@ describe('Priority 1 security fixes', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('two-person teams are recognised without lowering sensitive metric disclosure', () => {
+  test('two-person teams use the same reporting minimum in every metric', () => {
     expect(MIN_TEAM_DEFINITION_SIZE).toBe(2);
     expect(Organization.schema.path('settings.minTeamSize').options.min).toBe(2);
-    expect(MIN_TEAM_SIZE).toBe(8);
-    expect(MIN_METRIC_CONTRIBUTORS).toBe(8);
+    expect(MIN_TEAM_SIZE).toBe(2);
+    expect(MIN_METRIC_CONTRIBUTORS).toBe(2);
   });
 });

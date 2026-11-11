@@ -151,8 +151,8 @@ describe('hard readiness gate (setup mode)', () => {
   });
 });
 
-describe('small operational teams do not block verified organisation reporting', () => {
-  test('a verified eight-person team can report while valid smaller teams remain withheld', async () => {
+describe('small teams use the same metrics and source-coverage rules', () => {
+  test('a verified team can report while another team without observed events remains unavailable', async () => {
     const { org, teamA, users } = await seedOrg();
     const smallTeam = await Team.create({ name: 'Operations', orgId: org._id });
     await User.insertMany(Array.from({ length: 4 }, (_, index) => ({
@@ -169,11 +169,11 @@ describe('small operational teams do not block verified organisation reporting',
     expect(snapshot.reportMode).toBe('full');
     expect(snapshot.payload.coverage.mappingCoveragePct).toBe(100);
     const operations = snapshot.payload.teamReadiness.find(item => item.teamName === 'Operations');
-    expect(operations.status).toBe('Operational team (sensitive metrics withheld)');
+    expect(operations.status).toBe('Not enough mapped activity');
     expect(html).toContain('Weekly Intelligence Brief');
   });
 
-  test('all-small teams cannot pass the sensitive scoring readiness gate', async () => {
+  test('a four-person team with mapped events receives normal full report without invented confidence', async () => {
     const org = await Organization.create({name:'Small Teams',industry:'Other'});
     const team = await Team.create({name:'Small Team',orgId:org._id});
     const users = await User.insertMany(Array.from({length:4}, (_, i) => ({
@@ -182,9 +182,11 @@ describe('small operational teams do not block verified organisation reporting',
     })));
     await seedMeetingEvents(org,team,users,4);
     const html = await generateWeeklyBrief(org._id);
-    expect(html).toContain('Setup Required');
+    expect(html).toContain('Weekly Intelligence Brief');
     const snapshot = await WeeklyBriefSnapshot.findOne({orgId:org._id}).lean();
-    expect(snapshot.reportMode).toBe('setup');
+    expect(snapshot.reportMode).toBe('full');
+    expect(snapshot.payload.coverage.mappingCoveragePct).toBe(100);
+    expect(html).toContain('Insufficient data');
   });
 });
 

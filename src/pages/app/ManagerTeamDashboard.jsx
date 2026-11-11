@@ -23,7 +23,8 @@ export default function ManagerTeamDashboard() {
   const [teams, setTeams] = useState([]),
     [team, setTeam] = useState(''),
     [report, setReport] = useState(null),
-    [weeks, setWeeks] = useState(13);
+    [weeks, setWeeks] = useState(13),
+    [metricKey, setMetricKey] = useState('meetings');
   const [error, setError] = useState(''),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
@@ -148,7 +149,10 @@ export default function ManagerTeamDashboard() {
   };
   const date = (s) =>
     s ? new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
-  const points = (report?.points || []).slice(-weeks).map((p) => ({ ...p, label: date(p.date) }));
+  const selectedSeries = report?.trendSeries?.find((series) => series.key === metricKey);
+  const points = (selectedSeries?.points || report?.points || [])
+    .slice(-weeks)
+    .map((p) => ({ ...p, label: date(p.date) }));
   return (
     <AppShell user={currentUser()} mode="manager" section="My team">
       <div className="mx-auto max-w-6xl space-y-5">
@@ -255,7 +259,9 @@ export default function ManagerTeamDashboard() {
                               : 'Unavailable'}
                           </p>
                           <p className="mt-2 text-xs text-slate-500">
-                            {metric.observedDays} of 7 source-observed days
+                            {metric.observedDays == null
+                              ? 'Rolling seven-day source snapshot; daily completeness unverified'
+                              : metric.observedDays + ' of 7 source-observed days'}
                           </p>
                         </div>
                       ))}
@@ -267,7 +273,24 @@ export default function ManagerTeamDashboard() {
                   </section>
                   <section className="rounded-xl border bg-white p-4 sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h2 className="text-xl font-bold">Meeting activity over time</h2>
+                      <div>
+                        <h2 className="text-xl font-bold">Work patterns across weeks</h2>
+                        <label className="mt-2 block text-sm">
+                          Choose a measured signal
+                          <select
+                            value={metricKey}
+                            onChange={(e) => setMetricKey(e.target.value)}
+                            aria-label="Trend measurement"
+                            className="ml-3 rounded-md border border-slate-300 bg-white p-2"
+                          >
+                            {(report.trendSeries || []).map((series) => (
+                              <option key={series.key} value={series.key}>
+                                {series.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
                       <div className="flex gap-2">
                         {[
                           [4, '1M'],
@@ -289,8 +312,9 @@ export default function ManagerTeamDashboard() {
                       </div>
                     </div>
                     <p className="my-3 text-sm text-slate-600">
-                      X-axis: sampled seven-day window · Y-axis: meeting instances per mapped team
-                      contributor. No individual attendance is inferred.
+                      Each point is a comparable seven-day period. Missing source measurements
+                      remain gaps, never zero work. No individual attendance or employee performance
+                      is inferred.
                     </p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
@@ -298,8 +322,8 @@ export default function ManagerTeamDashboard() {
                           <CartesianGrid strokeDasharray="3 4" stroke="#e2e8f0" />
                           <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={22} />
                           <YAxis domain={[0, 'auto']} width={40} />
-                          <Tooltip formatter={(v) => [v, 'Meeting instances per contributor']} />
-                          {report.baseline != null && (
+                          <Tooltip formatter={(v) => [v, selectedSeries?.unit || 'per person']} />
+                          {metricKey === 'meetings' && report.baseline != null && (
                             <ReferenceLine
                               y={report.baseline}
                               stroke="#64748b"

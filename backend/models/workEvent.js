@@ -205,6 +205,12 @@ const workEventSchema = new mongoose.Schema(
       userEmail: String, // normalized calendar owner/sender email when available
       fromEmail: String, // normalized message sender email when available
       microsoftUserId: String,
+      // Verified by a bounded Microsoft Graph directory lookup; never inferred
+      // from message text, display name or assumed external domains.
+      senderIdentityClass: {
+        type: String,
+        enum: ['active_member', 'guest', 'disabled', 'directory_gap', 'not_found', 'unverified'],
+      },
       googleUserId: String,
       slackUserId: String,
       meetingType: {

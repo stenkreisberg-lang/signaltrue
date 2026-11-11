@@ -12,7 +12,8 @@ import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
 import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
-  managerAudit, normalizeEmail, hashInvitedEmail, resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
+  managerAudit, normalizeEmail, hashInvitedEmail,
+  resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
 const router = express.Router();
 
@@ -108,7 +109,7 @@ router.get('/admin/directory',requireAdmin,async(req,res)=>{
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
       status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
-    minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'});
+    minimum:Math.max(2,Number(org?.settings?.minTeamSize)||2),timezone:org?.settings?.timezone||'UTC'});
 });
 router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   const managerUserId=String(req.body?.managerUserId||'');
@@ -241,18 +242,33 @@ router.patch('/me/preferences',async(req,res)=>{
     teamId,assignmentId:changed._id,action:'manager_email_preference_changed'});
   noStore(res).json({teamId,weeklyEmailEnabled:changed.weeklyEmailEnabled});
 });
+async function scopedManagerData(scope) {
+  const { minimum } = await resolveOrgMinimum(scope.user.orgId);
+  return getScopedTeamMeasurements({
+    orgId:scope.user.orgId, team:scope.team, minimum,
+  });
+}
+router.get('/admin/teams/:teamId/trends', requireAdmin, async(req,res) => {
+  if (req.managerAdmin.role !== 'hr_admin')
+    return noStore(res).status(403).json({message:'Customer HR review required'});
+  const team=await Team.findOne({ _id:req.params.teamId, orgId:req.managerAdmin.orgId,
+    isActive:{ $ne:false } }).select('name orgId metadata isActive analyticsEnabled structure').lean();
+  if (!team) return noStore(res).status(404).json({message:'Team not found'});
+  const { minimum } = await resolveOrgMinimum(req.managerAdmin.orgId);
+  const data=await getScopedTeamMeasurements({orgId:req.managerAdmin.orgId,
+    team, minimum});
+  return noStore(res).json(data);
+});
 router.get('/teams/:teamId/trends',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope)return noStore(res).status(403).json({message:'Not authorized for this team'});
-  const {minimum}=await resolveOrgMinimum(scope.user.orgId);
-  const data=await getScopedTeamMeasurements({orgId:scope.user.orgId,team:scope.team,minimum});
+  const data=await scopedManagerData(scope);
   noStore(res).json(data);
 });
 router.post('/teams/:teamId/actions',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope)return noStore(res).status(403).json({message:'Not authorized for this team'});
-  const {minimum}=await resolveOrgMinimum(scope.user.orgId);
-  const data=await getScopedTeamMeasurements({orgId:scope.user.orgId,team:scope.team,minimum});
+  const data=await scopedManagerData(scope);
   const action=await createScopedAction({user:scope.user,team:scope.team,data,body:req.body});
   if(!action)return noStore(res).status(400).json({message:'Action requires eligible evidence, title and valid expected direction'});
   noStore(res).status(201).json(action);
@@ -260,8 +276,7 @@ router.post('/teams/:teamId/actions',async(req,res)=>{
 router.post('/teams/:teamId/actions/:actionId/review',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope)return noStore(res).status(403).json({message:'Not authorized for this team'});
-  const {minimum}=await resolveOrgMinimum(scope.user.orgId);
-  const data=await getScopedTeamMeasurements({orgId:scope.user.orgId,team:scope.team,minimum});
+  const data=await scopedManagerData(scope);
   if(!data.eligible)return noStore(res).status(409).json({message:'Evidence insufficient for outcome review'});
   const action=await ManagerWorkAction.findOne({_id:req.params.actionId,orgId:scope.user.orgId,teamId:scope.team._id});
   if(!action)return noStore(res).status(404).json({message:'Action not found'});
@@ -323,8 +338,8 @@ router.get('/teams/:teamId/report.pdf',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope||scope.assignment.exportEnabled!==true)
     return noStore(res).status(403).json({message:'Export not authorized by HR'});
-  const {minimum}=await resolveOrgMinimum(scope.user.orgId);
-  const data=await getScopedTeamMeasurements({orgId:scope.user.orgId,team:scope.team,minimum});
+  const data=await scopedManagerData(scope);
+  const minimum = data.minimum;
   if(!data.eligible)return noStore(res).status(409).json({message:'No privacy-eligible measurement available for export'});
   noStore(res).type('application/pdf').set('Content-Disposition','attachment; filename="signaltrue-private-team-report.pdf"');
   const pdf=new PDFDocument({size:'A4',margin:48,info:{Title:'SignalTrue - authorized team work-pattern report',

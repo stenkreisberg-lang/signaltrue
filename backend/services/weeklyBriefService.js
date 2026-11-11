@@ -644,7 +644,7 @@ export async function generateWeeklyBrief(orgId) {
   const org = await Organization.findById(orgId);
   if (!org) throw new Error('Organization not found');
   const minimumTeamSize = Math.max(2, Number(org.settings?.minTeamSize) || 2);
-  const sensitiveReportMinimum = Math.max(8, minimumTeamSize);
+  const sensitiveReportMinimum = minimumTeamSize;
   const teams = await Team.find({ orgId });
   const now = new Date();
 

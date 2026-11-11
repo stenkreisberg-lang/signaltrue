@@ -278,17 +278,15 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
     { $group: { _id: '$teamId', count: { $sum: 1 } } },
   ]);
   const countByTeam = new Map(counts.map((entry) => [String(entry._id), entry.count]));
-  const teams = await Team.find({ orgId }).select('_id').lean();
+  const teams = await Team.find({ orgId, isActive: { $ne: false } }).select('_id').lean();
 
   await Promise.all(
     teams.map((team) => {
       const actualSize = countByTeam.get(String(team._id)) || 0;
       return Team.findByIdAndUpdate(team._id, {
         $set: {
-          isActive: true,
           'metadata.actualSize': actualSize,
-          // Sensitive analytics keep their independent group-size gate.
-          analyticsEnabled: actualSize >= Math.max(8, minimumTeamSize),
+          analyticsEnabled: actualSize >= minimumTeamSize,
           operationalTeamEligible: actualSize >= Math.max(2, minimumTeamSize),
         },
       });

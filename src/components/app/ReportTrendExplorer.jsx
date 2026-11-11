@@ -133,7 +133,7 @@ function TeamDetail({ data, window, range }) {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <strong>No privacy-eligible comparisons.</strong> Teams that lack sufficient mapped actors
         or a comparable historical baseline are not named. The minimum is{' '}
-        {data.privacy?.minimumGroupSize || 8} actors per reported team-week.
+        {data.privacy?.minimumGroupSize || 2} actors per reported team-week.
       </div>
     );
   const comparable = teams.filter((t) => t.changePct != null).slice(0, 10);

@@ -47,25 +47,27 @@ describe('visual weekly report data integrity', () => {
     ], now);
     expect(series.weekly.at(-2).meetings).toBeNull();
   });
-  test('team views suppress any team below 8 mapped actors during a sampled period', () => {
+  test('team views include two-person teams but suppress weeks with fewer than two mapped actors', () => {
     const dates = ['2026-10-04','2026-10-11','2026-10-18','2026-10-25'];
     const weeks = ['2026-09-28','2026-10-05','2026-10-12','2026-10-19'];
     const team = { _id:'eligible', name:'Operations', isActive:true, analyticsEnabled:true, metadata:{actualSize:10} };
-    const hidden = { _id:'small', name:'Private small team', isActive:true, analyticsEnabled:true, metadata:{actualSize:7} };
+    const hidden = { _id:'small', name:'Private small team', isActive:true, analyticsEnabled:true, metadata:{actualSize:1} };
     const records = dates.flatMap((d,i) => [
       sample(d,10+i,{teamId:'eligible'}), sample(d,3,{teamId:'small'}),
     ]);
     const actorsByWeek = Object.fromEntries(weeks.flatMap(w => [
-      ['eligible:'+w, 9],['small:'+w,7],
+      ['eligible:'+w, 9],['small:'+w,1],
     ]));
     let visible = buildEligibleTeamTrends({ records, teams:[team,hidden],
-      activeMemberCounts:{eligible:10,small:7}, actorsByWeek, minimumGroupSize:8, now, anchorDay:0 });
+      activeMemberCounts:{eligible:10,small:1}, actorsByWeek, minimumGroupSize:2, now, anchorDay:0 });
     expect(visible.map(t => t.name)).toEqual(['Operations']);
     expect(visible[0].current).toBeCloseTo(13/9,2);
-    actorsByWeek['eligible:2026-10-05'] = 7;
+    actorsByWeek['eligible:2026-10-05'] = 1;
     visible = buildEligibleTeamTrends({ records, teams:[team,hidden],
-      activeMemberCounts:{eligible:10,small:7}, actorsByWeek, minimumGroupSize:8, now, anchorDay:0 });
-    expect(visible).toEqual([]); // no partial team comparison
+      activeMemberCounts:{eligible:10,small:1}, actorsByWeek, minimumGroupSize:2, now, anchorDay:0 });
+    expect(visible).toHaveLength(1);
+    expect(visible[0].points.find(p => p.date === '2026-10-05')
+      .meetingsPerRepresentedPerson).toBeNull(); // a single-contributor week is a gap
   });
   test('only privacy-eligible, non-private interventions appear', () => {
     const eligible = [{id:'eligible'}];

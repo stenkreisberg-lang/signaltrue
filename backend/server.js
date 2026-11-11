@@ -195,7 +195,11 @@ import { prepareTehnopolManagerScopes } from './services/tehnopolManagerPreparat
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
+import { reconcileTehnopolTeamsSenderIdentities } from './services/tehnopolSenderIdentityReconciliation.js';
+import { computeDailyMetrics } from './services/integrationMetricsService.js';
 import { repairTehnopolNovemberSnapshot } from './services/tehnopolSnapshotParityRepair.js';
+import { refreshTeamSizes } from './services/employeeSyncService.js';
+import { backfillTehnopolTeamHistory } from './services/tehnopolTeamHistoryBackfill.js';
 import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
 
 const app = express();
@@ -221,6 +225,9 @@ async function main() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ MongoDB connected');
         await repairTehnopolCanonicalOrganization();
+        // Recompute existing team eligibility. Teams of two may have been
+        // incorrectly marked analyticsEnabled=false by the old eight-person floor.
+        await refreshTeamSizes(TEHNOPOL_CANONICAL_ORG_ID, 2);
         // HR-approved manager scopes are prepared as pending only.
         // No invitations, access grants, exports or customer emails.
         try {
@@ -257,6 +264,31 @@ async function main() {
               console.error('[TehnopolRecovery] Unexpected recovery or parity job error');
             });
         }, 35_000);
+        // Classify currently unmatched Teams senders using Graph directory
+        // metadata, without guessing identities or reading message bodies.
+        // The job is idempotent and never grants access or sends emails.
+        setTimeout(() => {
+          void reconcileTehnopolTeamsSenderIdentities()
+            .then(async (result) => {
+              if (result.matchedInternalEvents > 0) {
+                // Exact provider-verified mappings changed team attribution.
+                // Refresh the seven closed UTC days and saved HR brief.
+                const today = new Date();
+                today.setUTCHours(0, 0, 0, 0);
+                for (let offset = 7; offset >= 1; offset--) {
+                  const day = new Date(today.getTime() - offset * 86400000);
+                  await computeDailyMetrics(TEHNOPOL_CANONICAL_ORG_ID, day);
+                }
+                await generateWeeklyBrief(TEHNOPOL_CANONICAL_ORG_ID);
+              }
+              // Source-backed historical team metrics, never demo values.
+              const history = await backfillTehnopolTeamHistory();
+              console.info('[TehnopolTeamHistoryStatus]', JSON.stringify(history));
+              await logTehnopolProductionDiagnostic();
+            })
+            .catch((err) => console.error(
+              '[TehnopolSenderReconciliation] Unexpected failure:', err.message));
+        }, 240_000);
         // One-off historical calculation correction after the rolling 7-day fix.
         // Resumable in MongoDB, does not send emails or expose client measurements.
         setTimeout(() => {

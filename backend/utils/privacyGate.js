@@ -20,14 +20,13 @@ import Organization from '../models/organizationModel.js';
 
 export const MIN_TEAM_DEFINITION_SIZE = 2;
 export const MIN_OPERATIONAL_TEAM_SIZE = MIN_TEAM_DEFINITION_SIZE;
-export const MIN_HEALTH_SAFETY_TEAM_SIZE = 8;
-// Aggregate reporting privacy remains stricter than the minimum valid team size.
-export const MIN_TEAM_SIZE = MIN_HEALTH_SAFETY_TEAM_SIZE;
-export const MIN_METRIC_CONTRIBUTORS = MIN_HEALTH_SAFETY_TEAM_SIZE;
+export const MIN_HEALTH_SAFETY_TEAM_SIZE = 2;
+export const MIN_TEAM_SIZE = MIN_TEAM_DEFINITION_SIZE;
+export const MIN_METRIC_CONTRIBUTORS = MIN_TEAM_DEFINITION_SIZE;
 export const CONCENTRATION_THRESHOLD = 0.4; // Fraction above which to flag concentration
 
-// Engagement Strain / Manager-overload pipeline uses the stricter H&S floor by default.
-// See docs/PIVOT_REPORT_SPEC.md §9.
+// All team reporting uses the same minimum of two actual mapped contributors.
+// This is a disclosure rule, not a claim that a two-person group is anonymous.
 export const MIN_ENGAGEMENT_TEAM_SIZE = MIN_HEALTH_SAFETY_TEAM_SIZE;
 
 // Minimum base value before a week-over-week percentage change is meaningful.

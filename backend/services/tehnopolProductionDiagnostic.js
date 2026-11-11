@@ -204,6 +204,14 @@ export async function logTehnopolProductionDiagnostic() {
         });
       }).length;
 
+      const senderIdentityClasses = await WorkEvent.aggregate([
+        { $match: { orgId, source: 'microsoft-teams', eventType: 'message',
+          actorUserId: null, timestamp: { $gte: new Date(Date.now() - 7 * 86400000) } } },
+        { $group: { _id: '$metadata.senderIdentityClass', count: { $sum: 1 } } },
+      ]);
+      const classifiedUnmappedSenders = Object.fromEntries(
+        senderIdentityClasses.map(row => [row._id || 'unverified', row.count])
+      );
       const summary = {
         orgId: String(orgId),
         name: org.name,
@@ -247,6 +255,7 @@ export async function logTehnopolProductionDiagnostic() {
           unmappedDistinctSenderIds: unmatchedChatSenderIds.length,
           unmappedKnownDirectoryIds: matchedIds.size,
           unmappedUnknownDirectoryIds: unrecognizedSenderCount,
+          unmappedEventClassification: classifiedUnmappedSenders,
           // An ID absent from our directory may be an external guest or a
           // missing roster identity. Do not classify it as external by default.
           unrecognizedClassification: 'unconfirmed_not_in_directory',

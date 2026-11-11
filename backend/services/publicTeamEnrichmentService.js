@@ -643,7 +643,7 @@ export async function applyTeamMappingSuggestions({
   decisionMode = 'admin_approved',
 }) {
   const org = await Organization.findById(orgId).select('settings.minTeamSize').lean();
-  const minimumTeamSize = Math.max(5, Number(org?.settings?.minTeamSize) || 5);
+  const minimumTeamSize = Math.max(2, Number(org?.settings?.minTeamSize) || 2);
   const catchAllTeams = await Team.find({ orgId, name: CATCH_ALL_TEAM }).select('_id').lean();
   const unassignedFilter = {
     orgId,
