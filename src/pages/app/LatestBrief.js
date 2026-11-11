@@ -450,7 +450,13 @@ export default function LatestBrief() {
     );
   }
 
-  // Scope the Estonian P2 experience to organisations using Tallinn\n  // reporting time; keep the established English workflow elsewhere.\n  if (brief?.reportTimeZone !== 'Europe/Tallinn') {\n    return <LatestBriefEnglish />;\n  }\n\n  const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
+  // Scope the Estonian P2 experience to organisations using Tallinn
+  // reporting time; keep the established English workflow elsewhere.
+  if (brief?.reportTimeZone !== 'Europe/Tallinn') {
+    return <LatestBriefEnglish />;
+  }
+
+  const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
   const roleActions = brief.actions?.roleBased || {};
   const allRoleActions = Object.values(roleActions).flat().filter(Boolean);
 
