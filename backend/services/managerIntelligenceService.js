@@ -176,7 +176,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       .select('date activePeopleCount calendar messaging measurementEvidence integrationCoverage')
       .sort({date:1}).lean(),
   ]);
-  const workPatternEvidence = summarizeObservedTeamDays(observedDaily, floor);
+  let workPatternEvidence = summarizeObservedTeamDays(observedDaily, floor);
   const trendDimensions = [
     { key: 'meetings', label: 'Meeting instances per represented person', unit: 'meetings/person' },
     { key: 'meeting_hours', label: 'Participant meeting hours per represented person', unit: 'hours/person' },
@@ -201,6 +201,40 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   }));
   const representedWeeks = trendSeries.find(series => series.key === 'meetings')
     ?.points.filter(point => point.verified).length || 0;
+  // The ordinary EngagementTeamDaily pipeline keeps the stricter anonymous
+  // eight-person threshold. For a controller-approved identifiable two-person
+  // view, derive the same metrics from the canonical seven-day rolling
+  // IntegrationMetricsDaily team snapshots, never from fabricated zeroes.
+  if (approvedRestrictedSmallTeam && workPatternEvidence.provenance.calendarObservedDays === 0) {
+    const latest = eligible.points.filter(point => point.measured &&
+      Number(point.actors) >= floor).at(-1);
+    if (latest) {
+      const fields = [
+        ['meeting_hours', 'Meeting participant-hours per represented person', 'meeting_hours', 'hours', true],
+        ['focus_availability', 'Uninterrupted calendar availability per represented person', 'focus_time', 'hours', true],
+        ['fragmented_days', 'Calendar fragmentation score', 'fragmentation', '/100', false],
+        ['after_hours_meetings', 'After-hours meeting share', null, '%', false],
+        ['teams_messages', 'Observed team messages', 'messages', 'events', false],
+        ['after_hours_messages', 'After-hours message share', 'after_hours', '%', false],
+      ];
+      const metrics = fields.map(([key, label, property, unit, normalize]) => {
+        const value = property && Number.isFinite(latest[property])
+          ? (normalize ? Math.round(latest[property] / latest.actors * 100) / 100 : latest[property])
+          : null;
+        return { key, label, value, unit, observedDays: null, available: value !== null };
+      });
+      workPatternEvidence = {
+        provenance: {
+          source: 'restricted_rolling7_team_snapshots',
+          sampledOn: latest.sampledOn,
+          calendarObservedDays: null,
+          messagingObservedDays: null,
+          explanation: 'Observed seven-day rolling team snapshot. Daily source completeness is not independently established; unavailable metrics are not zero.',
+        },
+        metrics,
+      };
+    }
+  }
   // A single authorized team only. No organization array, no user data, no
   // neighboring teams, no individual actor information in response.
   return { eligible:true, teamId:asId(teamId), teamName:team.name, minimum:floor,
