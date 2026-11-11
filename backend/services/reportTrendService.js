@@ -156,8 +156,14 @@ const catchAll = name => /^(unassigned|general|other|default|no[ -]?team)$/i.tes
 // Requiring a minimum number of DISTINCT mapped actors in each displayed week
 // prevents an undersized team becoming identifiable when members leave or sync drops.
 export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, actorsByWeek,
-  minimumGroupSize = 8, now = new Date(), anchorDay = 0, availability = {} }) {
-  const floor = Math.max(8, Number(minimumGroupSize) || 8);
+  minimumGroupSize = 8, now = new Date(), anchorDay = 0, availability = {},
+  approvedRestrictedSmallTeam = false }) {
+  // Small-group visibility must be explicitly granted by the controller
+  // and restricted to a single authorized manager or HR viewer. Other paths
+  // cannot lower the default privacy floor merely by passing 2.
+  const floor = approvedRestrictedSmallTeam
+    ? Math.max(2, Number(minimumGroupSize) || 8)
+    : Math.max(8, Number(minimumGroupSize) || 8);
   const allRecords = normalizeRecords(records).filter(r => r.teamId && !r.userId);
   const results = [];
   for (const team of teams || []) {
