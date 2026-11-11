@@ -66,6 +66,6 @@ export function deriveSourceMeasurementStatus(source = {}, diagnostic = null, no
     return { state: 'unmapped', label: 'No employees mapped', verified: false,
       reason: 'Events exist but cannot be assigned to active employee teams.' };
   }
-  return { state: 'measuring', label: 'Verified source events', verified: true,
+  return { state: 'measuring', label: 'Recent stored events', verified: true,
     reason: 'Successful sync and recent stored source events with attributed employees confirmed.' };
 }
