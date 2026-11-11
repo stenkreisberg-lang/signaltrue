@@ -27,11 +27,6 @@ export default function ManagerReportingAdmin() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
-  const [smallTeamPolicy, setSmallTeamPolicy] = useState(null);
-  const [legalBasis, setLegalBasis] = useState('legitimate_interests');
-  const [policyVersion, setPolicyVersion] = useState('');
-  const [employeeNotice, setEmployeeNotice] = useState(false);
-  const [riskReview, setRiskReview] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -41,14 +36,6 @@ export default function ManagerReportingAdmin() {
       ]);
       setDirectory(adminData.data);
       setStructure(orgData.data);
-      if (currentUser()?.role === 'hr_admin') {
-        try {
-          const policy = await api.get('/manager-intelligence/admin/privacy/small-teams');
-          setSmallTeamPolicy(policy.data);
-        } catch {
-          setSmallTeamPolicy(null);
-        }
-      }
       setError('');
     } catch (e) {
       setError(e.response?.data?.message || 'Could not load HR manager permissions');
@@ -137,78 +124,6 @@ export default function ManagerReportingAdmin() {
           title="Manager access & invitations"
           description="Approve who sees which team. Formal reporting lines do not create SignalTrue access."
         />
-        {currentUser()?.role === 'hr_admin' && (
-          <section className="app-panel space-y-4 border-amber-200">
-            <div>
-              <h2 className="text-lg font-bold">Restricted two-person team reporting</h2>
-              <p className="mt-2 text-sm text-slate-700">
-                Teams of two can have the same work-pattern trend dimensions as larger teams.
-                These results can identify individuals. Activation requires your organisation's
-                documented lawful basis, employee notice, risk review, and HR-verified managers.
-                Access is limited to HR and accepted team managers. No emails or exports.
-              </p>
-              <p className="mt-2 text-sm font-semibold">
-                {smallTeamPolicy?.enabled
-                  ? 'Customer approval recorded. Expires ' +
-                    new Date(smallTeamPolicy.expiresAt).toLocaleDateString('en-GB')
-                  : 'Not activated. Two-person behavioural results remain restricted.'}
-              </p>
-            </div>
-            {!smallTeamPolicy?.enabled && (
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="text-sm font-medium">
-                  Lawful basis recorded by HR
-                  <select value={legalBasis} onChange={(e) => setLegalBasis(e.target.value)}
-                    className={field}>
-                    <option value="legitimate_interests">Legitimate interests, documented assessment</option>
-                    <option value="legal_obligation">Legal obligation</option>
-                    <option value="public_task">Public task</option>
-                    <option value="other_documented">Other documented lawful basis</option>
-                  </select>
-                </label>
-                <label className="text-sm font-medium">
-                  Approved privacy policy or assessment reference
-                  <input value={policyVersion} onChange={(e) => setPolicyVersion(e.target.value)}
-                    placeholder="E.g. HR-policy-2026-11" className={field} />
-                </label>
-                <label className="text-sm">
-                  <input type="checkbox" checked={employeeNotice}
-                    onChange={(e) => setEmployeeNotice(e.target.checked)} />{' '}
-                  Employees have received the specific small-team monitoring notice
-                </label>
-                <label className="text-sm">
-                  <input type="checkbox" checked={riskReview}
-                    onChange={(e) => setRiskReview(e.target.checked)} />{' '}
-                  Privacy risk assessment and required consultation are complete
-                </label>
-                <div>
-                  <button type="button" className={button}
-                    disabled={busy || !employeeNotice || !riskReview ||
-                      policyVersion.trim().length < 4}
-                    onClick={() => run(
-                      () => api.post('/manager-intelligence/admin/privacy/small-teams', {
-                        enabled: true, legalBasis, policyVersion,
-                        noticeConfirmed: employeeNotice, riskReviewConfirmed: riskReview,
-                      }),
-                      'Restricted two-person reporting approved for HR and accepted managers.'
-                    )}>
-                    Record customer approval
-                  </button>
-                </div>
-              </div>
-            )}
-            {smallTeamPolicy?.enabled && (
-              <button className={secondary} type="button" disabled={busy}
-                onClick={() => run(
-                  () => api.post('/manager-intelligence/admin/privacy/small-teams',
-                    { enabled: false }),
-                  'Restricted small-team reporting disabled.'
-                )}>
-                Disable restricted reporting
-              </button>
-            )}
-          </section>
-        )}
         <section className="app-panel border-blue-200">
           <h2 className="text-lg font-bold">How access works</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-4">
