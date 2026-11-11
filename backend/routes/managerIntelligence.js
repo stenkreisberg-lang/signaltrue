@@ -13,7 +13,7 @@ import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
 import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
   managerAudit, normalizeEmail, hashInvitedEmail,
-  resolveScopedReportingPolicy, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
+  resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
 const router = express.Router();
 
@@ -96,55 +96,6 @@ async function sendInvite(email, teamName, token) {
   if(response.error) throw new Error('Invitation email provider rejected the request');
   return response.data?.id;
 }
-// Small-team work-pattern data are identifiable. Only an active HR controller
-// representative may document approval. No general admin or superadmin can
-// silently override this for another organization's employees.
-router.get('/admin/privacy/small-teams', requireAdmin, async(req,res) => {
-  if (req.managerAdmin.role !== 'hr_admin')
-    return noStore(res).status(403).json({message:'Active customer HR approval required'});
-  const org = await Organization.findById(req.managerAdmin.orgId)
-    .select('settings.smallTeamReporting').lean();
-  const policy = org?.settings?.smallTeamReporting;
-  noStore(res).json({enabled:Boolean(policy?.enabled),
-    expiresAt:policy?.expiresAt || null,
-    policyVersion:policy?.policyVersion || null,
-    needsApproval:!policy?.enabled});
-});
-router.post('/admin/privacy/small-teams', requireAdmin, async(req,res) => {
-  if (req.managerAdmin.role !== 'hr_admin')
-    return noStore(res).status(403).json({message:'Customer HR officer must approve'});
-  if (req.body?.enabled === false) {
-    await Organization.updateOne({ _id:req.managerAdmin.orgId },
-      { $set:{'settings.smallTeamReporting.enabled':false} });
-    return noStore(res).json({enabled:false});
-  }
-  const legalBasis=String(req.body?.legalBasis || '').trim();
-  const policyVersion=String(req.body?.policyVersion || '').trim();
-  if (req.body?.enabled !== true || req.body?.noticeConfirmed !== true ||
-      req.body?.riskReviewConfirmed !== true ||
-      !['legitimate_interests','legal_obligation','public_task','other_documented'].includes(legalBasis) ||
-      policyVersion.length < 4 || policyVersion.length > 80) {
-    return noStore(res).status(400).json({message:
-      'Document the lawful basis, current approved policy, employee notice and completed risk review first'});
-  }
-  const now=new Date();
-  const expiresAt=new Date(now.getTime()+180*86400000);
-  await Organization.updateOne({ _id:req.managerAdmin.orgId }, { $set:{
-    'settings.smallTeamReporting.enabled':true,
-    'settings.smallTeamReporting.minimumContributors':2,
-    'settings.smallTeamReporting.approvedBy':req.managerAdmin._id,
-    'settings.smallTeamReporting.approvedAt':now,
-    'settings.smallTeamReporting.employeeNoticeConfirmedAt':now,
-    'settings.smallTeamReporting.riskAssessmentApprovedAt':now,
-    'settings.smallTeamReporting.legalBasis':legalBasis,
-    'settings.smallTeamReporting.policyVersion':policyVersion,
-    'settings.smallTeamReporting.expiresAt':expiresAt,
-    'settings.smallTeamReporting.accessMode':'restricted',
-  } });
-  return noStore(res).json({enabled:true,expiresAt,
-    message:'Restricted interactive views only; no individual claims, email or exports'});
-});
-
 router.get('/admin/directory',requireAdmin,async(req,res)=>{
   const orgId=req.managerAdmin.orgId;
   const [users,teams,assignments,org] = await Promise.all([
@@ -158,7 +109,7 @@ router.get('/admin/directory',requireAdmin,async(req,res)=>{
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
       status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
-    minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'});
+    minimum:Math.max(2,Number(org?.settings?.minTeamSize)||2),timezone:org?.settings?.timezone||'UTC'});
 });
 router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   const managerUserId=String(req.body?.managerUserId||'');
@@ -292,13 +243,9 @@ router.patch('/me/preferences',async(req,res)=>{
   noStore(res).json({teamId,weeklyEmailEnabled:changed.weeklyEmailEnabled});
 });
 async function scopedManagerData(scope) {
-  const policy = await resolveScopedReportingPolicy({
-    orgId:scope.user.orgId, team:scope.team, audience:'assigned_manager',
-    scopeApproved:true,
-  });
+  const { minimum } = await resolveOrgMinimum(scope.user.orgId);
   return getScopedTeamMeasurements({
-    orgId:scope.user.orgId, team:scope.team, minimum:policy.minimum,
-    approvedRestrictedSmallTeam:policy.restrictedIdentifiable,
+    orgId:scope.user.orgId, team:scope.team, minimum,
   });
 }
 router.get('/admin/teams/:teamId/trends', requireAdmin, async(req,res) => {
@@ -307,11 +254,9 @@ router.get('/admin/teams/:teamId/trends', requireAdmin, async(req,res) => {
   const team=await Team.findOne({ _id:req.params.teamId, orgId:req.managerAdmin.orgId,
     isActive:{ $ne:false } }).select('name orgId metadata isActive analyticsEnabled structure').lean();
   if (!team) return noStore(res).status(404).json({message:'Team not found'});
-  const policy=await resolveScopedReportingPolicy({orgId:req.managerAdmin.orgId,
-    team,audience:'hr_admin',scopeApproved:true});
+  const { minimum } = await resolveOrgMinimum(req.managerAdmin.orgId);
   const data=await getScopedTeamMeasurements({orgId:req.managerAdmin.orgId,
-    team, minimum:policy.minimum,
-    approvedRestrictedSmallTeam:policy.restrictedIdentifiable});
+    team, minimum});
   return noStore(res).json(data);
 });
 router.get('/teams/:teamId/trends',async(req,res)=>{
@@ -394,8 +339,6 @@ router.get('/teams/:teamId/report.pdf',async(req,res)=>{
   if(!scope||scope.assignment.exportEnabled!==true)
     return noStore(res).status(403).json({message:'Export not authorized by HR'});
   const data=await scopedManagerData(scope);
-  if (data.restrictedIdentifiable)
-    return noStore(res).status(403).json({message:'Two-person reports cannot be exported'});
   const minimum = data.minimum;
   if(!data.eligible)return noStore(res).status(409).json({message:'No privacy-eligible measurement available for export'});
   noStore(res).type('application/pdf').set('Content-Disposition','attachment; filename="signaltrue-private-team-report.pdf"');
