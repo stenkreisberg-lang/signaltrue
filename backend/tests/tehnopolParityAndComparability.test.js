@@ -105,5 +105,11 @@ describe('manager access is scoped to the accepted team, never HR structure alon
     expect(validateTeamPermission({ ...args, teamId: secondTeam })).toBe(false);
     expect(validateTeamPermission({ ...args, orgId: secondTeam })).toBe(false);
     expect(validateTeamPermission({ ...args, user: { ...user, accountStatus: 'inactive' } })).toBe(false);
+    expect(validateTeamPermission({ ...args, team: { ...team,
+      structure: { source: 'hr', verifiedAt: new Date(), managerUserId: secondTeam },
+    } })).toBe(false);
+    expect(validateTeamPermission({ ...args, team: { ...team,
+      structure: { source: 'hr', verifiedAt: new Date(), managerUserId: actor },
+    } })).toBe(true);
   });
 });
