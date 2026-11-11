@@ -124,110 +124,127 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
     </div>
   );
 }
+const TEAM_DIMENSIONS = [
+  ['meetingHoursPerRepresentedPerson', 'Meeting participant-hours per calendar participant', 'hours/person'],
+  ['meetingsPerRepresentedPerson', 'Meeting instances per calendar participant', 'meetings/person'],
+  ['messagesPerRepresentedPerson', 'Messages per messaging participant', 'messages/person'],
+  ['afterHoursPct', 'After-hours messaging share', '%'],
+  ['focusHoursPerRepresentedPerson', 'Uninterrupted calendar availability per person', 'hours/person'],
+  ['recurringLoadPct', 'Recurring meeting share', '%'],
+  ['calendarFragmentation', 'Calendar fragmentation index', '/100'],
+];
 function TeamDetail({ data, window, range }) {
   const teams = data.teams || [];
   const [selected, setSelected] = useState('');
+  const [metricKey, setMetricKey] = useState('meetingHoursPerRepresentedPerson');
   const team = teams.find((t) => t.id === selected) || teams[0];
+  const meta = TEAM_DIMENSIONS.find(([key]) => key === metricKey) || TEAM_DIMENSIONS[0];
+  const summaries = (selectedTeam) => selectedTeam?.metricSummaries?.[metricKey] || null;
+  const summary = summaries(team);
+  const comparable = teams
+    .map((t) => ({ id: t.id, name: t.name, changePct: summaries(t)?.changePct ?? null }))
+    .filter((t) => t.changePct != null)
+    .slice(0, 15);
   if (!team)
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <strong>No privacy-eligible comparisons.</strong> Teams that lack sufficient mapped actors
-        or a comparable historical baseline are not named. The minimum is{' '}
-        {data.privacy?.minimumGroupSize || 2} actors per reported team-week.
+        No team has enough measured and attributed source observations for comparison.
+        The same minimum of {data.privacy?.minimumGroupSize || 2} contributors applies
+        to every team. Missing periods are not interpreted as zero activity.
       </div>
     );
-  const comparable = teams.filter((t) => t.changePct != null).slice(0, 10);
   const events = (data.annotations || []).filter(
     (e) => e.kind === 'intervention' && e.teamId === team.id
   );
   return (
     <>
-      {comparable.length > 1 ? (
-        <div
-          className="h-52"
-          role="img"
-          aria-label="Changes in team meeting instances per mapped person relative to earlier baseline"
-        >
+      <div className="mt-3 flex flex-wrap gap-3">
+        <label className="flex flex-col gap-1 text-sm font-bold" htmlFor="report-team">
+          Team
+          <select
+            id="report-team"
+            className="max-w-full rounded-md border border-slate-300 p-2 text-sm font-normal"
+            value={team.id}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold" htmlFor="report-team-metric">
+          Measured dimension
+          <select
+            id="report-team-metric"
+            className="max-w-full rounded-md border border-slate-300 p-2 text-sm font-normal"
+            value={metricKey}
+            onChange={(e) => setMetricKey(e.target.value)}
+          >
+            {TEAM_DIMENSIONS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+          </select>
+        </label>
+      </div>
+      {comparable.length > 1 && (
+        <div className="mt-4 h-52" role="img"
+          aria-label={`Team comparisons for ${meta[1]} against each team's own six-week baseline`}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={comparable}
-              layout="vertical"
-              margin={{ top: 5, right: 22, bottom: 0, left: 8 }}
-            >
+            <BarChart data={comparable} layout="vertical" margin={{ top: 5, right: 22, bottom: 0, left: 8 }}>
               <CartesianGrid strokeDasharray="3 5" horizontal={false} />
               <XAxis type="number" tickFormatter={(v) => v + '%'} tick={{ fontSize: 10 }} />
               <YAxis dataKey="name" type="category" width={115} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v) => [v + '%', 'Change from own baseline']} />
+              <Tooltip formatter={(v) => [v + '%', 'Change from comparable baseline']} />
               <ReferenceLine x={0} stroke="#64748b" />
               <Bar dataKey="changePct" maxBarSize={20}>
-                {comparable.map((t) => (
-                  <Cell key={t.id} fill={t.changePct >= 0 ? '#7c3aed' : '#0284c7'} />
-                ))}
+                {comparable.map((t) => <Cell key={t.id} fill={t.changePct >= 0 ? '#7c3aed' : '#0284c7'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      ) : (
-        <p className="text-sm text-slate-600">
-          One eligible team is available. A comparative ranking requires two.
-        </p>
       )}
-      <p className="my-3 text-xs leading-5 text-slate-600">
-        Normalized meeting-instance counts per distinct mapped actor. These are NOT individual
-        meeting attendance, performance scores, or health outcomes. Suppressed groups are excluded
-        entirely.
-      </p>
-      <label htmlFor="report-team" className="text-sm font-bold">
-        Explore an eligible team
-      </label>
-      <select
-        id="report-team"
-        className="ml-3 max-w-full rounded-md border border-slate-300 p-2 text-sm"
-        value={team.id}
-        onChange={(e) => setSelected(e.target.value)}
-      >
-        {teams.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </select>
       <div className="mt-4 rounded-xl border border-slate-200 p-3 sm:p-5">
-        <h3 className="font-bold text-slate-900">
-          {team.name}: meeting instances per mapped actor
-        </h3>
-        <p className="my-2 text-sm text-slate-700">
-          Last completed week: {fmt(team.current)} · Earlier six-week median: {fmt(team.baseline)}
-        </p>
+        <h3 className="font-bold text-slate-900">{team.name}: {meta[1]}</h3>
+        {summary?.current != null ? (
+          <p className="my-2 text-sm text-slate-700">
+            Latest completed week: <strong>{fmt(summary.current, meta[2])}</strong>
+            {summary.baseline != null
+              ? ' · Previous six-week median: ' + fmt(summary.baseline, meta[2])
+              : ' · Baseline not yet comparable'}
+            {summary.changePct != null ? ' · Change: ' + summary.changePct + '%' : ''}
+          </p>
+        ) : (
+          <p className="my-2 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+            No verified observation for this team and source in the latest completed week.
+          </p>
+        )}
         <Plot
           points={team.points.slice(-window[1])}
-          keyName="meetingsPerRepresentedPerson"
-          unit="meetings per mapped actor"
+          keyName={metricKey}
+          unit={meta[2]}
           range={range}
-          baseline={team.baseline}
+          baseline={summary?.verifiedComparison ? summary.baseline : null}
           events={events}
           color="#7c3aed"
         />
+        <p className="mt-2 text-xs leading-5 text-slate-600">
+          Source-specific contributor counts are applied to calendar and messaging measurements.
+          Comparisons require four measured periods in the prior six weeks. A missing source or
+          week is a gap, not zero; changes are descriptive, not proof of employee performance or causation.
+        </p>
         {events.length ? (
           events.slice(-4).map((e, i) => (
             <p key={i} className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-              <strong>{e.title}</strong> · Started {label(e.date)} · Review{' '}
-              {label(e.reviewAt) || 'not set'}.{' '}
-              {e.outcome
-                ? 'Recorded follow-up: ' + e.outcome.replaceAll('_', ' ') + '.'
-                : 'Outcome not recorded yet.'}
+              <strong>{e.title}</strong> · Started {label(e.date)} · Review {label(e.reviewAt) || 'not set'}.
+              {' '}{e.outcome ? 'Follow-up: ' + e.outcome.replaceAll('_', ' ') + '.' : 'Outcome not recorded yet.'}
               {e.observedBefore != null && e.observedAfter != null
-                ? ' Recorded before ' + e.observedBefore + ', after ' + e.observedAfter + '.'
-                : ''}
+                ? ' Before ' + e.observedBefore + ', after ' + e.observedAfter + ' (original units).' : ''}
               <span className="block text-xs text-slate-500">
-                Before/after action figures retain their original scope and units. Not proof of
-                causal impact.
+                Observed after the action, not proof that the action caused the change.
               </span>
             </p>
           ))
         ) : (
           <p className="mt-3 text-sm text-slate-500">
-            No recorded interventions for this eligible team in the selected history.
+            No recorded management actions for this team in the selected period.
           </p>
         )}
       </div>
