@@ -102,7 +102,8 @@ describe('HR roster import', () => {
     const newTeam = await Team.findById(updated.teamId).lean();
     expect(result.stats.created).toBe(0);
     expect(result.stats.matchedByUniqueDirectoryName).toBe(1);
-    expect(newTeam.name).toBe('New Unit');
+    // Department normalization intentionally removes the generic word "Unit".
+    expect(newTeam.name).toBe('New');
     expect(updated.hrStructure.teamVerifiedAt).toBeTruthy();
     expect(String(updated.hrStructure.verifiedBy)).toBe(String(person._id));
   });
