@@ -40,6 +40,7 @@ const brief = {
   id: 'brief-1',
   orgName: 'Example Org',
   reportMode: 'full',
+  reportTimeZone: 'Europe/Tallinn',
   generatedAt: '2026-08-03T08:00:00.000Z',
   periodStart: '2026-07-27T00:00:00.000Z',
   periodEnd: '2026-08-03T00:00:00.000Z',
