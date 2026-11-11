@@ -912,6 +912,17 @@ export async function generateWeeklyBrief(orgId) {
     currentContributors: contributorsFor(twEvents, 'message'),
     previousContributors: contributorsFor(lwEvents, 'message'),
   });
+  // A source/cohort change can make consecutive calendar periods incomparable.
+  // Preserve observations, but do not use their percentage movement to escalate.
+  const calendarComparison = evaluateCountComparability({
+    current: getCountByType(twEvents, 'meeting'),
+    previous: getCountByType(lwEvents, 'meeting'),
+    currentSources: sourceSetFor(twEvents, 'meeting'),
+    previousSources: sourceSetFor(lwEvents, 'meeting'),
+    currentContributors: contributorsFor(twEvents, 'meeting'),
+    previousContributors: contributorsFor(lwEvents, 'meeting'),
+    minimumPrevious: 10,
+  });
   const twTotal = twEvents.reduce((s, e) => s + e.count, 0);
   const lwTotal = lwEvents.reduce((s, e) => s + e.count, 0);
   const sixWeekTotal = sixWeekEvents.reduce((s, e) => s + e.count, 0);
@@ -1895,6 +1906,7 @@ export async function generateWeeklyBrief(orgId) {
     .sort((a, b) => a[0] - b[0])
     .map(([weekIdx, recs]) => ({
       weeksAgo: weekIdx + 1,
+      weekStart: new Date(thisWeekStart.getTime() - (weekIdx + 1) * 7 * 86400000).toISOString(),
       meetings: historicalMetricPerPerson(weekIdx, recs, 'meetingCount7d'),
       meetingHours: historicalMetricPerPerson(weekIdx, recs, 'meetingDurationTotalHours7d'),
       messagesPerPerson: historicalMetricPerPerson(weekIdx, recs, 'messageCount7d'),
@@ -1916,13 +1928,19 @@ export async function generateWeeklyBrief(orgId) {
     recurringBurden: 'recurring_load',
     asyncVolume: 'messages',
   };
+  const comparisonForStatusKey = (statusKey) =>
+    ['afterHoursRatio', 'asyncVolume'].includes(statusKey)
+      ? messagingComparison
+      : calendarComparison;
+  const isStatusEligible = (statusKey, readinessKey) =>
+    isMetricEligible(readinessKey) && comparisonForStatusKey(statusKey).comparable;
   const statusValue = (statusKey, value) =>
-    isMetricEligible(statusReadinessKey[statusKey]) ? value : null;
+    isStatusEligible(statusKey, statusReadinessKey[statusKey]) ? value : null;
   const eligibleMetricKeys = Object.entries(statusReadinessKey)
-    .filter(([, readinessKey]) => isMetricEligible(readinessKey))
+    .filter(([statusKey, readinessKey]) => isStatusEligible(statusKey, readinessKey))
     .map(([statusKey]) => statusKey);
   const blockedMetricKeys = Object.entries(statusReadinessKey)
-    .filter(([, readinessKey]) => !isMetricEligible(readinessKey))
+    .filter(([statusKey, readinessKey]) => !isStatusEligible(statusKey, readinessKey))
     .map(([statusKey]) => statusKey);
   const statusMetrics = (values) =>
     Object.fromEntries(
@@ -1945,7 +1963,12 @@ export async function generateWeeklyBrief(orgId) {
       : calculateTeamStatus({
           currentMetrics: statusMetrics(tw),
           previousMetrics: statusMetrics(lw),
-          weeklyHistory: [{ ...statusMetrics(tw) }, ...weeklyHistoryNewestFirst.map(statusMetrics)],
+          weeklyHistory: [
+            { ...statusMetrics(tw), weekStart: thisWeekStart.toISOString() },
+            ...weeklyHistoryNewestFirst.map((week) => ({
+              ...statusMetrics(week), weekStart: week.weekStart,
+            })),
+          ],
           baseline: {},
           contextTags,
           bdiData:
@@ -2002,6 +2025,10 @@ export async function generateWeeklyBrief(orgId) {
     weeklyHistory, // real 6-week trend, oldest first
     dataAnomalies: [
       ...dataAnomalies.map((a) => a.text),
+      ...(calendarComparison.comparable ? [] : [
+        'Calendar period comparison is not verified: ' + calendarComparison.reason +
+        ' Preserve observed values but withhold deterioration or causal claims.'
+      ]),
       ...(messagingComparison.comparable ? [] : [
         'Messaging period comparison is not verified: ' + messagingComparison.reason +
         ' Show observed counts only; do not interpret percentage growth or infer a cause.'
@@ -3194,6 +3221,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.meetings,
       display: isMetricBlocked('meetings') ? `${twMeetings} observed; insufficient data` : null,
       statusKey: 'meetings',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'meeting_hours',
@@ -3208,6 +3236,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.meeting_hours,
       display: isMetricBlocked('meeting_hours') ? 'Insufficient data' : null,
       statusKey: 'meetingHours',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'back_to_back',
@@ -3222,6 +3251,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.back_to_back,
       display: isMetricBlocked('back_to_back') ? 'Insufficient data' : null,
       statusKey: 'backToBack',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'messages',
@@ -3280,6 +3310,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.focus_time,
       display: isMetricBlocked('focus_time') ? 'Insufficient data' : null,
       statusKey: 'focusTimeAvailability',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'fragmentation',
@@ -3295,6 +3326,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.fragmentation,
       display: isMetricBlocked('fragmentation') ? 'Insufficient data' : null,
       statusKey: 'calendarFragmentation',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'recurring_load',
@@ -3309,6 +3341,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.recurring_load,
       display: isMetricBlocked('recurring_load') ? 'Insufficient data' : null,
       statusKey: 'recurringBurden',
+      comparison: calendarComparison,
     }),
     metricRow({
       key: 'active_alerts',
