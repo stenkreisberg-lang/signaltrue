@@ -113,6 +113,9 @@ test('shows the saved email brief with deeper evidence and report-grounded quest
   render(<LatestBrief />);
 
   expect(await screen.findByText('Review meeting load')).toBeInTheDocument();
+  expect(screen.getByText('What changed in how work happens?')).toBeInTheDocument();
+  expect(screen.queryByText('Metric evidence table')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Explore detailed evidence' }));
   expect(screen.getByText('Metric evidence table')).toBeInTheDocument();
   expect(screen.getByText('Ask about this brief')).toBeInTheDocument();
   expect(screen.getByText('Meeting hours increased.')).toBeInTheDocument();
@@ -132,8 +135,9 @@ test('submits a follow-up question to the weekly brief assistant', async () => {
   });
   render(<LatestBrief />);
 
-  const prompt = await screen.findByText('What should we verify before acting?');
-  fireEvent.click(prompt);
+  await screen.findByText('What changed in how work happens?');
+  fireEvent.click(screen.getByRole('button', { name: 'Explore detailed evidence' }));
+  fireEvent.click(screen.getByRole('button', { name: 'What should we verify before acting?' }));
   fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
 
   await waitFor(() => {
