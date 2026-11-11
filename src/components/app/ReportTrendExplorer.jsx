@@ -125,11 +125,19 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
   );
 }
 const TEAM_DIMENSIONS = [
-  ['meetingHoursPerRepresentedPerson', 'Meeting participant-hours per calendar participant', 'hours/person'],
+  [
+    'meetingHoursPerRepresentedPerson',
+    'Meeting participant-hours per calendar participant',
+    'hours/person',
+  ],
   ['meetingsPerRepresentedPerson', 'Meeting instances per calendar participant', 'meetings/person'],
   ['messagesPerRepresentedPerson', 'Messages per messaging participant', 'messages/person'],
   ['afterHoursPct', 'After-hours messaging share', '%'],
-  ['focusHoursPerRepresentedPerson', 'Uninterrupted calendar availability per person', 'hours/person'],
+  [
+    'focusHoursPerRepresentedPerson',
+    'Uninterrupted calendar availability per person',
+    'hours/person',
+  ],
   ['recurringLoadPct', 'Recurring meeting share', '%'],
   ['calendarFragmentation', 'Calendar fragmentation index', '/100'],
 ];
@@ -148,9 +156,9 @@ function TeamDetail({ data, window, range }) {
   if (!team)
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        No team has enough measured and attributed source observations for comparison.
-        The same minimum of {data.privacy?.minimumGroupSize || 2} contributors applies
-        to every team. Missing periods are not interpreted as zero activity.
+        No team has enough measured and attributed source observations for comparison. The same
+        minimum of {data.privacy?.minimumGroupSize || 2} contributors applies to every team. Missing
+        periods are not interpreted as zero activity.
       </div>
     );
   const events = (data.annotations || []).filter(
@@ -168,7 +176,9 @@ function TeamDetail({ data, window, range }) {
             onChange={(e) => setSelected(e.target.value)}
           >
             {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
           </select>
         </label>
@@ -180,29 +190,44 @@ function TeamDetail({ data, window, range }) {
             value={metricKey}
             onChange={(e) => setMetricKey(e.target.value)}
           >
-            {TEAM_DIMENSIONS.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+            {TEAM_DIMENSIONS.map(([key, name]) => (
+              <option key={key} value={key}>
+                {name}
+              </option>
+            ))}
           </select>
         </label>
       </div>
       {comparable.length > 1 && (
-        <div className="mt-4 h-52" role="img"
-          aria-label={`Team comparisons for ${meta[1]} against each team's own six-week baseline`}>
+        <div
+          className="mt-4 h-52"
+          role="img"
+          aria-label={`Team comparisons for ${meta[1]} against each team's own six-week baseline`}
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={comparable} layout="vertical" margin={{ top: 5, right: 22, bottom: 0, left: 8 }}>
+            <BarChart
+              data={comparable}
+              layout="vertical"
+              margin={{ top: 5, right: 22, bottom: 0, left: 8 }}
+            >
               <CartesianGrid strokeDasharray="3 5" horizontal={false} />
               <XAxis type="number" tickFormatter={(v) => v + '%'} tick={{ fontSize: 10 }} />
               <YAxis dataKey="name" type="category" width={115} tick={{ fontSize: 10 }} />
               <Tooltip formatter={(v) => [v + '%', 'Change from comparable baseline']} />
               <ReferenceLine x={0} stroke="#64748b" />
               <Bar dataKey="changePct" maxBarSize={20}>
-                {comparable.map((t) => <Cell key={t.id} fill={t.changePct >= 0 ? '#7c3aed' : '#0284c7'} />)}
+                {comparable.map((t) => (
+                  <Cell key={t.id} fill={t.changePct >= 0 ? '#7c3aed' : '#0284c7'} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
       <div className="mt-4 rounded-xl border border-slate-200 p-3 sm:p-5">
-        <h3 className="font-bold text-slate-900">{team.name}: {meta[1]}</h3>
+        <h3 className="font-bold text-slate-900">
+          {team.name}: {meta[1]}
+        </h3>
         {summary?.current != null ? (
           <p className="my-2 text-sm text-slate-700">
             Latest completed week: <strong>{fmt(summary.current, meta[2])}</strong>
@@ -227,16 +252,25 @@ function TeamDetail({ data, window, range }) {
         />
         <p className="mt-2 text-xs leading-5 text-slate-600">
           Source-specific contributor counts are applied to calendar and messaging measurements.
-          Comparisons require four measured periods in the prior six weeks. A missing source or
-          week is a gap, not zero; changes are descriptive, not proof of employee performance or causation.
+          Comparisons require four measured periods in the prior six weeks. A missing source or week
+          is a gap, not zero; changes are descriptive, not proof of employee performance or
+          causation.
         </p>
         {events.length ? (
           events.slice(-4).map((e, i) => (
             <p key={i} className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-              <strong>{e.title}</strong> · Started {label(e.date)} · Review {label(e.reviewAt) || 'not set'}.
-              {' '}{e.outcome ? 'Follow-up: ' + e.outcome.replaceAll('_', ' ') + '.' : 'Outcome not recorded yet.'}
+              <strong>{e.title}</strong> · Started {label(e.date)} · Review{' '}
+              {label(e.reviewAt) || 'not set'}.{' '}
+              {e.outcome
+                ? 'Follow-up: ' + e.outcome.replaceAll('_', ' ') + '.'
+                : 'Outcome not recorded yet.'}
               {e.observedBefore != null && e.observedAfter != null
-                ? ' Before ' + e.observedBefore + ', after ' + e.observedAfter + ' (original units).' : ''}
+                ? ' Before ' +
+                  e.observedBefore +
+                  ', after ' +
+                  e.observedAfter +
+                  ' (original units).'
+                : ''}
               <span className="block text-xs text-slate-500">
                 Observed after the action, not proof that the action caused the change.
               </span>
