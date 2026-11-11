@@ -226,7 +226,7 @@ export function safeAnalyticsPath(path: string) {
   }
 }
 
-function tryAttributionStorage<T>(operation: (storage: Storage) => T): T | undefined {
+function trySessionStorage<T>(operation: (storage: Storage) => T): T | undefined {
   try {
     const storage = safeSessionStorage();
     return storage ? operation(storage) : undefined;
@@ -237,7 +237,7 @@ function tryAttributionStorage<T>(operation: (storage: Storage) => T): T | undef
 }
 
 export function captureOriginalAttribution(): OriginalAttribution {
-  const stored = tryAttributionStorage((storage) => storage.getItem(ATTRIBUTION_KEY));
+  const stored = trySessionStorage((storage) => storage.getItem(ATTRIBUTION_KEY));
   if (stored) {
     try {
       const attribution = JSON.parse(stored) as OriginalAttribution;
@@ -247,12 +247,12 @@ export function captureOriginalAttribution(): OriginalAttribution {
         source: normalized.source,
         medium: normalized.medium,
       };
-      tryAttributionStorage((storage) =>
+      trySessionStorage((storage) =>
         storage.setItem(ATTRIBUTION_KEY, JSON.stringify(normalizedAttribution))
       );
       return normalizedAttribution;
     } catch {
-      tryAttributionStorage((storage) => storage.removeItem(ATTRIBUTION_KEY));
+      trySessionStorage((storage) => storage.removeItem(ATTRIBUTION_KEY));
     }
   }
 
@@ -273,7 +273,7 @@ export function captureOriginalAttribution(): OriginalAttribution {
     anonymousSessionId: createSessionId(),
   };
 
-  tryAttributionStorage((storage) => storage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)));
+  trySessionStorage((storage) => storage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)));
   return attribution;
 }
 
@@ -456,13 +456,20 @@ export const trackFunnelEvent = (eventName: FunnelEventName, params: AnalyticsPa
   sendInternalEvent(eventName, safeParams);
 };
 
+let commercialEngagementTrackedWithoutStorage = false;
+
 export function trackCommercialEngagedVisit(reason: 'active_time' | 'multi_page') {
-  if (typeof window === 'undefined') return false;
-  const storage = safeSessionStorage();
-  if (storage?.getItem(COMMERCIAL_ENGAGED_KEY) === 'true') return false;
+  if (typeof window === 'undefined' || commercialEngagementTrackedWithoutStorage) return false;
+  const previous = trySessionStorage((storage) => storage.getItem(COMMERCIAL_ENGAGED_KEY));
+  if (previous === 'true') return false;
+
+  const persisted = trySessionStorage((storage) => {
+    storage.setItem(COMMERCIAL_ENGAGED_KEY, 'true');
+    return true;
+  });
+  if (previous === undefined || !persisted) commercialEngagementTrackedWithoutStorage = true;
 
   trackFunnelEvent('commercial_engaged_visit', { engagement_reason: reason });
-  storage?.setItem(COMMERCIAL_ENGAGED_KEY, 'true');
   return true;
 }
 

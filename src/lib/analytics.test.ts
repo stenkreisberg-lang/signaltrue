@@ -172,4 +172,20 @@ describe('commercial analytics boundaries', () => {
     expect(trackCommercialEngagedVisit('multi_page')).toBe(false);
     expect(window.sessionStorage.getItem('signaltrue:commercial-engaged:v1')).toBe('true');
   });
+  test('keeps engagement best effort when storage denies access and deduplicates within the page', () => {
+    const read = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Storage denied', 'SecurityError');
+    });
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage denied', 'QuotaExceededError');
+    });
+    try {
+      expect(trackCommercialEngagedVisit('active_time')).toBe(true);
+      expect(trackCommercialEngagedVisit('multi_page')).toBe(false);
+      expect(write).toHaveBeenCalledWith('signaltrue:commercial-engaged:v1', 'true');
+    } finally {
+      read.mockRestore();
+      write.mockRestore();
+    }
+  });
 });
