@@ -12,7 +12,7 @@ import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
 import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
-  managerAudit, normalizeEmail, hashInvitedEmail, resolveOrgMinimum,
+  managerAudit, normalizeEmail, hashInvitedEmail,
   resolveScopedReportingPolicy, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
 const router = express.Router();
@@ -396,6 +396,7 @@ router.get('/teams/:teamId/report.pdf',async(req,res)=>{
   const data=await scopedManagerData(scope);
   if (data.restrictedIdentifiable)
     return noStore(res).status(403).json({message:'Two-person reports cannot be exported'});
+  const minimum = data.minimum;
   if(!data.eligible)return noStore(res).status(409).json({message:'No privacy-eligible measurement available for export'});
   noStore(res).type('application/pdf').set('Content-Disposition','attachment; filename="signaltrue-private-team-report.pdf"');
   const pdf=new PDFDocument({size:'A4',margin:48,info:{Title:'SignalTrue - authorized team work-pattern report',
