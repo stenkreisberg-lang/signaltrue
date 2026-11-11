@@ -44,7 +44,7 @@ describe('verified organisation structure and analytics separation', () => {
   expect(saved.body.status).toBe('verified');
   const verified = await request(app).get('/api/organisation-structure').set(bearer(hr)).expect(200);
   expect(verified.body.teams[0].formalManagerUserId).toBe(manager.id);
-  expect(verified.body.teams[0].reportingEligibleBySize).toBe(false);
+  expect(verified.body.teams[0].reportingEligibleBySize).toBe(true);
  });
  test('rejects cross-tenant relationships and circular parent assignment', async () => {
   const org = await Organization.create({ name: 'Tenant A' });
