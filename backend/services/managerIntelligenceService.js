@@ -31,6 +31,9 @@ export function validateTeamPermission({ user, assignment, team, orgId, teamId, 
   if (!user || user.accountStatus !== 'active' || !assignment || !team) return false;
   if (assignment.status !== 'active' || !assignment.acceptedAt || assignment.revokedAt) return false;
   if (team.isActive === false || team.analyticsEnabled === false) return false;
+  // HR-approved structure changes immediately invalidate an older manager grant.
+  if (team.structure?.source === 'hr' &&
+      (!team.structure.verifiedAt || asId(team.structure.managerUserId) !== asId(user._id))) return false;
   if (assignment.expiresAt && new Date(assignment.expiresAt) <= now) return false;
   return asId(user._id) === asId(assignment.managerUserId) &&
     asId(user.orgId) === asId(orgId) &&
@@ -47,7 +50,7 @@ export async function assertScopedManager(req, teamId) {
   if (!user || !user.orgId) return null;
   const [assignment, team] = await Promise.all([
     ManagerAssignment.findOne({ orgId: user.orgId, managerUserId: user._id, teamId, status: 'active' }).lean(),
-    Team.findOne({ orgId: user.orgId, _id: teamId }).select('name orgId isActive analyticsEnabled metadata').lean(),
+    Team.findOne({ orgId: user.orgId, _id: teamId }).select('name orgId isActive analyticsEnabled metadata structure').lean(),
   ]);
   return validateTeamPermission({ user, assignment, team, orgId: user.orgId, teamId })
     ? { user, assignment, team } : null;
@@ -207,9 +210,11 @@ export async function loadManagerRoster(req) {
   const list = await ManagerAssignment.find({orgId:user.orgId,managerUserId:user._id,status:'active',
     acceptedAt:{$ne:null},revokedAt:null}).lean();
   const teams = await Team.find({orgId:user.orgId,_id:{$in:list.map(a=>a.teamId)},isActive:{$ne:false},
-    analyticsEnabled:{$ne:false}}).select('name').lean();
+    analyticsEnabled:{$ne:false}}).select('name orgId isActive analyticsEnabled structure').lean();
   const valid = new Set(teams.map(t=>asId(t._id)));
-  return list.filter(a=>valid.has(asId(a.teamId)) && (!a.expiresAt || new Date(a.expiresAt)>new Date()))
+  return list.filter(a=>valid.has(asId(a.teamId)) && (!a.expiresAt || new Date(a.expiresAt)>new Date()) &&
+    validateTeamPermission({user,assignment:a,team:teams.find(t=>asId(t._id)===asId(a.teamId)),
+      orgId:user.orgId,teamId:a.teamId}))
     .map(a=>({assignmentId:asId(a._id),teamId:asId(a.teamId),
       name:teams.find(t=>asId(t._id)===asId(a.teamId))?.name,
       weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled}));
