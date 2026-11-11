@@ -31,13 +31,10 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
   const calendarEvents = matchedEvents.filter(e =>
     e.eventType === 'meeting' ||
     (e.eventType === 'meet_started' && calendarEventSources.includes(e.source)));
-  // Match computeMessagingMetrics exactly. In particular, its current
-  // implementation includes every event from a messaging source, even when
-  // that event has a different type. The audit should expose any such
-  // unexpected rows rather than silently narrow the denominator.
+  // Match the canonical event-type definition: calls and calendar meetings
+  // from a collaboration provider cannot inflate message observations.
   const messagingSources = ['microsoft-teams', 'slack', 'google-chat'];
-  const messageEvents = matchedEvents.filter(e =>
-    messagingSources.includes(e.source) || e.eventType === 'message');
+  const messageEvents = matchedEvents.filter(e => e.eventType === 'message');
   const meeting = calendarEvents.length ? computeMeetingMetrics(calendarEvents, day, workSchedule) : {};
   const messaging = messageEvents.length ? computeMessagingMetrics(messageEvents, day, workSchedule) : {};
   const checks = trackedFields.map(([field, metric, source, tolerance]) => {
