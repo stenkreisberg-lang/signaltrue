@@ -407,7 +407,13 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       existing.name = identity.name;
       existing.firstName = identity.firstName;
       existing.lastName = identity.lastName;
-      if (!existing.hrStructure?.teamVerifiedAt) existing.teamId = team._id;
+      const verifiedHrScope = canonical.sourceFormat === 'department_manager' && options.approvedBy;
+      if (!existing.hrStructure?.teamVerifiedAt || verifiedHrScope) existing.teamId = team._id;
+      if (verifiedHrScope) {
+        // Explicit HR approval is effective-dated, so nightly directory sync
+        // cannot silently replace this team and history before approval is not rewritten.
+        existing.hrStructure = { teamVerifiedAt: new Date(), verifiedBy: options.approvedBy };
+      }
       existing.profile = profile;
       await existing.save();
       stats.updated++;
