@@ -11,8 +11,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], ...(process.env.CI ? { channel: 'chrome' } : {}) } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 7'], ...(process.env.CI ? { channel: 'chrome' } : {}) } },
   ],
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1',
