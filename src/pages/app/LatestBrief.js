@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
 import ReportTrendExplorer from '../../components/app/ReportTrendExplorer';
+import HRDecisionSnapshot from '../../components/app/HRDecisionSnapshot';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
@@ -301,6 +302,7 @@ export default function LatestBrief() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [questionAnswer, setQuestionAnswer] = useState(null);
+  const [showDetailedEvidence, setShowDetailedEvidence] = useState(false);
   const [questionError, setQuestionError] = useState(null);
   const [asking, setAsking] = useState(false);
   const [contextTag, setContextTag] = useState('launch');
@@ -539,6 +541,28 @@ export default function LatestBrief() {
         </div>
       </section>
 
+      <HRDecisionSnapshot brief={brief} showReportLink={false} />
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div>
+          <h2 className="text-base font-bold text-slate-900">Detailed evidence and review tools</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Source history, team comparisons, calculations, AI questions and feedback are available
+            below when you need to investigate a specific observation.
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-expanded={showDetailedEvidence}
+          onClick={() => setShowDetailedEvidence((open) => !open)}
+          className="rounded-md border border-slate-300 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          {showDetailedEvidence ? 'Hide detailed evidence' : 'Explore detailed evidence'}
+        </button>
+      </div>
+
+      {showDetailedEvidence && (
+        <>
       {headlineMetrics.length > 0 && (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {headlineMetrics.map((metric) => (
@@ -1140,6 +1164,8 @@ export default function LatestBrief() {
           </div>
         )}
       </section>
+        </>
+      )}
     </AppShell>
   );
 }
