@@ -151,6 +151,43 @@ describe('hard readiness gate (setup mode)', () => {
   });
 });
 
+describe('small operational teams do not block verified organisation reporting', () => {
+  test('a verified eight-person team can report while valid smaller teams remain withheld', async () => {
+    const { org, teamA, users } = await seedOrg();
+    const smallTeam = await Team.create({ name: 'Operations', orgId: org._id });
+    await User.insertMany(Array.from({ length: 4 }, (_, index) => ({
+      email: `operations-${index}@test.invalid`,
+      name: `Operations User ${index}`,
+      orgId: org._id, teamId: smallTeam._id,
+      role: 'team_member', accountStatus: 'pending',
+    })));
+    await seedMeetingEvents(org, teamA, users, 8);
+
+    const html = await generateWeeklyBrief(org._id);
+    const snapshot = await WeeklyBriefSnapshot.findOne({ orgId: org._id }).lean();
+
+    expect(snapshot.reportMode).toBe('full');
+    expect(snapshot.payload.coverage.mappingCoveragePct).toBe(100);
+    const operations = snapshot.payload.teamReadiness.find(item => item.teamName === 'Operations');
+    expect(operations.status).toBe('Operational team (sensitive metrics withheld)');
+    expect(html).toContain('Weekly Intelligence Brief');
+  });
+
+  test('all-small teams cannot pass the sensitive scoring readiness gate', async () => {
+    const org = await Organization.create({name:'Small Teams',industry:'Other'});
+    const team = await Team.create({name:'Small Team',orgId:org._id});
+    const users = await User.insertMany(Array.from({length:4}, (_, i) => ({
+      email:`small-${i}@test.invalid`,name:`Small User ${i}`,orgId:org._id,
+      teamId:team._id, role:'team_member', accountStatus:'pending',
+    })));
+    await seedMeetingEvents(org,team,users,4);
+    const html = await generateWeeklyBrief(org._id);
+    expect(html).toContain('Setup Required');
+    const snapshot = await WeeklyBriefSnapshot.findOne({orgId:org._id}).lean();
+    expect(snapshot.reportMode).toBe('setup');
+  });
+});
+
 describe('full report mode', () => {
   async function seedFullOrg() {
     const seeded = await seedOrg();
