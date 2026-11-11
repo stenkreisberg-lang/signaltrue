@@ -56,6 +56,8 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
     period: { start: start.toISOString(), endExclusive: end.toISOString() },
     sourceEvidence: {
       calendarRows: calendarEvents.length,
+      teamsOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-teams').length,
+      outlookOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-outlook').length,
       messagingRows: messageEvents.length,
       actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
       actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
