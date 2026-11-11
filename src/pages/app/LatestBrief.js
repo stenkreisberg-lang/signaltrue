@@ -455,7 +455,7 @@ export default function LatestBrief() {
   const allRoleActions = Object.values(roleActions).flat().filter(Boolean);
 
   return (
-    <AppShell user={user} section="Latest Brief" width="wide">
+    <AppShell user={user} section="Aruanded" width="wide" locale="et">
       <PageHeader
         eyebrow="SignalTrue / Töökorralduse mõõtmine"
         title="Aruanded"
