@@ -912,7 +912,7 @@ ${monthlyStat(`${readiness.weeklySnapshots || 0}/3`, 'Weekly snapshots')}
 <div style="padding:26px 34px;">
 <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#475569;margin:0 0 14px;">Required before the next brief</h2>
 ${setupStep('1', 'Review people without a named team', `Directory departments are the primary source. Use public website suggestions only for remaining gaps, then approve each assignment.`)}
-${setupStep('2', 'Reach the privacy-safe team threshold', `Each reported team needs at least ${readiness.minimumTeamSize || 5} active mapped members. Catch-all and smaller groups remain suppressed.`)}
+${setupStep('2', 'Reach the privacy-safe team threshold', `Each reported team needs at least ${readiness.minimumTeamSize || 2} active mapped members. Catch-all and smaller groups remain suppressed.`)}
 ${setupStep('3', 'Collect independent weekly evidence', `The monthly brief needs at least three weekly snapshots; ${readiness.weeklySnapshots || 0} are currently available.`)}
 <div style="text-align:center;margin-top:20px;"><a href="${appUrl}/app/employees" style="display:inline-block;background:#0f172a;color:#fff;padding:11px 25px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">Review team setup</a></div>
 </div>${shellEnd}`;
