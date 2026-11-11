@@ -117,9 +117,12 @@ router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   const orgId=req.managerAdmin.orgId;
   const [user,team]=await Promise.all([
     User.findOne({_id:managerUserId,orgId,accountStatus:{$in:['active','pending']}}).select('_id email').lean(),
-    Team.findOne({_id:teamId,orgId,isActive:{$ne:false}}).select('_id name').lean()
+    Team.findOne({_id:teamId,orgId,isActive:{$ne:false}}).select('_id name structure').lean()
   ]);
   if(!user?.email||!team)return noStore(res).status(400).json({message:'Inactive or cross-organization employee/team'});
+  if (team.structure?.source === 'hr' &&
+    (!team.structure.verifiedAt || id(team.structure.managerUserId) !== id(managerUserId)))
+    return noStore(res).status(409).json({message:'Manager is not approved for this team in the HR roster'});
   let assignment=await ManagerAssignment.findOne({orgId,managerUserId,teamId});
   if(assignment && !['revoked','declined','expired'].includes(assignment.status))
     return noStore(res).status(409).json({message:'Assignment already exists; use Resend or Revoke'});
@@ -144,9 +147,12 @@ router.post('/admin/assignments/:assignmentId/invite',requireAdmin,async(req,res
     return noStore(res).status(429).json({message:'Please allow at least one minute between invitations'});
   const [user,team]=await Promise.all([
     User.findOne({_id:assignment.managerUserId,orgId,accountStatus:{$in:['active','pending']}}).select('_id email').lean(),
-    Team.findOne({_id:assignment.teamId,orgId,isActive:{$ne:false}}).select('name').lean(),
+    Team.findOne({_id:assignment.teamId,orgId,isActive:{$ne:false}}).select('name structure').lean(),
   ]);
   if(!user?.email||!team)return noStore(res).status(409).json({message:'Recipient is no longer employed or team is inactive'});
+  if (team.structure?.source === 'hr' &&
+      (!team.structure.verifiedAt || id(team.structure.managerUserId) !== id(assignment.managerUserId)))
+    return noStore(res).status(409).json({message:'HR-approved manager identity changed. Reconcile the assignment first.'});
   const token=secureToken(), tokenHash=hashSecret(token), expires=new Date(Date.now()+7*86400000);
   // Invalidate previous links when a new invitation is issued.
   await ManagerInvitation.deleteMany({assignmentId:assignment._id,usedAt:null});
@@ -204,6 +210,9 @@ router.post('/invitations/respond',async(req,res)=>{
     managerUserId:user._id,status:'invited',revokedAt:null,expiresAt:{$gt:new Date()}});
   const team=assignment?await Team.findOne({_id:assignment.teamId,orgId:user.orgId,isActive:{$ne:false}}):null;
   if(!assignment||!team)return noStore(res).status(403).json({message:'Authorization no longer active'});
+  if (team.structure?.source === 'hr' &&
+      (!team.structure.verifiedAt || id(team.structure.managerUserId) !== id(assignment.managerUserId)))
+    return noStore(res).status(403).json({message:'HR-approved team manager changed'});
   const marked=await ManagerInvitation.findOneAndUpdate(filter,{$set:accept?{usedAt:new Date()}:{declinedAt:new Date()}});
   if(!marked)return noStore(res).status(409).json({message:'Invitation already used'});
   const when=new Date();
