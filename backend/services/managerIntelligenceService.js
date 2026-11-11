@@ -114,6 +114,37 @@ export function summarizeObservedTeamDays(daily = [], floor = 2) {
   };
 }
 
+/**
+ * Count actual mapped contributors for each snapshot's exact rolling window.
+ * The logic is identical for every team size. Missing periods remain absent,
+ * and composition changes suppress unreliable week-to-week comparisons.
+ */
+export function buildRollingActorCohorts({ grouped = [], activeIds, teamId,
+  now = new Date(), anchorDay = 0, count = 26 }) {
+  const dayActors = new Map(grouped.map(row => [
+    String(row._id), new Set(row.actors.map(asId).filter(id => activeIds.has(id))),
+  ]));
+  const result = {};
+  const currentMonday = utcMonday(now);
+  let previous = null;
+  for (let back = count; back >= 1; back--) {
+    const weekStart = new Date(currentMonday.getTime() - back * 7 * DAY);
+    const sampledOn = new Date(weekStart.getTime() + ((anchorDay + 6) % 7) * DAY);
+    const union = new Set();
+    for (let dayOffset = -6; dayOffset <= 0; dayOffset++) {
+      const key = utcDay(new Date(sampledOn.getTime() + dayOffset * DAY));
+      for (const actor of dayActors.get(key) || []) union.add(actor);
+    }
+    const cohort = [...union].sort();
+    const comparable = !previous ||
+      (previous.length === cohort.length && cohort.every((id, i) => id === previous[i]));
+    result[asId(teamId) + ':' + utcDay(weekStart)] =
+      cohort.length && comparable ? cohort.length : 0;
+    if (cohort.length) previous = cohort;
+  }
+  return result;
+}
+
 export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 2 }) {
   const floor = Math.max(2, Number(minimum) || 2);
   const teamId = team._id;
@@ -129,34 +160,23 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   if (!records.length) return { eligible:false, reason:'Comparable historical data not available', minimum: floor };
   const anchorDay = buildReportTrendSeries(records.map(r => ({...r, teamId:null})), now).anchorDay;
   const currentMonday = utcMonday(now);
-  const actorWeeks = {};
-  const sourceWindowStart = new Date(currentMonday.getTime() - 26 * 7 * DAY +
-    ((anchorDay + 6) % 7) * DAY - 6 * DAY);
-  const weekStartDay = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][anchorDay];
+  // Each weekly point is a rolling seven-day snapshot sampled on the same
+  // weekday. Count distinct active contributors in that exact window, not an
+  // arbitrary calendar week with a different anchor.
+  const sourceWindowStart = new Date(currentMonday.getTime() - 26 * 7 * DAY - 6 * DAY);
   const grouped = await WorkEvent.aggregate([
     { $match: { orgId, teamId, actorUserId: { $ne: null },
       eventType: { $in: ['meeting', 'message', 'email_sent'] },
       timestamp: { $gte: sourceWindowStart, $lt: currentMonday } } },
-    { $group: { _id: { $dateTrunc: { date: '$timestamp', unit: 'week',
-      startOfWeek: weekStartDay, timezone: 'UTC' } }, actors: { $addToSet: '$actorUserId' } } },
+    { $group: {
+      _id: { $dateToString: { format: '%Y-%m-%d',
+        date: '$timestamp', timezone: 'UTC' } },
+      actors: { $addToSet: '$actorUserId' },
+    } },
   ]);
-  const cohortsBySample = new Map(grouped.map(row => {
-    const weekEnd = new Date(new Date(row._id).getTime() + 6 * DAY);
-    const cohort = row.actors.filter(m => activeIds.has(asId(m))).map(asId).sort();
-    return [utcDay(weekEnd), cohort];
-  }));
-  let previousCohort = null;
-  // The reporting denominator and metric cover the same 7-day sampled window.
-  // Suppress cohort changes, avoiding a one-person entry/exit subtraction attack.
-  for(let back = 26; back >= 1; back--) {
-    const startWeek = new Date(currentMonday.getTime() - back * 7 * DAY);
-    const obs = new Date(startWeek.getTime() + ((anchorDay + 6) % 7) * DAY);
-    const cohort = cohortsBySample.get(utcDay(obs)) || [];
-    const comparable = !previousCohort || (cohort.length === previousCohort.length &&
-      cohort.every((member,index) => member === previousCohort[index]));
-    actorWeeks[asId(teamId) + ':' + utcDay(startWeek)] = comparable ? cohort.length : 0;
-    previousCohort = cohort;
-  }
+  const actorWeeks = buildRollingActorCohorts({
+    grouped, activeIds, teamId, now, anchorDay,
+  });
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
     actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
   if (!eligible) return { eligible:false, reason:'Not enough comparable, privacy-eligible weekly measurements', minimum:floor };
