@@ -55,6 +55,7 @@ describe('real-tenant-safe source/snapshot parity audit', () => {
     };
     const fullRows = [...rows, teamsMeeting];
     const withTeamsMeeting = computeMeetingMetrics(fullRows, day, workSchedule);
+    expect(computeMessagingMetrics(fullRows, day, workSchedule).messageCount7d).toBe(2);
     const checked = compareStoredWorkPatternMetrics({
       events: fullRows,
       snapshot: {
