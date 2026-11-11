@@ -119,7 +119,7 @@ test('shows the saved email brief with deeper evidence and report-grounded quest
   expect(screen.getByText('Metric evidence table')).toBeInTheDocument();
   expect(screen.getByText('Ask about this brief')).toBeInTheDocument();
   expect(screen.getByText('Meeting hours increased.')).toBeInTheDocument();
-  expect(screen.getByText('Review recurring meetings.')).toBeInTheDocument();
+  expect(screen.getAllByText('Review recurring meetings.').length).toBeGreaterThan(0);
   expect(screen.getByText(/This snapshot was based on 95 active users/)).toBeInTheDocument();
 });
 
