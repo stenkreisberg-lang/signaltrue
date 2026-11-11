@@ -56,6 +56,9 @@ function formatMetricValue(metric, value) {
 }
 
 function Direction({ metric }) {
+  if (metric.comparisonReason) {
+    return <span className="text-amber-800">Comparison withheld: {metric.comparisonReason}</span>;
+  }
   if (!metric.available) {
     return <span className="text-amber-700">Data unavailable</span>;
   }
