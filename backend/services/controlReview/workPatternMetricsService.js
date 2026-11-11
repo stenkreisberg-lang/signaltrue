@@ -552,7 +552,7 @@ export async function computeTeamMetricsForPeriod({
     },
   ];
 
-  const thresholdForMetric = Math.max(8, Number(threshold) || 8);
+  const thresholdForMetric = Math.max(2, Number(threshold) || 2);
   const intersectCount = [...calendarContributors].filter((id) =>
     messagingContributors.has(id)).length;
   const metricContributors = {
@@ -572,7 +572,7 @@ export async function computeTeamMetricsForPeriod({
       : `Sensitive team metric requires at least ${thresholdForMetric} distinct contributors.`;
     const safeComponents = { ...row.components };
     // A group-level coordination total might be safe, but a per-channel count
-    // dominated by fewer than 8 people can still reveal one person's behaviour.
+    // dominated by fewer than the configured minimum contributors can still reveal one person's behaviour.
     if (row.metric === 'COORDINATION_CHANNEL_LOAD' && !suppressed) {
       if (calendarContributors.size < thresholdForMetric) {
         safeComponents.meetings = null;
