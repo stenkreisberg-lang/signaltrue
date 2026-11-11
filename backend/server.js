@@ -198,6 +198,8 @@ import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRe
 import { reconcileTehnopolTeamsSenderIdentities } from './services/tehnopolSenderIdentityReconciliation.js';
 import { computeDailyMetrics } from './services/integrationMetricsService.js';
 import { repairTehnopolNovemberSnapshot } from './services/tehnopolSnapshotParityRepair.js';
+import { refreshTeamSizes } from './services/employeeSyncService.js';
+import { backfillTehnopolTeamHistory } from './services/tehnopolTeamHistoryBackfill.js';
 import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
 
 const app = express();
@@ -223,6 +225,9 @@ async function main() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ MongoDB connected');
         await repairTehnopolCanonicalOrganization();
+        // Recompute existing team eligibility. Teams of two may have been
+        // incorrectly marked analyticsEnabled=false by the old eight-person floor.
+        await refreshTeamSizes(TEHNOPOL_CANONICAL_ORG_ID, 2);
         // HR-approved manager scopes are prepared as pending only.
         // No invitations, access grants, exports or customer emails.
         try {
@@ -276,6 +281,9 @@ async function main() {
                 }
                 await generateWeeklyBrief(TEHNOPOL_CANONICAL_ORG_ID);
               }
+              // Source-backed historical team metrics, never demo values.
+              const history = await backfillTehnopolTeamHistory();
+              console.info('[TehnopolTeamHistoryStatus]', JSON.stringify(history));
               await logTehnopolProductionDiagnostic();
             })
             .catch((err) => console.error(
