@@ -30,7 +30,7 @@ export function buildMicrosoftSourceEvidencePipeline(orgId, now = new Date()) {
         latestEventReceived: { $max: '$timestamp' },
         storedEvents7d: { $sum: 1 },
         attributedEvents7d: {
-          $sum: { $cond: [{ $ne: ['$actorUserId', null] }, 1, 0] },
+          $sum: { $cond: [{ $ne: [{ $ifNull: ['$actorUserId', null] }, null] }, 1, 0] },
         },
       },
     },
