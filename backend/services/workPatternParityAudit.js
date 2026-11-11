@@ -66,7 +66,8 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
         .filter(e => !['microsoft-outlook', 'microsoft-teams'].includes(e.source))
         .map(e => e.source))].sort(),
       messagingRows: messageEvents.length,
-      nonMessageRowsInMessagingSource: messageEvents.filter(e => e.eventType !== 'message').length,
+      nonMessageRowsInMessagingSource: matchedEvents.filter(e =>
+        messagingSources.includes(e.source) && e.eventType !== 'message').length,
       actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
       actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
     },
