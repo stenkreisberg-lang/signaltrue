@@ -60,6 +60,7 @@ async function addSnapshotFreshness(orgId, snapshot) {
   const directoryDelta = currentTotalUsers - snapshotTotalUsers;
   return {
     ...snapshot,
+    reportVersion: reportVersion(snapshot),
     freshness: {
       currentTotalUsers,
       snapshotTotalUsers,
