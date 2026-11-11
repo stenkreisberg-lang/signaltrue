@@ -92,6 +92,9 @@ export function calculateTeamStatus({
 }) {
   // ─── Identify deteriorating metrics ───
   const deteriorating = [];
+  const hasComparableNumbers = (current, previous) =>
+    typeof current === 'number' && Number.isFinite(current) &&
+    typeof previous === 'number' && Number.isFinite(previous) && previous > 0;
 
   // Check each key metric for deterioration (current > baseline upper band or significant WoW worsening)
   const metricChecks = [
@@ -131,20 +134,16 @@ export function calculateTeamStatus({
       prev: previousMetrics.recurringBurden,
       higherIsBad: true,
     },
-    {
-      key: 'asyncVolume',
-      curr: currentMetrics.asyncVolume,
-      prev: previousMetrics.asyncVolume,
-      higherIsBad: false,
-    },
+    // Message volume is a contextual observation, not a negative outcome.
+    // A drop can mean less noise, a source change, or fewer employees.
   ];
 
   for (const check of metricChecks) {
-    if (check.curr == null) continue;
+    if (!hasComparableNumbers(check.curr, check.prev)) continue;
 
     const worsening = check.higherIsBad
-      ? check.prev != null && check.prev > 0 && (check.curr - check.prev) / check.prev > 0.15
-      : check.prev != null && check.prev > 0 && (check.prev - check.curr) / check.prev > 0.15;
+      ? (check.curr - check.prev) / check.prev > 0.15
+      : (check.prev - check.curr) / check.prev > 0.15;
 
     if (worsening) {
       deteriorating.push(check.key);
@@ -159,13 +158,25 @@ export function calculateTeamStatus({
       const thisWeek = weeklyHistory[i];
       const prevWeek = weeklyHistory[i + 1];
       if (!thisWeek || !prevWeek) break;
+      // A skipped or missing week is not a consecutive observation.
+      if (thisWeek.weekStart || prevWeek.weekStart) {
+        const currentDate = Date.parse(thisWeek.weekStart);
+        const previousDate = Date.parse(prevWeek.weekStart);
+        if (!Number.isFinite(currentDate) || !Number.isFinite(previousDate) ||
+            currentDate - previousDate !== 7 * 86400000) break;
+      }
 
       let badCount = 0;
-      if (thisWeek.meetingHours > prevWeek.meetingHours * 1.1) badCount++;
-      if (thisWeek.backToBack > prevWeek.backToBack * 1.1) badCount++;
-      if (thisWeek.afterHoursRatio > prevWeek.afterHoursRatio * 1.1) badCount++;
-      if (thisWeek.focusTimeAvailability < prevWeek.focusTimeAvailability * 0.9) badCount++;
-      if (thisWeek.calendarFragmentation > prevWeek.calendarFragmentation * 1.1) badCount++;
+      const worsened = (key, higherIsBad) =>
+        hasComparableNumbers(thisWeek[key], prevWeek[key]) &&
+        (higherIsBad
+          ? (thisWeek[key] - prevWeek[key]) / prevWeek[key] > 0.1
+          : (prevWeek[key] - thisWeek[key]) / prevWeek[key] > 0.1);
+      if (worsened('meetingHours', true)) badCount++;
+      if (worsened('backToBack', true)) badCount++;
+      if (worsened('afterHoursRatio', true)) badCount++;
+      if (worsened('focusTimeAvailability', false)) badCount++;
+      if (worsened('calendarFragmentation', true)) badCount++;
 
       if (badCount >= 2) {
         weeksPersisted++;
@@ -210,7 +221,7 @@ export function calculateTeamStatus({
   if (detCount === 0 && weeksPersisted === 0) {
     // Stable: no meaningful negative movement
     status = STATUS_LEVELS.STABLE;
-    reason = 'No meaningful negative movement. Work patterns within normal range.';
+    reason = 'No eligible deterioration was established against the previous period. This does not prove healthy working conditions.';
   } else if (detCount <= 2 && weeksPersisted === 0) {
     // Watch: 1-2 metrics deteriorating, only 1-week signal
     status = STATUS_LEVELS.WATCH;
@@ -229,7 +240,7 @@ export function calculateTeamStatus({
       }
     } else {
       status = STATUS_LEVELS.EMERGING_DRIFT;
-      reason = `${detCount} metrics deteriorating${weeksPersisted > 0 ? ` for ${weeksPersisted + 1} consecutive weeks` : ''}. Evidence of coordination pressure building.`;
+      reason = `${detCount} measures changed negatively${weeksPersisted > 0 ? ` with ${weeksPersisted} consecutive measured weekly changes` : ' in the latest comparison'}. Verify the underlying sources and team context before inferring pressure.`;
     }
   } else {
     status = STATUS_LEVELS.WATCH;
@@ -239,11 +250,13 @@ export function calculateTeamStatus({
   // ─── BDI override: if BDI is in Critical Drift, escalate ───
   if (
     bdiData?.driftState === 'Critical Drift' &&
+    deteriorating.length >= 2 && weeksPersisted >= 1 &&
     STATUS_ORDER.indexOf(status) < STATUS_ORDER.indexOf(STATUS_LEVELS.CONFIRMED_DRIFT)
   ) {
     status = STATUS_LEVELS.CONFIRMED_DRIFT;
     reason = `BDI indicates Critical Drift (score: ${bdiData.driftScore}/100). ${reason}`;
-    confidence = 'High';
+    // A derived BDI classification is not independent high-quality source evidence.
+    if (confidence === 'Low') confidence = 'Medium';
   }
 
   const meta = STATUS_META[status];
