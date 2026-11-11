@@ -5,6 +5,10 @@
  */
 export function deriveSourceMeasurementStatus(source = {}, diagnostic = null, now = new Date()) {
   const status = String(diagnostic?.status || source.status || 'disconnected').toLowerCase();
+  if (diagnostic?.evidenceQueryFailed) {
+    return { state: 'verification_error', label: 'Evidence check failed', verified: false,
+      reason: 'Stored source-event verification failed. This does not mean there was no activity.' };
+  }
   const missing = diagnostic?.missingPermissions || [];
   const needsAdmin = status === 'needs_admin' || missing.length > 0;
   if (needsAdmin) {
@@ -44,9 +48,14 @@ export function deriveSourceMeasurementStatus(source = {}, diagnostic = null, no
     return { state: 'coverage_unverified', label: 'Connected, evidence unverified', verified: false,
       reason: 'Active mapping was reported, but stored source-event evidence was not independently checked.' };
   }
-  if (!diagnostic.latestEventReceived || Number(diagnostic.accepted || 0) === 0) {
-    return { state: 'no_observed_events', label: 'No verified activity', verified: false,
-      reason: 'No accepted source events are available; this is not a zero-activity measurement.' };
+  const observed = Number(diagnostic.storedEvents7d ?? diagnostic.accepted ?? 0);
+  if (!diagnostic.latestEventReceived || observed === 0) {
+    return { state: 'no_observed_events', label: 'No recent stored events', verified: false,
+      reason: 'No stored source events were found in the last seven days. This is not proof of zero work.' };
+  }
+  if (diagnostic.attributedEvents7d != null && Number(diagnostic.attributedEvents7d) === 0) {
+    return { state: 'unattributed_events', label: 'Events need employee mapping', verified: false,
+      reason: 'Source events exist, but none can currently be linked to a team member.' };
   }
   const evidenceTime = new Date(diagnostic.latestEventReceived).getTime();
   if (!Number.isFinite(evidenceTime) || now.getTime() - evidenceTime > 7 * 24 * 60 * 60 * 1000) {
@@ -58,5 +67,5 @@ export function deriveSourceMeasurementStatus(source = {}, diagnostic = null, no
       reason: 'Events exist but cannot be assigned to active employee teams.' };
   }
   return { state: 'measuring', label: 'Verified source events', verified: true,
-    reason: 'Successful sync, source events and mapped employees confirmed.' };
+    reason: 'Successful sync and recent stored source events with attributed employees confirmed.' };
 }
