@@ -86,6 +86,26 @@ describe('HR roster import', () => {
     ]);
   });
 
+  test('HR-approved manager roster resolves only an existing unique directory name and persists verified team', async () => {
+    const org = await Organization.create({ name: 'Sample Org', domain: 'sample.test' });
+    const oldTeam = await Team.create({ name: 'Old Unit', orgId: org._id });
+    const person = await User.create({
+      email: 'person@sample.test', name: 'Ana Example', orgId: org._id,
+      teamId: oldTeam._id, accountStatus: 'active', role: 'team_member',
+    });
+    const result = await importHrRosterRows(org._id, [{
+      Name: 'Ana Example', Team: 'New Unit', Department: 'New Unit',
+      'Manager Email': 'lead@sample.test', 'Roster Format': 'department_manager',
+    }], { approvedBy: person._id });
+    const updated = await User.findById(person._id).lean();
+    const newTeam = await Team.findById(updated.teamId).lean();
+    expect(result.stats.created).toBe(0);
+    expect(result.stats.matchedByUniqueDirectoryName).toBe(1);
+    expect(newTeam.name).toBe('New Unit');
+    expect(updated.hrStructure.teamVerifiedAt).toBeTruthy();
+    expect(String(updated.hrStructure.verifiedBy)).toBe(String(person._id));
+  });
+
   test('extracts table-like text from PDF exports', () => {
     const rows = parseHrRosterPdfText(`
       Name  Email  Position  Department
