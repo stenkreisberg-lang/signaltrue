@@ -87,6 +87,7 @@ describe('visual weekly report data integrity', () => {
   test('email only visualizes measured weekly data and provides an explicit next step', () => {
     const snapshot = {
       orgName:'Example',periodStart:new Date('2026-10-19'),periodEnd:now,
+      reportTimeZone:'Europe/Tallinn',
       status:{label:'Stable',evidenceGrade:'Low'},coverage:{mappingCoveragePct:98},
       metrics:[
         {key:'meetings',label:'Meetings',unit:'meetings',available:true,current:685,previous:750,changePct:-9},
