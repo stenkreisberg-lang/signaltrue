@@ -459,17 +459,25 @@ export default function LatestBrief() {
         eyebrow="SignalTrue / Töökorralduse mõõtmine"
         title="Aruanded"
         description="Ühe nädala mõõtmised, andmete päritolu, tiimide muutused ja juhtimisotsuste järelkontroll. Kõik väljundid lähtuvad samast salvestatud aruandest."
-        action={canRefresh ? (
-          <button type="button" onClick={refresh} disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-control border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 disabled:opacity-50">
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Värskenda andmeid
-          </button>
-        ) : null}
+        action={
+          canRefresh ? (
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-control border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Värskenda andmeid
+            </button>
+          ) : null
+        }
       />
       <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
         <div className="mb-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Salvestatud aruande versioon</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+            Salvestatud aruande versioon
+          </p>
           <p className="mt-1 text-sm text-slate-700">
             ${brief.orgName} · ${formatDate(brief.periodStart)} kuni ${formatDate(brief.periodEnd)}
           </p>
@@ -508,9 +516,12 @@ export default function LatestBrief() {
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Täiendav tõendusmaterjal ja metoodika</h2>
+          <h2 className="text-base font-bold text-slate-900">
+            Täiendav tõendusmaterjal ja metoodika
+          </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Siit leiad detailse mõõdikute loendi, sisemised signaalid, andmekatvuse ja metoodika selgitused.
+            Siit leiad detailse mõõdikute loendi, sisemised signaalid, andmekatvuse ja metoodika
+            selgitused.
           </p>
         </div>
         <button
@@ -587,8 +598,6 @@ export default function LatestBrief() {
               </div>
             </div>
           </section>
-
-
 
           {brief.reportMode === 'setup' ? (
             <section className="app-dashboard-section">

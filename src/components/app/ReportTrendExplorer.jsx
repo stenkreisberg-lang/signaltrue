@@ -24,10 +24,14 @@ const WINDOWS = {
 };
 const KEYS = ['meetings', 'after_hours', 'focus_time', 'back_to_back', 'fragmentation'];
 const ET_METRICS = {
-  meetings: 'Koosolekute arv', after_hours: 'Pärast tööaega saadetud sõnumid',
-  focus_time: 'Vaba kalendriaeg', back_to_back: 'Järjestikused koosolekud',
-  fragmentation: 'Kalendri killustatus', meeting_hours: 'Koosolekutunnid',
-  messages: 'Sõnumite arv', recurring_load: 'Korduvkoosolekud',
+  meetings: 'Koosolekute arv',
+  after_hours: 'Pärast tööaega saadetud sõnumid',
+  focus_time: 'Vaba kalendriaeg',
+  back_to_back: 'Järjestikused koosolekud',
+  fragmentation: 'Kalendri killustatus',
+  meeting_hours: 'Koosolekutunnid',
+  messages: 'Sõnumite arv',
+  recurring_load: 'Korduvkoosolekud',
 };
 const etMetric = (key, fallback) => ET_METRICS[key] || fallback || key;
 const COLOR = {
@@ -124,25 +128,18 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
         </ResponsiveContainer>
       </div>
       <p className="text-xs leading-5 text-slate-500">
-        X: {range === '1W' ? 'mõõtmise kuupäev' : 'lõppenud nädal'} · Y: {unit}. Iga punkt põhineb seitsme päeva andmetel. Puuduv nädal jääb tühjaks. Muutus ei tõenda põhjust.
+        X: {range === '1W' ? 'mõõtmise kuupäev' : 'lõppenud nädal'} · Y: {unit}. Iga punkt põhineb
+        seitsme päeva andmetel. Puuduv nädal jääb tühjaks. Muutus ei tõenda põhjust.
       </p>
     </div>
   );
 }
 const TEAM_DIMENSIONS = [
-  [
-    'meetingHoursPerRepresentedPerson',
-    'Koosolekutunnid kalendrikasutaja kohta',
-    'hours/person',
-  ],
+  ['meetingHoursPerRepresentedPerson', 'Koosolekutunnid kalendrikasutaja kohta', 'hours/person'],
   ['meetingsPerRepresentedPerson', 'Koosolekute arv kalendrikasutaja kohta', 'meetings/person'],
   ['messagesPerRepresentedPerson', 'Sõnumid saatja kohta', 'messages/person'],
   ['afterHoursPct', 'Väljaspool tööaega saadetud sõnumite osakaal', '%'],
-  [
-    'focusHoursPerRepresentedPerson',
-    'Vaba kalendriaeg inimese kohta',
-    'hours/person',
-  ],
+  ['focusHoursPerRepresentedPerson', 'Vaba kalendriaeg inimese kohta', 'hours/person'],
   ['recurringLoadPct', 'Korduvkoosolekute osakaal', '%'],
   ['calendarFragmentation', 'Kalendri killustatuse indeks', '/100'],
 ];
@@ -161,7 +158,9 @@ function TeamDetail({ data, window, range }) {
   if (!team)
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Ühelgi tiimil pole veel piisavalt allikaga seotud mõõtmisi. Igal tiimil kehtib sama {data.privacy?.minimumGroupSize || 2} seotud töötaja miinimum. Puuduvaid nädalaid ei loeta nulliks.
+        Ühelgi tiimil pole veel piisavalt allikaga seotud mõõtmisi. Igal tiimil kehtib sama{' '}
+        {data.privacy?.minimumGroupSize || 2} seotud töötaja miinimum. Puuduvaid nädalaid ei loeta
+        nulliks.
       </div>
     );
   const events = (data.annotations || []).filter(
@@ -254,7 +253,9 @@ function TeamDetail({ data, window, range }) {
           color="#7c3aed"
         />
         <p className="mt-2 text-xs leading-5 text-slate-600">
-          Kalendri ja sõnumite mõõtmistel kasutatakse vastava allika seotud töötajate hulka. Võrdluseks on vaja vähemalt nelja mõõdetud nädalat varasemast kuuest. Puuduv nädal on tühi, mitte null. Tulemused ei kirjelda töötaja sooritust ega tõenda põhjust.
+          Kalendri ja sõnumite mõõtmistel kasutatakse vastava allika seotud töötajate hulka.
+          Võrdluseks on vaja vähemalt nelja mõõdetud nädalat varasemast kuuest. Puuduv nädal on
+          tühi, mitte null. Tulemused ei kirjelda töötaja sooritust ega tõenda põhjust.
         </p>
         {events.length ? (
           events.slice(-4).map((e, i) => (
@@ -265,11 +266,7 @@ function TeamDetail({ data, window, range }) {
                 ? 'Järelkontroll: ' + e.outcome.replaceAll('_', ' ') + '.'
                 : 'Tulemus pole veel kirjas.'}
               {e.observedBefore != null && e.observedAfter != null
-                ? ' Enne ' +
-                  e.observedBefore +
-                  ', pärast ' +
-                  e.observedAfter +
-                  ' (algses ühikus).'
+                ? ' Enne ' + e.observedBefore + ', pärast ' + e.observedAfter + ' (algses ühikus).'
                 : ''}
               <span className="block text-xs text-slate-500">
                 Pärast tegevust mõõdetud muutus ei tõenda, et tegevus selle põhjustas.
@@ -318,7 +315,8 @@ export default function ReportTrendExplorer({ brief }) {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-blue-700" /> Kuidas töökorralduse näitajad ajas muutusid?
+            <BarChart3 className="h-5 w-5 text-blue-700" /> Kuidas töökorralduse näitajad ajas
+            muutusid?
           </h2>
           <p className="app-muted mt-1">
             Võrdle mõõdetud perioode ja tiime ning vaata varasemate tegevuste tulemusi.
@@ -349,7 +347,8 @@ export default function ReportTrendExplorer({ brief }) {
         <>
           {data.stale && (
             <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-              <AlertTriangle className="mr-1 inline h-4 w-4" /> Algandmed võivad olla aegunud. Viimane mõõtmine: {data.lastObservedDate || 'teadmata'}.
+              <AlertTriangle className="mr-1 inline h-4 w-4" /> Algandmed võivad olla aegunud.
+              Viimane mõõtmine: {data.lastObservedDate || 'teadmata'}.
             </p>
           )}
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
@@ -362,7 +361,9 @@ export default function ReportTrendExplorer({ brief }) {
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
               <p className="text-xs uppercase text-slate-600">Muutused, mida uurida</p>
-              <p className="mt-2 text-xl font-bold">{signals.length || 'Kinnitatud muutus puudub'}</p>
+              <p className="mt-2 text-xl font-bold">
+                {signals.length || 'Kinnitatud muutus puudub'}
+              </p>
               <p className="text-xs text-slate-500">
                 Vajalikud on võrreldavad nädalad ja baasväärtus
               </p>
@@ -403,7 +404,8 @@ export default function ReportTrendExplorer({ brief }) {
             </div>
           ) : (
             <p className="mb-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-              Võrreldud ajaloost ei saa kinnitada püsivat muutust. See ei tähenda, et olukord oleks tingimata hea.
+              Võrreldud ajaloost ei saa kinnitada püsivat muutust. See ei tähenda, et olukord oleks
+              tingimata hea.
             </p>
           )}
           <div className="mb-4 flex flex-wrap gap-2">
@@ -479,7 +481,8 @@ export default function ReportTrendExplorer({ brief }) {
                     />
                     {insights.find((i) => i.metric === metric) && (
                       <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-                        {insights.find((i) => i.metric === metric).statement} Enne otsust kontrolli olukorra tausta.
+                        {insights.find((i) => i.metric === metric).statement} Enne otsust kontrolli
+                        olukorra tausta.
                       </p>
                     )}
                   </>
@@ -496,7 +499,8 @@ export default function ReportTrendExplorer({ brief }) {
             </>
           )}
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Ühe nädala vaade näitab seitsme päeva libisevaid mõõtmisi, mitte päevade summat. Lõppenud nädala näidud on võetud UTC nädalapäeval{' '}
+            Ühe nädala vaade näitab seitsme päeva libisevaid mõõtmisi, mitte päevade summat.
+            Lõppenud nädala näidud on võetud UTC nädalapäeval{' '}
             {
               ['pühapäev', 'esmaspäev', 'teisipäev', 'kolmapäev', 'neljapäev', 'reede', 'laupäev'][
                 data.anchorDay

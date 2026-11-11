@@ -36,16 +36,28 @@ export default function ReportExportActions({ version }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" disabled={Boolean(busy)} onClick={() => openReport('pdf')}
-        className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+      <button
+        type="button"
+        disabled={Boolean(busy)}
+        onClick={() => openReport('pdf')}
+        className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+      >
         {busy === 'pdf' ? 'PDF-i loomine…' : 'Laadi alla HR aruanne (PDF)'}
       </button>
-      <button type="button" disabled={Boolean(busy)} onClick={() => openReport('email')}
-        className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 disabled:opacity-50">
+      <button
+        type="button"
+        disabled={Boolean(busy)}
+        onClick={() => openReport('email')}
+        className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 disabled:opacity-50"
+      >
         {busy === 'email' ? 'Eelvaate avamine…' : 'Vaata HR e-kirja'}
       </button>
       {version && <span className="text-xs text-slate-600">Versioon {version}</span>}
-      {error && <span className="text-xs text-amber-800" role="alert">{error}</span>}
+      {error && (
+        <span className="text-xs text-amber-800" role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
