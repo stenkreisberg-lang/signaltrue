@@ -579,7 +579,7 @@ describe('§36.6 — P0 metrics are calculated from content-free events', () => 
     expect(byMetric.COORDINATION_CHANNEL_LOAD.components.byChannelPerPerson).toHaveProperty('meetings');
   });
 
-  it('does not expose a two-manager subgroup in a larger team's reporting', async () => {
+  it("does not expose a two-manager subgroup in a larger team's reporting", async () => {
     const row = await TeamWorkPatternMetric.findOne({
       tenantId,
       teamId: teams.clean.team._id,
