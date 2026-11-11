@@ -212,7 +212,7 @@ describe('Work Network analysis', () => {
     expect(readWorkNetworkMetric(result, 'outsideTeamShare', ['eng'])).toBeNull();
   });
 
-  test('suppresses team-pair measurements with fewer than eight contributors', () => {
+  test('reports a team pair with four contributors under the unified two-person minimum', () => {
     const participants = ['e1', 'e2', 'p1', 'p2'];
     const currentEvents = [
       ...meetingCopies('small-1', participants),
@@ -222,8 +222,9 @@ describe('Work Network analysis', () => {
     const result = analyze({ currentEvents });
 
     expect(result.readiness.ready).toBe(true);
-    expect(result.actualEdges).toEqual([]);
-    expect(result.summary.suppressedConnections).toBe(1);
+    expect(result.actualEdges).toHaveLength(1);
+    expect(result.actualEdges[0].contributorCount).toBe(4);
+    expect(result.summary.suppressedConnections).toBe(0);
   });
 
   test('grades rechecks in the correct direction for each network metric', () => {
