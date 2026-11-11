@@ -1098,9 +1098,9 @@ export async function generateWeeklyBrief(orgId) {
     } else if (memberCount < sensitiveReportMinimum) {
       status = 'Operational team (sensitive metrics withheld)';
       reason = `This is a valid team, but sensitive engagement scores require at least ${sensitiveReportMinimum} active people.`;
-    } else if (eventInfo.activeUsers < minimumTeamSize) {
+    } else if (eventInfo.activeUsers < sensitiveReportMinimum) {
       status = 'Not enough mapped activity';
-      reason = `${eventInfo.activeUsers} active mapped user(s) this week; ${minimumTeamSize} required.`;
+      reason = `${eventInfo.activeUsers} mapped contributor(s) this week; ${sensitiveReportMinimum} required for sensitive scoring.`;
     } else if (eventInfo.events === 0) {
       status = 'No mapped events';
       reason = 'No calendar or collaboration events are mapped to this team yet.';
@@ -1110,8 +1110,11 @@ export async function generateWeeklyBrief(orgId) {
 
   const mappingCoveragePct =
     totalActivityEvents > 0 ? Math.round((mappedActorEventCount / totalActivityEvents) * 100) : 0;
+  // A valid operational team with fewer than the sensitive disclosure floor
+  // cannot be expected to pass sensitive scoring. Do not let those teams
+  // falsely block the entire organisation report.
   const eligibleTeamReadiness = teamReadiness.filter(
-    (item) => !['Excluded (catch-all)', 'Suppressed'].includes(item.status)
+    (item) => item.memberCount >= sensitiveReportMinimum && !isCatchAllTeam(item.team.name)
   );
   const readyTeamCount = eligibleTeamReadiness.filter(
     (item) => item.status === 'Ready for scoring'
@@ -1126,8 +1129,9 @@ export async function generateWeeklyBrief(orgId) {
     eligibleTeamReadiness.length > 0
       ? Math.round((readyTeamCount / eligibleTeamReadiness.length) * 100)
       : 0;
+  // No eligible team does NOT constitute evidence of a passing score.
   const hasEnoughTeamCoverage =
-    eligibleTeamReadiness.length === 0 || readyTeamCount >= requiredReadyTeamCount;
+    eligibleTeamReadiness.length > 0 && readyTeamCount >= requiredReadyTeamCount;
   const dataReadinessStatus =
     mappingCoveragePct >= 80 && hasEnoughTeamCoverage
       ? 'Ready'
