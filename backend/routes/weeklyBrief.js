@@ -12,6 +12,12 @@ import mongoose from 'mongoose';
 import WeeklyBriefFeedback from '../models/weeklyBriefFeedback.js';
 import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 import { getReportTrendSeries } from '../services/reportTrendService.js';
+import WeeklyWorkReview from '../models/weeklyWorkReview.js';
+import { reportVersion } from '../services/weeklyReportPresentationService.js';
+import { renderWeeklyHRPdf } from '../services/weeklyReportPdfService.js';
+import { pickTeamMeasurement, evaluateFollowUpMeasurement } from '../services/weeklyReportReviewService.js';
+import { renderVisualWeeklyEmail } from '../services/visualWeeklyEmailService.js';
+
 
 const router = express.Router();
 const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin', 'executive'];
@@ -209,6 +215,131 @@ router.get('/:orgId/preview', requireHROrAdmin, requireOrganizationAccess(), asy
     res.send(html);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Download the exact saved HR report seen on the dashboard and referenced by HR email.
+// Only authorised HR/admin accounts can request the full-organisation PDF.
+router.get('/report.pdf', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
+    if (!snapshot) return res.status(404).json({ message: 'Salvestatud aruanne puudub.' });
+    const version = reportVersion(snapshot);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="signaltrue-' + version + '.pdf"');
+    res.setHeader('Cache-Control', 'private, no-store');
+    renderWeeklyHRPdf(snapshot, res);
+  } catch (error) {
+    console.error('[WeeklyBrief] PDF export failed:', error.message);
+    if (!res.headersSent) res.status(500).json({ message: 'Aruande PDF-i loomine ebaõnnestus.' });
+    else res.end();
+  }
+});
+
+// This preview never regenerates the report or sends an email.
+router.get('/email-preview', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
+    if (!snapshot) return res.status(404).json({ message: 'Salvestatud aruanne puudub.' });
+    const html = renderVisualWeeklyEmail(snapshot, null, {
+      appUrl: process.env.FRONTEND_URL || 'https://www.signaltrue.ai',
+    });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.send(html);
+  } catch (error) {
+    console.error('[WeeklyBrief] Email preview failed:', error.message);
+    res.status(500).json({ message: 'E-kirja eelvaade ei ole saadaval.' });
+  }
+});
+
+// HR can record a time-limited work-design change only against a measured
+// team-specific baseline. A whole-organisation metric is never silently
+// presented as a team baseline.
+router.get('/action-reviews', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const reviews = await WeeklyWorkReview.find({ orgId: req.user.orgId })
+      .sort({ createdAt: -1 }).limit(50).lean();
+    res.json({ reviews });
+  } catch (error) {
+    console.error('[WeeklyBrief] Could not list action reviews:', error.message);
+    res.status(500).json({ message: 'Järelkontrollide laadimine ebaõnnestus.' });
+  }
+});
+
+router.post('/action-reviews', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    const snapshot = await getLatestWeeklyBriefSnapshot(req.user.orgId);
+    if (!snapshot) return res.status(409).json({ message: 'Enne tegevust on vaja salvestatud aruannet.' });
+    const { teamId, metricKey } = req.body || {};
+    const title = String(req.body?.title || '').trim();
+    const hypothesis = String(req.body?.hypothesis || '').trim();
+    const ownerName = String(req.body?.ownerName || '').trim();
+    const successCondition = String(req.body?.successCondition || '').trim();
+    const reviewDays = Number(req.body?.reviewDays || 14);
+    if (![14, 28].includes(reviewDays) || !title || title.length > 160 ||
+        !hypothesis || hypothesis.length > 600 || !ownerName || ownerName.length > 120 ||
+        !successCondition || successCondition.length > 360) {
+      return res.status(400).json({ message: 'Täida tegevus, vastutaja, hüpotees ja kontrollikriteerium.' });
+    }
+    const trends = await getReportTrendSeries(req.user.orgId, new Date(), {
+      includeTeams: true, minimumGroupSize: 2,
+    });
+    const team = (trends.teams || []).find(item => item.id === String(teamId));
+    const observation = pickTeamMeasurement(team, metricKey);
+    if (!observation) {
+      return res.status(409).json({ message: 'Selle tiimi ja mõõdiku kontrollitud lähteväärtus puudub.' });
+    }
+    const now = new Date();
+    const reviewDate = new Date(now.getTime() + reviewDays * 86400000);
+    const created = await WeeklyWorkReview.create({
+      orgId: req.user.orgId, teamId: team.id, teamName: team.name,
+      snapshotId: snapshot.id, reportVersion: reportVersion(snapshot),
+      metricKey, metricUnit: observation.unit,
+      baselineValue: observation.value, baselinePeriod: observation.date,
+      baselineContributors: observation.contributors, title, hypothesis,
+      ownerName, successCondition, startDate: now, reviewDate,
+      createdBy: req.user.userId,
+    });
+    res.status(201).json({ review: created });
+  } catch (error) {
+    console.error('[WeeklyBrief] Could not create action review:', error.message);
+    res.status(500).json({ message: 'Tegevuse salvestamine ebaõnnestus.' });
+  }
+});
+
+router.post('/action-reviews/:id/review', requireHROrAdmin, requireOrgContext, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Vigane tegevuse tunnus.' });
+    const record = await WeeklyWorkReview.findOne({ _id: req.params.id, orgId: req.user.orgId });
+    if (!record) return res.status(404).json({ message: 'Tegevust ei leitud.' });
+    const decision = String(req.body?.decision || '');
+    const note = String(req.body?.note || '').trim();
+    if (!['continue', 'adjust', 'close', 'investigate'].includes(decision) || note.length > 600)
+      return res.status(400).json({ message: 'Vali otsus ja lisa soovi korral selgitus.' });
+    if (new Date() < new Date(record.reviewDate)) {
+      return res.status(409).json({ message: 'Kokkulepitud kontrollkuupäev ei ole veel saabunud.' });
+    }
+    const trends = await getReportTrendSeries(req.user.orgId, new Date(), {
+      includeTeams: true, minimumGroupSize: 2,
+    });
+    const team = (trends.teams || []).find(item => item.id === String(record.teamId));
+    const evidence = evaluateFollowUpMeasurement(record, team);
+    record.reviews.push({
+      reviewedAt: new Date(), ...evidence, baselineValue: record.baselineValue,
+      decision, note, reviewedBy: req.user.userId,
+    });
+    if (decision === 'close') record.status = 'completed';
+    else {
+      record.status = 'active';
+      record.reviewDate = new Date(Date.now() + 14 * 86400000);
+    }
+    await record.save();
+    res.json({ review: record, evidence });
+  } catch (error) {
+    console.error('[WeeklyBrief] Follow-up review failed:', error.message);
+    res.status(500).json({ message: 'Järelkontrolli salvestamine ebaõnnestus.' });
   }
 });
 
