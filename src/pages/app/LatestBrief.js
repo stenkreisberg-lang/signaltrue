@@ -308,7 +308,7 @@ export default function LatestBrief() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [questionAnswer, setQuestionAnswer] = useState(null);
-  const [showDetailedEvidence, setShowDetailedEvidence] = useState(true);
+  const [showDetailedEvidence, setShowDetailedEvidence] = useState(false);
   const [questionError, setQuestionError] = useState(null);
   const [asking, setAsking] = useState(false);
   const [contextTag, setContextTag] = useState('launch');
@@ -503,11 +503,14 @@ export default function LatestBrief() {
 
       <HRDecisionSnapshot brief={brief} showReportLink={false} />
 
+      <ReportTrendExplorer brief={brief} />
+      {canRefresh && <WeeklyWorkReviewPanel />}
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Mõõtmiste ajalugu ja selgitused</h2>
+          <h2 className="text-base font-bold text-slate-900">Täiendav tõendusmaterjal ja metoodika</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Allpool saad võrrelda nädalate mõõtmisi, uurida tiimide muutusi ja kontrollida allikate katvust.
+            Siit leiad detailse mõõdikute loendi, sisemised signaalid, andmekatvuse ja metoodika selgitused.
           </p>
         </div>
         <button
@@ -585,9 +588,7 @@ export default function LatestBrief() {
             </div>
           </section>
 
-          <ReportTrendExplorer brief={brief} />
 
-          {canRefresh && <WeeklyWorkReviewPanel />}
 
           {brief.reportMode === 'setup' ? (
             <section className="app-dashboard-section">
