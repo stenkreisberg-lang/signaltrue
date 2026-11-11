@@ -52,19 +52,16 @@ Chronological narrative of your health journey. Board-ready summaries for execut
 
 ## Team-size and reporting policy
 
-**Implemented on the Priority 1 fix branch (not yet production-verified): a team may have as few as two active people.** A two-person team must be recognised in the organisation hierarchy, included in workforce and source-coverage reconciliation, and be eligible for *appropriately authorised team-level work-pattern reporting*. The earlier blanket eight-person team-size cutoff must not be mistaken for the minimum valid team definition.
+**The minimum reporting team has two active, mapped members.** Teams of two use the same measurement definitions, historical charts, HR/manager permissions, source-coverage checks, and reporting pathways as all other eligible teams. There is no special two-person opt-in, approval workflow, different dashboard, or default metric suppression solely because the group is small.
 
-Reporting eligibility and privacy are separate decisions:
+- One active mapped person is insufficient for a team aggregate. Two or more may be included when actual source evidence exists.
+- Inactive or departed accounts, guests, bots, and unresolved directory identities do not count as active team members. Unattributed events are not silently assigned to a person.
+- Missing observations are **unavailable**, not zero. The same comparison and sparse-baseline tests apply to all team sizes.
+- The normal authorization rules are unchanged: HR sees only its own organization; a manager sees only teams explicitly assigned through the ordinary HR invitation and account-acceptance process.
+- **Small aggregates are not anonymous.** A two-person total can reveal an individual's activity when combined with outside information. Do not describe aggregate results as anonymized, use them to rank individuals, or infer an individual person's health or productivity.
 
-1. **Team membership:** 2+ active employees defines a reportable team in the target product specification. Inactive, departed, duplicate, and non-employee accounts do not count.
-2. **Source availability:** A team may appear in organisation structure even when Microsoft 365 or another integration has not supplied usable activity. Display `unavailable`, not zero, for missing measurements.
-3. **Metric eligibility:** For the target two-person reporting mode, publish a team-level metric only when its required contributors are present, the denominator and historical comparison are valid, the metric does not disclose an identifiable individual's behaviour, and the recipient is explicitly authorised. A one-person contribution must not masquerade as a two-person aggregate. Identifying or sensitive small-group metrics remain unavailable or are rolled into a larger authorised group.
-4. **Access and privacy:** No person-level behavioral scoring or employee surveillance. Two-person aggregates are **not inherently anonymous**; aggregation alone does not rule out re-identification. Before releasing small-team behavioral reporting, document the lawful basis and privacy risk assessment, approve the metric-level disclosure policy, and test manager/HR permissions and cross-team inference.
-5. **Truthful reporting:** Do not present unavailable or privacy-suppressed metrics as `0`, healthy, or compliant.
+The reporting threshold is unified to **2** across organization/team structure, daily team metrics, multi-period trends, manager reporting, HR briefs, and control review. No separate small-team product switch or manual approval is required. Existing company data-access requirements and normal customer responsibilities remain the same for all teams.
 
-**Target implementation (pending CI and deployment):** `MIN_TEAM_DEFINITION_SIZE = 2` and organisation/employee sync recognise two-person teams. The privacy middleware and sensitive behavioural/health-safety metric gates still require at least eight people/contributors. A two-person team is structurally valid, but **sensitive individual-inferable analytics are not enabled at size two**. Full two-person metric reporting needs a separate approved privacy specification and tests.
-
-**Implementation checklist:** Introduce a configurable minimum team size of 2 for the relevant team/reporting pathways; audit every hardcoded floor and contributor gate; independently enforce metric-level privacy, active-person counting and source coverage; update HR/manager report views; verify that two-person teams produce only approved team-level values; test 1-person suppression, 2-person eligibility, inactive staff exclusion, overlapping groups, cross-tenant requests, exports and email recipients. Only describe the capability as available after tests and an approved release.
 
 ---
 
@@ -77,7 +74,7 @@ Reporting eligibility and privacy are separate decisions:
 - **Named patterns**: hidden strain, quiet withdrawal, manager bottleneck, coordination tax, async breakdown, engagement theatre
 - **AI-generated explanations** via `gpt-4o-mini`, deterministic fallback when unavailable
 - **Weekly digest email** with per-team score bars, urgent action banners, privacy footer
-- **Team and privacy thresholds**: Two active people define a valid team; sensitive engagement metrics keep an eight-person reporting and contributor floor pending separate privacy approval.
+- **Team and reporting thresholds**: Two active, mapped contributors are the minimum for team measurement, using the same logic across all team sizes; results are not guaranteed anonymous.
 - **Frontend**: Executive summary tile (Overview + Executive Summary pages), full detail page with sparklines, subscore bars, pattern cards, alert banners
 
 ### 📈 **Behavioral Drift Index (BDI)**
