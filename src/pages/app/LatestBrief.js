@@ -563,607 +563,632 @@ export default function LatestBrief() {
 
       {showDetailedEvidence && (
         <>
-      {headlineMetrics.length > 0 && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {headlineMetrics.map((metric) => (
-            <MetricCard key={metric.key} metric={metric} />
-          ))}
-        </div>
-      )}
-
-      <section className="app-panel mb-6 border-indigo-100 bg-indigo-50/40">
-        <div className="app-section-heading">
-          <div>
-            <p className="app-eyebrow">Leadership readout</p>
-            <h2>What to carry into the next review</h2>
-            <p>
-              Three evidence-led observations, one verification question, and one reversible next
-              step.
-            </p>
-          </div>
-          <StatusBadge tone={brief.reportMode === 'full' ? 'good' : 'review'}>
-            {brief.reportMode === 'full' ? 'Decision-ready with review' : 'Coverage first'}
-          </StatusBadge>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-container bg-white p-4">
-            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
-              Top observations
-            </p>
-            <ol className="mt-3 list-decimal space-y-2 pl-5 text-caption leading-5 text-slate-700">
-              {(brief.observations || []).slice(0, 3).map((item, index) => (
-                <li key={`${item.text}-${index}`}>
-                  {String(item.text).replace(/\.$/, '')} — summary
-                </li>
+          {headlineMetrics.length > 0 && (
+            <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {headlineMetrics.map((metric) => (
+                <MetricCard key={metric.key} metric={metric} />
               ))}
-              {!brief.observations?.length && <li>No material change was detected.</li>}
-            </ol>
-          </div>
-          <div className="rounded-container bg-white p-4">
-            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
-              Verify before acting
-            </p>
-            <p className="mt-3 text-caption leading-6 text-slate-700">
-              {String(brief.questions?.[0] || DEFAULT_QUESTIONS[1]).replace(/\?$/, '')} — brief
-              prompt
-            </p>
-          </div>
-          <div className="rounded-container bg-white p-4">
-            <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
-              Reversible next step
-            </p>
-            <p className="mt-3 text-caption leading-6 text-slate-700">
-              Test:{' '}
-              {brief.actions?.primary?.action ||
-                'Keep observing for one more week and review the same evidence.'}
-            </p>
-            {brief.actions?.primary?.owner && (
-              <p className="mt-2 text-caption text-slate-500">
-                Owner: {brief.actions.primary.owner}
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <ReportTrendExplorer brief={brief} />
-
-      {brief.reportMode === 'setup' ? (
-        <section className="app-dashboard-section">
-          <div className="app-section-heading">
-            <div>
-              <h2>Restore trustworthy reporting</h2>
-              <p>Modeled conclusions stay paused while coverage is incomplete.</p>
             </div>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {(roleActions.admin || []).map((action) => (
-              <ActionCard key={action.title} action={action} />
-            ))}
-          </div>
-        </section>
-      ) : (
-        <>
-          <div className="mb-6 grid gap-6 lg:grid-cols-2">
-            <section className="app-panel">
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-blue-700" />
-                <h2>What changed</h2>
-              </div>
-              <p className="app-muted">
-                All report observations, not only the three shown in email.
-              </p>
-              <div className="space-y-3">
-                {brief.observations?.length ? (
-                  brief.observations.map((item, index) => (
-                    <div
-                      key={`${item.text}-${index}`}
-                      className="rounded-container border border-slate-200 p-4"
-                    >
-                      <p className="text-caption leading-6 text-slate-700">{item.text}</p>
-                      <div className="mt-2">
-                        <StatusBadge tone={item.type === 'data_quality' ? 'review' : 'neutral'}>
-                          Evidence grade: {item.evidenceGrade}
-                        </StatusBadge>
-                      </div>
-                      {item.interpretation && (
-                        <p className="mt-3 text-caption leading-6 text-slate-700">
-                          <strong>Interpretation:</strong> {item.interpretation}
-                        </p>
-                      )}
-                      {item.alternativeExplanation && (
-                        <p className="mt-2 text-caption leading-6 text-slate-500">
-                          <strong>Alternative explanation:</strong> {item.alternativeExplanation}
-                        </p>
-                      )}
-                      {item.recommendedNextStep && (
-                        <p className="mt-2 text-caption leading-6 text-slate-700">
-                          <strong>
-                            {item.actionability === 'diagnostic_question'
-                              ? 'Diagnostic question:'
-                              : 'Next step:'}
-                          </strong>{' '}
-                          {item.recommendedNextStep}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <EmptyState>No material week-over-week change was detected.</EmptyState>
-                )}
-              </div>
-            </section>
+          )}
 
-            <section className="app-panel">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-700" />
-                <h2>Why it deserves review</h2>
-              </div>
-              <p className="app-muted">Review implications, not causal or clinical conclusions.</p>
-              <div className="space-y-3">
-                {brief.risks?.length ? (
-                  brief.risks.map((risk) => (
-                    <div
-                      key={risk}
-                      className="rounded-container border border-amber-200 bg-amber-50/70 p-4 text-caption leading-6 text-amber-950"
-                    >
-                      {risk}
-                    </div>
-                  ))
-                ) : (
-                  <EmptyState>No elevated review implication is present in this brief.</EmptyState>
-                )}
-                {brief.costEstimate && (
-                  <div className="rounded-container border border-slate-200 p-4">
-                    <p className="font-bold text-slate-900">
-                      Estimated coordination cost above baseline:{' '}
-                      {brief.costEstimate.formattedWeeklyCost}
-                    </p>
-                    <p className="mt-2 text-caption leading-5 text-slate-600">
-                      Uses the client-configured hourly cost and measured participant-hours above
-                      this organization’s baseline. Directional estimate only.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-
-          <section className="app-dashboard-section">
+          <section className="app-panel mb-6 border-indigo-100 bg-indigo-50/40">
             <div className="app-section-heading">
               <div>
-                <h2>Decisions and owners</h2>
-                <p>Each action should have a named owner, measure, and review window.</p>
+                <p className="app-eyebrow">Leadership readout</p>
+                <h2>What to carry into the next review</h2>
+                <p>
+                  Three evidence-led observations, one verification question, and one reversible
+                  next step.
+                </p>
               </div>
+              <StatusBadge tone={brief.reportMode === 'full' ? 'good' : 'review'}>
+                {brief.reportMode === 'full' ? 'Decision-ready with review' : 'Coverage first'}
+              </StatusBadge>
             </div>
             <div className="grid gap-4 lg:grid-cols-3">
-              {brief.actions?.primary && (
-                <ActionCard action={brief.actions.primary} fallbackTitle="Priority" />
-              )}
-              {allRoleActions
-                .filter((item) => item.action !== brief.actions?.primary?.action)
-                .slice(0, 5)
-                .map((action, index) => (
-                  <ActionCard key={`${action.action}-${index}`} action={action} />
-                ))}
-            </div>
-            {!brief.actions?.primary && allRoleActions.length === 0 && (
-              <EmptyState>
-                No action recommended this week. Continue monitoring. No measured pattern currently
-                justifies intervention.
-              </EmptyState>
-            )}
-          </section>
-        </>
-      )}
-
-      <AskBrief
-        questions={brief.questions}
-        onAsk={ask}
-        asking={asking}
-        answer={questionAnswer}
-        error={questionError}
-      />
-
-      {brief.metrics?.length > 0 && (
-        <section className="app-panel my-6 overflow-hidden">
-          <div className="app-section-heading">
-            <div>
-              <h2>Metric evidence table</h2>
-              <p>Current week, prior week, and organization-specific baseline in one view.</p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-left text-caption">
-              <thead>
-                <tr className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
-                  <th className="py-3 pr-4">Metric</th>
-                  <th className="px-4 py-3">Current</th>
-                  <th className="px-4 py-3">Prior</th>
-                  <th className="px-4 py-3">6-week baseline</th>
-                  <th className="px-4 py-3">Movement</th>
-                  <th className="pl-4 py-3">Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brief.metrics.map((metric) => (
-                  <tr key={metric.key} className="border-b border-slate-100 align-top">
-                    <td className="py-4 pr-4">
-                      <strong className="text-slate-900">{metric.label}</strong>
-                      {metric.note && (
-                        <p className="mt-1 max-w-xs text-caption text-slate-500">{metric.note}</p>
-                      )}
-                      {metric.readiness && (
-                        <p className="mt-1 max-w-xs text-caption text-slate-500">
-                          {String(metric.readiness.readiness).replace(/_/g, ' ')} ·{' '}
-                          {metric.readiness.mappedUsers}/{metric.readiness.totalUsers} people
-                          represented · {metric.readiness.eventCount} observations
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 font-bold text-slate-900">
-                      {formatMetricValue(metric)}
-                    </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatMetricValue(metric, metric.previous)}
-                    </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      {metric.baseline == null
-                        ? 'Not available'
-                        : formatMetricValue(metric, metric.baseline)}
-                    </td>
-                    <td className="px-4 py-4 text-caption">
-                      <Direction metric={metric} />
-                    </td>
-                    <td className="pl-4 py-4">
-                      <StatusBadge>{String(metric.measurementType).replace(/_/g, ' ')}</StatusBadge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {(brief.workPattern?.teams?.length > 0 || brief.signals?.length > 0) && (
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          <section className="app-panel">
-            <h2>Team condition detail</h2>
-            <p className="app-muted">
-              Aggregated internal model results shown with data readiness.
-            </p>
-            <div className="space-y-3">
-              {(brief.workPattern?.teams || []).map((team) => (
-                <div key={team.teamId} className="rounded-container border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-900">{team.teamName}</p>
-                      <p className="mt-1 text-caption text-slate-500">
-                        {team.activePeople} active mapped people
-                      </p>
-                    </div>
-                    <StatusBadge tone={statusTone(team.state)}>{team.state}</StatusBadge>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-control bg-slate-50 p-3">
-                      <p className="text-lead font-extrabold text-slate-900">
-                        {team.deviationIndex}/100
-                      </p>
-                      <p className="text-caption text-slate-500">Deviation index</p>
-                    </div>
-                    <div className="rounded-control bg-slate-50 p-3">
-                      <p className="text-lead font-extrabold text-slate-900">
-                        {team.dataReadiness}/100
-                      </p>
-                      <p className="text-caption text-slate-500">Data readiness</p>
-                    </div>
-                  </div>
-                  {team.drivers?.length > 0 && (
-                    <div className="mt-3 text-caption leading-5 text-slate-600">
-                      <strong>Top drivers:</strong>{' '}
-                      {team.drivers
-                        .map((driver) => `${driver.label} (${driver.score}/100)`)
-                        .join(', ')}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            {brief.workPattern?.limitation && (
-              <p className="mt-4 text-caption leading-5 text-slate-500">
-                {brief.workPattern.limitation}
-              </p>
-            )}
-          </section>
-
-          <section className="app-panel">
-            <h2>Active review signals</h2>
-            <p className="app-muted">
-              Rules that fired, their evidence, and the first suggested check.
-            </p>
-            <div className="space-y-3">
-              {brief.signals.map((signal, index) => (
-                <div
-                  key={`${signal.type}-${index}`}
-                  className="rounded-container border border-slate-200 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-slate-900">{signal.title}</p>
-                      <p className="mt-1 text-caption text-slate-500">
-                        {signal.family} · {signal.teamName}
-                      </p>
-                    </div>
-                    <StatusBadge tone="review">{signal.severity}</StatusBadge>
-                  </div>
-                  {signal.evidence && (
-                    <p className="mt-3 text-caption leading-6 text-slate-600">{signal.evidence}</p>
-                  )}
-                  {signal.action && (
-                    <p className="mt-3 text-caption leading-5 text-slate-700">
-                      <strong>Suggested check:</strong> {signal.action}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {((brief.prediction && brief.prediction.displayTier !== 'hidden') ||
-        brief.actionOutcomes?.length > 0) && (
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          {brief.prediction?.displayTier !== 'hidden' && (
-            <section className="app-panel">
-              <h2>
-                {brief.prediction?.displayTier === 'main_report'
-                  ? 'Forecast rule track record'
-                  : 'Experimental appendix — forecast rule track record'}
-              </h2>
-              <p className="app-muted">
-                An experimental directional rule, automatically checked next week.
-              </p>
-              {brief.prediction?.current && (
-                <div className="rounded-container border border-blue-200 bg-blue-50 p-4 text-caption leading-6 text-blue-950">
-                  <strong>This week:</strong> {brief.prediction.current.statement}
-                </div>
-              )}
-              {brief.prediction?.lastGraded && (
-                <div className="mt-3 rounded-container border border-slate-200 p-4 text-caption leading-6 text-slate-700">
-                  <strong>Last graded:</strong> {brief.prediction.lastGraded.statement}
-                  <p className="mt-2">
-                    Observed value: {brief.prediction.lastGraded.actualValue ?? 'not available'} ·{' '}
-                    {brief.prediction.lastGraded.matched ? 'Rule matched' : 'Rule did not match'}
+              <div className="rounded-container bg-white p-4">
+                <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+                  Top observations
+                </p>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-caption leading-5 text-slate-700">
+                  {(brief.observations || []).slice(0, 3).map((item, index) => (
+                    <li key={`${item.text}-${index}`}>
+                      {String(item.text).replace(/\.$/, '')} — summary
+                    </li>
+                  ))}
+                  {!brief.observations?.length && <li>No material change was detected.</li>}
+                </ol>
+              </div>
+              <div className="rounded-container bg-white p-4">
+                <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+                  Verify before acting
+                </p>
+                <p className="mt-3 text-caption leading-6 text-slate-700">
+                  {String(brief.questions?.[0] || DEFAULT_QUESTIONS[1]).replace(/\?$/, '')} — brief
+                  prompt
+                </p>
+              </div>
+              <div className="rounded-container bg-white p-4">
+                <p className="text-caption font-bold uppercase tracking-wider text-slate-500">
+                  Reversible next step
+                </p>
+                <p className="mt-3 text-caption leading-6 text-slate-700">
+                  Test:{' '}
+                  {brief.actions?.primary?.action ||
+                    'Keep observing for one more week and review the same evidence.'}
+                </p>
+                {brief.actions?.primary?.owner && (
+                  <p className="mt-2 text-caption text-slate-500">
+                    Owner: {brief.actions.primary.owner}
                   </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <ReportTrendExplorer brief={brief} />
+
+          {brief.reportMode === 'setup' ? (
+            <section className="app-dashboard-section">
+              <div className="app-section-heading">
+                <div>
+                  <h2>Restore trustworthy reporting</h2>
+                  <p>Modeled conclusions stay paused while coverage is incomplete.</p>
                 </div>
-              )}
-              <p className="mt-3 text-caption leading-5 text-slate-500">
-                {brief.prediction?.limitation}
-              </p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {(roleActions.admin || []).map((action) => (
+                  <ActionCard key={action.title} action={action} />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <>
+              <div className="mb-6 grid gap-6 lg:grid-cols-2">
+                <section className="app-panel">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-blue-700" />
+                    <h2>What changed</h2>
+                  </div>
+                  <p className="app-muted">
+                    All report observations, not only the three shown in email.
+                  </p>
+                  <div className="space-y-3">
+                    {brief.observations?.length ? (
+                      brief.observations.map((item, index) => (
+                        <div
+                          key={`${item.text}-${index}`}
+                          className="rounded-container border border-slate-200 p-4"
+                        >
+                          <p className="text-caption leading-6 text-slate-700">{item.text}</p>
+                          <div className="mt-2">
+                            <StatusBadge tone={item.type === 'data_quality' ? 'review' : 'neutral'}>
+                              Evidence grade: {item.evidenceGrade}
+                            </StatusBadge>
+                          </div>
+                          {item.interpretation && (
+                            <p className="mt-3 text-caption leading-6 text-slate-700">
+                              <strong>Interpretation:</strong> {item.interpretation}
+                            </p>
+                          )}
+                          {item.alternativeExplanation && (
+                            <p className="mt-2 text-caption leading-6 text-slate-500">
+                              <strong>Alternative explanation:</strong>{' '}
+                              {item.alternativeExplanation}
+                            </p>
+                          )}
+                          {item.recommendedNextStep && (
+                            <p className="mt-2 text-caption leading-6 text-slate-700">
+                              <strong>
+                                {item.actionability === 'diagnostic_question'
+                                  ? 'Diagnostic question:'
+                                  : 'Next step:'}
+                              </strong>{' '}
+                              {item.recommendedNextStep}
+                            </p>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <EmptyState>No material week-over-week change was detected.</EmptyState>
+                    )}
+                  </div>
+                </section>
+
+                <section className="app-panel">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-700" />
+                    <h2>Why it deserves review</h2>
+                  </div>
+                  <p className="app-muted">
+                    Review implications, not causal or clinical conclusions.
+                  </p>
+                  <div className="space-y-3">
+                    {brief.risks?.length ? (
+                      brief.risks.map((risk) => (
+                        <div
+                          key={risk}
+                          className="rounded-container border border-amber-200 bg-amber-50/70 p-4 text-caption leading-6 text-amber-950"
+                        >
+                          {risk}
+                        </div>
+                      ))
+                    ) : (
+                      <EmptyState>
+                        No elevated review implication is present in this brief.
+                      </EmptyState>
+                    )}
+                    {brief.costEstimate && (
+                      <div className="rounded-container border border-slate-200 p-4">
+                        <p className="font-bold text-slate-900">
+                          Estimated coordination cost above baseline:{' '}
+                          {brief.costEstimate.formattedWeeklyCost}
+                        </p>
+                        <p className="mt-2 text-caption leading-5 text-slate-600">
+                          Uses the client-configured hourly cost and measured participant-hours
+                          above this organization’s baseline. Directional estimate only.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              <section className="app-dashboard-section">
+                <div className="app-section-heading">
+                  <div>
+                    <h2>Decisions and owners</h2>
+                    <p>Each action should have a named owner, measure, and review window.</p>
+                  </div>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-3">
+                  {brief.actions?.primary && (
+                    <ActionCard action={brief.actions.primary} fallbackTitle="Priority" />
+                  )}
+                  {allRoleActions
+                    .filter((item) => item.action !== brief.actions?.primary?.action)
+                    .slice(0, 5)
+                    .map((action, index) => (
+                      <ActionCard key={`${action.action}-${index}`} action={action} />
+                    ))}
+                </div>
+                {!brief.actions?.primary && allRoleActions.length === 0 && (
+                  <EmptyState>
+                    No action recommended this week. Continue monitoring. No measured pattern
+                    currently justifies intervention.
+                  </EmptyState>
+                )}
+              </section>
+            </>
+          )}
+
+          <AskBrief
+            questions={brief.questions}
+            onAsk={ask}
+            asking={asking}
+            answer={questionAnswer}
+            error={questionError}
+          />
+
+          {brief.metrics?.length > 0 && (
+            <section className="app-panel my-6 overflow-hidden">
+              <div className="app-section-heading">
+                <div>
+                  <h2>Metric evidence table</h2>
+                  <p>Current week, prior week, and organization-specific baseline in one view.</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] border-collapse text-left text-caption">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-caption uppercase tracking-wider text-slate-500">
+                      <th className="py-3 pr-4">Metric</th>
+                      <th className="px-4 py-3">Current</th>
+                      <th className="px-4 py-3">Prior</th>
+                      <th className="px-4 py-3">6-week baseline</th>
+                      <th className="px-4 py-3">Movement</th>
+                      <th className="pl-4 py-3">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {brief.metrics.map((metric) => (
+                      <tr key={metric.key} className="border-b border-slate-100 align-top">
+                        <td className="py-4 pr-4">
+                          <strong className="text-slate-900">{metric.label}</strong>
+                          {metric.note && (
+                            <p className="mt-1 max-w-xs text-caption text-slate-500">
+                              {metric.note}
+                            </p>
+                          )}
+                          {metric.readiness && (
+                            <p className="mt-1 max-w-xs text-caption text-slate-500">
+                              {String(metric.readiness.readiness).replace(/_/g, ' ')} ·{' '}
+                              {metric.readiness.mappedUsers}/{metric.readiness.totalUsers} people
+                              represented · {metric.readiness.eventCount} observations
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 font-bold text-slate-900">
+                          {formatMetricValue(metric)}
+                        </td>
+                        <td className="px-4 py-4 text-slate-600">
+                          {formatMetricValue(metric, metric.previous)}
+                        </td>
+                        <td className="px-4 py-4 text-slate-600">
+                          {metric.baseline == null
+                            ? 'Not available'
+                            : formatMetricValue(metric, metric.baseline)}
+                        </td>
+                        <td className="px-4 py-4 text-caption">
+                          <Direction metric={metric} />
+                        </td>
+                        <td className="pl-4 py-4">
+                          <StatusBadge>
+                            {String(metric.measurementType).replace(/_/g, ' ')}
+                          </StatusBadge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           )}
 
+          {(brief.workPattern?.teams?.length > 0 || brief.signals?.length > 0) && (
+            <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              <section className="app-panel">
+                <h2>Team condition detail</h2>
+                <p className="app-muted">
+                  Aggregated internal model results shown with data readiness.
+                </p>
+                <div className="space-y-3">
+                  {(brief.workPattern?.teams || []).map((team) => (
+                    <div
+                      key={team.teamId}
+                      className="rounded-container border border-slate-200 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-slate-900">{team.teamName}</p>
+                          <p className="mt-1 text-caption text-slate-500">
+                            {team.activePeople} active mapped people
+                          </p>
+                        </div>
+                        <StatusBadge tone={statusTone(team.state)}>{team.state}</StatusBadge>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <div className="rounded-control bg-slate-50 p-3">
+                          <p className="text-lead font-extrabold text-slate-900">
+                            {team.deviationIndex}/100
+                          </p>
+                          <p className="text-caption text-slate-500">Deviation index</p>
+                        </div>
+                        <div className="rounded-control bg-slate-50 p-3">
+                          <p className="text-lead font-extrabold text-slate-900">
+                            {team.dataReadiness}/100
+                          </p>
+                          <p className="text-caption text-slate-500">Data readiness</p>
+                        </div>
+                      </div>
+                      {team.drivers?.length > 0 && (
+                        <div className="mt-3 text-caption leading-5 text-slate-600">
+                          <strong>Top drivers:</strong>{' '}
+                          {team.drivers
+                            .map((driver) => `${driver.label} (${driver.score}/100)`)
+                            .join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {brief.workPattern?.limitation && (
+                  <p className="mt-4 text-caption leading-5 text-slate-500">
+                    {brief.workPattern.limitation}
+                  </p>
+                )}
+              </section>
+
+              <section className="app-panel">
+                <h2>Active review signals</h2>
+                <p className="app-muted">
+                  Rules that fired, their evidence, and the first suggested check.
+                </p>
+                <div className="space-y-3">
+                  {brief.signals.map((signal, index) => (
+                    <div
+                      key={`${signal.type}-${index}`}
+                      className="rounded-container border border-slate-200 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-slate-900">{signal.title}</p>
+                          <p className="mt-1 text-caption text-slate-500">
+                            {signal.family} · {signal.teamName}
+                          </p>
+                        </div>
+                        <StatusBadge tone="review">{signal.severity}</StatusBadge>
+                      </div>
+                      {signal.evidence && (
+                        <p className="mt-3 text-caption leading-6 text-slate-600">
+                          {signal.evidence}
+                        </p>
+                      )}
+                      {signal.action && (
+                        <p className="mt-3 text-caption leading-5 text-slate-700">
+                          <strong>Suggested check:</strong> {signal.action}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {((brief.prediction && brief.prediction.displayTier !== 'hidden') ||
+            brief.actionOutcomes?.length > 0) && (
+            <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              {brief.prediction?.displayTier !== 'hidden' && (
+                <section className="app-panel">
+                  <h2>
+                    {brief.prediction?.displayTier === 'main_report'
+                      ? 'Forecast rule track record'
+                      : 'Experimental appendix — forecast rule track record'}
+                  </h2>
+                  <p className="app-muted">
+                    An experimental directional rule, automatically checked next week.
+                  </p>
+                  {brief.prediction?.current && (
+                    <div className="rounded-container border border-blue-200 bg-blue-50 p-4 text-caption leading-6 text-blue-950">
+                      <strong>This week:</strong> {brief.prediction.current.statement}
+                    </div>
+                  )}
+                  {brief.prediction?.lastGraded && (
+                    <div className="mt-3 rounded-container border border-slate-200 p-4 text-caption leading-6 text-slate-700">
+                      <strong>Last graded:</strong> {brief.prediction.lastGraded.statement}
+                      <p className="mt-2">
+                        Observed value: {brief.prediction.lastGraded.actualValue ?? 'not available'}{' '}
+                        ·{' '}
+                        {brief.prediction.lastGraded.matched
+                          ? 'Rule matched'
+                          : 'Rule did not match'}
+                      </p>
+                    </div>
+                  )}
+                  <p className="mt-3 text-caption leading-5 text-slate-500">
+                    {brief.prediction?.limitation}
+                  </p>
+                </section>
+              )}
+
+              <section className="app-panel">
+                <h2>Action follow-through</h2>
+                <p className="app-muted">
+                  What was tried and whether the same metric moved after review.
+                </p>
+                <div className="space-y-3">
+                  {brief.actionOutcomes?.length ? (
+                    brief.actionOutcomes.map((item, index) => (
+                      <div
+                        key={`${item.title}-${index}`}
+                        className="rounded-container border border-slate-200 p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-bold text-slate-900">{item.title}</p>
+                          <StatusBadge tone={item.outcome?.improved ? 'good' : 'neutral'}>
+                            {item.outcome?.result || item.status}
+                          </StatusBadge>
+                        </div>
+                        <p className="mt-2 text-caption text-slate-500">
+                          Started {formatDate(item.startedAt)}
+                          {item.teamName ? ` · ${item.teamName}` : ''}
+                        </p>
+                        {item.outcome?.percentChange != null && (
+                          <p className="mt-3 text-caption text-slate-700">
+                            Measured change: {item.outcome.percentChange > 0 ? '+' : ''}
+                            {item.outcome.percentChange}% · {item.outcome.result}
+                          </p>
+                        )}
+                        {item.outcome?.summary && (
+                          <p className="mt-2 text-caption text-slate-600">{item.outcome.summary}</p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState>
+                      No action has a measured outcome yet. Log a reversible action to start the
+                      14-day before-and-after loop.
+                    </EmptyState>
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {canRefresh && brief?.id && (
+            <section className="app-panel mb-6" aria-label="Report usefulness and decisions">
+              <h2 className="text-lg font-bold">Was this report useful?</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Tell SignalTrue whether the measured evidence helped you identify a new question or
+                record a decision. This feedback never changes the measured results.
+              </p>
+              <form className="mt-4 space-y-3" onSubmit={saveFeedback}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-sm font-semibold">
+                    Did the report help?
+                    <select
+                      className="mt-1 block w-full rounded-lg border p-2"
+                      value={feedbackUseful}
+                      onChange={(e) => setFeedbackUseful(e.target.value)}
+                    >
+                      <option value="yes">Yes, useful evidence</option>
+                      <option value="unclear">Not yet clear</option>
+                      <option value="no">No, not relevant</option>
+                    </select>
+                  </label>
+                  <label className="text-sm font-semibold">
+                    What did you do?
+                    <select
+                      className="mt-1 block w-full rounded-lg border p-2"
+                      value={feedbackAction}
+                      onChange={(e) => setFeedbackAction(e.target.value)}
+                    >
+                      <option value="none">No action yet</option>
+                      <option value="investigate">Started investigating</option>
+                      <option value="record">Recorded a management decision</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={feedbackNovel}
+                    onChange={(e) => setFeedbackNovel(e.target.checked)}
+                  />
+                  This report highlighted something I had not noticed before.
+                </label>
+                <label className="block text-sm font-semibold">
+                  Optional context for the product team
+                  <textarea
+                    className="mt-1 block w-full rounded-lg border p-3"
+                    rows={2}
+                    maxLength={500}
+                    value={feedbackNote}
+                    onChange={(e) => setFeedbackNote(e.target.value)}
+                    placeholder="Which finding was useful, unclear or misleading?"
+                  />
+                </label>
+                <button
+                  disabled={feedbackBusy}
+                  type="submit"
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  Save report feedback
+                </button>
+                {feedbackMessage && (
+                  <p role="status" className="text-sm text-slate-700">
+                    {feedbackMessage}
+                  </p>
+                )}
+              </form>
+            </section>
+          )}
+          <section className="app-panel mb-6" id="weekly-brief-context">
+            <div className="flex items-start gap-3">
+              <CircleHelp className="mt-1 h-5 w-5 text-violet-700" />
+              <div>
+                <h2>Add context for this week</h2>
+                <p className="app-muted mb-0">
+                  A launch, offsite, leave period, or client deadline can change how metadata should
+                  be interpreted. Context is shown to the report assistant and used by the next
+                  brief.
+                </p>
+              </div>
+            </div>
+            <form onSubmit={saveContext} className="mt-4 grid gap-3 md:grid-cols-[220px_1fr_auto]">
+              <select
+                value={contextTag}
+                onChange={(event) => setContextTag(event.target.value)}
+                className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
+              >
+                {CONTEXT_OPTIONS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={contextDescription}
+                onChange={(event) => setContextDescription(event.target.value)}
+                maxLength={300}
+                placeholder="Optional factual note, such as product launch on Thursday"
+                className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
+              />
+              <button
+                type="submit"
+                disabled={savingContext}
+                className="rounded-control bg-violet-700 px-4 py-2.5 text-caption font-bold text-white disabled:opacity-50"
+              >
+                {savingContext ? 'Saving...' : 'Add context'}
+              </button>
+            </form>
+            {contexts.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {contexts.map((item) => (
+                  <StatusBadge key={item._id || `${item.tag}-${item.description}`} tone="info">
+                    {String(item.tag).replace(/_/g, ' ')}
+                    {item.description ? `: ${item.description}` : ''}
+                  </StatusBadge>
+                ))}
+              </div>
+            )}
+          </section>
+
           <section className="app-panel">
-            <h2>Action follow-through</h2>
-            <p className="app-muted">
-              What was tried and whether the same metric moved after review.
-            </p>
-            <div className="space-y-3">
-              {brief.actionOutcomes?.length ? (
-                brief.actionOutcomes.map((item, index) => (
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-1 h-5 w-5 text-emerald-700" />
+              <div>
+                <h2>Data readiness and limits</h2>
+                <p className="app-muted">
+                  Coverage determines whether SignalTrue reports a model or pauses conclusions.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="text-lead font-extrabold text-slate-900">
+                  {brief.coverage?.mappingCoveragePct}%
+                </p>
+                <p className="text-caption text-slate-500">Activity attributed</p>
+              </div>
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="text-lead font-extrabold text-slate-900">
+                  {brief.coverage?.teamCoveragePct}%
+                </p>
+                <p className="text-caption text-slate-500">Eligible teams ready</p>
+              </div>
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="text-lead font-extrabold text-slate-900">
+                  {brief.coverage?.mappedUsers}
+                </p>
+                <p className="text-caption text-slate-500">
+                  of {brief.coverage?.totalUsers} users represented
+                </p>
+              </div>
+              <div className="rounded-container bg-slate-50 p-4">
+                <p className="text-lead font-extrabold text-slate-900">
+                  {brief.coverage?.readyTeams}
+                </p>
+                <p className="text-caption text-slate-500">
+                  of {brief.coverage?.eligibleTeams} eligible teams ready
+                </p>
+              </div>
+            </div>
+
+            {brief.integrations?.length > 0 && (
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {brief.integrations.map((integration) => (
                   <div
-                    key={`${item.title}-${index}`}
+                    key={integration.type}
                     className="rounded-container border border-slate-200 p-4"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-bold text-slate-900">{item.title}</p>
-                      <StatusBadge tone={item.outcome?.improved ? 'good' : 'neutral'}>
-                        {item.outcome?.result || item.status}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold text-slate-900">{integration.type}</p>
+                      <StatusBadge tone={integration.status === 'connected' ? 'good' : 'review'}>
+                        {integration.status}
                       </StatusBadge>
                     </div>
                     <p className="mt-2 text-caption text-slate-500">
-                      Started {formatDate(item.startedAt)}
-                      {item.teamName ? ` · ${item.teamName}` : ''}
+                      Coverage: {integration.mappedUsers ?? 'not available'}/
+                      {integration.totalUsers ?? 'not available'} · Last sync:{' '}
+                      {formatDate(integration.lastSyncAt)}
                     </p>
-                    {item.outcome?.percentChange != null && (
-                      <p className="mt-3 text-caption text-slate-700">
-                        Measured change: {item.outcome.percentChange > 0 ? '+' : ''}
-                        {item.outcome.percentChange}% · {item.outcome.result}
-                      </p>
-                    )}
-                    {item.outcome?.summary && (
-                      <p className="mt-2 text-caption text-slate-600">{item.outcome.summary}</p>
-                    )}
                   </div>
-                ))
-              ) : (
-                <EmptyState>
-                  No action has a measured outcome yet. Log a reversible action to start the 14-day
-                  before-and-after loop.
-                </EmptyState>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {canRefresh && brief?.id && (
-        <section className="app-panel mb-6" aria-label="Report usefulness and decisions">
-          <h2 className="text-lg font-bold">Was this report useful?</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Tell SignalTrue whether the measured evidence helped you identify a new question or
-            record a decision. This feedback never changes the measured results.
-          </p>
-          <form className="mt-4 space-y-3" onSubmit={saveFeedback}>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="text-sm font-semibold">
-                Did the report help?
-                <select
-                  className="mt-1 block w-full rounded-lg border p-2"
-                  value={feedbackUseful}
-                  onChange={(e) => setFeedbackUseful(e.target.value)}
-                >
-                  <option value="yes">Yes, useful evidence</option>
-                  <option value="unclear">Not yet clear</option>
-                  <option value="no">No, not relevant</option>
-                </select>
-              </label>
-              <label className="text-sm font-semibold">
-                What did you do?
-                <select
-                  className="mt-1 block w-full rounded-lg border p-2"
-                  value={feedbackAction}
-                  onChange={(e) => setFeedbackAction(e.target.value)}
-                >
-                  <option value="none">No action yet</option>
-                  <option value="investigate">Started investigating</option>
-                  <option value="record">Recorded a management decision</option>
-                </select>
-              </label>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={feedbackNovel}
-                onChange={(e) => setFeedbackNovel(e.target.checked)}
-              />
-              This report highlighted something I had not noticed before.
-            </label>
-            <label className="block text-sm font-semibold">
-              Optional context for the product team
-              <textarea
-                className="mt-1 block w-full rounded-lg border p-3"
-                rows={2}
-                maxLength={500}
-                value={feedbackNote}
-                onChange={(e) => setFeedbackNote(e.target.value)}
-                placeholder="Which finding was useful, unclear or misleading?"
-              />
-            </label>
-            <button
-              disabled={feedbackBusy}
-              type="submit"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              Save report feedback
-            </button>
-            {feedbackMessage && (
-              <p role="status" className="text-sm text-slate-700">
-                {feedbackMessage}
-              </p>
-            )}
-          </form>
-        </section>
-      )}
-      <section className="app-panel mb-6" id="weekly-brief-context">
-        <div className="flex items-start gap-3">
-          <CircleHelp className="mt-1 h-5 w-5 text-violet-700" />
-          <div>
-            <h2>Add context for this week</h2>
-            <p className="app-muted mb-0">
-              A launch, offsite, leave period, or client deadline can change how metadata should be
-              interpreted. Context is shown to the report assistant and used by the next brief.
-            </p>
-          </div>
-        </div>
-        <form onSubmit={saveContext} className="mt-4 grid gap-3 md:grid-cols-[220px_1fr_auto]">
-          <select
-            value={contextTag}
-            onChange={(event) => setContextTag(event.target.value)}
-            className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
-          >
-            {CONTEXT_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <input
-            value={contextDescription}
-            onChange={(event) => setContextDescription(event.target.value)}
-            maxLength={300}
-            placeholder="Optional factual note, such as product launch on Thursday"
-            className="rounded-control border border-slate-300 bg-white px-3 py-2.5 text-caption"
-          />
-          <button
-            type="submit"
-            disabled={savingContext}
-            className="rounded-control bg-violet-700 px-4 py-2.5 text-caption font-bold text-white disabled:opacity-50"
-          >
-            {savingContext ? 'Saving...' : 'Add context'}
-          </button>
-        </form>
-        {contexts.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {contexts.map((item) => (
-              <StatusBadge key={item._id || `${item.tag}-${item.description}`} tone="info">
-                {String(item.tag).replace(/_/g, ' ')}
-                {item.description ? `: ${item.description}` : ''}
-              </StatusBadge>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="app-panel">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-1 h-5 w-5 text-emerald-700" />
-          <div>
-            <h2>Data readiness and limits</h2>
-            <p className="app-muted">
-              Coverage determines whether SignalTrue reports a model or pauses conclusions.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-container bg-slate-50 p-4">
-            <p className="text-lead font-extrabold text-slate-900">
-              {brief.coverage?.mappingCoveragePct}%
-            </p>
-            <p className="text-caption text-slate-500">Activity attributed</p>
-          </div>
-          <div className="rounded-container bg-slate-50 p-4">
-            <p className="text-lead font-extrabold text-slate-900">
-              {brief.coverage?.teamCoveragePct}%
-            </p>
-            <p className="text-caption text-slate-500">Eligible teams ready</p>
-          </div>
-          <div className="rounded-container bg-slate-50 p-4">
-            <p className="text-lead font-extrabold text-slate-900">{brief.coverage?.mappedUsers}</p>
-            <p className="text-caption text-slate-500">
-              of {brief.coverage?.totalUsers} users represented
-            </p>
-          </div>
-          <div className="rounded-container bg-slate-50 p-4">
-            <p className="text-lead font-extrabold text-slate-900">{brief.coverage?.readyTeams}</p>
-            <p className="text-caption text-slate-500">
-              of {brief.coverage?.eligibleTeams} eligible teams ready
-            </p>
-          </div>
-        </div>
-
-        {brief.integrations?.length > 0 && (
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {brief.integrations.map((integration) => (
-              <div key={integration.type} className="rounded-container border border-slate-200 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-bold text-slate-900">{integration.type}</p>
-                  <StatusBadge tone={integration.status === 'connected' ? 'good' : 'review'}>
-                    {integration.status}
-                  </StatusBadge>
-                </div>
-                <p className="mt-2 text-caption text-slate-500">
-                  Coverage: {integration.mappedUsers ?? 'not available'}/
-                  {integration.totalUsers ?? 'not available'} · Last sync:{' '}
-                  {formatDate(integration.lastSyncAt)}
-                </p>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            )}
+          </section>
         </>
       )}
     </AppShell>

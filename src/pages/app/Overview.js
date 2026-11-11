@@ -162,7 +162,9 @@ export default function Overview() {
   const reportingReady =
     calibrationStatus?.readinessStatus === 'ready' && latestBrief?.reportMode === 'full';
   const hasMeasuredEvidence = (latestBrief?.trend || []).some((point) =>
-    ['meetingHours', 'messagesPerPerson', 'afterHoursPct', 'focusHours'].some((key) => point[key] != null)
+    ['meetingHours', 'messagesPerPerson', 'afterHoursPct', 'focusHours'].some(
+      (key) => point[key] != null
+    )
   );
 
   if (loading) {
@@ -275,7 +277,10 @@ export default function Overview() {
               Confirm the source records, employee mapping and reporting period before interpreting
               changes in team workload.
             </p>
-            <Link to="/app/signal-coverage" className="mt-3 inline-block text-sm font-semibold underline">
+            <Link
+              to="/app/signal-coverage"
+              className="mt-3 inline-block text-sm font-semibold underline"
+            >
               Check source verification
             </Link>
           </div>

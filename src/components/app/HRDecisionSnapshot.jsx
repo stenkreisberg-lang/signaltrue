@@ -65,10 +65,13 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   if (!brief) return null;
   const dimensions = buildHRDecisionDimensions(brief);
   const action = brief?.actions?.primary;
-  const period = [shortDate(brief.periodStart), shortDate(brief.periodEnd)].filter(Boolean).join(' to ');
+  const period = [shortDate(brief.periodStart), shortDate(brief.periodEnd)]
+    .filter(Boolean)
+    .join(' to ');
   const teams = (brief.workPattern?.teams || []).filter((team) => team?.teamName).slice(0, 4);
-  const unavailableCount = dimensions.filter(({ metric }) =>
-    !metric || metric.available !== true || number(metric.current) == null).length;
+  const unavailableCount = dimensions.filter(
+    ({ metric }) => !metric || metric.available !== true || number(metric.current) == null
+  ).length;
 
   return (
     <section className="app-dashboard-section" aria-label="HR decision summary">
@@ -82,14 +85,20 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
               What changed in how work happens?
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Review measured patterns before deciding whether a team needs support.
-              These numbers describe activity, not employee performance or wellbeing.
+              Review measured patterns before deciding whether a team needs support. These numbers
+              describe activity, not employee performance or wellbeing.
             </p>
           </div>
           <div className="text-sm text-slate-700">
-            <p><strong>Evidence:</strong> {brief.status?.evidenceGrade || 'Not assessed'}</p>
-            <p><strong>Activity mapped:</strong> {brief.coverage?.mappingCoveragePct == null
-              ? 'Unknown' : `${brief.coverage.mappingCoveragePct}%`}</p>
+            <p>
+              <strong>Evidence:</strong> {brief.status?.evidenceGrade || 'Not assessed'}
+            </p>
+            <p>
+              <strong>Activity mapped:</strong>{' '}
+              {brief.coverage?.mappingCoveragePct == null
+                ? 'Unknown'
+                : `${brief.coverage.mappingCoveragePct}%`}
+            </p>
             {unavailableCount > 0 && (
               <p className="font-semibold text-amber-800">
                 {unavailableCount} of 4 dimensions unverified
@@ -143,12 +152,12 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
             <h3 className="text-sm font-bold text-slate-900">Teams to discuss</h3>
             <div className="mt-3 grid gap-2 md:grid-cols-2">
               {teams.map((team) => (
-                <div key={team.teamId || team.teamName}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                <div
+                  key={team.teamId || team.teamName}
+                  className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-4 py-3 text-sm"
+                >
                   <span className="font-semibold text-slate-800">{team.teamName}</span>
-                  <span className="text-slate-600">
-                    {team.state || 'Review data'}
-                  </span>
+                  <span className="text-slate-600">{team.state || 'Review data'}</span>
                 </div>
               ))}
             </div>
@@ -160,8 +169,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
 
         {showReportLink && (
           <div className="border-t border-slate-200 pt-4">
-            <Link to="/app/latest-brief"
-              className="text-sm font-semibold text-blue-700 underline">
+            <Link to="/app/latest-brief" className="text-sm font-semibold text-blue-700 underline">
               Read the full evidence and record a decision
             </Link>
           </div>
