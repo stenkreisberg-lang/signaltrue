@@ -29,8 +29,10 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: http://localhost:8081
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Verify preinstalled Chrome
+        run: |
+          command -v google-chrome || command -v google-chrome-stable
+          (google-chrome --version || google-chrome-stable --version)
       - name: Browser flow tests
         run: npm run test:e2e
 
