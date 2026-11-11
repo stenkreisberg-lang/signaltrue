@@ -113,7 +113,7 @@ beforeEach(() => {
 test('shows the saved email brief with deeper evidence and report-grounded questions', async () => {
   render(<LatestBrief />);
 
-  expect(await screen.findByText('Aruanded')).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Aruanded', level: 1 })).toBeInTheDocument();
   expect(screen.getByText('Mis muutus töökorralduses?')).toBeInTheDocument();
   expect(screen.queryByText('Metric evidence table')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Näita üksikasju' }));
