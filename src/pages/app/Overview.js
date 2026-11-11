@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import OverviewEnglish from './OverviewEnglish';
 import { Link } from 'react-router-dom';
 import {
   CartesianGrid,
@@ -118,7 +119,7 @@ export default function Overview() {
     };
   }, []);
 
-  if (loading) {
+  // Existing international customers retain the English report until the\n  // redesigned dashboard has a complete English translation.\n  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {\n    return <OverviewEnglish />;\n  }\n\n  if (loading) {
     return (
       <AppShell user={user} section="Ülevaade">
         <div className="app-panel flex min-h-64 items-center justify-center">
