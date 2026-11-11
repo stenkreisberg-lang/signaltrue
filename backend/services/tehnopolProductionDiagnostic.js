@@ -285,7 +285,7 @@ export async function logTehnopolProductionDiagnostic() {
         managerReporting: {
           hrVerifiedManagerTeams: verifiedManagerTeams.length,
           currentVerifiedManagerAccounts: managerUsers.length,
-          scopedPermissionPredicatePasses,
+          scopedPermissionPredicatePasses: scopedPermissionPasses,
           verifiedTeamsAwaitingAssignment: Math.max(0,
             verifiedManagerTeams.length - scopedPermissionPasses),
           assignmentStatuses: Object.fromEntries(managerAssignments.map(row => [row._id || 'unknown', row.count])),
