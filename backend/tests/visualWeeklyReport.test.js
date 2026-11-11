@@ -90,6 +90,7 @@ describe('visual weekly report data integrity', () => {
       status:{label:'Stable',evidenceGrade:'Low'},coverage:{mappingCoveragePct:98},
       metrics:[
         {key:'meetings',label:'Meetings',unit:'meetings',available:true,current:685,previous:750,changePct:-9},
+        {key:'meeting_hours',label:'Meeting hours',unit:'hours',available:true,current:12,previous:10,changePct:20,readiness:{mappedUsers:2,totalUsers:42}},
         {key:'after_hours',label:'After-hours messaging',unit:'%',available:false,readiness:{mappedUsers:2,totalUsers:42}},
         {key:'focus_time',label:'Uninterrupted time',unit:'hours',available:false},
       ],observations:[],actions:{primary:null}
@@ -98,16 +99,18 @@ describe('visual weekly report data integrity', () => {
       sample('2026-10-11', 750), sample('2026-10-18', 720), sample('2026-10-25',685),
     ],now);
     const html = renderVisualWeeklyEmail(snapshot, history);
-    expect(html).toContain('Meetings · historical pattern');
-    expect(html).toContain('Full measurement inventory');
-    expect(html).toContain('Unavailable');
-    expect(html).toContain('No validated observations');
+    expect(html).toContain('Nädala töökorralduse ülevaade');
+    expect(html).toContain('Koosolekuaeg');
+    expect(html).toContain('Mõõdikute allikad ja katvus');
+    expect(html).toContain('Andmed puuduvad');
+    expect(html).toContain('Algandmete ja aruande täielik vastavuskontroll ei ole kinnitatud');
+    expect(html).toContain('Aruande versioon ST-');
     expect(html).toContain('/app/latest-brief');
     expect(html).not.toContain('No action recommended this week');
     expect(emailTimeline(history.weekly.slice(-4),'meetings','meetings')).toContain('—');
     const bundle = renderVisualWeeklyEmailPackage(snapshot, history);
     expect(bundle.attachments).toHaveLength(1);
-    expect(bundle.html).toContain('cid:st-weekly-meetings');
+    expect(bundle.html).toContain('cid:st-weekly-meeting_hours');
     const decoded = Buffer.from(bundle.attachments[0].content, 'base64');
     expect([...decoded.subarray(0, 8)]).toEqual([137,80,78,71,13,10,26,10]);
   });
