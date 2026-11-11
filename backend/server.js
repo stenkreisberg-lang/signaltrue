@@ -195,6 +195,7 @@ import { prepareTehnopolManagerScopes } from './services/tehnopolManagerPreparat
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
+import { repairTehnopolNovemberSnapshot } from './services/tehnopolSnapshotParityRepair.js';
 import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
 
 const app = express();
@@ -246,9 +247,14 @@ async function main() {
         // This updates saved metrics/report snapshots only, never sends emails.
         setTimeout(() => {
           void runTehnopolMeasurementRecovery()
-            .then(() => logTehnopolProductionDiagnostic())
+            .then(async () => {
+              // One-time, bounded correction of the previously failed
+              // 2026-11-10 calendar snapshot. No customer email is sent.
+              await repairTehnopolNovemberSnapshot();
+              await logTehnopolProductionDiagnostic();
+            })
             .catch(() => {
-              console.error('[TehnopolRecovery] Unexpected job error');
+              console.error('[TehnopolRecovery] Unexpected recovery or parity job error');
             });
         }, 35_000);
         // One-off historical calculation correction after the rolling 7-day fix.
