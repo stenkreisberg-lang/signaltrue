@@ -32,7 +32,7 @@ async function lookupGraphUser(token, id) {
       '?$select=id,userType,accountEnabled,mail,userPrincipalName';
     const response = await fetch(url, {
       headers: { Authorization: 'Bearer ' + token },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(10000), // eslint-disable-line no-undef
     });
     if (response.status === 404) return { status: 'not_found' };
     if (!response.ok) return { status: 'unverified' };
