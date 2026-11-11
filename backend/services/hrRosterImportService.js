@@ -3,6 +3,8 @@ import path from 'node:path';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
+import ManagerAssignment from '../models/managerAssignment.js';
+import { parseDepartmentManagerRosterSheet } from './departmentManagerRosterService.js';
 import {
   classifyEmployeeCandidate,
   normalizeDirectoryString,
@@ -79,6 +81,8 @@ function canonicalizeRosterRow(row, index) {
     team,
     department: department || team,
     status: getAliasedValue(row, 'status'),
+    managerEmail: normalizeEmail(row?.['Manager Email']),
+    sourceFormat: row?.['Roster Format'] || null,
   };
 }
 
@@ -258,7 +262,10 @@ export async function parseHrRosterFile(file) {
 
   if (extension === '.xlsx') {
     const { default: readXlsxFile } = await import('read-excel-file/node');
-    const [headers = [], ...rows] = await readXlsxFile(buffer);
+    const allRows = await readXlsxFile(buffer);
+    const structured = parseDepartmentManagerRosterSheet(allRows);
+    if (structured) return structured.rows;
+    const [headers = [], ...rows] = allRows;
     return rows
       .filter((row) => row.some((value) => value !== null && value !== ''))
       .map((row) =>
@@ -307,6 +314,9 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     skipped: 0,
     inactiveSkipped: 0,
     teamsCreated: 0,
+    matchedByUniqueDirectoryName: 0,
+    managersPrepared: 0,
+    managerScopesHeld: 0,
     skippedRows: [],
   };
 
@@ -315,8 +325,41 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
   const teamsByName = new Map(teams.map((team) => [team.name.toLowerCase(), team]));
   teamsByName.set('unassigned', unassignedTeam);
 
+  // A manager-labelled HR workbook contains employee names, but no employee
+  // emails. Reconcile only against UNIQUE existing directory identities; never
+  // guess addresses or create employee accounts from names.
+  const knownDirectory = rows.some(row => row?.['Roster Format'] === 'department_manager')
+    ? await User.find({ orgId, accountStatus: { $ne: 'inactive' } })
+        .select('_id name displayName firstName lastName email accountStatus').lean()
+    : [];
+  const directoryByName = new Map();
+  const canonicalName = name => normalizeDirectoryString(name)?.normalize('NFKC').toLocaleLowerCase('et') || '';
+  for (const person of knownDirectory) {
+    const display = person.name || person.displayName ||
+      [person.firstName, person.lastName].filter(Boolean).join(' ');
+    const lookup = canonicalName(display);
+    if (!lookup) continue;
+    if (!directoryByName.has(lookup)) directoryByName.set(lookup, []);
+    directoryByName.get(lookup).push(person);
+  }
+  const managerScopes = new Map();
+
   for (const [index, row] of rows.entries()) {
     const canonical = canonicalizeRosterRow(row, index);
+    if (canonical.sourceFormat === 'department_manager' && !canonical.email) {
+      if (!canonical.team) {
+        pushSkipped(stats, canonical.rowNumber, null, 'unassigned_employee');
+        continue;
+      }
+      const matches = directoryByName.get(canonicalName(canonical.name)) || [];
+      if (matches.length !== 1 || !matches[0].email) {
+        pushSkipped(stats, canonical.rowNumber, null,
+          matches.length > 1 ? 'ambiguous_directory_name' : 'missing_directory_identity');
+        continue;
+      }
+      canonical.email = normalizeEmail(matches[0].email);
+      stats.matchedByUniqueDirectoryName++;
+    }
     if (isInactiveRosterStatus(canonical.status)) {
       stats.inactiveSkipped++;
       pushSkipped(stats, canonical.rowNumber, canonical.email, 'inactive_employee');
@@ -352,11 +395,25 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       department: canonical.department || canonical.team || existing?.profile?.department,
     };
 
+    if (canonical.sourceFormat === 'department_manager' && canonical.managerEmail) {
+      const scopeKey = String(team._id) + ':' + canonical.managerEmail;
+      if (!managerScopes.has(scopeKey)) managerScopes.set(scopeKey, {
+        team, managerEmail: canonical.managerEmail, matched: 0,
+      });
+      managerScopes.get(scopeKey).matched++;
+    }
+
     if (existing) {
       existing.name = identity.name;
       existing.firstName = identity.firstName;
       existing.lastName = identity.lastName;
-      if (!existing.hrStructure?.teamVerifiedAt) existing.teamId = team._id;
+      const verifiedHrScope = canonical.sourceFormat === 'department_manager' && options.approvedBy;
+      if (!existing.hrStructure?.teamVerifiedAt || verifiedHrScope) existing.teamId = team._id;
+      if (verifiedHrScope) {
+        // Explicit HR approval is effective-dated, so nightly directory sync
+        // cannot silently replace this team and history before approval is not rewritten.
+        existing.hrStructure = { teamVerifiedAt: new Date(), verifiedBy: options.approvedBy };
+      }
       existing.profile = profile;
       await existing.save();
       stats.updated++;
@@ -378,8 +435,31 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     }
   }
 
-  await refreshTeamSizes(orgId, Math.max(8, Number(org.settings?.minTeamSize) || 8));
+  await refreshTeamSizes(orgId, Math.max(2, Number(org.settings?.minTeamSize) || 2));
   const eventRemap = await remapWorkEventTeams(orgId);
+
+  // HR upload can prepare manager grants, but cannot activate them or send
+  // invitations. Each manager must later accept their scoped invitation.
+  if (options.applyManagers === true && options.approvedBy) {
+    for (const scope of managerScopes.values()) {
+      const manager = await User.findOne({ orgId, email: scope.managerEmail,
+        accountStatus: { $ne: 'inactive' } }).select('_id').lean();
+      if (!manager || scope.matched < 2) {
+        stats.managerScopesHeld++;
+        continue;
+      }
+      const existingAssignment = await ManagerAssignment.findOne({ orgId,
+        managerUserId: manager._id, teamId: scope.team._id });
+      if (existingAssignment) {
+        if (existingAssignment.status !== 'pending') continue;
+      } else {
+        await ManagerAssignment.create({ orgId, managerUserId: manager._id,
+          teamId: scope.team._id, invitedBy: options.approvedBy,
+          status: 'pending', weeklyEmailEnabled: false, exportEnabled: false });
+      }
+      stats.managersPrepared++;
+    }
+  }
 
   return {
     success: true,

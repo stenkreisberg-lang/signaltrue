@@ -42,6 +42,9 @@ export async function repairTehnopolCanonicalOrganization() {
       // Customer confirmed all Tehnopol reporting uses Tallinn local time.
       'settings.timezone': 'Europe/Tallinn',
       'settings.timezoneConfirmedAt': new Date(),
+      // Two active people define a structural team. Sensitive score disclosure
+      // remains independently protected by the eight-person contributor gate.
+      'settings.minTeamSize': 2,
     },
   });
 

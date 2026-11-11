@@ -238,6 +238,33 @@ export default function ManagerTeamDashboard() {
                       </div>
                     ))}
                   </div>
+                  <section className="rounded-xl border bg-white p-5">
+                    <h2 className="text-xl font-bold">Recorded work patterns</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      The latest seven days, based on observed source events. Missing days are
+                      excluded, not treated as zero. These values do not measure employee
+                      performance, wellbeing, or actual productive time.
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {(report.workPatternEvidence?.metrics || []).map((metric) => (
+                        <div key={metric.key} className="rounded-lg border bg-slate-50 p-4">
+                          <p className="text-xs font-semibold text-slate-600">{metric.label}</p>
+                          <p className="mt-2 text-xl font-bold">
+                            {metric.available && metric.value != null
+                              ? metric.value + ' ' + metric.unit
+                              : 'Unavailable'}
+                          </p>
+                          <p className="mt-2 text-xs text-slate-500">
+                            {metric.observedDays} of 7 source-observed days
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500">
+                      {report.workPatternEvidence?.provenance?.explanation ||
+                        'Source evidence is not available for this period.'}
+                    </p>
+                  </section>
                   <section className="rounded-xl border bg-white p-4 sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h2 className="text-xl font-bold">Meeting activity over time</h2>

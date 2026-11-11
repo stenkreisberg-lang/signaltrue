@@ -204,8 +204,24 @@ router.post(
         });
       }
 
+      const isManagerSheet = rows.some((row) => row?.['Roster Format'] === 'department_manager');
+      // A hierarchical manager workbook is not safe to apply accidentally.
+      // An explicit HR-admin confirmation is required to change team mapping.
+      if (isManagerSheet && req.body?.confirmRosterImport !== 'true') {
+        return res.status(409).json({
+          success: false,
+          confirmationRequired: true,
+          message: 'Department/manager roster recognized. Review its staff and manager scopes, then re-upload with confirmRosterImport=true. Manager invitations are never sent by the import.',
+          distinctAssignedNames: rows.length,
+          departmentTeams: [...new Set(rows.map((row) => row.Team))],
+          proposedManagers: [...new Set(rows.map((row) => row['Manager Email']).filter(Boolean))],
+        });
+      }
+
       const result = await importHrRosterRows(orgId, rows, {
         sourceFilename: req.file.originalname || req.file.originalName || null,
+        applyManagers: isManagerSheet && req.body?.assignManagers === 'true',
+        approvedBy: req.user.userId || req.user._id,
       });
 
       res.json({
