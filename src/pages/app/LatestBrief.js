@@ -14,6 +14,9 @@ import {
 import AppShell, { PageHeader } from '../../components/app/AppShell';
 import ReportTrendExplorer from '../../components/app/ReportTrendExplorer';
 import HRDecisionSnapshot from '../../components/app/HRDecisionSnapshot';
+import ReportExportActions from '../../components/app/ReportExportActions';
+import WeeklyWorkReviewPanel from '../../components/app/WeeklyWorkReviewPanel';
+
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
@@ -305,7 +308,7 @@ export default function LatestBrief() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [questionAnswer, setQuestionAnswer] = useState(null);
-  const [showDetailedEvidence, setShowDetailedEvidence] = useState(false);
+  const [showDetailedEvidence, setShowDetailedEvidence] = useState(true);
   const [questionError, setQuestionError] = useState(null);
   const [asking, setAsking] = useState(false);
   const [contextTag, setContextTag] = useState('launch');
@@ -453,24 +456,26 @@ export default function LatestBrief() {
   return (
     <AppShell user={user} section="Latest Brief" width="wide">
       <PageHeader
-        eyebrow="Weekly intelligence"
-        title="Latest brief and evidence"
-        description={`The email summary and this dashboard use the same saved report generated ${formatDate(brief.generatedAt)}. The dashboard keeps the detail that would make the email too long.`}
-        action={
-          canRefresh ? (
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-control border border-slate-300 bg-white px-4 py-2.5 text-caption font-bold text-slate-700 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh measured data
-            </button>
-          ) : null
-        }
+        eyebrow="SignalTrue / Töökorralduse mõõtmine"
+        title="Aruanded"
+        description="Ühe nädala mõõtmised, andmete päritolu, tiimide muutused ja juhtimisotsuste järelkontroll. Kõik väljundid lähtuvad samast salvestatud aruandest."
+        action={canRefresh ? (
+          <button type="button" onClick={refresh} disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-control border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 disabled:opacity-50">
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Värskenda andmeid
+          </button>
+        ) : null}
       />
-
+      <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Salvestatud aruande versioon</p>
+          <p className="mt-1 text-sm text-slate-700">
+            ${brief.orgName} · ${formatDate(brief.periodStart)} kuni ${formatDate(brief.periodEnd)}
+          </p>
+        </div>
+        <ReportExportActions version={brief.reportVersion} />
+      </div>
       {error && (
         <div className="mb-4 rounded-control border border-red-200 bg-red-50 p-3 text-caption text-red-800">
           {error}
@@ -496,62 +501,13 @@ export default function LatestBrief() {
         </div>
       )}
 
-      <section className="app-dashboard-hero">
-        <div className="app-dashboard-hero-main">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge
-              tone={brief.status?.blockedMetrics > 0 ? 'review' : statusTone(brief.status?.label)}
-            >
-              {brief.status?.label === 'Stable' && brief.status?.blockedMetrics > 0
-                ? 'Observed activity stable · partial evidence'
-                : brief.status?.label}
-            </StatusBadge>
-            <StatusBadge>
-              Evidence grade: {brief.status?.evidenceGrade || 'Not available'}
-            </StatusBadge>
-            <StatusBadge tone={brief.reportMode === 'full' ? 'good' : 'review'}>
-              {brief.reportMode === 'full' ? 'Full report' : 'Setup report'}
-            </StatusBadge>
-          </div>
-          <h1 className="app-dashboard-title mt-4">{brief.orgName}</h1>
-          <p className="app-dashboard-copy">
-            {brief.status?.label === 'Stable' && brief.status?.blockedMetrics > 0
-              ? 'Eligible measurements show no material negative movement. Other work patterns cannot yet be assessed because their sources lack sufficient coverage.'
-              : brief.status?.summary}
-          </p>
-          {brief.status?.escalationAction && (
-            <p className="mt-4 rounded-control border border-amber-200 bg-amber-50 p-3 text-caption text-amber-950">
-              <strong>Escalation rule:</strong> {brief.status.escalationAction}
-            </p>
-          )}
-        </div>
-        <div className="app-dashboard-hero-side">
-          <p className="app-dashboard-eyebrow">Report scope</p>
-          <p className="text-caption font-bold text-slate-900">
-            {formatDate(brief.periodStart)} to {formatDate(brief.periodEnd)}
-          </p>
-          <div className="mt-4 space-y-3 text-caption leading-6 text-slate-600">
-            <p>
-              <strong>{brief.status?.baselineWeeks || 0} weeks</strong> of organization-specific
-              history available.
-            </p>
-            <p>
-              <strong>{brief.coverage?.mappingCoveragePct || 0}%</strong> activity attribution and{' '}
-              <strong>{brief.coverage?.teamCoveragePct || 0}%</strong> eligible-team readiness.
-            </p>
-            <p>Evidence grades are rules, not confidence intervals or outcome probabilities.</p>
-          </div>
-        </div>
-      </section>
-
       <HRDecisionSnapshot brief={brief} showReportLink={false} />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Detailed evidence and review tools</h2>
+          <h2 className="text-base font-bold text-slate-900">Mõõtmiste ajalugu ja selgitused</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Source history, team comparisons, calculations, AI questions and feedback are available
-            below when you need to investigate a specific observation.
+            Allpool saad võrrelda nädalate mõõtmisi, uurida tiimide muutusi ja kontrollida allikate katvust.
           </p>
         </div>
         <button
@@ -560,7 +516,7 @@ export default function LatestBrief() {
           onClick={() => setShowDetailedEvidence((open) => !open)}
           className="rounded-md border border-slate-300 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white"
         >
-          {showDetailedEvidence ? 'Hide detailed evidence' : 'Explore detailed evidence'}
+          {showDetailedEvidence ? 'Peida üksikasjad' : 'Näita üksikasju'}
         </button>
       </div>
 
@@ -630,6 +586,8 @@ export default function LatestBrief() {
           </section>
 
           <ReportTrendExplorer brief={brief} />
+
+          {canRefresh && <WeeklyWorkReviewPanel />}
 
           {brief.reportMode === 'setup' ? (
             <section className="app-dashboard-section">
