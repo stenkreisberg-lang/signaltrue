@@ -31,8 +31,13 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
   const calendarEvents = matchedEvents.filter(e =>
     e.eventType === 'meeting' ||
     (e.eventType === 'meet_started' && calendarEventSources.includes(e.source)));
+  // Match computeMessagingMetrics exactly. In particular, its current
+  // implementation includes every event from a messaging source, even when
+  // that event has a different type. The audit should expose any such
+  // unexpected rows rather than silently narrow the denominator.
+  const messagingSources = ['microsoft-teams', 'slack', 'google-chat'];
   const messageEvents = matchedEvents.filter(e =>
-    ['microsoft-teams','slack','google-chat'].includes(e.source) && e.eventType === 'message');
+    messagingSources.includes(e.source) || e.eventType === 'message');
   const meeting = calendarEvents.length ? computeMeetingMetrics(calendarEvents, day, workSchedule) : {};
   const messaging = messageEvents.length ? computeMessagingMetrics(messageEvents, day, workSchedule) : {};
   const checks = trackedFields.map(([field, metric, source, tolerance]) => {
@@ -58,7 +63,13 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
       calendarRows: calendarEvents.length,
       teamsOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-teams').length,
       outlookOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-outlook').length,
+      otherOriginMeetingRows: calendarEvents.filter(e =>
+        !['microsoft-outlook', 'microsoft-teams'].includes(e.source)).length,
+      otherMeetingSources: [...new Set(calendarEvents
+        .filter(e => !['microsoft-outlook', 'microsoft-teams'].includes(e.source))
+        .map(e => e.source))].sort(),
       messagingRows: messageEvents.length,
+      nonMessageRowsInMessagingSource: messageEvents.filter(e => e.eventType !== 'message').length,
       actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
       actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
     },
