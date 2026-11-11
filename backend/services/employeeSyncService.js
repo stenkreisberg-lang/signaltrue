@@ -1,4 +1,5 @@
 import { WebClient } from '@slack/web-api';
+import mongoose from 'mongoose';
 import User from '../models/user.js';
 import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
@@ -273,8 +274,13 @@ function resolveDirectoryTeam(msUser, mapping) {
 }
 
 export async function refreshTeamSizes(orgId, minimumTeamSize) {
+  // Mongoose does not cast aggregation pipelines. Passing a string ObjectId
+  // silently matches zero employees and can disable every team's analytics.
+  const scopeId = mongoose.isValidObjectId(orgId)
+    ? new mongoose.Types.ObjectId(String(orgId))
+    : orgId;
   const counts = await User.aggregate([
-    { $match: { orgId, accountStatus: { $ne: 'inactive' } } },
+    { $match: { orgId: scopeId, accountStatus: { $ne: 'inactive' } } },
     { $group: { _id: '$teamId', count: { $sum: 1 } } },
   ]);
   const countByTeam = new Map(counts.map((entry) => [String(entry._id), entry.count]));
