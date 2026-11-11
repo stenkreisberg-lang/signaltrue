@@ -1,0 +1,27 @@
+name: One-time patched Mongoose lockfile
+on:
+  push:
+    branches:
+      - fix/tehnopol-roster-readiness-20261111
+permissions:
+  contents: write
+jobs:
+  patch-mongoose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Regenerate backend lockfile with patched Mongoose 9.x
+        run: npm --prefix backend install 'mongoose@^9.12.1' --save --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile on this feature branch
+        run: |
+          git config user.name 'signaltrue-security-bot'
+          git config user.email 'format@signaltrue.ai'
+          git add backend/package.json backend/package-lock.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'fix(security): update Mongoose and backend lockfile'
+          git push origin HEAD:fix/tehnopol-roster-readiness-20261111
