@@ -288,7 +288,7 @@ export async function refreshTeamSizes(orgId, minimumTeamSize) {
           isActive: true,
           'metadata.actualSize': actualSize,
           // Sensitive analytics keep their independent group-size gate.
-          analyticsEnabled: actualSize >= Math.max(8, minimumTeamSize),
+          analyticsEnabled: actualSize >= minimumTeamSize,
           operationalTeamEligible: actualSize >= Math.max(2, minimumTeamSize),
         },
       });
