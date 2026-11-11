@@ -120,6 +120,18 @@ export async function reconcileTehnopolTeamsSenderIdentities() {
         summary[classification]++;
         const filter = { ...missing, 'metadata.microsoftUserId': id };
         if (matchedUser?.teamId) {
+          // Persist the verified directory ID for future ingestion. Only an
+          // existing active employee with the same exact company email and
+          // no conflicting Microsoft ID may acquire this mapping.
+          await User.updateOne({
+            _id: matchedUser._id, orgId: org._id,
+            $or: [
+              { 'externalIds.microsoftUserId': { $exists: false } },
+              { 'externalIds.microsoftUserId': null },
+              { 'externalIds.microsoftUserId': '' },
+              { 'externalIds.microsoftUserId': id },
+            ],
+          }, { $set: { 'externalIds.microsoftUserId': id } });
           const applied = await WorkEvent.updateMany(filter,
             { $set: { actorUserId: matchedUser._id, teamId: matchedUser.teamId,
               'metadata.senderIdentityClass': classification } });
