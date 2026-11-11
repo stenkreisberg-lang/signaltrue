@@ -4,6 +4,7 @@
  * as the dashboard. Private PNGs are embedded with Content-ID; no external chart API.
  */
 import { createTrendPng } from './weeklyChartPng.js';
+import { renderVisualWeeklyEmail as renderEnglishEmail, renderVisualWeeklyEmailPackage as renderEnglishPackage } from './visualWeeklyEmailServiceEnglish.js';
 import { buildHRReportPresentation, formatHRValue } from './weeklyReportPresentationService.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -228,9 +229,11 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
     '</td></tr></table></td></tr></table></body></html>';
 }
 export function renderVisualWeeklyEmail(snapshot, trends, options = {}) {
+  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishEmail(snapshot, trends, options);
   return buildEmail(snapshot, trends, options);
 }
 export function renderVisualWeeklyEmailPackage(snapshot, trends, options = {}) {
+  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishPackage(snapshot, trends, options);
   const metrics = snapshot?.metrics || [];
   const eligible = PRIORITY.map(key => metricByKey(metrics, key)).filter(isAvailable);
   const historical = savedEmailTrends(snapshot, trends);
