@@ -1,0 +1,30 @@
+name: Temporary P2 formatter
+on:
+  pull_request:
+    types: [synchronize]
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  format-p2:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/tehnopol-p0-p1-evidence-20261111' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx prettier --write src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx
+      - run: |
+          git config user.name signaltrue-formatter
+          git config user.email format@signaltrue.ai
+          git add src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: format P2 report screens'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
