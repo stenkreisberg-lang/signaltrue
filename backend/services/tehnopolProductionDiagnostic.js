@@ -160,9 +160,10 @@ export async function logTehnopolProductionDiagnostic() {
         snapshotDay.setUTCHours(0, 0, 0, 0);
         const lookback = new Date(snapshotDay.getTime() - 6 * 86400000);
         const end = new Date(snapshotDay.getTime() + 86400000);
-        const query = { orgId,
-          source: { $in: ['microsoft-outlook', 'microsoft-teams'] },
-          timestamp: { $gte: lookback, $lt: end } };
+        // Report-wide snapshots include every stored eligible integration.
+        // Querying only Outlook and Teams can manufacture a discrepancy when
+        // older calendar or collaboration adapters contributed to the rollup.
+        const query = { orgId, timestamp: { $gte: lookback, $lt: end } };
         const eventLimit = 15000;
         const eventTotal = await WorkEvent.countDocuments(query);
         if (eventTotal <= eventLimit) {
