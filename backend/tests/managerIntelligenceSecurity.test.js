@@ -25,7 +25,13 @@ describe('manager assignment authorization invariant',()=>{
   expect(validateTeamPermission({...valid,user:{...valid.user,accountStatus:'inactive'}})).toBe(false);
   expect(validateTeamPermission({...valid,team:{...valid.team,analyticsEnabled:false}})).toBe(false);
  });
- test('one-time secret is generated with enough entropy and stored as a digest',()=>{
+ test('HR-verified structure immediately removes access from a former manager',()=>{
+  const hrStructure = {source:'hr',verifiedAt:new Date('2026-10-25'),managerUserId:person};
+  expect(validateTeamPermission({...valid,team:{...valid.team,structure:hrStructure}})).toBe(true);
+  expect(validateTeamPermission({...valid,team:{...valid.team,structure:{...hrStructure,managerUserId:'507f191e810c19729de86099'}}})).toBe(false);
+  expect(validateTeamPermission({...valid,team:{...valid.team,structure:{...hrStructure,verifiedAt:null}}})).toBe(false);
+ });
+  test('one-time secret is generated with enough entropy and stored as a digest',()=>{
   const a=secureToken(),b=secureToken();
   expect(a).not.toBe(b);
   expect(a.length).toBeGreaterThan(40);

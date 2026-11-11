@@ -155,8 +155,19 @@ const catchAll = name => /^(unassigned|general|other|default|no[ -]?team)$/i.tes
 
 // Requiring a minimum number of DISTINCT mapped actors in each displayed week
 // prevents an undersized team becoming identifiable when members leave or sync drops.
+export const TEAM_TREND_DIMENSIONS = Object.freeze([
+  { key: 'meetingsPerRepresentedPerson', label: 'Meetings per calendar participant', unit: 'meetings/person' },
+  { key: 'meetingHoursPerRepresentedPerson', label: 'Meeting participant-hours per person', unit: 'hours/person' },
+  { key: 'messagesPerRepresentedPerson', label: 'Messages per messaging participant', unit: 'messages/person' },
+  { key: 'afterHoursPct', label: 'After-hours messaging', unit: '%' },
+  { key: 'focusHoursPerRepresentedPerson', label: 'Uninterrupted calendar availability per person', unit: 'hours/person' },
+  { key: 'recurringLoadPct', label: 'Recurring meeting share', unit: '%' },
+  { key: 'calendarFragmentation', label: 'Calendar fragmentation index', unit: '/100' },
+]);
+
 export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, actorsByWeek,
-  minimumGroupSize = 2, now = new Date(), anchorDay = 0, availability = {} }) {
+  calendarActorsByWeek = null, messagingActorsByWeek = null,
+  minimumGroupSize = 2, now = new Date(), anchorDay = 0 }) {
   const floor = Math.max(2, Number(minimumGroupSize) || 2);
   const allRecords = normalizeRecords(records).filter(r => r.teamId && !r.userId);
   const results = [];
@@ -165,30 +176,67 @@ export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, ac
     const members = activeMemberCounts[key] || 0;
     if (team.isActive === false || team.analyticsEnabled === false || catchAll(team.name) ||
       members < floor || (Number(team.metadata?.actualSize) > 0 && team.metadata.actualSize < floor)) continue;
-    const teamRecords = allRecords.filter(r => id(r.teamId) === key);
+    const rawTeamRecords = allRecords.filter(r => id(r.teamId) === key);
+    // Do not mix the old calculation window with corrected rolling-seven-day snapshots.
+    const corrected = rawTeamRecords.some(r => r.calculationWindowVersion === 'rolling7-calendar-days-v2');
+    const teamRecords = corrected
+      ? rawTeamRecords.filter(r => r.calculationWindowVersion === 'rolling7-calendar-days-v2')
+      : rawTeamRecords;
     const weekly = buildWeekly(teamRecords, now, anchorDay, 26, (_record, weekStart) =>
       (actorsByWeek[key + ':' + dayKey(weekStart)] || 0) >= floor);
     const normalized = weekly.map(p => {
       const actors = actorsByWeek[key + ':' + p.date] || 0;
-      const allowed = actors >= floor && p.measured;
-      return { ...p, actors: allowed ? actors : null,
-        meetingsPerRepresentedPerson: allowed && Number.isFinite(p.meetings) ? fixed(p.meetings / actors, 2) : null };
+      const calendar = (calendarActorsByWeek || actorsByWeek)[key + ':' + p.date] || 0;
+      const messaging = (messagingActorsByWeek || actorsByWeek)[key + ':' + p.date] || 0;
+      const eligible = actors >= floor && p.measured;
+      const eligibleCalendar = eligible && calendar >= floor;
+      const eligibleMessaging = eligible && messaging >= floor;
+      return {
+        ...p,
+        actors: eligible ? actors : null,
+        calendarActors: eligibleCalendar ? calendar : null,
+        messagingActors: eligibleMessaging ? messaging : null,
+        meetingsPerRepresentedPerson: eligibleCalendar && Number.isFinite(p.meetings)
+          ? fixed(p.meetings / calendar, 2) : null,
+        meetingHoursPerRepresentedPerson: eligibleCalendar && Number.isFinite(p.meeting_hours)
+          ? fixed(p.meeting_hours / calendar, 2) : null,
+        messagesPerRepresentedPerson: eligibleMessaging && Number.isFinite(p.messages)
+          ? fixed(p.messages / messaging, 2) : null,
+        afterHoursPct: eligibleMessaging ? p.after_hours : null,
+        focusHoursPerRepresentedPerson: eligibleCalendar && Number.isFinite(p.focus_time)
+          ? fixed(p.focus_time / calendar, 2) : null,
+        recurringLoadPct: eligibleCalendar ? p.recurring_load : null,
+        calendarFragmentation: eligibleCalendar ? p.fragmentation : null,
+      };
     });
-    const visible = normalized.filter(p => p.meetingsPerRepresentedPerson != null);
-    // Existing observed periods are useful without pretending that four
-    // historical weeks exist. Never manufacture missing samples.
-    if (visible.length === 0) continue;
-    const recent = visible.at(-1)?.meetingsPerRepresentedPerson ?? null;
-    const preceding = visible.slice(0, -1).map(p => p.meetingsPerRepresentedPerson).filter(Number.isFinite);
-    const base = preceding.length >= 4 ? sortedMedian(preceding) : null;
-    results.push({ id: key, name: displayName(team.name), population: members,
+    const metricSummaries = Object.fromEntries(TEAM_TREND_DIMENSIONS.map(dimension => {
+      const current = normalized.at(-1)?.[dimension.key] ?? null;
+      // The baseline is the six immediately preceding comparable weekly periods.
+      // Four measured periods are required; older isolated data are not silently substituted.
+      const history = normalized.slice(-7, -1).map(p => p[dimension.key]).filter(Number.isFinite);
+      const baseline = history.length >= 4 ? sortedMedian(history) : null;
+      const rawChange = baseline > 0 && Number.isFinite(current)
+        ? (current - baseline) / baseline * 100 : null;
+      const changePct = rawChange != null && Math.abs(rawChange) <= 500 ? fixed(rawChange) : null;
+      return [dimension.key, {
+        current, baseline: baseline == null ? null : fixed(baseline, 2),
+        changePct, comparablePeriods: history.length, unit: dimension.unit,
+        verifiedComparison: changePct != null,
+      }];
+    }));
+    const hasMeasuredData = normalized.some(p =>
+      TEAM_TREND_DIMENSIONS.some(d => Number.isFinite(p[d.key])));
+    if (!hasMeasuredData) continue;
+    const primary = metricSummaries.meetingsPerRepresentedPerson;
+    results.push({
+      id: key, name: displayName(team.name), population: members,
       latestRepresented: normalized.at(-1)?.actors || null, points: normalized,
-      current: recent, baseline: base == null ? null : fixed(base, 2),
-      changePct: base > 0 ? fixed((recent - base) / base * 100) : null,
-      metric: 'meetingsPerRepresentedPerson',
-      note: 'Recorded team meeting instances divided by distinct mapped actors that week. This is not individual meeting attendance.' });
+      current: primary.current, baseline: primary.baseline, changePct: primary.changePct,
+      metric: 'meetingsPerRepresentedPerson', metricSummaries,
+      note: 'Team-level observations with source-specific mapped contributors. No individual scores; missing periods are gaps.',
+    });
   }
-  return results.sort((a, b) => Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0)).slice(0, 12);
+  return results.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
 }
 export function buildTimelineAnnotations({ contexts = [], interventions = [], teams = [], now = new Date() }) {
   const events = (contexts || []).filter(c => !c.teamId && c.tag).map(c => ({
@@ -264,18 +312,39 @@ export async function getReportTrendSeries(orgId, now = new Date(), { includeTea
     User.aggregate([{ $match: { orgId: scopedOrgId, accountStatus: { $ne: 'inactive' }, teamId: { $ne: null } } },
       { $group: { _id: '$teamId', count: { $sum: 1 } } }]),
     WorkEvent.aggregate([{ $match: { orgId: scopedOrgId, timestamp: { $gte: start, $lte: now }, teamId: { $ne: null }, actorUserId: { $ne: null } } },
-      { $group: { _id: { team: '$teamId', week: { $dateTrunc: { date: '$timestamp', unit: 'week', startOfWeek: actorWeekStart, timezone: 'UTC' } } }, actors: { $addToSet: '$actorUserId' } } },
-      { $project: { active: { $size: '$actors' } } }]),
+      { $group: {
+        _id: { team: '$teamId', week: { $dateTrunc: { date: '$timestamp', unit: 'week', startOfWeek: actorWeekStart, timezone: 'UTC' } } },
+        actors: { $addToSet: '$actorUserId' },
+        calendarActors: { $addToSet: { $cond: [
+          { $and: [{ $eq: ['$eventType', 'meeting'] }, { $in: ['$source', ['microsoft-outlook', 'google-calendar', 'microsoft-teams']] }] },
+          '$actorUserId', null,
+        ] } },
+        messagingActors: { $addToSet: { $cond: [
+          { $and: [{ $eq: ['$eventType', 'message'] }, { $in: ['$source', ['microsoft-teams', 'slack', 'google-chat']] }] },
+          '$actorUserId', null,
+        ] } },
+      } },
+      { $project: {
+        active: { $size: '$actors' },
+        calendar: { $size: { $setDifference: ['$calendarActors', [null]] } },
+        messaging: { $size: { $setDifference: ['$messagingActors', [null]] } },
+      } }]),
     Intervention.find({ orgId: scopedOrgId, source: { $ne: 'manager_coaching' }, privateToManager: { $ne: true },
       startDate: { $gte: start, $lte: now } }).select('teamId title interventionType startDate reviewDate recheckDate targetMetric expectedEffect successCriterion outcomeDelta reviews privateToManager').limit(100).lean(),
   ]);
   const memberCounts = Object.fromEntries(members.map(m => [id(m._id), m.count]));
-  const actorsByWeek = Object.fromEntries(actors.map(a => {
+  const cohortWeekKey = a => {
     const endDate = new Date(new Date(a._id.week).getTime() + 6 * DAY);
-    return [id(a._id.team) + ':' + dayKey(monday(endDate)), a.active];
-  }));
-  const eligible = buildEligibleTeamTrends({ records, teams, activeMemberCounts: memberCounts, actorsByWeek, minimumGroupSize: floor,
-    now, anchorDay: org.anchorDay });
+    return id(a._id.team) + ':' + dayKey(monday(endDate));
+  };
+  const actorsByWeek = Object.fromEntries(actors.map(a => [cohortWeekKey(a), a.active]));
+  const calendarActorsByWeek = Object.fromEntries(actors.map(a => [cohortWeekKey(a), a.calendar]));
+  const messagingActorsByWeek = Object.fromEntries(actors.map(a => [cohortWeekKey(a), a.messaging]));
+  const eligible = buildEligibleTeamTrends({
+    records, teams, activeMemberCounts: memberCounts, actorsByWeek,
+    calendarActorsByWeek, messagingActorsByWeek,
+    minimumGroupSize: floor, now, anchorDay: org.anchorDay,
+  });
   return { ...org, teams: eligible, annotations: buildTimelineAnnotations({ contexts, interventions, teams: eligible, now }),
     privacy: { minimumGroupSize: floor, visibleTeams: eligible.length,
       note: 'Only team-week observations with at least the privacy minimum of distinct mapped actors appear. Suppressed groups are omitted entirely.' } };

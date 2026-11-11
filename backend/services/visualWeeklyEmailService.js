@@ -4,6 +4,8 @@
  * as the dashboard. Private PNGs are embedded with Content-ID; no external chart API.
  */
 import { createTrendPng } from './weeklyChartPng.js';
+import { renderVisualWeeklyEmail as renderEnglishEmail, renderVisualWeeklyEmailPackage as renderEnglishPackage } from './visualWeeklyEmailServiceEnglish.js';
+import { buildHRReportPresentation, formatHRValue } from './weeklyReportPresentationService.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -147,88 +149,103 @@ function outcomeSection(snapshot) {
     (a.outcome?.result ? '<br>Observed: ' + esc(a.outcome.result) : '<br>Review not yet verified') +
     '</p>').join('') + mild('Observed post-action changes are associations, not causal proof.'));
 }
+// Use frozen, saved historical points whenever present. An email should not
+// attach a newer live chart to an older report snapshot.
+export function savedEmailTrends(snapshot, fallback = null) {
+  if (!Array.isArray(snapshot?.trend) || snapshot.trend.length === 0) return fallback;
+  return {
+    weekly: snapshot.trend.map((point) => ({
+      date: point.weekStart || point.date,
+      meeting_hours: point.meetingHours ?? null,
+      messages: point.messagesPerPerson ?? null,
+      after_hours: point.afterHoursPct ?? null,
+      focus_time: point.focusHours ?? null,
+      meetings: point.meetings ?? null,
+      fragmentation: point.fragmentation ?? null,
+    })),
+    insights: [],
+  };
+}
+
 function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', embeddedKeys = [] } = {}) {
   if (!snapshot) throw new Error('Weekly snapshot unavailable');
-  const metrics = snapshot.metrics || [];
-  const eligible = PRIORITY.map(key => metricByKey(metrics, key)).filter(isAvailable);
-  const headline = eligible.slice(0, 3);
-  const chartKeys = eligible.filter(m => HIST_KEYS[m.key] &&
-    (trends?.weekly || []).slice(-8).filter(pt => Number.isFinite(pt?.[HIST_KEYS[m.key]])).length >= 3)
-    .slice(0, 3);
-  const overview = headline.length ? '<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>' +
-    headline.map(metricCard).join('') + '</tr></table>' : p('No reliable work-pattern metrics are available. IT should inspect the source coverage.');
-  const actionable = snapshot.actions?.primary;
-  const action = actionable?.action ||
-    (snapshot.signals || []).find(item => item?.action)?.action ||
-    'Review source coverage and validate the reported change with the relevant team before changing work arrangements.';
-  const label = (snapshot.signals || []).length
-    ? 'Changes that deserve review'
-    : 'Weekly evidence overview';
-  const gapCount = metrics.filter(m => !isAvailable(m)).length;
-  const coverage = snapshot.coverage || {};
-  const coverageText = (coverage.mappedUsers == null || coverage.totalUsers == null)
-    ? 'Coverage denominator not available'
-    : coverage.mappedUsers + ' / ' + coverage.totalUsers + ' active accounts represented';
-  const url = esc(String(appUrl).replace(/\/$/, '') + '/app/latest-brief');
-  return '<!doctype html><html lang="en"><body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#10223a;">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:16px 7px;">' +
-    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;">' +
-    '<tr><td style="background:#10223a;padding:24px 20px;color:white;">' +
-    '<div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#93c5fd;">SIGNALTRUE · WORK-PATTERN EVIDENCE</div>' +
-    '<h1 style="font-size:23px;line-height:1.25;margin:10px 0 5px;color:white;">' + esc(snapshot.orgName) + '</h1>' +
-    '<div style="font-size:12px;color:#cbd5e1;">Completed period ' +
-    esc(localDay(snapshot.periodStart, snapshot.reportTimeZone)) + ' – ' +
-    esc(localDay(new Date(snapshot.periodEnd).getTime() - 1, snapshot.reportTimeZone)) +
-    '</div></td></tr>' +
-    '<tr><td style="padding:20px 16px;">' +
-    '<div style="font-size:12px;color:#64748b;font-weight:bold;">THE ONE-MINUTE READ</div>' +
-    '<h2 style="font-size:19px;margin:7px 0 5px;color:#10223a;">' + esc(label) + '</h2>' +
-    mild('Evidence grade: ' + (snapshot.status?.evidenceGrade || 'not assessed') + '. ' +
-      coverageText + '. ' + gapCount + ' measurements require additional verification. ' +
-      'This report measures work patterns, not employee wellbeing or performance.') +
-    overview + signalCards(snapshot.signals) +
-    section('What to do next',
-      p(action) +
-      mild('Owner: ' + (actionable?.owner || 'HR / relevant team lead') +
-        '. Review: ' + (actionable?.reviewWindow || 'agree a 14-day check') +
-        '. Verify context and record any intervention before concluding what caused a change.')) +
-    chartKeys.map(m => chartSection(m, trends, HIST_KEYS[m.key], embeddedKeys.includes(m.key))).join('') +
-    teamSection(snapshot) + outcomeSection(snapshot) +
-    section('Team coverage and missing evidence', (snapshot.teamReadiness || []).length
-      ? '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">' +
-        snapshot.teamReadiness.map(team =>
-          '<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 2px;font-size:11px;color:#334155;">' +
-          esc(team.teamName) + '</td><td align="right" style="border-bottom:1px solid #e2e8f0;padding:6px 2px;font-size:11px;color:#475569;">' +
-          esc(team.status) + '</td></tr>' +
-          (team.reason ? '<tr><td colspan="2" style="padding:2px 2px 6px;color:#64748b;font-size:10px;">' +
-          esc(team.reason) + '</td></tr>' : '')).join('') + '</table>'
-      : p('Team coverage diagnostics have not been provided yet. No team-level conclusion can be inferred.')) +
-    section('Full measurement inventory', evidenceTable(metrics) +
-      mild('Unavailable means missing, insufficient or inconsistent observations, not a measured zero. ' +
-        'Calendar availability does not prove focused work or rest. Source mapping and team privacy rules apply.')) +
-    (snapshot.dataQuality?.anomalies?.length ?
-      section('Measurement warnings', (snapshot.dataQuality.anomalies || []).slice(0, 4)
-        .map(a => p(a.text || a.kind)).join('')) : '') +
-    '<table role="presentation" width="100%" style="margin-top:18px;"><tr><td align="center" style="background:#10223a;padding:15px;">' +
-    '<a href="' + url + '" style="color:white;font-size:13px;font-weight:bold;text-decoration:none;">Explore the dashboard: 1W · 1M · 3M · 6M</a>' +
+  const view = buildHRReportPresentation(snapshot);
+  const sharedTrends = savedEmailTrends(snapshot, trends);
+  const rows = view.metrics.map(m => {
+    const change = m.comparable
+      ? (m.delta > 0 ? '+' : '') + formatHRValue({ unit: m.unit }, m.delta)
+      : 'Võrdlus puudub';
+    return '<td style="padding:7px;vertical-align:top;width:50%;">' +
+      '<div style="border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;padding:13px;">' +
+      '<div style="font-size:12px;font-weight:bold;color:#475569;">' + esc(m.short) + '</div>' +
+      '<div style="font-size:25px;font-weight:bold;color:#14253b;margin:8px 0;">' +
+      esc(m.available ? formatHRValue(m) : 'Andmed puuduvad') + '</div>' +
+      '<div style="font-size:11px;color:#475569;">' + esc(change) + '</div>' +
+      '</div></td>';
+  });
+  const metricsGrid = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+    '<tr>' + rows.slice(0, 2).join('') + '</tr><tr>' + rows.slice(2).join('') + '</tr></table>';
+  const provenance = view.metrics.map(m =>
+    '<tr><td style="padding:8px 4px;border-bottom:1px solid #e2e8f0;font-size:11px;color:#334155;">' +
+    esc(m.label) + '</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #e2e8f0;font-size:11px;color:#64748b;">' +
+    esc(m.source) + ' · ' + esc(m.mappedUsers == null ? 'katvus puudub' : m.mappedUsers + '/' + (m.totalUsers ?? '?')) +
+    '</td></tr>').join('');
+  const baseUrl = String(appUrl).endsWith('/') ? String(appUrl).slice(0, -1) : String(appUrl);
+  const reportUrl = esc(baseUrl + '/app/latest-brief');
+  const trendMetric = (snapshot.metrics || []).find(m => m.key === 'meeting_hours');
+  const chart = trendMetric && trendMetric.available
+    ? chartSection(trendMetric, sharedTrends, 'meeting_hours', embeddedKeys.includes('meeting_hours')) : '';
+  const next = 'Uuri olulist muutust tiimiga ja pane kokkulepitud tegevus koos kontrollkuupäevaga kirja.';
+  return '<!doctype html><html lang="et"><body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#14253b;">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:20px 8px;">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:white;border-radius:12px;">' +
+    '<tr><td style="padding:24px;background:#14253b;color:white;">' +
+    '<div style="font-size:11px;font-weight:bold;color:#9ee1d0;">SIGNALTRUE</div>' +
+    '<h1 style="font-size:23px;line-height:1.3;margin:10px 0 5px;color:white;">Nädala töökorralduse ülevaade</h1>' +
+    '<div style="font-size:12px;color:#cbd5e1;">' + esc(view.orgName) + ' · ' +
+    esc(localDay(view.periodStart, snapshot.reportTimeZone)) + ' – ' +
+    esc(localDay(new Date(view.periodEnd).getTime() - 1, snapshot.reportTimeZone)) +
+    ' · ' + esc(view.version) + '</div></td></tr>' +
+    '<tr><td style="padding:20px;">' +
+    '<h2 style="font-size:17px;color:#14253b;margin:0 0 8px;">Mis töökorralduses muutus?</h2>' +
+    p(view.description) +
+    (view.sourceWarning ? '<p style="margin:12px 0;padding:10px;background:#fffbeb;color:#92400e;font-size:12px;">' +
+      esc(view.sourceWarning) + '</p>' : '') +
+    '<div style="margin-top:14px;">' + metricsGrid + '</div>' +
+    section('Mida järgmisena kontrollida?', p(next) +
+      mild('Põhjus selgub pärast allikate ja tiimi tööolukorra kontrolli. Sõnumite arv ei näita töö tulemuslikkust.')) +
+    chart +
+    section('Mõõdikute allikad ja katvus', '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">' +
+      provenance + '</table>') +
+    (view.actionOutcomes.length
+      ? section('Varasemate tegevuste järelkontroll', view.actionOutcomes.slice(0, 3).map(a =>
+          p((a.title || 'Kokkulepitud tegevus') + ': ' +
+            (a.outcome?.result || 'mõõdetud tulemus puudub'))).join(''))
+      : '') +
+    '<table role="presentation" width="100%" style="margin-top:20px;"><tr><td align="center" style="background:#14253b;padding:15px;">' +
+    '<a href="' + reportUrl + '" style="font-weight:bold;color:white;text-decoration:none;">Ava sama aruande mõõtmised ja tegevused</a>' +
     '</td></tr></table>' +
-    mild('The report is generated from validated aggregate observations. The dashboard provides source, coverage and team-level context where authorised.') +
+    mild('Aruande versioon ' + view.version + '. Töölaua numbrid, HR PDF ja see e-kiri pärinevad samast salvestatud aruandest. Järelkontroll ei tõenda üksinda põhjuslikku seost.') +
     '</td></tr></table></td></tr></table></body></html>';
 }
 export function renderVisualWeeklyEmail(snapshot, trends, options = {}) {
+  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishEmail(snapshot, trends, options);
   return buildEmail(snapshot, trends, options);
 }
 export function renderVisualWeeklyEmailPackage(snapshot, trends, options = {}) {
+  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishPackage(snapshot, trends, options);
   const metrics = snapshot?.metrics || [];
   const eligible = PRIORITY.map(key => metricByKey(metrics, key)).filter(isAvailable);
+  const historical = savedEmailTrends(snapshot, trends);
   const embeddedKeys = [];
   const attachments = [];
   for (const metric of eligible) {
-    if (attachments.length >= 3) break;
+    if (attachments.length >= 1) break;
+    if (metric.key !== 'meeting_hours') continue;
     const key = HIST_KEYS[metric.key];
     if (!key) continue;
-    const history = (trends?.weekly || []).slice(-8);
-    const reference = (trends?.insights || []).find(item => item.metric === key)?.baseline ?? metric.baseline;
+    const history = (historical?.weekly || []).slice(-8);
+    const reference = (historical?.insights || []).find(item => item.metric === key)?.baseline ?? metric.baseline;
     const png = createTrendPng(history, key, { baseline: Number.isFinite(reference) ? reference : null });
     if (!png) continue;
     embeddedKeys.push(metric.key);
@@ -239,5 +256,5 @@ export function renderVisualWeeklyEmailPackage(snapshot, trends, options = {}) {
       content_type: 'image/png',
     });
   }
-  return { html: buildEmail(snapshot, trends, { ...options, embeddedKeys }), attachments };
+  return { html: buildEmail(snapshot, historical, { ...options, embeddedKeys }), attachments };
 }
