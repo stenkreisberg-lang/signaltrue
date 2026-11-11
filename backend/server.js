@@ -195,6 +195,8 @@ import { prepareTehnopolManagerScopes } from './services/tehnopolManagerPreparat
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
+import { reconcileTehnopolTeamsSenderIdentities } from './services/tehnopolSenderIdentityReconciliation.js';
+import { computeDailyMetrics } from './services/integrationMetricsService.js';
 import { repairTehnopolNovemberSnapshot } from './services/tehnopolSnapshotParityRepair.js';
 import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
 
@@ -257,6 +259,28 @@ async function main() {
               console.error('[TehnopolRecovery] Unexpected recovery or parity job error');
             });
         }, 35_000);
+        // Classify currently unmatched Teams senders using Graph directory
+        // metadata, without guessing identities or reading message bodies.
+        // The job is idempotent and never grants access or sends emails.
+        setTimeout(() => {
+          void reconcileTehnopolTeamsSenderIdentities()
+            .then(async (result) => {
+              if (result.matchedInternalEvents > 0) {
+                // Exact provider-verified mappings changed team attribution.
+                // Refresh the seven closed UTC days and saved HR brief.
+                const today = new Date();
+                today.setUTCHours(0, 0, 0, 0);
+                for (let offset = 7; offset >= 1; offset--) {
+                  const day = new Date(today.getTime() - offset * 86400000);
+                  await computeDailyMetrics(TEHNOPOL_CANONICAL_ORG_ID, day);
+                }
+                await generateWeeklyBrief(TEHNOPOL_CANONICAL_ORG_ID);
+              }
+              await logTehnopolProductionDiagnostic();
+            })
+            .catch((err) => console.error(
+              '[TehnopolSenderReconciliation] Unexpected failure:', err.message));
+        }, 240_000);
         // One-off historical calculation correction after the rolling 7-day fix.
         // Resumable in MongoDB, does not send emails or expose client measurements.
         setTimeout(() => {
