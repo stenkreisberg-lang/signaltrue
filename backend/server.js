@@ -222,8 +222,14 @@ async function main() {
         await repairTehnopolCanonicalOrganization();
         // HR-approved manager scopes are prepared as pending only.
         // No invitations, access grants, exports or customer emails.
-        const managerPreparation = await prepareTehnopolManagerScopes();
-        console.log('[TehnopolManagerPreparation]', JSON.stringify(managerPreparation));
+        try {
+          const managerPreparation = await prepareTehnopolManagerScopes();
+          console.log('[TehnopolManagerPreparation]', JSON.stringify(managerPreparation));
+        } catch (error) {
+          // Do not take down customer reporting because invitation preparation failed.
+          // A failed preparation never grants manager access.
+          console.error('[TehnopolManagerPreparation] Failed:', error.message);
+        }
         await logTehnopolProductionDiagnostic();
         // The one-time canonical data repair/backfill was completed on 2026-10-06.
         // On startup, refresh only the saved HR dashboard brief from the canonical data.
