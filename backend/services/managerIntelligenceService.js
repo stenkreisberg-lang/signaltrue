@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
+import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import WorkEvent from '../models/workEvent.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
@@ -54,6 +55,62 @@ export async function assertScopedManager(req, teamId) {
 export async function managerAudit({ orgId, actorUserId, managerUserId, teamId, assignmentId, action }) {
   await ManagerAuditEvent.create({ orgId, actorUserId, managerUserId, teamId, assignmentId, action });
 }
+/**
+ * Observed-only team activity. Never use Mongoose default zeroes as proof that
+ * an integration produced measurements. Seven-day results are deliberately
+ * marked partial unless all seven days contain verified source evidence.
+ */
+export function summarizeObservedTeamDays(daily = [], floor = 8) {
+  const eligible = daily.filter(day => Number(day.activePeopleCount) >= floor);
+  const calendar = eligible.filter(day =>
+    day.integrationCoverage?.hasCalendar && day.measurementEvidence?.calendarEventCount > 0);
+  const messaging = eligible.filter(day =>
+    day.integrationCoverage?.hasMessaging && day.measurementEvidence?.messagingEventCount > 0);
+  const sum = (days, get) => days.reduce((total, day) => total + Number(get(day) || 0), 0);
+  const value = (days, get, digits = 1) => days.length
+    ? Math.round(sum(days, get) * 10 ** digits) / 10 ** digits
+    : null;
+  const calendarEventCount = sum(calendar, d => d.measurementEvidence?.calendarEventCount);
+  const messagingEventCount = sum(messaging, d => d.measurementEvidence?.messagingEventCount);
+  const meetings = sum(calendar, d => d.calendar?.meetingCount);
+  const messages = sum(messaging, d => d.messaging?.messagesSentTotal);
+  const afterHoursMessages = sum(messaging, d =>
+    Number(d.messaging?.afterHoursMessageRatio || 0) * Number(d.messaging?.messagesSentTotal || 0));
+  return {
+    provenance: {
+      calendarObservedDays: calendar.length,
+      messagingObservedDays: messaging.length,
+      calendarEventCount,
+      messagingEventCount,
+      calendarComplete: calendar.length === 7,
+      messagingComplete: messaging.length === 7,
+      explanation: 'Observed calendar availability is not proven focus or actual work time. Missing source days are not counted as zero.',
+    },
+    metrics: [
+      { key: 'meeting_hours', label: 'Meeting hours per represented person',
+        value: value(calendar, d => d.calendar?.meetingHoursPerPerson), unit: 'hours',
+        observedDays: calendar.length, available: calendar.length > 0 },
+      { key: 'focus_availability', label: 'Uninterrupted calendar availability per represented person',
+        value: value(calendar, d => d.calendar?.focusHoursAvailablePerPerson), unit: 'hours',
+        observedDays: calendar.length, available: calendar.length > 0 },
+      { key: 'fragmented_days', label: 'Observed fragmented-day share',
+        value: calendar.length
+          ? Math.round(100 * sum(calendar, d => d.calendar?.fragmentedDayRatio) / calendar.length)
+          : null, unit: '%', observedDays: calendar.length, available: calendar.length > 0 },
+      { key: 'after_hours_meetings', label: 'After-hours meeting share',
+        value: meetings > 0
+          ? Math.round(100 * sum(calendar, d => d.calendar?.afterHoursMeetingCount) / meetings)
+          : null, unit: '%', observedDays: calendar.length, available: meetings > 0 },
+      { key: 'teams_messages', label: 'Observed team messages',
+        value: messaging.length ? messages : null, unit: 'events',
+        observedDays: messaging.length, available: messaging.length > 0 },
+      { key: 'after_hours_messages', label: 'After-hours message share',
+        value: messages > 0 ? Math.round(100 * afterHoursMessages / messages) : null,
+        unit: '%', observedDays: messaging.length, available: messages > 0 },
+    ],
+  };
+}
+
 export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 8 }) {
   const floor = Math.max(8, Number(minimum) || 8);
   const teamId = team._id;
@@ -100,13 +157,19 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
     actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
   if (!eligible) return { eligible:false, reason:'Not enough comparable, privacy-eligible weekly measurements', minimum:floor };
-  const [actions,contexts] = await Promise.all([
+  const observedStart = utcDay(new Date(now.getTime() - 7 * DAY));
+  const [actions,contexts,observedDaily] = await Promise.all([
     ManagerWorkAction.find({orgId,teamId}).select('title hypothesis metric direction baseline baselineWeek startDate due14 due28 status outcome14 outcome28 createdAt').sort({createdAt:-1}).limit(20).lean(),
-    ManagerTeamContext.find({orgId,teamId,weekStart:{$gte:start,$lte:now}}).select('weekStart tag note').sort({weekStart:-1}).limit(25).lean()
+    ManagerTeamContext.find({orgId,teamId,weekStart:{$gte:start,$lte:now}}).select('weekStart tag note').sort({weekStart:-1}).limit(25).lean(),
+    EngagementTeamDaily.find({orgId,teamId,date:{$gte:observedStart,$lt:utcDay(now)}})
+      .select('date activePeopleCount calendar messaging measurementEvidence integrationCoverage')
+      .sort({date:1}).lean(),
   ]);
+  const workPatternEvidence = summarizeObservedTeamDays(observedDaily, floor);
   // A single authorized team only. No organization array, no user data, no
   // neighboring teams, no individual actor information in response.
   return { eligible:true, teamId:asId(teamId), teamName:team.name, minimum:floor,
+    workPatternEvidence,
     methodology:eligible.note, metric:'meetingsPerRepresentedPerson',
     current:eligible.current, baseline:eligible.baseline, changePct:eligible.changePct,
     points:eligible.points.map(p=>({date:p.date,sampledOn:p.sampledOn,
