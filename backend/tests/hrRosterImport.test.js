@@ -91,6 +91,7 @@ describe('HR roster import', () => {
     const oldTeam = await Team.create({ name: 'Old Unit', orgId: org._id });
     const person = await User.create({
       email: 'person@sample.test', name: 'Ana Example', orgId: org._id,
+      password: 'synthetic-test-only-password',
       teamId: oldTeam._id, accountStatus: 'active', role: 'team_member',
     });
     const result = await importHrRosterRows(org._id, [{
