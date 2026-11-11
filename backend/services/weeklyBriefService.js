@@ -25,6 +25,7 @@ import { getReportTrendSeries } from './reportTrendService.js';
 import { renderVisualWeeklyEmail, renderVisualWeeklyEmailPackage } from './visualWeeklyEmailService.js';
 import { buildWeeklyBriefEnvelope } from './weeklyBriefDeliveryEnvelope.js';
 import { completedReportingWeek } from '../utils/reportingPeriods.js';
+import { evaluateCountComparability } from '../utils/periodComparability.js';
 import {
   ACTIONABILITY,
   determineActionability,
@@ -251,6 +252,7 @@ function pctChangeLabelSafe(curr, prev, { minBase = 1, minDelta = 0.05 } = {}) {
   if (Math.abs(prev) < minBase) {
     return Math.abs(curr) < minBase ? 'low volume' : curr > prev ? '↑ new' : '↓ to low';
   }
+  if (Math.abs(delta / prev) > 5) return 'Source coverage / baseline needs review';
   return pctChangeLabel(curr, prev);
 }
 function trendIcon(curr, prev, higherIsBad = true) {
@@ -338,17 +340,20 @@ function metricRow({
   denominator = null,
   display = null,
   statusKey = null,
+  comparison = { comparable: true, reason: null },
 }) {
   const safeCurrent = available ? roundValue(current, decimals) : null;
   const safePrevious = available ? roundValue(previous, decimals) : null;
   const safeBaseline = available ? roundValue(baseline, decimals) : null;
   let direction = 'neutral';
-  if (available && safeCurrent != null && safePrevious != null && safeCurrent !== safePrevious) {
+  if (available && comparison?.comparable !== false &&
+      safeCurrent != null && safePrevious != null && safeCurrent !== safePrevious) {
     const improved = higherIsBetter ? safeCurrent > safePrevious : safeCurrent < safePrevious;
     direction = improved ? 'intended' : 'review';
   }
   const changePct =
-    available && safePrevious != null && safePrevious !== 0 && safeCurrent != null
+    available && comparison?.comparable !== false &&
+      safePrevious != null && safePrevious !== 0 && safeCurrent != null
       ? roundValue(((safeCurrent - safePrevious) / Math.abs(safePrevious)) * 100, 0)
       : null;
 
@@ -362,6 +367,7 @@ function metricRow({
     available,
     direction,
     changePct,
+    comparisonReason: comparison?.comparable === false ? comparison.reason : null,
     higherIsBetter,
     measurementType,
     note,
@@ -711,7 +717,7 @@ export async function generateWeeklyBrief(orgId) {
     ]),
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: lastWeekStart, $lt: thisWeekStart } } },
-      { $group: { _id: { source: '$source', eventType: '$eventType' }, count: { $sum: 1 } } },
+      { $group: { _id: { source: '$source', eventType: '$eventType' }, count: { $sum: 1 }, mappedActors: { $addToSet: '$actorUserId' } } },
     ]),
     WorkEvent.aggregate([
       { $match: { orgId: org._id, timestamp: { $gte: sixWeekStart, $lt: thisWeekStart } } },
@@ -892,6 +898,20 @@ export async function generateWeeklyBrief(orgId) {
   let lwMeetings = getCountByType(lwEvents, 'meeting');
   const twMessages = getCountByType(twEvents, 'message');
   const lwMessages = getCountByType(lwEvents, 'message');
+  const sourceSetFor = (rows, eventType) =>
+    rows.filter((row) => row._id.eventType === eventType && row.count > 0)
+      .map((row) => row._id.source);
+  const contributorsFor = (rows, eventType) =>
+    new Set(rows.filter((row) => row._id.eventType === eventType)
+      .flatMap((row) => row.mappedActors || []).filter(Boolean).map(String)).size;
+  const messagingComparison = evaluateCountComparability({
+    current: twMessages,
+    previous: lwMessages,
+    currentSources: sourceSetFor(twEvents, 'message'),
+    previousSources: sourceSetFor(lwEvents, 'message'),
+    currentContributors: contributorsFor(twEvents, 'message'),
+    previousContributors: contributorsFor(lwEvents, 'message'),
+  });
   const twTotal = twEvents.reduce((s, e) => s + e.count, 0);
   const lwTotal = lwEvents.reduce((s, e) => s + e.count, 0);
   const sixWeekTotal = sixWeekEvents.reduce((s, e) => s + e.count, 0);
@@ -1979,7 +1999,13 @@ export async function generateWeeklyBrief(orgId) {
     sixWeekAvg, // per-person figures (matches "Workload detail" table rows)
     sixWeekRawAvg, // raw event counts (matches "Meetings"/"Messages" table rows)
     weeklyHistory, // real 6-week trend, oldest first
-    dataAnomalies: dataAnomalies.map((a) => a.text),
+    dataAnomalies: [
+      ...dataAnomalies.map((a) => a.text),
+      ...(messagingComparison.comparable ? [] : [
+        'Messaging period comparison is not verified: ' + messagingComparison.reason +
+        ' Show observed counts only; do not interpret percentage growth or infer a cause.'
+      ]),
+    ],
     suspectMetrics: [...suspectMetrics],
     twMeetings,
     lwMeetings,
@@ -3211,6 +3237,7 @@ export async function generateWeeklyBrief(orgId) {
       readiness: metricReadiness.messages,
       display: isMetricBlocked('messages') ? `${twMessages} observed; insufficient data` : null,
       statusKey: 'asyncVolume',
+      comparison: messagingComparison,
     }),
     metricRow({
       key: 'after_hours',
@@ -3236,6 +3263,7 @@ export async function generateWeeklyBrief(orgId) {
             ? `${twAfterHoursMessageCount} of ${twObservedMessageCount} observed messages; insufficient data`
             : null,
       statusKey: 'afterHoursRatio',
+      comparison: messagingComparison,
     }),
     metricRow({
       key: 'focus_time',

@@ -12,6 +12,8 @@ import ManagerAssignment from '../models/managerAssignment.js';
 import EngagementTeamDaily from '../models/engagementTeamDaily.js';
 import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
+import { compareStoredWorkPatternMetrics } from './workPatternParityAudit.js';
+import { validateTeamPermission } from './managerIntelligenceService.js';
 
 const ADMIN_ROLES = ['master_admin', 'hr_admin', 'admin', 'org_admin', 'executive', 'compliance'];
 
@@ -59,7 +61,8 @@ export async function logTehnopolProductionDiagnostic() {
         User.countDocuments({ orgId, accountStatus: 'inactive' }),
         User.countDocuments({ orgId, role: { $in: ADMIN_ROLES }, accountStatus: { $ne: 'inactive' } }),
         User.countDocuments({ orgId, role: 'hr_admin', accountStatus: 'active' }),
-        Team.find({ orgId, isActive: { $ne: false } }).select('_id name size memberCount').lean(),
+        Team.find({ orgId, isActive: { $ne: false } })
+          .select('_id name size memberCount structure isActive analyticsEnabled').lean(),
         WorkEvent.countDocuments({ orgId }),
         WorkEvent.countDocuments({ orgId, timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }),
         WorkEvent.findOne({ orgId }).sort({ timestamp: -1 }).select('timestamp source eventType teamId actorUserId').lean(),
@@ -147,8 +150,59 @@ export async function logTehnopolProductionDiagnostic() {
       const unrecognizedSenderCount = unmatchedChatSenderIds.filter(userId => !matchedIds.has(String(userId))).length;
       const latestOrgMetric = await IntegrationMetricsDaily.findOne({ orgId, teamId: null, userId: null })
         .sort({ date: -1 })
-        .select('date messageCount7d afterHoursMessageRatio uniqueChannels7d meetingCount7d meetingInstanceCount7d')
+        .select('date meetingDurationTotalHours7d meetingParticipantHours7d focusTimeAvailabilityHours messageCount7d afterHoursMessageRatio uniqueChannels7d meetingCount7d meetingInstanceCount7d')
         .lean();
+      // Read-only source-to-snapshot reconciliation for the active customer tenant.
+      // Never log source records, person identities, subjects or message content.
+      let parity = { status: 'NOT_CHECKED', checks: [] };
+      if (org.lifecycleStatus !== 'retired' && latestOrgMetric?.date) {
+        const snapshotDay = new Date(latestOrgMetric.date);
+        snapshotDay.setUTCHours(0, 0, 0, 0);
+        const lookback = new Date(snapshotDay.getTime() - 6 * 86400000);
+        const end = new Date(snapshotDay.getTime() + 86400000);
+        const query = { orgId,
+          source: { $in: ['microsoft-outlook', 'microsoft-teams'] },
+          timestamp: { $gte: lookback, $lt: end } };
+        const eventLimit = 15000;
+        const eventTotal = await WorkEvent.countDocuments(query);
+        if (eventTotal <= eventLimit) {
+          const sourceRows = await WorkEvent.find(query)
+            .select('source eventType actorUserId externalId timestamp metadata').lean();
+          parity = compareStoredWorkPatternMetrics({
+            events: sourceRows, snapshot: latestOrgMetric,
+            workSchedule: {
+              timezone: org.settings?.timezone || 'UTC',
+              workdayStart: org.settings?.workdayStart || '09:00',
+              workdayEnd: org.settings?.workdayEnd || '17:00',
+            },
+          });
+        } else {
+          parity = { status: 'UNVERIFIED_VOLUME_LIMIT', eventCount: eventTotal, checks: [] };
+        }
+      }
+
+      const verifiedManagerTeams = teams.filter(team =>
+        team.structure?.source === 'hr' &&
+        team.structure?.verifiedAt && team.structure?.managerUserId);
+      const approvedManagerIds = verifiedManagerTeams.map(team => team.structure.managerUserId);
+      const managerUsers = approvedManagerIds.length
+        ? await User.find({ orgId, _id: { $in: approvedManagerIds },
+            accountStatus: 'active' }).select('_id orgId accountStatus').lean()
+        : [];
+      const managerUserMap = new Map(managerUsers.map(user => [String(user._id), user]));
+      const managerAssignmentRows = await ManagerAssignment.find({ orgId })
+        .select('managerUserId teamId status acceptedAt revokedAt expiresAt').lean();
+      const assignmentMap = new Map(managerAssignmentRows.map(item =>
+        [String(item.teamId) + ':' + String(item.managerUserId), item]));
+      const scopedPermissionPasses = verifiedManagerTeams.filter(team => {
+        const user = managerUserMap.get(String(team.structure.managerUserId));
+        const assignment = assignmentMap.get(String(team._id) + ':' +
+          String(team.structure.managerUserId));
+        return validateTeamPermission({
+          user, assignment, team, orgId, teamId: team._id,
+        });
+      }).length;
+
       const summary = {
         orgId: String(orgId),
         name: org.name,
@@ -227,7 +281,13 @@ export async function logTehnopolProductionDiagnostic() {
           totalUsers: latestBrief.payload?.coverage?.totalUsers ?? null,
           mappedUsers: latestBrief.payload?.coverage?.mappedUsers ?? null,
         } : null,
+        sourceToSnapshotParity: parity,
         managerReporting: {
+          hrVerifiedManagerTeams: verifiedManagerTeams.length,
+          currentVerifiedManagerAccounts: managerUsers.length,
+          scopedPermissionPredicatePasses,
+          verifiedTeamsAwaitingAssignment: Math.max(0,
+            verifiedManagerTeams.length - scopedPermissionPasses),
           assignmentStatuses: Object.fromEntries(managerAssignments.map(row => [row._id || 'unknown', row.count])),
           managerAccessValidatedInSession: false,
           teamDailySnapshotCount: dailyTeamSnapshots,

@@ -309,6 +309,12 @@ export async function computeTeamMetricsForPeriod({
   const sources = new Set();
   const calendarDays = new Set();
   const messagingDays = new Set();
+  // Count the distinct people who actually contributed to EACH signal.
+  // Membership in a large group is not evidence of a privacy-safe metric.
+  const calendarContributors = new Set();
+  const messagingContributors = new Set();
+  const anyContributors = new Set();
+  const afterHoursContributors = new Set();
 
   for (const event of events) {
     const personId = String(event.actorUserId);
@@ -319,6 +325,7 @@ export async function computeTeamMetricsForPeriod({
     const kind = classify(event);
     sources.add(event.source);
     person.hasAnyEvent = true;
+    if (kind !== 'OTHER') anyContributors.add(personId);
 
     const dayKey = event.timestamp.toISOString().slice(0, 10);
     person.activeDays.add(dayKey);
@@ -326,6 +333,7 @@ export async function computeTeamMetricsForPeriod({
     if (kind === 'MEETING') {
       if (event.metadata?.isCancelled || event.metadata?.isAllDay) continue;
       calendarDays.add(dayKey);
+      calendarContributors.add(personId);
 
       const interval = meetingInterval(event);
       person.meetingIntervals.push(interval);
@@ -341,14 +349,17 @@ export async function computeTeamMetricsForPeriod({
       person.interruptionInstants.push(interval.start);
     } else if (kind === 'CHAT') {
       messagingDays.add(dayKey);
+      messagingContributors.add(personId);
       person.chatEvents += 1;
       person.interruptionInstants.push(event.timestamp);
     } else if (kind === 'EMAIL') {
       messagingDays.add(dayKey);
+      messagingContributors.add(personId);
       person.emailEvents += 1;
       person.interruptionInstants.push(event.timestamp);
     } else if (kind === 'CALL') {
       messagingDays.add(dayKey);
+      messagingContributors.add(personId);
       person.callEvents += 1;
       person.interruptionInstants.push(event.timestamp);
     }
@@ -356,6 +367,7 @@ export async function computeTeamMetricsForPeriod({
     // §10 — after-hours is judged against this person's own schedule.
     if (kind !== 'OTHER' && !isWithinSchedule(event.timestamp, schedule)) {
       person.afterHoursEvents += 1;
+      afterHoursContributors.add(personId);
     }
   }
 
@@ -540,15 +552,55 @@ export async function computeTeamMetricsForPeriod({
     },
   ];
 
-  return rows.map((row) => ({
-    ...row,
-    contributorCount,
-    dataCoverage,
-    dataQuality: row.value === null ? 'INSUFFICIENT' : dataQuality,
-    suppressed: false,
-    suppressionReason: '',
-    sources: sourceList,
-  }));
+  const thresholdForMetric = Math.max(8, Number(threshold) || 8);
+  const intersectCount = [...calendarContributors].filter((id) =>
+    messagingContributors.has(id)).length;
+  const metricContributors = {
+    MEETING_LOAD: calendarContributors.size,
+    UNINTERRUPTED_CALENDAR_AVAILABILITY: calendarContributors.size,
+    UNINTERRUPTED_WORK_WINDOW: intersectCount,
+    AFTER_HOURS_ACTIVITY: afterHoursContributors.size,
+    COORDINATION_CHANNEL_LOAD: anyContributors.size,
+    MANAGEMENT_LAYER_COORDINATION_LOAD: managerIds.size,
+  };
+  return rows.map((row) => {
+    const actualContributors = metricContributors[row.metric] ?? contributorCount;
+    const suppressed = groupSize < thresholdForMetric ||
+      actualContributors < thresholdForMetric || row.value == null;
+    const reason = row.value == null
+      ? (row.components?.unavailableReason || 'Required source coverage is unavailable.')
+      : `Sensitive team metric requires at least ${thresholdForMetric} distinct contributors.`;
+    const safeComponents = { ...row.components };
+    // A group-level coordination total might be safe, but a per-channel count
+    // dominated by fewer than 8 people can still reveal one person's behaviour.
+    if (row.metric === 'COORDINATION_CHANNEL_LOAD' && !suppressed) {
+      if (calendarContributors.size < thresholdForMetric) {
+        safeComponents.meetings = null;
+        if (safeComponents.byChannelPerPerson) safeComponents.byChannelPerPerson.meetings = null;
+      }
+      if (messagingContributors.size < thresholdForMetric) {
+        safeComponents.chat = null;
+        safeComponents.email = null;
+        safeComponents.calls = null;
+        if (safeComponents.byChannelPerPerson) {
+          safeComponents.byChannelPerPerson.chat = null;
+          safeComponents.byChannelPerPerson.email = null;
+          safeComponents.byChannelPerPerson.calls = null;
+        }
+      }
+    }
+    return {
+      ...row,
+      value: suppressed ? null : row.value,
+      components: suppressed ? {} : safeComponents,
+      contributorCount: suppressed ? null : actualContributors,
+      dataCoverage: suppressed ? null : dataCoverage,
+      dataQuality: suppressed ? 'INSUFFICIENT' : dataQuality,
+      suppressed,
+      suppressionReason: suppressed ? reason : '',
+      sources: suppressed ? [] : sourceList,
+    };
+  });
 }
 
 export const P0_METRIC_ORDER = [
