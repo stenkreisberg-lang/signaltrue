@@ -822,10 +822,9 @@ export function isOutsideWorkingHours(timestamp, workSchedule = {}) {
 }
 
 export function computeMessagingMetrics(events, date, workSchedule = {}) {
-  const messagingSources = ['slack', 'microsoft-teams', 'google-chat'];
-  const messagingEvents = events.filter(
-    (e) => messagingSources.includes(e.source) || e.eventType === 'message'
-  );
+  // A Teams call or meeting is not a message, even when the provider is
+  // a messaging platform. Count observed message events only.
+  const messagingEvents = events.filter((e) => e.eventType === 'message');
 
   const window7dStart = new Date(date);
   window7dStart.setDate(window7dStart.getDate() - 6);
