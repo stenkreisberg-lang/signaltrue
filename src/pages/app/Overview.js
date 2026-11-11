@@ -16,6 +16,7 @@ import { Card, Spinner } from '../../components/UIComponents';
 import AntiWeaponizationNotice from '../../components/AntiWeaponizationNotice';
 import OnboardingBanner from '../../components/OnboardingBanner';
 import EngagementStrainDashboard from '../../components/EngagementStrainDashboard';
+import HRDecisionSnapshot from '../../components/app/HRDecisionSnapshot';
 import AppShell from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
@@ -72,40 +73,40 @@ function EvidenceTrendGrid({ brief }) {
     <section className="app-dashboard-section">
       <div className="app-section-heading">
         <div>
-          <p className="app-dashboard-eyebrow">Measured movement</p>
-          <h2>What changed across the last six measured periods</h2>
-          <p>Missing values remain gaps. They are not converted into zero activity.</p>
+          <p className="app-dashboard-eyebrow">Measured history</p>
+          <h2>How the work pattern is moving</h2>
+          <p>Four separate dimensions. A gap means data was unavailable, not zero activity.</p>
         </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <TrendChart
-          title="Meeting participant-hours per person"
-          description="Calendar load, compared across measured periods."
+          title="Meeting load"
+          description="Participant-hours per represented person, not meeting instances."
           data={data}
           dataKey="meetingHours"
           color="#2563eb"
           unit="h"
         />
         <TrendChart
-          title="Meetings per person"
-          description="Meeting instances, not attendee-expanded event rows."
+          title="Messaging intensity"
+          description="Messages per represented person. Volume alone is not a performance measure."
           data={data}
-          dataKey="meetings"
+          dataKey="messagesPerPerson"
           color="#0f766e"
           unit=""
           type="bar"
         />
         <TrendChart
-          title="Consecutive meeting blocks"
-          description="Blocks with less than five minutes between sessions."
+          title="After-hours messaging"
+          description="Share of observed messages sent outside the configured work schedule."
           data={data}
-          dataKey="backToBack"
-          color="#d97706"
-          unit=""
+          dataKey="afterHoursPct"
+          color="#b45309"
+          unit="%"
         />
         <TrendChart
           title="Uninterrupted calendar availability"
-          description="Available work time per person where calendar coverage is eligible."
+          description="Available time per person, not verified focus or delivered output."
           data={data}
           dataKey="focusHours"
           color="#7c3aed"
@@ -160,12 +161,10 @@ export default function Overview() {
   const primaryAction = latestBrief?.actions?.primary?.action ? latestBrief.actions.primary : null;
   const reportingReady =
     calibrationStatus?.readinessStatus === 'ready' && latestBrief?.reportMode === 'full';
-  const meetingMetric = latestBrief?.metrics?.find((metric) => metric.key === 'meeting_hours');
-  const meetingTrend = meetingMetric?.available
-    ? (latestBrief?.trend || []).filter((point) => point.meetingHours != null)
-    : [];
   const hasMeasuredEvidence = (latestBrief?.trend || []).some((point) =>
-    ['meetingHours', 'meetings', 'backToBack', 'focusHours'].some((key) => point[key] != null)
+    ['meetingHours', 'messagesPerPerson', 'afterHoursPct', 'focusHours'].some(
+      (key) => point[key] != null
+    )
   );
 
   if (loading) {
@@ -273,175 +272,23 @@ export default function Overview() {
           </div>
         ) : (
           <div className="app-dashboard-hero-side">
-            <p className="app-dashboard-eyebrow">How this works</p>
+            <p className="app-dashboard-eyebrow">Evidence still needs verification</p>
             <p className="text-caption leading-6 text-slate-700">
-              Check what is measured, consult the team about the pattern, record one reversible
-              change, then compare the same indicator after 14 days.
+              Confirm the source records, employee mapping and reporting period before interpreting
+              changes in team workload.
             </p>
+            <Link
+              to="/app/signal-coverage"
+              className="mt-3 inline-block text-sm font-semibold underline"
+            >
+              Check source verification
+            </Link>
           </div>
         )}
       </div>
 
-      {latestBrief && (
-        <section className="app-dashboard-section">
-          <div className="app-panel border-indigo-200">
-            {/* The finding itself is in the hero; this panel carries the
-                numbers behind it and how far they can be trusted. */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="app-dashboard-eyebrow">What moved</p>
-              <div className="flex flex-wrap gap-2 text-caption text-slate-500">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  Evidence grade: {latestBrief.status?.evidenceGrade || 'not available'}
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  Employee mapping:{' '}
-                  {latestBrief.coverage?.mappingCoveragePct == null
-                    ? 'Unknown'
-                    : `${latestBrief.coverage.mappingCoveragePct}%`}
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold">
-                  {latestBrief.reportMode === 'full' ? 'Full report' : 'Setup report'}
-                </span>
-              </div>
-            </div>
-            {meetingTrend.length >= 2 && (
-              <div className="mt-5 rounded-container border border-slate-200 bg-white p-4">
-                <h3 className="font-bold text-slate-900">Meeting hours per person</h3>
-                <p className="mb-3 text-caption text-slate-600">
-                  Measured periods only. Missing observations are not treated as zero.
-                </p>
-                <div
-                  className="h-60"
-                  role="img"
-                  aria-label="Meeting hours per person across measured reporting periods"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={meetingTrend}>
-                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="meetingHours"
-                        name="Meeting hours/person"
-                        stroke="#2563eb"
-                        strokeWidth={2}
-                        dot
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-            {latestBrief.metrics?.length > 0 && (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {latestBrief.metrics
-                  .filter((metric) =>
-                    ['meeting_hours', 'after_hours', 'focus_time', 'active_alerts'].includes(
-                      metric.key
-                    )
-                  )
-                  .map((metric) => {
-                    const measured = metric.available && metric.current != null;
-                    const suffix = metric.unit === '%' ? '%' : metric.unit === 'hours' ? 'h' : '';
-                    const value = measured ? `${metric.current}${suffix}` : null;
-                    // A drift product is about movement, so the change against
-                    // baseline is the headline and the level is the detail.
-                    const hasChange = measured && typeof metric.changePct === 'number';
-                    const changeTone =
-                      metric.direction === 'intended'
-                        ? 'text-emerald-700'
-                        : metric.direction === 'adverse'
-                          ? 'text-rose-700'
-                          : 'text-slate-900';
-
-                    return (
-                      <div
-                        key={metric.key}
-                        className="rounded-container border border-slate-200 bg-slate-50 p-4"
-                      >
-                        {hasChange ? (
-                          <p className={`text-lead font-extrabold ${changeTone}`}>
-                            {metric.changePct > 0 ? '+' : ''}
-                            {metric.changePct}%
-                          </p>
-                        ) : (
-                          <p className="text-lead font-extrabold text-slate-900">
-                            {value ?? 'Not measured'}
-                          </p>
-                        )}
-                        <p className="mt-1 text-caption font-bold uppercase tracking-wide text-slate-500">
-                          {metric.label}
-                        </p>
-                        {hasChange && (
-                          <p className="mt-1 text-caption text-slate-600">
-                            {value} now · baseline{' '}
-                            {metric.baseline != null ? `${metric.baseline}${suffix}` : 'not set'}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
+      {latestBrief && <HRDecisionSnapshot brief={latestBrief} />}
       {latestBrief && <EvidenceTrendGrid brief={latestBrief} />}
-      <section className="app-dashboard-section">
-        <div className="app-section-heading">
-          <div>
-            <h2>From observation to a documented decision</h2>
-            <p>
-              Three steps for HR. Only source-supported measurements should influence the decision.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="app-panel space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">1 · Verify</p>
-            <h3 className="font-semibold">Check the evidence</h3>
-            <p className="text-sm text-slate-600">
-              Confirm the reporting period, eligible employees, and source coverage before drawing
-              conclusions.
-            </p>
-            <Link
-              className="inline-block text-sm font-semibold underline"
-              to="/app/signal-coverage"
-            >
-              Review source coverage
-            </Link>
-          </div>
-          <div className="app-panel space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              2 · Investigate
-            </p>
-            <h3 className="font-semibold">Ask what explains the change</h3>
-            <p className="text-sm text-slate-600">
-              Discuss context with the relevant team. Digital metadata alone does not establish
-              cause, strain or wellbeing.
-            </p>
-            <Link className="inline-block text-sm font-semibold underline" to="/app/signals">
-              See work-pattern evidence
-            </Link>
-          </div>
-          <div className="app-panel space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">3 · Review</p>
-            <h3 className="font-semibold">Record and remeasure</h3>
-            <p className="text-sm text-slate-600">
-              Document a management action and review comparable measurements after implementation.
-            </p>
-            <Link
-              className="inline-block text-sm font-semibold underline"
-              to="/app/control-reviews"
-            >
-              Open actions & reviews
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {calibrationStatus === null && (
         <div className="app-panel mb-4 text-caption text-amber-800">
           Calibration status unavailable. Data readiness cannot be confirmed right now.
