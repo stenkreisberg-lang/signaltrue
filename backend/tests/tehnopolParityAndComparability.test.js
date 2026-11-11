@@ -41,6 +41,35 @@ describe('real-tenant-safe source/snapshot parity audit', () => {
       start: '2026-11-04T00:00:00.000Z', endExclusive: '2026-11-11T00:00:00.000Z',
     });
   });
+  test('includes Teams-origin meeting observations in the same scope as the canonical calculator', () => {
+    const teamsMeeting = {
+      source: 'microsoft-teams',
+      eventType: 'meeting',
+      actorUserId: actor,
+      timestamp: new Date('2026-11-10T11:00:00Z'),
+      metadata: {
+        meetingInstanceIdHash: 'teams-meeting-1', durationMinutes: 90,
+        startTime: new Date('2026-11-10T11:00:00Z'),
+        endTime: new Date('2026-11-10T12:30:00Z'),
+      },
+    };
+    const fullRows = [...rows, teamsMeeting];
+    const withTeamsMeeting = computeMeetingMetrics(fullRows, day, workSchedule);
+    const checked = compareStoredWorkPatternMetrics({
+      events: fullRows,
+      snapshot: {
+        ...snapshot,
+        meetingInstanceCount7d: withTeamsMeeting.meetingInstanceCount7d,
+        meetingDurationTotalHours7d: withTeamsMeeting.meetingDurationTotalHours7d,
+        focusTimeAvailabilityHours: withTeamsMeeting.focusTimeAvailabilityHours,
+      },
+      workSchedule,
+    });
+    expect(checked.status).toBe('PASS');
+    expect(checked.sourceEvidence.calendarRows).toBe(2);
+    expect(checked.checks.every(item => item.status === 'PASS')).toBe(true);
+  });
+
   test('flags inconsistent persisted report data, never backfills invented values', () => {
     const result = compareStoredWorkPatternMetrics({
       events: rows, snapshot: { ...snapshot, messageCount7d: 400 }, workSchedule,
