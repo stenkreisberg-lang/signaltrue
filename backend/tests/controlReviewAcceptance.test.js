@@ -579,16 +579,16 @@ describe('§36.6 — P0 metrics are calculated from content-free events', () => 
     expect(byMetric.COORDINATION_CHANNEL_LOAD.components.byChannelPerPerson).toHaveProperty('meetings');
   });
 
-  it('aggregates the management layer only when more than one manager exists', async () => {
+  it("does not expose a two-manager subgroup in a larger team's reporting", async () => {
     const row = await TeamWorkPatternMetric.findOne({
       tenantId,
       teamId: teams.clean.team._id,
       metric: 'MANAGEMENT_LAYER_COORDINATION_LOAD',
-      suppressed: false,
     }).lean();
-
-    expect(row.components.managerCount).toBeGreaterThanOrEqual(2);
-    expect(row.components).not.toHaveProperty('perManager');
+    expect(row.suppressed).toBe(true);
+    expect(row.value).toBeNull();
+    expect(row.components).toEqual({});
+    expect(row.contributorCount).toBeNull();
   });
 
   it('stores no message or email content on any work event', async () => {
@@ -1507,6 +1507,31 @@ describe('§36.22 — the Trust Deployment Pack gates connector activation', () 
     expect(text).toMatch(/Workplace Surveillance Act 2005/);
     expect(text).toMatch(/WorkSafe Victoria/);
     expect(text).not.toMatch(/you are compliant/i);
+  });
+});
+
+describe('per-metric contributor privacy', () => {
+  it('suppresses individual-inferable metrics for a large team with just three observed people', async () => {
+    const periodStart = new Date(periods[periods.length - 1].periodEnd.getTime() + DAY_MS);
+    const periodEnd = new Date(periodStart.getTime() + 7 * DAY_MS);
+    const contributors = teams.clean.memberIds.slice(0, 3);
+    await WorkEvent.insertMany(contributors.flatMap((id, index) => [
+      meetingEvent({ teamId: teams.clean.team._id, userId: id,
+        at: new Date(periodStart.getTime() + 24 * 3600000 + index * 3600000) }),
+      messageEvent({ teamId: teams.clean.team._id, userId: id,
+        at: new Date(periodStart.getTime() + 25 * 3600000 + index * 3600000) }),
+    ]));
+    const rows = await metricsService.computeTeamMetricsForPeriod({
+      tenantId, teamId: teams.clean.team._id, periodStart, periodEnd,
+    });
+    expect(rows).toHaveLength(6);
+    for (const row of rows) {
+      expect(row.suppressed).toBe(true);
+      expect(row.value).toBeNull();
+      expect(row.components).toEqual({});
+      expect(row.dataQuality).toBe('INSUFFICIENT');
+      expect(row.contributorCount).toBeNull();
+    }
   });
 });
 

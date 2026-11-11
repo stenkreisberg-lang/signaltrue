@@ -104,6 +104,14 @@ function signalFor(points, key) {
   const median = sortedMedian(baseline);
   if (median == null || median <= 0) return null;
   const v = lastFour[3], delta = fixed((v - median) / median * 100);
+  // A 40,000% message "signal" from a tiny or newly collected baseline is
+  // not an HR conclusion. Preserve the numeric history but require a data
+  // source and cohort review before describing its direction.
+  if (Math.abs(delta) > 500 || (key === 'messages' && median < 30)) {
+    return { metric: key, current: v, baseline: fixed(median), deltaPct: null,
+      direction: 'unverified', sustained: false, material: false,
+      statement: 'Extreme movement or sparse baseline. Verify source coverage and historical comparability.' };
+  }
   const allUp = lastFour.every((val, i) => i === 0 || val > lastFour[i - 1]);
   const allDown = lastFour.every((val, i) => i === 0 || val < lastFour[i - 1]);
   const direction = allUp ? 'rising' : allDown ? 'falling' : 'variable';
