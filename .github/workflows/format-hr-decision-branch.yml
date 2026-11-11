@@ -1,0 +1,28 @@
+name: Format HR decision review branch
+on:
+  push:
+    branches:
+      - improve/hr-decision-overview-20261111
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx prettier --write src/components/app/HRDecisionSnapshot.jsx src/pages/app/Overview.js src/pages/app/LatestBrief.js
+      - name: Commit formatting
+        run: |
+          git config user.name "signaltrue-format"
+          git config user.email "format@signaltrue.ai"
+          git add src/components/app/HRDecisionSnapshot.jsx src/pages/app/Overview.js src/pages/app/LatestBrief.js
+          git diff --cached --quiet || git commit -m "chore: format HR review screens [skip ci]"
+          git push
