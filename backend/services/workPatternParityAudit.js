@@ -23,9 +23,14 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
     const t = new Date(e.timestamp).getTime();
     return Number.isFinite(t) && t >= start.getTime() && t < end.getTime();
   });
+  // The canonical calculator accepts explicit meeting events even when they
+  // originate in a collaboration source (e.g. Teams). Filtering only Outlook
+  // here incorrectly reports a discrepancy against a correctly computed
+  // org-wide meeting snapshot.
+  const calendarEventSources = ['microsoft-outlook', 'google-calendar', 'calendar', 'meet'];
   const calendarEvents = matchedEvents.filter(e =>
-    ['microsoft-outlook','google-calendar','calendar','meet'].includes(e.source) &&
-    ['meeting','meet_started'].includes(e.eventType));
+    e.eventType === 'meeting' ||
+    (e.eventType === 'meet_started' && calendarEventSources.includes(e.source)));
   const messageEvents = matchedEvents.filter(e =>
     ['microsoft-teams','slack','google-chat'].includes(e.source) && e.eventType === 'message');
   const meeting = calendarEvents.length ? computeMeetingMetrics(calendarEvents, day, workSchedule) : {};
@@ -51,6 +56,8 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
     period: { start: start.toISOString(), endExclusive: end.toISOString() },
     sourceEvidence: {
       calendarRows: calendarEvents.length,
+      teamsOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-teams').length,
+      outlookOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-outlook').length,
       messagingRows: messageEvents.length,
       actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
       actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
