@@ -117,6 +117,11 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
                   {available ? formatHRMetric(metric) : 'Unavailable'}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">{absoluteComparison(metric)}</p>
+                {metric?.comparisonReason && (
+                  <p className="mt-2 text-xs font-medium text-amber-800">
+                    Comparison withheld: {metric.comparisonReason}
+                  </p>
+                )}
                 <p className="mt-3 text-xs leading-5 text-slate-600">{description}</p>
               </div>
             );
