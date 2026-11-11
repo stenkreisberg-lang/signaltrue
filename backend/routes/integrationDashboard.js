@@ -11,6 +11,7 @@ import { triggerManualSync } from '../services/integrationSyncScheduler.js';
 import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
 import { deriveMicrosoftIntegrationStatus } from '../services/microsoftIntegrationStatusService.js';
 import { deriveSourceMeasurementStatus } from '../services/sourceMeasurementStatus.js';
+import { buildMicrosoftSourceEvidencePipeline } from '../services/sourceEventEvidence.js';
 
 const router = express.Router();
 
@@ -202,12 +203,18 @@ router.get('/status', authenticateToken, async (req, res) => {
 
 async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsoftState) {
   const sourceTypes = ['microsoft-outlook', 'microsoft-teams'];
-  const latestEvents = await WorkEvent.aggregate([
-    { $match: { orgId, source: { $in: sourceTypes } } },
-    { $sort: { timestamp: -1 } },
-    { $group: { _id: '$source', timestamp: { $first: '$timestamp' } } },
-  ]).catch(() => []);
-  const latestBySource = new Map(latestEvents.map((item) => [item._id, item.timestamp]));
+  let evidenceRows = [];
+  let evidenceQueryFailed = false;
+  try {
+    // Explicit ObjectId cast is essential here: aggregations do not cast JWT strings.
+    // Count actual accepted WorkEvent documents for the last seven days, rather
+    // than using the latest incremental poll's count as a proof of all-time absence.
+    evidenceRows = await WorkEvent.aggregate(buildMicrosoftSourceEvidencePipeline(orgId));
+  } catch (error) {
+    evidenceQueryFailed = true;
+    console.error('[IntegrationDashboard] Unable to verify stored Microsoft events:', error.message);
+  }
+  const evidenceBySource = new Map(evidenceRows.map((item) => [item._id, item]));
   const grantedRoles = microsoftState?.grantedRoles || [];
 
   return {
@@ -225,11 +232,14 @@ async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsof
         const fetched = Number(sync.lastSyncEventsCount ?? coverage.eventsCollected ?? 0);
         const mappedUsers = Number(coverage.mappedUsers ?? coverage.syncedUsers ?? 0);
         const totalUsers = Number(coverage.totalUsers ?? coverage.attemptedUsers ?? 0);
-        const accepted = Number(
-          coverage.eventsAccepted ?? coverage.mappedEvents ?? coverage.eventsCollected ?? fetched
-        );
-        const rejected = Math.max(0, fetched - accepted);
-        const latestEventReceived = latestBySource.get(type) || sync.lastEventTimestamp || null;
+        const stored = evidenceBySource.get(type);
+        const accepted = Number(stored?.storedEvents7d || 0);
+        const attributedEvents7d = Number(stored?.attributedEvents7d || 0);
+        // The last sync counter covers one poll, whereas accepted covers the
+        // stored seven-day evidence window. Do not subtract unlike periods.
+        const rejected = Number.isFinite(Number(coverage.eventsRejected))
+          ? Number(coverage.eventsRejected) : null;
+        const latestEventReceived = stored?.latestEventReceived || null;
         const missingPermissions = state.missingRoles || [];
         const missingRequirements = [];
         if (!microsoftState?.identityLinked) missingRequirements.push('Microsoft tenant sign-in');
@@ -268,6 +278,9 @@ async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsof
             latestEventReceived,
             fetched,
             accepted,
+            storedEvents7d: accepted,
+            attributedEvents7d,
+            evidenceQueryFailed,
             rejected,
             totalUsers,
             mappedUsers,
