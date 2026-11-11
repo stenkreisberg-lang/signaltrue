@@ -191,6 +191,7 @@ import { runOrgScoring } from './services/scoringEngineService.js';
 import Team from './models/team.js';
 import Organization, { ACTIVE_ORG_FILTER } from './models/organizationModel.js';
 import { logTehnopolProductionDiagnostic } from './services/tehnopolProductionDiagnostic.js';
+import { prepareTehnopolManagerScopes } from './services/tehnopolManagerPreparationService.js';
 import { repairTehnopolCanonicalOrganization, TEHNOPOL_CANONICAL_ORG_ID } from './services/tehnopolCanonicalRepair.js';
 import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
@@ -219,6 +220,16 @@ async function main() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ MongoDB connected');
         await repairTehnopolCanonicalOrganization();
+        // HR-approved manager scopes are prepared as pending only.
+        // No invitations, access grants, exports or customer emails.
+        try {
+          const managerPreparation = await prepareTehnopolManagerScopes();
+          console.log('[TehnopolManagerPreparation]', JSON.stringify(managerPreparation));
+        } catch (error) {
+          // Do not take down customer reporting because invitation preparation failed.
+          // A failed preparation never grants manager access.
+          console.error('[TehnopolManagerPreparation] Failed:', error.message);
+        }
         await logTehnopolProductionDiagnostic();
         // The one-time canonical data repair/backfill was completed on 2026-10-06.
         // On startup, refresh only the saved HR dashboard brief from the canonical data.
@@ -234,9 +245,11 @@ async function main() {
         // local-time measurements exactly once, guarded by an atomic DB lease.
         // This updates saved metrics/report snapshots only, never sends emails.
         setTimeout(() => {
-          void runTehnopolMeasurementRecovery().catch(() => {
-            console.error('[TehnopolRecovery] Unexpected job error');
-          });
+          void runTehnopolMeasurementRecovery()
+            .then(() => logTehnopolProductionDiagnostic())
+            .catch(() => {
+              console.error('[TehnopolRecovery] Unexpected job error');
+            });
         }, 35_000);
         // One-off historical calculation correction after the rolling 7-day fix.
         // Resumable in MongoDB, does not send emails or expose client measurements.
