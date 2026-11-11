@@ -189,7 +189,8 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
     esc(m.label) + '</td><td style="text-align:right;padding:8px 4px;border-bottom:1px solid #e2e8f0;font-size:11px;color:#64748b;">' +
     esc(m.source) + ' · ' + esc(m.mappedUsers == null ? 'katvus puudub' : m.mappedUsers + '/' + (m.totalUsers ?? '?')) +
     '</td></tr>').join('');
-  const reportUrl = esc(String(appUrl).replace(/\\/$/, '') + '/app/latest-brief');
+  const baseUrl = String(appUrl).endsWith('/') ? String(appUrl).slice(0, -1) : String(appUrl);
+  const reportUrl = esc(baseUrl + '/app/latest-brief');
   const trendMetric = (snapshot.metrics || []).find(m => m.key === 'meeting_hours');
   const chart = trendMetric && trendMetric.available
     ? chartSection(trendMetric, sharedTrends, 'meeting_hours', embeddedKeys.includes('meeting_hours')) : '';
