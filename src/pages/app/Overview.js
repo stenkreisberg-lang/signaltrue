@@ -119,7 +119,13 @@ export default function Overview() {
     };
   }, []);
 
-  // Existing international customers retain the English report until the\n  // redesigned dashboard has a complete English translation.\n  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {\n    return <OverviewEnglish />;\n  }\n\n  if (loading) {
+  // Existing international customers retain the English report until the
+  // redesigned dashboard has a complete English translation.
+  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {
+    return <OverviewEnglish />;
+  }
+
+  if (loading) {
     return (
       <AppShell user={user} section="Ülevaade" locale="et">
         <div className="app-panel flex min-h-64 items-center justify-center">
