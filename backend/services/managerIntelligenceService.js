@@ -11,7 +11,6 @@ import ManagerAuditEvent from '../models/managerAuditEvent.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import ManagerTeamContext from '../models/managerTeamContext.js';
 import { buildReportTrendSeries, buildEligibleTeamTrends } from './reportTrendService.js';
-import { resolveRestrictedTeamMinimum } from './smallTeamReportingPolicy.js';
 
 export const MANAGER_TERMS_VERSION = 'manager-intelligence-2026-10';
 const DAY = 86400000;
@@ -64,7 +63,7 @@ export async function managerAudit({ orgId, actorUserId, managerUserId, teamId, 
  * an integration produced measurements. Seven-day results are deliberately
  * marked partial unless all seven days contain verified source evidence.
  */
-export function summarizeObservedTeamDays(daily = [], floor = 8) {
+export function summarizeObservedTeamDays(daily = [], floor = 2) {
   const eligible = daily.filter(day => Number(day.activePeopleCount) >= floor);
   const calendar = eligible.filter(day =>
     day.integrationCoverage?.hasCalendar && day.measurementEvidence?.calendarEventCount > 0);
@@ -115,11 +114,8 @@ export function summarizeObservedTeamDays(daily = [], floor = 8) {
   };
 }
 
-export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
-  minimum = 8, approvedRestrictedSmallTeam = false }) {
-  const floor = approvedRestrictedSmallTeam
-    ? Math.max(2, Number(minimum) || 8)
-    : Math.max(8, Number(minimum) || 8);
+export async function getScopedTeamMeasurements({ orgId, team, now = new Date(), minimum = 2 }) {
+  const floor = Math.max(2, Number(minimum) || 2);
   const teamId = team._id;
   const start = new Date(utcMonday(now).getTime() - 27 * 7 * DAY);
   const [records, roster] = await Promise.all([
@@ -139,10 +135,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   const weekStartDay = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][anchorDay];
   const grouped = await WorkEvent.aggregate([
     { $match: { orgId, teamId, actorUserId: { $ne: null },
-      ...(approvedRestrictedSmallTeam
-        ? { eventType: { $in: ['meeting', 'message', 'email_sent'] } }
-        : { eventType: 'meeting',
-            source: { $in: ['calendar', 'microsoft-outlook', 'google-calendar'] } }),
+      eventType: { $in: ['meeting', 'message', 'email_sent'] },
       timestamp: { $gte: sourceWindowStart, $lt: currentMonday } } },
     { $group: { _id: { $dateTrunc: { date: '$timestamp', unit: 'week',
       startOfWeek: weekStartDay, timezone: 'UTC' } }, actors: { $addToSet: '$actorUserId' } } },
@@ -165,8 +158,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
     previousCohort = cohort;
   }
   const eligible = buildEligibleTeamTrends({records, teams:[team], activeMemberCounts:{[asId(teamId)]:population},
-    actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay,
-    approvedRestrictedSmallTeam })[0];
+    actorsByWeek:actorWeeks, minimumGroupSize:floor, now, anchorDay })[0];
   if (!eligible) return { eligible:false, reason:'Not enough comparable, privacy-eligible weekly measurements', minimum:floor };
   const observedStart = utcDay(new Date(now.getTime() - 7 * DAY));
   const [actions,contexts,observedDaily] = await Promise.all([
@@ -205,7 +197,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   // eight-person threshold. For a controller-approved identifiable two-person
   // view, derive the same metrics from the canonical seven-day rolling
   // IntegrationMetricsDaily team snapshots, never from fabricated zeroes.
-  if (approvedRestrictedSmallTeam && workPatternEvidence.provenance.calendarObservedDays === 0) {
+  if (workPatternEvidence.provenance.calendarObservedDays === 0) {
     const latest = eligible.points.filter(point => point.measured &&
       Number(point.actors) >= floor).at(-1);
     if (latest) {
@@ -225,7 +217,7 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       });
       workPatternEvidence = {
         provenance: {
-          source: 'restricted_rolling7_team_snapshots',
+          source: 'rolling7_team_snapshots',
           sampledOn: latest.sampledOn,
           calendarObservedDays: null,
           messagingObservedDays: null,
@@ -238,10 +230,6 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
   // A single authorized team only. No organization array, no user data, no
   // neighboring teams, no individual actor information in response.
   return { eligible:true, teamId:asId(teamId), teamName:team.name, minimum:floor,
-    restrictedIdentifiable: approvedRestrictedSmallTeam,
-    privacyNotice: approvedRestrictedSmallTeam
-      ? 'This two-person team report is potentially identifiable. Restricted to HR-approved viewers. No exports, weekly emails or individual assessment.'
-      : null,
     trendSeries, representedWeeks,
     workPatternEvidence,
     methodology:eligible.note, metric:'meetingsPerRepresentedPerson',
@@ -290,16 +278,7 @@ export async function loadManagerRoster(req) {
       name:teams.find(t=>asId(t._id)===asId(a.teamId))?.name,
       weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled}));
 }
-export async function resolveScopedReportingPolicy({ orgId, team, audience,
-  scopeApproved = false, now = new Date() }) {
-  const org = await Organization.findById(orgId).select('settings.smallTeamReporting').lean();
-  return resolveRestrictedTeamMinimum({
-    policy: org?.settings?.smallTeamReporting,
-    team, audience, scopeApproved, now,
-  });
-}
-
 export async function resolveOrgMinimum(orgId) {
   const org = await Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean();
-  return {minimum:Math.max(8,Number(org?.settings?.minTeamSize)||8),timezone:org?.settings?.timezone||'UTC'};
+  return {minimum:Math.max(2,Number(org?.settings?.minTeamSize)||2),timezone:org?.settings?.timezone||'UTC'};
 }
