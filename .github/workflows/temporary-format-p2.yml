@@ -19,11 +19,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npx prettier --write src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx
+      - run: npx prettier --write src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx src/components/app/AppShell.js
       - run: |
           git config user.name signaltrue-formatter
           git config user.email format@signaltrue.ai
-          git add src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx
+          git add src/pages/app/Overview.js src/pages/app/LatestBrief.js src/components/app/HRDecisionSnapshot.jsx src/components/app/ReportTrendExplorer.jsx src/components/app/WeeklyWorkReviewPanel.jsx src/components/app/ReportExportActions.jsx src/components/app/AppShell.js
           if ! git diff --cached --quiet; then
             git commit -m 'chore: format P2 report screens'
             git push origin HEAD:${{ github.head_ref }}
