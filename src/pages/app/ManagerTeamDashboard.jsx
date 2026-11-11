@@ -312,9 +312,9 @@ export default function ManagerTeamDashboard() {
                       </div>
                     </div>
                     <p className="my-3 text-sm text-slate-600">
-                      Each point is a comparable seven-day period. Missing source measurements remain
-                      gaps, never zero work. No individual attendance or employee performance is
-                      inferred.
+                      Each point is a comparable seven-day period. Missing source measurements
+                      remain gaps, never zero work. No individual attendance or employee performance
+                      is inferred.
                     </p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
