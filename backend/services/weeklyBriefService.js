@@ -1877,6 +1877,7 @@ export async function generateWeeklyBrief(orgId) {
       weeksAgo: weekIdx + 1,
       meetings: historicalMetricPerPerson(weekIdx, recs, 'meetingCount7d'),
       meetingHours: historicalMetricPerPerson(weekIdx, recs, 'meetingDurationTotalHours7d'),
+      messagesPerPerson: historicalMetricPerPerson(weekIdx, recs, 'messageCount7d'),
       backToBack: historicalMetricPerPerson(weekIdx, recs, 'backToBackMeetingBlocks'),
       afterHoursRatio: avgField(recs, 'afterHoursMessageRatio'),
       afterHoursRatioPct: Math.round(avgField(recs, 'afterHoursMessageRatio') * 100),
@@ -3303,6 +3304,7 @@ export async function generateWeeklyBrief(orgId) {
         label: `${point.weeksAgo}w ago`,
         meetings: isMetricEligible('meetings') ? roundValue(point.meetings, 1) : null,
         meetingHours: isMetricEligible('meeting_hours') ? roundValue(point.meetingHours, 1) : null,
+        messagesPerPerson: isMetricEligible('messages') ? roundValue(point.messagesPerPerson, 1) : null,
         backToBack: isMetricEligible('back_to_back') ? roundValue(point.backToBack, 1) : null,
         afterHoursPct: isMetricEligible('after_hours')
           ? roundValue(point.afterHoursRatioPct, 0)
@@ -3320,6 +3322,7 @@ export async function generateWeeklyBrief(orgId) {
       label: 'Current',
       meetings: isMetricEligible('meetings') ? roundValue(tw.meetings, 1) : null,
       meetingHours: isMetricEligible('meeting_hours') ? roundValue(tw.meetingHours, 1) : null,
+      messagesPerPerson: isMetricEligible('messages') ? roundValue(tw.messages, 1) : null,
       backToBack: isMetricEligible('back_to_back') ? roundValue(tw.backToBack, 1) : null,
       afterHoursPct: isMetricEligible('after_hours')
         ? roundValue((tw.afterHoursRatio || 0) * 100, 0)
