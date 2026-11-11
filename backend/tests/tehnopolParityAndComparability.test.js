@@ -55,6 +55,7 @@ describe('real-tenant-safe source/snapshot parity audit', () => {
     };
     const fullRows = [...rows, teamsMeeting];
     const withTeamsMeeting = computeMeetingMetrics(fullRows, day, workSchedule);
+    expect(computeMessagingMetrics(fullRows, day, workSchedule).messageCount7d).toBe(2);
     const checked = compareStoredWorkPatternMetrics({
       events: fullRows,
       snapshot: {
@@ -68,6 +69,36 @@ describe('real-tenant-safe source/snapshot parity audit', () => {
     expect(checked.status).toBe('PASS');
     expect(checked.sourceEvidence.calendarRows).toBe(2);
     expect(checked.checks.every(item => item.status === 'PASS')).toBe(true);
+  });
+
+  test('includes a second calendar adapter when the org snapshot already includes it', () => {
+    const otherCalendarMeeting = {
+      source: 'calendar',
+      eventType: 'meeting',
+      actorUserId: actor,
+      timestamp: new Date('2026-11-10T12:00:00Z'),
+      metadata: {
+        meetingInstanceIdHash: 'another-calendar-meeting',
+        durationMinutes: 30,
+        startTime: new Date('2026-11-10T12:00:00Z'),
+        endTime: new Date('2026-11-10T12:30:00Z'),
+      },
+    };
+    const fullRows = [...rows, otherCalendarMeeting];
+    const allSourcesMeeting = computeMeetingMetrics(fullRows, day, workSchedule);
+    const checked = compareStoredWorkPatternMetrics({
+      events: fullRows,
+      snapshot: {
+        ...snapshot,
+        meetingInstanceCount7d: allSourcesMeeting.meetingInstanceCount7d,
+        meetingDurationTotalHours7d: allSourcesMeeting.meetingDurationTotalHours7d,
+        focusTimeAvailabilityHours: allSourcesMeeting.focusTimeAvailabilityHours,
+      },
+      workSchedule,
+    });
+    expect(checked.status).toBe('PASS');
+    expect(checked.sourceEvidence.otherOriginMeetingRows).toBe(1);
+    expect(checked.sourceEvidence.otherMeetingSources).toContain('calendar');
   });
 
   test('flags inconsistent persisted report data, never backfills invented values', () => {

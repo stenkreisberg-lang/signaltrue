@@ -31,8 +31,10 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
   const calendarEvents = matchedEvents.filter(e =>
     e.eventType === 'meeting' ||
     (e.eventType === 'meet_started' && calendarEventSources.includes(e.source)));
-  const messageEvents = matchedEvents.filter(e =>
-    ['microsoft-teams','slack','google-chat'].includes(e.source) && e.eventType === 'message');
+  // Match the canonical event-type definition: calls and calendar meetings
+  // from a collaboration provider cannot inflate message observations.
+  const messagingSources = ['microsoft-teams', 'slack', 'google-chat'];
+  const messageEvents = matchedEvents.filter(e => e.eventType === 'message');
   const meeting = calendarEvents.length ? computeMeetingMetrics(calendarEvents, day, workSchedule) : {};
   const messaging = messageEvents.length ? computeMessagingMetrics(messageEvents, day, workSchedule) : {};
   const checks = trackedFields.map(([field, metric, source, tolerance]) => {
@@ -58,7 +60,14 @@ export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSch
       calendarRows: calendarEvents.length,
       teamsOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-teams').length,
       outlookOriginMeetingRows: calendarEvents.filter(e => e.source === 'microsoft-outlook').length,
+      otherOriginMeetingRows: calendarEvents.filter(e =>
+        !['microsoft-outlook', 'microsoft-teams'].includes(e.source)).length,
+      otherMeetingSources: [...new Set(calendarEvents
+        .filter(e => !['microsoft-outlook', 'microsoft-teams'].includes(e.source))
+        .map(e => e.source))].sort(),
       messagingRows: messageEvents.length,
+      nonMessageRowsInMessagingSource: matchedEvents.filter(e =>
+        messagingSources.includes(e.source) && e.eventType !== 'message').length,
       actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
       actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
     },
