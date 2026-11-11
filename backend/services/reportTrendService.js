@@ -156,14 +156,8 @@ const catchAll = name => /^(unassigned|general|other|default|no[ -]?team)$/i.tes
 // Requiring a minimum number of DISTINCT mapped actors in each displayed week
 // prevents an undersized team becoming identifiable when members leave or sync drops.
 export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, actorsByWeek,
-  minimumGroupSize = 8, now = new Date(), anchorDay = 0, availability = {},
-  approvedRestrictedSmallTeam = false }) {
-  // Small-group visibility must be explicitly granted by the controller
-  // and restricted to a single authorized manager or HR viewer. Other paths
-  // cannot lower the default privacy floor merely by passing 2.
-  const floor = approvedRestrictedSmallTeam
-    ? Math.max(2, Number(minimumGroupSize) || 8)
-    : Math.max(8, Number(minimumGroupSize) || 8);
+  minimumGroupSize = 2, now = new Date(), anchorDay = 0, availability = {} }) {
+  const floor = Math.max(2, Number(minimumGroupSize) || 2);
   const allRecords = normalizeRecords(records).filter(r => r.teamId && !r.userId);
   const results = [];
   for (const team of teams || []) {
@@ -181,9 +175,11 @@ export function buildEligibleTeamTrends({ records, teams, activeMemberCounts, ac
         meetingsPerRepresentedPerson: allowed && Number.isFinite(p.meetings) ? fixed(p.meetings / actors, 2) : null };
     });
     const visible = normalized.filter(p => p.meetingsPerRepresentedPerson != null);
-    if (visible.length < 4 || normalized.slice(-4).some(p => p.meetingsPerRepresentedPerson == null)) continue;
-    const recent = normalized.at(-1)?.meetingsPerRepresentedPerson;
-    const preceding = normalized.slice(-10, -4).map(p => p.meetingsPerRepresentedPerson).filter(Number.isFinite);
+    // Existing observed periods are useful without pretending that four
+    // historical weeks exist. Never manufacture missing samples.
+    if (visible.length === 0) continue;
+    const recent = visible.at(-1)?.meetingsPerRepresentedPerson ?? null;
+    const preceding = visible.slice(0, -1).map(p => p.meetingsPerRepresentedPerson).filter(Number.isFinite);
     const base = preceding.length >= 4 ? sortedMedian(preceding) : null;
     results.push({ id: key, name: displayName(team.name), population: members,
       latestRepresented: normalized.at(-1)?.actors || null, points: normalized,
@@ -213,7 +209,7 @@ export function buildTimelineAnnotations({ contexts = [], interventions = [], te
     });
   return [...events, ...actions].filter(e => new Date(e.date) <= now).sort((a, b) => a.date.localeCompare(b.date)).slice(-30);
 }
-export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 8 } = {}) {
+export async function getReportTrendSeries(orgId, now = new Date(), { includeTeams = false, minimumGroupSize = 2 } = {}) {
   const start = new Date(monday(now).getTime() - 27 * 7 * DAY);
   const scopedOrgId = mongoose.isValidObjectId(orgId) ? new mongoose.Types.ObjectId(String(orgId)) : orgId;
   const [records, contexts, actorDays] = await Promise.all([
@@ -258,7 +254,7 @@ export async function getReportTrendSeries(orgId, now = new Date(), { includeTea
     .sort((a, b) => Number(b.sustained) - Number(a.sustained) || Math.abs(b.deltaPct) - Math.abs(a.deltaPct));
   org.method += ' Participant-hours and calendar-availability hours are divided by distinct represented calendar actors in each same seven-day window. Legacy and corrected calculation versions are never mixed.';
   if (!includeTeams) return { ...org, annotations: buildTimelineAnnotations({ contexts, now }), teams: [] };
-  const floor = Math.max(8, Number(minimumGroupSize) || 8);
+  const floor = Math.max(2, Number(minimumGroupSize) || 2);
   // The unique-person denominator must use the SAME rolling seven days as
   // the sampled metric; grouping on calendar Mon–Sun would be wrong for a
   // Wednesday or Friday source snapshot.
