@@ -9,7 +9,9 @@ on:
 jobs:
   frontend:
     name: Frontend quality and browser flows
-    runs-on: ubuntu-latest
+    # ubuntu-latest resolved to Ubuntu 26.04 with broken DNS for apt browser deps.
+    # Pin to stable 24.04 instead of silently bypassing browser tests.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - name: Set up Node.js
@@ -29,8 +31,12 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: http://localhost:8081
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      # GitHub-hosted Ubuntu 24.04 already includes Google Chrome. Apt DNS
+      # failures must not block an otherwise valid browser test suite.
+      - name: Verify preinstalled Chrome
+        run: |
+          command -v google-chrome || command -v google-chrome-stable
+          (google-chrome --version || google-chrome-stable --version)
       - name: Browser flow tests
         run: npm run test:e2e
 
