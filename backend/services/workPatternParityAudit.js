@@ -1,0 +1,60 @@
+import { computeMeetingMetrics, computeMessagingMetrics } from './integrationMetricsService.js';
+
+const trackedFields = [
+  ['meetingInstanceCount7d', 'meetingInstanceCount7d', 'calendar', 0],
+  ['meetingDurationTotalHours7d', 'meetingDurationTotalHours7d', 'calendar', 0.05],
+  ['messageCount7d', 'messageCount7d', 'messaging', 0],
+  ['afterHoursMessageRatio', 'afterHoursMessageRatio', 'messaging', 0.001],
+  ['focusTimeAvailabilityHours', 'focusTimeAvailabilityHours', 'calendar', 0.05],
+];
+
+/** Recompute only content-free aggregate evidence with the same UTC rolling
+ * seven-day definition used by IntegrationMetricsDaily. This makes reports
+ * auditable without logging people, messages, meeting subjects or event IDs.
+ */
+export function compareStoredWorkPatternMetrics({ events = [], snapshot, workSchedule }) {
+  if (!snapshot?.date) return { status: 'NO_SNAPSHOT', checks: [], period: null };
+  const day = new Date(snapshot.date);
+  if (!Number.isFinite(day.getTime())) return { status: 'INVALID_DATE', checks: [], period: null };
+  day.setUTCHours(0, 0, 0, 0);
+  const start = new Date(day.getTime() - 6 * 86400000);
+  const end = new Date(day.getTime() + 86400000);
+  const matchedEvents = events.filter(e => {
+    const t = new Date(e.timestamp).getTime();
+    return Number.isFinite(t) && t >= start.getTime() && t < end.getTime();
+  });
+  const calendarEvents = matchedEvents.filter(e =>
+    ['microsoft-outlook','google-calendar','calendar','meet'].includes(e.source) &&
+    ['meeting','meet_started'].includes(e.eventType));
+  const messageEvents = matchedEvents.filter(e =>
+    ['microsoft-teams','slack','google-chat'].includes(e.source) && e.eventType === 'message');
+  const meeting = calendarEvents.length ? computeMeetingMetrics(calendarEvents, day, workSchedule) : {};
+  const messaging = messageEvents.length ? computeMessagingMetrics(messageEvents, day, workSchedule) : {};
+  const checks = trackedFields.map(([field, metric, source, tolerance]) => {
+    const stored = snapshot[field];
+    const recalculated = source === 'calendar' ? meeting[metric] : messaging[metric];
+    const observed = source === 'calendar' ? calendarEvents.length : messageEvents.length;
+    const complete = typeof stored === 'number' && Number.isFinite(stored) &&
+      typeof recalculated === 'number' && Number.isFinite(recalculated) && observed > 0;
+    return {
+      field,
+      stored: complete ? stored : null,
+      recomputed: complete ? recalculated : null,
+      discrepancy: complete ? Number((recalculated - stored).toFixed(4)) : null,
+      status: !complete ? 'UNVERIFIED' :
+        Math.abs(recalculated - stored) <= tolerance ? 'PASS' : 'FAIL',
+    };
+  });
+  return {
+    status: checks.some(c => c.status === 'FAIL') ? 'FAIL' :
+      checks.some(c => c.status !== 'PASS') ? 'INCOMPLETE' : 'PASS',
+    period: { start: start.toISOString(), endExclusive: end.toISOString() },
+    sourceEvidence: {
+      calendarRows: calendarEvents.length,
+      messagingRows: messageEvents.length,
+      actorAttributedCalendarRows: calendarEvents.filter(e => e.actorUserId).length,
+      actorAttributedMessagingRows: messageEvents.filter(e => e.actorUserId).length,
+    },
+    checks,
+  };
+}
