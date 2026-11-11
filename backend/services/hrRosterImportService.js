@@ -316,6 +316,7 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     teamsCreated: 0,
     matchedByUniqueDirectoryName: 0,
     managersPrepared: 0,
+    managerStructuresVerified: 0,
     managerScopesHeld: 0,
     skippedRows: [],
   };
@@ -448,6 +449,15 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
         stats.managerScopesHeld++;
         continue;
       }
+      // A manager cannot take over a team with another pending or active
+      // appointment through a workbook import. HR must resolve that conflict.
+      const conflictingAssignment = await ManagerAssignment.findOne({ orgId,
+        teamId: scope.team._id, managerUserId: { $ne: manager._id },
+        status: { $in: ['pending', 'invited', 'active'] }, revokedAt: null });
+      if (conflictingAssignment) {
+        stats.managerScopesHeld++;
+        continue;
+      }
       const existingAssignment = await ManagerAssignment.findOne({ orgId,
         managerUserId: manager._id, teamId: scope.team._id });
       if (existingAssignment) {
@@ -457,7 +467,18 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
           teamId: scope.team._id, invitedBy: options.approvedBy,
           status: 'pending', weeklyEmailEnabled: false, exportEnabled: false });
       }
+      // Formal manager identity supports manager-related calendar measures.
+      // This is a verified structure field, NOT a grant of dashboard access.
+      await Team.updateOne({ orgId, _id: scope.team._id }, {
+        $set: {
+          'structure.managerUserId': manager._id,
+          'structure.verifiedAt': new Date(),
+          'structure.verifiedBy': options.approvedBy,
+          'structure.source': 'hr',
+        },
+      });
       stats.managersPrepared++;
+      stats.managerStructuresVerified++;
     }
   }
 
