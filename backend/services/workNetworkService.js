@@ -1378,7 +1378,7 @@ export function analyzeWorkNetwork({
         'active partner teams',
       ],
       internalRules: [
-        'eight-contributor privacy minimum',
+        'two-contributor reporting minimum',
         '80% mapping readiness',
         'within-company percentile review rules',
       ],
