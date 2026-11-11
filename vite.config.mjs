@@ -45,6 +45,10 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'lcov'],
+        // These are verbatim pre-P2 compatibility copies for non-Estonian
+        // tenants. Count coverage on the redesigned live code, rather than
+        // double-counting the same existing English implementation.
+        exclude: ['src/pages/app/*English.js', 'src/components/app/*English.jsx'],
         thresholds: {
           statements: 46,
           branches: 37,
