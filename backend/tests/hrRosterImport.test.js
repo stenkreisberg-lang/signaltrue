@@ -8,6 +8,7 @@ import Organization from '../models/organizationModel.js';
 import Team from '../models/team.js';
 import User from '../models/user.js';
 import WorkEvent from '../models/workEvent.js';
+import ManagerAssignment from '../models/managerAssignment.js';
 import { remapWorkEventTeams } from '../services/employeeSyncService.js';
 import {
   importHrRosterRows,
@@ -106,6 +107,44 @@ describe('HR roster import', () => {
     expect(newTeam.name).toBe('New');
     expect(updated.hrStructure.teamVerifiedAt).toBeTruthy();
     expect(String(updated.hrStructure.verifiedBy)).toBe(String(person._id));
+  });
+
+  test('HR-approved manager scope records a formal manager and pending-only invitation', async () => {
+    const org = await Organization.create({ name: 'Example', domain: 'example.test' });
+    const oldTeam = await Team.create({ name: 'Other Department', orgId: org._id });
+    const manager = await User.create({
+      name: 'Marta Manager', email: 'manager@example.test',
+      password: 'synthetic-test-password', accountStatus: 'active',
+      role: 'team_member', orgId: org._id, teamId: oldTeam._id,
+    });
+    const members = await User.insertMany([
+      { name: 'Ada Example', email: 'ada@example.test', accountStatus: 'pending',
+        role: 'team_member', orgId: org._id, teamId: oldTeam._id },
+      { name: 'Ben Example', email: 'ben@example.test', accountStatus: 'pending',
+        role: 'team_member', orgId: org._id, teamId: oldTeam._id },
+    ]);
+    const rows = members.map(member => ({
+      Name: member.name,
+      Team: 'Customer Success',
+      Department: 'Customer Success',
+      'Manager Email': 'manager@example.test',
+      'Roster Format': 'department_manager',
+    }));
+    const result = await importHrRosterRows(org._id, rows, {
+      applyManagers: true, approvedBy: manager._id,
+    });
+    const team = await Team.findOne({orgId:org._id,name:'Customer Success'}).lean();
+    const assignment = await ManagerAssignment.findOne({
+      orgId: org._id, teamId: team._id, managerUserId: manager._id,
+    }).lean();
+    expect(result.stats.managerStructuresVerified).toBe(1);
+    expect(result.stats.managersPrepared).toBe(1);
+    expect(String(team.structure.managerUserId)).toBe(String(manager._id));
+    expect(team.structure.source).toBe('hr');
+    expect(String(team.structure.verifiedBy)).toBe(String(manager._id));
+    expect(assignment.status).toBe('pending');
+    expect(assignment.acceptedAt).toBeFalsy();
+    expect(assignment.weeklyEmailEnabled).toBe(false);
   });
 
   test('extracts table-like text from PDF exports', () => {
