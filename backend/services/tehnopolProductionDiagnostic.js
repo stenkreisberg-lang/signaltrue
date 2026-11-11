@@ -8,6 +8,9 @@ import Signal from '../models/signal.js';
 import CategoryKingSignal from '../models/categoryKingSignal.js';
 import IntegrationConnection from '../models/integrationConnection.js';
 import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
+import ManagerAssignment from '../models/managerAssignment.js';
+import EngagementTeamDaily from '../models/engagementTeamDaily.js';
+import EngagementStrainWeekly from '../models/engagementStrainWeekly.js';
 import { classifyEmployeeCandidate } from '../utils/employeeIdentity.js';
 
 const ADMIN_ROLES = ['master_admin', 'hr_admin', 'admin', 'org_admin', 'executive', 'compliance'];
@@ -75,6 +78,17 @@ export async function logTehnopolProductionDiagnostic() {
         WorkEvent.countDocuments({ orgId, timestamp: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, teamId: { $ne: null } }),
         User.find({ orgId, accountStatus: { $ne: 'inactive' } }).select('email name displayName role').lean(),
       ]);
+
+      const [managerAssignments, dailyTeamSnapshots, latestTeamSnapshot, weeklyStrainCount, teamMetricCount] =
+        await Promise.all([
+          ManagerAssignment.aggregate([{ $match: { orgId } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }]),
+          EngagementTeamDaily.countDocuments({ orgId }),
+          EngagementTeamDaily.findOne({ orgId }).sort({ date: -1 })
+            .select('date activePeopleCount integrationCoverage measurementEvidence').lean(),
+          EngagementStrainWeekly.countDocuments({ orgId }),
+          IntegrationMetricsDaily.countDocuments({ orgId, teamId: { $ne: null }, userId: null }),
+        ]);
 
       const microsoft = org.integrations?.microsoft || {};
       const employeeCandidates = rosterUsers.filter((u) =>
@@ -213,6 +227,18 @@ export async function logTehnopolProductionDiagnostic() {
           totalUsers: latestBrief.payload?.coverage?.totalUsers ?? null,
           mappedUsers: latestBrief.payload?.coverage?.mappedUsers ?? null,
         } : null,
+        managerReporting: {
+          assignmentStatuses: Object.fromEntries(managerAssignments.map(row => [row._id || 'unknown', row.count])),
+          managerAccessValidatedInSession: false,
+          teamDailySnapshotCount: dailyTeamSnapshots,
+          latestTeamSnapshotDate: latestTeamSnapshot?.date || null,
+          latestDailyCalendarObserved: Boolean(latestTeamSnapshot?.integrationCoverage?.hasCalendar &&
+            latestTeamSnapshot?.measurementEvidence?.calendarEventCount > 0),
+          latestDailyMessagingObserved: Boolean(latestTeamSnapshot?.integrationCoverage?.hasMessaging &&
+            latestTeamSnapshot?.measurementEvidence?.messagingEventCount > 0),
+          weeklyEngagementSnapshotCount: weeklyStrainCount,
+          teamIntegrationMetricCount: teamMetricCount,
+        },
         integrationConnections: connections.map((c) => ({
           provider: c.integrationType,
           status: c.status || null,
