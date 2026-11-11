@@ -212,20 +212,12 @@ export default function ManagerTeamDashboard() {
               <label className="ml-auto flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={report?.restrictedIdentifiable ? false : email}
-                  disabled={report?.restrictedIdentifiable}
+                  checked={email}
                   onChange={(e) => setPref(e.target.checked)}
                 />{' '}
                 Weekly digest
               </label>
             </section>
-            {report?.restrictedIdentifiable && (
-              <p role="note" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-                This is a restricted, potentially identifiable two-person team report.
-                Use it only to discuss work design. Do not infer individual productivity or health.
-                Exports and automatic email delivery are disabled.
-              </p>
-            )}
             {report?.eligible === false ? (
               <section className="rounded-xl border border-amber-200 bg-white p-6">
                 <h2 className="font-bold">Insufficient privacy-eligible evidence</h2>
@@ -350,7 +342,7 @@ export default function ManagerTeamDashboard() {
                         Context · {date(c.weekStart)}: {c.tag}. {c.note}
                       </p>
                     ))}
-                    {!report.restrictedIdentifiable && teams.find((t) => t.teamId === team)?.exportEnabled && (
+                    {teams.find((t) => t.teamId === team)?.exportEnabled && (
                       <button
                         onClick={exportPdf}
                         className="mt-3 rounded-lg border px-4 py-2 text-sm font-semibold"
