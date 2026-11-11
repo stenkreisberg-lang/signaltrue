@@ -198,21 +198,6 @@ const organizationSchema = new mongoose.Schema(
       onboardingComplete: { type: Boolean, default: false },
       // Minimum formal team size (2+); sensitive metric disclosure remains gated separately.
       minTeamSize: { type: Number, default: 2, min: 2 },
-      // Deliberately separate from the formal team-size definition.
-      // Two-person behavioural data are identifiable and only available in
-      // scoped interactive HR/manager reports after documented customer signoff.
-      smallTeamReporting: {
-        enabled: { type: Boolean, default: false },
-        minimumContributors: { type: Number, enum: [2], default: 2 },
-        approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-        approvedAt: { type: Date, default: null },
-        employeeNoticeConfirmedAt: { type: Date, default: null },
-        riskAssessmentApprovedAt: { type: Date, default: null },
-        legalBasis: { type: String, default: null },
-        policyVersion: { type: String, default: null },
-        expiresAt: { type: Date, default: null },
-        accessMode: { type: String, enum: ['restricted'], default: 'restricted' },
-      },
       timezone: { type: String, default: 'UTC' },
       timezoneConfirmedAt: { type: Date },
       workdayStart: { type: String, default: '09:00' },
