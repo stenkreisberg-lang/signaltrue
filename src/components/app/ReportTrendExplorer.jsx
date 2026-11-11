@@ -23,6 +23,13 @@ const WINDOWS = {
   '6M': ['weekly', 26],
 };
 const KEYS = ['meetings', 'after_hours', 'focus_time', 'back_to_back', 'fragmentation'];
+const ET_METRICS = {
+  meetings: 'Koosolekute arv', after_hours: 'Pärast tööaega saadetud sõnumid',
+  focus_time: 'Vaba kalendriaeg', back_to_back: 'Järjestikused koosolekud',
+  fragmentation: 'Kalendri killustatus', meeting_hours: 'Koosolekutunnid',
+  messages: 'Sõnumite arv', recurring_load: 'Korduvkoosolekud',
+};
+const etMetric = (key, fallback) => ET_METRICS[key] || fallback || key;
 const COLOR = {
   meetings: '#2563eb',
   after_hours: '#d97706',
@@ -32,12 +39,12 @@ const COLOR = {
 };
 const label = (d) =>
   d
-    ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    ? new Date(d + 'T12:00:00Z').toLocaleDateString('et-EE', { day: 'numeric', month: 'short' })
     : '';
 const fmt = (v, unit = '') =>
   v == null
-    ? 'Not measured'
-    : Number(v).toLocaleString('en-GB', { maximumFractionDigits: 2 }) +
+    ? 'Andmed puuduvad'
+    : Number(v).toLocaleString('et-EE', { maximumFractionDigits: 2 }) +
       (unit === '%' ? '%' : unit === 'hours' ? ' h' : '');
 const week = (date) => {
   const d = new Date(date);
@@ -54,7 +61,7 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
   if (rows.filter((r) => Number.isFinite(r.amount)).length < 2)
     return (
       <div className="flex min-h-52 items-center justify-center rounded-xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-600">
-        Fewer than two comparable recorded observations. Missing measurements are not shown as zero.
+        Võrreldavaid mõõtmisi on vähem kui kaks. Puuduvat mõõtmist ei kuvata nullina.
       </div>
     );
   const markers = events
@@ -65,7 +72,7 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
       <div
         className="h-64 sm:h-72"
         role="img"
-        aria-label="Measured trend, time on X and value on Y"
+        aria-label="Mõõdetud muutus ajas, kuupäev horisontaalteljel ja väärtus vertikaalteljel"
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 15, right: 18, left: -8, bottom: 0 }}>
@@ -88,7 +95,7 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
                 y={baseline}
                 stroke="#64748b"
                 strokeDasharray="5 4"
-                label={{ value: 'Earlier median', position: 'insideTopRight', fontSize: 10 }}
+                label={{ value: 'Varasem mediaan', position: 'insideTopRight', fontSize: 10 }}
               />
             )}
             {markers.map((e, i) => (
@@ -98,7 +105,7 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
                 stroke={e.kind === 'context' ? '#a78bfa' : '#0f766e'}
                 strokeDasharray="3 4"
                 label={{
-                  value: e.kind === 'context' ? 'Event' : 'Action',
+                  value: e.kind === 'context' ? 'Sündmus' : 'Tegevus',
                   position: 'top',
                   fontSize: 9,
                 }}
@@ -117,9 +124,7 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
         </ResponsiveContainer>
       </div>
       <p className="text-xs leading-5 text-slate-500">
-        X: {range === '1W' ? 'observation date' : 'completed UTC week'} · Y: {unit}. Each recorded
-        value covers the preceding seven days. Gaps mean missing records. Lines show correlation,
-        not causation.
+        X: {range === '1W' ? 'mõõtmise kuupäev' : 'lõppenud nädal'} · Y: {unit}. Iga punkt põhineb seitsme päeva andmetel. Puuduv nädal jääb tühjaks. Muutus ei tõenda põhjust.
       </p>
     </div>
   );
@@ -127,19 +132,19 @@ function Plot({ points, keyName, unit, baseline, events = [], range, color = '#2
 const TEAM_DIMENSIONS = [
   [
     'meetingHoursPerRepresentedPerson',
-    'Meeting participant-hours per calendar participant',
+    'Koosolekutunnid kalendrikasutaja kohta',
     'hours/person',
   ],
-  ['meetingsPerRepresentedPerson', 'Meeting instances per calendar participant', 'meetings/person'],
-  ['messagesPerRepresentedPerson', 'Messages per messaging participant', 'messages/person'],
-  ['afterHoursPct', 'After-hours messaging share', '%'],
+  ['meetingsPerRepresentedPerson', 'Koosolekute arv kalendrikasutaja kohta', 'meetings/person'],
+  ['messagesPerRepresentedPerson', 'Sõnumid saatja kohta', 'messages/person'],
+  ['afterHoursPct', 'Väljaspool tööaega saadetud sõnumite osakaal', '%'],
   [
     'focusHoursPerRepresentedPerson',
-    'Uninterrupted calendar availability per person',
+    'Vaba kalendriaeg inimese kohta',
     'hours/person',
   ],
-  ['recurringLoadPct', 'Recurring meeting share', '%'],
-  ['calendarFragmentation', 'Calendar fragmentation index', '/100'],
+  ['recurringLoadPct', 'Korduvkoosolekute osakaal', '%'],
+  ['calendarFragmentation', 'Kalendri killustatuse indeks', '/100'],
 ];
 function TeamDetail({ data, window, range }) {
   const teams = data.teams || [];
@@ -156,9 +161,7 @@ function TeamDetail({ data, window, range }) {
   if (!team)
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        No team has enough measured and attributed source observations for comparison. The same
-        minimum of {data.privacy?.minimumGroupSize || 2} contributors applies to every team. Missing
-        periods are not interpreted as zero activity.
+        Ühelgi tiimil pole veel piisavalt allikaga seotud mõõtmisi. Igal tiimil kehtib sama {data.privacy?.minimumGroupSize || 2} seotud töötaja miinimum. Puuduvaid nädalaid ei loeta nulliks.
       </div>
     );
   const events = (data.annotations || []).filter(
@@ -168,7 +171,7 @@ function TeamDetail({ data, window, range }) {
     <>
       <div className="mt-3 flex flex-wrap gap-3">
         <label className="flex flex-col gap-1 text-sm font-bold" htmlFor="report-team">
-          Team
+          Tiim
           <select
             id="report-team"
             className="max-w-full rounded-md border border-slate-300 p-2 text-sm font-normal"
@@ -183,7 +186,7 @@ function TeamDetail({ data, window, range }) {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm font-bold" htmlFor="report-team-metric">
-          Measured dimension
+          Mõõdik
           <select
             id="report-team-metric"
             className="max-w-full rounded-md border border-slate-300 p-2 text-sm font-normal"
@@ -202,7 +205,7 @@ function TeamDetail({ data, window, range }) {
         <div
           className="mt-4 h-52"
           role="img"
-          aria-label={`Team comparisons for ${meta[1]} against each team's own six-week baseline`}
+          aria-label={`Tiimide võrdlus mõõdikul ${meta[1]} varasema kuue nädala taustal`}
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -213,7 +216,7 @@ function TeamDetail({ data, window, range }) {
               <CartesianGrid strokeDasharray="3 5" horizontal={false} />
               <XAxis type="number" tickFormatter={(v) => v + '%'} tick={{ fontSize: 10 }} />
               <YAxis dataKey="name" type="category" width={115} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v) => [v + '%', 'Change from comparable baseline']} />
+              <Tooltip formatter={(v) => [v + '%', 'Muutus võrreldava baasväärtusega']} />
               <ReferenceLine x={0} stroke="#64748b" />
               <Bar dataKey="changePct" maxBarSize={20}>
                 {comparable.map((t) => (
@@ -230,15 +233,15 @@ function TeamDetail({ data, window, range }) {
         </h3>
         {summary?.current != null ? (
           <p className="my-2 text-sm text-slate-700">
-            Latest completed week: <strong>{fmt(summary.current, meta[2])}</strong>
+            Viimane lõppenud nädal: <strong>{fmt(summary.current, meta[2])}</strong>
             {summary.baseline != null
-              ? ' · Previous six-week median: ' + fmt(summary.baseline, meta[2])
-              : ' · Baseline not yet comparable'}
-            {summary.changePct != null ? ' · Change: ' + summary.changePct + '%' : ''}
+              ? ' · Eelmise kuue nädala mediaan: ' + fmt(summary.baseline, meta[2])
+              : ' · Võrreldav baasväärtus puudub'}
+            {summary.changePct != null ? ' · Muutus: ' + summary.changePct + '%' : ''}
           </p>
         ) : (
           <p className="my-2 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
-            No verified observation for this team and source in the latest completed week.
+            Selle tiimi viimase lõppenud nädala allikamõõtmist ei ole kinnitatud.
           </p>
         )}
         <Plot
@@ -251,34 +254,31 @@ function TeamDetail({ data, window, range }) {
           color="#7c3aed"
         />
         <p className="mt-2 text-xs leading-5 text-slate-600">
-          Source-specific contributor counts are applied to calendar and messaging measurements.
-          Comparisons require four measured periods in the prior six weeks. A missing source or week
-          is a gap, not zero; changes are descriptive, not proof of employee performance or
-          causation.
+          Kalendri ja sõnumite mõõtmistel kasutatakse vastava allika seotud töötajate hulka. Võrdluseks on vaja vähemalt nelja mõõdetud nädalat varasemast kuuest. Puuduv nädal on tühi, mitte null. Tulemused ei kirjelda töötaja sooritust ega tõenda põhjust.
         </p>
         {events.length ? (
           events.slice(-4).map((e, i) => (
             <p key={i} className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-              <strong>{e.title}</strong> · Started {label(e.date)} · Review{' '}
-              {label(e.reviewAt) || 'not set'}.{' '}
+              <strong>{e.title}</strong> · Algas {label(e.date)} · Ülevaatus{' '}
+              {label(e.reviewAt) || 'määramata'}.{' '}
               {e.outcome
-                ? 'Follow-up: ' + e.outcome.replaceAll('_', ' ') + '.'
-                : 'Outcome not recorded yet.'}
+                ? 'Järelkontroll: ' + e.outcome.replaceAll('_', ' ') + '.'
+                : 'Tulemus pole veel kirjas.'}
               {e.observedBefore != null && e.observedAfter != null
-                ? ' Before ' +
+                ? ' Enne ' +
                   e.observedBefore +
-                  ', after ' +
+                  ', pärast ' +
                   e.observedAfter +
-                  ' (original units).'
+                  ' (algses ühikus).'
                 : ''}
               <span className="block text-xs text-slate-500">
-                Observed after the action, not proof that the action caused the change.
+                Pärast tegevust mõõdetud muutus ei tõenda, et tegevus selle põhjustas.
               </span>
             </p>
           ))
         ) : (
           <p className="mt-3 text-sm text-slate-500">
-            No recorded management actions for this team in the selected period.
+            Valitud perioodil ei ole selle tiimi kohta tegevusi salvestatud.
           </p>
         )}
       </div>
@@ -299,7 +299,7 @@ export default function ReportTrendExplorer({ brief }) {
         if (active) setData(r.data);
       })
       .catch(() => {
-        if (active) setError('Source-backed history is currently unavailable.');
+        if (active) setError('Mõõdetud ajalugu ei ole praegu kättesaadav.');
       });
     return () => {
       active = false;
@@ -314,14 +314,14 @@ export default function ReportTrendExplorer({ brief }) {
   const baseline = insights.find((i) => i.metric === metric)?.baseline;
   const latest = [...points].reverse().find((p) => p[metric] != null);
   return (
-    <section className="app-panel mb-6" aria-label="Work-pattern history">
+    <section className="app-panel mb-6" aria-label="Töökorralduse mõõtmiste ajalugu">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-blue-700" /> What changed over time?
+            <BarChart3 className="h-5 w-5 text-blue-700" /> Kuidas töökorralduse näitajad ajas muutusid?
           </h2>
           <p className="app-muted mt-1">
-            See the evidence, compare teams safely and inspect outcomes of recorded actions.
+            Võrdle mõõdetud perioode ja tiime ning vaata varasemate tegevuste tulemusi.
           </p>
         </div>
         <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 p-1">
@@ -344,38 +344,37 @@ export default function ReportTrendExplorer({ brief }) {
         </div>
       </div>
       {error && <p className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
-      {!data && !error && <p className="text-sm">Loading measured trends…</p>}
+      {!data && !error && <p className="text-sm">Mõõdetud ajaloo laadimine…</p>}
       {data && (
         <>
           {data.stale && (
             <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-              <AlertTriangle className="mr-1 inline h-4 w-4" /> Source records may be stale. Last
-              recorded: {data.lastObservedDate || 'unknown'}.
+              <AlertTriangle className="mr-1 inline h-4 w-4" /> Algandmed võivad olla aegunud. Viimane mõõtmine: {data.lastObservedDate || 'teadmata'}.
             </p>
           )}
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs uppercase text-slate-600">Evidence</p>
+              <p className="text-xs uppercase text-slate-600">Mõõtmised</p>
               <p className="mt-2 text-xl font-bold text-slate-900">
                 {KEYS.filter((k) => data.availability?.[k]?.available).length} / {KEYS.length}
               </p>
-              <p className="text-xs text-slate-500">Metrics ready for review</p>
+              <p className="text-xs text-slate-500">Mõõdikud, mida saab uurida</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs uppercase text-slate-600">Changes to investigate</p>
-              <p className="mt-2 text-xl font-bold">{signals.length || 'None confirmed'}</p>
+              <p className="text-xs uppercase text-slate-600">Muutused, mida uurida</p>
+              <p className="mt-2 text-xl font-bold">{signals.length || 'Kinnitatud muutus puudub'}</p>
               <p className="text-xs text-slate-500">
-                Consecutive weeks and historical baseline required
+                Vajalikud on võrreldavad nädalad ja baasväärtus
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs uppercase text-slate-600">Next step</p>
+              <p className="text-xs uppercase text-slate-600">Järgmine samm</p>
               <p className="mt-2 text-sm font-bold">
                 {data.teams?.length === 0 && signals.length === 0
-                  ? 'Improve source coverage or keep observing'
-                  : brief?.actions?.primary?.title || 'Review context before changing work'}
+                  ? 'Kontrolli andmekatvust või jätka mõõtmist'
+                  : brief?.actions?.primary?.title || 'Enne muudatust kontrolli tööolukorda'}
               </p>
-              <p className="text-xs text-slate-500">No automated causal claims</p>
+              <p className="text-xs text-slate-500">Automaatseid põhjuslikke järeldusi ei tehta</p>
             </div>
           </div>
           {signals.length ? (
@@ -392,7 +391,7 @@ export default function ReportTrendExplorer({ brief }) {
                   className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-left hover:border-amber-400"
                 >
                   <span className="font-bold text-amber-950">
-                    {data.metrics.find((m) => m.key === item.metric)?.label}
+                    {etMetric(item.metric, data.metrics.find((m) => m.key === item.metric)?.label)}
                   </span>
                   <span className="block text-lg font-bold">
                     {item.deltaPct > 0 ? '+' : ''}
@@ -404,14 +403,13 @@ export default function ReportTrendExplorer({ brief }) {
             </div>
           ) : (
             <p className="mb-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-              No sustained change can be established from the comparable historical evidence. This
-              is not a claim of healthy conditions.
+              Võrreldud ajaloost ei saa kinnitada püsivat muutust. See ei tähenda, et olukord oleks tingimata hea.
             </p>
           )}
           <div className="mb-4 flex flex-wrap gap-2">
             {[
-              ['org', 'Organization trends'],
-              ['teams', 'Team comparisons and interventions'],
+              ['org', 'Organisatsiooni ajalugu'],
+              ['teams', 'Tiimide võrdlus ja tegevused'],
             ].map(([k, text]) => (
               <button
                 type="button"
@@ -449,25 +447,25 @@ export default function ReportTrendExplorer({ brief }) {
                         : 'border-slate-200 bg-white text-slate-700')
                     }
                   >
-                    {data.metrics.find((m) => m.key === k)?.label || k}
-                    {!data.availability?.[k]?.available ? ' · limited' : ''}
+                    {etMetric(k, data.metrics.find((m) => m.key === k)?.label)}
+                    {!data.availability?.[k]?.available ? ' · piiratud' : ''}
                   </button>
                 ))}
               </div>
               <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
-                <h3 className="font-bold">{meta?.label || metric}</h3>
+                <h3 className="font-bold">{etMetric(metric, meta?.label)}</h3>
                 {!ready ? (
                   <p className="mt-3 rounded-lg bg-amber-50 p-4 text-sm text-amber-900">
-                    <AlertTriangle className="mr-2 inline h-4 w-4" /> Insufficient evidence.{' '}
+                    <AlertTriangle className="mr-2 inline h-4 w-4" /> Andmed puudulikud.{' '}
                     {data.availability?.[metric]?.reason ||
-                      'Check connection, mapping and metric readiness.'}
+                      'Kontrolli ühendust, töötajate seoseid ja mõõdiku valmisolekut.'}
                   </p>
                 ) : (
                   <>
                     <p className="my-3 text-sm text-slate-700">
-                      Latest complete period: <strong>{fmt(latest?.[metric], meta?.unit)}</strong>
+                      Viimane täielik periood: <strong>{fmt(latest?.[metric], meta?.unit)}</strong>
                       {baseline != null
-                        ? ' · Earlier six-week median: ' + fmt(baseline, meta?.unit)
+                        ? ' · Varasema kuue nädala mediaan: ' + fmt(baseline, meta?.unit)
                         : ''}
                     </p>
                     <Plot
@@ -481,8 +479,7 @@ export default function ReportTrendExplorer({ brief }) {
                     />
                     {insights.find((i) => i.metric === metric) && (
                       <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-                        {insights.find((i) => i.metric === metric).statement} Validate context
-                        before acting.
+                        {insights.find((i) => i.metric === metric).statement} Enne otsust kontrolli olukorra tausta.
                       </p>
                     )}
                   </>
@@ -493,33 +490,32 @@ export default function ReportTrendExplorer({ brief }) {
                 .slice(-4)
                 .map((e, i) => (
                   <p className="mt-2 text-xs text-slate-600" key={i}>
-                    {label(e.date)}: {e.title}. Context does not dismiss a change.
+                    {label(e.date)}: {e.title}. Taustinfo ei muuda mõõdetud fakti olematuks.
                   </p>
                 ))}
             </>
           )}
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            The 1W view contains rolling seven-day snapshots, not daily totals. Completed weeks are
-            sampled consistently on UTC weekday{' '}
+            Ühe nädala vaade näitab seitsme päeva libisevaid mõõtmisi, mitte päevade summat. Lõppenud nädala näidud on võetud UTC nädalapäeval{' '}
             {
-              ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][
+              ['pühapäev', 'esmaspäev', 'teisipäev', 'kolmapäev', 'neljapäev', 'reede', 'laupäev'][
                 data.anchorDay
               ]
             }
-            . Incomplete periods are excluded from weekly comparison. {data.method}
+            . Poolikuid perioode nädalavõrdlusse ei kaasata.
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <a
               href="/app/signals"
               className="rounded-lg bg-slate-900 px-4 py-2.5 font-bold text-white"
             >
-              Review recommended actions
+              Vaata soovitatud tegevusi
             </a>
             <a
               href="#weekly-brief-context"
               className="rounded-lg border border-slate-200 px-4 py-2.5 font-bold text-slate-800"
             >
-              Add event context
+              Lisa nädala taustinfo
             </a>
           </div>
         </>
