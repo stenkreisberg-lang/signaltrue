@@ -213,6 +213,19 @@ describe('directory mapping', () => {
     expect(normalizeDepartmentName(null)).toBeNull();
   });
 
+  test('does not reject a real employee solely because their department contains the tenant name', () => {
+    expect(classifyEmployeeCandidate({
+      email: 'ada@example.test',
+      name: 'Ada Example',
+      department: 'Tehnopol Kiirendi',
+    })).toMatchObject({ ok: true, firstName: 'Ada', lastName: 'Example' });
+    expect(classifyEmployeeCandidate({
+      email: 'room-4@example.test',
+      name: 'Meeting Room 4',
+      department: 'Tehnopol Kiirendi',
+    })).toMatchObject({ ok: false });
+  });
+
   test('accepts only real employees with first name and surname', () => {
     expect(
       classifyEmployeeCandidate({
