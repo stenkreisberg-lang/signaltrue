@@ -147,6 +147,52 @@ describe('HR roster import', () => {
     expect(assignment.weeklyEmailEnabled).toBe(false);
   });
 
+  test('resolves manager name only against a unique directory identity and saves leadership cohort', async () => {
+    const org = await Organization.create({ name: 'Tehnopol fixture', domain: 'example.test' });
+    const initialTeam = await Team.create({ name: 'Initial', orgId: org._id });
+    const manager = await User.create({
+      name: 'Anne Manager', email: 'anne@example.test',
+      orgId: org._id, teamId: initialTeam._id, role: 'hr_admin',
+      accountStatus: 'active', password: 'synthetic-password',
+    });
+    const members = await User.insertMany([
+      { name: 'Ada Worker', email: 'ada@example.test', orgId: org._id,
+        teamId: initialTeam._id, source: 'microsoft', accountStatus: 'pending' },
+      { name: 'Ben Worker', email: 'ben@example.test', orgId: org._id,
+        teamId: initialTeam._id, source: 'microsoft', accountStatus: 'pending' },
+    ]);
+    const rows = members.map(member => ({
+      Name: member.name, Team: 'Tehnopol Kiirendi', Department: 'Tehnopol Kiirendi',
+      'Manager Name': 'Anne Manager', 'Manager Email': null,
+      'Additional Reporting Groups': member.name === 'Ada Worker' ? ['Juhtkond'] : [],
+      'Roster Format': 'department_manager',
+    }));
+    const result = await importHrRosterRows(org._id, rows, {
+      approvedBy: manager._id, applyManagers: true,
+    });
+    const team = await Team.findOne({ orgId: org._id, name: 'Tehnopol Kiirendi' }).lean();
+    const ada = await User.findById(members[0]._id).lean();
+    const appointment = await ManagerAssignment.findOne({
+      orgId: org._id, teamId: team._id, managerUserId: manager._id,
+    }).lean();
+    expect(result.stats).toMatchObject({ updated: 2, managerStructuresVerified: 1 });
+    expect(ada.hrStructure.reportingGroups).toEqual(['Juhtkond']);
+    expect(String(ada.teamId)).toBe(String(team._id));
+    expect(appointment.status).toBe('pending');
+    expect(appointment.weeklyEmailEnabled).toBe(false);
+  });
+
+  test('rejects an unverified workbook manager before creating or changing employees or teams', async () => {
+    const org = await Organization.create({ name: 'Tehnopol fixture', domain: 'example.test' });
+    await expect(importHrRosterRows(org._id, [{
+      Name: 'Ada Worker', Team: 'Tehnopol Kiirendi', Department: 'Tehnopol Kiirendi',
+      'Manager Name': 'Unknown Manager', 'Manager Email': null,
+      'Roster Format': 'department_manager',
+    }], { applyManagers: true })).rejects.toThrow(/no employees or manager permissions were changed/);
+    expect(await User.countDocuments({ orgId: org._id })).toBe(0);
+    expect(await Team.countDocuments({ orgId: org._id })).toBe(0);
+  });
+
   test('extracts table-like text from PDF exports', () => {
     const rows = parseHrRosterPdfText(`
       Name  Email  Position  Department
