@@ -66,139 +66,79 @@ function isSundayNightOrLater() {
 // CORE: Send weekly briefs for all orgs
 // ═══════════════════════════════════════════════
 
+// Single-flight for overlapping hourly checks in one server process.
+// WeeklyBriefDispatch separately guards duplicate provider delivery.
+let weeklyEmailRunPromise = null;
 async function executeWeeklyEmails(trigger = 'cron') {
+  if (weeklyEmailRunPromise) return weeklyEmailRunPromise;
+  weeklyEmailRunPromise = executeWeeklyEmailsOnce(trigger)
+    .finally(() => { weeklyEmailRunPromise = null; });
+  return weeklyEmailRunPromise;
+}
+async function isWeeklyEmailComplete(weekKey) {
+  const run = await CronLog.findOne({ jobName: JOB_NAME, weekKey })
+    .select('status').lean();
+  return run?.status === 'success';
+}
+async function executeWeeklyEmailsOnce(trigger) {
   const weekKey = getWeekKey();
-
-  // Check if already sent this week
-  const alreadySent = await CronLog.hasRunForWeek(JOB_NAME, weekKey);
-  if (alreadySent) {
-    console.log(`[WeeklyScheduler] ✅ Emails already sent for ${weekKey} — skipping`);
+  const previous = await CronLog.findOne({ jobName: JOB_NAME, weekKey }).lean();
+  if (previous?.status === 'success') {
+    console.log(`[WeeklyScheduler] All weekly emails confirmed for ${weekKey}`);
     return { skipped: true, weekKey };
   }
+  // A partial run is not complete. Retry only organisations that were not sent.
+  const sentOrgIds = new Set((previous?.results || [])
+    .filter(item => item.status === 'sent')
+    .map(item => String(item.orgId)));
 
-  // Ensure all weekly measurement and manager scoring has finished. If scoring
-  // cannot complete, fail closed instead of sending a partially built report.
+  // No customer mail is dispatched unless the measurement cycle completes.
   await ensureWeeklyCycleComplete();
-  console.log(`[WeeklyScheduler] 📧 Sending weekly emails for ${weekKey} (trigger: ${trigger})...`);
-  const startTime = Date.now();
+  const started = Date.now();
+  const { sendWeeklyBrief } = await import('../services/weeklyBriefService.js');
+  const { default: Organization, ACTIVE_ORG_FILTER } =
+    await import('../models/organizationModel.js');
+  const orgs = await Organization.find(ACTIVE_ORG_FILTER);
+  const results = [];
 
-  try {
-    const { sendWeeklyBrief } = await import('../services/weeklyBriefService.js');
-    const { default: Organization, ACTIVE_ORG_FILTER } = await import(
-      '../models/organizationModel.js'
-    );
-    const orgs = await Organization.find(ACTIVE_ORG_FILTER);
-
-    const results = [];
-    let sentCount = 0;
-    let failedCount = 0;
-
-    for (const org of orgs) {
-      try {
-        await sendWeeklyBrief(org._id);
-        results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
-        sentCount++;
-        console.log(`  ✅ ${org.name}: sent`);
-      } catch (err) {
-        results.push({ orgName: org.name, orgId: org._id, status: 'failed', error: err.message });
-        failedCount++;
-        console.error(`  ❌ ${org.name}: ${err.message}`);
-      }
+  for (const org of orgs) {
+    if (sentOrgIds.has(String(org._id))) {
+      results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
+      continue;
     }
-
-    const durationMs = Date.now() - startTime;
-    const status = failedCount === 0 ? 'success' : sentCount > 0 ? 'partial' : 'failed';
-
-    // Persist to MongoDB
-    await CronLog.create({
-      jobName: JOB_NAME,
-      weekKey,
-      executedAt: new Date(),
-      durationMs,
-      status,
-      results,
-      trigger,
-      totalOrgs: orgs.length,
-      sentCount,
-      failedCount,
-    });
-
-    console.log(
-      `[WeeklyScheduler] ${status === 'success' ? '✅' : '⚠️'} Done in ${(durationMs / 1000).toFixed(1)}s — ${sentCount} sent, ${failedCount} failed`
-    );
-
-    // If partial failure, schedule a retry for failed orgs in 30 minutes
-    if (failedCount > 0) {
-      const failedOrgIds = results.filter((r) => r.status === 'failed').map((r) => r.orgId);
-      console.log(
-        `[WeeklyScheduler] ⏳ Scheduling retry for ${failedCount} failed orgs in 30 minutes...`
-      );
-      setTimeout(() => retryFailedOrgs(failedOrgIds, weekKey), 30 * 60 * 1000);
-    }
-
-    return { skipped: false, weekKey, status, sentCount, failedCount, durationMs };
-  } catch (error) {
-    console.error(`[WeeklyScheduler] ❌ Critical failure:`, error.message);
-
-    // Still log the failure so we can diagnose
     try {
-      await CronLog.create({
-        jobName: JOB_NAME,
-        weekKey,
-        executedAt: new Date(),
-        durationMs: Date.now() - startTime,
-        status: 'failed',
-        results: [],
-        trigger,
-        totalOrgs: 0,
-        sentCount: 0,
-        failedCount: 0,
-      });
-    } catch (logErr) {
-      console.error(`[WeeklyScheduler] Could not log failure:`, logErr.message);
-    }
-
-    throw error;
-  }
-}
-
-// ═══════════════════════════════════════════════
-// RETRY: Re-send only for failed orgs
-// ═══════════════════════════════════════════════
-
-async function retryFailedOrgs(orgIds, weekKey) {
-  console.log(`[WeeklyScheduler] 🔄 Retrying ${orgIds.length} failed orgs...`);
-
-  try {
-    const { sendWeeklyBrief } = await import('../services/weeklyBriefService.js');
-    let retrySuccess = 0;
-
-    for (const orgId of orgIds) {
-      try {
-        await sendWeeklyBrief(orgId);
-        retrySuccess++;
-        console.log(`  ✅ Retry succeeded for org ${orgId}`);
-      } catch (err) {
-        console.error(`  ❌ Retry still failing for org ${orgId}: ${err.message}`);
+      const delivery = await sendWeeklyBrief(org._id);
+      if (delivery?.skipped && delivery.reason !== 'already_sent') {
+        throw new Error('Delivery skipped without a confirmed send');
       }
+      results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
+      console.log(`[WeeklyScheduler] ${org.name}: sent or already confirmed`);
+    } catch (error) {
+      results.push({
+        orgName: org.name, orgId: org._id, status: 'failed',
+        error: String(error?.message || 'unknown_delivery_failure').slice(0, 250),
+      });
+      console.error(`[WeeklyScheduler] ${org.name}: ${error.message}`);
     }
-
-    // Update the existing log to reflect retry results
-    if (retrySuccess > 0) {
-      await CronLog.findOneAndUpdate(
-        { jobName: JOB_NAME, weekKey },
-        {
-          $inc: { sentCount: retrySuccess, failedCount: -retrySuccess },
-          $set: { status: 'success' },
-        }
-      );
-      console.log(
-        `[WeeklyScheduler] 🔄 Retry completed: ${retrySuccess}/${orgIds.length} recovered`
-      );
-    }
-  } catch (err) {
-    console.error(`[WeeklyScheduler] Retry error:`, err.message);
   }
+  const sentCount = results.filter(result => result.status === 'sent').length;
+  const failedCount = results.length - sentCount;
+  const status = failedCount === 0 ? 'success' : sentCount > 0 ? 'partial' : 'failed';
+
+  // The unique week record retains per-org failures across Render restarts.
+  await CronLog.findOneAndUpdate(
+    { jobName: JOB_NAME, weekKey },
+    { $set: {
+      executedAt: new Date(), durationMs: Date.now() - started,
+      status, results, trigger, totalOrgs: orgs.length,
+      sentCount, failedCount,
+    } },
+    { upsert: true, new: true },
+  );
+  console.log(
+    `[WeeklyScheduler] ${weekKey}: sent=${sentCount}, failed=${failedCount}, status=${status}`
+  );
+  return { skipped: false, weekKey, status, sentCount, failedCount };
 }
 
 // ═══════════════════════════════════════════════
@@ -379,7 +319,7 @@ async function startupCatchUp() {
 
     // 2. Check if emails were sent this week (should happen Monday)
     if (isMondayOrLater()) {
-      const emailsSent = await CronLog.hasRunForWeek(JOB_NAME, getWeekKey());
+      const emailsSent = await isWeeklyEmailComplete(getWeekKey());
       if (!emailsSent) {
         console.log('[WeeklyScheduler] ⚡ Missed weekly emails — sending now');
         await executeWeeklyEmails('startup-catchup');
@@ -412,7 +352,7 @@ export async function getEmailScheduleStatus() {
     CronLog.getLastSuccessfulRun(JOB_NAME),
     CronLog.getLastSuccessfulRun(REPORT_GEN_JOB),
     CronLog.getLastSuccessfulRun(SITE_ANALYTICS_JOB),
-    CronLog.hasRunForWeek(JOB_NAME, weekKey),
+    isWeeklyEmailComplete(weekKey),
     CronLog.hasRunForWeek(REPORT_GEN_JOB, weekKey),
     CronLog.hasRunForWeek(SITE_ANALYTICS_JOB, weekKey),
   ]);
@@ -552,7 +492,7 @@ export function initWeeklyEmailScheduler() {
 
     try {
       const weekKey = getWeekKey();
-      const alreadySent = await CronLog.hasRunForWeek(JOB_NAME, weekKey);
+      const alreadySent = await isWeeklyEmailComplete(weekKey);
       if (!alreadySent) {
         console.log('[WeeklyScheduler] 🐕 Watchdog detected missed email — sending now');
         await executeWeeklyEmails('watchdog');
@@ -574,6 +514,6 @@ export function initWeeklyEmailScheduler() {
   console.log('[WeeklyScheduler] 🔍 Startup catch-up: Will check in 30 seconds');
 
   console.log(
-    '[WeeklyScheduler] ✅ Scheduler initialized — emails WILL be sent every Monday, guaranteed.'
+    '[WeeklyScheduler] Scheduler initialized: weekly send and persisted retry enabled.'
   );
 }
