@@ -170,8 +170,8 @@ describe('HR roster import', () => {
     const result = await importHrRosterRows(org._id, rows, {
       approvedBy: manager._id, applyManagers: true,
     });
-    const team = await Team.findOne({ orgId: org._id, name: 'Tehnopol Kiirendi' }).lean();
     const ada = await User.findById(members[0]._id).lean();
+    const team = await Team.findById(ada.teamId).lean();
     const appointment = await ManagerAssignment.findOne({
       orgId: org._id, teamId: team._id, managerUserId: manager._id,
     }).lean();
