@@ -46,9 +46,9 @@ describe('hierarchical department and manager workbook', () => {
   test('keeps a leadership reporting cohort without double-counting a primary department', () => {
     const parsed = parseDepartmentManagerRosterSheet([
       header,
-      ['Juhtkond', 'Agnes Leader\\nagnes@example.test', 'Katrin Example'],
+      ['Juhtkond', 'Agnes Leader\nagnes@example.test', 'Katrin Example'],
       [null, null, 'Anne Example'],
-      ['Administratsioon-finants', 'Agnes Leader\\nagnes@example.test', 'Katrin Example'],
+      ['Administratsioon-finants', 'Agnes Leader\nagnes@example.test', 'Katrin Example'],
       [null, null, 'Liis Example'],
     ]);
     expect(parsed.distinctNames).toBe(3);
