@@ -398,7 +398,7 @@ export async function getEmailScheduleStatus() {
     },
     siteAnalyticsReport: {
       sentThisWeek: siteAnalyticsThisWeek,
-      recipientEmail: process.env.SITE_ANALYTICS_REPORT_EMAIL || 'sten.kreisberg@gmail.com',
+      recipientEmail: process.env.SITE_ANALYTICS_REPORT_EMAIL || 'sten.kreisberg@signaltrue.ai',
       lastRun: lastSiteAnalyticsRun
         ? {
             weekKey: lastSiteAnalyticsRun.weekKey,
