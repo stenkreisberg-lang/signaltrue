@@ -8,7 +8,7 @@ import {
 } from './ga4Service.js';
 import { getSearchConsoleOverview } from './searchConsoleService.js';
 
-const DEFAULT_RECIPIENT = 'sten.kreisberg@gmail.com';
+const DEFAULT_RECIPIENT = 'sten.kreisberg@signaltrue.ai';
 const FROM_EMAIL = process.env.SITE_ANALYTICS_FROM_EMAIL || 'SignalTrue <reports@signaltrue.ai>';
 
 function number(value) {
