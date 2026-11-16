@@ -87,7 +87,7 @@ services:
       - key: REPORT_TRIGGER_SECRET
         sync: false
       - key: SITE_ANALYTICS_REPORT_EMAIL
-        value: sten.kreisberg@gmail.com
+        value: sten.kreisberg@signaltrue.ai
       - key: SITE_ANALYTICS_FROM_EMAIL
         sync: false
       - key: SEARCH_CONSOLE_SITE_URL
