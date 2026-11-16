@@ -68,6 +68,16 @@ function isSundayNightOrLater() {
 
 // Single-flight for overlapping hourly checks in one server process.
 // WeeklyBriefDispatch separately guards duplicate provider delivery.
+// Pure helper used by the recovery path and its regression tests.
+export function selectPendingWeeklyOrganizations(organizations, previousResults = []) {
+  const sent = new Set(previousResults
+    .filter(item => item.status === 'sent')
+    .map(item => String(item.orgId)));
+  return organizations.filter(org => !sent.has(String(org._id)));
+}
+export function weeklyDeliveryIsComplete(status) {
+  return status === 'success';
+}
 let weeklyEmailRunPromise = null;
 async function executeWeeklyEmails(trigger = 'cron') {
   if (weeklyEmailRunPromise) return weeklyEmailRunPromise;
@@ -78,7 +88,7 @@ async function executeWeeklyEmails(trigger = 'cron') {
 async function isWeeklyEmailComplete(weekKey) {
   const run = await CronLog.findOne({ jobName: JOB_NAME, weekKey })
     .select('status').lean();
-  return run?.status === 'success';
+  return weeklyDeliveryIsComplete(run?.status);
 }
 async function executeWeeklyEmailsOnce(trigger) {
   const weekKey = getWeekKey();
@@ -88,9 +98,6 @@ async function executeWeeklyEmailsOnce(trigger) {
     return { skipped: true, weekKey };
   }
   // A partial run is not complete. Retry only organisations that were not sent.
-  const sentOrgIds = new Set((previous?.results || [])
-    .filter(item => item.status === 'sent')
-    .map(item => String(item.orgId)));
 
   // No customer mail is dispatched unless the measurement cycle completes.
   await ensureWeeklyCycleComplete();
@@ -99,10 +106,12 @@ async function executeWeeklyEmailsOnce(trigger) {
   const { default: Organization, ACTIVE_ORG_FILTER } =
     await import('../models/organizationModel.js');
   const orgs = await Organization.find(ACTIVE_ORG_FILTER);
+  const pendingOrgIds = new Set(selectPendingWeeklyOrganizations(orgs, previous?.results || [])
+    .map(org => String(org._id)));
   const results = [];
 
   for (const org of orgs) {
-    if (sentOrgIds.has(String(org._id))) {
+    if (!pendingOrgIds.has(String(org._id))) {
       results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
       continue;
     }
