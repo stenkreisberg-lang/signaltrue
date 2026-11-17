@@ -11,6 +11,7 @@ import { triggerManualSync } from '../services/integrationSyncScheduler.js';
 import { REQUIRED_MICROSOFT_APPLICATION_ROLES } from '../services/microsoftAdminConsentService.js';
 import { deriveMicrosoftIntegrationStatus } from '../services/microsoftIntegrationStatusService.js';
 import { deriveSourceMeasurementStatus } from '../services/sourceMeasurementStatus.js';
+import { MIN_METRIC_CONTRIBUTORS } from '../utils/privacyGate.js';
 import { buildMicrosoftSourceEvidencePipeline } from '../services/sourceEventEvidence.js';
 
 const router = express.Router();
@@ -194,6 +195,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     res.json({
       integrations: measuredIntegrations,
       evidenceSummary,
+      reportingPolicy: { minimumContributors: MIN_METRIC_CONTRIBUTORS },
       overallCoverage,
       setup,
       healthIssues,
