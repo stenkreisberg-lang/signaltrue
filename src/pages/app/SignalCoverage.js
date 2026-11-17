@@ -118,11 +118,14 @@ export default function SignalCoverage() {
         </div>
       </section>
       {status.effectiveTeamMinimum > status.minimumContributors && (
-        <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+        >
           This organisation is configured for at least {status.effectiveTeamMinimum} team members,
-          while the standard metric contributor minimum is {status.minimumContributors}.
-          Team eligibility may therefore differ from the two-person reporting policy.
-          Verify the tenant configuration before promising team reports; no setting has been changed.
+          while the standard metric contributor minimum is {status.minimumContributors}. Team
+          eligibility may therefore differ from the two-person reporting policy. Verify the tenant
+          configuration before promising team reports; no setting has been changed.
         </p>
       )}
       <section className="coverage-grid">
