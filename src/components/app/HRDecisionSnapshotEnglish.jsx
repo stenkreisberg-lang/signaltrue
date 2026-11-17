@@ -179,9 +179,12 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
         )}
 
         {showReportLink && (
-          <div className="border-t border-slate-200 pt-4">
+          <div className="flex flex-wrap gap-5 border-t border-slate-200 pt-4">
             <Link to="/app/latest-brief" className="text-sm font-semibold text-blue-700 underline">
-              Read the full evidence and record a decision
+              Read the full saved evidence
+            </Link>
+            <Link to="/app/control-reviews/new" className="text-sm font-semibold text-blue-700 underline">
+              Open a documented control review
             </Link>
           </div>
         )}
