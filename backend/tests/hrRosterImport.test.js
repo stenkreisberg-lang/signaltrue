@@ -193,6 +193,54 @@ describe('HR roster import', () => {
     expect(await Team.countDocuments({ orgId: org._id })).toBe(0);
   });
 
+  test('never partially imports a manager workbook when a staff identity is missing', async () => {
+    const org = await Organization.create({ name: 'Department fixture', domain: 'example.test' });
+    const initialTeam = await Team.create({ name: 'Previous', orgId: org._id });
+    const known = await User.create({
+      name: 'Known Worker', email: 'known@example.test',
+      accountStatus: 'active', role: 'team_member', orgId: org._id,
+      teamId: initialTeam._id, password: 'test-only',
+    });
+    const rows = [
+      { Name: 'Known Worker', Team: 'New Department', Department: 'New Department',
+        'Manager Name': 'Example Manager', 'Manager Email': 'manager@example.test',
+        'Roster Format': 'department_manager' },
+      { Name: 'Missing Worker', Team: 'New Department', Department: 'New Department',
+        'Manager Name': 'Example Manager', 'Manager Email': 'manager@example.test',
+        'Roster Format': 'department_manager' },
+    ];
+    await expect(importHrRosterRows(org._id, rows, {
+      approvedBy: known._id,
+    })).rejects.toThrow(/cannot be imported partially/);
+    expect((await User.findById(known._id)).teamId.toString())
+      .toBe(initialTeam._id.toString());
+    expect(await Team.countDocuments({ orgId: org._id })).toBe(1);
+    expect(await ManagerAssignment.countDocuments({ orgId: org._id })).toBe(0);
+  });
+
+  test('refuses manager-scope imports with a named email absent from the tenant directory', async () => {
+    const org = await Organization.create({ name: 'Manager fixture', domain: 'example.test' });
+    const team = await Team.create({ name: 'Original', orgId: org._id });
+    const members = await User.insertMany([
+      { name: 'Ada Worker', email: 'ada@example.test', orgId: org._id,
+        teamId: team._id, accountStatus: 'active', role: 'team_member' },
+      { name: 'Ben Worker', email: 'ben@example.test', orgId: org._id,
+        teamId: team._id, accountStatus: 'active', role: 'team_member' },
+    ]);
+    const rows = members.map(member => ({
+      Name: member.name, Team: 'New Department', Department: 'New Department',
+      'Manager Name': 'Unknown Manager', 'Manager Email': 'unknown@example.test',
+      'Roster Format': 'department_manager',
+    }));
+    await expect(importHrRosterRows(org._id, rows, {
+      approvedBy: members[0]._id, applyManagers: true,
+    })).rejects.toThrow(/manager_requires_unique_tenant_directory_identity/);
+    expect(await Team.countDocuments({ orgId: org._id })).toBe(1);
+    expect(await ManagerAssignment.countDocuments({ orgId: org._id })).toBe(0);
+    expect((await User.findById(members[0]._id)).teamId.toString())
+      .toBe(team._id.toString());
+  });
+
   test('extracts table-like text from PDF exports', () => {
     const rows = parseHrRosterPdfText(`
       Name  Email  Position  Department
