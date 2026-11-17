@@ -1,7 +1,7 @@
 import { hasValidAdminApiKey } from '../middleware/auth.js';
 import express from 'express';
 import multer from 'multer';
-import { authenticateToken, requireRoles } from '../middleware/auth.js';
+import { authenticateToken, requireCurrentUserRoles, requireRoles } from '../middleware/auth.js';
 import {
   cleanupInvalidEmployees,
   syncEmployeesFromSlack,
@@ -183,7 +183,9 @@ router.post(
 router.post(
   '/hr-roster',
   authenticateToken,
-  requireRoles(['hr_admin', 'admin', 'master_admin']),
+  // HR roster approval changes team and reporting scope. A stale JWT must
+  // never retain permissions after the user's org/role/account changes.
+  requireCurrentUserRoles(['hr_admin', 'admin', 'master_admin']),
   rosterUpload,
   async (req, res) => {
     try {
