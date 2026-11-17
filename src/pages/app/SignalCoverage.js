@@ -6,7 +6,13 @@ import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function SignalCoverage() {
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState({ loading: true, sources: [], calibration: null, minimumContributors: null, sourceError: false });
+  const [status, setStatus] = useState({
+    loading: true,
+    sources: [],
+    calibration: null,
+    minimumContributors: null,
+    sourceError: false,
+  });
 
   useEffect(() => {
     let active = true;
@@ -27,7 +33,7 @@ export default function SignalCoverage() {
           sourceError: integration.status !== 'fulfilled',
           minimumContributors:
             integration.status === 'fulfilled'
-              ? integration.value.data.reportingPolicy?.minimumContributors ?? null
+              ? (integration.value.data.reportingPolicy?.minimumContributors ?? null)
               : null,
           sources:
             integration.status === 'fulfilled' ? integration.value.data.integrations || [] : [],
@@ -35,7 +41,14 @@ export default function SignalCoverage() {
             calibration.status === 'fulfilled' && calibration.value ? calibration.value.data : null,
         });
       } catch {
-        if (active) setStatus({ loading: false, sources: [], calibration: null, minimumContributors: null, sourceError: true });
+        if (active)
+          setStatus({
+            loading: false,
+            sources: [],
+            calibration: null,
+            minimumContributors: null,
+            sourceError: true,
+          });
       }
     };
     load();
@@ -87,7 +100,13 @@ export default function SignalCoverage() {
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>{status.loading ? '...' : status.minimumContributors != null ? `${status.minimumContributors} contributors` : 'Not verified'}</strong>
+            <strong>
+              {status.loading
+                ? '...'
+                : status.minimumContributors != null
+                  ? `${status.minimumContributors} contributors`
+                  : 'Not verified'}
+            </strong>
             <span>Minimum contributors for a reportable metric</span>
           </div>
         </div>
@@ -101,7 +120,10 @@ export default function SignalCoverage() {
             unmapped data must never be treated as zero work.
           </p>
           {status.sourceError ? (
-            <p className="coverage-empty" role="alert">Source status could not be loaded. This is not evidence that there are no integrations or events.</p>
+            <p className="coverage-empty" role="alert">
+              Source status could not be loaded. This is not evidence that there are no integrations
+              or events.
+            </p>
           ) : status.sources.length === 0 ? (
             <p className="coverage-empty">No sources were returned by the integration service.</p>
           ) : (
@@ -120,7 +142,9 @@ export default function SignalCoverage() {
                           ? ` · last sync ${new Date(source.lastSync).toLocaleDateString()}`
                           : ''}
                       </small>
-                      <small>Connection: {String(source.status || 'unknown').replaceAll('_', ' ')}</small>
+                      <small>
+                        Connection: {String(source.status || 'unknown').replaceAll('_', ' ')}
+                      </small>
                       {source.statusMessage && <small>{source.statusMessage}</small>}
                       {source.sourceEvidence && !source.sourceEvidence.evidenceQueryFailed && (
                         <small>

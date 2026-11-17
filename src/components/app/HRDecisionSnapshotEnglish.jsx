@@ -58,7 +58,12 @@ function shortDate(value, timeZone = 'UTC') {
   if (!value) return '';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric', timeZone });
+  return date.toLocaleDateString('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone,
+  });
 }
 
 export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
@@ -73,7 +78,9 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   const period = [
     shortDate(brief.periodStart, brief.reportTimeZone || 'UTC'),
     shortDate(periodEndInclusive, brief.reportTimeZone || 'UTC'),
-  ].filter(Boolean).join(' to ');
+  ]
+    .filter(Boolean)
+    .join(' to ');
   const teams = (brief.workPattern?.teams || []).filter((team) => team?.teamName).slice(0, 4);
   const unavailableCount = dimensions.filter(
     ({ metric }) => !metric || metric.available !== true || number(metric.current) == null
@@ -120,9 +127,9 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
 
         {!reportParityConfirmed && (
           <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            This saved report does not include confirmed source-to-snapshot reconciliation.
-            That is a verification limitation, not proof that the measurements are incorrect.
-            Check source evidence and team mapping before relying on a conclusion.
+            This saved report does not include confirmed source-to-snapshot reconciliation. That is
+            a verification limitation, not proof that the measurements are incorrect. Check source
+            evidence and team mapping before relying on a conclusion.
           </p>
         )}
 
@@ -196,7 +203,10 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
             <Link to="/app/latest-brief" className="text-sm font-semibold text-blue-700 underline">
               Read the full saved evidence
             </Link>
-            <Link to="/app/control-reviews/new" className="text-sm font-semibold text-blue-700 underline">
+            <Link
+              to="/app/control-reviews/new"
+              className="text-sm font-semibold text-blue-700 underline"
+            >
               Open a documented control review
             </Link>
           </div>

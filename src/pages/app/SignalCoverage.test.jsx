@@ -65,9 +65,7 @@ it('does not misrepresent a failed status request as no connected sources', asyn
   render(<SignalCoverage />);
 
   await waitFor(() => {
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Source status could not be loaded'
-    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Source status could not be loaded');
   });
   expect(screen.getByText('Not verified')).toBeInTheDocument();
 });
