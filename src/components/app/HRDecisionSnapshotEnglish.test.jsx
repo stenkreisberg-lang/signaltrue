@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import HRDecisionSnapshotEnglish from './HRDecisionSnapshotEnglish';
 
 vi.mock('react-router-dom', () => ({
-  Link: ({ children }) => children,
+  Link: ({ children, to }) => <a href={to}>{children}</a>,
 }));
 
 it('uses the inclusive end of the saved report period even in Tallinn time zone', () => {
