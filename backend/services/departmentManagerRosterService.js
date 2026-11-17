@@ -31,10 +31,10 @@ export function parseDepartmentManagerRosterSheet(grid) {
     if (clean(rawManager)) {
       managerEmail = emailFrom(rawManager);
       managerName = clean(rawManager).split(/\r?\n/)[0].trim();
-      if (!department || !managerEmail) {
-        exceptions.push({ row: i + 1, reason: 'manager_missing_department_or_email' });
+      if (!department || !managerName) {
+        exceptions.push({ row: i + 1, reason: 'manager_missing_department_or_name' });
       } else {
-        managers.set(key(department) + '|' + managerEmail, {
+        managers.set(key(department) + '|' + (managerEmail || 'name:' + key(managerName)), {
           department, managerEmail, managerName,
         });
       }
@@ -48,48 +48,80 @@ export function parseDepartmentManagerRosterSheet(grid) {
   for (const manager of managers.values()) {
     const id = key(manager.department);
     if (!managersByDepartment.has(id)) managersByDepartment.set(id, new Set());
-    managersByDepartment.get(id).add(manager.managerEmail);
+    managersByDepartment.get(id).add(manager.managerEmail || 'name:' + key(manager.managerName));
   }
 
-  // The opening unlabelled names are not an organisation unit. If they also
-  // appear in a named department, use only the explicit assignment.
+  // A person can belong to a functional department and to Juhtkond.
+  // A leadership membership is a reporting cohort, not a second primary
+  // team: keeping both as primary would double count Outlook/Teams events.
+  // Contradictory non-leadership memberships must be reviewed by HR.
   const byName = new Map();
   for (const entry of entries) {
     const id = key(entry.name);
-    const previous = byName.get(id);
-    if (!previous) { byName.set(id, entry); continue; }
-    if (!previous.department && entry.department) {
-      byName.set(id, entry);
-    } else if (previous.department && !entry.department) {
-      // Preserve explicit assignment over the introductory list.
-    } else if (key(previous.department) === key(entry.department) &&
-               previous.managerEmail === entry.managerEmail) {
-      exceptions.push({ row: entry.sourceRow, reason: 'duplicate_same_scope' });
-    } else {
-      byName.set(id, { ...entry, conflict: true });
-      exceptions.push({ row: entry.sourceRow, reason: 'conflicting_employee_scope' });
-    }
+    if (!byName.has(id)) byName.set(id, []);
+    byName.get(id).push(entry);
   }
 
   const rows = [];
-  for (const entry of byName.values()) {
-    if (entry.conflict) continue;
-    if (!entry.department || !entry.managerEmail) {
-      exceptions.push({ row: entry.sourceRow, reason: 'unassigned_employee' });
+  for (const appearances of byName.values()) {
+    const withDepartment = appearances.filter(entry => Boolean(entry.department));
+    if (!withDepartment.length) {
+      exceptions.push({ row: appearances[0].sourceRow, reason: 'unassigned_employee' });
       continue;
     }
+
+    const distinctScopes = new Map();
+    for (const entry of withDepartment) {
+      const id = key(entry.department) + '|' +
+        (entry.managerEmail || 'manager-name:' + key(entry.managerName));
+      if (!distinctScopes.has(id)) distinctScopes.set(id, entry);
+      else exceptions.push({ row: entry.sourceRow, reason: 'duplicate_same_scope' });
+    }
+    const scopes = [...distinctScopes.values()];
+    const primaryScopes = scopes.filter(entry => key(entry.department) !== 'juhtkond');
+    const leadershipScopes = scopes.filter(entry => key(entry.department) === 'juhtkond');
+
+    let primary;
+    let reportingGroups = [];
+    if (primaryScopes.length === 1 && leadershipScopes.length <= 1) {
+      primary = primaryScopes[0];
+      if (leadershipScopes.length) reportingGroups = ['Juhtkond'];
+    } else if (primaryScopes.length === 0 && leadershipScopes.length === 1) {
+      primary = leadershipScopes[0];
+    } else {
+      exceptions.push({
+        row: scopes[scopes.length - 1].sourceRow,
+        reason: 'conflicting_employee_scope',
+        name: appearances[0].name,
+      });
+      continue;
+    }
+    if (!primary.managerName || !primary.department) {
+      exceptions.push({ row: primary.sourceRow, reason: 'manager_missing_department_or_name' });
+      continue;
+    }
+    if (!primary.managerEmail) {
+      exceptions.push({
+        row: primary.sourceRow,
+        reason: 'manager_email_missing_directory_resolution_required',
+        managerName: primary.managerName,
+      });
+    }
+
     const separateManagerScopes =
-      (managersByDepartment.get(key(entry.department))?.size || 0) > 1;
+      (managersByDepartment.get(key(primary.department))?.size || 0) > 1;
     const team = separateManagerScopes
-      ? `${entry.department} / ${entry.managerName}`
-      : entry.department;
+      ? `${primary.department} / ${primary.managerName}`
+      : primary.department;
     rows.push({
-      Name: entry.name,
-      Department: entry.department,
+      Name: primary.name,
+      Department: primary.department,
       Team: team,
-      'Manager Email': entry.managerEmail,
+      'Manager Email': primary.managerEmail,
+      'Manager Name': primary.managerName,
+      'Additional Reporting Groups': reportingGroups,
       'Roster Format': 'department_manager',
-      'Source Row': entry.sourceRow,
+      'Source Row': primary.sourceRow,
     });
   }
   return { rows, managers: [...managers.values()], exceptions,
