@@ -30,3 +30,16 @@ This branch addresses confirmed UI defects from the 17 November screenshots. It 
 
 ## Production safety
 This is a draft pull request. Do not merge, deploy, alter production tenant data, or send customer email until the release blockers have accepted evidence. Tracking issue: #86.
+
+## Independently observed production evidence — 17 Nov
+
+- Current active Tehnopol tenant: minimum two active contributors; 42 active application accounts, 41 qualifying internal employee candidates. This does not itself prove the customer's roster has been HR-approved.
+- Latest corrected workbook (received 16 Nov) has 43 department memberships for 40 unique people. Three belong to both Juhtkond and a functional team; 10 entries form the Tehnopol Kiirendi cohort. Confirm all names against the live Microsoft directory before importing, especially the manager named without an email.
+- Read-only backend parity diagnostic for 2026-11-10 through 2026-11-17 UTC: saved meeting instances 344 vs recomputed 343, saved attendee hours 930.9831 vs 930.4831. Messaging 4964, after-hours message ratio and focus availability reconcile. **Overall parity FAIL**. No historical report or customer source data was overwritten.
+- The routine daily metric computation for 16 Nov ran at 04:00 UTC on 17 Nov. New metadata can arrive afterward. PR #85 now logs aggregate source insert/update freshness relative to this snapshot, without exposing identities or changing records. Check that output after the next reviewed deployment; do not assume late ingestion is the cause.
+- Live manager status: zero HR-verified teams, zero active verified manager-account scopes, zero actual manager-account-session validations. Pending-only onboarding code cannot stand in for a real manager sign-in.
+- Latest source mapping was approximately 95% for all work events; 65 distinct Teams sender IDs did not match currently known internal directory IDs. This is not proof that they are internal staff. Classify only with verified directory evidence.
+- Source-comparable cross-team trend suppression is implemented and tested on PR #85; unreportable rates now display "Not comparable" and a specific reason rather than a potentially alarming percentage.
+- The project’s protected frontend preview is built by Vercel; successful preview build and all GitHub automated tests are necessary but not sufficient for production deployment.
+
+**Decision:** Do not close Issue #86 or merge PR #85 as a fully accepted release until the outstanding customer-specific checks are complete. Do not send customer emails, enable manager permissions, or silently rewrite saved reports to manufacture parity.
