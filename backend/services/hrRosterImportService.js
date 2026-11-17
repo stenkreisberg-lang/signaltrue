@@ -375,20 +375,16 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       resolved.has(row) ? { ...row, 'Manager Email': resolved.get(row) } : row);
   }
 
-  const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
-  const teams = await Team.find({ orgId });
-  const teamsByName = new Map(teams.map((team) => [team.name.toLowerCase(), team]));
-  teamsByName.set('unassigned', unassignedTeam);
-
-  // A manager-labelled HR workbook contains employee names, but no employee
-  // emails. Reconcile only against UNIQUE existing directory identities; never
-  // guess addresses or create employee accounts from names.
-  const knownDirectory = rows.some(row => row?.['Roster Format'] === 'department_manager')
+  // Validate every manager-style roster row before the *first* write.
+  // Silently skipping one unmatched employee would make a seemingly
+  // HR-approved structure internally inconsistent.
+  const knownDirectory = managerRows.length
     ? await User.find({ orgId, accountStatus: { $ne: 'inactive' } })
         .select('_id name displayName firstName lastName email accountStatus').lean()
     : [];
   const directoryByName = new Map();
-  const canonicalName = name => normalizeDirectoryString(name)?.normalize('NFKC').toLocaleLowerCase('et') || '';
+  const canonicalName = name =>
+    normalizeDirectoryString(name)?.normalize('NFKC').toLocaleLowerCase('et') || '';
   for (const person of knownDirectory) {
     const display = person.name || person.displayName ||
       [person.firstName, person.lastName].filter(Boolean).join(' ');
@@ -397,6 +393,57 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     if (!directoryByName.has(lookup)) directoryByName.set(lookup, []);
     directoryByName.get(lookup).push(person);
   }
+  if (managerRows.length) {
+    const matchedEmailSet = new Set();
+    const unresolved = [];
+    for (const [index, row] of resolvedRows.entries()) {
+      const canonical = canonicalizeRosterRow(row, index);
+      if (canonical.sourceFormat !== 'department_manager') continue;
+      const matches = directoryByName.get(canonicalName(canonical.name)) || [];
+      const match = matches.length === 1 ? matches[0] : null;
+      const matchedEmail = normalizeEmail(match?.email);
+      if (!canonical.team || !matchedEmail) {
+        unresolved.push({
+          row: row['Source Row'] || canonical.rowNumber,
+          reason: !canonical.team ? 'no_department' :
+            matches.length > 1 ? 'ambiguous_employee_identity' : 'missing_employee_identity',
+        });
+        continue;
+      }
+      if (matchedEmailSet.has(matchedEmail)) {
+        unresolved.push({
+          row: row['Source Row'] || canonical.rowNumber,
+          reason: 'duplicate_employee_identity',
+        });
+      }
+      matchedEmailSet.add(matchedEmail);
+      if (options.applyManagers === true) {
+        const currentManager = knownDirectory.filter(person =>
+          normalizeEmail(person.email) === canonical.managerEmail
+        );
+        if (currentManager.length !== 1) {
+          unresolved.push({
+            row: row['Source Row'] || canonical.rowNumber,
+            reason: 'manager_requires_unique_tenant_directory_identity',
+          });
+        }
+      }
+    }
+    if (unresolved.length) {
+      const summary = unresolved
+        .slice(0, 12)
+        .map(entry => `row ${entry.row}: ${entry.reason}`)
+        .join('; ');
+      throw new Error(
+        `HR manager roster cannot be imported partially (${unresolved.length} unresolved): ${summary}. No employees, teams, or manager permissions were changed.`
+      );
+    }
+  }
+
+  const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
+  const teams = await Team.find({ orgId });
+  const teamsByName = new Map(teams.map((team) => [team.name.toLowerCase(), team]));
+  teamsByName.set('unassigned', unassignedTeam);
   const managerScopes = new Map();
 
   for (const [index, row] of resolvedRows.entries()) {
