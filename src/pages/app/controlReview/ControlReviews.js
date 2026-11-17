@@ -96,6 +96,18 @@ export default function ControlReviews() {
             </Link>
           )}
 
+          {MODULE_ORDER.every((key) => !modules[key]?.items?.length) && (
+            <div className="app-panel mb-5 border-teal-200 bg-teal-50 text-sm text-slate-800">
+              <strong>No control reviews recorded yet.</strong>{' '}
+              Start with one documented workplace change or source-supported observation;
+              assign the affected team and the measurement to recheck. This does not
+              establish whether the change caused an outcome.
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Link to="/app/control-reviews/new" className="font-semibold text-teal-800 underline">Open a control review</Link>
+                <Link to="/app/latest-brief" className="font-semibold text-teal-800 underline">Inspect the saved report</Link>
+              </div>
+            </div>
+          )}
           <div className="cr-modules">
             {MODULE_ORDER.map((key) => {
               const module = modules[key];
@@ -105,7 +117,19 @@ export default function ControlReviews() {
                 <section key={key} className="app-panel cr-section">
                   <h2>{module.question}</h2>
 
-                  {module.items.length === 0 && <EmptyNote>Nothing here right now.</EmptyNote>}
+                  {module.items.length === 0 && (
+                    <EmptyNote>
+                      {key === 'needsAttention'
+                        ? 'No recorded review currently needs attention.'
+                        : key === 'controlsBeingImplemented'
+                          ? 'No controls are recorded as being implemented.'
+                          : key === 'monitoring'
+                            ? 'No follow-up measurements are currently scheduled.'
+                            : key === 'reviewsDue'
+                              ? 'No recorded reviews are due.'
+                              : 'No recorded review exceptions require investigation.'}
+                    </EmptyNote>
+                  )}
 
                   {key === 'needsAttention' &&
                     module.items.map((item) => (
