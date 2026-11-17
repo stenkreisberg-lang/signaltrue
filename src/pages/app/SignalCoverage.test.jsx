@@ -69,3 +69,21 @@ it('does not misrepresent a failed status request as no connected sources', asyn
   });
   expect(screen.getByText('Not verified')).toBeInTheDocument();
 });
+
+it('warns rather than silently claiming two-person team eligibility when tenant policy differs', async () => {
+  api.get.mockImplementation((url) =>
+    url === '/integration-dashboard/status'
+      ? Promise.resolve({
+          data: {
+            reportingPolicy: { minimumContributors: 2, effectiveTeamMinimum: 8 },
+            integrations: [],
+          },
+        })
+      : Promise.resolve({ data: {} })
+  );
+
+  render(<SignalCoverage />);
+  const warning = await screen.findByRole('alert');
+  expect(warning).toHaveTextContent('configured for at least 8 team members');
+  expect(warning).toHaveTextContent('standard metric contributor minimum is 2');
+});
