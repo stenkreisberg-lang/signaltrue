@@ -78,6 +78,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   const unavailableCount = dimensions.filter(
     ({ metric }) => !metric || metric.available !== true || number(metric.current) == null
   ).length;
+  const reportParityConfirmed = brief.dataQuality?.sourceToSnapshotParity?.status === 'PASS';
 
   return (
     <section className="app-dashboard-section" aria-label="HR decision summary">
@@ -105,6 +106,10 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
                 ? 'Unknown'
                 : `${brief.coverage.mappingCoveragePct}%`}
             </p>
+            <p className={reportParityConfirmed ? 'text-emerald-800' : 'text-amber-800'}>
+              <strong>Source-to-report reconciliation:</strong>{' '}
+              {reportParityConfirmed ? 'Confirmed' : 'Not recorded in this report'}
+            </p>
             {unavailableCount > 0 && (
               <p className="font-semibold text-amber-800">
                 {unavailableCount} of 4 dimensions unverified
@@ -112,6 +117,14 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
             )}
           </div>
         </header>
+
+        {!reportParityConfirmed && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            This saved report does not include confirmed source-to-snapshot reconciliation.
+            That is a verification limitation, not proof that the measurements are incorrect.
+            Check source evidence and team mapping before relying on a conclusion.
+          </p>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dimensions.map(({ key, title, description, metric }) => {
