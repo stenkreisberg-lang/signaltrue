@@ -738,13 +738,13 @@
   }
 
   .app-main {
-    max-width: 1180px;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 30px 34px 64px;
   }
 
   .app-main-wide {
-    max-width: 1280px;
+    max-width: 1680px;
   }
 
   .app-privacy-bar {
