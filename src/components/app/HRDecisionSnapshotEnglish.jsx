@@ -54,20 +54,26 @@ export function buildHRDecisionDimensions(brief) {
   }));
 }
 
-function shortDate(value) {
+function shortDate(value, timeZone = 'UTC') {
   if (!value) return '';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric', timeZone });
 }
 
 export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   if (!brief) return null;
   const dimensions = buildHRDecisionDimensions(brief);
   const action = brief?.actions?.primary;
-  const period = [shortDate(brief.periodStart), shortDate(brief.periodEnd)]
-    .filter(Boolean)
-    .join(' to ');
+  // Period end is exclusive in saved weekly snapshots: display the last
+  // included calendar day, without changing the underlying query window.
+  const periodEndInclusive = brief.periodEnd
+    ? new Date(new Date(brief.periodEnd).getTime() - 1)
+    : null;
+  const period = [
+    shortDate(brief.periodStart, brief.reportTimeZone || 'UTC'),
+    shortDate(periodEndInclusive, brief.reportTimeZone || 'UTC'),
+  ].filter(Boolean).join(' to ');
   const teams = (brief.workPattern?.teams || []).filter((team) => team?.teamName).slice(0, 4);
   const unavailableCount = dimensions.filter(
     ({ metric }) => !metric || metric.available !== true || number(metric.current) == null
