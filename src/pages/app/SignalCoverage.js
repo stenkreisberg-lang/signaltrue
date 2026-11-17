@@ -11,6 +11,7 @@ export default function SignalCoverage() {
     sources: [],
     calibration: null,
     minimumContributors: null,
+    effectiveTeamMinimum: null,
     sourceError: false,
   });
 
@@ -35,6 +36,10 @@ export default function SignalCoverage() {
             integration.status === 'fulfilled'
               ? (integration.value.data.reportingPolicy?.minimumContributors ?? null)
               : null,
+          effectiveTeamMinimum:
+            integration.status === 'fulfilled'
+              ? (integration.value.data.reportingPolicy?.effectiveTeamMinimum ?? null)
+              : null,
           sources:
             integration.status === 'fulfilled' ? integration.value.data.integrations || [] : [],
           calibration:
@@ -47,6 +52,7 @@ export default function SignalCoverage() {
             sources: [],
             calibration: null,
             minimumContributors: null,
+            effectiveTeamMinimum: null,
             sourceError: true,
           });
       }
@@ -111,6 +117,14 @@ export default function SignalCoverage() {
           </div>
         </div>
       </section>
+      {status.effectiveTeamMinimum > status.minimumContributors && (
+        <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          This organisation is configured for at least {status.effectiveTeamMinimum} team members,
+          while the standard metric contributor minimum is {status.minimumContributors}.
+          Team eligibility may therefore differ from the two-person reporting policy.
+          Verify the tenant configuration before promising team reports; no setting has been changed.
+        </p>
+      )}
       <section className="coverage-grid">
         <div className="app-panel">
           <h2>Source verification</h2>
