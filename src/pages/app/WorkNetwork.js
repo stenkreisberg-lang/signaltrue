@@ -649,7 +649,7 @@ export default function WorkNetwork() {
               </div>
               {network.actualEdges.length === 0 ? (
                 <p className="mt-4 text-caption text-slate-600">
-                  No team-pair link met the five-contributor privacy threshold in this period.
+                  No team-pair link met the required contributor threshold in this period.
                 </p>
               ) : (
                 <div className="mt-5 overflow-x-auto">
