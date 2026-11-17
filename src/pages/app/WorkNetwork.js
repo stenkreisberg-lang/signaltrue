@@ -710,23 +710,34 @@ export default function WorkNetwork() {
                             </p>
                           </td>
                           <td className="px-3 py-4">{pct(edge.bridgeConcentration)}</td>
-                          <td className="px-3 py-4">{edge.trendPct == null ? (
+                          <td className="px-3 py-4">
+                            {edge.trendPct == null ? (
                               <span
                                 className="text-slate-500"
-                                title={{
-                                  period_sources_changed: 'Connected activity sources differ between periods.',
-                                  period_mapping_coverage_changed: 'Event-to-employee mapping is not comparable.',
-                                  represented_people_changed: 'The observed employee population changed.',
-                                  insufficient_period_events: 'There are too few observed events in one period.',
-                                  edge_sources_changed: 'The sources for this team interface changed.',
-                                  insufficient_base: 'The prior count was too small for a useful percentage.',
-                                }[edge.trendReason] || 'A comparable earlier period is unavailable.'}
+                                title={
+                                  {
+                                    period_sources_changed:
+                                      'Connected activity sources differ between periods.',
+                                    period_mapping_coverage_changed:
+                                      'Event-to-employee mapping is not comparable.',
+                                    represented_people_changed:
+                                      'The observed employee population changed.',
+                                    insufficient_period_events:
+                                      'There are too few observed events in one period.',
+                                    edge_sources_changed:
+                                      'The sources for this team interface changed.',
+                                    insufficient_base:
+                                      'The prior count was too small for a useful percentage.',
+                                  }[edge.trendReason] ||
+                                  'A comparable earlier period is unavailable.'
+                                }
                               >
                                 Not comparable
                               </span>
                             ) : (
                               trend(edge.trendPct)
-                            )}</td>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
