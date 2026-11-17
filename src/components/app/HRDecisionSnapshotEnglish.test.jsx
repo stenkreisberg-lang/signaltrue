@@ -11,8 +11,8 @@ it('uses the inclusive end of the saved report period even in Tallinn time zone'
     <HRDecisionSnapshotEnglish
       brief={{
         reportTimeZone: 'Europe/Tallinn',
-        periodStart: '2026-11-09T00:00:00Z',
-        periodEnd: '2026-11-16T00:00:00Z',
+        periodStart: '2026-11-08T22:00:00Z',
+        periodEnd: '2026-11-15T22:00:00Z',
         metrics: [],
         coverage: {},
         actions: {},
