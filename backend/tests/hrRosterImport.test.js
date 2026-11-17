@@ -223,9 +223,11 @@ describe('HR roster import', () => {
     const team = await Team.create({ name: 'Original', orgId: org._id });
     const members = await User.insertMany([
       { name: 'Ada Worker', email: 'ada@example.test', orgId: org._id,
-        teamId: team._id, accountStatus: 'active', role: 'team_member' },
+        teamId: team._id, accountStatus: 'active', role: 'team_member',
+        password: 'test-only' },
       { name: 'Ben Worker', email: 'ben@example.test', orgId: org._id,
-        teamId: team._id, accountStatus: 'active', role: 'team_member' },
+        teamId: team._id, accountStatus: 'active', role: 'team_member',
+        password: 'test-only' },
     ]);
     const rows = members.map(member => ({
       Name: member.name, Team: 'New Department', Department: 'New Department',
