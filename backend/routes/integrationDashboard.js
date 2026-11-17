@@ -40,7 +40,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     const [organization, connections, healthIssues] = await Promise.all([
       Organization.findById(orgId)
         .select(
-          'integrations.microsoft.accessToken integrations.microsoft.delegatedConnectedAt integrations.microsoft.delegatedScopes integrations.microsoft.tenantId integrations.microsoft.applicationConsentCallbackAt integrations.microsoft.applicationConsentGrantedAt integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentLastCheckedAt integrations.microsoft.applicationConsentLastError integrations.microsoft.applicationConsentRoles integrations.microsoft.applicationConsentSources'
+          'integrations.microsoft.accessToken integrations.microsoft.delegatedConnectedAt integrations.microsoft.delegatedScopes integrations.microsoft.tenantId integrations.microsoft.applicationConsentCallbackAt integrations.microsoft.applicationConsentGrantedAt integrations.microsoft.applicationConsentVerifiedAt integrations.microsoft.applicationConsentLastCheckedAt integrations.microsoft.applicationConsentLastError integrations.microsoft.applicationConsentRoles integrations.microsoft.applicationConsentSources settings.minTeamSize'
         )
         .lean(),
       IntegrationConnection.find({ orgId }).lean(),
@@ -192,10 +192,18 @@ router.get('/status', authenticateToken, async (req, res) => {
       generatedAt: new Date().toISOString(),
     };
 
+    const configuredMinimum = Number(organization?.settings?.minTeamSize);
+    const effectiveTeamMinimum = Number.isFinite(configuredMinimum)
+      ? Math.max(MIN_METRIC_CONTRIBUTORS, configuredMinimum)
+      : MIN_METRIC_CONTRIBUTORS;
+
     res.json({
       integrations: measuredIntegrations,
       evidenceSummary,
-      reportingPolicy: { minimumContributors: MIN_METRIC_CONTRIBUTORS },
+      reportingPolicy: {
+        minimumContributors: MIN_METRIC_CONTRIBUTORS,
+        effectiveTeamMinimum,
+      },
       overallCoverage,
       setup,
       healthIssues,
