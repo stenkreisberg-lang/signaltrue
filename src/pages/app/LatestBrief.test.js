@@ -98,6 +98,8 @@ const brief = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // This suite verifies the explicit Estonian reporting variant.
+  window.localStorage.setItem('signaltrue.uiLocale', 'et');
   installMatchMedia();
   getAuthenticatedContext.mockResolvedValue({
     user: { name: 'Admin', role: 'hr_admin' },
