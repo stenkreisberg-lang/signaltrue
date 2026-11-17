@@ -271,7 +271,9 @@ function isLikelyServiceAccount(candidate, email) {
     candidate.realName,
     candidate.title,
     candidate.jobTitle,
-    candidate.department,
+    // Department is organisation metadata, not an account identity. A real
+    // employee in "Tehnopol Kiirendi" or "Demo Operations" must not be
+    // classified as a service account because of the unit's name.
     localPart.replace(/[._+-]+/g, ' '),
   ]
     .map(normalizeDirectoryString)
