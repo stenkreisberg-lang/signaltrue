@@ -1,0 +1,29 @@
+name: One-time reporting coverage formatting
+on:
+  push:
+    branches:
+      - fix/reporting-qa-status-locale-20261117
+    paths:
+      - '.github/workflows/format-coverage-once.yml'
+permissions:
+  contents: write
+jobs:
+  format-once:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/reporting-qa-status-locale-20261117
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx prettier --write src/pages/app/SignalCoverage.js src/pages/app/SignalCoverage.test.jsx
+      - name: Commit formatting and remove one-time workflow
+        run: |
+          git add src/pages/app/SignalCoverage.js src/pages/app/SignalCoverage.test.jsx
+          git rm .github/workflows/format-coverage-once.yml
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'style: format source coverage policy display and test'
+          git push origin HEAD:fix/reporting-qa-status-locale-20261117
