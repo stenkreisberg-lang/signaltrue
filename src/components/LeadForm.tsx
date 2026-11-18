@@ -74,6 +74,7 @@ export default function LeadForm({
   const submissionInFlightRef = useRef(false);
   const lastValidationErrorRef = useRef('');
   const submissionIdRef = useRef(createSubmissionId());
+  const submittedInputRef = useRef<string | null>(null);
   const attribution = useMemo(() => getOriginalAttribution(), []);
   const planAnalyticsParam = plan ? { plan } : {};
 
@@ -121,6 +122,14 @@ export default function LeadForm({
       return;
     }
 
+    const submittedInput = JSON.stringify([
+      fields.fullName.trim(), fields.workEmail.trim(), fields.organization.trim(),
+      source, tag, plan || '', intent,
+    ]);
+    if (submittedInputRef.current !== null && submittedInputRef.current !== submittedInput) {
+      submissionIdRef.current = createSubmissionId();
+    }
+    submittedInputRef.current = submittedInput;
     submissionInFlightRef.current = true;
     setSubmitting(true);
     setSubmitError('');
