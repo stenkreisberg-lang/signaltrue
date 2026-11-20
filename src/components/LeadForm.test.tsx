@@ -168,3 +168,29 @@ test.each([false, true])('retries the same enquiry identity only for unchanged d
     expect(stored.size).toBe(1);
   }
 });
+
+test.each([
+  { success: 'false', confirmed: true, leadId: 'mock' },
+  { success: true, confirmed: 'false', leadId: 'mock' },
+  { success: true, confirmed: true, leadId: '   ' },
+  { success: true, confirmed: true, leadId: 123 },
+  { success: true, confirmed: true },
+])('does not confirm an invalid save receipt: %j', async (data) => {
+  vi.clearAllMocks();
+  vi.mocked(api.post).mockResolvedValueOnce({ data });
+  render(<LeadForm ctaLocation="test_location" />);
+  fillRequiredFields();
+  fireEvent.submit(document.getElementById('commercial-lead-form')!);
+  await screen.findByRole('alert');
+  expect(screen.queryByTestId('lead-confirmation')).not.toBeInTheDocument();
+  expect(screen.getByLabelText(/Work email/i)).toHaveValue('jane@example.com');
+  expect(trackFunnelEvent).not.toHaveBeenCalledWith('lead_submit_success', expect.anything());
+  expect(trackFunnelEvent).not.toHaveBeenCalledWith('lead_confirmed', expect.anything());
+  vi.mocked(api.post).mockResolvedValueOnce({
+    data: { success: true, confirmed: true, leadId: 'persisted-lead' },
+  });
+  fireEvent.submit(document.getElementById('commercial-lead-form')!);
+  await screen.findByTestId('lead-confirmation');
+  const calls = vi.mocked(api.post).mock.calls;
+  expect(calls[1][1].submissionId).toBe(calls[0][1].submissionId);
+});

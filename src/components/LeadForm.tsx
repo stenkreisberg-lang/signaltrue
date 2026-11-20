@@ -159,7 +159,10 @@ export default function LeadForm({
         timestamp: new Date().toISOString(),
       });
 
-      if (!response.data?.success || !response.data?.confirmed || !response.data?.leadId) {
+      if (
+        response.data?.success !== true || response.data?.confirmed !== true ||
+        typeof response.data?.leadId !== 'string' || !response.data.leadId.trim()
+      ) {
         throw new Error('The server did not confirm the request.');
       }
       trackFunnelEvent('lead_submit_success', {
