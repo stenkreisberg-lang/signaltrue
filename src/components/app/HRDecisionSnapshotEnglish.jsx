@@ -54,24 +54,38 @@ export function buildHRDecisionDimensions(brief) {
   }));
 }
 
-function shortDate(value) {
+function shortDate(value, timeZone = 'UTC') {
   if (!value) return '';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone,
+  });
 }
 
 export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   if (!brief) return null;
   const dimensions = buildHRDecisionDimensions(brief);
   const action = brief?.actions?.primary;
-  const period = [shortDate(brief.periodStart), shortDate(brief.periodEnd)]
+  // Period end is exclusive in saved weekly snapshots: display the last
+  // included calendar day, without changing the underlying query window.
+  const periodEndInclusive = brief.periodEnd
+    ? new Date(new Date(brief.periodEnd).getTime() - 1)
+    : null;
+  const period = [
+    shortDate(brief.periodStart, brief.reportTimeZone || 'UTC'),
+    shortDate(periodEndInclusive, brief.reportTimeZone || 'UTC'),
+  ]
     .filter(Boolean)
     .join(' to ');
   const teams = (brief.workPattern?.teams || []).filter((team) => team?.teamName).slice(0, 4);
   const unavailableCount = dimensions.filter(
     ({ metric }) => !metric || metric.available !== true || number(metric.current) == null
   ).length;
+  const reportParityConfirmed = brief.dataQuality?.sourceToSnapshotParity?.status === 'PASS';
 
   return (
     <section className="app-dashboard-section" aria-label="HR decision summary">
@@ -99,6 +113,10 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
                 ? 'Unknown'
                 : `${brief.coverage.mappingCoveragePct}%`}
             </p>
+            <p className={reportParityConfirmed ? 'text-emerald-800' : 'text-amber-800'}>
+              <strong>Source-to-report reconciliation:</strong>{' '}
+              {reportParityConfirmed ? 'Confirmed' : 'Not recorded in this report'}
+            </p>
             {unavailableCount > 0 && (
               <p className="font-semibold text-amber-800">
                 {unavailableCount} of 4 dimensions unverified
@@ -106,6 +124,14 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
             )}
           </div>
         </header>
+
+        {!reportParityConfirmed && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            This saved report does not include confirmed source-to-snapshot reconciliation. That is
+            a verification limitation, not proof that the measurements are incorrect. Check source
+            evidence and team mapping before relying on a conclusion.
+          </p>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dimensions.map(({ key, title, description, metric }) => {
@@ -173,9 +199,15 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
         )}
 
         {showReportLink && (
-          <div className="border-t border-slate-200 pt-4">
+          <div className="flex flex-wrap gap-5 border-t border-slate-200 pt-4">
             <Link to="/app/latest-brief" className="text-sm font-semibold text-blue-700 underline">
-              Read the full evidence and record a decision
+              Read the full saved evidence
+            </Link>
+            <Link
+              to="/app/control-reviews/new"
+              className="text-sm font-semibold text-blue-700 underline"
+            >
+              Open a documented control review
             </Link>
           </div>
         )}

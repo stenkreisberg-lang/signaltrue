@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import LatestBriefEnglish from './LatestBriefEnglish';
+import { getReportingLocale } from '../../utils/reportingLocale';
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -301,7 +302,7 @@ function AskBrief({ questions, onAsk, asking, answer, error }) {
   );
 }
 
-export default function LatestBrief() {
+function LatestBriefEstonian() {
   const [user, setUser] = useState(null);
   const [brief, setBrief] = useState(null);
   const [contexts, setContexts] = useState([]);
@@ -448,12 +449,6 @@ export default function LatestBrief() {
         </div>
       </div>
     );
-  }
-
-  // Scope the Estonian P2 experience to organisations using Tallinn
-  // reporting time; keep the established English workflow elsewhere.
-  if (brief?.reportTimeZone !== 'Europe/Tallinn') {
-    return <LatestBriefEnglish />;
   }
 
   const canRefresh = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
@@ -1171,4 +1166,9 @@ export default function LatestBrief() {
       )}
     </AppShell>
   );
+}
+
+// Language is an explicit preference, not a side effect of Europe/Tallinn.
+export default function LatestBrief() {
+  return getReportingLocale() === 'et' ? <LatestBriefEstonian /> : <LatestBriefEnglish />;
 }

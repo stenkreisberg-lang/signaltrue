@@ -47,6 +47,9 @@ const userSchema = new mongoose.Schema(
     hrStructure: {
       teamVerifiedAt: { type: Date, default: null },
       verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      // HR-verified additional reporting cohorts (e.g. Juhtkond).
+      // These are not primary team IDs and must not double-count work events.
+      reportingGroups: { type: [String], default: [] },
     },
     // Source of user creation
     source: {

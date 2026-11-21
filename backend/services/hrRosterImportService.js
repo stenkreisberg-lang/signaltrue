@@ -82,6 +82,10 @@ function canonicalizeRosterRow(row, index) {
     department: department || team,
     status: getAliasedValue(row, 'status'),
     managerEmail: normalizeEmail(row?.['Manager Email']),
+    managerName: normalizeDirectoryString(row?.['Manager Name']),
+    additionalReportingGroups: Array.isArray(row?.['Additional Reporting Groups'])
+      ? row['Additional Reporting Groups'].map(normalizeDirectoryString).filter(Boolean)
+      : [],
     sourceFormat: row?.['Roster Format'] || null,
   };
 }
@@ -264,7 +268,17 @@ export async function parseHrRosterFile(file) {
     const { default: readXlsxFile } = await import('read-excel-file/node');
     const allRows = await readXlsxFile(buffer);
     const structured = parseDepartmentManagerRosterSheet(allRows);
-    if (structured) return structured.rows;
+    if (structured) {
+      // Do not silently discard people with contradictory, non-leadership
+      // assignments. The uploader must correct the workbook first.
+      const blocking = structured.exceptions.filter(item =>
+        ['conflicting_employee_scope', 'manager_missing_department_or_name'].includes(item.reason));
+      if (blocking.length) {
+        throw new Error('HR roster has unresolved structural conflicts at sheet rows ' +
+          blocking.map(item => item.row).join(', ') + '; no employees were changed.');
+      }
+      return structured.rows;
+    }
     const [headers = [], ...rows] = allRows;
     return rows
       .filter((row) => row.some((value) => value !== null && value !== ''))
@@ -321,20 +335,56 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     skippedRows: [],
   };
 
-  const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
-  const teams = await Team.find({ orgId });
-  const teamsByName = new Map(teams.map((team) => [team.name.toLowerCase(), team]));
-  teamsByName.set('unassigned', unassignedTeam);
+  // Preflight the *entire* department/manager workbook before touching teams
+  // or employee records. The Excel can name a manager without an email:
+  // resolve only an exact, unique, active tenant directory identity.
+  const managerRows = rows.filter(row => row?.['Roster Format'] === 'department_manager');
+  const unresolvedManagers = managerRows.filter(row => !normalizeEmail(row?.['Manager Email']));
+  let resolvedRows = rows;
+  if (unresolvedManagers.length) {
+    const directory = await User.find({
+      orgId, accountStatus: { $ne: 'inactive' },
+    }).select('name displayName firstName lastName email').lean();
+    const normalized = value =>
+      (normalizeDirectoryString(value) || '').normalize('NFKC').toLocaleLowerCase('et');
+    const byName = new Map();
+    for (const user of directory) {
+      const name = user.name || user.displayName ||
+        [user.firstName, user.lastName].filter(Boolean).join(' ');
+      const nameKey = normalized(name);
+      if (!nameKey) continue;
+      if (!byName.has(nameKey)) byName.set(nameKey, []);
+      byName.get(nameKey).push(user);
+    }
+    const resolved = new Map();
+    for (const row of unresolvedManagers) {
+      const managerName = normalizeDirectoryString(row?.['Manager Name']);
+      const matches = byName.get(normalized(managerName)) || [];
+      const valid = matches.filter(user =>
+        normalizeEmail(user.email)?.endsWith('@' + String(org.domain || '').toLowerCase()));
+      if (valid.length !== 1 || matches.length !== 1) {
+        throw new Error(
+          'HR roster manager ' + (managerName || '(not named)') +
+          ' must have one uniquely matched active tenant directory email; ' +
+          'no employees or manager permissions were changed.'
+        );
+      }
+      resolved.set(row, normalizeEmail(valid[0].email));
+    }
+    resolvedRows = rows.map(row =>
+      resolved.has(row) ? { ...row, 'Manager Email': resolved.get(row) } : row);
+  }
 
-  // A manager-labelled HR workbook contains employee names, but no employee
-  // emails. Reconcile only against UNIQUE existing directory identities; never
-  // guess addresses or create employee accounts from names.
-  const knownDirectory = rows.some(row => row?.['Roster Format'] === 'department_manager')
+  // Validate every manager-style roster row before the *first* write.
+  // Silently skipping one unmatched employee would make a seemingly
+  // HR-approved structure internally inconsistent.
+  const knownDirectory = managerRows.length
     ? await User.find({ orgId, accountStatus: { $ne: 'inactive' } })
         .select('_id name displayName firstName lastName email accountStatus').lean()
     : [];
   const directoryByName = new Map();
-  const canonicalName = name => normalizeDirectoryString(name)?.normalize('NFKC').toLocaleLowerCase('et') || '';
+  const canonicalName = name =>
+    normalizeDirectoryString(name)?.normalize('NFKC').toLocaleLowerCase('et') || '';
   for (const person of knownDirectory) {
     const display = person.name || person.displayName ||
       [person.firstName, person.lastName].filter(Boolean).join(' ');
@@ -343,9 +393,60 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
     if (!directoryByName.has(lookup)) directoryByName.set(lookup, []);
     directoryByName.get(lookup).push(person);
   }
+  if (managerRows.length) {
+    const matchedEmailSet = new Set();
+    const unresolved = [];
+    for (const [index, row] of resolvedRows.entries()) {
+      const canonical = canonicalizeRosterRow(row, index);
+      if (canonical.sourceFormat !== 'department_manager') continue;
+      const matches = directoryByName.get(canonicalName(canonical.name)) || [];
+      const match = matches.length === 1 ? matches[0] : null;
+      const matchedEmail = normalizeEmail(match?.email);
+      if (!canonical.team || !matchedEmail) {
+        unresolved.push({
+          row: row['Source Row'] || canonical.rowNumber,
+          reason: !canonical.team ? 'no_department' :
+            matches.length > 1 ? 'ambiguous_employee_identity' : 'missing_employee_identity',
+        });
+        continue;
+      }
+      if (matchedEmailSet.has(matchedEmail)) {
+        unresolved.push({
+          row: row['Source Row'] || canonical.rowNumber,
+          reason: 'duplicate_employee_identity',
+        });
+      }
+      matchedEmailSet.add(matchedEmail);
+      if (options.applyManagers === true) {
+        const currentManager = knownDirectory.filter(person =>
+          normalizeEmail(person.email) === canonical.managerEmail
+        );
+        if (currentManager.length !== 1) {
+          unresolved.push({
+            row: row['Source Row'] || canonical.rowNumber,
+            reason: 'manager_requires_unique_tenant_directory_identity',
+          });
+        }
+      }
+    }
+    if (unresolved.length) {
+      const summary = unresolved
+        .slice(0, 12)
+        .map(entry => `row ${entry.row}: ${entry.reason}`)
+        .join('; ');
+      throw new Error(
+        `HR manager roster cannot be imported partially (${unresolved.length} unresolved): ${summary}. No employees, teams, or manager permissions were changed.`
+      );
+    }
+  }
+
+  const unassignedTeam = await getOrCreateUnassignedTeam(orgId);
+  const teams = await Team.find({ orgId });
+  const teamsByName = new Map(teams.map((team) => [team.name.toLowerCase(), team]));
+  teamsByName.set('unassigned', unassignedTeam);
   const managerScopes = new Map();
 
-  for (const [index, row] of rows.entries()) {
+  for (const [index, row] of resolvedRows.entries()) {
     const canonical = canonicalizeRosterRow(row, index);
     if (canonical.sourceFormat === 'department_manager' && !canonical.email) {
       if (!canonical.team) {
@@ -413,7 +514,10 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       if (verifiedHrScope) {
         // Explicit HR approval is effective-dated, so nightly directory sync
         // cannot silently replace this team and history before approval is not rewritten.
-        existing.hrStructure = { teamVerifiedAt: new Date(), verifiedBy: options.approvedBy };
+        existing.hrStructure = {
+          teamVerifiedAt: new Date(), verifiedBy: options.approvedBy,
+          reportingGroups: canonical.additionalReportingGroups,
+        };
       }
       existing.profile = profile;
       await existing.save();
@@ -430,6 +534,10 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
         role: 'team_member',
         orgId,
         teamId: team._id,
+        hrStructure: options.approvedBy && canonical.sourceFormat === 'department_manager'
+          ? { teamVerifiedAt: new Date(), verifiedBy: options.approvedBy,
+              reportingGroups: canonical.additionalReportingGroups }
+          : undefined,
         profile,
       });
       stats.created++;

@@ -825,6 +825,53 @@ function buildInsights(edges, nodes, teamById, sourceCoverage) {
   return insights.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]).slice(0, 6);
 }
 
+/**
+ * Cross-period network percentages are meaningful only when the observed
+ * sources, mapping and represented population are comparable. This is
+ * a measurement comparability gate, not a two-person privacy exception.
+ */
+export function assessNetworkPeriodComparability(current, previous) {
+  const count = (period) => Number(period?.interactionEventCount) || 0;
+  const countCurrent = count(current);
+  const countPrevious = count(previous);
+  if (countCurrent < MIN_EVENTS || countPrevious < MIN_EVENTS) {
+    return { comparable: false, reason: 'insufficient_period_events' };
+  }
+  if (
+    ratio(current.mappedEventCount, countCurrent) < READY_COVERAGE ||
+    ratio(previous.mappedEventCount, countPrevious) < READY_COVERAGE
+  ) {
+    return { comparable: false, reason: 'period_mapping_coverage_changed' };
+  }
+  const sourcesNow = [...(current.sources || [])].sort();
+  const sourcesBefore = [...(previous.sources || [])].sort();
+  if (
+    sourcesNow.length !== sourcesBefore.length ||
+    sourcesNow.some((source, index) => source !== sourcesBefore[index])
+  ) {
+    return { comparable: false, reason: 'period_sources_changed' };
+  }
+  const peopleNow = current.observedActors?.size || 0;
+  const peopleBefore = previous.observedActors?.size || 0;
+  if (
+    !peopleNow || !peopleBefore ||
+    Math.min(peopleNow, peopleBefore) / Math.max(peopleNow, peopleBefore) < 0.75
+  ) {
+    return { comparable: false, reason: 'represented_people_changed' };
+  }
+  return { comparable: true, reason: null };
+}
+
+function guardedNetworkChange(previousValue, currentValue, periodComparison, sameEdgeSources = true) {
+  if (!periodComparison.comparable) {
+    return { reportable: false, pct: null, reason: periodComparison.reason };
+  }
+  if (!sameEdgeSources) {
+    return { reportable: false, pct: null, reason: 'edge_sources_changed' };
+  }
+  return evaluateChange(previousValue, currentValue);
+}
+
 function responseTotal(demand) {
   return (
     (demand?.acceptedInvites || 0) +
@@ -834,7 +881,7 @@ function responseTotal(demand) {
   );
 }
 
-function buildTeamDemandRows(eligibleTeams, current, previous, teamById, memberCounts) {
+function buildTeamDemandRows(eligibleTeams, current, previous, teamById, memberCounts, periodComparison) {
   return [...eligibleTeams]
     .map((teamId) => {
       const team = teamById.get(teamId);
@@ -844,10 +891,11 @@ function buildTeamDemandRows(eligibleTeams, current, previous, teamById, memberC
       const inviteeContributorCount = now.inviteePeople.size;
       const responseReportable =
         responses >= MIN_METRIC_CONTRIBUTORS && inviteeContributorCount >= MIN_METRIC_CONTRIBUTORS;
-      const sentChange = evaluateChange(before.sentAttendeeHours, now.sentAttendeeHours);
-      const receivedChange = evaluateChange(
+      const sentChange = guardedNetworkChange(before.sentAttendeeHours, now.sentAttendeeHours, periodComparison);
+      const receivedChange = guardedNetworkChange(
         before.receivedAttendeeHours,
-        now.receivedAttendeeHours
+        now.receivedAttendeeHours,
+        periodComparison
       );
 
       return {
@@ -1003,7 +1051,7 @@ function buildLeadershipQuestions(teamDemand, edges, nodes, sourceCoverage) {
           question: 'Where are meeting invites being declined most?',
           answer: 'Invite response data is not yet strong enough to compare teams.',
           evidence: [
-            'Response-status metrics are suppressed until at least eight invitees and eight responses are measured.',
+            `Response-status metrics require at least ${MIN_METRIC_CONTRIBUTORS} invitees and ${MIN_METRIC_CONTRIBUTORS} responses.`,
           ],
           sourceBasis: calendarBasis,
           severity: 'low',
@@ -1161,6 +1209,7 @@ export function analyzeWorkNetwork({
   );
   const current = analyzePeriod(currentEvents, userTeam, organizerByHash);
   const previous = analyzePeriod(previousEvents, userTeam, organizerByHash);
+  const periodComparison = assessNetworkPeriodComparability(current, previous);
   const mappingCoverage = ratio(mappedUserCount, activeUserCount);
   const eventMappingCoverage = ratio(current.mappedEventCount, current.interactionEventCount);
   const ready =
@@ -1194,7 +1243,7 @@ export function analyzeWorkNetwork({
       const now = current.nodes.get(teamId) || emptyNode();
       const before = previous.nodes.get(teamId) || emptyNode();
       const total = now.internalUnits + now.crossUnits;
-      const change = evaluateChange(before.crossUnits, now.crossUnits);
+      const change = guardedNetworkChange(before.crossUnits, now.crossUnits, periodComparison);
       return {
         id: teamId,
         name: team.name,
@@ -1247,7 +1296,9 @@ export function analyzeWorkNetwork({
               previousEdge.otherInteractionCount +
               previousEdge.meetingMinutes / 30
             : 0;
-          const change = evaluateChange(previousUnits, interactionUnits);
+          const sameEdgeSources = Boolean(previousEdge) &&
+            [...edge.sources].sort().join('|') === [...previousEdge.sources].sort().join('|');
+          const change = guardedNetworkChange(previousUnits, interactionUnits, periodComparison, sameEdgeSources);
           const maxDirection = Math.max(edge.directionAToB, edge.directionBToA);
           const minDirection = Math.min(edge.directionAToB, edge.directionBToA);
           const directedInteractionCount = edge.directionAToB + edge.directionBToA;
@@ -1309,7 +1360,7 @@ export function analyzeWorkNetwork({
     : [];
 
   const teamDemand = ready
-    ? buildTeamDemandRows(eligibleTeams, current, previous, teamById, memberCounts)
+    ? buildTeamDemandRows(eligibleTeams, current, previous, teamById, memberCounts, periodComparison)
     : [];
   const sourceCoverage = buildSourceCoverage(current);
   const leadershipQuestions = ready

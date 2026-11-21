@@ -150,7 +150,7 @@ export async function logTehnopolProductionDiagnostic() {
       const unrecognizedSenderCount = unmatchedChatSenderIds.filter(userId => !matchedIds.has(String(userId))).length;
       const latestOrgMetric = await IntegrationMetricsDaily.findOne({ orgId, teamId: null, userId: null })
         .sort({ date: -1 })
-        .select('date meetingDurationTotalHours7d meetingParticipantHours7d focusTimeAvailabilityHours messageCount7d afterHoursMessageRatio uniqueChannels7d meetingCount7d meetingInstanceCount7d')
+        .select('date updatedAt calculationWindowVersion meetingDurationTotalHours7d meetingParticipantHours7d focusTimeAvailabilityHours messageCount7d afterHoursMessageRatio uniqueChannels7d meetingCount7d meetingInstanceCount7d')
         .lean();
       // Read-only source-to-snapshot reconciliation for the active customer tenant.
       // Never log source records, person identities, subjects or message content.
@@ -180,6 +180,38 @@ export async function logTehnopolProductionDiagnostic() {
         } else {
           parity = { status: 'UNVERIFIED_VOLUME_LIMIT', eventCount: eventTotal, checks: [] };
         }
+      }
+
+      // Diagnose discrepancies without changing source events or a saved report.
+      // Late-arriving/updated metadata can explain a stale snapshot, but is not
+      // sufficient evidence that a snapshot must be overwritten.
+      let parityFreshness = { status: 'NOT_CHECKED' };
+      if (org.lifecycleStatus !== 'retired' && latestOrgMetric?.updatedAt && latestOrgMetric?.date) {
+        const day = new Date(latestOrgMetric.date);
+        day.setUTCHours(0, 0, 0, 0);
+        const from = new Date(day.getTime() - 6 * 86400000);
+        const until = new Date(day.getTime() + 86400000);
+        const periodScope = { orgId, timestamp: { $gte: from, $lt: until } };
+        const [insertedAfterSnapshot, modifiedAfterSnapshot] = await Promise.all([
+          WorkEvent.countDocuments({
+            ...periodScope, createdAt: { $gt: latestOrgMetric.updatedAt },
+          }),
+          WorkEvent.countDocuments({
+            ...periodScope, updatedAt: { $gt: latestOrgMetric.updatedAt },
+          }),
+        ]);
+        parityFreshness = {
+          status: 'CHECKED',
+          snapshotUpdatedAt: iso(latestOrgMetric.updatedAt),
+          calculationWindowVersion: latestOrgMetric.calculationWindowVersion || null,
+          insertedAfterSnapshot,
+          modifiedAfterSnapshot,
+          diagnostic: parity.status === 'FAIL'
+            ? (insertedAfterSnapshot || modifiedAfterSnapshot
+              ? 'LATE_OR_MODIFIED_SOURCE_EVENTS_POSSIBLE'
+              : 'SAME_SOURCE_WINDOW_REQUIRES_FORMULA_OR_HISTORY_INVESTIGATION')
+            : 'NO_RECONCILIATION_FAILURE',
+        };
       }
 
       const verifiedManagerTeams = teams.filter(team =>
@@ -292,6 +324,7 @@ export async function logTehnopolProductionDiagnostic() {
           mappedUsers: latestBrief.payload?.coverage?.mappedUsers ?? null,
         } : null,
         sourceToSnapshotParity: parity,
+        sourceToSnapshotFreshness: parityFreshness,
         managerReporting: {
           hrVerifiedManagerTeams: verifiedManagerTeams.length,
           currentVerifiedManagerAccounts: managerUsers.length,

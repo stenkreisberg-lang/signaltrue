@@ -6,7 +6,14 @@ import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function SignalCoverage() {
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState({ loading: true, sources: [], calibration: null });
+  const [status, setStatus] = useState({
+    loading: true,
+    sources: [],
+    calibration: null,
+    minimumContributors: null,
+    effectiveTeamMinimum: null,
+    sourceError: false,
+  });
 
   useEffect(() => {
     let active = true;
@@ -24,13 +31,30 @@ export default function SignalCoverage() {
         if (!active) return;
         setStatus({
           loading: false,
+          sourceError: integration.status !== 'fulfilled',
+          minimumContributors:
+            integration.status === 'fulfilled'
+              ? (integration.value.data.reportingPolicy?.minimumContributors ?? null)
+              : null,
+          effectiveTeamMinimum:
+            integration.status === 'fulfilled'
+              ? (integration.value.data.reportingPolicy?.effectiveTeamMinimum ?? null)
+              : null,
           sources:
             integration.status === 'fulfilled' ? integration.value.data.integrations || [] : [],
           calibration:
             calibration.status === 'fulfilled' && calibration.value ? calibration.value.data : null,
         });
       } catch {
-        if (active) setStatus({ loading: false, sources: [], calibration: null });
+        if (active)
+          setStatus({
+            loading: false,
+            sources: [],
+            calibration: null,
+            minimumContributors: null,
+            effectiveTeamMinimum: null,
+            sourceError: true,
+          });
       }
     };
     load();
@@ -39,7 +63,9 @@ export default function SignalCoverage() {
     };
   }, []);
 
-  const connected = status.sources.filter((source) => source.status === 'connected').length;
+  const connected = status.sources.filter((source) =>
+    ['connected', 'partial'].includes(source.status)
+  ).length;
   const measuredSources = status.sources.filter(
     (source) => source.measurementStatus?.verified === true
   ).length;
@@ -67,7 +93,7 @@ export default function SignalCoverage() {
           <Database size={20} />
           <div>
             <strong>{status.loading ? '...' : connected}</strong>
-            <span>Sources connected</span>
+            <span>Connected or partially connected sources</span>
           </div>
         </div>
         <div className="app-metric">
@@ -80,20 +106,43 @@ export default function SignalCoverage() {
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>8 contributors</strong>
-            <span>Sensitive metric threshold</span>
+            <strong>
+              {status.loading
+                ? '...'
+                : status.minimumContributors != null
+                  ? `${status.minimumContributors} contributors`
+                  : 'Not verified'}
+            </strong>
+            <span>Minimum contributors for a reportable metric</span>
           </div>
         </div>
       </section>
+      {status.effectiveTeamMinimum > status.minimumContributors && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+        >
+          This organisation is configured for at least {status.effectiveTeamMinimum} team members,
+          while the standard metric contributor minimum is {status.minimumContributors}. Team
+          eligibility may therefore differ from the two-person reporting policy. Verify the tenant
+          configuration before promising team reports; no setting has been changed.
+        </p>
+      )}
       <section className="coverage-grid">
         <div className="app-panel">
           <h2>Source verification</h2>
           <p className="app-muted">
-            Connection alone does not confirm usable activity. Missing, stale or unmapped data must
-            never be treated as zero work.
+            Connection state and stored-event verification are separate checks. Previously stored
+            events do not prove that permissions or synchronisation still work. Missing, stale or
+            unmapped data must never be treated as zero work.
           </p>
-          {status.sources.length === 0 ? (
-            <p className="coverage-empty">No connected sources are available yet.</p>
+          {status.sourceError ? (
+            <p className="coverage-empty" role="alert">
+              Source status could not be loaded. This is not evidence that there are no integrations
+              or events.
+            </p>
+          ) : status.sources.length === 0 ? (
+            <p className="coverage-empty">No sources were returned by the integration service.</p>
           ) : (
             <div className="coverage-list">
               {status.sources.map((source) => {
@@ -109,6 +158,9 @@ export default function SignalCoverage() {
                         {source.lastSync
                           ? ` · last sync ${new Date(source.lastSync).toLocaleDateString()}`
                           : ''}
+                      </small>
+                      <small>
+                        Connection: {String(source.status || 'unknown').replaceAll('_', ' ')}
                       </small>
                       {source.statusMessage && <small>{source.statusMessage}</small>}
                       {source.sourceEvidence && !source.sourceEvidence.evidenceQueryFailed && (

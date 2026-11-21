@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import OverviewEnglish from './OverviewEnglish';
+import { getReportingLocale } from '../../utils/reportingLocale';
 import { Link } from 'react-router-dom';
 import {
   CartesianGrid,
@@ -82,7 +83,7 @@ function MeetingHistory({ brief }) {
   );
 }
 
-export default function Overview() {
+function OverviewEstonian() {
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [brief, setBrief] = useState(null);
   const [user, setUser] = useState(null);
@@ -118,12 +119,6 @@ export default function Overview() {
       active = false;
     };
   }, []);
-
-  // Existing international customers retain the English report until the
-  // redesigned dashboard has a complete English translation.
-  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {
-    return <OverviewEnglish />;
-  }
 
   if (loading) {
     return (
@@ -204,4 +199,9 @@ export default function Overview() {
       )}
     </AppShell>
   );
+}
+
+// The reporting time zone controls date boundaries, not the interface language.
+export default function Overview() {
+  return getReportingLocale() === 'et' ? <OverviewEstonian /> : <OverviewEnglish />;
 }
