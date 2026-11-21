@@ -31,6 +31,8 @@ export const FUNNEL_EVENT_NAMES = [
   // Kept in the reporting allow-list so historical pre-P0 data remains queryable.
   'lead_form_submit',
   'lead_confirmed',
+  'consultant_enquiry_submitted',
+  'pilot_request_submitted',
   'booking_link_click',
   'self_check_viewed',
   'self_check_started',
