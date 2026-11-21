@@ -43,4 +43,36 @@ describe('hierarchical department and manager workbook', () => {
   test('declines unrelated Excel workbooks', () => {
     expect(parseDepartmentManagerRosterSheet([['Name','Email','Department'],['X','x@valid.test','Sales']])).toBeNull();
   });
+  test('keeps a leadership reporting cohort without double-counting a primary department', () => {
+    const parsed = parseDepartmentManagerRosterSheet([
+      header,
+      ['Juhtkond', 'Agnes Leader\nagnes@example.test', 'Katrin Example'],
+      [null, null, 'Anne Example'],
+      ['Administratsioon-finants', 'Agnes Leader\nagnes@example.test', 'Katrin Example'],
+      [null, null, 'Liis Example'],
+    ]);
+    expect(parsed.distinctNames).toBe(3);
+    expect(parsed.rows).toHaveLength(3);
+    const katrin = parsed.rows.find(row => row.Name === 'Katrin Example');
+    expect(katrin.Team).toBe('Administratsioon-finants');
+    expect(katrin['Additional Reporting Groups']).toEqual(['Juhtkond']);
+    expect(parsed.rows.find(row => row.Name === 'Anne Example').Team).toBe('Juhtkond');
+    expect(parsed.exceptions.some(item => item.reason === 'conflicting_employee_scope')).toBe(false);
+  });
+
+  test('keeps all manager-named rows while explicitly flagging a missing work email', () => {
+    const parsed = parseDepartmentManagerRosterSheet([
+      header,
+      ['Tehnopol Kiirendi', 'Anne Example', 'Ari Example'],
+      [null, null, 'Ben Example'],
+    ]);
+    expect(parsed.rows.map(row => row.Name)).toEqual(['Ari Example', 'Ben Example']);
+    expect(parsed.rows.every(row => row.Team === 'Tehnopol Kiirendi')).toBe(true);
+    expect(parsed.rows.every(row => row['Manager Name'] === 'Anne Example')).toBe(true);
+    expect(parsed.rows.every(row => !row['Manager Email'])).toBe(true);
+    expect(parsed.exceptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ reason: 'manager_email_missing_directory_resolution_required' }),
+    ]));
+  });
+
 });
