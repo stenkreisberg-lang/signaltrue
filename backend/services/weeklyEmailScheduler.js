@@ -78,6 +78,19 @@ export function selectPendingWeeklyOrganizations(organizations, previousResults 
 export function weeklyDeliveryIsComplete(status) {
   return status === 'success';
 }
+
+// An accepted customer send does not prove a QA copy was included or delivered.
+// Keep these counts separate so missing QA does not cause duplicate customer sends.
+export function summarizeAdminCopyDelivery(results = []) {
+  const customerSends = results.filter(result => result.status === 'sent');
+  return {
+    includedCount: customerSends.filter(item =>
+      item.qaCopyStatus === 'included' || item.qaCopyStatus === 'already_recipient').length,
+    missingCount: customerSends.filter(item => item.qaCopyStatus === 'disabled').length,
+    unverifiedCount: customerSends.filter(item =>
+      !item.qaCopyStatus || item.qaCopyStatus === 'unknown').length,
+  };
+}
 let weeklyEmailRunPromise = null;
 async function executeWeeklyEmails(trigger = 'cron') {
   if (weeklyEmailRunPromise) return weeklyEmailRunPromise;
@@ -109,10 +122,16 @@ async function executeWeeklyEmailsOnce(trigger) {
   const pendingOrgIds = new Set(selectPendingWeeklyOrganizations(orgs, previous?.results || [])
     .map(org => String(org._id)));
   const results = [];
+  const previouslySentByOrg = new Map((previous?.results || [])
+    .filter(item => item.status === 'sent')
+    .map(item => [String(item.orgId), item]));
 
   for (const org of orgs) {
     if (!pendingOrgIds.has(String(org._id))) {
-      results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
+      results.push({
+        ...previouslySentByOrg.get(String(org._id)),
+        orgName: org.name, orgId: org._id, status: 'sent',
+      });
       continue;
     }
     try {
@@ -120,8 +139,11 @@ async function executeWeeklyEmailsOnce(trigger) {
       if (delivery?.skipped && delivery.reason !== 'already_sent') {
         throw new Error('Delivery skipped without a confirmed send');
       }
-      results.push({ orgName: org.name, orgId: org._id, status: 'sent' });
-      console.log(`[WeeklyScheduler] ${org.name}: sent or already confirmed`);
+      results.push({
+        orgName: org.name, orgId: org._id, status: 'sent',
+        qaCopyStatus: delivery?.qaCopyStatus || 'unknown',
+      });
+      console.log(`[WeeklyScheduler] ${org.name}: sent or already confirmed; QA copy ${delivery?.qaCopyStatus || 'unverified'}`);
     } catch (error) {
       results.push({
         orgName: org.name, orgId: org._id, status: 'failed',
@@ -133,6 +155,7 @@ async function executeWeeklyEmailsOnce(trigger) {
   const sentCount = results.filter(result => result.status === 'sent').length;
   const failedCount = results.length - sentCount;
   const status = failedCount === 0 ? 'success' : sentCount > 0 ? 'partial' : 'failed';
+  const adminCopies = summarizeAdminCopyDelivery(results);
 
   // The unique week record retains per-org failures across Render restarts.
   await CronLog.findOneAndUpdate(
@@ -141,13 +164,19 @@ async function executeWeeklyEmailsOnce(trigger) {
       executedAt: new Date(), durationMs: Date.now() - started,
       status, results, trigger, totalOrgs: orgs.length,
       sentCount, failedCount,
+      adminCopiesIncluded: adminCopies.includedCount,
+      adminCopiesMissing: adminCopies.missingCount,
+      adminCopiesUnverified: adminCopies.unverifiedCount,
     } },
     { upsert: true, new: true },
   );
   console.log(
-    `[WeeklyScheduler] ${weekKey}: sent=${sentCount}, failed=${failedCount}, status=${status}`
+    `[WeeklyScheduler] ${weekKey}: sent=${sentCount}, failed=${failedCount}, status=${status}, adminCopies=${JSON.stringify(adminCopies)}`
   );
-  return { skipped: false, weekKey, status, sentCount, failedCount };
+  if (adminCopies.missingCount || adminCopies.unverifiedCount) {
+    console.error('[WeeklyScheduler] Customer send cannot be treated as confirmed admin-copy delivery. Check config and provider receipts; do not resend customer reports.');
+  }
+  return { skipped: false, weekKey, status, sentCount, failedCount, adminCopies };
 }
 
 // ═══════════════════════════════════════════════
@@ -354,6 +383,7 @@ export async function getEmailScheduleStatus() {
     lastEmailRun,
     lastReportRun,
     lastSiteAnalyticsRun,
+    currentEmailRun,
     emailThisWeek,
     reportThisWeek,
     siteAnalyticsThisWeek,
@@ -361,10 +391,16 @@ export async function getEmailScheduleStatus() {
     CronLog.getLastSuccessfulRun(JOB_NAME),
     CronLog.getLastSuccessfulRun(REPORT_GEN_JOB),
     CronLog.getLastSuccessfulRun(SITE_ANALYTICS_JOB),
+    CronLog.findOne({ jobName: JOB_NAME, weekKey }).lean(),
     isWeeklyEmailComplete(weekKey),
     CronLog.hasRunForWeek(REPORT_GEN_JOB, weekKey),
     CronLog.hasRunForWeek(SITE_ANALYTICS_JOB, weekKey),
   ]);
+
+  const adminCopyConfigEnabled = process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
+  const adminCopyAddress = String(process.env.SUPERADMIN_EMAIL || '').trim().toLowerCase();
+  const adminCopyRecipientValid = Boolean(adminCopyAddress && adminCopyAddress.endsWith('@signaltrue.ai'));
+  const adminCopyCounts = summarizeAdminCopyDelivery(currentEmailRun?.results || []);
 
   // Determine next scheduled send
   const now = new Date();
@@ -394,6 +430,13 @@ export async function getEmailScheduleStatus() {
           }
         : null,
       nextScheduled: emailThisWeek ? nextMonday.toISOString() : 'Pending (will send on next check)',
+      adminCopies: {
+        configured: adminCopyConfigEnabled,
+        recipientValid: adminCopyRecipientValid,
+        ...adminCopyCounts,
+        // Included means a provider request carried the address, not inbox receipt.
+        providerDeliveryVerified: false,
+      },
     },
     weeklyReports: {
       generatedThisWeek: reportThisWeek,
@@ -422,11 +465,15 @@ export async function getEmailScheduleStatus() {
         ? nextSiteAnalyticsMonday.toISOString()
         : 'Pending (will send on next Monday 7:30 AM UTC)',
     },
-    health: emailThisWeek
-      ? '✅ On track'
-      : isMondayOrLater()
-        ? '⚠️ Emails pending — watchdog will send soon'
-        : '⏳ Waiting for Monday',
+    health: !adminCopyConfigEnabled || !adminCopyRecipientValid
+      ? '⚠️ Admin report copy not configured; customer email success does not include founder QA copy'
+      : adminCopyCounts.missingCount > 0 || adminCopyCounts.unverifiedCount > 0
+        ? '⚠️ Some admin report copies are missing or unverified; inspect provider receipts, do not resend customers'
+        : emailThisWeek
+          ? '✅ Customer sends accepted; admin copy included (inbox delivery not verified)'
+          : isMondayOrLater()
+            ? '⚠️ Customer emails pending — watchdog will send soon'
+            : '⏳ Waiting for Monday',
   };
 }
 
