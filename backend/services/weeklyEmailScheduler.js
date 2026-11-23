@@ -400,6 +400,9 @@ export async function getEmailScheduleStatus() {
   const adminCopyConfigEnabled = process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
   const adminCopyAddress = String(process.env.SUPERADMIN_EMAIL || '').trim().toLowerCase();
   const adminCopyRecipientValid = Boolean(adminCopyAddress && adminCopyAddress.endsWith('@signaltrue.ai'));
+  // The founder expects the same inbox that receives the weekly commercial report.
+  const expectedAdminInbox = String(process.env.SITE_ANALYTICS_REPORT_EMAIL || 'sten.kreisberg@signaltrue.ai').trim().toLowerCase();
+  const adminCopyRecipientMatchesInbox = adminCopyAddress === expectedAdminInbox;
   const adminCopyCounts = summarizeAdminCopyDelivery(currentEmailRun?.results || []);
 
   // Determine next scheduled send
@@ -433,6 +436,9 @@ export async function getEmailScheduleStatus() {
       adminCopies: {
         configured: adminCopyConfigEnabled,
         recipientValid: adminCopyRecipientValid,
+        configuredRecipient: adminCopyAddress || null,
+        expectedAdminInbox,
+        recipientMatchesExpectedInbox: adminCopyRecipientMatchesInbox,
         ...adminCopyCounts,
         // Included means a provider request carried the address, not inbox receipt.
         providerDeliveryVerified: false,
@@ -465,8 +471,8 @@ export async function getEmailScheduleStatus() {
         ? nextSiteAnalyticsMonday.toISOString()
         : 'Pending (will send on next Monday 7:30 AM UTC)',
     },
-    health: !adminCopyConfigEnabled || !adminCopyRecipientValid
-      ? '⚠️ Admin report copy not configured; customer email success does not include founder QA copy'
+    health: !adminCopyConfigEnabled || !adminCopyRecipientValid || !adminCopyRecipientMatchesInbox
+      ? '⚠️ Founder QA copy disabled, invalid or addressed to a different inbox; customer send success is not founder delivery'
       : adminCopyCounts.missingCount > 0 || adminCopyCounts.unverifiedCount > 0
         ? '⚠️ Some admin report copies are missing or unverified; inspect provider receipts, do not resend customers'
         : emailThisWeek
