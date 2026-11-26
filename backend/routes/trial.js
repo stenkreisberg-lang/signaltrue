@@ -20,7 +20,7 @@ import MonthlyReport from '../models/monthlyReport.js';
 import CeoSummary from '../models/ceoSummary.js';
 import Signal from '../models/signal.js';
 import Intervention from '../models/intervention.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireHROrAdmin } from '../middleware/auth.js';
 import { buildShareUrl, generateCeoSummaryForOrg } from '../services/ceoSummaryService.js';
 
 const router = express.Router();
@@ -226,7 +226,7 @@ router.get('/status', authenticateToken, async (req, res) => {
  * Get executive summary data for CEO view
  * Returns current status, top risks, and recommended actions
  */
-router.get('/executive-summary/:orgId', authenticateToken, async (req, res) => {
+router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
   try {
     const { orgId } = req.params;
 
@@ -427,7 +427,7 @@ router.post('/mark-milestone', authenticateToken, async (req, res) => {
  * GET /api/trial/monthly-report
  * Get the first free monthly report
  */
-router.get('/monthly-report', authenticateToken, async (req, res) => {
+router.get('/monthly-report', authenticateToken, requireHROrAdmin, async (req, res) => {
   try {
     const organization = await Organization.findById(req.user.orgId);
 
@@ -516,7 +516,7 @@ router.get('/monthly-report', authenticateToken, async (req, res) => {
  * POST /api/trial/generate-ceo-summary
  * Generate CEO executive summary from monthly report
  */
-router.post('/generate-ceo-summary', authenticateToken, async (req, res) => {
+router.post('/generate-ceo-summary', authenticateToken, requireHROrAdmin, async (req, res) => {
   try {
     const organization = await Organization.findById(req.user.orgId);
 
