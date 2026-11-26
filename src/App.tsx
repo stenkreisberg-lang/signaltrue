@@ -31,6 +31,7 @@ const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DashboardRouter = lazy(() => import('./pages/DashboardRouter'));
 const Overview = lazy(() => import('./pages/app/Overview'));
 const ExecutiveSummary = lazy(() => import('./pages/app/ExecutiveSummary'));
+const MonthlyArchive = lazy(() => import('./pages/app/MonthlyArchive'));
 const LatestBrief = lazy(() => import('./pages/app/LatestBrief'));
 const ManagerReportingAdmin = lazy(() => import('./pages/app/ManagerReportingAdmin'));
 const ManagerInvitation = lazy(() => import('./pages/app/ManagerInvitation'));
@@ -276,7 +277,11 @@ const App = () => (
                 <Route path="/app/site-analytics" element={withHrAccess(<SiteAnalytics />)} />
                 <Route
                   path="/app/monthly-report"
-                  element={withAuthentication(<Navigate to="/app/overview" replace />)}
+                  element={
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
+                      <MonthlyArchive />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />
                 <Route
