@@ -605,6 +605,7 @@ export default function ManagerTeamDashboard() {
               <label>
                 {et ? 'Tiim' : 'Team'}{' '}
                 <select
+                  aria-label={et ? 'Tiim' : 'Team'}
                   className={control}
                   value={selected}
                   onChange={(e) => setSelected(e.target.value)}
