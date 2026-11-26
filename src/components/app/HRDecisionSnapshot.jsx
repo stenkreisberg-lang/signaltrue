@@ -112,7 +112,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   if (meetingDelta !== null && Math.abs(meetingDelta) >= 1) {
     findings.push({
       title: meetingDelta > 0 ? 'Koosolekuaeg kasvas.' : 'Koosolekuaeg vähenes.',
-      detail: `${formatHRMetric(meeting, meeting.previous)} → ${formatHRMetric(meeting)} inimese kohta.`,
+      detail: `${formatHRMetric(meeting, meeting.previous)} → ${formatHRMetric(meeting)}.`,
       question: 'Kas muutus tulenes töökorraldusest või ajutisest projektietapist?',
       action:
         'Vaadake üle korduvate koosolekute eesmärk ja kestus. Võrrelge kahe nädala pärast koosolekuaega ning vaba kalendriaega.',
@@ -126,14 +126,13 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
           : 'Töövälisel ajal saadetud sõnumite osakaal vähenes.',
       detail: `${formatHRMetric(afterHours, afterHours.previous)} → ${formatHRMetric(afterHours)}.`,
       question: 'Kas töövälise suhtluse muutus oli seotud ajutise vajaduse või kokkulepetega?',
-      action:
-        'Arutage tiimiga töövälise suhtluse ootusi ja jälgige sama näitajat järgmise kahe nädala jooksul.',
+      action: 'Leppige kokku suhtluse ootused ja jälgige näitajat kahe nädala jooksul.',
     });
   }
   const conclusion =
     meetingDelta !== null && meetingDelta <= -1 && focusDelta !== null && focusDelta <= -0.5
       ? 'Koosolekuaeg vähenes, kuid vaba kalendriaega jäi samuti vähem.'
-      : findings[0]?.title || 'Võrreldavates mõõtmistes ei ilmnenud valitud piire ületavat muutust.';
+      : findings[0]?.title || 'Suuri muutusi ei tuvastatud võrreldavates mõõtmistes.';
   const sourceVerified = brief.dataQuality?.sourceToSnapshotParity?.status === 'PASS';
   const canSuggestAction =
     sourceVerified &&
@@ -220,7 +219,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
           <div className="rounded-lg border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-900">Mida tasub uurida?</h3>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              {findings[0]?.question || 'Kontrollige, kas mõõdetud perioodid on omavahel võrreldavad.'}
+              {findings[0]?.question || 'Kontrollige perioodide võrreldavust.'}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 p-4">
