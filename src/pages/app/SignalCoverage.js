@@ -41,9 +41,9 @@ export default function SignalCoverage() {
     };
   }, []);
 
-  const connected = status.sources.filter((source) =>
-    ['connected', 'measuring'].includes(source.status)
-  ).length;
+  const connected = status.sources.filter((source) => {
+    return ['connected', 'measuring'].includes(source.status);
+  }).length;
   const measuredSources = status.sources.filter(
     (source) => source.measurementStatus?.verified === true
   ).length;
@@ -77,14 +77,16 @@ export default function SignalCoverage() {
         <div className="app-metric">
           <ShieldCheck size={20} />
           <div>
-            <strong>{status.loading ? '...' : status.error ? 'Unavailable' : measuredSources}</strong>
+            <strong>
+              {status.loading ? '...' : status.error ? 'Unavailable' : measuredSources}
+            </strong>
             <span>Sources with verified events</span>
           </div>
         </div>
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>{status.loading ? '...' : status.minimumSize ?? 'Unavailable'}</strong>
+            <strong>{status.loading ? '...' : (status.minimumSize ?? 'Unavailable')}</strong>
             <span>Minimum team size for reporting</span>
           </div>
         </div>
