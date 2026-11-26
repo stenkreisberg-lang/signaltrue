@@ -1,5 +1,5 @@
 import {describe,test,expect} from '@jest/globals';
-import {validateTeamPermission,hashSecret,secureToken,validateActionBody} from '../services/managerIntelligenceService.js';
+import {validateTeamPermission,hashSecret,secureToken,validateActionBody,evaluateActionOutcome} from '../services/managerIntelligenceService.js';
 import {isManagerDeliveryWindow,managerLocalClock,managerReportWeek,renderManagerWeeklyDigest} from '../services/managerWeeklyDeliveryService.js';
 const now=new Date('2026-10-26T10:30:00Z');
 const org='507f191e810c19729de86001',otherOrg='507f191e810c19729de86002';
@@ -65,5 +65,18 @@ describe('manager digest confidentiality and scheduling',()=>{
   expect(html).toContain('1.2');
   expect(html).toContain('/app/manager');
   expect(html).not.toContain('mailto:');
+ });
+});
+
+describe('manager action metric integrity',()=>{
+ test('accepts a measured focus metric and rejects arbitrary metrics',()=>{
+  expect(validateActionBody({title:'Protect focus',direction:'increase',metric:'focus_time'}).metric).toBe('focus_time');
+  expect(validateActionBody({title:'Score people',direction:'increase',metric:'productivity'})).toBeNull();
+ });
+ test('reviews the chosen metric rather than meeting frequency',()=>{
+  const action={metric:'focus_time',baseline:4,baselineKey:'same',baselineWeek:'2026-10-05',startDate:new Date('2026-10-12'),due14:new Date('2026-10-26'),due28:new Date('2026-11-09'),direction:'increase'};
+  const data={eligible:true,points:[{date:'2026-10-19',value:1}],trendSeries:[{key:'focus_time',points:[{date:'2026-10-05',value:4,verified:true,comparisonKey:'same'},{date:'2026-10-19',comparisonKey:'same',sampledOn:'2026-10-25',value:5,verified:true}]}]};
+  expect(evaluateActionOutcome(action,data,new Date('2026-10-26'))).toMatchObject({day:14,value:5,status:'improved'});
+  expect(evaluateActionOutcome(action,{...data,trendSeries:[]},new Date('2026-10-26'))).toBeNull();
  });
 });

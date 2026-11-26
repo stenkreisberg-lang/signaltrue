@@ -199,6 +199,7 @@ const organizationSchema = new mongoose.Schema(
       // Minimum formal team size (2+); sensitive metric disclosure remains gated separately.
       minTeamSize: { type: Number, default: 2, min: 2 },
       timezone: { type: String, default: 'UTC' },
+      reportLanguage: { type: String, enum: ['en', 'et'] },
       timezoneConfirmedAt: { type: Date },
       workdayStart: { type: String, default: '09:00' },
       workdayEnd: { type: String, default: '17:00' },

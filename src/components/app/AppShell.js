@@ -6,6 +6,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
  * secondary disclosure. Route guards remain authoritative for access.
  */
 const ESTONIAN_NAVIGATION = {
+  'My team': 'Minu tiim',
   Overview: 'Ülevaade',
   'Organisation & teams': 'Organisatsioon ja tiimid',
   'Actions & reviews': 'Tegevused ja järelkontroll',
