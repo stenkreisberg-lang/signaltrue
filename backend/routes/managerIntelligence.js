@@ -11,7 +11,7 @@ import ManagerAssignment from '../models/managerAssignment.js';
 import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
-import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
+import { assertScopedManager, createScopedAction, evaluateActionOutcome, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
   managerAudit, normalizeEmail, hashInvitedEmail,
   resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
@@ -283,17 +283,14 @@ router.post('/teams/:teamId/actions/:actionId/review',async(req,res)=>{
   const now=new Date();
   const day=now>=action.due28?28:now>=action.due14?14:0;
   if(!day)return noStore(res).status(409).json({message:'First review is available after 14 days'});
-  const latest=data.points.filter(p=>p.value!=null).at(-1);
-  if(!latest||latest.date<=action.baselineWeek || action.baseline==null)return noStore(res).status(409).json({message:'No comparable post-action measurement'});
-  const diff=latest.value-action.baseline;
-  const status=Math.abs(diff)<Math.max(0.05,action.baseline*0.05)?'unchanged':
-    (action.direction==='decrease'?diff<0:action.direction==='increase'?diff>0:Math.abs(diff)<0.05)?'improved':'worsened';
+  const outcome=evaluateActionOutcome(action,data,now);
+  if(!outcome)return noStore(res).status(409).json({message:'No comparable post-action measurement for the selected metric'});
   const field=day===28?'outcome28':'outcome14';
-  action[field]={value:latest.value,status,measuredAt:now};
+  action[field]={value:outcome.value,status:outcome.status,measuredAt:now};
   await action.save();
   await managerAudit({orgId:scope.user.orgId,actorUserId:scope.user._id,managerUserId:scope.user._id,
     teamId:scope.team._id,action:'manager_followup_review'});
-  noStore(res).json({day,baseline:action.baseline,current:latest.value,status,
+  noStore(res).json({day,baseline:action.baseline,current:outcome.value,status:outcome.status,
     note:'Observed before/after association with unchanged metric definition, not proof of causal improvement'});
 });
 
