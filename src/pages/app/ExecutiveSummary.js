@@ -1,302 +1,255 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
-  Clock3,
-  RefreshCw,
-  ShieldCheck,
-} from 'lucide-react';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
-function formatDate(value) {
-  if (!value) return 'Not available';
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    new Date(value)
-  );
-}
-
-function Metric({ value, label, note }) {
-  return (
-    <div className="app-dashboard-card">
-      <span className="app-dashboard-card-value">{value ?? 0}</span>
-      <span className="app-dashboard-card-label">{label}</span>
-      <span className="app-dashboard-card-note">{note}</span>
-    </div>
-  );
-}
+const labels = {
+  meeting_hours: [
+    'Meeting hours per calendar participant',
+    'Koosolekutunde kalendrikasutaja kohta',
+  ],
+  focus_time: [
+    'Available calendar hours per calendar participant',
+    'Vaba kalendriaega kalendrikasutaja kohta',
+  ],
+  after_hours: ['After-hours message share', 'Tööväliste sõnumite osakaal'],
+  messages: ['Observed messages', 'Mõõdetud sõnumeid'],
+};
+const riskLabels = {
+  Critical: 'Kriitiline',
+  Risk: 'Vajab kontrolli',
+  Informational: 'Teadmiseks',
+  High: 'kõrge',
+  Medium: 'keskmine',
+};
 
 export default function ExecutiveSummary() {
-  const [user, setUser] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
-
+  const [user, setUser] = useState(null),
+    [summary, setSummary] = useState(null),
+    [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false),
+    [shareStatus, setShareStatus] = useState(''),
+    [sharing, setSharing] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setError(false);
+    setSummary(null);
+    setShareStatus('');
     try {
       const context = await getAuthenticatedContext();
       setUser(context.user);
-      if (!context.orgId) throw new Error('No organization is associated with this account.');
-      const { data } = await api.get(`/trial/executive-summary/${context.orgId}`);
-      setSummary(data);
-    } catch (loadError) {
-      setError(
-        loadError.response?.data?.message ||
-          loadError.response?.data?.error ||
-          loadError.message ||
-          'The executive brief is unavailable.'
-      );
+      if (!context.orgId) throw new Error('Missing tenant');
+      const r = await api.get('/trial/executive-summary/' + context.orgId);
+      setSummary(r.data);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
     load();
   }, [load]);
-
-  const createShareLink = async () => {
-    setNotice(null);
+  const et = summary?.locale === 'et',
+    t = (en, estonian) => (et ? estonian : en);
+  const fmt = (n) =>
+    Number.isFinite(n)
+      ? new Intl.NumberFormat(et ? 'et-EE' : 'en-GB', { maximumFractionDigits: 2 }).format(n)
+      : t('Unavailable', 'Andmed puuduvad');
+  const share = async () => {
+    setSharing(true);
     try {
-      const { data } = await api.post('/trial/generate-ceo-summary');
-      const shareUrl = `${window.location.origin}/ceo-summary/${data.shareToken}`;
-      await navigator.clipboard.writeText(shareUrl);
-      setNotice('A privacy-safe executive link was copied. Review it before sharing.');
-    } catch (shareError) {
-      setError(shareError.response?.data?.message || 'The share link could not be created.');
+      const r = await api.post('/trial/generate-ceo-summary');
+      await navigator.clipboard.writeText(
+        window.location.origin + '/ceo-summary/' + r.data.shareToken
+      );
+      setShareStatus(t('Executive link copied.', 'Juhtkonna kokkuvõtte link on kopeeritud.'));
+    } catch {
+      setShareStatus(t('Could not copy a share link.', 'Lingi kopeerimine ebaõnnestus.'));
+    } finally {
+      setSharing(false);
     }
   };
-
-  if (loading) {
-    return (
-      <AppShell user={user} section="Executive brief">
-        <div className="app-panel flex min-h-64 items-center justify-center gap-3 text-caption text-slate-600">
-          <RefreshCw className="h-5 w-5 animate-spin" /> Preparing the executive decision brief…
-        </div>
-      </AppShell>
-    );
-  }
-
+  const work = summary?.workPatterns,
+    controls = summary?.controlSummary;
+  const title = t('Executive decision brief', 'Juhtkonna kokkuvõte');
+  const decision =
+    controls?.due > 0
+      ? t(
+          'Assign an owner to the overdue reviews and agree a decision date.',
+          'Määrake tähtaja ületanud järelkontrollidele vastutaja ja leppige kokku otsustamise aeg.'
+        )
+      : summary?.evidenceSummary?.criticalSignals > 0
+        ? t(
+            'Ask the responsible teams to check the highest-priority observations.',
+            'Paluge vastutavatel tiimidel kõige olulisemad tähelepanekud üle kontrollida.'
+          )
+        : work?.metrics?.find((m) => m.key === 'focus_time')?.delta < 0
+          ? t(
+              'Calendar availability fell. Ask teams whether meeting placement explains the reduction.',
+              'Vaba kalendriaega jäi vähem. Uurige tiimidelt, kas muutust selgitab koosolekute paigutus.'
+            )
+          : t(
+              'Check the measured changes with the teams before choosing a new action.',
+              'Enne uue tegevuse valimist arutage mõõdetud muutusi tiimidega.'
+            );
   return (
-    <AppShell user={user} section="Executive brief" width="wide">
+    <AppShell user={user} locale={summary?.locale} section={title}>
       <PageHeader
-        eyebrow="Leadership decision support"
-        title="Executive decision brief"
-        description="A concise view of changing exposure, evidence confidence, control ownership and effectiveness. It is not a workforce health score."
+        title={title}
+        description={summary?.orgName}
         action={
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={load} className="action-secondary-button">
-              <RefreshCw size={16} aria-hidden="true" /> Refresh
-            </button>
-            <button type="button" onClick={createShareLink} className="action-primary-button">
-              Create reviewed share link
-            </button>
-          </div>
+          <button className="app-secondary-button" onClick={load} disabled={loading}>
+            {t('Refresh', 'Värskenda')}
+          </button>
         }
       />
-
-      {error && <div className="action-notice is-error">{error}</div>}
-      {notice && <div className="action-notice is-success">{notice}</div>}
-
-      {summary && (
-        <>
-          <section className="app-dashboard-hero">
-            <div className="app-dashboard-hero-main">
-              <p className="app-dashboard-eyebrow">Current decision status</p>
-              <h2 className="app-dashboard-title">{summary.currentStatus}</h2>
-              <p className="app-dashboard-copy">
-                Direction: {summary.trendDirection}. Generated {formatDate(summary.generatedAt)}.
-                Leadership should remove barriers, confirm ownership and ask whether controls were
-                reviewed—not infer individual wellbeing from this brief.
-              </p>
-            </div>
-            <div className="app-dashboard-hero-side">
-              <p className="app-dashboard-eyebrow">Executive use</p>
-              <p className="text-caption leading-6 text-slate-700">
-                1. Confirm the highest-priority team review. 2. Remove resource or decision
-                barriers. 3. Check overdue controls. 4. Review effectiveness and worker feedback.
-              </p>
-            </div>
-          </section>
-
-          {summary.evidenceSummary?.unqualifiedObservations > 0 && (
-            <div className="app-panel mb-5 border-amber-200 bg-amber-50 text-caption text-amber-950">
-              {summary.evidenceSummary.unqualifiedObservations} open observation(s) have
-              insufficient evidence confidence for an executive priority. They are excluded from the
-              priority status and should be reviewed as data-quality or verification questions
-              rather than presented as confirmed critical findings.
-            </div>
+      {loading ? (
+        <p role="status">{t('Loading…', 'Laadin…')}</p>
+      ) : error ? (
+        <p role="alert">
+          {t(
+            'Could not load the executive brief. Check access and try again.',
+            'Kokkuvõtet ei saanud laadida. Kontrolli ligipääsu ja proovi uuesti.'
           )}
-
-          <section className="app-dashboard-section">
-            <div className="app-section-heading">
-              <div>
-                <h2>Evidence and control position</h2>
-                <p>Counts are team-level and privacy-gated.</p>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric
-                value={summary.evidenceSummary?.teamsRequiringReview}
-                label="Teams requiring review"
-                note={`${summary.evidenceSummary?.criticalSignals || 0} critical patterns`}
-              />
-              <Metric
-                value={summary.evidenceSummary?.highConfidenceSignals}
-                label="High-confidence signals"
-                note={`${summary.evidenceSummary?.openQualifiedSignals || 0} qualified signals open`}
-              />
-              <Metric
-                value={summary.controlSummary?.active}
-                label="Active controls"
-                note={`${summary.controlSummary?.due || 0} reviews due`}
-              />
-              <Metric
-                value={summary.controlSummary?.improved}
-                label="Controls showing improvement"
-                note={`${summary.controlSummary?.completed || 0} completed reviews`}
-              />
-            </div>
-          </section>
-
-          <section className="app-panel mb-6">
-            <h2 className="text-lead font-bold text-slate-900">What leadership can conclude</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              <div className="rounded-container bg-slate-50 p-4">
-                <p className="font-bold text-slate-900">Measured priorities</p>
-                <p className="mt-2 text-caption text-slate-700">
-                  {summary.evidenceSummary?.openQualifiedSignals ?? 0} open findings with at least
-                  medium confidence. Review their evidence before assigning cause.
-                </p>
-              </div>
-              <div className="rounded-container bg-slate-50 p-4">
-                <p className="font-bold text-slate-900">Data limitations</p>
-                <p className="mt-2 text-caption text-slate-700">
-                  {summary.evidenceSummary?.unqualifiedObservations ?? 0} lower-confidence
-                  observation(s) are excluded from executive escalation.
-                </p>
-              </div>
-              <div className="rounded-container bg-slate-50 p-4">
-                <p className="font-bold text-slate-900">Follow-up</p>
-                <p className="mt-2 text-caption text-slate-700">
-                  {summary.controlSummary?.due ?? 0} overdue review(s).
-                  {summary.controlSummary?.improved ?? 0} completed control(s) show improvement in
-                  the tracked measure. This alone does not prove causation.
-                </p>
-              </div>
-            </div>
-          </section>
-          <section className="app-dashboard-section grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="app-panel">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-700" aria-hidden="true" />
-                <div>
-                  <h2>Priority evidence</h2>
-                  <p className="app-muted mb-0">
-                    Verify cause and context with workers before acting.
+        </p>
+      ) : (
+        summary && (
+          <>
+            <section className="app-panel mb-5">
+              <h2>{t('What needs a leadership decision?', 'Mis vajab juhtkonna otsust?')}</h2>
+              <p className="mt-2 text-lg">{decision}</p>
+              <p className="app-muted">
+                {t('Newly recorded signals this week', 'Sel nädalal lisandunud signaale')}:{' '}
+                {fmt(summary.recentSignalCount)} · {t('previous week', 'eelmisel nädalal')}:{' '}
+                {fmt(summary.olderSignalCount)}.
+              </p>
+            </section>
+            <section className="app-panel mb-5">
+              <h2>{t('Organisational work patterns', 'Organisatsiooni töömustrid')}</h2>
+              {work?.state === 'observed' ? (
+                <>
+                  <p className="app-muted">
+                    {t('Latest completed reporting week', 'Viimane lõppenud aruandenädal')} ·{' '}
+                    {new Date(work.periodStart).toLocaleDateString(et ? 'et-EE' : 'en-GB', {
+                      timeZone: summary.timezone || 'UTC',
+                    })}{' '}
+                    –{' '}
+                    {new Date(new Date(work.periodEnd) - 1).toLocaleDateString(
+                      et ? 'et-EE' : 'en-GB',
+                      { timeZone: summary.timezone || 'UTC' }
+                    )}
                   </p>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3">
-                {summary.topRisks?.length ? (
-                  summary.topRisks.map((risk) => (
-                    <article
-                      key={risk.id}
-                      className="rounded-container border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-bold text-slate-900">{risk.title}</h3>
-                          <p className="mt-1 text-caption text-slate-600">{risk.teamName}</p>
-                        </div>
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-caption font-bold text-amber-800">
-                          {risk.severity} · {risk.confidence} confidence
-                        </span>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {work.metrics.map((m) => (
+                      <div className="rounded-lg border p-3" key={m.key}>
+                        <h3 className="font-semibold">{labels[m.key]?.[et ? 1 : 0]}</h3>
+                        <p className="text-2xl font-bold">
+                          {fmt(m.current)}
+                          {m.current !== null &&
+                            (m.unit === 'hours' ? ' h' : m.unit === '%' ? '%' : '')}
+                        </p>
+                        <p className="app-muted">
+                          {m.delta == null
+                            ? t('No comparable previous value', 'Võrreldav eelmine mõõtmine puudub')
+                            : t('Change from previous week', 'Muutus võrreldes eelmise nädalaga') +
+                              ': ' +
+                              (m.delta > 0 ? '+' : '') +
+                              fmt(m.delta) +
+                              (m.unit === '%'
+                                ? t(' percentage points', ' protsendipunkti')
+                                : m.unit === 'hours'
+                                  ? ' h'
+                                  : '')}
+                        </p>
                       </div>
-                      <p className="mt-3 text-caption leading-6 text-slate-700">
-                        {risk.evidenceStatement}
-                      </p>
-                      <p className="mt-2 text-caption text-slate-500">
-                        Current {risk.currentValue ?? 'not available'} · Baseline{' '}
-                        {risk.baselineValue ?? 'not available'} · Change{' '}
-                        {risk.deltaPercent == null ? 'not available' : `${risk.deltaPercent}%`}
-                      </p>
-                    </article>
-                  ))
-                ) : (
-                  <div className="rounded-container bg-slate-50 p-5 text-caption text-slate-600">
-                    No qualified priority evidence is currently visible. This does not establish
-                    that psychosocial risk is absent; continue normal consultation and review.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="app-panel border-indigo-200">
-              <div className="flex items-center gap-3">
-                <Clock3 className="h-5 w-5 text-indigo-700" aria-hidden="true" />
-                <div>
-                  <h2>Decisions requiring leadership</h2>
-                  <p className="app-muted mb-0">
-                    Only decisions that need ownership or barrier removal.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 grid gap-3">
-                {summary.decisionPrompts?.length ? (
-                  summary.decisionPrompts.map((item) => (
-                    <div
-                      key={item.title}
-                      className="rounded-container border border-indigo-200 bg-indigo-50 p-4"
-                    >
-                      <h3 className="font-bold text-slate-900">{item.title}</h3>
-                      <p className="mt-2 text-caption leading-6 text-slate-700">{item.decision}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-container bg-emerald-50 p-4 text-caption text-emerald-900">
-                    No additional executive decision is recorded. Continue reviewing active
-                    controls.
-                  </div>
-                )}
-              </div>
-              <Link
-                to="/app/actions"
-                className="mt-5 inline-flex items-center gap-2 text-caption font-bold text-indigo-700"
-              >
-                Open the control register <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </section>
-
-          <section className="app-dashboard-section">
-            <div className="app-panel border-emerald-200 bg-emerald-50/40">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-700" aria-hidden="true" />
-                <div>
-                  <h2>Interpretation limits</h2>
-                  <div className="mt-3 grid gap-2">
-                    {(summary.limitations || []).map((item) => (
-                      <p key={item} className="flex gap-2 text-caption leading-6 text-slate-700">
-                        <CheckCircle2
-                          className="mt-1 h-4 w-4 shrink-0 text-emerald-700"
-                          aria-hidden="true"
-                        />
-                        {item}
-                      </p>
                     ))}
                   </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </>
+                  <p className="mt-3">
+                    {work.reconciled
+                      ? t(
+                          'Source checks passed for this reporting period.',
+                          'Perioodi algandmete kontroll on läbitud.'
+                        )
+                      : t(
+                          'Source-to-report reconciliation is unconfirmed for this period.',
+                          'Selle perioodi algandmete ja aruande vastavus on kinnitamata.'
+                        )}
+                  </p>
+                </>
+              ) : (
+                <p>
+                  {t(
+                    'A current organisational report with sufficient measurements is unavailable.',
+                    'Selle nädala kohta puudub piisavate mõõtmistega organisatsiooni aruanne.'
+                  )}
+                </p>
+              )}
+            </section>
+            <section className="app-panel mb-5">
+              <h2>{t('Management actions and reviews', 'Juhtimistegevused ja järelkontrollid')}</h2>
+              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  ['Active', 'Pooleli', controls?.active],
+                  ['Overdue', 'Üle tähtaja', controls?.due],
+                  ['Completed', 'Lõpetatud', controls?.completed],
+                  ['Measured improvement', 'Mõõdetud paranemine', controls?.improved],
+                ].map(([en, ee, value]) => (
+                  <div key={en}>
+                    <dt>{t(en, ee)}</dt>
+                    <dd className="text-2xl font-bold">{fmt(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="app-muted">
+                {t(
+                  'A before-and-after comparison can show a change. Other factors may explain it.',
+                  'Võrdlus näitab, mis pärast otsust muutus. Muutusel võib olla ka teisi põhjuseid.'
+                )}
+              </p>
+              {user?.role !== 'executive' && (
+                <Link to="/app/actions">
+                  {t('Review action records', 'Vaata tegevuste ülevaadet')}
+                </Link>
+              )}
+            </section>
+            {!!summary.topRisks?.length && (
+              <section className="app-panel mb-5">
+                <h2>
+                  {t('Team observations for review', 'Kontrollimist vajavad tiimide tähelepanekud')}
+                </h2>
+                {summary.topRisks.map((r) => (
+                  <article className="mt-3 border-t pt-3" key={r.id}>
+                    <h3 className="font-semibold">{r.title}</h3>
+                    <p>
+                      {r.teamName} · {et ? riskLabels[r.severity] || r.severity : r.severity}
+                    </p>
+                    <p>
+                      {t('Current', 'Praegu')}: {fmt(r.currentValue)} · {t('Baseline', 'Lähtetase')}
+                      : {fmt(r.baselineValue)}
+                    </p>
+                  </article>
+                ))}
+              </section>
+            )}
+            {summary.evidenceSummary?.unqualifiedObservations > 0 && (
+              <p>
+                {t(
+                  'Observations awaiting stronger evidence',
+                  'Lisatõendeid vajavaid tähelepanekuid'
+                )}
+                : {fmt(summary.evidenceSummary.unqualifiedObservations)}
+              </p>
+            )}
+            {user?.role !== 'executive' && (
+              <button onClick={share} disabled={sharing} className="app-secondary-button">
+                {t('Copy executive share link', 'Kopeeri juhtkonna kokkuvõtte link')}
+              </button>
+            )}
+            {shareStatus && <p role="status">{shareStatus}</p>}
+          </>
+        )
       )}
     </AppShell>
   );

@@ -1,3 +1,5 @@
+import { leadershipWorkPatterns } from '../services/leadershipWorkPatterns.js';
+import WeeklyBriefSnapshot from '../models/weeklyBriefSnapshot.js';
 /**
  * Trial Management Routes
  *
@@ -20,7 +22,7 @@ import MonthlyReport from '../models/monthlyReport.js';
 import CeoSummary from '../models/ceoSummary.js';
 import Signal from '../models/signal.js';
 import Intervention from '../models/intervention.js';
-import { authenticateToken, requireHROrAdmin } from '../middleware/auth.js';
+import { authenticateToken, requireHROrAdmin, requireCurrentUserRoles } from '../middleware/auth.js';
 import { buildShareUrl, generateCeoSummaryForOrg } from '../services/ceoSummaryService.js';
 
 const router = express.Router();
@@ -226,8 +228,9 @@ router.get('/status', authenticateToken, async (req, res) => {
  * Get executive summary data for CEO view
  * Returns current status, top risks, and recommended actions
  */
-router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, async (req, res) => {
+router.get('/executive-summary/:orgId', authenticateToken, requireCurrentUserRoles(['admin','hr_admin','master_admin','executive']), async (req, res) => {
   try {
+    res.set('Cache-Control','private, no-store');
     const { orgId } = req.params;
 
     // Verify user has access to this org
@@ -235,23 +238,27 @@ router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, asy
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const organization = await Organization.findById(orgId);
-    if (!organization) {
+    const organization = await Organization.findById(orgId).select('name settings.timezone settings.reportLanguage lifecycleStatus').lean();
+    if (!organization || organization.lifecycleStatus === 'retired') {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    const [signals, interventions] = await Promise.all([
+    const [signals, interventions,snapshot] = await Promise.all([
       Signal.find({ orgId, status: { $in: ['Open', 'Acknowledged', 'In Progress'] } })
-        .populate('teamId', 'name')
+        .populate({path:'teamId',select:'name',match:{orgId,isActive:{$ne:false},analyticsEnabled:{$ne:false}}})
         .sort({ severity: -1, lastUpdated: -1 })
         .limit(100)
         .lean(),
-      Intervention.find({ orgId })
-        .populate('teamId', 'name')
+      Intervention.find({ orgId, privateToManager:{$ne:true},source:{$ne:'manager_coaching'} })
+        .populate({path:'teamId',select:'name',match:{orgId,isActive:{$ne:false},analyticsEnabled:{$ne:false}}})
         .sort({ createdAt: -1 })
         .limit(100)
         .lean(),
+      WeeklyBriefSnapshot.findOne({orgId}).sort({periodEnd:-1}).select('reportMode periodStart periodEnd payload.metrics payload.dataQuality.sourceToSnapshotParity.status').lean(),
     ]);
+    const timezone=organization.settings?.timezone || 'UTC';
+    const workPatterns=leadershipWorkPatterns(snapshot,timezone);
+    const locale=organization.settings?.reportLanguage || (timezone==='Europe/Tallinn'?'et':'en');
 
     // Low-confidence observations are hypotheses, not qualified executive priorities.
     const unqualifiedSignals = signals.filter((signal) => !['High', 'Medium'].includes(signal.confidence));
@@ -296,7 +303,7 @@ router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, asy
       (item) => item.recheckDate && new Date(item.recheckDate) <= now
     );
     const improvedControls = completedControls.filter(
-      (item) => item.outcomeDelta?.improved === true
+      (item) => item.outcomeDelta?.computedAt && item.outcomeDelta.improved === true
     );
     const consultedControls = interventions.filter(
       (item) => item.consultation?.status === 'completed'
@@ -310,12 +317,8 @@ router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, asy
       const age = Date.now() - new Date(s.createdAt).getTime();
       return age >= 7 * 24 * 60 * 60 * 1000 && age < 14 * 24 * 60 * 60 * 1000;
     }).length;
-    const trendDirection =
-      recentSignalCount > olderSignalCount
-        ? 'worsening'
-        : recentSignalCount < olderSignalCount
-          ? 'improving'
-          : 'stable';
+    const trendDirection = recentSignalCount === olderSignalCount ? 'unchanged count' :
+      recentSignalCount > olderSignalCount ? 'more newly recorded signals' : 'fewer newly recorded signals';
 
     const decisionPrompts = [];
     if (overdueControls.length > 0) {
@@ -339,9 +342,9 @@ router.get('/executive-summary/:orgId', authenticateToken, requireHROrAdmin, asy
     }
 
     res.json({
-      currentStatus,
-      topRisks,
-      trendDirection,
+      currentStatus, locale, timezone, workPatterns,
+      topRisks:req.user.role==='executive'?[]:topRisks,
+      trendDirection, recentSignalCount, olderSignalCount,
       decisionPrompts,
       evidenceSummary: {
         unqualifiedObservations: unqualifiedSignals.length,
@@ -516,7 +519,7 @@ router.get('/monthly-report', authenticateToken, requireHROrAdmin, async (req, r
  * POST /api/trial/generate-ceo-summary
  * Generate CEO executive summary from monthly report
  */
-router.post('/generate-ceo-summary', authenticateToken, requireHROrAdmin, async (req, res) => {
+router.post('/generate-ceo-summary', authenticateToken, requireCurrentUserRoles(['admin','master_admin','hr_admin']), async (req, res) => {
   try {
     const organization = await Organization.findById(req.user.orgId);
 

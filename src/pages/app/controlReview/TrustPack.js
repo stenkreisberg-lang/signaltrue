@@ -106,12 +106,14 @@ export default function TrustPack() {
       <div className="cr-trust-status app-panel">
         <div>
           <h2>
-            {pack.connectorsActivated ? 'Connectors are active' : 'Connectors are not active'}
+            {pack.connectorsActivated
+              ? 'Deployment checklist acknowledged'
+              : 'Deployment checklist awaiting acknowledgement'}
           </h2>
           <p className="app-muted">
             {pack.connectorsActivated
-              ? `Switched on ${formatDate(pack.acknowledgedAt)}. Data collection is running under the settings below.`
-              : 'Nothing is collected until you switch this on. The checklist below is preparation material ;  it does not block you.'}
+              ? `Acknowledged ${formatDate(pack.acknowledgedAt)}. Open Data coverage for verified source activity.`
+              : 'Use this checklist to record deployment preparation. Open Data coverage for current connection and measurement status.'}
           </p>
           {pack.outstanding.length > 0 && (
             <p className="cr-meta">Not yet ticked: {pack.outstanding.join(', ')}</p>
