@@ -3498,7 +3498,8 @@ export async function generateWeeklyBrief(orgId) {
         pattern: item.patternObserved,
         evidence: item.evidence || [],
         interpretation: item.whatThisMayMean,
-        evidenceGrade: item.confidence,
+        // Metadata supports the observation, not the causal hypothesis.
+        evidenceGrade: 'Low',
         alternativeExplanation: item.whatCouldAlsoExplainIt,
         source: 'ai_interpretation',
       })),
