@@ -123,8 +123,13 @@ export default function LeadForm({
     }
 
     const submittedInput = JSON.stringify([
-      fields.fullName.trim(), fields.workEmail.trim(), fields.organization.trim(),
-      source, tag, plan || '', intent,
+      fields.fullName.trim(),
+      fields.workEmail.trim(),
+      fields.organization.trim(),
+      source,
+      tag,
+      plan || '',
+      intent,
     ]);
     if (submittedInputRef.current !== null && submittedInputRef.current !== submittedInput) {
       submissionIdRef.current = createSubmissionId();
@@ -160,8 +165,10 @@ export default function LeadForm({
       });
 
       if (
-        response.data?.success !== true || response.data?.confirmed !== true ||
-        typeof response.data?.leadId !== 'string' || !response.data.leadId.trim()
+        response.data?.success !== true ||
+        response.data?.confirmed !== true ||
+        typeof response.data?.leadId !== 'string' ||
+        !response.data.leadId.trim()
       ) {
         throw new Error('The server did not confirm the request.');
       }
