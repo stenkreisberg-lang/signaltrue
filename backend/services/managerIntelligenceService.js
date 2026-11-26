@@ -263,21 +263,50 @@ export async function getScopedTeamMeasurements({ orgId, team, now = new Date(),
       outcome14:a.outcome14,outcome28:a.outcome28})),
     caveat:'Changes are associations in recorded meeting instances per mapped contributor, not productivity, performance or health scores.' };
 }
+const ACTION_METRICS = new Set(['meetingsPerRepresentedPerson', 'meeting_hours', 'focus_time', 'after_hours', 'recurring_load', 'messages']);
+export function actionMetricPoints(data, metric) {
+  if (!ACTION_METRICS.has(metric)) return [];
+  if (metric === 'meetingsPerRepresentedPerson') return data?.points || [];
+  return data?.trendSeries?.find(series => series.key === metric)?.points
+    .filter(point => point.verified === true) || [];
+}
+export function evaluateActionOutcome(action, data, now = new Date()) {
+  const day = now >= new Date(action.due28) ? 28 : now >= new Date(action.due14) ? 14 : 0;
+  if (!day || !data?.eligible || !Number.isFinite(action.baseline)) return null;
+  const start = new Date(action.startDate);
+  if (!Number.isFinite(start.getTime())) return null;
+  const earliest = new Date(start.getTime() + (day - 7) * DAY);
+  const latest = actionMetricPoints(data, action.metric).filter(point =>
+    Number.isFinite(point.value) && point.date > action.baselineWeek &&
+    new Date(point.sampledOn || point.date) >= earliest &&
+    new Date(point.sampledOn || point.date) <= now).at(-1);
+  if (!latest) return null;
+  const diff = latest.value - action.baseline;
+  const tolerance = Math.max(0.05, Math.abs(action.baseline) * 0.05);
+  const within = Math.abs(diff) <= tolerance;
+  const status = within ? 'unchanged' : action.direction === 'stabilize' ? 'worsened' :
+    (action.direction === 'decrease' ? diff < 0 : diff > 0) ? 'improved' : 'worsened';
+  return { day, value: latest.value, status, measuredAt: now };
+}
 export function validateActionBody(body) {
   const title = String(body?.title || '').trim();
   const hypothesis = String(body?.hypothesis || '').trim();
   const direction = String(body?.direction || '');
   if (!title || title.length > 180 || hypothesis.length > 1000 ||
     !['increase', 'decrease', 'stabilize'].includes(direction)) return null;
-  return { title, hypothesis, direction, metric: 'meetingsPerRepresentedPerson' };
+  const metric = body?.metric ?? 'meetingsPerRepresentedPerson';
+  if (!ACTION_METRICS.has(metric)) return null;
+  return { title, hypothesis, direction, metric };
 }
 export async function createScopedAction({user,team,data,body}) {
   const safe = validateActionBody(body);
   if (!safe || !data?.eligible) return null;
   const now = new Date();
-  const p = data.points.filter(x=>x.value != null).at(-1);
+  const p = actionMetricPoints(data, safe.metric).filter(x=>Number.isFinite(x.value)).at(-1);
+  if (!p) return null;
   const action = await ManagerWorkAction.create({orgId:user.orgId,teamId:team._id,createdBy:user._id,
-    ...safe,baseline:p?.value ?? null,baselineWeek:p?.date ?? null,startDate:now,
+    ...safe,baseline:p.value,baselineWeek:p.date,startDate:now,
+    baselineMeasurement: safe.metric === 'meetingsPerRepresentedPerson' ? 'meeting-instances-per-mapped-actor-v1' : safe.metric + '-weekly-v1',
     due14:new Date(now.getTime()+14*DAY),due28:new Date(now.getTime()+28*DAY)});
   await managerAudit({orgId:user.orgId,actorUserId:user._id,managerUserId:user._id,
     teamId:team._id,action:'manager_action_created'});
