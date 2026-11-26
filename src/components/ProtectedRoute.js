@@ -54,9 +54,9 @@ function ProtectedRoute({ children, allowedRoles }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 text-center">
         <div className="max-w-md rounded-container border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">HR access required</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Access restricted</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            This SignalTrue workspace is available to authorised HR and organisation administrators.
+            Your account does not have permission to open this SignalTrue workspace.
           </p>
           <a
             className="mt-6 inline-block text-sm font-semibold text-slate-900 underline"
