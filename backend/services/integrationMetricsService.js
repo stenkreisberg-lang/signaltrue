@@ -490,7 +490,9 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
   const gaps = [];
   let backToBackMeetingBlocks = 0;
   for (const actorMeetings of meetingsByActor.values()) {
-    const sortedMeetings = [...actorMeetings.values()].sort((a, b) => a.start - b.start);
+    // Equal starts are simultaneous. Place the latest end last, so the next
+    // transition cannot depend on the order in which the provider returned rows.
+    const sortedMeetings = [...actorMeetings.values()].sort((a, b) => a.start - b.start || a.end - b.end);
     for (let i = 1; i < sortedMeetings.length; i++) {
       const gap = (sortedMeetings[i].start - sortedMeetings[i - 1].end) / (1000 * 60);
       if (gap >= 0) gaps.push(gap);

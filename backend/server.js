@@ -197,7 +197,7 @@ import { generateWeeklyBrief } from './services/weeklyBriefService.js';
 import { runTehnopolMeasurementRecovery } from './services/tehnopolMeasurementRecovery.js';
 import { reconcileTehnopolTeamsSenderIdentities } from './services/tehnopolSenderIdentityReconciliation.js';
 import { computeDailyMetrics } from './services/integrationMetricsService.js';
-import { repairTehnopolNovemberSnapshot } from './services/tehnopolSnapshotParityRepair.js';
+import { repairTehnopolNovemberSnapshot, reconcileTehnopolWeeklyTransitions } from './services/tehnopolSnapshotParityRepair.js';
 import { refreshTeamSizes } from './services/employeeSyncService.js';
 import { backfillTehnopolTeamHistory } from './services/tehnopolTeamHistoryBackfill.js';
 import { rebuildSevenDayReportHistory } from './services/historicalMetricRebuildService.js';
@@ -257,6 +257,7 @@ async function main() {
             .then(async () => {
               // Recheck the dated calendar discrepancies identified against stored events.
               await repairTehnopolNovemberSnapshot();
+              await reconcileTehnopolWeeklyTransitions();
               await logTehnopolProductionDiagnostic();
             })
             .catch(() => {

@@ -23,6 +23,17 @@ const rows = [
 ];
 
 describe('real-tenant-safe source/snapshot parity audit', () => {
+  test('simultaneous starts have the same back-to-back count in either ingestion order', () => {
+    const event = (id, start, end) => ({ source: 'microsoft-outlook', eventType: 'meeting',
+      actorUserId: actor, timestamp: new Date(start), metadata: { meetingInstanceIdHash: id,
+        startTime: new Date(start), endTime: new Date(end) } });
+    const short = event('short', '2026-11-10T08:00Z', '2026-11-10T08:30Z');
+    const long = event('long', '2026-11-10T08:00Z', '2026-11-10T09:00Z');
+    const next = event('next', '2026-11-10T09:04Z', '2026-11-10T10:00Z');
+    for (const order of [[short, long, next], [long, next, short]]) {
+      expect(computeMeetingMetrics(order, day, workSchedule).backToBackMeetingBlocks).toBe(1);
+    }
+  });
   const meeting = computeMeetingMetrics(rows, day, workSchedule);
   const messaging = computeMessagingMetrics(rows, day, workSchedule);
   const snapshot = { date: day,
