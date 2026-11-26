@@ -3,7 +3,7 @@ import { Toaster as Sonner } from './components/ui/sonner';
 import { TooltipProvider } from './components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, ReactNode, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AnalyticsPageTracker from './components/AnalyticsPageTracker';
@@ -31,6 +31,7 @@ const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
 const DashboardRouter = lazy(() => import('./pages/DashboardRouter'));
 const Overview = lazy(() => import('./pages/app/Overview'));
 const ExecutiveSummary = lazy(() => import('./pages/app/ExecutiveSummary'));
+const MonthlyArchive = lazy(() => import('./pages/app/MonthlyArchive'));
 const LatestBrief = lazy(() => import('./pages/app/LatestBrief'));
 const ManagerReportingAdmin = lazy(() => import('./pages/app/ManagerReportingAdmin'));
 const ManagerInvitation = lazy(() => import('./pages/app/ManagerInvitation'));
@@ -49,7 +50,6 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const CeoSummary = lazy(() => import('./pages/CeoSummary'));
 const SuperadminDashboard = lazy(() => import('./pages/SuperadminDashboard'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const TeamAnalytics = lazy(() => import('./pages/TeamAnalytics'));
 const TeamAnalyticsPage = lazy(() => import('./pages/TeamAnalyticsPage'));
 const AdminOnboarding = lazy(() => import('./pages/AdminOnboarding'));
 const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
@@ -98,9 +98,27 @@ const HR_REPORT_ROLES = [
   'executive',
   'compliance',
 ];
+const PRIVATE_REPORT_ROLES = ['master_admin', 'admin', 'hr_admin'];
+const SUPERADMIN_ROLES = ['master_admin'];
 const withHrAccess = (page: ReactNode) => (
   <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>{page}</ProtectedRoute>
 );
+
+function PublicChat() {
+  const { pathname } = useLocation();
+  const privatePaths = [
+    '/app',
+    '/dashboard',
+    '/superadmin',
+    '/admin',
+    '/integrations',
+    '/ceo-summary',
+  ];
+  if (privatePaths.some((path) => pathname === path || pathname.startsWith(path + '/'))) {
+    return null;
+  }
+  return <ChatWidget />;
+}
 
 const App = () => (
   <ErrorBoundary>
@@ -188,7 +206,14 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/app/latest-brief" element={withHrAccess(<LatestBrief />)} />
+                <Route
+                  path="/app/latest-brief"
+                  element={
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
+                      <LatestBrief />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/app/admin/manager-reporting"
                   element={
@@ -206,7 +231,10 @@ const App = () => (
                 <Route path="/app/signals" element={withHrAccess(<Signals />)} />
                 <Route path="/app/signals/:signalId" element={withHrAccess(<Signals />)} />
                 <Route path="/app/active-monitoring" element={withHrAccess(<ActiveMonitoring />)} />
-                <Route path="/app/risk-feed" element={withHrAccess(<ActiveMonitoring />)} />
+                <Route
+                  path="/app/risk-feed"
+                  element={withHrAccess(<Navigate to="/app/active-monitoring" replace />)}
+                />
                 <Route path="/app/actions" element={withHrAccess(<Actions />)} />
                 <Route
                   path="/app/manager-coaching"
@@ -229,7 +257,7 @@ const App = () => (
                 <Route
                   path="/app/executive-summary"
                   element={
-                    <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
                       <ExecutiveSummary />
                     </ProtectedRoute>
                   }
@@ -249,12 +277,26 @@ const App = () => (
                 <Route path="/app/site-analytics" element={withHrAccess(<SiteAnalytics />)} />
                 <Route
                   path="/app/monthly-report"
-                  element={withAuthentication(<Navigate to="/app/overview" replace />)}
+                  element={
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
+                      <MonthlyArchive />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />
-                <Route path="/superadmin" element={withAuthentication(<SuperadminDashboard />)} />
+                <Route
+                  path="/superadmin"
+                  element={
+                    <ProtectedRoute allowedRoles={SUPERADMIN_ROLES}>
+                      <SuperadminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/team-analytics" element={withAuthentication(<TeamAnalyticsPage />)} />
-                <Route path="/app/team-analytics" element={withAuthentication(<TeamAnalytics />)} />
+                <Route
+                  path="/app/team-analytics"
+                  element={withAuthentication(<Navigate to="/dashboard" replace />)}
+                />
                 <Route path="/admin/onboarding" element={withAuthentication(<AdminOnboarding />)} />
                 <Route path="/self-check" element={<SelfCheck />} />
                 <Route path="/integrations" element={withAuthentication(<IntegrationsPage />)} />
@@ -325,7 +367,7 @@ const App = () => (
                 />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <ChatWidget />
+              <PublicChat />
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>

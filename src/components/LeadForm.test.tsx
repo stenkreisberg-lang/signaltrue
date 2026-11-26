@@ -139,35 +139,40 @@ describe('LeadForm', () => {
   });
 });
 
-test.each([false, true])('retries the same enquiry identity only for unchanged details (edited=%s)', async (edited) => {
-  vi.clearAllMocks();
-  const stored = new Map<string, string>();
-  vi.mocked(api.post).mockImplementation(async (_url, body) => {
-    const payload = body as { submissionId: string; email: string };
-    if (!stored.has(payload.submissionId)) stored.set(payload.submissionId, payload.email);
-    if (vi.mocked(api.post).mock.calls.length === 1) throw new Error('Response lost after mocked persistence');
-    return { data: { success: true, confirmed: true, leadId: 'mock-lead' } };
-  });
-  render(<LeadForm ctaLocation="test_location" />);
-  fillRequiredFields();
-  fireEvent.submit(document.getElementById('commercial-lead-form')!);
-  await screen.findByRole('alert');
-  if (edited) fireEvent.change(screen.getByLabelText(/Work email/i), {
-    target: { value: 'corrected@example.com' },
-  });
-  await waitFor(() => expect(screen.getByRole('button', { name: /free/i })).not.toBeDisabled());
-  fireEvent.submit(document.getElementById('commercial-lead-form')!);
-  await screen.findByTestId('lead-confirmation');
-  const first = vi.mocked(api.post).mock.calls[0][1] as { submissionId: string };
-  const second = vi.mocked(api.post).mock.calls[1][1] as { submissionId: string };
-  if (edited) {
-    expect(second.submissionId).not.toBe(first.submissionId);
-    expect(stored.get(second.submissionId)).toBe('corrected@example.com');
-  } else {
-    expect(second.submissionId).toBe(first.submissionId);
-    expect(stored.size).toBe(1);
+test.each([false, true])(
+  'retries the same enquiry identity only for unchanged details (edited=%s)',
+  async (edited) => {
+    vi.clearAllMocks();
+    const stored = new Map<string, string>();
+    vi.mocked(api.post).mockImplementation(async (_url, body) => {
+      const payload = body as { submissionId: string; email: string };
+      if (!stored.has(payload.submissionId)) stored.set(payload.submissionId, payload.email);
+      if (vi.mocked(api.post).mock.calls.length === 1)
+        throw new Error('Response lost after mocked persistence');
+      return { data: { success: true, confirmed: true, leadId: 'mock-lead' } };
+    });
+    render(<LeadForm ctaLocation="test_location" />);
+    fillRequiredFields();
+    fireEvent.submit(document.getElementById('commercial-lead-form')!);
+    await screen.findByRole('alert');
+    if (edited)
+      fireEvent.change(screen.getByLabelText(/Work email/i), {
+        target: { value: 'corrected@example.com' },
+      });
+    await waitFor(() => expect(screen.getByRole('button', { name: /free/i })).not.toBeDisabled());
+    fireEvent.submit(document.getElementById('commercial-lead-form')!);
+    await screen.findByTestId('lead-confirmation');
+    const first = vi.mocked(api.post).mock.calls[0][1] as { submissionId: string };
+    const second = vi.mocked(api.post).mock.calls[1][1] as { submissionId: string };
+    if (edited) {
+      expect(second.submissionId).not.toBe(first.submissionId);
+      expect(stored.get(second.submissionId)).toBe('corrected@example.com');
+    } else {
+      expect(second.submissionId).toBe(first.submissionId);
+      expect(stored.size).toBe(1);
+    }
   }
-});
+);
 
 test.each([
   { success: 'false', confirmed: true, leadId: 'mock' },

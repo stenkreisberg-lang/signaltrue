@@ -53,3 +53,26 @@ test('clears an invalid stored session and redirects to login', async () => {
   expect(await screen.findByText('Navigate to /login')).toBeInTheDocument();
   await waitFor(() => expect(clearStoredSession).toHaveBeenCalledTimes(1));
 });
+
+test('rejects a non-master-admin account from a master-admin-only route', async () => {
+  localStorage.setItem('token', 'valid-token');
+  getAuthenticatedContext.mockResolvedValue({ user: { role: 'hr_admin' }, orgId: 'org-1' });
+  render(
+    <ProtectedRoute allowedRoles={['master_admin']}>
+      <div>Superadmin content</div>
+    </ProtectedRoute>
+  );
+  expect(await screen.findByText('Access restricted')).toBeInTheDocument();
+  expect(screen.queryByText('Superadmin content')).not.toBeInTheDocument();
+});
+
+test('allows an authorised master administrator', async () => {
+  localStorage.setItem('token', 'valid-token');
+  getAuthenticatedContext.mockResolvedValue({ user: { role: 'master_admin' } });
+  render(
+    <ProtectedRoute allowedRoles={['master_admin']}>
+      <div>Superadmin content</div>
+    </ProtectedRoute>
+  );
+  expect(await screen.findByText('Superadmin content')).toBeInTheDocument();
+});
