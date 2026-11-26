@@ -98,6 +98,7 @@ describe('directory-synced manager onboarding', () => {
   });
   const listing = await request(app).get('/api/manager-intelligence/admin/directory')
     .set(bearer(hr)).expect(200);
+  expect(listing.body).toMatchObject({ minimum: 2, locale: 'en' });
   expect(listing.body.users.find(u => u.id === pending.id)?.accountStatus).toBe('pending');
   const approved = await request(app).post('/api/manager-intelligence/admin/assignments')
     .set(bearer(hr)).send({ managerUserId: pending.id, teamId: team.id, weeklyEmailEnabled: false }).expect(201);
