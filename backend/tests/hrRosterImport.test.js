@@ -147,6 +147,26 @@ describe('HR roster import', () => {
     expect(assignment.weeklyEmailEnabled).toBe(false);
   });
 
+  test('matches real directory employees in departments containing the organization name', async () => {
+    const org = await Organization.create({ name: 'Example', domain: 'example.test' });
+    const oldTeam = await Team.create({ name: 'Previous', orgId: org._id });
+    const person = await User.create({
+      name: 'Ada Example', email: 'ada@example.test', orgId: org._id,
+      password: 'synthetic-test-password', teamId: oldTeam._id,
+      role: 'team_member', accountStatus: 'active',
+    });
+    const result = await importHrRosterRows(org._id, [{
+      Name: 'Ada Example', Department: 'Tehnopol Accelerator', Team: 'Tehnopol Accelerator',
+      'Roster Format': 'department_manager',
+    }], { approvedBy: person._id });
+    expect(result.stats.updated).toBe(1);
+    expect(result.stats.created).toBe(0);
+    expect(result.stats.skipped).toBe(0);
+    const updated = await User.findById(person._id).lean();
+    expect(updated.profile.department).toBe('Tehnopol Accelerator');
+    expect(String(updated.teamId)).not.toBe(String(oldTeam._id));
+  });
+
   test('extracts table-like text from PDF exports', () => {
     const rows = parseHrRosterPdfText(`
       Name  Email  Position  Department
