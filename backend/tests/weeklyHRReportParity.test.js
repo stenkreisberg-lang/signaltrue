@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import {
-  buildHRReportPresentation, reportVersion, formatHRValue,
+  buildHRReportPresentation, reportVersion, formatHRValue, formatHRDelta, reportLanguage,
 } from '../services/weeklyReportPresentationService.js';
 import { weeklyHRPdfBuffer } from '../services/weeklyReportPdfService.js';
 import {
@@ -58,6 +58,23 @@ describe('P2 saved HR report: same values in PDF, dashboard and email', () => {
     expect(formatHRValue(view.metrics[0])).toBe('11,8 h');
   });
 
+  test('honours the saved language independently of the time zone and supports older reports', () => {
+    expect(reportLanguage({ reportLanguage: 'en', reportTimeZone: 'Europe/Tallinn' })).toBe('en');
+    expect(reportLanguage({ reportLanguage: 'et', reportTimeZone: 'UTC' })).toBe('et');
+    expect(reportLanguage({ reportTimeZone: 'Europe/Tallinn' })).toBe('et');
+    const view = buildHRReportPresentation({ ...snapshot, metrics: [] }, 'en');
+    expect(view.description).toContain('no comparable prior period');
+    expect(view.metrics[1]).toMatchObject({ short: 'Messages', unit: 'messages', current: null });
+  });
+
+  test('separates percentage-point changes from relative percentages and retains true zero', () => {
+    expect(formatHRDelta({ comparable: true, delta: -3, unit: '%' }, 'en')).toBe('-3 pp');
+    expect(formatHRDelta({ comparable: true, delta: 0, unit: '%' })).toBe('0 protsendipunkti');
+    expect(formatHRDelta({ comparable: false, delta: -3, unit: '%' })).toBeNull();
+    const malformed = { key: 'focus_time', available: true, current: '' };
+    expect(buildHRReportPresentation({ ...snapshot, metrics: [malformed] }).metrics[3].available).toBe(false);
+  });
+
   test('version changes only when frozen report content changes', () => {
     expect(reportVersion(snapshot)).toBe(reportVersion({ ...snapshot, generatedAt: new Date() }));
     expect(reportVersion(snapshot)).not.toBe(reportVersion({
@@ -79,6 +96,7 @@ describe('P2 saved HR report: same values in PDF, dashboard and email', () => {
     const pdf = await weeklyHRPdfBuffer(snapshot);
     expect(pdf.subarray(0, 4).toString('ascii')).toBe('%PDF');
     expect(pdf.length).toBeGreaterThan(1800);
+    expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)).toHaveLength(2);
   });
 });
 

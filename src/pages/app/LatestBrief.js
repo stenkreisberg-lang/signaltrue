@@ -452,7 +452,9 @@ export default function LatestBrief() {
 
   // Scope the Estonian P2 experience to organisations using Tallinn
   // reporting time; keep the established English workflow elsewhere.
-  if (brief?.reportTimeZone !== 'Europe/Tallinn') {
+  if (
+    (brief?.reportLanguage || (brief?.reportTimeZone === 'Europe/Tallinn' ? 'et' : 'en')) === 'en'
+  ) {
     return <LatestBriefEnglish />;
   }
 

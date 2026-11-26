@@ -6,34 +6,34 @@ const DIMENSIONS = [
     key: 'meeting_hours',
     title: 'Koosolekuaeg inimese kohta',
     short: 'Koosolekuaeg',
-    source: 'Outlook',
+    source: 'Kalender',
     description: 'Koosolekutel osalemise tunnid kalendrikasutaja kohta',
   },
   {
     key: 'messages',
     title: 'Sõnumid kokku',
     short: 'Sõnumid',
-    source: 'Teams',
+    source: 'Sõnumid',
     description: 'Mõõdetud sõnumid kokku, mitte sõnumid töötaja kohta',
   },
   {
     key: 'after_hours',
     title: 'Sõnumid väljaspool tööaega',
     short: 'Pärast tööaega',
-    source: 'Teams',
+    source: 'Sõnumid',
     description: 'Väljaspool kokkulepitud tööaega saadetud sõnumite osakaal',
   },
   {
     key: 'focus_time',
     title: 'Vaba kalendriaeg inimese kohta',
     short: 'Vaba kalendriaeg',
-    source: 'Outlook',
+    source: 'Kalender',
     description: 'Pikemad kohtumisteta ajavahemikud, mitte tõend keskendunud tööst',
   },
 ];
 
 function number(value) {
-  return value != null && Number.isFinite(Number(value)) ? Number(value) : null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function formatHRMetric(metric, value = metric?.current) {
@@ -68,13 +68,13 @@ export function buildHRDecisionDimensions(brief) {
   }));
 }
 
-function shortDate(value) {
+function shortDate(value, timeZone) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return '';
   return new Date(value).toLocaleDateString('et-EE', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    timeZone: 'Europe/Tallinn',
+    timeZone: timeZone || 'Europe/Tallinn',
   });
 }
 
@@ -132,7 +132,10 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   const conclusion =
     meetingDelta !== null && meetingDelta <= -1 && focusDelta !== null && focusDelta <= -0.5
       ? 'Koosolekuaeg vähenes, kuid vaba kalendriaega jäi samuti vähem.'
-      : findings[0]?.title || 'Suuri muutusi ei tuvastatud võrreldavates mõõtmistes.';
+      : findings[0]?.title ||
+        ([meetingDelta, focusDelta, afterHoursDelta].some((value) => value !== null)
+          ? 'Võrreldavates näitajates ei ületanud muutus tähelepanu piiri.'
+          : 'Muutust ei saa hinnata, sest võrreldav eelmine periood puudub.');
   const sourceVerified = brief.dataQuality?.sourceToSnapshotParity?.status === 'PASS';
   const canSuggestAction =
     sourceVerified &&
@@ -147,7 +150,8 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
-              Nädala kokkuvõte · {shortDate(brief.periodStart)} kuni {shortDate(periodEnd)}
+              Nädala kokkuvõte · {shortDate(brief.periodStart, brief.reportTimeZone)} kuni{' '}
+              {shortDate(periodEnd, brief.reportTimeZone)}
             </p>
             <h2 className="mt-2 text-xl font-bold text-slate-950">Mis muutus töökorralduses?</h2>
             <p className="mt-2 text-sm leading-6 text-slate-700">{conclusion}</p>
@@ -158,7 +162,10 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700">
             <p>
-              <strong>Seotud sündmusi:</strong> {brief.coverage?.mappingCoveragePct ?? '—'}%
+              <strong>Seotud sündmusi:</strong>{' '}
+              {brief.coverage?.mappingCoveragePct == null
+                ? 'teadmata'
+                : brief.coverage.mappingCoveragePct + '%'}
             </p>
             <p className="mt-1">
               <strong>Algandmete kontroll:</strong> {sourceVerified ? 'kinnitatud' : 'kinnitamata'}
