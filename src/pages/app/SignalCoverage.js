@@ -6,7 +6,12 @@ import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function SignalCoverage() {
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState({ loading: true, sources: [], calibration: null });
+  const [status, setStatus] = useState({
+    loading: true,
+    sources: [],
+    minimumSize: null,
+    error: false,
+  });
 
   useEffect(() => {
     let active = true;
@@ -16,21 +21,18 @@ export default function SignalCoverage() {
         const context = await getAuthenticatedContext();
         if (!active) return;
         setUser(context.user);
-        const [integration, calibration] = await Promise.allSettled([
-          api.get('/integration-dashboard/status'),
-          context.orgId ? api.get(`/calibration/status/${context.orgId}`) : Promise.resolve(null),
-        ]);
-
+        const integration = await api.get('/integration-dashboard/status');
+        const data = integration.data;
+        if (!Array.isArray(data?.integrations)) throw new Error('Invalid integration response');
         if (!active) return;
         setStatus({
           loading: false,
-          sources:
-            integration.status === 'fulfilled' ? integration.value.data.integrations || [] : [],
-          calibration:
-            calibration.status === 'fulfilled' && calibration.value ? calibration.value.data : null,
+          sources: data.integrations,
+          minimumSize: data.setup?.teams?.minimumSize ?? null,
+          error: false,
         });
       } catch {
-        if (active) setStatus({ loading: false, sources: [], calibration: null });
+        if (active) setStatus({ loading: false, sources: [], minimumSize: null, error: true });
       }
     };
     load();
@@ -39,7 +41,9 @@ export default function SignalCoverage() {
     };
   }, []);
 
-  const connected = status.sources.filter((source) => source.status === 'connected').length;
+  const connected = status.sources.filter((source) => {
+    return ['connected', 'measuring'].includes(source.status);
+  }).length;
   const measuredSources = status.sources.filter(
     (source) => source.measurementStatus?.verified === true
   ).length;
@@ -66,22 +70,24 @@ export default function SignalCoverage() {
         <div className="app-metric">
           <Database size={20} />
           <div>
-            <strong>{status.loading ? '...' : connected}</strong>
+            <strong>{status.loading ? '...' : status.error ? 'Unavailable' : connected}</strong>
             <span>Sources connected</span>
           </div>
         </div>
         <div className="app-metric">
           <ShieldCheck size={20} />
           <div>
-            <strong>{status.loading ? '...' : measuredSources}</strong>
+            <strong>
+              {status.loading ? '...' : status.error ? 'Unavailable' : measuredSources}
+            </strong>
             <span>Sources with verified events</span>
           </div>
         </div>
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>8 contributors</strong>
-            <span>Sensitive metric threshold</span>
+            <strong>{status.loading ? '...' : (status.minimumSize ?? 'Unavailable')}</strong>
+            <span>Minimum team size for reporting</span>
           </div>
         </div>
       </section>
@@ -92,7 +98,14 @@ export default function SignalCoverage() {
             Connection alone does not confirm usable activity. Missing, stale or unmapped data must
             never be treated as zero work.
           </p>
-          {status.sources.length === 0 ? (
+          {status.loading ? (
+            <p className="coverage-empty">Checking source status…</p>
+          ) : status.error ? (
+            <p className="coverage-empty" role="alert">
+              Source status could not be loaded. Refresh to retry. This does not mean sources are
+              disconnected.
+            </p>
+          ) : status.sources.length === 0 ? (
             <p className="coverage-empty">No connected sources are available yet.</p>
           ) : (
             <div className="coverage-list">
@@ -139,7 +152,7 @@ export default function SignalCoverage() {
           {[
             'No message, email or document content is stored or analyzed.',
             'No individual employee scores are exposed.',
-            'Minimum group thresholds suppress sensitive results.',
+            'Reporting uses the configured minimum team size and requires adequate mapped activity. Small-team aggregates may permit individual inference.',
             'Role-based access protects organization data.',
           ].map((line) => (
             <div className="coverage-rule" key={line}>
