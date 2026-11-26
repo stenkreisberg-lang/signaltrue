@@ -257,7 +257,7 @@ const App = () => (
                 <Route
                   path="/app/executive-summary"
                   element={
-                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
+                    <ProtectedRoute allowedRoles={[...PRIVATE_REPORT_ROLES, 'executive']}>
                       <ExecutiveSummary />
                     </ProtectedRoute>
                   }

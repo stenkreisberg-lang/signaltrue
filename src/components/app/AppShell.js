@@ -67,7 +67,7 @@ const links = [
     label: 'Leadership summary',
     group: 'Explore',
     secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin'],
+    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
   },
   {
     to: '/integrations',
