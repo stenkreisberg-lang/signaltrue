@@ -5,7 +5,7 @@
  */
 import { createTrendPng } from './weeklyChartPng.js';
 import { renderVisualWeeklyEmail as renderEnglishEmail, renderVisualWeeklyEmailPackage as renderEnglishPackage } from './visualWeeklyEmailServiceEnglish.js';
-import { buildHRReportPresentation, formatHRValue } from './weeklyReportPresentationService.js';
+import { buildHRReportPresentation, formatHRValue, formatHRDelta, reportLanguage } from './weeklyReportPresentationService.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -173,7 +173,7 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
   const sharedTrends = savedEmailTrends(snapshot, trends);
   const rows = view.metrics.map(m => {
     const change = m.comparable
-      ? (m.delta > 0 ? '+' : '') + formatHRValue({ unit: m.unit }, m.delta)
+      ? formatHRDelta(m)
       : 'Võrdlus puudub';
     return '<td style="padding:7px;vertical-align:top;width:50%;">' +
       '<div style="border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;padding:13px;">' +
@@ -229,11 +229,11 @@ function buildEmail(snapshot, trends, { appUrl = 'https://www.signaltrue.ai', em
     '</td></tr></table></td></tr></table></body></html>';
 }
 export function renderVisualWeeklyEmail(snapshot, trends, options = {}) {
-  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishEmail(snapshot, trends, options);
+  if (reportLanguage(snapshot) === 'en') return renderEnglishEmail(snapshot, trends, options);
   return buildEmail(snapshot, trends, options);
 }
 export function renderVisualWeeklyEmailPackage(snapshot, trends, options = {}) {
-  if (snapshot?.reportTimeZone !== 'Europe/Tallinn') return renderEnglishPackage(snapshot, trends, options);
+  if (reportLanguage(snapshot) === 'en') return renderEnglishPackage(snapshot, trends, options);
   const metrics = snapshot?.metrics || [];
   const eligible = PRIORITY.map(key => metricByKey(metrics, key)).filter(isAvailable);
   const historical = savedEmailTrends(snapshot, trends);

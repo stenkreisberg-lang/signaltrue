@@ -121,7 +121,12 @@ export default function Overview() {
 
   // Existing international customers retain the English report until the
   // redesigned dashboard has a complete English translation.
-  if (!loading && brief?.reportTimeZone !== 'Europe/Tallinn' && !error) {
+  if (
+    !loading &&
+    (brief?.reportLanguage || (brief?.reportTimeZone === 'Europe/Tallinn' ? 'et' : 'en')) ===
+      'en' &&
+    !error
+  ) {
     return <OverviewEnglish />;
   }
 

@@ -25,7 +25,7 @@ const DIMENSIONS = [
 ];
 
 function number(value) {
-  return Number.isFinite(Number(value)) && value != null ? Number(value) : null;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function formatHRMetric(metric, value = metric?.current) {
@@ -43,7 +43,8 @@ function absoluteComparison(metric) {
   if (!metric || metric.available !== true) return 'Source evidence insufficient';
   const prior = number(metric.previous);
   const current = number(metric.current);
-  if (prior == null || current == null) return 'No comparable prior period';
+  if (metric.comparisonReason || metric.changePct == null || prior == null || current == null)
+    return 'No comparable prior period';
   return `Previous period: ${formatHRMetric(metric, prior)}`;
 }
 
@@ -54,18 +55,29 @@ export function buildHRDecisionDimensions(brief) {
   }));
 }
 
-function shortDate(value) {
+function shortDate(value, timeZone) {
   if (!value) return '';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: timeZone || 'UTC',
+  });
 }
 
 export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
   if (!brief) return null;
   const dimensions = buildHRDecisionDimensions(brief);
   const action = brief?.actions?.primary;
-  const period = [shortDate(brief.periodStart), shortDate(brief.periodEnd)]
+  const period = [
+    shortDate(brief.periodStart, brief.reportTimeZone),
+    shortDate(
+      brief.periodEnd && new Date(new Date(brief.periodEnd).getTime() - 1),
+      brief.reportTimeZone
+    ),
+  ]
     .filter(Boolean)
     .join(' to ');
   const teams = (brief.workPattern?.teams || []).filter((team) => team?.teamName).slice(0, 4);

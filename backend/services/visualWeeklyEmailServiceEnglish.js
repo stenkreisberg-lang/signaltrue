@@ -17,7 +17,7 @@ const day = v => v ? new Date(v).toLocaleDateString('en-GB', {
 const localDay = (v, timeZone = 'UTC') => v ? new Date(v).toLocaleDateString('en-GB', {
   day: 'numeric', month: 'short', timeZone,
 }) : '—';
-const isAvailable = m => m?.available === true && Number.isFinite(Number(m.current));
+const isAvailable = m => m?.available === true && Number.isFinite(m.current);
 const metricByKey = (metrics, key) => metrics.find(m => m.key === key);
 const PRIORITY = [
   'meeting_hours', 'after_hours', 'focus_time', 'fragmentation',
@@ -46,7 +46,7 @@ const severityScore = value => {
     str.includes('watch') || str.includes('moderate') ? 2 : 1;
 };
 function difference(metric) {
-  if (!isAvailable(metric) || metric.previous == null || !Number.isFinite(Number(metric.previous))) return 'No comparable previous period';
+  if (!isAvailable(metric) || metric.comparisonReason || metric.changePct == null || !Number.isFinite(metric.previous)) return 'No comparable previous period';
   const delta = Number(metric.current) - Number(metric.previous);
   const sign = delta > 0 ? '+' : '';
   const unit = metric.unit === '%' ? ' percentage points' : metric.unit === 'hours' ? ' h' : '';
