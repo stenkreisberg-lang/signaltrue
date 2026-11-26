@@ -483,7 +483,9 @@ export default function ManagerTeamDashboard() {
                       />
                     </label>
                     <button
-                      disabled={!title.trim() || busy || !actionMetrics.some((m) => m.key === actionMetric)}
+                      disabled={
+                        !title.trim() || busy || !actionMetrics.some((m) => m.key === actionMetric)
+                      }
                       onClick={submit}
                       className="mt-3 rounded-lg bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
                     >
