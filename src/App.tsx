@@ -98,6 +98,7 @@ const HR_REPORT_ROLES = [
   'executive',
   'compliance',
 ];
+const SUPERADMIN_ROLES = ['master_admin'];
 const withHrAccess = (page: ReactNode) => (
   <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>{page}</ProtectedRoute>
 );
@@ -206,7 +207,10 @@ const App = () => (
                 <Route path="/app/signals" element={withHrAccess(<Signals />)} />
                 <Route path="/app/signals/:signalId" element={withHrAccess(<Signals />)} />
                 <Route path="/app/active-monitoring" element={withHrAccess(<ActiveMonitoring />)} />
-                <Route path="/app/risk-feed" element={withHrAccess(<ActiveMonitoring />)} />
+                <Route
+                  path="/app/risk-feed"
+                  element={withHrAccess(<Navigate to="/app/active-monitoring" replace />)}
+                />
                 <Route path="/app/actions" element={withHrAccess(<Actions />)} />
                 <Route
                   path="/app/manager-coaching"
@@ -252,7 +256,10 @@ const App = () => (
                   element={withAuthentication(<Navigate to="/app/overview" replace />)}
                 />
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />
-                <Route path="/superadmin" element={withAuthentication(<SuperadminDashboard />)} />
+                <Route
+                  path="/superadmin"
+                  element={<ProtectedRoute allowedRoles={SUPERADMIN_ROLES}><SuperadminDashboard /></ProtectedRoute>}
+                />
                 <Route path="/team-analytics" element={withAuthentication(<TeamAnalyticsPage />)} />
                 <Route path="/app/team-analytics" element={withAuthentication(<TeamAnalytics />)} />
                 <Route path="/admin/onboarding" element={withAuthentication(<AdminOnboarding />)} />
