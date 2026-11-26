@@ -1,4 +1,5 @@
 import express from 'express';
+import MonthlyReport from '../models/monthlyReport.js';
 import {
   generateWeeklyReportForTeam,
   generateWeeklyReportsForOrg,
@@ -249,6 +250,29 @@ router.get(
         message: 'Error fetching monthly report',
         error: error.message,
       });
+    }
+  }
+);
+
+// Archive index contains dates and delivery metadata only, not historical scores.
+router.get(
+  '/monthly/org/:orgId/archive',
+  authenticateToken,
+  checkRole(['hr_admin', 'admin', 'master_admin']),
+  requireOrganizationAccess(),
+  privacyGateOrg,
+  async (req, res) => {
+    try {
+      const reports = await MonthlyReport.find({ orgId: req.params.orgId })
+        .select('_id periodStart periodEnd reportMode accessStatus generatedAt emailSentAt')
+        .sort({ periodEnd: -1 })
+        .limit(24)
+        .lean();
+      res.set('Cache-Control', 'private, no-store');
+      return res.json({ reports });
+    } catch (error) {
+      console.error('Monthly archive lookup failed:', error.message);
+      return res.status(500).json({ message: 'Monthly report archive is unavailable' });
     }
   }
 );
