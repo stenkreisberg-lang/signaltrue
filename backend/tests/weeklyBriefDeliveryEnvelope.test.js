@@ -21,6 +21,7 @@ describe('weekly client reports and explicitly authorised QA copies', () => {
     });
     expect(envelope.to).toEqual(['hr@example.com']);
     expect(envelope.bcc).toEqual([]);
+    expect(envelope.qaCopyStatus).toBe('disabled');
     expect(envelope.html).toBe(html);
   });
 
@@ -32,6 +33,7 @@ describe('weekly client reports and explicitly authorised QA copies', () => {
     });
     expect(envelope.to).toEqual(['hr@example.com']);
     expect(envelope.bcc).toEqual(['quality@signaltrue.ai']);
+    expect(envelope.qaCopyStatus).toBe('included');
     expect(envelope.html).toBe(html);
   });
 
@@ -42,6 +44,7 @@ describe('weekly client reports and explicitly authorised QA copies', () => {
       superadminEmail: 'quality@signaltrue.ai',
     });
     expect(envelope.bcc).toEqual([]);
+    expect(envelope.qaCopyStatus).toBe('already_recipient');
   });
 
   test('fails closed when QA copies are enabled without an approved business recipient', () => {

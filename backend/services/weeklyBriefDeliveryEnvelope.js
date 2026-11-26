@@ -21,9 +21,16 @@ export function buildWeeklyBriefEnvelope({
     throw new Error('An explicitly configured @signaltrue.ai QA mailbox is required for client report copies');
   }
 
+  // Provider acceptance only verifies the address was included in the send;
+  // inbox delivery must be checked separately in provider delivery events.
+  const qaCopyStatus = !qaEnabled
+    ? 'disabled'
+    : to.includes(admin) ? 'already_recipient' : 'included';
+
   return {
     to,
-    bcc: qaEnabled && !to.includes(admin) ? [admin] : [],
+    bcc: qaCopyStatus === 'included' ? [admin] : [],
+    qaCopyStatus,
     subject,
     html,
   };

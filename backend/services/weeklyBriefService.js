@@ -1,3 +1,4 @@
+import {currentReportRecipients,verifyClaimRecipients} from './reportRecipients.js';
 import WeeklyWorkReview from '../models/weeklyWorkReview.js';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
@@ -3681,20 +3682,7 @@ export async function sendWeeklyBrief(orgId) {
   // Organisation-wide reports are not sent to every admin by default. HR may
   // approve explicit active administrator addresses; otherwise only hr_admin
   // accounts receive the brief. An approved empty list pauses delivery.
-  const configured = Boolean(org.settings?.weeklyBriefRecipientsApprovedAt);
-  const approved = new Set((org.settings?.weeklyBriefRecipients || [])
-    .map(email => String(email).trim().toLowerCase()));
-  const orgUsers = await User.find({
-    orgId,
-    role: { $in: configured
-      ? ['master_admin', 'hr_admin', 'admin', 'org_admin']
-      : ['hr_admin'] },
-    accountStatus: 'active',
-    email: { $exists: true, $ne: null },
-  });
-  const recipients = [...new Set(orgUsers
-    .map(u => String(u.email || '').trim().toLowerCase())
-    .filter(email => email && (!configured || approved.has(email))))];
+  const recipients = await currentReportRecipients(orgId);
 
   if (!recipients.length) {
     throw new Error('No active authorised HR/admin recipient for org ' + org.name + '; delivery blocked.');
@@ -3708,14 +3696,19 @@ export async function sendWeeklyBrief(orgId) {
     await WeeklyBriefDispatch.create({
       _id: dispatchId, orgId: org._id, periodStart,
       status: 'sending', recipientCount: recipients.length,
+      qaCopyStatus: envelope.qaCopyStatus,
     });
   } catch (error) {
     if (error?.code !== 11000) throw error;
     const existing = await WeeklyBriefDispatch.findById(dispatchId).lean();
-    if (existing?.status === 'sent') return { skipped: true, reason: 'already_sent', dispatchId };
+    if (existing?.status === 'sent') return {
+      skipped: true, reason: 'already_sent', dispatchId,
+      qaCopyStatus: existing.qaCopyStatus || 'unknown',
+    };
     throw new Error('Previous weekly send may be in progress or unconfirmed. Reconcile dispatch ' + dispatchId);
   }
 
+  await verifyClaimRecipients(orgId,dispatchId,recipients);
   let providerMessageId;
   try {
     console.log('[WeeklyBrief] Sending authorised report for org ' + String(org._id));
@@ -3756,7 +3749,12 @@ export async function sendWeeklyBrief(orgId) {
     await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
       $set: { status: 'sent', sentAt: new Date(), providerMessageId },
     });
-    return { sent: true, dispatchId, providerMessageId };
+    if (envelope.qaCopyStatus === 'disabled') {
+      // Do not misrepresent the customer send as evidence of an admin copy.
+      // Never resend a customer email to repair the missing QA copy.
+      console.error(`[WeeklyBrief] Customer email accepted for ${org.name}; admin QA copy disabled`);
+    }
+    return { sent: true, dispatchId, providerMessageId, qaCopyStatus: envelope.qaCopyStatus };
   } catch (error) {
     // Email may have been accepted before the failure. Never automatically send it again.
     await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {

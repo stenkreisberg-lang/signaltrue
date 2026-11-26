@@ -31,8 +31,11 @@ jobs:
           node --check services/integrationMetricsService.js
           node --check services/weeklySchedulerService.js
           node --check services/weeklyEmailScheduler.js
+          node --check services/weeklyBriefDeliveryEnvelope.js
+          node --check models/weeklyBriefDispatch.js
+          node --check models/cronLog.js
           node --check services/historicalMetricRebuildService.js
           node --check server.js
       - name: Run targeted regression tests
         working-directory: backend
-        run: npm test -- --runInBand tests/visualWeeklyReport.test.js tests/weeklyDispatchTimezone.test.js
+        run: npm test -- --runInBand tests/visualWeeklyReport.test.js tests/weeklyDispatchTimezone.test.js tests/weeklyBriefDeliveryEnvelope.test.js tests/reportDeliveryHealthService.test.js

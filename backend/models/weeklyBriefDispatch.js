@@ -8,6 +8,8 @@ const weeklyBriefDispatchSchema = new mongoose.Schema({
   periodStart: { type: Date, required: true },
   status: { type: String, enum: ['sending', 'sent', 'unknown'], required: true },
   recipientCount: Number,
+  // 'included' means BCC was in the provider request, not that it reached the inbox.
+  qaCopyStatus: { type: String, enum: ['included', 'already_recipient', 'disabled'] },
   providerMessageId: String,
   lastError: String,
   sentAt: Date,
