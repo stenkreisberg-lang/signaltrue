@@ -1,3 +1,4 @@
+import {currentReportRecipients,verifyClaimRecipients} from './reportRecipients.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import TeamState from '../models/teamState.js';
 import Team from '../models/team.js';
@@ -1042,20 +1043,7 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
   const html = generateMonthlyEmailHTML({ org, report });
 
   // Match the HR-approved organisation-wide weekly report recipient policy.
-  const configured = Boolean(org.settings?.weeklyBriefRecipientsApprovedAt);
-  const approved = new Set((org.settings?.weeklyBriefRecipients || [])
-    .map(value => String(value).trim().toLowerCase()));
-  const orgUsers = await User.find({
-    orgId,
-    role: { $in: configured
-      ? ['master_admin', 'hr_admin', 'admin', 'org_admin']
-      : ['hr_admin'] },
-    accountStatus: 'active',
-    email: { $exists: true, $ne: null },
-  }).select('email');
-  const recipients = previewOnly ? [] : [...new Set(orgUsers
-    .map(user => String(user.email || '').trim().toLowerCase())
-    .filter(email => email && (!configured || approved.has(email))))];
+  const recipients = previewOnly ? [] : await currentReportRecipients(orgId);
 
   // ── Data quality gate: never send all-zero report to clients ──────────────
   const hasData = reportHasRealData(report);
@@ -1096,6 +1084,7 @@ export async function sendMonthlyReportEmail(orgId, report, { previewOnly = fals
       if (existing?.status === 'sent') return { skipped: true, reason: 'already_sent', dispatchId };
       throw new Error('Monthly email send requires delivery reconciliation: ' + dispatchId);
     }
+    await verifyClaimRecipients(orgId,dispatchId,recipients);
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { data, error } = await resend.emails.send({
