@@ -190,7 +190,14 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/app/latest-brief" element={<ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}><LatestBrief /></ProtectedRoute>} />
+                <Route
+                  path="/app/latest-brief"
+                  element={
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
+                      <LatestBrief />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/app/admin/manager-reporting"
                   element={
@@ -259,7 +266,11 @@ const App = () => (
                 <Route path="/ceo-summary/:token" element={<CeoSummary />} />
                 <Route
                   path="/superadmin"
-                  element={<ProtectedRoute allowedRoles={SUPERADMIN_ROLES}><SuperadminDashboard /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={SUPERADMIN_ROLES}>
+                      <SuperadminDashboard />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route path="/team-analytics" element={withAuthentication(<TeamAnalyticsPage />)} />
                 <Route path="/app/team-analytics" element={withAuthentication(<TeamAnalytics />)} />
