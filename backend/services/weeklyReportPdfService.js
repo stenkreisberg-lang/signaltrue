@@ -9,7 +9,8 @@ const TEAL = '#0F766E';
 const WARN = '#92400E';
 const MARGIN = 44;
 const WIDTH = 595.28;
-const safeText = value => String(value ?? '').replace(/[\x00-\x1f]/g, ' ').slice(0, 320);
+// Helvetica uses WinAnsi. Map the locale's Unicode minus to its printable hyphen.
+const safeText = value => String(value ?? '').replaceAll('−', '-').replace(/[\x00-\x1f]/g, ' ').slice(0, 320);
 
 const text = {
   et: {
@@ -113,7 +114,7 @@ function drawMetricCard(doc, metric, x, y, width, lang) {
     : copy.noComparison;
   if (!metric.available) comparison = copy.missing;
   doc.font('Helvetica').fontSize(8.5).fillColor(metric.comparable ? TEAL : WARN)
-    .text(comparison, x + 12, y + 73, { width: width - 24 });
+    .text(safeText(comparison), x + 12, y + 73, { width: width - 24 });
 }
 
 function chart(doc, snapshot, y, lang) {
