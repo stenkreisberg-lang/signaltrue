@@ -31,6 +31,7 @@ export default function ManagerTeamDashboard() {
   const [title, setTitle] = useState(''),
     [hypothesis, setHypothesis] = useState(''),
     [direction, setDirection] = useState('decrease');
+  const [actionMetric, setActionMetric] = useState('meetingsPerRepresentedPerson');
   const [email, setEmail] = useState(true);
   const [contextTag, setContextTag] = useState('planning'),
     [contextNote, setContextNote] = useState('');
@@ -78,6 +79,7 @@ export default function ManagerTeamDashboard() {
         title,
         hypothesis,
         direction,
+        metric: actionMetric,
       });
       setTitle('');
       setHypothesis('');
@@ -159,6 +161,12 @@ export default function ManagerTeamDashboard() {
   const date = (s) =>
     s ? new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
   const report = loadedReport?.requestedTeamId === team ? loadedReport : null;
+  const actionMetrics = (report?.trendSeries || [])
+    .filter((series) => series.points?.some((p) => p.verified && Number.isFinite(p.value)))
+    .map((series) => ({
+      key: series.key === 'meetings' ? 'meetingsPerRepresentedPerson' : series.key,
+      label: series.label,
+    }));
   const selectedSeries = report?.trendSeries?.find((series) => series.key === metricKey);
   const points = (selectedSeries?.points || report?.points || [])
     .slice(-weeks)
@@ -210,6 +218,7 @@ export default function ManagerTeamDashboard() {
                     setReport(null);
                     setTitle('');
                     setHypothesis('');
+                    setActionMetric('meetingsPerRepresentedPerson');
                     setContextNote('');
                     setMessage('');
                     setError('');
@@ -449,6 +458,21 @@ export default function ManagerTeamDashboard() {
                       </label>
                     </div>
                     <label className="mt-3 block text-sm font-semibold">
+                      Measurement to review
+                      <select
+                        value={actionMetric}
+                        onChange={(e) => setActionMetric(e.target.value)}
+                        className="mt-1 block w-full rounded-lg border p-3"
+                      >
+                        <option value="">Choose measured evidence</option>
+                        {actionMetrics.map((metric) => (
+                          <option key={metric.key} value={metric.key}>
+                            {metric.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="mt-3 block text-sm font-semibold">
                       Context and hypothesis
                       <textarea
                         rows={3}
@@ -459,7 +483,7 @@ export default function ManagerTeamDashboard() {
                       />
                     </label>
                     <button
-                      disabled={!title.trim() || busy}
+                      disabled={!title.trim() || busy || !actionMetrics.some((m) => m.key === actionMetric)}
                       onClick={submit}
                       className="mt-3 rounded-lg bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
                     >
@@ -476,6 +500,9 @@ export default function ManagerTeamDashboard() {
                         >
                           <div>
                             <p className="font-bold">{a.title}</p>
+                            <p className="text-xs text-slate-600">
+                              {actionMetrics.find((m) => m.key === a.metric)?.label || a.metric}
+                            </p>
                             <p className="text-xs text-slate-600">
                               Day 14: {date(a.due14)} · Day 28: {date(a.due28)} · Outcome:{' '}
                               {a.outcome28?.status || a.outcome14?.status || 'Pending'}
