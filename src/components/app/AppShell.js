@@ -40,7 +40,7 @@ const links = [
     to: '/app/latest-brief',
     label: 'Reports',
     group: 'Start',
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+    roles: ['master_admin', 'admin', 'hr_admin'],
   },
   { to: '/app/signal-coverage', label: 'Settings & access', group: 'Start' },
   { to: '/app/signals', label: 'Work-pattern evidence', group: 'Explore', secondary: true },
@@ -58,7 +58,7 @@ const links = [
     label: 'Leadership summary',
     group: 'Explore',
     secondary: true,
-    roles: ['master_admin', 'admin', 'hr_admin', 'executive'],
+    roles: ['master_admin', 'admin', 'hr_admin'],
   },
   {
     to: '/integrations',
