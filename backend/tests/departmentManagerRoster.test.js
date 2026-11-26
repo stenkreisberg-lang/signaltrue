@@ -44,3 +44,12 @@ describe('hierarchical department and manager workbook', () => {
     expect(parseDepartmentManagerRosterSheet([['Name','Email','Department'],['X','x@valid.test','Sales']])).toBeNull();
   });
 });
+
+test('preserves a named department when manager email is absent without inventing a grant', () => {
+  const parsed = parseDepartmentManagerRosterSheet([
+    header, ['Accelerator', 'Alex Manager', 'Ada Example'], [null, null, 'Ben Example'],
+  ]);
+  expect(parsed.rows).toHaveLength(2);
+  expect(parsed.rows.every(row => row.Team === 'Accelerator' && row['Manager Email'] === null)).toBe(true);
+  expect(parsed.managers).toHaveLength(0);
+});

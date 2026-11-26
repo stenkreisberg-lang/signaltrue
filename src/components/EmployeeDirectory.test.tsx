@@ -165,3 +165,43 @@ test('deletes an employee profile from the directory row actions', async () => {
 
   confirmSpy.mockRestore();
 });
+
+test('confirms a hierarchical roster before sending an approved import', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  mockedApi.post
+    .mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: {
+          confirmationRequired: true,
+          distinctAssignedNames: 2,
+          departmentTeams: ['Operations'],
+          proposedManagers: ['manager@example.test'],
+        },
+      },
+    })
+    .mockResolvedValueOnce({
+      data: {
+        message: 'Imported',
+        stats: {
+          rowsProcessed: 2,
+          created: 0,
+          updated: 2,
+          skipped: 0,
+          teamsCreated: 0,
+          skippedRows: [],
+        },
+      },
+    });
+  render(<EmployeeDirectory />);
+  const input = await screen.findByLabelText('HR roster export');
+  fireEvent.change(input, { target: { files: [new File(['synthetic'], 'roster.xlsx')] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Import roster' }));
+  await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(2));
+  const approved = mockedApi.post.mock.calls[1][1] as FormData;
+  expect(approved.get('confirmRosterImport')).toBe('true');
+  expect(approved.get('assignManagers')).toBe('true');
+  expect(confirm).toHaveBeenCalled();
+  expect(await screen.findByText('Imported')).toBeTruthy();
+  confirm.mockRestore();
+});

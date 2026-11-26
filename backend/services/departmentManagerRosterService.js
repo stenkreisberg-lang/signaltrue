@@ -74,7 +74,7 @@ export function parseDepartmentManagerRosterSheet(grid) {
   const rows = [];
   for (const entry of byName.values()) {
     if (entry.conflict) continue;
-    if (!entry.department || !entry.managerEmail) {
+    if (!entry.department) {
       exceptions.push({ row: entry.sourceRow, reason: 'unassigned_employee' });
       continue;
     }
@@ -88,6 +88,7 @@ export function parseDepartmentManagerRosterSheet(grid) {
       Department: entry.department,
       Team: team,
       'Manager Email': entry.managerEmail,
+      'Manager Name': entry.managerName,
       'Roster Format': 'department_manager',
       'Source Row': entry.sourceRow,
     });
