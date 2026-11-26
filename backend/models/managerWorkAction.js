@@ -6,7 +6,7 @@ const managerWorkActionSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, required: true },
   title: { type: String, required: true, maxlength: 180 },
   hypothesis: { type: String, maxlength: 1000 },
-  metric: { type: String, enum: ['meetingsPerRepresentedPerson'], required: true },
+  metric: { type: String, enum: ['meetingsPerRepresentedPerson', 'meeting_hours', 'focus_time', 'after_hours', 'recurring_load', 'messages'], required: true },
   direction: { type: String, enum: ['decrease', 'increase', 'stabilize'], required: true },
   baseline: { type: Number, default: null },
   baselineWeek: String, baselineMeasurement: { type: String, default: 'meeting-instances-per-mapped-actor-v1' },
