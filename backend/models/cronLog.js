@@ -50,6 +50,7 @@ const cronLogSchema = new mongoose.Schema(
         status: { type: String, enum: ['sent', 'failed', 'skipped'] },
         error: String,
         recipientCount: Number,
+        qaCopyStatus: { type: String, enum: ['included', 'already_recipient', 'disabled', 'unknown'] },
       },
     ],
 
@@ -64,6 +65,10 @@ const cronLogSchema = new mongoose.Schema(
     totalOrgs: Number,
     sentCount: Number,
     failedCount: Number,
+    // QA copy counts are separate from customer delivery; never trigger customer resends.
+    adminCopiesIncluded: Number,
+    adminCopiesMissing: Number,
+    adminCopiesUnverified: Number,
   },
   { timestamps: true }
 );

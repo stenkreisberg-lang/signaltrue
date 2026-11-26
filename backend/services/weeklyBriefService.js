@@ -3708,11 +3708,15 @@ export async function sendWeeklyBrief(orgId) {
     await WeeklyBriefDispatch.create({
       _id: dispatchId, orgId: org._id, periodStart,
       status: 'sending', recipientCount: recipients.length,
+      qaCopyStatus: envelope.qaCopyStatus,
     });
   } catch (error) {
     if (error?.code !== 11000) throw error;
     const existing = await WeeklyBriefDispatch.findById(dispatchId).lean();
-    if (existing?.status === 'sent') return { skipped: true, reason: 'already_sent', dispatchId };
+    if (existing?.status === 'sent') return {
+      skipped: true, reason: 'already_sent', dispatchId,
+      qaCopyStatus: existing.qaCopyStatus || 'unknown',
+    };
     throw new Error('Previous weekly send may be in progress or unconfirmed. Reconcile dispatch ' + dispatchId);
   }
 
@@ -3756,7 +3760,12 @@ export async function sendWeeklyBrief(orgId) {
     await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
       $set: { status: 'sent', sentAt: new Date(), providerMessageId },
     });
-    return { sent: true, dispatchId, providerMessageId };
+    if (envelope.qaCopyStatus === 'disabled') {
+      // Do not misrepresent the customer send as evidence of an admin copy.
+      // Never resend a customer email to repair the missing QA copy.
+      console.error(`[WeeklyBrief] Customer email accepted for ${org.name}; admin QA copy disabled`);
+    }
+    return { sent: true, dispatchId, providerMessageId, qaCopyStatus: envelope.qaCopyStatus };
   } catch (error) {
     // Email may have been accepted before the failure. Never automatically send it again.
     await WeeklyBriefDispatch.updateOne({ _id: dispatchId }, {
