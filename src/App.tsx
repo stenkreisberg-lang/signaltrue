@@ -98,6 +98,7 @@ const HR_REPORT_ROLES = [
   'executive',
   'compliance',
 ];
+const PRIVATE_REPORT_ROLES = ['master_admin', 'admin', 'hr_admin'];
 const SUPERADMIN_ROLES = ['master_admin'];
 const withHrAccess = (page: ReactNode) => (
   <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>{page}</ProtectedRoute>
@@ -189,7 +190,7 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/app/latest-brief" element={withHrAccess(<LatestBrief />)} />
+                <Route path="/app/latest-brief" element={<ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}><LatestBrief /></ProtectedRoute>} />
                 <Route
                   path="/app/admin/manager-reporting"
                   element={
@@ -233,7 +234,7 @@ const App = () => (
                 <Route
                   path="/app/executive-summary"
                   element={
-                    <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>
+                    <ProtectedRoute allowedRoles={PRIVATE_REPORT_ROLES}>
                       <ExecutiveSummary />
                     </ProtectedRoute>
                   }
