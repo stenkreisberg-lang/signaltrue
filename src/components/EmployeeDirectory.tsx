@@ -110,7 +110,13 @@ interface HrRosterStats {
 interface ApiError {
   response?: {
     status?: number;
-    data?: { message?: string };
+    data?: {
+      message?: string;
+      confirmationRequired?: boolean;
+      distinctAssignedNames?: number;
+      departmentTeams?: string[];
+      proposedManagers?: string[];
+    };
   };
 }
 
@@ -418,7 +424,20 @@ const EmployeeDirectory: React.FC = () => {
       setImportingRoster(true);
       const formData = new FormData();
       formData.append('file', rosterFile);
-      const response = await api.post('/employee-sync/hr-roster', formData, { timeout: 120000 });
+      let response;
+      try {
+        response = await api.post('/employee-sync/hr-roster', formData, { timeout: 120000 });
+      } catch (error: unknown) {
+        const preview = (error as ApiError).response;
+        if (preview?.status !== 409 || !preview.data?.confirmationRequired) throw error;
+        const details = preview.data;
+        if (!window.confirm(
+          `Review HR roster: ${details.distinctAssignedNames ?? 0} employee rows.\nTeams: ${(details.departmentTeams || []).join(', ')}\nProposed manager emails: ${(details.proposedManagers || []).join(', ')}\nApply employee mapping and prepare pending manager assignments? No invitations are sent.`
+        )) return;
+        formData.append('confirmRosterImport', 'true');
+        formData.append('assignManagers', 'true');
+        response = await api.post('/employee-sync/hr-roster', formData, { timeout: 120000 });
+      }
       setRosterStats(response.data.stats);
       setRosterFile(null);
       showSuccess(response.data.message);
