@@ -49,7 +49,6 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const CeoSummary = lazy(() => import('./pages/CeoSummary'));
 const SuperadminDashboard = lazy(() => import('./pages/SuperadminDashboard'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const TeamAnalytics = lazy(() => import('./pages/TeamAnalytics'));
 const TeamAnalyticsPage = lazy(() => import('./pages/TeamAnalyticsPage'));
 const AdminOnboarding = lazy(() => import('./pages/AdminOnboarding'));
 const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
@@ -273,7 +272,10 @@ const App = () => (
                   }
                 />
                 <Route path="/team-analytics" element={withAuthentication(<TeamAnalyticsPage />)} />
-                <Route path="/app/team-analytics" element={withAuthentication(<TeamAnalytics />)} />
+                <Route
+                  path="/app/team-analytics"
+                  element={withAuthentication(<Navigate to="/dashboard" replace />)}
+                />
                 <Route path="/admin/onboarding" element={withAuthentication(<AdminOnboarding />)} />
                 <Route path="/self-check" element={<SelfCheck />} />
                 <Route path="/integrations" element={withAuthentication(<IntegrationsPage />)} />
