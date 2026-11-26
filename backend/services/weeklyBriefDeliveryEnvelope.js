@@ -1,3 +1,11 @@
+export function weeklyQACopyConfig(superadminEmail = process.env.SUPERADMIN_EMAIL) {
+  const weeklyMailbox = String(process.env.WEEKLY_HR_QA_COPY_EMAIL || '').trim();
+  const address = (weeklyMailbox || String(superadminEmail || '')).trim().toLowerCase();
+  const enabled = Boolean(weeklyMailbox) || process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
+  const valid = /^[a-z0-9_+-]+(?:\.[a-z0-9_+-]+)*@signaltrue\.ai$/.test(address);
+  return { address, enabled, valid };
+}
+
 /**
  * Keep the platform owner's weekly quality-assurance copy in the SAME email
  * transaction as the customer report. BCC receives the exact subject, HTML,
@@ -15,9 +23,8 @@ export function buildWeeklyBriefEnvelope({
     .map((email) => String(email || '').trim().toLowerCase())
     .filter(Boolean))];
 
-  const admin = String(superadminEmail || '').trim().toLowerCase();
-  const qaEnabled = process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
-  if (qaEnabled && (!admin || !admin.endsWith('@signaltrue.ai'))) {
+  const { address: admin, enabled: qaEnabled, valid } = weeklyQACopyConfig(superadminEmail);
+  if (qaEnabled && !valid) {
     throw new Error('An explicitly configured @signaltrue.ai QA mailbox is required for client report copies');
   }
 

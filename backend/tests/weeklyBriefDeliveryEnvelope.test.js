@@ -4,12 +4,16 @@ import { buildWeeklyBriefEnvelope } from '../services/weeklyBriefDeliveryEnvelop
 describe('weekly client reports and explicitly authorised QA copies', () => {
   const html = '<html><body><h1>Company report</h1><svg>Graph</svg></body></html>';
   const subject = 'Weekly intelligence brief';
-  let previous;
+  let previous, previousWeekly;
   beforeEach(() => {
+    previousWeekly = process.env.WEEKLY_HR_QA_COPY_EMAIL;
+    delete process.env.WEEKLY_HR_QA_COPY_EMAIL;
     previous = process.env.CLIENT_REPORT_QA_COPIES_ENABLED;
     delete process.env.CLIENT_REPORT_QA_COPIES_ENABLED;
   });
   afterEach(() => {
+    if (previousWeekly === undefined) delete process.env.WEEKLY_HR_QA_COPY_EMAIL;
+    else process.env.WEEKLY_HR_QA_COPY_EMAIL = previousWeekly;
     if (previous === undefined) delete process.env.CLIENT_REPORT_QA_COPIES_ENABLED;
     else process.env.CLIENT_REPORT_QA_COPIES_ENABLED = previous;
   });
@@ -35,6 +39,21 @@ describe('weekly client reports and explicitly authorised QA copies', () => {
     expect(envelope.bcc).toEqual(['quality@signaltrue.ai']);
     expect(envelope.qaCopyStatus).toBe('included');
     expect(envelope.html).toBe(html);
+  });
+
+  test('can authorise a weekly-only copy without enabling other report types', () => {
+    process.env.WEEKLY_HR_QA_COPY_EMAIL = ' Weekly.Reports@SignalTrue.ai ';
+    const envelope = buildWeeklyBriefEnvelope({ recipients: ['hr@example.com'], subject, html });
+    expect(envelope.bcc).toEqual(['weekly.reports@signaltrue.ai']);
+    expect(envelope.qaCopyStatus).toBe('included');
+    expect(process.env.CLIENT_REPORT_QA_COPIES_ENABLED).toBeUndefined();
+  });
+
+  test('rejects a recipient list or an external address in the weekly-only setting', () => {
+    for (const value of ['external@example.com,weekly@signaltrue.ai', 'external@example.com']) {
+      process.env.WEEKLY_HR_QA_COPY_EMAIL = value;
+      expect(() => buildWeeklyBriefEnvelope({ recipients: ['hr@example.com'], subject, html })).toThrow();
+    }
   });
 
   test('does not duplicate the QA recipient in the BCC field', () => {
