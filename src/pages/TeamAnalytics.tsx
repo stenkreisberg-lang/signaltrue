@@ -87,7 +87,9 @@ const TeamAnalytics: React.FC = () => {
       } catch {
         if (active) {
           setAnalytics(null);
-          setError('Team analytics are unavailable or evidence is incomplete. No estimates are displayed.');
+          setError(
+            'Team analytics are unavailable or evidence is incomplete. No estimates are displayed.'
+          );
         }
       } finally {
         if (active) setLoading(false);
