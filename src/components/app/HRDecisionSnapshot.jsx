@@ -92,16 +92,53 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
     metric.changePct != null &&
     number(metric.current) != null &&
     number(metric.previous) != null;
+  const delta = (metric) =>
+    comparableChange(metric) ? number(metric.current) - number(metric.previous) : null;
+  const meetingDelta = delta(meeting);
+  const focusDelta = delta(focus);
+  const afterHours = dimensions.find((item) => item.key === 'after_hours')?.metric;
+  const afterHoursDelta = delta(afterHours);
+  const findings = [];
+  if (focusDelta !== null && focusDelta <= -0.5) {
+    findings.push({
+      title: 'Vaba kalendriaega jäi vähem.',
+      detail: `${formatHRMetric(focus, focus.previous)} → ${formatHRMetric(focus)} inimese kohta.`,
+      question: 'Kas kohtumiste paigutus või muud kalendrikohustused on muutunud?',
+      action:
+        'Katsetage kahe nädala jooksul pikemaid kohtumisteta tööplokke. Seejärel võrrelge vaba kalendriaega ja töövälisel ajal suhtlemist.',
+    });
+  }
+  if (meetingDelta !== null && Math.abs(meetingDelta) >= 1) {
+    findings.push({
+      title: meetingDelta > 0 ? 'Koosolekuaeg kasvas.' : 'Koosolekuaeg vähenes.',
+      detail: `${formatHRMetric(meeting, meeting.previous)} → ${formatHRMetric(meeting)} inimese kohta.`,
+      question: 'Kas muutus tulenes töökorraldusest või ajutisest projektietapist?',
+      action:
+        'Vaadake üle korduvate koosolekute eesmärk ja kestus. Võrrelge kahe nädala pärast koosolekuaega ning vaba kalendriaega.',
+    });
+  }
+  if (afterHoursDelta !== null && Math.abs(afterHoursDelta) >= 2) {
+    findings.push({
+      title:
+        afterHoursDelta > 0
+          ? 'Töövälisel ajal saadetud sõnumite osakaal kasvas.'
+          : 'Töövälisel ajal saadetud sõnumite osakaal vähenes.',
+      detail: `${formatHRMetric(afterHours, afterHours.previous)} → ${formatHRMetric(afterHours)}.`,
+      question: 'Kas töövälise suhtluse muutus oli seotud ajutise vajaduse või kokkulepetega?',
+      action:
+        'Arutage tiimiga töövälise suhtluse ootusi ja jälgige sama näitajat järgmise kahe nädala jooksul.',
+    });
+  }
   const conclusion =
-    comparableChange(meeting) &&
-    comparableChange(focus) &&
-    number(meeting.current) > number(meeting.previous) &&
-    number(focus.current) < number(focus.previous)
-      ? 'Koosolekutele kulunud aeg kasvas ja vaba kalendriaega jäi vähem.'
-      : comparableChange(meeting) && number(meeting.current) > number(meeting.previous)
-        ? 'Koosolekutele kulunud aeg kasvas. Muutuse põhjust tuleb kontrollida.'
-        : 'Vaata nädala mõõtmisi ning uuri, millised muutused vajavad selgitust.';
+    meetingDelta !== null && meetingDelta <= -1 && focusDelta !== null && focusDelta <= -0.5
+      ? 'Koosolekuaeg vähenes, kuid vaba kalendriaega jäi samuti vähem.'
+      : findings[0]?.title || 'Võrreldavates mõõtmistes ei ilmnenud valitud piire ületavat muutust.';
   const sourceVerified = brief.dataQuality?.sourceToSnapshotParity?.status === 'PASS';
+  const canSuggestAction =
+    sourceVerified &&
+    brief.reportMode === 'full' &&
+    !brief.freshness?.refreshFailed &&
+    brief.status?.evidenceGrade !== 'Low';
   const periodEnd = brief.periodEnd ? new Date(new Date(brief.periodEnd).getTime() - 1) : null;
 
   return (
@@ -131,6 +168,21 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
             )}
           </div>
         </header>
+
+        {findings.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-slate-900">Olulised mõõdetud muutused</h3>
+            {findings.map((finding) => (
+              <div key={finding.title} className="rounded-lg border border-slate-200 p-3">
+                <p className="font-semibold text-slate-900">{finding.title}</p>
+                <p className="mt-1 text-sm text-slate-700">{finding.detail}</p>
+              </div>
+            ))}
+            <p className="text-xs text-slate-500">
+              Muutused ei näita iseenesest põhjust ega töö tulemuslikkust.
+            </p>
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dimensions.map(({ key, short, source, description, metric }) => (
@@ -167,15 +219,16 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
           <div className="rounded-lg border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-900">Mida tasub uurida?</h3>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              Kas muutus oli seotud ajutise projektietapiga või on tiimi iganädalane töökorraldus
-              muutunud?
+              {findings[0]?.question ||
+                'Kontrollige, kas mõõdetud perioodid on omavahel võrreldavad.'}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-900">Järgmine samm</h3>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              Kontrolli lähteandmed, aruta muutust tiimijuhiga ja pane otsus koos ülevaatuse
-              kuupäevaga kirja.
+              {canSuggestAction && findings[0]
+                ? findings[0].action
+                : 'Kontrollige lähteandmeid ja arutage tähelepanekuid tiimijuhiga enne otsust.'}
             </p>
             <Link
               to="/app/latest-brief#action-reviews"
