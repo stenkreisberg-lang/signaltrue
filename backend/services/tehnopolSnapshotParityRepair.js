@@ -12,7 +12,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import WorkEvent from '../models/workEvent.js';
 import { TEHNOPOL_CANONICAL_ORG_ID } from './tehnopolCanonicalRepair.js';
 import { compareStoredWorkPatternMetrics } from './workPatternParityAudit.js';
-import { computeDailyMetrics } from './integrationMetricsService.js';
+import { computeDailyMetrics, computeMeetingMetrics } from './integrationMetricsService.js';
 import { generateWeeklyBrief } from './weeklyBriefService.js';
 import { logTehnopolProductionDiagnostic } from './tehnopolProductionDiagnostic.js';
 
@@ -74,6 +74,68 @@ export async function repairTehnopolNovemberSnapshot() {
     results.push(await reconcileTehnopolSnapshot(new Date(day + 'T00:00:00Z'), 'tehnopol-org-parity-' + day + '-v1'));
   }
   return results;
+}
+
+// Reconcile only the weekly anchors used in the pilot audit. Historical customer
+// dispatches stay frozen. Reads select calendar metadata only.
+export async function reconcileTehnopolWeeklyTransitions() {
+  const org = await Organization.findById(TEHNOPOL_CANONICAL_ORG_ID).select('domain lifecycleStatus settings').lean();
+  if (org?.domain !== 'tehnopol.ee' || org.lifecycleStatus !== 'active' || org.settings?.timezone !== 'Europe/Tallinn') return;
+  const db = mongoose.connection.db;
+  if (!db) return;
+  const jobs = db.collection('signaltrue_maintenance_runs');
+  const key = 'tehnopol-calendar-transitions-2026-09-13-to-11-22-v1';
+  await jobs.updateOne({ _id: key }, { $setOnInsert: { status: 'pending' } }, { upsert: true });
+  const startedAt = new Date();
+  const lease = await jobs.findOneAndUpdate({ _id: key, $or: [
+    { status: { $in: ['pending', 'failed'] } },
+    { status: 'running', startedAt: { $lt: new Date(+startedAt - 3600000) } },
+  ] }, { $set: { status: 'running', startedAt } }, { returnDocument: 'after' });
+  if (!lease) return;
+  const dates = [];
+  try {
+    for (let week = 0; week < 11; week++) {
+      const target = new Date(Date.UTC(2026, 8, 13) + week * 7 * DAY);
+      const records = await IntegrationMetricsDaily.find({ orgId: org._id, userId: null, date: target,
+        calculationWindowVersion: 'rolling7-calendar-days-v2' })
+        .select('teamId meetingInstanceCount7d meetingParticipantHours7d backToBackMeetingBlocks').lean();
+      const events = await WorkEvent.find({ orgId: org._id, eventType: { $in: ['meeting', 'meet_started'] },
+        timestamp: { $gte: new Date(+target - 6*DAY), $lt: new Date(+target + DAY) } })
+        .select('source eventType actorUserId teamId timestamp externalId metadata.startTime metadata.endTime metadata.durationMinutes metadata.meetingIdHash metadata.meetingInstanceIdHash metadata.internalAttendeeCount metadata.isAllDay metadata.isCancelled metadata.isFreeCalendarEvent metadata.attendeeResponseStatus').limit(MAX_EVENTS+1).lean();
+      if (!records.length || !events.length || events.length > MAX_EVENTS) throw new Error('source_or_snapshot_unavailable');
+      let checked = 0, updated = 0, withheld = 0;
+      const changes = [];
+      for (const record of records) {
+        const source = record.teamId ? events.filter(event => String(event.teamId) === String(record.teamId)) : events;
+        if (!source.length) { withheld++; continue; }
+        const metrics = computeMeetingMetrics(source, target, scheduleFromOrg(org));
+        if (record.meetingInstanceCount7d !== metrics.meetingInstanceCount7d ||
+            !Number.isFinite(record.meetingParticipantHours7d) ||
+            Math.abs(record.meetingParticipantHours7d - metrics.meetingParticipantHours7d) > 0.05) {
+          withheld++;
+          continue;
+        }
+        checked++;
+        if (record.backToBackMeetingBlocks === metrics.backToBackMeetingBlocks) continue;
+        changes.push({ updateOne: { filter: { _id: record._id, orgId: org._id,
+          backToBackMeetingBlocks: record.backToBackMeetingBlocks, meetingInstanceCount7d: record.meetingInstanceCount7d,
+          meetingParticipantHours7d: record.meetingParticipantHours7d },
+          update: { $set: { backToBackMeetingBlocks: metrics.backToBackMeetingBlocks } } } });
+      }
+      if (changes.length) {
+        const result = await IntegrationMetricsDaily.bulkWrite(changes);
+        if (result.matchedCount !== changes.length) throw new Error('snapshot_changed_during_check');
+        updated = result.modifiedCount;
+      }
+      dates.push({ date: target, checked, updated, withheld });
+    }
+    await generateWeeklyBrief(org._id);
+    await jobs.updateOne({ _id: key, status: 'running', startedAt },
+      { $set: { status: 'completed', completedAt: new Date(), dates } });
+  } catch (err) {
+    await jobs.updateOne({ _id: key, status: 'running', startedAt }, { $set: { status: 'failed', dates } });
+    throw err;
+  }
 }
 
 async function reconcileTehnopolSnapshot(target, jobKey) {
