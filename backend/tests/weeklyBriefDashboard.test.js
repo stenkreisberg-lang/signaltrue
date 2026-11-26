@@ -100,8 +100,18 @@ describe('weekly brief dashboard API', () => {
       .expect(403);
   });
 
+  test('rejects executive access to private HR brief and assistant', async () => {
+    await request(appFor({ orgId: orgA, role: 'executive' }))
+      .get('/api/weekly-brief/latest')
+      .expect(403);
+    await request(appFor({ orgId: orgA, role: 'executive' }))
+      .post('/api/weekly-brief/ask')
+      .send({ question: 'What happened to meeting hours?' })
+      .expect(403);
+  });
+
   test('answers from the saved report when an AI provider is unavailable', async () => {
-    const response = await request(appFor({ orgId: orgA, role: 'executive' }))
+    const response = await request(appFor({ orgId: orgA, role: 'hr_admin' }))
       .post('/api/weekly-brief/ask')
       .send({ question: 'What happened to meeting hours and what should we do?' })
       .expect(200);
