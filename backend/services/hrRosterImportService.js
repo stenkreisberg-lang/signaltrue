@@ -373,7 +373,8 @@ export async function importHrRosterRows(orgId, rows, options = {}) {
       name: canonical.name,
       displayName: canonical.name,
       title: canonical.position,
-      department: canonical.department,
+      // A verified HR department is an assignment label, not an account identity.
+      department: canonical.sourceFormat === 'department_manager' ? undefined : canonical.department,
     });
 
     if (!identity.ok) {
