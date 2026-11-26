@@ -6,7 +6,12 @@ import { getAuthenticatedContext } from '../../utils/authContext';
 
 export default function SignalCoverage() {
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState({ loading: true, sources: [], minimumSize: null, error: false });
+  const [status, setStatus] = useState({
+    loading: true,
+    sources: [],
+    minimumSize: null,
+    error: false,
+  });
 
   useEffect(() => {
     let active = true;
@@ -36,7 +41,9 @@ export default function SignalCoverage() {
     };
   }, []);
 
-  const connected = status.sources.filter((source) => ['connected', 'measuring'].includes(source.status)).length;
+  const connected = status.sources.filter((source) =>
+    ['connected', 'measuring'].includes(source.status)
+  ).length;
   const measuredSources = status.sources.filter(
     (source) => source.measurementStatus?.verified === true
   ).length;
@@ -92,7 +99,10 @@ export default function SignalCoverage() {
           {status.loading ? (
             <p className="coverage-empty">Checking source status…</p>
           ) : status.error ? (
-            <p className="coverage-empty" role="alert">Source status could not be loaded. Refresh to retry. This does not mean sources are disconnected.</p>
+            <p className="coverage-empty" role="alert">
+              Source status could not be loaded. Refresh to retry. This does not mean sources are
+              disconnected.
+            </p>
           ) : status.sources.length === 0 ? (
             <p className="coverage-empty">No connected sources are available yet.</p>
           ) : (
