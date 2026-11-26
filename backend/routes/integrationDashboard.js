@@ -639,8 +639,11 @@ router.get('/metrics', authenticateToken, async (req, res) => {
  */
 router.post('/signals/:id/acknowledge', authenticateToken, async (req, res) => {
   try {
-    const signal = await CategoryKingSignal.findByIdAndUpdate(
-      req.params.id,
+    if (!req.user?.orgId) {
+      return res.status(403).json({ message: 'Organization access required' });
+    }
+    const signal = await CategoryKingSignal.findOneAndUpdate(
+      { _id: req.params.id, orgId: req.user.orgId },
       {
         status: 'acknowledged',
         acknowledgedAt: new Date(),
@@ -665,10 +668,13 @@ router.post('/signals/:id/acknowledge', authenticateToken, async (req, res) => {
  */
 router.post('/signals/:id/dismiss', authenticateToken, async (req, res) => {
   try {
+    if (!req.user?.orgId) {
+      return res.status(403).json({ message: 'Organization access required' });
+    }
     const { reason } = req.body;
 
-    const signal = await CategoryKingSignal.findByIdAndUpdate(
-      req.params.id,
+    const signal = await CategoryKingSignal.findOneAndUpdate(
+      { _id: req.params.id, orgId: req.user.orgId },
       {
         status: 'dismissed',
         dismissedAt: new Date(),

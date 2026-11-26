@@ -1,3 +1,4 @@
+import { recordDueManagerReviews } from '../services/managerActionReviewService.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import { Resend } from 'resend';
@@ -11,7 +12,7 @@ import ManagerAssignment from '../models/managerAssignment.js';
 import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
 import Organization from '../models/organizationModel.js';
-import { assertScopedManager, createScopedAction, evaluateActionOutcome, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
+import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
   managerAudit, normalizeEmail, hashInvitedEmail,
   resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
 
@@ -226,7 +227,12 @@ router.post('/invitations/respond',async(req,res)=>{
     teamId:assignment.teamId,assignmentId:assignment._id,action:accept?'manager_accepted':'manager_declined'});
   noStore(res).json({status,teamId:accept?id(assignment.teamId):undefined});
 });
-router.get('/me/teams',async(req,res)=>noStore(res).json({teams:await loadManagerRoster(req)}));
+router.get('/me/teams',async(req,res)=>{
+  const user=await loadOrgUser(req);
+  if (!user) return noStore(res).status(403).json({message:'Active account required'});
+  const [teams,config]=await Promise.all([loadManagerRoster(req),resolveOrgMinimum(user.orgId)]);
+  noStore(res).json({teams,locale:config.locale});
+});
 router.patch('/me/preferences',async(req,res)=>{
   const user=await loadOrgUser(req);
   const on=req.body?.weeklyEmailEnabled;
@@ -242,10 +248,10 @@ router.patch('/me/preferences',async(req,res)=>{
     teamId,assignmentId:changed._id,action:'manager_email_preference_changed'});
   noStore(res).json({teamId,weeklyEmailEnabled:changed.weeklyEmailEnabled});
 });
-async function scopedManagerData(scope) {
-  const { minimum } = await resolveOrgMinimum(scope.user.orgId);
+async function scopedManagerData(scope, forReview = false) {
+  const { minimum, locale } = await resolveOrgMinimum(scope.user.orgId);
   return getScopedTeamMeasurements({
-    orgId:scope.user.orgId, team:scope.team, minimum,
+    orgId:scope.user.orgId, team:scope.team, minimum, locale, forReview,
   });
 }
 router.get('/admin/teams/:teamId/trends', requireAdmin, async(req,res) => {
@@ -254,9 +260,9 @@ router.get('/admin/teams/:teamId/trends', requireAdmin, async(req,res) => {
   const team=await Team.findOne({ _id:req.params.teamId, orgId:req.managerAdmin.orgId,
     isActive:{ $ne:false } }).select('name orgId metadata isActive analyticsEnabled structure').lean();
   if (!team) return noStore(res).status(404).json({message:'Team not found'});
-  const { minimum } = await resolveOrgMinimum(req.managerAdmin.orgId);
+  const { minimum, locale } = await resolveOrgMinimum(req.managerAdmin.orgId);
   const data=await getScopedTeamMeasurements({orgId:req.managerAdmin.orgId,
-    team, minimum});
+    team, minimum, locale});
   return noStore(res).json(data);
 });
 router.get('/teams/:teamId/trends',async(req,res)=>{
@@ -268,7 +274,7 @@ router.get('/teams/:teamId/trends',async(req,res)=>{
 router.post('/teams/:teamId/actions',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope)return noStore(res).status(403).json({message:'Not authorized for this team'});
-  const data=await scopedManagerData(scope);
+  const data=await scopedManagerData(scope, true);
   const action=await createScopedAction({user:scope.user,team:scope.team,data,body:req.body});
   if(!action)return noStore(res).status(400).json({message:'Action requires eligible evidence, title and valid expected direction'});
   noStore(res).status(201).json(action);
@@ -276,21 +282,15 @@ router.post('/teams/:teamId/actions',async(req,res)=>{
 router.post('/teams/:teamId/actions/:actionId/review',async(req,res)=>{
   const scope=await assertScopedManager(req,req.params.teamId);
   if(!scope)return noStore(res).status(403).json({message:'Not authorized for this team'});
-  const data=await scopedManagerData(scope);
-  if(!data.eligible)return noStore(res).status(409).json({message:'Evidence insufficient for outcome review'});
-  const action=await ManagerWorkAction.findOne({_id:req.params.actionId,orgId:scope.user.orgId,teamId:scope.team._id});
+  if (!validId(req.params.actionId)) return noStore(res).status(400).json({message:'Invalid action'});
+  const action=await ManagerWorkAction.findOne({_id:req.params.actionId,orgId:scope.user.orgId,teamId:scope.team._id,status:'active'}).lean();
   if(!action)return noStore(res).status(404).json({message:'Action not found'});
-  const now=new Date();
-  const day=now>=action.due28?28:now>=action.due14?14:0;
-  if(!day)return noStore(res).status(409).json({message:'First review is available after 14 days'});
-  const outcome=evaluateActionOutcome(action,data,now);
-  if(!outcome)return noStore(res).status(409).json({message:'No comparable post-action measurement for the selected metric'});
-  const field=day===28?'outcome28':'outcome14';
-  action[field]={value:outcome.value,status:outcome.status,measuredAt:now};
-  await action.save();
+  const data=await scopedManagerData(scope, true);
+  const outcome=await recordDueManagerReviews(action,data);
+  if(!outcome)return noStore(res).status(409).json({message:'No review due for this action'});
   await managerAudit({orgId:scope.user.orgId,actorUserId:scope.user._id,managerUserId:scope.user._id,
     teamId:scope.team._id,action:'manager_followup_review'});
-  noStore(res).json({day,baseline:action.baseline,current:outcome.value,status:outcome.status,
+  noStore(res).json({day:outcome.day,baseline:action.baseline,current:outcome.value,status:outcome.status,
     note:'Observed before/after association with unchanged metric definition, not proof of causal improvement'});
 });
 
@@ -336,23 +336,26 @@ router.get('/teams/:teamId/report.pdf',async(req,res)=>{
   if(!scope||scope.assignment.exportEnabled!==true)
     return noStore(res).status(403).json({message:'Export not authorized by HR'});
   const data=await scopedManagerData(scope);
-  const minimum = data.minimum;
   if(!data.eligible)return noStore(res).status(409).json({message:'No privacy-eligible measurement available for export'});
+  const et=data.locale==='et';
+  const heading=et?'Tiimi töömustrite aruanne':'Team work-pattern report';
+  const fmt=n=>new Intl.NumberFormat(et?'et-EE':'en-GB',{maximumFractionDigits:2}).format(n);
   noStore(res).type('application/pdf').set('Content-Disposition','attachment; filename="signaltrue-private-team-report.pdf"');
-  const pdf=new PDFDocument({size:'A4',margin:48,info:{Title:'SignalTrue - authorized team work-pattern report',
-    Author:'SignalTrue',Subject:'Privacy-gated manager intelligence'}});
+  const pdf=new PDFDocument({size:'A4',margin:48,info:{Title:heading,Author:'SignalTrue'}});
   pdf.pipe(res);
-  pdf.fillColor('#10223a').fontSize(20).text('SignalTrue | Team work-pattern intelligence');
-  pdf.moveDown(1).fontSize(14).text(data.teamName);
-  pdf.moveDown(1).fontSize(11).fillColor('#475569').text('Privacy minimum: '+minimum+' active mapped calendar contributors per comparable week.');
-  pdf.moveDown().fillColor('#10223a').text('Latest eligible complete-week value: '+String(data.current??'unavailable'));
-  pdf.text('Earlier median: '+String(data.baseline??'unavailable'));
-  pdf.moveDown().fontSize(12).text('Weekly data | meeting instances per mapped calendar contributor');
-  for(const p of data.points.slice(-13)){
-    pdf.fontSize(10).text(p.date+'   '+(p.value==null?'No eligible measurement':String(p.value)));
+  pdf.fontSize(20).text(heading).moveDown().fontSize(14).text(data.teamName);
+  for(const f of data.findings){
+    pdf.moveDown().fontSize(12).text(f.label).fontSize(10).text(
+      (et?'Varasem mediaan: ':'Earlier median: ')+fmt(f.baseline)+' '+f.unit+' | '+f.sampledOn+': '+fmt(f.current)+' '+f.unit
+    ).text(f.question);
   }
-  pdf.moveDown().fontSize(9).fillColor('#64748b').text(data.caveat);
-  pdf.text('Authorization was checked immediately before generating this file. Once downloaded, control access to your own local copy.');
+  for(const series of data.trendSeries){
+    pdf.moveDown().fontSize(12).text(series.label+' ('+series.unit+')');
+    for(const point of series.points.slice(-13)){
+      pdf.fontSize(9).text(point.sampledOn+'    '+(point.verified?fmt(point.value):(et?'Andmed puuduvad':'Unavailable')));
+    }
+  }
+  pdf.moveDown().text(et?'Üks punkt hõlmab seitset päeva. Töömustrite muutusel võib olla mitu põhjust.':'Each observation covers seven days. Several factors may explain a change.');
   pdf.end();
 });
 

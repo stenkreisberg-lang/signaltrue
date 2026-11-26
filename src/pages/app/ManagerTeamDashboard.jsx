@@ -12,538 +12,633 @@ import {
 } from 'recharts';
 import api from '../../utils/api';
 import AppShell from '../../components/app/AppShell';
-const currentUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || 'null');
-  } catch {
-    return null;
-  }
+
+const panel = 'rounded-xl border bg-white p-5';
+const control = 'rounded-lg border border-slate-300 bg-white px-3 py-2';
+const cta = 'rounded-lg bg-slate-900 px-4 py-2 font-bold text-white disabled:opacity-50';
+const statusEt = {
+  improved: 'Muutus oodatud suunas',
+  worsened: 'Muutus vastassuunas',
+  unchanged: 'Olulise muutuseta',
+  insufficient_evidence: 'Võrreldavaid andmeid napib',
+  claimed: 'Saatmisel',
+  sent: 'E-posti teenus võttis kirja vastu',
+  delivered: 'Kohaletoimetamine kinnitatud',
+  bounced: 'Kiri tagastati',
+  failed: 'Saatmine ebaõnnestus',
+  cancelled: 'Saatmine tühistati',
+  unknown: 'Saatus kinnitamata',
 };
-export default function ManagerTeamDashboard() {
-  const [teams, setTeams] = useState([]),
-    [team, setTeam] = useState(''),
-    [loadedReport, setReport] = useState(null),
-    [weeks, setWeeks] = useState(13),
-    [metricKey, setMetricKey] = useState('meetings');
-  const [error, setError] = useState(''),
-    [message, setMessage] = useState(''),
-    [busy, setBusy] = useState(false);
+const statusEn = {
+  improved: 'Moved in the expected direction',
+  worsened: 'Moved away from the expected direction',
+  unchanged: 'Little change',
+  insufficient_evidence: 'Insufficient comparable evidence',
+  sent: 'Accepted by the email provider',
+  delivered: 'Delivery confirmed',
+};
+const actionKey = (key) => (key === 'meetings' ? 'meetingsPerRepresentedPerson' : key);
+
+function TeamReport({ team, locale, teamChanged, onPreference }) {
+  const et = locale === 'et',
+    t = (en, etText) => (et ? etText : en);
+  const fmt = (v) =>
+    Number.isFinite(v)
+      ? new Intl.NumberFormat(et ? 'et-EE' : 'en-GB', { maximumFractionDigits: 2 }).format(v)
+      : t('Unavailable', 'Andmed puuduvad');
+  const date = (v) =>
+    v
+      ? new Date(v).toLocaleDateString(et ? 'et-EE' : 'en-GB', {
+          day: 'numeric',
+          month: 'short',
+          timeZone: 'UTC',
+        })
+      : '';
+  const status = (v) => (et ? statusEt : statusEn)[v] || v;
+  const [report, setReport] = useState(null),
+    [failed, setFailed] = useState(false),
+    [update, setUpdate] = useState(0);
+  const [selected, setSelected] = useState('meetings'),
+    [weeks, setWeeks] = useState(4);
   const [title, setTitle] = useState(''),
     [hypothesis, setHypothesis] = useState(''),
     [direction, setDirection] = useState('decrease');
-  const [actionMetric, setActionMetric] = useState('meetingsPerRepresentedPerson');
-  const [email, setEmail] = useState(true);
-  const [contextTag, setContextTag] = useState('planning'),
-    [contextNote, setContextNote] = useState('');
-  const [deliveries, setDeliveries] = useState([]);
+  const [metric, setMetric] = useState(''),
+    [note, setNote] = useState(''),
+    [tag, setTag] = useState('planning');
+  const [message, setMessage] = useState(''),
+    [error, setError] = useState(''),
+    [busy, setBusy] = useState(false);
+  const mounted = useRef(false);
+  const actionInput = useRef(null);
+  const path = '/manager-intelligence/teams/' + team.teamId;
   useEffect(() => {
-    api
-      .get('/manager-intelligence/me/teams')
-      .then((r) => {
-        setTeams(r.data.teams || []);
-        setTeam(r.data.teams?.[0]?.teamId || '');
-        setEmail(r.data.teams?.[0]?.weeklyEmailEnabled !== false);
-      })
-      .catch(() => setError('Unable to verify manager appointment'));
-  }, []);
-  const requestVersion = useRef(0);
-  const selectedTeam = useRef(team);
-  selectedTeam.current = team;
-  const reload = useCallback(() => {
-    if (!team || selectedTeam.current !== team) return;
-    const version = ++requestVersion.current;
-    api
-      .get('/manager-intelligence/teams/' + team + '/trends')
-      .then((r) => {
-        if (version !== requestVersion.current || selectedTeam.current !== team) return;
-        setReport({ ...r.data, requestedTeamId: team });
-        setError('');
-      })
-      .catch((e) => {
-        if (version !== requestVersion.current || selectedTeam.current !== team) return;
-        setReport(null);
-        setError(e.response?.data?.message || 'Unable to load team report');
-      });
-  }, [team]);
-  useEffect(() => {
-    setReport(null);
-    reload();
+    mounted.current = true;
     return () => {
-      requestVersion.current += 1;
+      mounted.current = false;
     };
-  }, [reload]);
-  const submit = async () => {
-    setBusy(true);
-    try {
-      await api.post('/manager-intelligence/teams/' + team + '/actions', {
-        title,
-        hypothesis,
-        direction,
-        metric: actionMetric,
-      });
-      setTitle('');
-      setHypothesis('');
-      setMessage('Action recorded; check results after 14 and 28 days.');
-      reload();
-    } catch (e) {
-      setError(e.response?.data?.message || 'Action not saved');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const review = async (id) => {
-    setBusy(true);
-    try {
-      const x = await api.post(
-        '/manager-intelligence/teams/' + team + '/actions/' + id + '/review'
-      );
-      setMessage('Follow-up: ' + x.data.status + ' (observed association, not causal proof).');
-      reload();
-    } catch (e) {
-      setError(e.response?.data?.message || 'Review unavailable');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const setPref = async (checked) => {
-    setEmail(checked);
-    try {
-      await api.patch('/manager-intelligence/me/preferences', {
-        teamId: team,
-        weeklyEmailEnabled: checked,
-      });
-    } catch {
-      setEmail(!checked);
-      setError('Preference not saved');
-    }
-  };
-  useEffect(() => {
-    api
-      .get('/manager-intelligence/me/deliveries')
-      .then((r) => setDeliveries(r.data.deliveries || []))
-      .catch(() => {});
   }, []);
-  const addContext = async () => {
+  useEffect(() => {
+    let active = true;
+    setFailed(false);
+    api
+      .get(path + '/trends')
+      .then((r) => {
+        if (active) setReport(r.data);
+      })
+      .catch(() => {
+        if (active) {
+          setFailed(true);
+          setReport(null);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [path, update]);
+  async function perform(operation, success) {
+    if (busy) return;
+    setError('');
+    setMessage('');
     setBusy(true);
     try {
-      const weekStart = new Date();
-      weekStart.setUTCHours(0, 0, 0, 0);
-      weekStart.setUTCDate(weekStart.getUTCDate() - ((weekStart.getUTCDay() + 6) % 7) - 7);
-      await api.post('/manager-intelligence/teams/' + team + '/context', {
-        tag: contextTag,
-        note: contextNote,
-        weekStart: weekStart.toISOString(),
-      });
-      setMessage('Week context saved. It explains a possible change but does not remove evidence.');
-      setContextNote('');
-      reload();
-    } catch (e) {
-      setError(e.response?.data?.message || 'Could not save context');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const exportPdf = async () => {
-    try {
-      const r = await api.get('/manager-intelligence/teams/' + team + '/report.pdf', {
-        responseType: 'blob',
-      });
-      const url = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
-      const el = document.createElement('a');
-      el.href = url;
-      el.download = 'signaltrue-private-team-report.pdf';
-      el.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const result = await operation();
+      if (mounted.current) {
+        success(result);
+        setUpdate((i) => i + 1);
+      }
     } catch {
-      setError('PDF export not authorized or data insufficient');
+      if (mounted.current)
+        setError(
+          t(
+            'Could not complete the request. Check access and current evidence, then retry.',
+            'Toiming ebaõnnestus. Kontrolli ligipääsu ja andmete olemasolu ning proovi uuesti.'
+          )
+        );
+    } finally {
+      if (mounted.current) setBusy(false);
     }
+  }
+  const series = report?.trendSeries || [];
+  const current = series.find((s) => s.key === selected) || series[0];
+  const options = series.filter((s) => s.baselineAvailable);
+  const chosen = options.find((s) => actionKey(s.key) === metric) || options[0];
+  const saveAction = (e) => {
+    e.preventDefault();
+    if (!chosen || !title.trim()) return;
+    perform(
+      () =>
+        api.post(path + '/actions', {
+          title,
+          hypothesis,
+          direction,
+          metric: actionKey(chosen.key),
+        }),
+      () => {
+        setTitle('');
+        setHypothesis('');
+        setMessage(
+          t(
+            'Decision saved. Reviews are scheduled for days 14 and 28.',
+            'Otsus on salvestatud. Järelkontrollid toimuvad 14 ja 28 päeva pärast.'
+          )
+        );
+      }
+    );
   };
-  const date = (s) =>
-    s ? new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
-  const report = loadedReport?.requestedTeamId === team ? loadedReport : null;
-  const actionMetrics = (report?.trendSeries || [])
-    .filter((series) => series.points?.some((p) => p.verified && Number.isFinite(p.value)))
-    .map((series) => ({
-      key: series.key === 'meetings' ? 'meetingsPerRepresentedPerson' : series.key,
-      label: series.label,
-    }));
-  const selectedSeries = report?.trendSeries?.find((series) => series.key === metricKey);
-  const points = (selectedSeries?.points || report?.points || [])
-    .slice(-weeks)
-    .map((p) => ({ ...p, label: date(p.date) }));
+  const saveContext = (e) => {
+    e.preventDefault();
+    const monday = new Date();
+    monday.setUTCHours(0, 0, 0, 0);
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7) - 7);
+    perform(
+      () => api.post(path + '/context', { weekStart: monday.toISOString(), tag, note }),
+      () => {
+        setNote('');
+        setMessage(t('Week context saved.', 'Nädala selgitus on salvestatud.'));
+      }
+    );
+  };
+  const download = () =>
+    perform(
+      () => api.get(path + '/report.pdf', { responseType: 'blob' }),
+      (r) => {
+        const url = URL.createObjectURL(r.data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'signaltrue-team.pdf';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    );
   return (
-    <AppShell user={currentUser()} mode="manager" section="My team">
-      <div className="mx-auto max-w-6xl space-y-5">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold tracking-widest text-blue-700">
-              SIGNALTRUE / TEAM MANAGER
-            </p>
-            <h1 className="mt-2 text-3xl font-bold">My team</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Private, aggregated work-pattern evidence and management actions.
-            </p>
-          </div>
-          <Link className="rounded-lg border bg-white px-4 py-2 text-sm" to="/dashboard">
-            Back to account
-          </Link>
-        </header>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-          >
-            {error}
-          </p>
-        )}
-        {message && (
-          <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
-            {message}
-          </p>
-        )}
-        {!teams.length ? (
-          <section className="rounded-xl border bg-white p-8">
-            <h2 className="font-bold">No active manager appointment</h2>
-            <p className="mt-2 text-sm">Ask HR to appoint you and use the verified invitation.</p>
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {teamChanged}
+        <label>
+          <input
+            type="checkbox"
+            disabled={busy}
+            checked={team.weeklyEmailEnabled !== false}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              perform(
+                () =>
+                  api.patch('/manager-intelligence/me/preferences', {
+                    teamId: team.teamId,
+                    weeklyEmailEnabled: checked,
+                  }),
+                () => onPreference(team.teamId, checked)
+              );
+            }}
+          />{' '}
+          {t('Weekly email', 'Iganädalane e-kiri')}
+        </label>
+      </div>
+      {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
+      {failed ? (
+        <div role="alert">
+          {t('Team report could not be loaded.', 'Tiimi aruannet ei õnnestunud laadida.')}{' '}
+          <button className={control} onClick={() => setUpdate((n) => n + 1)}>
+            {t('Retry', 'Proovi uuesti')}
+          </button>
+        </div>
+      ) : !report ? (
+        <p role="status">{t('Loading team measurements…', 'Laadin tiimi mõõtmisi…')}</p>
+      ) : !report.eligible ? (
+        <p className={panel}>
+          {t(
+            'This team has insufficient source coverage or too few represented contributors for a report.',
+            'Tiimi aruande jaoks on allikate katvus või esindatud inimeste arv liiga väike.'
+          )}
+        </p>
+      ) : (
+        <>
+          <section className={panel}>
+            <h2 className="text-xl font-bold">
+              {t('What changed this week?', 'Mis sel nädalal muutus?')}
+            </h2>
+            {report.findings?.length ? (
+              report.findings.map((f, i) => (
+                <div key={f.key} className="mt-4 border-t pt-3">
+                  <h3 className="font-semibold">{f.label}</h3>
+                  <p>
+                    {fmt(f.baseline)} →{' '}
+                    <strong>
+                      {fmt(f.current)} {f.unit}
+                    </strong>{' '}
+                    · {date(f.sampledOn)}
+                  </p>
+                  <p>
+                    {t('Change from the median', 'Muutus võrreldes mediaaniga')} ({f.periods}{' '}
+                    {t('earlier weeks', 'varasemat nädalat')}): {f.delta > 0 ? '+' : ''}
+                    {fmt(f.delta)}{' '}
+                    {f.unit === '%' ? t('percentage points', 'protsendipunkti') : f.unit}
+                    {f.changePct != null ? ' (' + fmt(f.changePct) + '%)' : ''}
+                  </p>
+                  <p className="my-1">{f.question}</p>
+                  {i === 0 && (
+                    <button
+                      className={control}
+                      onClick={() => {
+                        setMetric(actionKey(f.key));
+                        actionInput.current?.focus();
+                      }}
+                    >
+                      {t(
+                        'Record a decision about this change',
+                        'Salvesta selle muutusega seotud otsus'
+                      )}
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p>
+                {t(
+                  'No change can be ranked from comparable weekly observations. The chart shows which measurements are available.',
+                  'Võrreldavate nädalate põhjal ei eristu muutust. Graafikult näed, millised mõõtmised on olemas.'
+                )}
+              </p>
+            )}
           </section>
-        ) : (
-          <>
-            <section className="flex flex-wrap gap-4 rounded-xl border bg-white p-4">
-              <label className="text-sm font-bold">
-                My authorized team{' '}
+          <section className={panel}>
+            <h2 className="text-xl font-bold">
+              {t('Work patterns across weeks', 'Töömustrite muutus ajas')}
+            </h2>
+            <div className="my-3 flex flex-wrap items-center gap-3">
+              <label>
+                {t('Measurement', 'Näitaja')}{' '}
                 <select
-                  value={team}
-                  disabled={busy}
-                  onChange={(e) => {
-                    setReport(null);
-                    setTitle('');
-                    setHypothesis('');
-                    setActionMetric('meetingsPerRepresentedPerson');
-                    setContextNote('');
-                    setMessage('');
-                    setError('');
-                    setTeam(e.target.value);
-                    setEmail(
-                      teams.find((t) => t.teamId === e.target.value)?.weeklyEmailEnabled !== false
-                    );
-                  }}
-                  className="ml-2 rounded border p-2"
+                  className={control}
+                  value={current?.key || ''}
+                  onChange={(e) => setSelected(e.target.value)}
                 >
-                  {teams.map((t) => (
-                    <option key={t.teamId} value={t.teamId}>
-                      {t.name}
+                  {series.map((s) => (
+                    <option key={s.key} value={s.key}>
+                      {s.label}
                     </option>
                   ))}
                 </select>
               </label>
-              <label className="ml-auto flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={email}
-                  onChange={(e) => setPref(e.target.checked)}
-                />{' '}
-                Weekly digest
-              </label>
-            </section>
-            {report?.eligible === false ? (
-              <section className="rounded-xl border border-amber-200 bg-white p-6">
-                <h2 className="font-bold">Insufficient privacy-eligible evidence</h2>
-                <p className="mt-2 text-sm">
-                  {report.reason}. No statistics, individual records or inferred stable status are
-                  disclosed.
-                </p>
-              </section>
-            ) : (
-              report?.eligible && (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {[
-                      ['Latest eligible seven-day observation', report.current],
-                      ['Earlier eligible-window median', report.baseline],
-                      ['Evidence gate', report.minimum + ' mapped people minimum'],
-                    ].map(([k, v]) => (
-                      <div key={k} className="rounded-xl border bg-white p-5">
-                        <p className="text-xs text-slate-500">{k}</p>
-                        <p className="mt-2 text-2xl font-bold">{v ?? 'Not enough history'}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <section className="rounded-xl border bg-white p-5">
-                    <h2 className="text-xl font-bold">Recorded work patterns</h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      The latest seven days, based on observed source events. Missing days are
-                      excluded, not treated as zero. These values do not measure employee
-                      performance, wellbeing, or actual productive time.
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {(report.workPatternEvidence?.metrics || []).map((metric) => (
-                        <div key={metric.key} className="rounded-lg border bg-slate-50 p-4">
-                          <p className="text-xs font-semibold text-slate-600">{metric.label}</p>
-                          <p className="mt-2 text-xl font-bold">
-                            {metric.available && metric.value != null
-                              ? metric.value + ' ' + metric.unit
-                              : 'Unavailable'}
-                          </p>
-                          <p className="mt-2 text-xs text-slate-500">
-                            {metric.observedDays == null
-                              ? 'Rolling seven-day source snapshot; daily completeness unverified'
-                              : metric.observedDays + ' of 7 source-observed days'}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-3 text-xs text-slate-500">
-                      {report.workPatternEvidence?.provenance?.explanation ||
-                        'Source evidence is not available for this period.'}
-                    </p>
-                  </section>
-                  <section className="rounded-xl border bg-white p-4 sm:p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-xl font-bold">Work patterns across weeks</h2>
-                        <label className="mt-2 block text-sm">
-                          Choose a measured signal
-                          <select
-                            value={metricKey}
-                            onChange={(e) => setMetricKey(e.target.value)}
-                            aria-label="Trend measurement"
-                            className="ml-3 rounded-md border border-slate-300 bg-white p-2"
-                          >
-                            {(report.trendSeries || []).map((series) => (
-                              <option key={series.key} value={series.key}>
-                                {series.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                      <div className="flex gap-2">
-                        {[
-                          [4, '1M'],
-                          [13, '3M'],
-                          [26, '6M'],
-                        ].map(([n, k]) => (
-                          <button
-                            key={k}
-                            aria-pressed={weeks === n}
-                            onClick={() => setWeeks(n)}
-                            className={
-                              'rounded-md px-3 py-2 text-sm ' +
-                              (weeks === n ? 'bg-slate-900 text-white' : 'bg-slate-100')
-                            }
-                          >
-                            {k}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="my-3 text-sm text-slate-600">
-                      Each point is a comparable seven-day period. Missing source measurements
-                      remain gaps, never zero work. No individual attendance or employee performance
-                      is inferred.
-                    </p>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={points}>
-                          <CartesianGrid strokeDasharray="3 4" stroke="#e2e8f0" />
-                          <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={22} />
-                          <YAxis domain={[0, 'auto']} width={40} />
-                          <Tooltip formatter={(v) => [v, selectedSeries?.unit || 'per person']} />
-                          {metricKey === 'meetings' && report.baseline != null && (
-                            <ReferenceLine
-                              y={report.baseline}
-                              stroke="#64748b"
-                              strokeDasharray="5 4"
-                            />
-                          )}
-                          <Line
-                            dataKey="value"
-                            type="linear"
-                            connectNulls={false}
-                            stroke="#2563eb"
-                            strokeWidth={3}
-                            dot={{ r: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <p className="mt-3 text-xs text-slate-500">
-                      {report.methodology}. Missing measurements remain gaps. These patterns are not
-                      employee health or productivity scores.
-                    </p>
-                    {(report.contexts || []).slice(0, 5).map((c, i) => (
-                      <p key={i} className="mt-2 text-xs text-slate-600">
-                        Context · {date(c.weekStart)}: {c.tag}. {c.note}
-                      </p>
-                    ))}
-                    {teams.find((t) => t.teamId === team)?.exportEnabled && (
-                      <button
-                        onClick={exportPdf}
-                        className="mt-3 rounded-lg border px-4 py-2 text-sm font-semibold"
-                      >
-                        Download approved PDF
-                      </button>
-                    )}
-                  </section>
-                  <section className="rounded-xl border bg-white p-5">
-                    <h2 className="text-xl font-bold">Explain an unusual week</h2>
-                    <p className="my-2 text-sm text-slate-600">
-                      Add context for the previous completed week; this does not erase measured
-                      evidence.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <select
-                        value={contextTag}
-                        onChange={(e) => setContextTag(e.target.value)}
-                        className="rounded-lg border p-2"
-                      >
-                        {[
-                          'planning',
-                          'launch',
-                          'deadline',
-                          'offsite',
-                          'holiday',
-                          'reorganization',
-                          'other',
-                        ].map((k) => (
-                          <option key={k} value={k}>
-                            {k}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        maxLength={500}
-                        value={contextNote}
-                        onChange={(e) => setContextNote(e.target.value)}
-                        placeholder="Optional explanation"
-                        className="flex-1 rounded-lg border p-2"
-                      />
-                      <button
-                        disabled={busy}
-                        onClick={addContext}
-                        className="rounded-lg border px-4 py-2 text-sm font-bold"
-                      >
-                        Add context
-                      </button>
-                    </div>
-                  </section>
-                  <section id="actions" className="rounded-xl border bg-white p-5">
-                    <h2 className="text-xl font-bold">Record a management decision</h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Create a work-design action and review comparable measurements after 14 and 28
-                      days.
-                    </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <label className="text-sm font-semibold">
-                        Decision
-                        <input
-                          maxLength={180}
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border p-3"
-                          placeholder="Reduce recurring status meetings"
-                        />
-                      </label>
-                      <label className="text-sm font-semibold">
-                        Expected direction
-                        <select
-                          value={direction}
-                          onChange={(e) => setDirection(e.target.value)}
-                          className="mt-1 block w-full rounded-lg border p-3"
-                        >
-                          <option value="decrease">Decrease</option>
-                          <option value="increase">Increase</option>
-                          <option value="stabilize">Stabilize</option>
-                        </select>
-                      </label>
-                    </div>
-                    <label className="mt-3 block text-sm font-semibold">
-                      Measurement to review
-                      <select
-                        value={actionMetric}
-                        onChange={(e) => setActionMetric(e.target.value)}
-                        className="mt-1 block w-full rounded-lg border p-3"
-                      >
-                        <option value="">Choose measured evidence</option>
-                        {actionMetrics.map((metric) => (
-                          <option key={metric.key} value={metric.key}>
-                            {metric.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="mt-3 block text-sm font-semibold">
-                      Context and hypothesis
-                      <textarea
-                        rows={3}
-                        maxLength={1000}
-                        value={hypothesis}
-                        onChange={(e) => setHypothesis(e.target.value)}
-                        className="mt-1 block w-full rounded-lg border p-3"
-                      />
-                    </label>
-                    <button
-                      disabled={
-                        !title.trim() || busy || !actionMetrics.some((m) => m.key === actionMetric)
-                      }
-                      onClick={submit}
-                      className="mt-3 rounded-lg bg-slate-900 px-5 py-3 font-bold text-white disabled:opacity-50"
-                    >
-                      Save action and review dates
-                    </button>
-                  </section>
-                  <section className="rounded-xl border bg-white p-5">
-                    <h2 className="text-xl font-bold">Actions and outcomes</h2>
-                    {report.actions?.length ? (
-                      report.actions.map((a) => (
-                        <div
-                          key={a.id}
-                          className="mt-3 flex flex-wrap justify-between gap-2 rounded-lg border p-4"
-                        >
-                          <div>
-                            <p className="font-bold">{a.title}</p>
-                            <p className="text-xs text-slate-600">
-                              {actionMetrics.find((m) => m.key === a.metric)?.label || a.metric}
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              Day 14: {date(a.due14)} · Day 28: {date(a.due28)} · Outcome:{' '}
-                              {a.outcome28?.status || a.outcome14?.status || 'Pending'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => review(a.id)}
-                            disabled={busy}
-                            className="rounded-lg border px-3 py-2 text-sm font-semibold"
-                          >
-                            Check follow-up
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="mt-3 text-sm text-slate-600">No actions recorded yet.</p>
-                    )}
-                  </section>
-                </>
-              )
+              {[1, 4, 13, 26].map((n, i) => (
+                <button
+                  key={n}
+                  aria-pressed={weeks === n}
+                  className={weeks === n ? cta : control}
+                  onClick={() => setWeeks(n)}
+                >
+                  {
+                    (et
+                      ? ['1 nädal', '1 kuu', '3 kuud', '6 kuud']
+                      : ['1 week', '1 month', '3 months', '6 months'])[i]
+                  }
+                </button>
+              ))}
+            </div>
+            <p>
+              {current?.label} · {current?.unit} · {t('Latest', 'Viimane mõõtmine')}{' '}
+              {fmt(current?.points.at(-1)?.value)}
+            </p>
+            <div className="h-64" role="img" aria-label={current?.label}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={current?.points.slice(-weeks) || []}>
+                  <CartesianGrid strokeDasharray="3 4" />
+                  <XAxis dataKey="sampledOn" tickFormatter={date} minTickGap={18} />
+                  <YAxis width={40} />
+                  <Tooltip labelFormatter={date} formatter={(v) => [fmt(v), current?.unit]} />
+                  {current?.summary && (
+                    <ReferenceLine y={current.summary.baseline} strokeDasharray="5 4" />
+                  )}
+                  <Line
+                    dataKey="value"
+                    stroke="#0f766e"
+                    strokeWidth={3}
+                    connectNulls={false}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm">
+              {t(
+                'Each point covers seven days. Gaps indicate unavailable measurements.',
+                'Iga punkt hõlmab seitset päeva. Lünk tähistab puuduvat mõõtmist.'
+              )}
+            </p>
+            {team.exportEnabled && (
+              <button className={control} onClick={download}>
+                {t('Download PDF', 'Laadi PDF alla')}
+              </button>
             )}
-          </>
+          </section>
+          <section id="actions" className={panel}>
+            <h2 className="text-xl font-bold">
+              {t('Record a management decision', 'Salvesta juhtimisotsus')}
+            </h2>
+            {options.length ? (
+              <form className="mt-3 grid gap-3" onSubmit={saveAction}>
+                <label>
+                  {t('What will you change?', 'Mida muudad?')}{' '}
+                  <input
+                    ref={actionInput}
+                    className={control + ' w-full'}
+                    required
+                    maxLength={180}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  <label>
+                    {t('Measure', 'Mõõdik')}{' '}
+                    <select
+                      className={control}
+                      value={actionKey(chosen.key)}
+                      onChange={(e) => setMetric(e.target.value)}
+                    >
+                      {options.map((s) => (
+                        <option key={s.key} value={actionKey(s.key)}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    {t('Expected change', 'Oodatav muutus')}{' '}
+                    <select
+                      className={control}
+                      value={direction}
+                      onChange={(e) => setDirection(e.target.value)}
+                    >
+                      {['decrease', 'increase', 'stabilize'].map((k, i) => (
+                        <option key={k} value={k}>
+                          {
+                            (et
+                              ? ['Väheneb', 'Suureneb', 'Püsib samal tasemel']
+                              : ['Decrease', 'Increase', 'Remain stable'])[i]
+                          }
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <p>
+                  {t('Starting point', 'Lähtetase')}: {fmt(chosen.points.at(-1).value)}{' '}
+                  {chosen.unit} · {date(chosen.points.at(-1).sampledOn)}
+                </p>
+                <label>
+                  {t('Expected outcome (optional detail)', 'Oodatav tulemus (täpsustus)')}{' '}
+                  <input
+                    className={control + ' w-full'}
+                    maxLength={1000}
+                    value={hypothesis}
+                    onChange={(e) => setHypothesis(e.target.value)}
+                  />
+                </label>
+                <button className={cta} disabled={busy || !title.trim()}>
+                  {t('Save decision and schedule reviews', 'Salvesta otsus ja järelkontrollid')}
+                </button>
+              </form>
+            ) : (
+              <p>
+                {t(
+                  'A recent verified baseline is required to measure a decision.',
+                  'Otsuse mõju jälgimiseks on vaja värsket kontrollitud lähtetaset.'
+                )}
+              </p>
+            )}
+            {report.actions?.map((a) => (
+              <article className="mt-4 border-t pt-3" key={a.id}>
+                <h3 className="font-bold">{a.title}</h3>
+                <p>
+                  {series.find((s) => actionKey(s.key) === a.metric)?.label} · {fmt(a.baseline)}
+                </p>
+                {[14, 28].map((day) => {
+                  const o = a['outcome' + day];
+                  return (
+                    <p key={day}>
+                      {t('Day', 'Päev')} {day} · {date(a['due' + day])} ·{' '}
+                      {o?.status ? status(o.status) : t('Pending', 'Ootel')}
+                      {Number.isFinite(o?.value) ? ' · ' + fmt(o.value) : ''}
+                    </p>
+                  );
+                })}
+                <button
+                  className={control}
+                  disabled={busy || new Date(a.due14) > new Date()}
+                  onClick={() =>
+                    perform(
+                      () => api.post(path + '/actions/' + a.id + '/review'),
+                      (r) => setMessage(status(r.data.status))
+                    )
+                  }
+                >
+                  {t('Check follow-up', 'Vaata järelkontrolli')}
+                </button>
+              </article>
+            ))}
+            <p className="mt-3 text-sm">
+              {t(
+                'The comparison shows what changed after the decision. Other changes may also explain it.',
+                'Võrdlus näitab, mis pärast otsust muutus. Muutusel võib olla ka teisi põhjuseid.'
+              )}
+            </p>
+          </section>
+          <details className={panel}>
+            <summary>
+              {t('Add context to the previous week', 'Lisa eelmise nädala selgitus')}
+            </summary>
+            <form className="mt-2 flex flex-wrap gap-2" onSubmit={saveContext}>
+              <select
+                aria-label={t('Context', 'Selgituse liik')}
+                className={control}
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+              >
+                {[
+                  'planning',
+                  'launch',
+                  'deadline',
+                  'offsite',
+                  'holiday',
+                  'reorganization',
+                  'other',
+                ].map((k, i) => (
+                  <option key={k} value={k}>
+                    {et
+                      ? [
+                          'Planeerimine',
+                          'Käivitus',
+                          'Tähtaeg',
+                          'Meeskonnapäev',
+                          'Pühad',
+                          'Ümberkorraldus',
+                          'Muu',
+                        ][i]
+                      : k}
+                  </option>
+                ))}
+              </select>
+              <input
+                aria-label={t('Optional note', 'Lisamärkus')}
+                className={control}
+                maxLength={500}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <button disabled={busy} className={control}>
+                {t('Save', 'Salvesta')}
+              </button>
+            </form>
+            {report.contexts?.map((c, i) => (
+              <p key={i}>
+                {date(c.weekStart)} ·{' '}
+                {et
+                  ? {
+                      planning: 'Planeerimine',
+                      launch: 'Käivitus',
+                      deadline: 'Tähtaeg',
+                      offsite: 'Meeskonnapäev',
+                      holiday: 'Pühad',
+                      reorganization: 'Ümberkorraldus',
+                      other: 'Muu',
+                    }[c.tag] || c.tag
+                  : c.tag}{' '}
+                {c.note}
+              </p>
+            ))}
+          </details>
+        </>
+      )}
+    </>
+  );
+}
+
+export default function ManagerTeamDashboard() {
+  const [teams, setTeams] = useState(null),
+    [selected, setSelected] = useState(''),
+    [locale, setLocale] = useState('en'),
+    [failed, setFailed] = useState(false),
+    [deliveries, setDeliveries] = useState(null),
+    [deliveryFailed, setDeliveryFailed] = useState(false);
+  const load = useCallback(() => {
+    let active = true;
+    setFailed(false);
+    setTeams(null);
+    api
+      .get('/manager-intelligence/me/teams')
+      .then(({ data }) => {
+        if (active) {
+          setLocale(data.locale || 'en');
+          setTeams(data.teams);
+          setSelected(data.teams[0]?.teamId || '');
+        }
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(load, [load, attempt]);
+  useEffect(() => {
+    let active = true;
+    api
+      .get('/manager-intelligence/me/deliveries')
+      .then(({ data }) => {
+        if (active) setDeliveries(data.deliveries);
+      })
+      .catch(() => {
+        if (active) setDeliveryFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const et = locale === 'et',
+    team = teams?.find((t) => t.teamId === selected);
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user'));
+  } catch {
+    /* Invalid cached display profile. */
+  }
+  return (
+    <AppShell user={user} mode="manager" locale={locale} section={et ? 'Minu tiim' : 'My team'}>
+      <div className="mx-auto max-w-6xl space-y-5">
+        <header className="flex flex-wrap justify-between gap-3">
+          <h1 className="text-3xl font-bold">{team?.name || (et ? 'Minu tiim' : 'My team')}</h1>
+          <Link className={control} to="/dashboard">
+            {et ? 'Tagasi konto juurde' : 'Back to account'}
+          </Link>
+        </header>
+        {failed ? (
+          <p role="alert">
+            {et ? 'Ligipääsu kontroll ebaõnnestus.' : 'Could not verify team access.'}{' '}
+            <button onClick={() => setAttempt((v) => v + 1)}>
+              {et ? 'Proovi uuesti' : 'Retry'}
+            </button>
+          </p>
+        ) : !teams ? (
+          <p role="status">{et ? 'Kontrollin ligipääsu…' : 'Verifying team access…'}</p>
+        ) : !team ? (
+          <p className={panel}>
+            {et
+              ? 'Sul puudub aktiivne tiimijuhi ligipääs. Ligipääsu saamiseks pöördu personalijuhi poole.'
+              : 'No active manager appointment. Contact HR to request access.'}
+          </p>
+        ) : (
+          <TeamReport
+            key={selected}
+            team={team}
+            locale={locale}
+            onPreference={(id, checked) =>
+              setTeams((list) =>
+                list.map((v) => (v.teamId === id ? { ...v, weeklyEmailEnabled: checked } : v))
+              )
+            }
+            teamChanged={
+              <label>
+                {et ? 'Tiim' : 'Team'}{' '}
+                <select
+                  className={control}
+                  value={selected}
+                  onChange={(e) => setSelected(e.target.value)}
+                >
+                  {teams.map((v) => (
+                    <option key={v.teamId} value={v.teamId}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            }
+          />
         )}
-        <section id="reports" className="rounded-xl border bg-white p-5">
-          <h2 className="text-lg font-bold">My weekly delivery history</h2>
-          {deliveries.length ? (
+        <section id="reports" className={panel}>
+          <h2 className="text-lg font-bold">
+            {et ? 'Minu aruannete saatmisajalugu' : 'My report delivery history'}
+          </h2>
+          {deliveryFailed ? (
+            <p>
+              {et ? 'Saatmisajalugu ei saanud laadida.' : 'Delivery history could not be loaded.'}
+            </p>
+          ) : !deliveries ? (
+            <p>{et ? 'Laadin…' : 'Loading…'}</p>
+          ) : deliveries.length ? (
             deliveries.slice(0, 8).map((d, i) => (
-              <p key={i} className="mt-2 text-sm text-slate-600">
-                Week {d.weekKey} · {d.status}
+              <p key={i}>
+                {d.weekKey} · {(et ? statusEt : statusEn)[d.status] || d.status}
               </p>
             ))
           ) : (
-            <p className="mt-2 text-sm text-slate-600">No manager digests delivered yet.</p>
+            <p>{et ? 'Saatmiskirjeid veel pole.' : 'No report deliveries recorded.'}</p>
           )}
         </section>
-        <p className="text-xs text-slate-500">
-          Each request checks the active HR-approved manager/team assignment. Unauthorized or
-          small-cohort data is not shown.
-        </p>
       </div>
     </AppShell>
   );

@@ -658,6 +658,15 @@ async function main() {
         console.log('⏰ Cron job scheduled: Calendly commercial conversion sync hourly');
       }
 
+      cron.schedule('15 6 * * *', async () => {
+        try {
+          const { runDueManagerReviews } = await import('./services/managerActionReviewService.js');
+          await runDueManagerReviews();
+        } catch (err) {
+          console.error('[ManagerIntelligence] Action review failed:', err.message);
+        }
+      });
+
       // Work Network action outcomes - daily after the first integration sync
       cron.schedule('20 6 * * *', async () => {
         console.log('⏰ Rechecking due Work Network actions...');
