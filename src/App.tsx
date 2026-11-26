@@ -3,7 +3,7 @@ import { Toaster as Sonner } from './components/ui/sonner';
 import { TooltipProvider } from './components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, ReactNode, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AnalyticsPageTracker from './components/AnalyticsPageTracker';
@@ -102,6 +102,22 @@ const SUPERADMIN_ROLES = ['master_admin'];
 const withHrAccess = (page: ReactNode) => (
   <ProtectedRoute allowedRoles={HR_REPORT_ROLES}>{page}</ProtectedRoute>
 );
+
+function PublicChat() {
+  const { pathname } = useLocation();
+  const privatePaths = [
+    '/app',
+    '/dashboard',
+    '/superadmin',
+    '/admin',
+    '/integrations',
+    '/ceo-summary',
+  ];
+  if (privatePaths.some((path) => pathname === path || pathname.startsWith(path + '/'))) {
+    return null;
+  }
+  return <ChatWidget />;
+}
 
 const App = () => (
   <ErrorBoundary>
@@ -346,7 +362,7 @@ const App = () => (
                 />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <ChatWidget />
+              <PublicChat />
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>
