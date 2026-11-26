@@ -10,6 +10,7 @@ const ESTONIAN_NAVIGATION = {
   'Organisation & teams': 'Organisatsioon ja tiimid',
   'Actions & reviews': 'Tegevused ja järelkontroll',
   Reports: 'Aruanded',
+  'Monthly reports': 'Kuuaruanded',
   'Settings & access': 'Seaded ja ligipääs',
   'Work-pattern evidence': 'Töömustri mõõtmised',
   'Pattern history': 'Muutused ajas',
@@ -52,6 +53,13 @@ const links = [
     group: 'Explore',
     secondary: true,
     roles: ['master_admin', 'admin', 'hr_admin', 'org_admin', 'executive'],
+  },
+  {
+    to: '/app/monthly-report',
+    label: 'Monthly reports',
+    group: 'Explore',
+    secondary: true,
+    roles: ['master_admin', 'admin', 'hr_admin'],
   },
   {
     to: '/app/executive-summary',
