@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LineChart,
@@ -22,7 +22,7 @@ const currentUser = () => {
 export default function ManagerTeamDashboard() {
   const [teams, setTeams] = useState([]),
     [team, setTeam] = useState(''),
-    [report, setReport] = useState(null),
+    [loadedReport, setReport] = useState(null),
     [weeks, setWeeks] = useState(13),
     [metricKey, setMetricKey] = useState('meetings');
   const [error, setError] = useState(''),
@@ -45,23 +45,32 @@ export default function ManagerTeamDashboard() {
       })
       .catch(() => setError('Unable to verify manager appointment'));
   }, []);
-  const reload = () => {
-    if (!team) return;
+  const requestVersion = useRef(0);
+  const selectedTeam = useRef(team);
+  selectedTeam.current = team;
+  const reload = useCallback(() => {
+    if (!team || selectedTeam.current !== team) return;
+    const version = ++requestVersion.current;
     api
       .get('/manager-intelligence/teams/' + team + '/trends')
       .then((r) => {
-        setReport(r.data);
+        if (version !== requestVersion.current || selectedTeam.current !== team) return;
+        setReport({ ...r.data, requestedTeamId: team });
         setError('');
       })
       .catch((e) => {
+        if (version !== requestVersion.current || selectedTeam.current !== team) return;
         setReport(null);
-        setError(e.response?.data?.message || 'Not authorized');
+        setError(e.response?.data?.message || 'Unable to load team report');
       });
-  };
+  }, [team]);
   useEffect(() => {
     setReport(null);
     reload();
-  }, [team]);
+    return () => {
+      requestVersion.current += 1;
+    };
+  }, [reload]);
   const submit = async () => {
     setBusy(true);
     try {
@@ -149,6 +158,7 @@ export default function ManagerTeamDashboard() {
   };
   const date = (s) =>
     s ? new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+  const report = loadedReport?.requestedTeamId === team ? loadedReport : null;
   const selectedSeries = report?.trendSeries?.find((series) => series.key === metricKey);
   const points = (selectedSeries?.points || report?.points || [])
     .slice(-weeks)
@@ -195,7 +205,14 @@ export default function ManagerTeamDashboard() {
                 My authorized team{' '}
                 <select
                   value={team}
+                  disabled={busy}
                   onChange={(e) => {
+                    setReport(null);
+                    setTitle('');
+                    setHypothesis('');
+                    setContextNote('');
+                    setMessage('');
+                    setError('');
                     setTeam(e.target.value);
                     setEmail(
                       teams.find((t) => t.teamId === e.target.value)?.weeklyEmailEnabled !== false
