@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import {
   ArrowLeft,
   Users,
@@ -53,85 +54,51 @@ const TeamAnalytics: React.FC = () => {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error] = useState('');
-
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8081';
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
     const fetchAnalytics = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
+        const { data } = await api.get('/analytics/team-summary');
+        const required = [
+          data?.teamHealth?.signalsDetected,
+          data?.teamHealth?.executionCapacity,
+          data?.communicationMetrics?.slackMessages,
+          data?.communicationMetrics?.avgResponseTime,
+          data?.communicationMetrics?.afterHoursPercentage,
+          data?.meetingMetrics?.totalHours,
+          data?.meetingMetrics?.focusHours,
+          data?.meetingMetrics?.meetingToFocusRatio,
+          data?.risks?.retentionExposure ?? data?.risks?.attritionRisk,
+          data?.risks?.recoveryExposure ?? data?.risks?.burnoutRisk,
+          data?.risks?.collaborationRisk,
+        ];
+        if (
+          !required.every((value) => typeof value === 'number' && Number.isFinite(value)) ||
+          !['stable', 'worsening', 'stabilizing', 'recovering'].includes(data?.teamHealth?.driftStatus)
+        ) {
+          throw new Error('Incomplete analytics evidence');
         }
-
-        const response = await fetch(`${API_BASE}/api/analytics/team-summary`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        if (active) {
           setAnalytics(normalizeAnalyticsData(data));
-        } else {
-          // Use fallback demo data if API not available
-          setAnalytics({
-            teamHealth: {
-              signalsDetected: 2,
-              driftStatus: 'stable',
-              executionCapacity: 75,
-              trend: 'stable',
-            },
-            communicationMetrics: {
-              slackMessages: 1247,
-              avgResponseTime: 2.3,
-              afterHoursPercentage: 12,
-            },
-            meetingMetrics: {
-              totalHours: 18,
-              focusHours: 22,
-              meetingToFocusRatio: 0.82,
-            },
-            risks: {
-              retentionExposure: 15,
-              recoveryExposure: 22,
-              collaborationRisk: 8,
-            },
-          });
+          setError('');
         }
-      } catch (err) {
-        console.error('Failed to fetch analytics:', err);
-        // Set demo data on error
-        setAnalytics({
-          teamHealth: {
-            energyIndex: 72,
-            resilienceScore: 68,
-            executionCapacity: 75,
-            trend: 'stable',
-          },
-          communicationMetrics: {
-            slackMessages: 1247,
-            avgResponseTime: 2.3,
-            afterHoursPercentage: 12,
-          },
-          meetingMetrics: {
-            totalHours: 18,
-            focusHours: 22,
-            meetingToFocusRatio: 0.82,
-          },
-          risks: {
-            retentionExposure: 15,
-            recoveryExposure: 22,
-            collaborationRisk: 8,
-          },
-        });
+      } catch {
+        if (active) {
+          setAnalytics(null);
+          setError('Team analytics are unavailable or evidence is incomplete. No estimates are displayed.');
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchAnalytics();
-  }, [API_BASE, navigate]);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'text-green-600';
@@ -166,11 +133,11 @@ const TeamAnalytics: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error || !analytics) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center text-red-600">
-          <p>{error}</p>
+          <p role="alert">{error || 'Team analytics are unavailable.'}</p>
           <button
             onClick={() => navigate('/dashboard')}
             className="mt-4 text-blue-600 hover:underline"
@@ -220,7 +187,7 @@ const TeamAnalytics: React.FC = () => {
               <div
                 className={`text-display font-bold ${getScoreColor(analytics?.teamHealth.signalsDetected !== undefined ? (analytics?.teamHealth.signalsDetected > 3 ? 40 : analytics?.teamHealth.signalsDetected > 1 ? 70 : 90) : 0)}`}
               >
-                {analytics?.teamHealth.signalsDetected ?? analytics?.teamHealth.energyIndex ?? 0}
+                {analytics.teamHealth.signalsDetected}
               </div>
               <p className="text-caption text-gray-600 mt-1">
                 Active drift signals requiring attention
