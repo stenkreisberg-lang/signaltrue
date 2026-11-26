@@ -21,6 +21,7 @@
  */
 
 import cron from 'node-cron';
+import { weeklyQACopyConfig } from './weeklyBriefDeliveryEnvelope.js';
 import CronLog from '../models/cronLog.js';
 import { ensureWeeklyCycleComplete } from './weeklySchedulerService.js';
 
@@ -397,9 +398,7 @@ export async function getEmailScheduleStatus() {
     CronLog.hasRunForWeek(SITE_ANALYTICS_JOB, weekKey),
   ]);
 
-  const adminCopyConfigEnabled = process.env.CLIENT_REPORT_QA_COPIES_ENABLED === 'true';
-  const adminCopyAddress = String(process.env.SUPERADMIN_EMAIL || '').trim().toLowerCase();
-  const adminCopyRecipientValid = Boolean(adminCopyAddress && adminCopyAddress.endsWith('@signaltrue.ai'));
+  const { enabled: adminCopyConfigEnabled, address: adminCopyAddress, valid: adminCopyRecipientValid } = weeklyQACopyConfig();
   // The founder expects the same inbox that receives the weekly commercial report.
   const expectedAdminInbox = String(process.env.SITE_ANALYTICS_REPORT_EMAIL || 'sten.kreisberg@signaltrue.ai').trim().toLowerCase();
   const adminCopyRecipientMatchesInbox = adminCopyAddress === expectedAdminInbox;
@@ -500,7 +499,9 @@ export async function manualTriggerWeeklySiteAnalyticsReport() {
 // ═══════════════════════════════════════════════
 
 export function initWeeklyEmailScheduler() {
-  console.log('[WeeklyScheduler] 🚀 Initializing self-healing weekly email scheduler...');
+  const copy = weeklyQACopyConfig();
+  const copyStatus = copy.enabled ? (copy.valid ? 'configured' : 'invalid') : 'disabled';
+  console.log('[WeeklyScheduler] Weekly HR QA copy configuration:', copyStatus);
   // ── PRIMARY: Monday at 09:00 Europe/Tallinn, DST-aware ──
   // Poll at 06:00 and 07:00 UTC for summer and winter. Never send before scoring.
   cron.schedule('0 6,7,8,9,10 * * 1', async () => {
