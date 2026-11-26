@@ -20,7 +20,7 @@ import { renderVisualWeeklyEmail } from '../services/visualWeeklyEmailService.js
 
 
 const router = express.Router();
-const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin', 'executive'];
+const DASHBOARD_ROLES = ['master_admin', 'admin', 'hr_admin'];
 const SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 function requireOrgContext(req, res, next) {
