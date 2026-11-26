@@ -18,6 +18,8 @@ const field = 'mt-1 block w-full rounded-lg border border-slate-300 bg-white p-3
 
 export default function ManagerReportingAdmin() {
   const [directory, setDirectory] = useState(null);
+  const et = directory?.locale === 'et';
+  const tr = (en, estonian) => (et ? estonian : en);
   const [structure, setStructure] = useState(null);
   const [person, setPerson] = useState('');
   const [team, setTeam] = useState('');
@@ -82,7 +84,10 @@ export default function ManagerReportingAdmin() {
           teamId: team,
           weeklyEmailEnabled: weeklyEmail,
         }),
-      'Appointment saved. Review the assignment and send the company invitation below.'
+      tr(
+        'Appointment saved. Review the assignment and send the company invitation below.',
+        'Tiimijuhi määramine on salvestatud. Kontrolli õigusi ja saada kutse.'
+      )
     );
     if (result?.data?.id) {
       setConfirm(false);
@@ -93,19 +98,28 @@ export default function ManagerReportingAdmin() {
               '/manager-intelligence/admin/assignments/' + result.data.id + '/permissions',
               { exportEnabled: true }
             ),
-          'Appointment ready to invite. PDF export approved by HR.'
+          tr(
+            'Appointment ready to invite. PDF export approved by HR.',
+            'Määramine on kinnitatud. PDF-i allalaadimine on lubatud.'
+          )
         );
     }
   };
   const send = (id) =>
     run(
       () => api.post('/manager-intelligence/admin/assignments/' + id + '/invite'),
-      'Seven-day invitation sent to the nominated company email. Team access starts only after acceptance.'
+      tr(
+        'Seven-day invitation sent to the nominated company email. Team access starts only after acceptance.',
+        'Kutse anti e-posti teenusele edastamiseks. Kutse kehtib seitse päeva. Juhi ligipääs algab pärast kutse vastuvõtmist.'
+      )
     );
   const revoke = (id) =>
     run(
       () => api.post('/manager-intelligence/admin/assignments/' + id + '/revoke'),
-      'Manager permission revoked. Subsequent team-data requests will be denied.'
+      tr(
+        'Manager permission revoked. Subsequent team-data requests will be denied.',
+        'Juhi ligipääs on tühistatud.'
+      )
     );
   const permission = (id, fieldName, value) =>
     run(
@@ -113,25 +127,52 @@ export default function ManagerReportingAdmin() {
         api.patch('/manager-intelligence/admin/assignments/' + id + '/permissions', {
           [fieldName]: value,
         }),
-      'Manager permission updated.'
+      tr('Manager permission updated.', 'Tiimijuhi õigused on uuendatud.')
     );
 
   return (
-    <AppShell user={currentUser()} section="HR / Access">
+    <AppShell
+      locale={et ? 'et' : 'en'}
+      user={currentUser()}
+      section={tr('HR / Access', 'HR / Ligipääs')}
+    >
       <div className="space-y-5">
         <PageHeader
-          eyebrow="HR / ACCESS"
-          title="Manager access & invitations"
-          description="Approve who sees which team. Formal reporting lines do not create SignalTrue access."
+          eyebrow={tr('HR / ACCESS', 'HR / LIGIPÄÄS')}
+          title={tr('Manager access & invitations', 'Tiimijuhtide ligipääs ja kutsed')}
+          description={tr(
+            'Approve who sees which team. Formal reporting lines do not create SignalTrue access.',
+            'Siin kinnitab personalijuht, kes näeb konkreetse tiimi andmeid. Organisatsiooni struktuuri lisamine üksi ligipääsu ei anna.'
+          )}
         />
         <section className="app-panel border-blue-200">
-          <h2 className="text-lg font-bold">How access works</h2>
+          <h2 className="text-lg font-bold">
+            {tr('How access works', 'Kuidas juht ligipääsu saab?')}
+          </h2>
           <div className="mt-3 grid gap-3 md:grid-cols-4">
             {[
-              ['1', 'HR selects the employee and team'],
-              ['2', 'HR confirms access and email settings'],
-              ['3', 'Employee claims the account if necessary and accepts a seven-day invitation'],
-              ['4', 'Only that team becomes visible, subject to privacy and source coverage'],
+              ['1', tr('HR selects the employee and team', 'Personalijuht valib töötaja ja tiimi')],
+              [
+                '2',
+                tr(
+                  'HR confirms access and email settings',
+                  'Personalijuht kinnitab õigused ja e-posti seaded'
+                ),
+              ],
+              [
+                '3',
+                tr(
+                  'Employee claims the account if necessary and accepts a seven-day invitation',
+                  'Töötaja võtab vajaduse korral konto kasutusele ja kinnitab kutse seitsme päeva jooksul'
+                ),
+              ],
+              [
+                '4',
+                tr(
+                  'Only that team becomes visible, subject to privacy and source coverage',
+                  'Juht näeb oma tiimi koondandmeid, kui katvus on piisav'
+                ),
+              ],
             ].map(([n, txt]) => (
               <div key={n} className="rounded-lg bg-slate-50 p-3 text-sm">
                 <span className="mr-2 font-bold">{n}.</span>
@@ -140,9 +181,19 @@ export default function ManagerReportingAdmin() {
             ))}
           </div>
           <p className="mt-3 text-sm text-slate-600">
-            A team needs at least {directory?.minimum || 8} mapped contributors in each relevant
-            reporting period. An appointment never bypasses the privacy threshold. Manager email
-            also requires the separately enabled production delivery service.
+            {directory?.minimum != null
+              ? tr(
+                  `At least ${directory.minimum} mapped contributors are required per reporting period.`,
+                  `Igal aruandeperioodil peab olema vähemalt ${directory.minimum} andmetega seotud tiimiliiget.`
+                )
+              : tr(
+                  'The reporting threshold is being checked.',
+                  'Aruandluse alampiir on kontrollimisel.'
+                )}{' '}
+            {tr(
+              'Manager email also requires an active delivery service.',
+              'Nädalaaruande saatmiseks peab ka e-posti teenus olema sisse lülitatud.'
+            )}
           </p>
         </section>
         {error && (
@@ -150,7 +201,21 @@ export default function ManagerReportingAdmin() {
             role="alert"
             className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
           >
-            {error}
+            {et
+              ? {
+                  'Manager is not approved for this team in the HR roster':
+                    'Kontrolli organisatsiooni struktuuris, kas see töötaja on kinnitatud just selle tiimi juhiks.',
+                  'HR-approved manager identity changed. Reconcile the assignment first.':
+                    'Tiimile kinnitatud juht on muutunud. Uuenda esmalt juhi määramist.',
+                  'Please allow at least one minute between invitations':
+                    'Oota enne uue kutse saatmist vähemalt minut.',
+                  'Invitation could not be sent. Verify mail transport.':
+                    'Kutset ei saanud saata. Kontrolli e-posti teenust.',
+                  'Recipient is no longer employed or team is inactive':
+                    'Töötaja või tiim ei ole enam aktiivne.',
+                }[error] ||
+                'Toiming ebaõnnestus. Kontrolli ligipääsu ja tiimi andmeid ning proovi uuesti.'
+              : error}
           </p>
         )}
         {notice && (
@@ -162,14 +227,18 @@ export default function ManagerReportingAdmin() {
           </p>
         )}
         <section className="app-panel space-y-4">
-          <h2 className="text-lg font-bold">1. Appoint a team manager</h2>
+          <h2 className="text-lg font-bold">
+            {tr('1. Appoint a team manager', '1. Vali tiimijuht')}
+          </h2>
           <p className="text-sm text-slate-600">
-            You can invite active employees and employees imported from Microsoft who have not
-            created a SignalTrue account yet.
+            {tr(
+              'You can invite active employees and employees imported from Microsoft who have not created a SignalTrue account yet.',
+              'Kutsuda saab nii aktiivse kontoga töötajat kui ka Microsoftist lisatud töötajat, kes pole veel SignalTrue kontot kasutusele võtnud.'
+            )}
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold">
-              Employee
+              {tr('Employee', 'Töötaja')}
               <select
                 className={field}
                 value={person}
@@ -178,17 +247,19 @@ export default function ManagerReportingAdmin() {
                   setConfirm(false);
                 }}
               >
-                <option value="">Select an employee</option>
+                <option value="">{tr('Select an employee', 'Vali töötaja')}</option>
                 {employees.map((u) => (
                   <option value={u.id} key={u.id}>
                     {u.name || u.email} · {u.email}{' '}
-                    {u.accountStatus === 'pending' ? '(account not claimed)' : ''}
+                    {u.accountStatus === 'pending'
+                      ? tr('(account not claimed)', '(konto veel kasutusele võtmata)')
+                      : ''}
                   </option>
                 ))}
               </select>
             </label>
             <label className="text-sm font-semibold">
-              Authorised team
+              {tr('Authorised team', 'Tiim')}
               <select
                 className={field}
                 value={team}
@@ -197,7 +268,7 @@ export default function ManagerReportingAdmin() {
                   setConfirm(false);
                 }}
               >
-                <option value="">Select a team</option>
+                <option value="">{tr('Select a team', 'Vali tiim')}</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -208,18 +279,31 @@ export default function ManagerReportingAdmin() {
           </div>
           {employee && selectedTeam && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <h3 className="font-semibold">2. Review the invitation scope</h3>
+              <h3 className="font-semibold">
+                {tr('2. Review the invitation scope', '2. Kontrolli ligipääsu ja õigusi')}
+              </h3>
               <p className="mt-2 text-sm">
-                <strong>{employee.name || employee.email}</strong> will be offered access to
-                <strong> {selectedTeam.name}</strong> only. The team currently has{' '}
-                {teamDetails?.memberCount ?? 'unverified'} directory-mapped employees.
+                <strong>{employee.name || employee.email}</strong>{' '}
+                {tr('will have access only to', 'saab ligipääsu ainult järgmise tiimi andmetele:')}{' '}
+                <strong>{selectedTeam.name}</strong>.{' '}
+                {tr('Directory-mapped employees', 'Tiimiga seotud töötajaid')}:{' '}
+                {teamDetails?.memberCount ?? tr('unverified', 'kinnitamata')}.
                 {teamDetails?.reportingEligibleBySize === false
-                  ? ' Team results remain withheld until minimum cohort and source conditions are satisfied.'
-                  : ' Source coverage must also be sufficient before results can appear.'}
+                  ? tr(
+                      ' Team results remain withheld until minimum cohort and source conditions are satisfied.',
+                      ' Tulemusi kuvatakse siis, kui nii osalejate arv kui ka allikate katvus on piisav.'
+                    )
+                  : tr(
+                      ' Source coverage must also be sufficient before results can appear.',
+                      ' Tulemuste kuvamiseks peab ka allikate katvus olema piisav.'
+                    )}
               </p>
               {employee.accountStatus === 'pending' && (
                 <p className="mt-2 text-sm font-semibold text-amber-800">
-                  This employee must create a password using their invitation before signing in.
+                  {tr(
+                    'This employee must create a password using their invitation before signing in.',
+                    'Töötaja peab enne esimest sisselogimist kutse kaudu parooli looma.'
+                  )}
                 </p>
               )}
               <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -229,7 +313,10 @@ export default function ManagerReportingAdmin() {
                     checked={weeklyEmail}
                     onChange={(e) => setWeeklyEmail(e.target.checked)}
                   />
-                  Request weekly team email after acceptance
+                  {tr(
+                    'Request weekly team email after acceptance',
+                    'Saada tiimi nädalaaruanne pärast kutse vastuvõtmist'
+                  )}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -237,7 +324,10 @@ export default function ManagerReportingAdmin() {
                     checked={allowPdf}
                     onChange={(e) => setAllowPdf(e.target.checked)}
                   />
-                  Permit scoped PDF downloads
+                  {tr(
+                    'Permit scoped PDF downloads',
+                    'Luba selle tiimi PDF-aruannete allalaadimine'
+                  )}
                 </label>
               </div>
               <label className="mt-4 flex items-center gap-2 text-sm font-semibold">
@@ -246,11 +336,17 @@ export default function ManagerReportingAdmin() {
                   checked={confirm}
                   onChange={(e) => setConfirm(e.target.checked)}
                 />
-                I have checked the nominated employee, team and requested permissions.
+                {tr(
+                  'I have checked the nominated employee, team and requested permissions.',
+                  'Olen töötaja, tiimi ja ligipääsuõigused üle kontrollinud.'
+                )}
               </label>
               {existing && (
                 <p className="mt-2 text-sm text-amber-800">
-                  This appointment already exists. Use the controls below.
+                  {tr(
+                    'This appointment already exists. Use the controls below.',
+                    'See seos on juba olemas. Kutset ja õigusi saab muuta allpool.'
+                  )}
                 </p>
               )}
               <button
@@ -259,39 +355,53 @@ export default function ManagerReportingAdmin() {
                 disabled={!confirm || busy || Boolean(existing)}
                 onClick={appoint}
               >
-                Approve manager appointment
+                {tr('Approve manager appointment', 'Kinnita tiimijuhi määramine')}
               </button>
             </div>
           )}
         </section>
         <section className="app-panel space-y-3">
-          <h2 className="text-lg font-bold">3. Invitations & current authorisations</h2>
+          <h2 className="text-lg font-bold">
+            {tr('3. Invitations & current authorisations', '3. Kutsed ja kehtivad õigused')}
+          </h2>
           {!assignments.length && (
-            <p className="text-sm text-slate-600">No manager appointments yet.</p>
+            <p className="text-sm text-slate-600">
+              {tr('No manager appointments yet.', 'Ühtki tiimijuhti pole veel määratud.')}
+            </p>
           )}
           {assignments.map((a) => {
             const u = employees.find((x) => x.id === a.managerUserId);
-            const t = teams.find((x) => x.id === a.teamId);
+            const assignedTeam = teams.find((x) => x.id === a.teamId);
             return (
               <div key={a.id} className="rounded-lg border border-slate-200 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-bold">
-                      {u?.name || u?.email || 'Previously assigned employee'} ·{' '}
-                      {t?.name || 'Inactive team'}
+                      {u?.name ||
+                        u?.email ||
+                        tr('Previously assigned employee', 'Varem määratud töötaja')}{' '}
+                      · {assignedTeam?.name || tr('Inactive team', 'Mitteaktiivne tiim')}
                     </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {a.status === 'active'
-                        ? 'Accepted and active'
+                        ? tr('Accepted and active', 'Kutse vastu võetud, ligipääs aktiivne')
                         : a.status === 'invited'
-                          ? 'Invitation pending acceptance'
+                          ? tr('Invitation pending acceptance', 'Kutse ootab vastuvõtmist')
                           : a.status === 'pending'
-                            ? 'Approved, invitation not yet sent'
+                            ? tr(
+                                'Prepared, invitation not yet sent',
+                                'Määramine ette valmistatud, kutse saatmata'
+                              )
                             : a.status === 'revoked'
-                              ? 'Access revoked'
-                              : 'Access ' + a.status}
+                              ? tr('Access revoked', 'Ligipääs tühistatud')
+                              : a.status === 'declined'
+                                ? tr('Invitation declined', 'Kutsest keeldutud')
+                                : a.status === 'expired'
+                                  ? tr('Invitation expired', 'Kutse aegunud')
+                                  : tr('Status unavailable', 'Seisund teadmata')}
                       {a.invitedAt
-                        ? ' · Sent ' + new Date(a.invitedAt).toLocaleDateString('en-GB')
+                        ? tr(' · Sent ', ' · Saadetud ') +
+                          new Date(a.invitedAt).toLocaleDateString(et ? 'et-EE' : 'en-GB')
                         : ''}
                     </p>
                   </div>
@@ -303,7 +413,9 @@ export default function ManagerReportingAdmin() {
                         className={secondary}
                         onClick={() => send(a.id)}
                       >
-                        {a.status === 'invited' ? 'Resend invitation' : 'Send invitation'}
+                        {a.status === 'invited'
+                          ? tr('Resend invitation', 'Saada kutse uuesti')
+                          : tr('Send invitation', 'Saada kutse')}
                       </button>
                     )}
                     {a.status !== 'revoked' && (
@@ -313,7 +425,7 @@ export default function ManagerReportingAdmin() {
                         className={secondary + ' text-red-700'}
                         onClick={() => revoke(a.id)}
                       >
-                        Revoke
+                        {tr('Revoke', 'Tühista ligipääs')}
                       </button>
                     )}
                   </div>
@@ -327,7 +439,7 @@ export default function ManagerReportingAdmin() {
                         disabled={busy}
                         onChange={(e) => permission(a.id, 'weeklyEmailEnabled', e.target.checked)}
                       />
-                      Weekly email subscription
+                      {tr('Weekly email subscription', 'Tiimi nädalaaruanne e-postiga')}
                     </label>
                     <label className="flex items-center gap-2 text-sm">
                       <input
@@ -336,7 +448,7 @@ export default function ManagerReportingAdmin() {
                         disabled={busy}
                         onChange={(e) => permission(a.id, 'exportEnabled', e.target.checked)}
                       />
-                      Allow scoped PDF export
+                      {tr('Allow scoped PDF export', 'Luba tiimiaruande PDF-i allalaadimine')}
                     </label>
                   </div>
                 )}
@@ -344,9 +456,10 @@ export default function ManagerReportingAdmin() {
             );
           })}
           <p className="text-xs text-slate-500">
-            HR approval, invitation delivery and access acceptance are separate events. Revocation
-            is enforced on every API request. No individual messages or employee rankings are
-            available.
+            {tr(
+              'HR approval, invitation delivery and access acceptance are separate events. Revocation is enforced on every API request. No individual messages or employee rankings are available.',
+              'Personali kinnitus, kutse saatmine ja juhi nõusolek registreeritakse eraldi. Ligipääsu tühistamine jõustub järgmisest päringust. Juht näeb ainult tiimi koondandmeid.'
+            )}
           </p>
         </section>
       </div>

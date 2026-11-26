@@ -11,7 +11,7 @@ import Team from '../models/team.js';
 import ManagerAssignment from '../models/managerAssignment.js';
 import ManagerInvitation from '../models/managerInvitation.js';
 import ManagerWorkAction from '../models/managerWorkAction.js';
-import Organization from '../models/organizationModel.js';
+import { managerInvitationEmail } from '../services/managerInvitationEmail.js';
 import { assertScopedManager, createScopedAction, getScopedTeamMeasurements, hashSecret, loadManagerRoster,
   managerAudit, normalizeEmail, hashInvitedEmail,
   resolveOrgMinimum, secureToken, MANAGER_TERMS_VERSION } from '../services/managerIntelligenceService.js';
@@ -62,7 +62,7 @@ router.use(authenticateToken);
 const ADMIN_ROLES = new Set(['master_admin','admin','hr_admin','org_admin']);
 const id = x => String(x?._id || x || '');
 const validId = x => mongoose.isValidObjectId(x);
-const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 function noStore(res) { res.set('Cache-Control','no-store, private'); res.set('Pragma','no-cache'); return res; }
 async function loadOrgUser(req) {
   if (!validId(req.user?.userId)) return null;
@@ -76,22 +76,14 @@ async function requireAdmin(req,res,next) {
     req.managerAdmin=user; next();
   } catch(e){next(e)}
 }
-const invitationEmail = (teamName, url) =>
-  '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;padding:24px;color:#0f172a;">' +
-  '<p style="font-size:12px;color:#64748b;font-weight:bold;">SIGNALTRUE / TEAM INTELLIGENCE</p>' +
-  '<h2>Invitation to view team work-pattern insights</h2><p>An authorized organization administrator invited you to view aggregated trends for ' +
-  escapeHtml(teamName) + '.</p><p>No individual conversations, employee rankings or personal scores are included.</p>' +
-  '<p><a href="'+escapeHtml(url)+'" style="display:inline-block;padding:13px 18px;background:#10223a;color:white;text-decoration:none;border-radius:6px;">Verify identity and review invitation</a></p>' +
-  '<p>The invitation expires in seven days. If you have not created a SignalTrue password yet, use the link to claim your company account. You must sign in and accept before seeing any team information.</p>' +
-  '<p>If this invitation was unexpected, do not use the link; contact HR.</p></div>';
-async function sendInvite(email, teamName, token) {
+async function sendInvite(email, teamName, token, locale) {
   if(!process.env.RESEND_API_KEY) throw new Error('Invitation email transport is not configured');
   const url=(process.env.FRONTEND_URL || 'https://www.signaltrue.ai').replace(/\/$/,'') +
-    '/app/manager/invite#token='+encodeURIComponent(token);
+    '/app/manager/invite#token='+encodeURIComponent(token)+'&lang='+locale;
+  const message=managerInvitationEmail(teamName,url,locale);
   const resend=new Resend(process.env.RESEND_API_KEY);
   const response=await resend.emails.send({
-    from:'SignalTrue <brief@signaltrue.ai>',to:email,subject:'SignalTrue team insight access invitation',
-    html:invitationEmail(teamName,url),
+    from:'SignalTrue <brief@signaltrue.ai>',to:email,subject:message.subject, html:message.html,
     tags:[{name:'email_type',value:'manager-invitation'}]
   });
   if(response.error) throw new Error('Invitation email provider rejected the request');
@@ -99,18 +91,18 @@ async function sendInvite(email, teamName, token) {
 }
 router.get('/admin/directory',requireAdmin,async(req,res)=>{
   const orgId=req.managerAdmin.orgId;
-  const [users,teams,assignments,org] = await Promise.all([
+  const [users,teams,assignments,policy] = await Promise.all([
     User.find({orgId,accountStatus:{$in:['active','pending']},email:{$exists:true,$ne:''}})
       .select('_id name email role accountStatus teamId').sort({name:1}).limit(250).lean(),
     Team.find({orgId,isActive:{$ne:false}}).select('_id name').sort({name:1}).lean(),
     ManagerAssignment.find({orgId}).select('managerUserId teamId status weeklyEmailEnabled exportEnabled activatedAt invitedAt revokedAt').lean(),
-    Organization.findById(orgId).select('settings.minTeamSize settings.timezone').lean(),
+    resolveOrgMinimum(orgId),
   ]);
   noStore(res).json({users:users.map(u=>({id:id(u._id),name:u.name,email:u.email,role:u.role,accountStatus:u.accountStatus,teamId:id(u.teamId)})),
     teams:teams.map(t=>({id:id(t._id),name:t.name})),
     assignments:assignments.map(a=>({id:id(a._id),managerUserId:id(a.managerUserId),teamId:id(a.teamId),
       status:a.status,weeklyEmailEnabled:a.weeklyEmailEnabled,exportEnabled:a.exportEnabled,activatedAt:a.activatedAt,invitedAt:a.invitedAt,revokedAt:a.revokedAt})),
-    minimum:Math.max(2,Number(org?.settings?.minTeamSize)||2),timezone:org?.settings?.timezone||'UTC'});
+    ...policy});
 });
 router.post('/admin/assignments',requireAdmin,async(req,res)=>{
   const managerUserId=String(req.body?.managerUserId||'');
@@ -155,6 +147,7 @@ router.post('/admin/assignments/:assignmentId/invite',requireAdmin,async(req,res
   if (team.structure?.source === 'hr' &&
       (!team.structure.verifiedAt || id(team.structure.managerUserId) !== id(assignment.managerUserId)))
     return noStore(res).status(409).json({message:'HR-approved manager identity changed. Reconcile the assignment first.'});
+  const policy=await resolveOrgMinimum(orgId);
   const token=secureToken(), tokenHash=hashSecret(token), expires=new Date(Date.now()+7*86400000);
   // Invalidate previous links when a new invitation is issued.
   await ManagerInvitation.deleteMany({assignmentId:assignment._id,usedAt:null});
@@ -162,7 +155,7 @@ router.post('/admin/assignments/:assignmentId/invite',requireAdmin,async(req,res
     recipientUserId:user._id,recipientEmailHash:hashInvitedEmail(user.email),
     tokenHash,expiresAt:expires});
   try {
-    await sendInvite(user.email,team.name,token);
+    await sendInvite(user.email,team.name,token,policy.locale);
   } catch(e) {
     await ManagerInvitation.deleteOne({_id:invite._id});
     return noStore(res).status(503).json({message:'Invitation could not be sent. Verify mail transport.'});
@@ -197,9 +190,10 @@ router.post('/invitations/inspect',async(req,res)=>{
   if(!assignment)return noStore(res).status(403).json({message:'Invitation no longer authorized'});
   const team=await Team.findOne({_id:assignment.teamId,orgId:user.orgId,isActive:{$ne:false}}).select('name').lean();
   if(!team)return noStore(res).status(403).json({message:'Team no longer active'});
-  noStore(res).json({teamName:team.name,expiresAt:invitation.expiresAt,
-    termsVersion:MANAGER_TERMS_VERSION,purpose:'Privacy-protected aggregate team work-pattern intelligence',
-    restrictions:'Only assigned team, no individual content; coverage thresholds apply'});
+  const {locale}=await resolveOrgMinimum(user.orgId);
+  noStore(res).json({teamName:team.name,expiresAt:invitation.expiresAt,locale,
+    termsVersion:MANAGER_TERMS_VERSION,purpose:locale==='et' ? 'Tiimi töökorraldust kirjeldavad koondnäitajad' : 'Aggregate team work patterns',
+    restrictions:locale==='et' ? 'Ligipääs kehtib ainult määratud tiimile. Üksikisiku sisu ei kuvata. Kehtivad andmekatvuse nõuded' : 'Access is limited to your assigned team. Source coverage and privacy thresholds apply'});
 });
 router.post('/invitations/respond',async(req,res)=>{
   const user=await loadOrgUser(req),token=String(req.body?.token||''),accept=req.body?.accept===true;
