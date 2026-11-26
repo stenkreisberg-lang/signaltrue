@@ -1,6 +1,6 @@
 /**
  * Bounded, one-time correction of the canonical Tehnopol org-wide snapshot for
- * 10 and 22 November 2026 after raw-event reconciliation found
+ * the affected November 2026 dates after raw-event reconciliation found
  * stale calendar measurements. This never sends customer mail.
  *
  * It is intentionally NOT a general backfill or a replacement for checking
@@ -16,7 +16,7 @@ import { computeDailyMetrics } from './integrationMetricsService.js';
 import { generateWeeklyBrief } from './weeklyBriefService.js';
 import { logTehnopolProductionDiagnostic } from './tehnopolProductionDiagnostic.js';
 
-const AFFECTED_DATES = ['2026-11-10', '2026-11-22'];
+const AFFECTED_DATES = ['2026-11-01', '2026-11-08', '2026-11-10', '2026-11-15', '2026-11-22'];
 const DAY = 86400000;
 const MAX_EVENTS = 15000;
 const CALENDAR_FIELDS = new Set([
@@ -28,7 +28,12 @@ const CALENDAR_FIELDS = new Set([
 export function assessTehnopolParityRepair(parity) {
   if (parity?.status === 'PASS') return { eligible: false, reason: 'already_consistent' };
   if (parity?.status !== 'FAIL') return { eligible: false, reason: 'missing_or_unverified_evidence' };
-  const failed = parity.checks.filter((item) => item.status === 'FAIL');
+  const expected = [...CALENDAR_FIELDS, 'messageCount7d', 'afterHoursMessageRatio'];
+  const checks = parity.checks || [];
+  if (checks.length !== expected.length || expected.some(field => !checks.some(check => check.field === field))) {
+    return { eligible: false, reason: 'missing_or_unverified_evidence' };
+  }
+  const failed = checks.filter((item) => item.status === 'FAIL');
   const other = parity.checks.filter((item) => item.status !== 'PASS' && item.status !== 'FAIL');
   if (!failed.length || other.length || failed.some((item) => !CALENDAR_FIELDS.has(item.field))) {
     return { eligible: false, reason: 'unexpected_measurement_failure' };
@@ -49,7 +54,8 @@ async function readEvidence(orgId, target) {
   const total = await WorkEvent.countDocuments(scope);
   if (total < 1 || total > MAX_EVENTS) return { status: 'event_limit_or_missing', total };
   const events = await WorkEvent.find(scope)
-    .select('source eventType actorUserId externalId timestamp metadata').lean();
+    .select('source eventType actorUserId externalId timestamp metadata.meetingIdHash metadata.meetingInstanceIdHash metadata.durationMinutes metadata.startTime metadata.endTime metadata.internalAttendeeCount metadata.isAllDay metadata.isCancelled metadata.isFreeCalendarEvent metadata.attendeeResponseStatus')
+    .limit(MAX_EVENTS + 1).lean();
   if (events.length !== total) return { status: 'changed_while_reading', total };
   return { status: 'complete', total, events };
 }
@@ -84,6 +90,9 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
   if (previous?.status === 'completed') return {applied:false,reason:'already_reconciled'};
   const snapshot = await getSnapshot(org._id, target);
   if (!snapshot) return { applied: false, reason: 'november_snapshot_missing' };
+  if (snapshot.calculationWindowVersion !== 'rolling7-calendar-days-v2') {
+    return { applied: false, reason: 'noncomparable_calculation_version' };
+  }
   const evidence = await readEvidence(org._id, target);
   if (evidence.status !== 'complete') {
     return { applied: false, reason: evidence.status, eventCount: evidence.total };
@@ -100,13 +109,14 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
   await jobs.updateOne({ _id: jobKey }, {
     $setOnInsert: { status: 'pending', createdAt: new Date() },
   }, { upsert: true });
+  const startedAt = new Date();
   const lease = await jobs.findOneAndUpdate({
     _id: jobKey, $or: [
       {status:{$in:['pending','failed']}},
       {status:'running',startedAt:{$lt:new Date(Date.now()-60*60*1000)}},
     ],
   }, {
-    $set: { status: 'running', startedAt: new Date(), errorCategory: null },
+    $set: { status: 'running', startedAt, errorCategory: null },
     $inc: { attempts: 1 },
   }, { returnDocument: 'after' });
   if (!lease) return { applied: false, reason: 'previously_processed_or_running' };
@@ -120,7 +130,7 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
     // convert a moving source window into a false PASS.
     const finalEvidence = await readEvidence(org._id, target);
     const refreshed = await getSnapshot(org._id, target);
-    const after = finalEvidence.status === 'complete'
+    const after = finalEvidence.status === 'complete' && finalEvidence.total === evidence.total
       ? compareStoredWorkPatternMetrics({
         events: finalEvidence.events, snapshot: refreshed, workSchedule,
       })
@@ -130,6 +140,7 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
       snapshotDate: target.toISOString(),
       beforeStatus: before.status,
       afterStatus: after.status,
+      referenceChecks: after.checks.map(({ field, stored, recomputed, status }) => ({ field, stored, recomputed, status })),
       calendarBefore: before.checks.filter((check) => CALENDAR_FIELDS.has(check.field))
         .map(({ field, discrepancy }) => ({ field, discrepancy })),
       calendarAfter: after.checks.filter((check) => CALENDAR_FIELDS.has(check.field))
@@ -139,7 +150,7 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
     };
 
     if (after.status !== 'PASS') {
-      await jobs.updateOne({ _id: jobKey, status: 'running' }, {
+      await jobs.updateOne({ _id: jobKey, status: 'running', startedAt }, {
         $set: { status: 'failed', failedAt: new Date(),
           errorCategory: 'parity_still_failed', audit },
       });
@@ -149,14 +160,14 @@ async function reconcileTehnopolSnapshot(target, jobKey) {
 
     // No sending. Writes a replacement saved HR brief after verified metrics.
     await generateWeeklyBrief(org._id);
-    await jobs.updateOne({ _id: jobKey, status: 'running' }, {
+    await jobs.updateOne({ _id: jobKey, status: 'running', startedAt }, {
       $set: { status: 'completed', completedAt: new Date(), audit },
     });
     console.info('[TehnopolSnapshotRepair] Recomputed and verified', JSON.stringify(audit));
     await logTehnopolProductionDiagnostic();
     return { applied: true, ...audit };
   } catch (error) {
-    await jobs.updateOne({ _id: jobKey, status: 'running' }, {
+    await jobs.updateOne({ _id: jobKey, status: 'running', startedAt }, {
       $set: { status: 'failed', failedAt: new Date(), errorCategory: 'repair_exception' },
     });
     console.error('[TehnopolSnapshotRepair] Failed:', error.message);

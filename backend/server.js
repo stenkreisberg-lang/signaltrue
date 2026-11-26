@@ -255,8 +255,7 @@ async function main() {
         setTimeout(() => {
           void runTehnopolMeasurementRecovery()
             .then(async () => {
-              // One-time, bounded correction of the previously failed
-              // 2026-11-10 calendar snapshot. No customer email is sent.
+              // Recheck the dated calendar discrepancies identified against stored events.
               await repairTehnopolNovemberSnapshot();
               await logTehnopolProductionDiagnostic();
             })

@@ -16,6 +16,15 @@ describe('one-time canonical tenant parity correction guard', () => {
     })).toEqual({ eligible: true, reason: 'calendar_snapshot_mismatch' });
   });
 
+  test('requires a complete and nonduplicated source comparison before a rewrite', () => {
+    for (const checks of [
+      calendarFailures.slice(0, 3),
+      [...calendarFailures.slice(0, 4), calendarFailures[3]],
+    ]) {
+      expect(assessTehnopolParityRepair({ status: 'FAIL', checks }).eligible).toBe(false);
+    }
+  });
+
   test('does not recalculate a passing period', () => {
     expect(assessTehnopolParityRepair({ status: 'PASS', checks: [] }))
       .toEqual({ eligible: false, reason: 'already_consistent' });
