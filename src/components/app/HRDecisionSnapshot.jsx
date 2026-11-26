@@ -92,8 +92,9 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
     metric.changePct != null &&
     number(metric.current) != null &&
     number(metric.previous) != null;
-  const delta = (metric) =>
-    comparableChange(metric) ? number(metric.current) - number(metric.previous) : null;
+  const delta = (metric) => {
+    return comparableChange(metric) ? number(metric.current) - number(metric.previous) : null;
+  };
   const meetingDelta = delta(meeting);
   const focusDelta = delta(focus);
   const afterHours = dimensions.find((item) => item.key === 'after_hours')?.metric;
@@ -138,7 +139,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
     sourceVerified &&
     brief.reportMode === 'full' &&
     !brief.freshness?.refreshFailed &&
-    brief.status?.evidenceGrade !== 'Low';
+    ['High', 'Medium'].includes(brief.status?.evidenceGrade);
   const periodEnd = brief.periodEnd ? new Date(new Date(brief.periodEnd).getTime() - 1) : null;
 
   return (
@@ -219,8 +220,7 @@ export default function HRDecisionSnapshot({ brief, showReportLink = true }) {
           <div className="rounded-lg border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-900">Mida tasub uurida?</h3>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              {findings[0]?.question ||
-                'Kontrollige, kas mõõdetud perioodid on omavahel võrreldavad.'}
+              {findings[0]?.question || 'Kontrollige, kas mõõdetud perioodid on omavahel võrreldavad.'}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 p-4">
