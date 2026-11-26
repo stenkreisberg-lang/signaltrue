@@ -229,7 +229,7 @@ router.post('/invitations/respond',async(req,res)=>{
 });
 router.get('/me/teams',async(req,res)=>{
   const user=await loadOrgUser(req);
-  if (!user) return noStore(res).status(403).json({message:'Active account required'});
+  if (!user) return noStore(res).json({teams:[]});
   const [teams,config]=await Promise.all([loadManagerRoster(req),resolveOrgMinimum(user.orgId)]);
   noStore(res).json({teams,locale:config.locale});
 });
