@@ -475,20 +475,20 @@ router.get('/monthly-report', authenticateToken, requireHROrAdmin, async (req, r
 
         // Key workload patterns
         patterns: report.orgHealth || {
-          avgBDI: 0,
-          bdiTrend: 'stable',
+          avgBDI: null,
+          bdiTrend: 'unavailable',
           teamsAtRisk: 0,
         },
 
         // Trend direction
         trend: {
-          direction: report.orgHealth?.bdiTrend || 'stable',
+          direction: report.orgHealth?.bdiTrend || 'unavailable',
           label:
             report.orgHealth?.bdiTrend === 'improving'
               ? 'Improving'
               : report.orgHealth?.bdiTrend === 'deteriorating'
                 ? 'Worsening'
-                : 'Stable',
+                : report.orgHealth?.bdiTrend === 'stable' ? 'Stable' : 'Insufficient evidence',
         },
 
         // Areas of concern (no recommendations yet - that requires payment)

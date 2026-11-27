@@ -4,9 +4,12 @@ import AppShell, { PageHeader } from '../../components/app/AppShell';
 import api from '../../utils/api';
 import { getAuthenticatedContext } from '../../utils/authContext';
 
-function date(value) {
-  if (!value || !Number.isFinite(new Date(value).getTime())) return 'Not recorded';
-  return new Date(value).toLocaleDateString(undefined, { dateStyle: 'medium' });
+function date(value, locale) {
+  if (!value || !Number.isFinite(new Date(value).getTime()))
+    return locale === 'et' ? 'Andmed puuduvad' : 'Not recorded';
+  return new Date(value).toLocaleDateString(locale === 'et' ? 'et-EE' : 'en-GB', {
+    dateStyle: 'medium',
+  });
 }
 
 export default function MonthlyArchive() {
@@ -34,38 +37,53 @@ export default function MonthlyArchive() {
     };
   }, []);
 
+  const locale = user?.reportLanguage || 'en';
+  const t = (en, et) => (locale === 'et' ? et : en);
   return (
-    <AppShell user={user} section="Reports">
+    <AppShell locale={locale} user={user} section={t('Reports', 'Aruanded')}>
       <PageHeader
-        title="Monthly report archive"
-        description="Saved reporting periods and recorded email delivery. Historical scores are not republished."
-        action={<Link to="/app/latest-brief">Open weekly brief</Link>}
+        title={t('Monthly report archive', 'Kuuaruannete arhiiv')}
+        description={t(
+          'Saved reporting periods and recorded email delivery. Historical scores are not republished.',
+          'Siin näed salvestatud aruandeperioode ja e-kirja saatmise aega.'
+        )}
+        action={<Link to="/app/latest-brief">{t('Open weekly brief', 'Ava nädalaaruanne')}</Link>}
       />
       <section className="app-panel">
         {error ? (
-          <p role="alert">The archive is unavailable. Please try again later.</p>
+          <p role="alert">
+            {t(
+              'The archive is unavailable. Please try again later.',
+              'Arhiivi ei saanud laadida. Proovi hiljem uuesti.'
+            )}
+          </p>
         ) : reports === null ? (
-          <p role="status">Loading saved reports…</p>
+          <p role="status">{t('Loading saved reports…', 'Aruannete laadimine…')}</p>
         ) : reports.length === 0 ? (
-          <p>No monthly reports have been recorded.</p>
+          <p>
+            {t('No monthly reports have been recorded.', 'Kuuaruandeid pole veel salvestatud.')}
+          </p>
         ) : (
           <div className="divide-y divide-slate-200">
             {reports.map((report) => (
               <article key={report._id} className="py-4">
                 <h2 className="font-semibold">
-                  {date(report.periodStart)} to {date(report.periodEnd)}
+                  {date(report.periodStart, locale)} – {date(report.periodEnd, locale)}
                 </h2>
                 <p className="text-sm text-slate-600">
                   {report.reportMode === 'decision'
-                    ? 'Decision brief'
+                    ? t('Decision brief', 'Juhtkonna kuuaruanne')
                     : report.reportMode === 'setup'
-                      ? 'Setup brief'
-                      : 'Report type not recorded'}
+                      ? t('Setup brief', 'Andmete valmisoleku aruanne')
+                      : t('Report type not recorded', 'Aruande liik pole salvestatud')}
                   {' · '}
-                  {report.accessStatus === 'archived' ? 'Archived' : 'Saved'}
+                  {report.accessStatus === 'archived'
+                    ? t('Archived', 'Arhiveeritud')
+                    : t('Saved', 'Salvestatud')}
                 </p>
                 <p className="text-sm text-slate-600">
-                  Generated: {date(report.generatedAt)} · Email sent: {date(report.emailSentAt)}
+                  {t('Generated', 'Koostatud')} {date(report.generatedAt, locale)} ·{' '}
+                  {t('Email sent', 'E-kiri saadetud')} {date(report.emailSentAt, locale)}
                 </p>
               </article>
             ))}

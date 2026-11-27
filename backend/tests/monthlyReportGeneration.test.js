@@ -7,7 +7,9 @@ import User from '../models/user.js';
 import WorkEvent from '../models/workEvent.js';
 import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import Intervention from '../models/intervention.js';
-import { generateMonthlyReportForOrg } from '../services/monthlyReportService.js';
+import ManagerWorkAction from '../models/managerWorkAction.js';
+import WeeklyBriefDispatch from '../models/weeklyBriefDispatch.js';
+import { claimMonthlyDispatch, generateMonthlyReportForOrg } from '../services/monthlyReportService.js';
 
 jest.setTimeout(120000);
 
@@ -44,29 +46,22 @@ async function seedOrganization(mappedPeople) {
     }))
   );
   const now = new Date();
-  await WorkEvent.insertMany(
+  const day = 86400000;
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const lastSunday = today - (now.getUTCDay() || 7) * day;
+  const anchors = [0, 1, 2, 3].map(week => new Date(lastSunday - week * 7 * day));
+  await WorkEvent.insertMany(anchors.flatMap((date, week) =>
     users.slice(0, mappedPeople).map((user, index) => ({
-      orgId: org._id,
-      teamId: team._id,
-      actorUserId: user._id,
-      source: 'microsoft-outlook',
-      eventType: 'meeting',
-      externalId: `monthly-meeting-${mappedPeople}-${index}`,
-      timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      orgId: org._id, teamId: team._id, actorUserId: user._id, source: 'microsoft-outlook',
+      eventType: 'meeting', externalId: `monthly-meeting-${week}-${index}`, timestamp: date,
     }))
-  );
-  await IntegrationMetricsDaily.insertMany(
-    [3, 10, 17, 24].map((daysAgo, index) => ({
-      orgId: org._id,
-      teamId: null,
-      date: new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000),
-      meetingInstanceCount7d: 20 + index,
-      meetingParticipantHours7d: 50 + index * 2,
-      backToBackMeetingBlocks: 4 + index,
-      afterHoursMessageRatio: 0.1,
-      rci: 20,
-    }))
-  );
+  ));
+  await IntegrationMetricsDaily.insertMany(anchors.map((date, index) => ({
+    orgId: org._id, teamId: null, userId: null, date,
+    calculationWindowVersion: 'rolling7-calendar-days-v2',
+    meetingInstanceCount7d: 20 + index, meetingParticipantHours7d: 50 + index * 2,
+    backToBackMeetingBlocks: 4 + index, afterHoursMessageRatio: 0.1, rci: 20,
+  })));
   return org;
 }
 
@@ -99,14 +94,39 @@ describe('monthly generation readiness gate', () => {
         computedAt: new Date(),
       },
     });
-    const report = await generateMonthlyReportForOrg(org._id);
+    await ManagerWorkAction.create({orgId:org._id, teamId:team._id, createdBy:createdBy._id,
+      title:'Change meeting schedule',metric:'meeting_hours',direction:'decrease',
+      outcome14:{status:'improved',measuredAt:new Date()},outcome28:{status:'insufficient_evidence',measuredAt:new Date()}});
+    const report = await generateMonthlyReportForOrg(String(org._id));
 
     expect(report.reportMode).toBe('decision');
+    expect(report.orgHealth.avgAfterHoursPct).toBeNull();
+    expect(report.orgHealth.avgBDI).toBeNull();
+    expect(report.orgHealth.bdiTrend).toBe('unavailable');
+    expect(report.actionOutcomes).toMatchObject({managerReviewed:1,managerImproved:0,managerInsufficient:1});
     expect(report.dataReadiness.userCoveragePct).toBe(100);
     expect(report.dataReadiness.teamCoveragePct).toBe(100);
     expect(report.orgHealth.avgMeetingCount).toBeGreaterThan(0);
     expect(report.retentionExposure.estimatedTurnoverRisk).toBe(0);
     expect(report.actionOutcomes.measured).toBe(1);
     expect(report.actionOutcomes.items[0].title).toBe('Meeting reset');
+  });
+});
+
+describe('monthly delivery claims', () => {
+  test('one concurrent claim for regenerated reports and legacy sends still suppress duplicates', async () => {
+    const orgId = new mongoose.Types.ObjectId();
+    const dates = [new Date('2026-11-01T04:00Z'), new Date('2026-11-02T09:00Z')];
+    const attempts = await Promise.allSettled(dates.map(date => claimMonthlyDispatch(orgId,date,1)));
+    expect(attempts.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    const claim = await WeeklyBriefDispatch.findOne({orgId});
+    expect(claim._id).toBe('monthly:'+String(orgId)+':2026-11');
+    claim.status = 'sent';
+    await claim.save();
+    expect((await claimMonthlyDispatch(orgId,dates[1],1)).skipped).toBe(true);
+    const next = new Date('2026-12-01T04:00Z');
+    await WeeklyBriefDispatch.create({_id:'monthly:'+String(orgId)+':'+next.toISOString(),orgId,
+      periodStart:next,status:'sent',recipientCount:1});
+    expect((await claimMonthlyDispatch(orgId,next,1)).skipped).toBe(true);
   });
 });

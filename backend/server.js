@@ -735,7 +735,7 @@ async function main() {
               const report = await generateMonthlyReportForOrg(org._id);
               if (report) {
                 console.log(
-                  `  ✅ ${org.name}: BDI ${report.orgHealth.avgBDI.toFixed(1)}/100 (${report.orgHealth.bdiTrend})`
+                  `  Monthly ${report.reportMode} report generated for ${org.name}`
                 );
                 await sendMonthlyReportEmail(org._id, report);
               }
