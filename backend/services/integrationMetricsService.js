@@ -422,7 +422,7 @@ function getEventDurationMinutes(event) {
   return 0;
 }
 
-export function computeMeetingMetrics(events, date, workSchedule = {}) {
+function meetingStartsInWindow(events, date) {
   // Include all calendar/meeting sources: Google Calendar, Microsoft Outlook, Meet
   const meetEvents = events.filter(
     (e) =>
@@ -439,7 +439,7 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
 
   // Meeting count and duration — support both legacy (meet_started) and core adapters (meeting)
   const seen = new Set();
-  const meetingStarts = events7d.filter((e) => {
+  return events7d.filter((e) => {
     if (e.eventType !== 'meet_started' && e.eventType !== 'meeting') return false;
     if (
       e.metadata?.isCancelled === true ||
@@ -452,6 +452,9 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
     seen.add(key);
     return true;
   });
+}
+
+function summarizeMeetingTransitions(meetingStarts) {
   const meetingCount7d = new Set(meetingStarts.map(getMeetingInstanceKey)).size;
 
   // New calendar rows are attendee-expanded. For legacy aggregate rows, use the
@@ -464,12 +467,6 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
         : Math.max(1, Number(event.metadata?.internalAttendeeCount) || 0);
       return sum + duration * participantWeight;
     }, 0) / 60;
-
-  // Ad-hoc meetings
-  const adHocMeetingCount7d = new Set(
-    meetingStarts.filter((e) => e.metadata?.isAdHoc).map(getMeetingInstanceKey)
-  ).size;
-  const adHocMeetingRate7d = meetingCount7d > 0 ? adHocMeetingCount7d / meetingCount7d : 0;
 
   // Back-to-back pressure is a person-level condition. Never join one employee's
   // calendar event to another employee's next event.
@@ -501,6 +498,33 @@ export function computeMeetingMetrics(events, date, workSchedule = {}) {
   }
 
   const avgGapBetweenMeetingsMins = mean(gaps) || 0;
+  return {
+    meetingInstanceCount7d: meetingCount7d,
+    meetingParticipantHours7d: meetingDurationTotalHours7d,
+    backToBackMeetingBlocks,
+    avgGapBetweenMeetingsMins,
+  };
+}
+
+export function computeCalendarTransitionEvidence(events, date) {
+  return summarizeMeetingTransitions(meetingStartsInWindow(events, date));
+}
+
+export function computeMeetingMetrics(events, date, workSchedule = {}) {
+  const meetingStarts = meetingStartsInWindow(events, date);
+  const {
+    meetingInstanceCount7d: meetingCount7d,
+    meetingParticipantHours7d: meetingDurationTotalHours7d,
+    backToBackMeetingBlocks,
+    avgGapBetweenMeetingsMins,
+  } = summarizeMeetingTransitions(meetingStarts);
+
+  // Ad-hoc meetings
+  const adHocMeetingCount7d = new Set(
+    meetingStarts.filter((e) => e.metadata?.isAdHoc).map(getMeetingInstanceKey)
+  ).size;
+  const adHocMeetingRate7d = meetingCount7d > 0 ? adHocMeetingCount7d / meetingCount7d : 0;
+
   const meetingFragmentationIndex =
     avgGapBetweenMeetingsMins > 0 ? meetingCount7d * (60 / avgGapBetweenMeetingsMins) : 0;
 
@@ -555,18 +579,8 @@ function calculateObservedMeetingGaps(meetings, schedule) {
     const start = new Date(event.metadata?.startTime || event.timestamp);
     const duration = getEventDurationMinutes(event);
     if (!Number.isFinite(start.getTime()) || duration <= 0) continue;
-    let day;
-    try {
-      day = new Intl.DateTimeFormat('en-CA', {
-        timeZone: zone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(start);
-    } catch {
-      day = start.toISOString().slice(0, 10);
-    }
-    const key = `${String(event.actorUserId)}:${day}`;
+    const { year, month, day } = localDateParts(start, zone);
+    const key = `${String(event.actorUserId)}:${year}-${month}-${day}`;
     if (!perDay.has(key)) perDay.set(key, []);
     perDay.get(key).push([start.getTime(), start.getTime() + duration * 60000]);
   }
@@ -799,19 +813,26 @@ function parseClock(value, fallback) {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
+// Retain only the last requested zone. A weekly run normally uses one zone
+// for thousands of rows, and each new ICU formatter allocates native memory.
+let lastTimezone;
+let lastFormatter;
+
 function localDateParts(date, timezone) {
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      weekday: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(date);
-    return Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  } catch {
-    return localDateParts(date, 'UTC');
+  if (timezone !== lastTimezone || !lastFormatter) {
+    const options = {
+      year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    };
+    try {
+      lastFormatter = new Intl.DateTimeFormat('en-US', { ...options, timeZone: timezone });
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+      lastFormatter = new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' });
+    }
+    lastTimezone = timezone;
   }
+  return Object.fromEntries(lastFormatter.formatToParts(date).map((part) => [part.type, part.value]));
 }
 
 export function isOutsideWorkingHours(timestamp, workSchedule = {}) {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { computeMeetingMetrics, computeMessagingMetrics } from '../services/integrationMetricsService.js';
+import { computeCalendarTransitionEvidence, computeMeetingMetrics, computeMessagingMetrics, isOutsideWorkingHours } from '../services/integrationMetricsService.js';
 import { compareStoredWorkPatternMetrics } from '../services/workPatternParityAudit.js';
 import { evaluateCountComparability } from '../utils/periodComparability.js';
 import { validateTeamPermission } from '../services/managerIntelligenceService.js';
@@ -32,6 +32,28 @@ describe('real-tenant-safe source/snapshot parity audit', () => {
     const next = event('next', '2026-11-10T09:04Z', '2026-11-10T10:00Z');
     for (const order of [[short, long, next], [long, next, short]]) {
       expect(computeMeetingMetrics(order, day, workSchedule).backToBackMeetingBlocks).toBe(1);
+    }
+  });
+  test('transition repair uses the same counts and weights as the full calendar calculation', () => {
+    const first = rows[0];
+    const legacy = { ...first, actorUserId: null, source: 'meet', eventType: 'meet_started',
+      metadata: { ...first.metadata, meetingInstanceIdHash: 'legacy', internalAttendeeCount: 3 } };
+    const next = { ...first, timestamp: new Date('2026-11-10T09:03Z'),
+      metadata: { durationMinutes: 30, meetingInstanceIdHash: 'next' } };
+    const declined = { ...next, metadata: { ...next.metadata, meetingInstanceIdHash: 'declined',
+      attendeeResponseStatus: 'declined' } };
+    const events = [first, legacy, first, next, declined, rows[1], { ...first, actorUserId: 'second' }];
+    const evidence = computeCalendarTransitionEvidence(events, day);
+    expect(evidence).toEqual({ meetingInstanceCount7d: 3, meetingParticipantHours7d: 5.5,
+      backToBackMeetingBlocks: 1, avgGapBetweenMeetingsMins: 3 });
+    expect(computeMeetingMetrics(events, day, workSchedule)).toMatchObject(evidence);
+  });
+
+  test('timezone changes and invalid zones preserve working-hour boundaries', () => {
+    const time = '2026-11-10T15:15:00Z';
+    for (const [timezone, outside] of [['Europe/Tallinn', true], ['UTC', false],
+      ['Invalid/Zone', false], ['Europe/Tallinn', true]]) {
+      expect(isOutsideWorkingHours(time, { timezone })).toBe(outside);
     }
   });
   const meeting = computeMeetingMetrics(rows, day, workSchedule);

@@ -12,7 +12,7 @@ import IntegrationMetricsDaily from '../models/integrationMetricsDaily.js';
 import WorkEvent from '../models/workEvent.js';
 import { TEHNOPOL_CANONICAL_ORG_ID } from './tehnopolCanonicalRepair.js';
 import { compareStoredWorkPatternMetrics } from './workPatternParityAudit.js';
-import { computeDailyMetrics, computeMeetingMetrics } from './integrationMetricsService.js';
+import { computeCalendarTransitionEvidence, computeDailyMetrics } from './integrationMetricsService.js';
 import { generateWeeklyBrief } from './weeklyBriefService.js';
 import { logTehnopolProductionDiagnostic } from './tehnopolProductionDiagnostic.js';
 
@@ -108,7 +108,7 @@ export async function reconcileTehnopolWeeklyTransitions() {
       for (const record of records) {
         const source = record.teamId ? events.filter(event => String(event.teamId) === String(record.teamId)) : events;
         if (!source.length) { withheld++; continue; }
-        const metrics = computeMeetingMetrics(source, target, scheduleFromOrg(org));
+        const metrics = computeCalendarTransitionEvidence(source, target);
         if (record.meetingInstanceCount7d !== metrics.meetingInstanceCount7d ||
             !Number.isFinite(record.meetingParticipantHours7d) ||
             Math.abs(record.meetingParticipantHours7d - metrics.meetingParticipantHours7d) > 0.05) {
