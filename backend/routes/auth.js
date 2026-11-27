@@ -407,12 +407,14 @@ router.get('/me', authenticateToken, async (req, res) => {
     // Enrich with organization slug and name for frontend routing/state
     let orgSlug = null;
     let orgName = null;
+    let reportLanguage = 'en';
     if (user.orgId) {
       const org = await Organization.findById(user.orgId)
-        .select({ slug: 1, name: 1 })
+        .select({ slug: 1, name: 1, 'settings.reportLanguage': 1, 'settings.timezone': 1 })
         .catch(() => null);
       orgSlug = org?.slug || null;
       orgName = org?.name || null;
+      reportLanguage = org?.settings?.reportLanguage || (org?.settings?.timezone === 'Europe/Tallinn' ? 'et' : 'en');
     }
 
     res.json({
@@ -424,6 +426,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       orgId: user.orgId,
       orgSlug,
       orgName,
+      reportLanguage,
     });
   } catch (error) {
     console.error('Get user error:', error);
