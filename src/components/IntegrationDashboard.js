@@ -15,6 +15,7 @@ import {
   Briefcase,
   LayoutGrid,
 } from 'lucide-react';
+import { adminTranslator } from '../utils/adminLanguage';
 import ITAdminInvitationManager from './ITAdminInvitationManager';
 
 /**
@@ -41,88 +42,83 @@ const INTEGRATIONS = {
     icon: Mail,
     color: 'bg-teal-700',
     description: 'Track calendar and meeting metadata',
-    signals: ['Meeting load', 'Calendar gaps', 'After-hours coordination'],
   },
   'microsoft-teams': {
     name: 'Microsoft Teams',
     icon: MessageSquare,
     color: 'bg-teal-700',
     description: 'Track Teams collaboration metadata',
-    signals: ['Collaboration load', 'After-hours messaging', 'Channel activity'],
   },
   slack: {
     name: 'Slack',
     icon: MessageSquare,
     color: 'bg-teal-700',
     description: 'Track Slack collaboration metadata',
-    signals: ['Collaboration load', 'After-hours messaging', 'Channel activity'],
   },
   'google-calendar': {
     name: 'Google Calendar',
     icon: Video,
     color: 'bg-teal-700',
     description: 'Track calendar and meeting metadata',
-    signals: ['Meeting load', 'Calendar gaps', 'After-hours coordination'],
   },
   'google-chat': {
     name: 'Google Chat',
     icon: MessageSquare,
     color: 'bg-teal-700',
     description: 'Track Chat collaboration metadata',
-    signals: ['Collaboration load', 'After-hours messaging', 'Space activity'],
   },
   jira: {
     name: 'Jira',
     icon: LayoutGrid,
     color: 'bg-teal-700',
     description: 'Track project and task management',
-    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   asana: {
     name: 'Asana',
     icon: LayoutGrid,
     color: 'bg-teal-700',
     description: 'Track project and task management',
-    signals: ['Execution stagnation', 'Rework spiral', 'WIP overload'],
   },
   gmail: {
     name: 'Gmail',
     icon: Mail,
     color: 'bg-teal-700',
     description: 'Analyze email patterns and after-hours activity',
-    signals: ['Boundary erosion', 'Response drift'],
   },
   meet: {
     name: 'Google Meet',
     icon: Video,
     color: 'bg-teal-700',
     description: 'Track meeting load and recovery time',
-    signals: ['Meeting fatigue', 'Recovery collapse', 'Panic coordination'],
   },
   notion: {
     name: 'Notion',
     icon: FileText,
     color: 'bg-teal-700',
     description: 'Monitor documentation and decision patterns',
-    signals: ['Decision churn', 'Documentation decay'],
   },
   hubspot: {
     name: 'HubSpot',
     icon: Briefcase,
     color: 'bg-teal-700',
     description: 'Track CRM activity and external pressure',
-    signals: ['External pressure injection', 'Escalation cascade'],
   },
   pipedrive: {
     name: 'Pipedrive',
     icon: Briefcase,
     color: 'bg-teal-700',
     description: 'Track CRM activity and external pressure',
-    signals: ['External pressure injection', 'Escalation cascade'],
   },
 };
 
-export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChange, userRole }) {
+export default function IntegrationDashboard({
+  orgId: _orgId,
+  onIntegrationChange,
+  userRole,
+  locale = 'en',
+}) {
+  const t = adminTranslator(locale);
+  const [statusAvailable, setStatusAvailable] = useState(false);
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -152,6 +148,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       if (!res.ok) throw new Error('Failed to fetch integrations');
 
       const data = await res.json();
+      if (!Array.isArray(data.integrations)) throw new Error('Source status is unavailable.');
+      setStatusAvailable(true);
       setSetup(data.setup || null);
       setHealthIssues(data.healthIssues || []);
       setMicrosoftCompanyAccess(data.microsoftCompanyAccess || null);
@@ -162,9 +160,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
           source: integration.type,
           connected: ['connected', 'measuring'].includes(integration.status),
           coverageDetails: integration.coverage || {},
-          coverage: integration.coverage?.percent || 0,
-          eventCount: integration.coverage?.events || 0,
-          signals_enabled: integration.whatWeMeasure?.length || 0,
+          coverage: integration.coverage?.total > 0 ? integration.coverage.percent : null,
+          eventCount: integration.coverage?.events ?? null,
           last_sync: integration.lastSync,
           sync_status: integration.lastSyncStatus,
           sync_error: integration.statusMessage,
@@ -172,13 +169,14 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       );
       const googleRes = await fetch(`${API_BASE}/api/integrations/google-workspace/admin-status`, {
         headers: { Authorization: `Bearer ${token}` },
-      });
-      if (googleRes.ok) {
+      }).catch(() => null);
+      if (googleRes?.ok) {
         const googleData = await googleRes.json();
         setGoogleWorkspace(googleData);
         setGoogleAdminEmail(googleData.delegatedAdminEmail || '');
       }
     } catch (err) {
+      setStatusAvailable(false);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -273,7 +271,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok || !data.authorizationUrl) throw new Error(data.message || 'Connection failed');
+      if (!res.ok || !data.authorizationUrl)
+        throw new Error(data.message || t('Connection failed'));
       window.location.href = data.authorizationUrl;
     } catch (err) {
       setError(err.message);
@@ -301,7 +300,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         setSyncing((prev) => ({ ...prev, [source]: false }));
       }, 2000);
     } catch (err) {
-      console.error('Sync error:', err);
+      console.error(t('Sync error:'), err);
       setSyncing((prev) => ({ ...prev, [source]: false }));
     }
   };
@@ -334,17 +333,6 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
     }
   };
 
-  // Calculate overall data quality score
-  const calculateDataQuality = () => {
-    const connected = integrations.filter((i) => i.connected);
-    if (connected.length === 0) return 0;
-
-    const avgCoverage = connected.reduce((sum, i) => sum + (i.coverage || 0), 0) / connected.length;
-    const sourceScore = Math.min(100, connected.length * 15);
-
-    return Math.round((avgCoverage + sourceScore) / 2);
-  };
-
   if (loading) {
     return (
       <div className="p-8 flex justify-center">
@@ -353,10 +341,25 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
     );
   }
 
+  if (!statusAvailable) {
+    return (
+      <div className="app-panel" role="alert">
+        <p>
+          {t(
+            'Source status could not be loaded. Refresh to retry. This does not mean sources are disconnected.'
+          )}
+        </p>
+        <button type="button" className="mt-3 underline" onClick={fetchIntegrations}>
+          {t('Recheck status')}
+        </button>
+      </div>
+    );
+  }
+
   const connectedCount = integrations.filter((i) => i.connected).length;
-  const measuringCount = integrations.filter((i) => i.status === 'measuring').length;
+  const measuringCount = integrations.filter((i) => i.measurementStatus?.verified === true).length;
   const needsAdminCount = integrations.filter((i) => i.status === 'needs_admin').length;
-  const dataQuality = calculateDataQuality();
+
   const microsoftRequiredRoles = microsoftCompanyAccess?.requiredRoles || [];
   const microsoftGrantedRoles = microsoftCompanyAccess?.grantedRoles || [];
   const microsoftMissingRoles =
@@ -379,7 +382,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       )}
       {healthIssues.length > 0 && (
         <div className="rounded-container border border-red-200 bg-red-50 p-5">
-          <h3 className="font-semibold text-red-950">Data source attention required</h3>
+          <h3 className="font-semibold text-red-950">{t('Data source attention required')}</h3>
           <ul className="mt-2 space-y-1 text-caption text-red-900">
             {healthIssues.map((issue) => (
               <li key={issue.key}>
@@ -391,22 +394,31 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       )}
       {setup && !setup.readiness?.setupComplete && (
         <div className="rounded-container border border-amber-200 bg-amber-50 p-5">
-          <h3 className="font-semibold text-amber-950">Complete data readiness</h3>
+          <h3 className="font-semibold text-amber-950">{t('Complete data readiness')}</h3>
           <p className="mt-1 text-caption text-amber-900">
             {needsAdminCount > 0
               ? `${needsAdminCount} source${needsAdminCount === 1 ? '' : 's'} still require administrator consent.`
               : connectedCount === 0
-                ? 'Connect a data source to begin.'
+                ? t('Connect a data source to begin.')
                 : measuringCount === 0
-                  ? 'Sources are authorized, but no activity events have arrived yet.'
-                  : 'Activity is arriving. Finish employee mapping, timezone confirmation, and team setup before reports are released.'}
+                  ? t('Recent source events still need verification.')
+                  : t(
+                      'Activity is arriving. Finish employee mapping, timezone confirmation, and team setup before reports are released.'
+                    )}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-caption text-amber-900">
-            <span>Directory: {setup.directory?.directorySyncedUsers || 0} synced</span>
+            <span>
+              {t('Directory:')} {setup.directory?.directorySyncedUsers ?? t('Unavailable')}{' '}
+              {t('synced')}
+            </span>
             <span>•</span>
-            <span>Activity: {setup.activity?.totalEvents || 0} events</span>
+            <span>
+              {t('Activity:')} {setup.activity?.totalEvents ?? t('Unavailable')} {t('events')}
+            </span>
             <span>•</span>
-            <span>Report-ready teams: {setup.teams?.ready || 0}</span>
+            <span>
+              {t('Report-ready teams:')} {setup.teams?.ready ?? t('Unavailable')}
+            </span>
           </div>
         </div>
       )}
@@ -415,14 +427,14 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
-              <h3 className="font-semibold text-slate-950">Microsoft company-wide access</h3>
+              <h3 className="font-semibold text-slate-950">{t('Microsoft company-wide access')}</h3>
               <p className="mt-1 text-caption text-slate-600">
-                Microsoft sign-in only identifies the administrator and tenant. Outlook and Teams
-                become connected only after a tenant administrator grants application permissions
-                and SignalTrue's live Graph checks pass.
+                {t(
+                  "Microsoft sign-in only identifies the administrator and tenant. Outlook and Teams become connected only after a tenant administrator grants application permissions and SignalTrue's live Graph checks pass."
+                )}
               </p>
               <p className="mt-2 break-all text-caption text-slate-500">
-                Required application permissions: {microsoftRequiredRoles.join(', ')}
+                {t('Required application permissions:')} {microsoftRequiredRoles.join(', ')}
               </p>
               <div className="mt-2 flex flex-wrap gap-2 text-caption">
                 {['outlook', 'teams'].map((source) => {
@@ -441,7 +453,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                         }`}
                       >
                         {source === 'outlook' ? 'Outlook' : 'Teams'}:{' '}
-                        {sourceStatus.replace('_', ' ')}
+                        {t(sourceStatus.replace(/_/g, ' '))}
                       </span>
                       {!verified && sourceState?.statusMessage && (
                         <span className="max-w-sm text-slate-600">{sourceState.statusMessage}</span>
@@ -453,14 +465,15 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               {microsoftCompanyAccess.lastCheckedAt && microsoftNeedsAdmin && (
                 <div className="mt-2 space-y-1 text-caption">
                   <p className="text-slate-600">
-                    Granted application permissions:{' '}
+                    {t('Granted application permissions:')}{' '}
                     {microsoftGrantedRoles.length > 0
                       ? microsoftGrantedRoles.join(', ')
-                      : 'none detected'}
+                      : t('none detected')}
                   </p>
                   {microsoftMissingRoles.length > 0 && (
                     <p className="font-medium text-amber-700">
-                      Still missing: {microsoftMissingRoles.join(', ')}
+                      {t('Still missing:')}
+                      {microsoftMissingRoles.join(', ')}
                     </p>
                   )}
                 </div>
@@ -473,7 +486,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             </div>
             {microsoftStatus === 'connected' ? (
               <div className="rounded-control bg-teal-50 px-3 py-2 text-caption font-medium text-teal-800">
-                Company-wide access verified
+                {t('Company-wide access verified')}
               </div>
             ) : microsoftNeedsAdmin ? (
               <div className="flex min-w-[300px] flex-col gap-2">
@@ -482,18 +495,20 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   disabled={!microsoftCompanyAccess.configured}
                   className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
                 >
-                  Grant company-wide access
+                  {t('Grant company-wide access')}
                 </button>
                 <button
                   onClick={verifyMicrosoftCompanyAccess}
                   disabled={verifyingMicrosoft || !microsoftCompanyAccess.configured}
                   className="rounded-control bg-teal-50 px-4 py-2 text-caption font-medium text-teal-800 disabled:opacity-50"
                 >
-                  {verifyingMicrosoft ? 'Verifying with Microsoft…' : 'Already granted? Verify'}
+                  {verifyingMicrosoft
+                    ? t('Verifying with Microsoft…')
+                    : t('Already granted? Verify')}
                 </button>
                 {!microsoftCompanyAccess.configured && (
                   <p className="text-caption text-amber-700">
-                    SignalTrue Microsoft application configuration is required first.
+                    {t('SignalTrue Microsoft application configuration is required first.')}
                   </p>
                 )}
               </div>
@@ -504,11 +519,12 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   disabled={verifyingMicrosoft || !microsoftCompanyAccess.configured}
                   className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
                 >
-                  {verifyingMicrosoft ? 'Checking sources…' : 'Retry Microsoft verification'}
+                  {verifyingMicrosoft ? t('Checking sources…') : t('Retry Microsoft verification')}
                 </button>
                 <p className="text-caption text-slate-600">
-                  Application permissions are already present. Re-granting administrator consent is
-                  not required unless a missing role is listed.
+                  {t(
+                    'Application permissions are already present. Re-granting administrator consent is not required unless a missing role is listed.'
+                  )}
                 </p>
               </div>
             )}
@@ -517,6 +533,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
       )}
       {microsoftDiagnostics && (
         <MicrosoftDiagnosticsPanel
+          locale={locale}
           diagnostics={microsoftDiagnostics}
           onRefresh={fetchIntegrations}
         />
@@ -525,24 +542,28 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         <div className="rounded-container border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
-              <h3 className="font-semibold text-slate-950">Google Workspace company-wide access</h3>
+              <h3 className="font-semibold text-slate-950">
+                {t('Google Workspace company-wide access')}
+              </h3>
               <p className="mt-1 text-caption text-slate-600">
-                A normal Google sign-in only covers one user. A Workspace administrator must add
-                SignalTrue under Security → API controls → Domain-wide delegation, then verify it
-                here.
+                {t(
+                  'A normal Google sign-in only covers one user. A Workspace administrator must add SignalTrue under Security → API controls → Domain-wide delegation, then verify it here.'
+                )}
               </p>
               {googleWorkspace.serviceAccountClientId && (
                 <p className="mt-2 text-caption text-slate-600">
-                  Client ID: <code>{googleWorkspace.serviceAccountClientId}</code>
+                  {t('Client ID:')}
+                  <code>{googleWorkspace.serviceAccountClientId}</code>
                 </p>
               )}
               <p className="mt-1 break-all text-caption text-slate-500">
-                Scopes: {(googleWorkspace.requiredScopes || []).join(', ')}
+                {t('Scopes:')}
+                {(googleWorkspace.requiredScopes || []).join(', ')}
               </p>
             </div>
             {googleWorkspace.verifiedAt ? (
               <div className="rounded-control bg-teal-50 px-3 py-2 text-caption font-medium text-teal-800">
-                Company-wide access verified
+                {t('Company-wide access verified')}
               </div>
             ) : (
               <div className="flex min-w-[300px] flex-col gap-2">
@@ -558,11 +579,11 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   disabled={verifyingGoogle || !googleWorkspace.serviceAccountConfigured}
                   className="rounded-control bg-teal-700 px-4 py-2 text-caption font-medium text-white disabled:opacity-50"
                 >
-                  {verifyingGoogle ? 'Verifying…' : 'Verify company-wide access'}
+                  {verifyingGoogle ? t('Verifying…') : t('Verify company-wide access')}
                 </button>
                 {!googleWorkspace.serviceAccountConfigured && (
                   <p className="text-caption text-amber-700">
-                    SignalTrue service account configuration is required first.
+                    {t('SignalTrue service account configuration is required first.')}
                   </p>
                 )}
               </div>
@@ -579,7 +600,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
             </div>
             <div>
               <p className="text-lead font-bold text-gray-900">{connectedCount}</p>
-              <p className="text-caption text-gray-500">Authorized sources</p>
+              <p className="text-caption text-gray-500">{t('Authorized sources')}</p>
             </div>
           </div>
         </div>
@@ -590,8 +611,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <TrendingUp className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <p className="text-lead font-bold text-gray-900">{dataQuality}%</p>
-              <p className="text-caption text-gray-500">Data Quality</p>
+              <p className="text-lead font-bold text-gray-900">{measuringCount}</p>
+              <p className="text-caption text-gray-500">{t('Sources with verified events')}</p>
             </div>
           </div>
         </div>
@@ -602,10 +623,8 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
               <BarChart3 className="w-5 h-5 text-teal-700" />
             </div>
             <div>
-              <p className="text-lead font-bold text-gray-900">
-                {integrations.reduce((sum, i) => sum + (i.signals_enabled || 0), 0)}
-              </p>
-              <p className="text-caption text-gray-500">Signals Enabled</p>
+              <p className="text-lead font-bold text-gray-900">{needsAdminCount}</p>
+              <p className="text-caption text-gray-500">{t('Awaiting administrator consent')}</p>
             </div>
           </div>
         </div>
@@ -638,7 +657,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{config.name}</h3>
-                    <p className="text-caption text-gray-500">{config.description}</p>
+                    <p className="text-caption text-gray-500">{t(config.description)}</p>
                   </div>
                 </div>
 
@@ -665,36 +684,46 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                       }`}
                     >
                       {needsAdmin
-                        ? integration.statusMessage || 'Administrator consent is still required.'
+                        ? integration.statusMessage || t('Administrator consent is still required.')
                         : hasError
                           ? integration.statusMessage ||
-                            'Permissions are present, but this source could not be verified.'
+                            t('Permissions are present, but this source could not be verified.')
                           : integration.status === 'measuring'
-                            ? `Measuring from ${integration.eventCount || 0} activity events.`
+                            ? Number.isFinite(integration.eventCount)
+                              ? t('Events reported by the source') + ': ' + integration.eventCount
+                              : t('Source event count unavailable')
                             : integration.statusMessage ||
-                              'Authorized; waiting for the first activity sync.'}
+                              t('Authorized; waiting for the first activity sync.')}
                     </div>
                     {/* Status */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div>
-                        <p className="text-caption text-gray-500">Coverage</p>
+                        <p className="text-caption text-gray-500">{t('Coverage')}</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-teal-600 rounded-full"
-                              style={{ width: `${integration.coverage || 0}%` }}
+                              style={{
+                                width: Number.isFinite(integration.coverage)
+                                  ? integration.coverage + '%'
+                                  : 0,
+                              }}
                             />
                           </div>
                           <span className="text-caption font-medium text-gray-700">
-                            {integration.coverage || 0}%
+                            {Number.isFinite(integration.coverage)
+                              ? integration.coverage + '%'
+                              : t('Unavailable')}
                           </span>
                         </div>
                       </div>
 
                       <div>
-                        <p className="text-caption text-gray-500">Last Sync</p>
+                        <p className="text-caption text-gray-500">{t('Last Sync')}</p>
                         <p className="text-caption text-gray-700">
-                          {integration.last_sync ? formatTimeAgo(integration.last_sync) : 'Never'}
+                          {integration.last_sync
+                            ? formatTimeAgo(integration.last_sync, locale)
+                            : t('Never')}
                         </p>
                       </div>
                     </div>
@@ -703,7 +732,9 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                     {integration.sync_status === 'error' && (
                       <div className="mb-4 p-2 bg-red-50 rounded-control flex items-center gap-2 text-caption text-red-700">
                         <AlertTriangle className="w-3 h-3" />
-                        <span>Sync error: {integration.sync_error}</span>
+                        <span>
+                          {t('Sync error:')} {integration.sync_error}
+                        </span>
                       </div>
                     )}
 
@@ -727,7 +758,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                           onClick={grantMicrosoftCompanyAccess}
                           className="flex-1 px-3 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors"
                         >
-                          Grant / verify company-wide access
+                          {t('Grant / verify company-wide access')}
                         </button>
                       ) : source.startsWith('microsoft-') && hasError ? (
                         <button
@@ -735,7 +766,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                           disabled={verifyingMicrosoft}
                           className="flex-1 px-3 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors disabled:opacity-50"
                         >
-                          {verifyingMicrosoft ? 'Verifying…' : 'Retry verification'}
+                          {verifyingMicrosoft ? t('Verifying…') : t('Retry verification')}
                         </button>
                       ) : (
                         <button
@@ -746,7 +777,7 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                           <RefreshCw
                             className={`w-4 h-4 ${syncing[source] ? 'animate-spin' : ''}`}
                           />
-                          {syncing[source] ? 'Syncing...' : 'Sync Now'}
+                          {syncing[source] ? t('Syncing...') : t('Sync Now')}
                         </button>
                       )}
 
@@ -761,27 +792,14 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
                 ) : (
                   <>
                     {/* Signals that would be enabled */}
-                    <div className="mb-4">
-                      <p className="text-caption text-gray-500 mb-2">Enables these signals:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {config.signals.map((signal, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-1 text-caption bg-gray-100 text-gray-600 rounded"
-                          >
-                            {signal}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Connect Button */}
                     <button
                       onClick={() => connectIntegration(source)}
                       className="w-full px-4 py-2 text-caption font-medium text-white bg-teal-700 rounded-control hover:bg-teal-800 transition-colors flex items-center justify-center gap-2"
                     >
                       <Link2 className="w-4 h-4" />
-                      Connect {config.name}
+                      {t('Connect')}
+                      {config.name}
                     </button>
                   </>
                 )}
@@ -791,33 +809,10 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
         })}
       </div>
 
-      {/* Data Quality Tips */}
-      {dataQuality < 70 && (
-        <div className="bg-slate-50 border border-slate-200 rounded-container p-5">
-          <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            Improve Your Data Quality
-          </h4>
-          <ul className="space-y-2 text-caption text-slate-600">
-            {connectedCount < 3 && (
-              <li>• Connect more integrations to enable comprehensive signals</li>
-            )}
-            {integrations.some((i) => i.connected && i.coverage < 70) && (
-              <li>• Map more users in connected integrations to improve coverage</li>
-            )}
-            {!integrations.find((i) => i.source === 'jira' || i.source === 'asana')?.connected && (
-              <li>• Connect Jira or Asana to enable execution metrics</li>
-            )}
-            {!integrations.find((i) => i.source === 'gmail')?.connected && (
-              <li>• Connect Gmail to observe after-hours patterns</li>
-            )}
-          </ul>
-        </div>
-      )}
-
       {/* Settings Modal */}
       {showConnectModal && (
         <IntegrationSettingsModal
+          locale={locale}
           source={showConnectModal}
           integration={integrations.find((i) => i.source === showConnectModal)}
           onClose={() => setShowConnectModal(null)}
@@ -828,21 +823,25 @@ export default function IntegrationDashboard({ orgId: _orgId, onIntegrationChang
   );
 }
 
-function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
+function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh, locale }) {
+  const t = adminTranslator(locale);
+  const format = locale === 'et' ? 'et-EE' : 'en-GB';
   const sources = Object.values(diagnostics.sources || {});
-  const date = (value) => (value ? new Date(value).toLocaleString() : 'Not recorded');
-  const number = (value) => Number(value || 0).toLocaleString();
+  const date = (value) => (value ? new Date(value).toLocaleString(format) : t('Not recorded'));
+  const number = (value) =>
+    Number.isFinite(value) ? value.toLocaleString(format) : t('Unavailable');
   return (
     <section className="rounded-container border border-slate-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="app-eyebrow">Microsoft 365 ingestion audit</p>
+          <p className="app-eyebrow">{t('Microsoft 365 ingestion audit')}</p>
           <h3 className="mt-1 text-lead font-bold text-slate-950">
-            Where Outlook and Teams data stands
+            {t('Where Outlook and Teams data stands')}
           </h3>
           <p className="mt-2 max-w-3xl text-caption leading-6 text-slate-600">
-            This audit separates tenant consent, source sync, event arrival, and employee mapping. A
-            green connection alone does not mean the source is report-ready.
+            {t(
+              'This audit separates tenant consent, source sync, event arrival, and employee mapping. A green connection alone does not mean the source is report-ready.'
+            )}
           </p>
         </div>
         <button
@@ -850,7 +849,7 @@ function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
           onClick={onRefresh}
           className="rounded-control border border-slate-300 bg-white px-3 py-2 text-caption font-semibold text-slate-700"
         >
-          Recheck status
+          {t('Recheck status')}
         </button>
       </div>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -858,50 +857,52 @@ function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
           <article key={source.source} className="rounded-container border border-slate-200 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h4 className="font-bold text-slate-900">{source.label}</h4>
+                <h4 className="font-bold text-slate-900">{t(source.label)}</h4>
                 <p className="mt-1 text-caption text-slate-500">
-                  Status: {String(source.status).replace(/_/g, ' ')}
+                  {t('Status:')} {t(String(source.status).replace(/_/g, ' '))}
                 </p>
               </div>
               <span
                 className={`rounded-full px-2.5 py-1 text-caption font-bold ${source.status === 'connected' ? 'bg-teal-50 text-teal-800' : source.status === 'error' ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800'}`}
               >
-                {source.status}
+                {t(String(source.status).replace(/_/g, ' '))}
               </span>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-caption">
               <DiagnosticStat
-                label="Last successful sync"
+                label={t('Last successful sync')}
                 value={date(source.lastSuccessfulSync)}
               />
               <DiagnosticStat
-                label="Latest event received"
+                label={t('Latest event received')}
                 value={date(source.latestEventReceived)}
               />
+              <DiagnosticStat label={t('Last sync event count')} value={number(source.fetched)} />
               <DiagnosticStat
-                label="Fetched / accepted / rejected"
-                value={`${number(source.fetched)} / ${number(source.accepted)} / ${number(source.rejected)}`}
+                label={t('Stored events in seven days')}
+                value={number(source.evidenceQueryFailed ? null : source.storedEvents7d)}
               />
+              <DiagnosticStat label={t('Reported rejections')} value={number(source.rejected)} />
               <DiagnosticStat
-                label="Mapped people"
+                label={t('Mapped people')}
                 value={`${number(source.mappedUsers)} / ${number(source.totalUsers)}`}
               />
               {source.source === 'teams' && (
                 <DiagnosticStat
-                  label="Teams read / skipped"
+                  label={t('Teams read / skipped')}
                   value={`${number(source.teamsRead)} / ${number(source.teamsSkipped)}`}
                 />
               )}
               {source.source === 'outlook' && (
                 <DiagnosticStat
-                  label="Mailboxes unavailable / failed"
+                  label={t('Mailboxes unavailable / failed')}
                   value={`${number(source.unavailableUsers)} / ${number(source.failedUsers)}`}
                 />
               )}
             </dl>
             {source.missingRequirements?.length > 0 && (
               <div className="mt-4 rounded-control bg-amber-50 p-3 text-caption text-amber-950">
-                <strong>Missing or blocked:</strong>
+                <strong>{t('Missing or blocked:')}</strong>
                 <ul className="mt-1 list-disc space-y-1 pl-5">
                   {source.missingRequirements.map((item) => (
                     <li key={item}>{item}</li>
@@ -910,11 +911,12 @@ function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
               </div>
             )}
             <p className="mt-4 border-l-4 border-teal-600 pl-3 text-caption leading-5 text-slate-700">
-              <strong>Next action:</strong> {source.nextAction}
+              <strong>{t('Next action:')}</strong> {t(source.nextAction)}
             </p>
             {source.lastSyncMessage && (
               <p className="mt-2 text-caption text-slate-500">
-                Latest sync note: {source.lastSyncMessage}
+                {t('Latest sync note:')}
+                {source.lastSyncMessage}
               </p>
             )}
           </article>
@@ -922,11 +924,13 @@ function MicrosoftDiagnosticsPanel({ diagnostics, onRefresh }) {
       </div>
       <details className="mt-4 rounded-control border border-slate-200 p-3 text-caption">
         <summary className="cursor-pointer font-semibold text-slate-700">
-          Permissions inspected
+          {t('Permissions inspected')}
         </summary>
         <p className="mt-2 text-slate-600">
-          Granted application roles:{' '}
-          {diagnostics.grantedRoles?.length ? diagnostics.grantedRoles.join(', ') : 'none recorded'}
+          {t('Granted application roles:')}{' '}
+          {diagnostics.grantedRoles?.length
+            ? diagnostics.grantedRoles.join(', ')
+            : t('none recorded')}
         </p>
       </details>
     </section>
@@ -943,7 +947,8 @@ function DiagnosticStat({ label, value }) {
 }
 
 // Settings Modal Component
-function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }) {
+function IntegrationSettingsModal({ source, integration, onClose, onDisconnect, locale }) {
+  const t = adminTranslator(locale);
   const config = INTEGRATIONS[source];
   const Icon = config?.icon || Link2;
 
@@ -960,8 +965,10 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
             <Icon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{config?.name || source} Settings</h3>
-            <p className="text-caption text-gray-500">Manage integration connection</p>
+            <h3 className="font-semibold text-gray-900">
+              {config?.name || source} {t('Settings')}
+            </h3>
+            <p className="text-caption text-gray-500">{t('Manage integration connection')}</p>
           </div>
         </div>
 
@@ -969,18 +976,18 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
         <div className="p-6 space-y-4">
           <div>
             <label className="block text-caption font-medium text-gray-700 mb-1">
-              Connection Status
+              {t('Connection Status')}
             </label>
             <div className="flex items-center gap-2">
               {integration?.connected ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span className="text-green-700">Connected</span>
+                  <span className="text-green-700">{t('Connected')}</span>
                 </>
               ) : (
                 <>
                   <XCircle className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-500">Not connected</span>
+                  <span className="text-gray-500">{t('Not connected')}</span>
                 </>
               )}
             </div>
@@ -990,32 +997,45 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
             <>
               <div>
                 <label className="block text-caption font-medium text-gray-700 mb-1">
-                  User Coverage
+                  {t('User Coverage')}
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-green-500 rounded-full"
-                      style={{ width: `${integration.coverage || 0}%` }}
+                      style={{
+                        width: Number.isFinite(integration.coverage)
+                          ? integration.coverage + '%'
+                          : 0,
+                      }}
                     />
                   </div>
                   <span className="text-caption font-medium text-gray-700">
-                    {integration.coverage || 0}%
+                    {Number.isFinite(integration.coverage)
+                      ? integration.coverage + '%'
+                      : t('Unavailable')}
                   </span>
                 </div>
                 <p className="text-caption text-gray-500 mt-1">
-                  {integration.mapped_users || 0} of {integration.total_users || 0} users mapped
+                  {Number.isFinite(integration.coverageDetails?.mapped) &&
+                  integration.coverageDetails?.total > 0
+                    ? integration.coverageDetails.mapped +
+                      '/' +
+                      integration.coverageDetails.total +
+                      ' ' +
+                      t('mapped people')
+                    : t('Employee coverage unavailable')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-caption font-medium text-gray-700 mb-1">
-                  Last Sync
+                  {t('Last Sync')}
                 </label>
                 <p className="text-caption text-gray-600">
                   {integration.last_sync
                     ? new Date(integration.last_sync).toLocaleString()
-                    : 'Never'}
+                    : t('Never')}
                 </p>
               </div>
             </>
@@ -1029,7 +1049,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
               onClick={onDisconnect}
               className="px-4 py-2 text-caption font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-control transition-colors"
             >
-              Disconnect
+              {t('Disconnect')}
             </button>
           ) : (
             <div />
@@ -1039,7 +1059,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
             onClick={onClose}
             className="px-4 py-2 text-caption font-medium text-gray-700 bg-white border border-gray-300 rounded-control hover:bg-gray-50 transition-colors"
           >
-            Close
+            {t('Close')}
           </button>
         </div>
       </div>
@@ -1048,7 +1068,7 @@ function IntegrationSettingsModal({ source, integration, onClose, onDisconnect }
 }
 
 // Utility function
-function formatTimeAgo(dateString) {
+function formatTimeAgo(dateString, locale) {
   const date = new Date(dateString);
   const now = new Date();
   const diff = now - date;
@@ -1057,7 +1077,8 @@ function formatTimeAgo(dateString) {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  if (minutes < 60) return relative.format(-minutes, 'minute');
+  if (hours < 24) return relative.format(-hours, 'hour');
+  return relative.format(-days, 'day');
 }

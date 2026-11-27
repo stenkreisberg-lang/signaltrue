@@ -235,15 +235,15 @@ async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsof
         const state = microsoftState?.sources?.[name] || {};
         const coverage = connection?.coverage || {};
         const sync = connection?.sync || {};
-        const fetched = Number(sync.lastSyncEventsCount ?? coverage.eventsCollected ?? 0);
+        const fetched = sync.lastSyncEventsCount ?? null;
         const mappedUsers = Number(coverage.mappedUsers ?? coverage.syncedUsers ?? 0);
         const totalUsers = Number(coverage.totalUsers ?? coverage.attemptedUsers ?? 0);
         const stored = evidenceBySource.get(type);
-        const accepted = Number(stored?.storedEvents7d || 0);
-        const attributedEvents7d = Number(stored?.attributedEvents7d || 0);
+        const accepted = evidenceQueryFailed ? null : Number(stored?.storedEvents7d ?? 0);
+        const attributedEvents7d = evidenceQueryFailed ? null : Number(stored?.attributedEvents7d ?? 0);
         // The last sync counter covers one poll, whereas accepted covers the
         // stored seven-day evidence window. Do not subtract unlike periods.
-        const rejected = Number.isFinite(Number(coverage.eventsRejected))
+        const rejected = Number.isFinite(coverage.eventsRejected)
           ? Number(coverage.eventsRejected) : null;
         const latestEventReceived = stored?.latestEventReceived || null;
         const missingPermissions = state.missingRoles || [];
@@ -290,12 +290,12 @@ async function buildMicrosoftDiagnostics(orgId, microsoft, connections, microsof
             rejected,
             totalUsers,
             mappedUsers,
-            availableUsers: Number(coverage.availableUsers || 0),
-            unavailableUsers: Number(coverage.unavailableUsers || 0),
-            failedUsers: Number(coverage.failedUsers || 0),
-            teamsDiscovered: Number(coverage.teamsDiscovered || 0),
-            teamsRead: Number(coverage.teamsRead || 0),
-            teamsSkipped: Number(coverage.teamsSkipped || 0),
+            availableUsers: coverage.availableUsers ?? null,
+            unavailableUsers: coverage.unavailableUsers ?? null,
+            failedUsers: coverage.failedUsers ?? null,
+            teamsDiscovered: coverage.teamsDiscovered ?? null,
+            teamsRead: coverage.teamsRead ?? null,
+            teamsSkipped: coverage.teamsSkipped ?? null,
             requiredPermissions: state.requiredRoles || [],
             grantedPermissions: grantedRoles,
             missingPermissions,

@@ -1,3 +1,4 @@
+import { adminTranslator } from '../../utils/adminLanguage';
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Database, Lock, ShieldCheck } from 'lucide-react';
 import AppShell, { PageHeader } from '../../components/app/AppShell';
@@ -41,6 +42,11 @@ export default function SignalCoverage() {
     };
   }, []);
 
+  const locale = user?.reportLanguage || 'en';
+  const t = adminTranslator(locale);
+  const format = locale === 'et' ? 'et-EE' : 'en-GB';
+  const count = (value) =>
+    Number.isFinite(value) ? value.toLocaleString(format) : t('Unavailable');
   const connected = status.sources.filter((source) => {
     return ['connected', 'measuring'].includes(source.status);
   }).length;
@@ -51,93 +57,97 @@ export default function SignalCoverage() {
   const getSourceStatus = (source) => {
     const measurement = source.measurementStatus;
     if (measurement?.verified) {
-      return { label: measurement.label, className: 'status-ok' };
+      return { label: t(measurement.label), className: 'status-ok' };
     }
     if (measurement?.state === 'disconnected') {
-      return { label: 'Not connected', className: 'status-muted' };
+      return { label: t('Not connected'), className: 'status-muted' };
     }
-    return { label: measurement?.label || 'Not verified', className: 'status-warn' };
+    return { label: t(measurement?.label || t('Not verified')), className: 'status-warn' };
   };
 
   return (
-    <AppShell user={user} section="Data Coverage">
+    <AppShell locale={locale} user={user} section={t('Data Coverage')}>
       <PageHeader
-        eyebrow="Governance"
-        title="Data coverage and privacy"
-        description="Understand which sources contribute to signals, how coverage matures, and the safeguards applied before any insight is shown."
+        eyebrow={t('Governance')}
+        title={t('Data coverage and privacy')}
+        description={t(
+          'Understand which sources contribute to signals, how coverage matures, and the safeguards applied before any insight is shown.'
+        )}
       />
       <section className="app-metric-grid">
         <div className="app-metric">
           <Database size={20} />
           <div>
-            <strong>{status.loading ? '...' : status.error ? 'Unavailable' : connected}</strong>
-            <span>Sources connected</span>
+            <strong>{status.loading ? '...' : status.error ? t('Unavailable') : connected}</strong>
+            <span>{t('Sources connected')}</span>
           </div>
         </div>
         <div className="app-metric">
           <ShieldCheck size={20} />
           <div>
             <strong>
-              {status.loading ? '...' : status.error ? 'Unavailable' : measuredSources}
+              {status.loading ? '...' : status.error ? t('Unavailable') : measuredSources}
             </strong>
-            <span>Sources with verified events</span>
+            <span>{t('Sources with verified events')}</span>
           </div>
         </div>
         <div className="app-metric">
           <Lock size={20} />
           <div>
-            <strong>{status.loading ? '...' : (status.minimumSize ?? 'Unavailable')}</strong>
-            <span>Minimum team size for reporting</span>
+            <strong>{status.loading ? '...' : (status.minimumSize ?? t('Unavailable'))}</strong>
+            <span>{t('Minimum team size for reporting')}</span>
           </div>
         </div>
       </section>
       <section className="coverage-grid">
         <div className="app-panel">
-          <h2>Source verification</h2>
+          <h2>{t('Source verification')}</h2>
           <p className="app-muted">
-            Connection alone does not confirm usable activity. Missing, stale or unmapped data must
-            never be treated as zero work.
+            {t(
+              'Connection alone does not confirm usable activity. Missing, stale or unmapped data must never be treated as zero work.'
+            )}
           </p>
           {status.loading ? (
-            <p className="coverage-empty">Checking source status…</p>
+            <p className="coverage-empty">{t('Checking source status…')}</p>
           ) : status.error ? (
             <p className="coverage-empty" role="alert">
-              Source status could not be loaded. Refresh to retry. This does not mean sources are
-              disconnected.
+              {t(
+                'Source status could not be loaded. Refresh to retry. This does not mean sources are disconnected.'
+              )}
             </p>
           ) : status.sources.length === 0 ? (
-            <p className="coverage-empty">No connected sources are available yet.</p>
+            <p className="coverage-empty">{t('No connected sources are available yet.')}</p>
           ) : (
             <div className="coverage-list">
               {status.sources.map((source) => {
                 const sourceStatus = getSourceStatus(source);
-                const mapped = source.coverage?.mapped || 0;
-                const total = source.coverage?.total || 0;
+                const mapped = source.coverage?.mapped;
+                const total = source.coverage?.total;
                 return (
                   <div key={source.type} className="coverage-source">
                     <div className="coverage-source-main">
                       <span>{source.name || source.type}</span>
                       <small>
-                        {mapped}/{total} mapped people
+                        {Number.isFinite(mapped) && Number.isFinite(total) && total > 0
+                          ? mapped + '/' + total + ' ' + t('mapped people')
+                          : t('Employee coverage unavailable')}
                         {source.lastSync
-                          ? ` · last sync ${new Date(source.lastSync).toLocaleDateString()}`
+                          ? ` · ${t('last sync')} ${new Date(source.lastSync).toLocaleDateString(format)}`
                           : ''}
                       </small>
-                      {source.statusMessage && <small>{source.statusMessage}</small>}
+                      {source.statusMessage && <small>{t(source.statusMessage)}</small>}
                       {source.sourceEvidence && !source.sourceEvidence.evidenceQueryFailed && (
                         <small>
-                          Last seven days:{' '}
-                          {Number(source.sourceEvidence.storedEvents7d || 0).toLocaleString()}{' '}
-                          stored events,{' '}
-                          {Number(source.sourceEvidence.attributedEvents7d || 0).toLocaleString()}{' '}
-                          assigned to employees
+                          {t('Last seven days:')} {count(source.sourceEvidence.storedEvents7d)}{' '}
+                          {t('stored events,')} {count(source.sourceEvidence.attributedEvents7d)}{' '}
+                          {t('assigned to employees')}
                           {source.sourceEvidence.lastEventReceived
-                            ? ` · latest ${new Date(source.sourceEvidence.lastEventReceived).toLocaleDateString()}`
+                            ? ` · ${t('latest event')} ${new Date(source.sourceEvidence.lastEventReceived).toLocaleDateString(format)}`
                             : ''}
                         </small>
                       )}
                       {source.measurementStatus?.reason && (
-                        <small>{source.measurementStatus.reason}</small>
+                        <small>{t(source.measurementStatus.reason)}</small>
                       )}
                     </div>
                     <span className={sourceStatus.className}>{sourceStatus.label}</span>
@@ -148,12 +158,14 @@ export default function SignalCoverage() {
           )}
         </div>
         <div className="app-panel">
-          <h2>Privacy controls</h2>
+          <h2>{t('Privacy controls')}</h2>
           {[
-            'No message, email or document content is stored or analyzed.',
-            'No individual employee scores are exposed.',
-            'Reporting uses the configured minimum team size and requires adequate mapped activity. Small-team aggregates may permit individual inference.',
-            'Role-based access protects organization data.',
+            t('No message, email or document content is stored or analyzed.'),
+            t('No individual employee scores are exposed.'),
+            t(
+              'Reporting uses the configured minimum team size and requires adequate mapped activity. Small-team aggregates may permit individual inference.'
+            ),
+            t('Role-based access protects organization data.'),
           ].map((line) => (
             <div className="coverage-rule" key={line}>
               <CheckCircle2 size={18} />

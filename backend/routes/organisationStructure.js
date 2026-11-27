@@ -7,6 +7,8 @@ import OrgUnit from '../models/orgUnit.js';
 import Organization from '../models/organizationModel.js';
 import { refreshTeamSizes } from '../services/employeeSyncService.js';
 
+import { weeklyQACopyConfig } from '../services/weeklyBriefDeliveryEnvelope.js';
+
 const router = express.Router();
 const ADMIN_ROLES = new Set(['master_admin', 'admin', 'hr_admin']);
 const ident = value => String(value?._id || value || '');
@@ -50,8 +52,10 @@ router.get('/', async (req, res, next) => {
     for (const person of people) memberCounts.set(ident(person.teamId), (memberCounts.get(ident(person.teamId)) || 0) + 1);
     const minimum = Math.max(2, Number(org?.settings?.minTeamSize) || 2);
     const teamMinimum = Math.max(2, Number(org?.settings?.minTeamSize) || 2);
+    const qaCopy = weeklyQACopyConfig();
     return privacy(res).json({
       organisation: { name: org?.name || '', timezone: org?.settings?.timezone || 'UTC', minimum, teamMinimum,
+        weeklyQualityCopyEnabled: qaCopy.enabled && qaCopy.valid,
         approvedReportRecipients: org?.settings?.weeklyBriefRecipients || [],
         recipientsReviewedAt: org?.settings?.weeklyBriefRecipientsApprovedAt || null },
       teams: teams.map(t => ({

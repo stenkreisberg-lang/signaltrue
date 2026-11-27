@@ -1,3 +1,4 @@
+import { adminTranslator } from '../../utils/adminLanguage';
 import React, { useEffect, useState } from 'react';
 import AppShell from '../../components/app/AppShell';
 import EmployeeDirectory from '../../components/EmployeeDirectory';
@@ -24,15 +25,17 @@ export default function Employees() {
     };
   }, []);
 
+  const locale = user?.reportLanguage || 'en';
+  const t = adminTranslator(locale);
   const canManageTeamSetup = ['master_admin', 'admin', 'hr_admin'].includes(user?.role);
 
   return (
-    <AppShell user={user} section="Organisation">
+    <AppShell locale={locale} user={user} section={t('Organisation')}>
       {loading ? (
-        <div className="app-panel">Loading team setup...</div>
+        <div className="app-panel">{t('Loading team setup...')}</div>
       ) : canManageTeamSetup ? (
         <div className="space-y-4">
-          <OrganisationWorkspace />
+          <OrganisationWorkspace locale={locale} />
           <section className="app-panel">
             <button
               type="button"
@@ -41,8 +44,8 @@ export default function Employees() {
               onClick={() => setAdvanced(!advanced)}
             >
               {advanced
-                ? 'Hide directory import and advanced mapping tools'
-                : 'Open directory import and advanced mapping tools'}
+                ? t('Hide directory import and advanced mapping tools')
+                : t('Open directory import and advanced mapping tools')}
             </button>
             {advanced && (
               <div className="mt-4">
@@ -53,9 +56,9 @@ export default function Employees() {
         </div>
       ) : (
         <div className="app-panel">
-          <h1>Team setup is restricted</h1>
+          <h1>{t('Team setup is restricted')}</h1>
           <p className="app-muted">
-            An administrator or HR administrator must review team mappings.
+            {t('An administrator or HR administrator must review team mappings.')}
           </p>
         </div>
       )}

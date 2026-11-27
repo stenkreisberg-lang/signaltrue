@@ -1,14 +1,15 @@
+import { adminTranslator } from '../../utils/adminLanguage';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { PageHeader } from '../../components/app/AppShell';
 
-const id = (value) => String(value || '');
+const emptyPeople = [];
 const input = 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm';
 const action =
   'rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50';
 
-function Hierarchy({ teams, people, selected, onSelect }) {
+function Hierarchy({ teams, people, selected, onSelect, t }) {
   const known = new Set(teams.map((t) => t.id));
   const children = (parent) =>
     teams.filter((t) => (known.has(t.parentTeamId) ? t.parentTeamId : null) === parent);
@@ -31,12 +32,14 @@ function Hierarchy({ teams, people, selected, onSelect }) {
         >
           <span className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-semibold text-slate-900">{team.name}</span>
-            <span className="text-xs text-slate-500">{team.memberCount} employees</span>
+            <span className="text-xs text-slate-500">
+              {team.memberCount} {t('employees')}
+            </span>
           </span>
           <span className="mt-1 block text-xs text-slate-600">
-            {manager ? 'Formal manager: ' + manager.name : 'Formal manager not verified'}
+            {manager ? t('Formal manager:') + ' ' + manager.name : t('Formal manager not verified')}
             {' · '}
-            {team.verifiedAt ? 'HR-reviewed structure' : 'Structure needs verification'}
+            {team.verifiedAt ? t('HR-reviewed structure') : t('Structure needs verification')}
           </span>
         </button>
         {children(team.id).map((child) => render(child, next, level + 1))}
@@ -46,7 +49,8 @@ function Hierarchy({ teams, people, selected, onSelect }) {
   return <div>{children(null).map((team) => render(team))}</div>;
 }
 
-export default function OrganisationWorkspace() {
+export default function OrganisationWorkspace({ locale = 'en' }) {
+  const t = adminTranslator(locale);
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState('');
   const [personId, setPersonId] = useState('');
@@ -66,26 +70,26 @@ export default function OrganisationWorkspace() {
       setRecipientEmails(response.data.organisation?.approvedReportRecipients || []);
       setError('');
     } catch (e) {
-      setError(e.response?.data?.message || 'Organisation structure unavailable');
+      setError(t(e.response?.data?.message || 'Organisation structure unavailable'));
     }
-  }, []);
+  }, [t]);
   useEffect(() => {
     refresh();
   }, [refresh]);
   const teams = data?.teams || [];
-  const people = data?.people || [];
+  const people = data?.people || emptyPeople;
   const team = teams.find((t) => t.id === selected);
   const person = people.find((p) => p.id === personId);
   useEffect(() => {
     if (!team) return;
     setParent(team.parentTeamId || '');
     setFormalManager(team.formalManagerUserId || '');
-  }, [selected, data]);
+  }, [team]);
   useEffect(() => {
     if (!person) return;
     setPersonTeam(person.teamId || '');
     setPersonManager(person.managerUserId || '');
-  }, [personId, data]);
+  }, [person]);
   const eligibleRecipients = people.filter(
     (p) =>
       p.accountStatus === 'active' &&
@@ -95,8 +99,8 @@ export default function OrganisationWorkspace() {
     execute(
       () => api.put('/organisation-structure/report-recipients', { emails: recipientEmails }),
       recipientEmails.length
-        ? 'HR weekly report recipients approved.'
-        : 'Weekly organisation report delivery paused.'
+        ? t('HR weekly report recipients approved.')
+        : t('Weekly organisation report delivery paused.')
     );
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -119,7 +123,7 @@ export default function OrganisationWorkspace() {
       await refresh();
       setNotice(message);
     } catch (e) {
-      setError(e.response?.data?.message || 'Change could not be saved');
+      setError(t(e.response?.data?.message || 'Change could not be saved'));
     } finally {
       setBusy(false);
     }
@@ -127,12 +131,14 @@ export default function OrganisationWorkspace() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="HR / ORGANISATION"
-        title="Organisation & teams"
-        description="Verify the company structure, correct reporting lines and appoint managers. Organisation details are separate from private work-pattern measurements."
+        eyebrow={t('HR / ORGANISATION')}
+        title={t('Organisation & teams')}
+        description={t(
+          'Verify the company structure, correct reporting lines and appoint managers. Organisation details are separate from private work-pattern measurements.'
+        )}
         action={
           <Link to="/app/admin/manager-reporting" className={action}>
-            Manager access
+            {t('Manager access')}
           </Link>
         }
       />
@@ -153,15 +159,15 @@ export default function OrganisationWorkspace() {
         </p>
       )}
       {!data ? (
-        <div className="app-panel">Loading the verified workforce and teams…</div>
+        <div className="app-panel">{t('Loading the verified workforce and teams…')}</div>
       ) : (
         <>
           <div className="grid gap-3 md:grid-cols-4">
             {[
-              ['Employees', data.summary.employees],
-              ['Teams', data.summary.teams],
-              ['Accounts to claim', data.summary.pendingAccounts],
-              ['Unverified teams', data.summary.unverifiedTeams],
+              [t('Employees'), data.summary.employees],
+              [t('Teams'), data.summary.teams],
+              [t('Accounts to claim'), data.summary.pendingAccounts],
+              [t('Unverified teams'), data.summary.unverifiedTeams],
             ].map(([label, value]) => (
               <div key={label} className="app-panel">
                 <p className="text-xs text-slate-500">{label}</p>
@@ -170,55 +176,69 @@ export default function OrganisationWorkspace() {
             ))}
           </div>
           <div className="app-panel border-amber-200 bg-amber-50">
-            <p className="font-semibold">An organisational chart is not a communication map.</p>
+            <p className="font-semibold">
+              {t('An organisational chart is not a communication map.')}
+            </p>
             <p className="mt-1 text-sm">
-              Reporting lines are verified by HR. Microsoft Teams channels or frequent meeting
-              organisers never establish manager permissions. A team needs at least{' '}
-              {data.organisation.minimum} contributors and sufficient source coverage before
-              work-pattern metrics can be shown.
+              {t(
+                'HR verifies reporting lines. Meeting organisers and Teams channels cannot grant manager access.'
+              )}{' '}
+              {t('Minimum contributors for reporting')} {data.organisation.minimum}.{' '}
+              {t('Reporting also requires adequate source coverage.')}
               <Link to="/app/signal-coverage" className="ml-1 underline">
-                Check data coverage
+                {t('Check data coverage')}
               </Link>
               .
             </p>
           </div>
           <div className="grid items-start gap-4 lg:grid-cols-2">
-            <section className="app-panel space-y-3" aria-label="Formal organisation structure">
-              <h2 className="text-xl font-bold">Formal structure</h2>
+            <section
+              className="app-panel space-y-3"
+              aria-label={t('Formal organisation structure')}
+            >
+              <h2 className="text-xl font-bold">{t('Formal structure')}</h2>
               <p className="text-sm text-slate-600">
-                Choose a team to verify its department and manager.
+                {t('Choose a team to verify its department and manager.')}
               </p>
-              <Hierarchy teams={teams} people={people} selected={selected} onSelect={setSelected} />
+              <Hierarchy
+                teams={teams}
+                people={people}
+                selected={selected}
+                onSelect={setSelected}
+                t={t}
+              />
               {!teams.length && (
                 <p className="text-sm text-slate-600">
-                  No active teams. Review the employee import.
+                  {t('No active teams. Review the employee import.')}
                 </p>
               )}
             </section>
-            <section className="app-panel space-y-4" aria-label="Verify team structure">
-              <h2 className="text-xl font-bold">Verify a team</h2>
+            <section className="app-panel space-y-4" aria-label={t('Verify team structure')}>
+              <h2 className="text-xl font-bold">{t('Verify a team')}</h2>
               {team ? (
                 <>
                   <p className="font-semibold">{team.name}</p>
                   <p className="text-sm text-slate-600">
-                    {team.memberCount} active workforce records. {team.measurementStatus}.
+                    {t('People on the current roster')} {team.memberCount}.
                   </p>
                   <p className="text-sm text-slate-600">
                     {team.reportingEligibleBySize
-                      ? 'Meets the size requirement. Source coverage must still be verified.'
-                      : 'Below the minimum cohort or team reporting disabled. Analytics remain suppressed.'}
+                      ? t('Meets the size requirement. Source coverage must still be verified.')
+                      : t(
+                          'Below the minimum cohort or team reporting disabled. Analytics remain suppressed.'
+                        )}
                   </p>
                   <Link className="text-sm font-semibold underline" to={'/app/insights/' + team.id}>
-                    Open team investigation
+                    {t('Open team investigation')}
                   </Link>
                   <label className="block text-sm font-semibold">
-                    Parent department or team
+                    {t('Parent department or team')}
                     <select
                       className={input}
                       value={parent}
                       onChange={(e) => setParent(e.target.value)}
                     >
-                      <option value="">Top-level team</option>
+                      <option value="">{t('Top-level team')}</option>
                       {teams
                         .filter((t) => t.id !== team.id)
                         .map((t) => (
@@ -229,13 +249,13 @@ export default function OrganisationWorkspace() {
                     </select>
                   </label>
                   <label className="block text-sm font-semibold">
-                    Formal reporting manager
+                    {t('Formal reporting manager')}
                     <select
                       className={input}
                       value={formalManager}
                       onChange={(e) => setFormalManager(e.target.value)}
                     >
-                      <option value="">Not verified yet</option>
+                      <option value="">{t('Not verified yet')}</option>
                       {people.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} · {p.email}
@@ -254,57 +274,68 @@ export default function OrganisationWorkspace() {
                             parentTeamId: parent || null,
                             formalManagerUserId: formalManager || null,
                           }),
-                        'Team structure verified by HR.'
+                        t('Team structure verified by HR.')
                       )
                     }
                   >
-                    Save verified structure
+                    {t('Save verified structure')}
                   </button>
                   <p className="text-xs text-slate-500">
-                    Assigning a formal manager does not give them SignalTrue reporting access.
+                    {t(
+                      'Assigning a formal manager does not give them SignalTrue reporting access.'
+                    )}
                     <Link className="ml-1 underline" to="/app/admin/manager-reporting">
-                      Approve access separately
+                      {t('Approve access separately')}
                     </Link>
                     .
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-slate-600">Select a team from the organisation tree.</p>
+                <p className="text-sm text-slate-600">
+                  {t('Select a team from the organisation tree.')}
+                </p>
               )}
             </section>
           </div>
           <section
             className="app-panel"
-            aria-label="Formal organisation compared with coordination patterns"
+            aria-label={t('Formal organisation compared with coordination patterns')}
           >
-            <h2 className="text-xl font-bold">Formal structure vs. how teams coordinate</h2>
+            <h2 className="text-xl font-bold">{t('Formal structure vs. how teams coordinate')}</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Formal reporting relationships come from HR verification. A separate work-network view
-              can show privacy-eligible links based on meetings and available message metadata. It
-              does not infer who reports to whom, and an absent link does not mean that teams never
-              collaborate.
+              {t(
+                'Formal reporting relationships come from HR verification. A separate work-network view can show privacy-eligible links based on meetings and available message metadata. It does not infer who reports to whom, and an absent link does not mean that teams never collaborate.'
+              )}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
                 to="/app/work-network"
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
               >
-                Review measured cross-team coordination
+                {t('Review measured cross-team coordination')}
               </Link>
               <Link
                 to="/app/signal-coverage"
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
               >
-                Check messaging and calendar coverage
+                {t('Check messaging and calendar coverage')}
               </Link>
             </div>
           </section>
-          <section className="app-panel space-y-3" aria-label="HR weekly report recipients">
-            <h2 className="text-xl font-bold">Who receives the weekly HR report?</h2>
+          <section className="app-panel space-y-3" aria-label={t('HR weekly report recipients')}>
+            <h2 className="text-xl font-bold">{t('Who receives the weekly HR report?')}</h2>
             <p className="text-sm text-slate-600">
-              Only the approved, active organisation administrators selected here receive the
-              organisation-wide report. Team managers receive separate team-only emails after
-              accepting a specific assignment. This permission does not carry over.
+              {t(
+                'Choose the active administrators who receive the weekly organisation report. Team managers receive separate reports for the teams they have accepted.'
+              )}
+              {data.organisation.weeklyQualityCopyEnabled && (
+                <>
+                  {' '}
+                  {t(
+                    'When the organisation report is sent, the designated SignalTrue administrator also receives a copy for quality review.'
+                  )}
+                </>
+              )}
             </p>
             <div className="grid gap-2 md:grid-cols-2">
               {eligibleRecipients.map((person) => (
@@ -333,33 +364,39 @@ export default function OrganisationWorkspace() {
             </div>
             {!eligibleRecipients.length && (
               <p className="text-sm text-amber-800">
-                No active administrative accounts are eligible. Confirm HR access before enabling
-                delivery.
+                {t(
+                  'No active administrative accounts are eligible. Confirm HR access before enabling delivery.'
+                )}
               </p>
             )}
             <p className="text-xs text-slate-600">
               {data.organisation.recipientsReviewedAt
-                ? 'Recipients reviewed ' +
-                  new Date(data.organisation.recipientsReviewedAt).toLocaleDateString('en-GB')
-                : 'Not explicitly reviewed. Delivery falls back to active HR administrator accounts only.'}{' '}
-              Saving an empty approved list pauses automatic organisation email.
+                ? t('Recipients reviewed') +
+                  ' ' +
+                  new Date(data.organisation.recipientsReviewedAt).toLocaleDateString(
+                    locale === 'et' ? 'et-EE' : 'en-GB'
+                  )
+                : t(
+                    'Not explicitly reviewed. Delivery falls back to active HR administrator accounts only.'
+                  )}{' '}
+              {t('Saving an empty approved list pauses automatic organisation email.')}
             </p>
             <button type="button" className={action} disabled={busy} onClick={saveRecipients}>
-              Save approved recipients
+              {t('Save approved recipients')}
             </button>
           </section>
-          <section className="app-panel space-y-3" aria-label="HR employee mapping">
+          <section className="app-panel space-y-3" aria-label={t('HR employee mapping')}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold">Employee mapping</h2>
+                <h2 className="text-xl font-bold">{t('Employee mapping')}</h2>
                 <p className="text-sm text-slate-600">
-                  Verify imported employees. Ex-employees are excluded from the active roster.
+                  {t('Review imported employees. This roster excludes accounts marked inactive.')}
                 </p>
               </div>
               <input
                 className={input + ' max-w-sm'}
-                aria-label="Search employees"
-                placeholder="Search employee or department"
+                aria-label={t('Search employees')}
+                placeholder={t('Search employee or department')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -380,8 +417,9 @@ export default function OrganisationWorkspace() {
                     <span className="ml-2 text-slate-600">{p.email}</span>
                   </span>
                   <span className="text-xs text-slate-500">
-                    {teams.find((t) => t.id === p.teamId)?.name || 'Unmapped'} · {p.accountStatus} ·{' '}
-                    {p.verifiedTeam ? 'HR verified' : 'Directory mapping'}
+                    {teams.find((t) => t.id === p.teamId)?.name || t('Unmapped')} ·{' '}
+                    {t(p.accountStatus)} ·{' '}
+                    {p.verifiedTeam ? t('HR verified') : t('Directory mapping')}
                   </span>
                 </button>
               ))}
@@ -389,17 +427,17 @@ export default function OrganisationWorkspace() {
             {person && (
               <div className="grid gap-3 rounded-lg border bg-slate-50 p-4 md:grid-cols-3">
                 <div className="md:col-span-3">
-                  <strong>{person.name}</strong> · Directory department:{' '}
-                  {person.directoryDepartment || 'Not provided'}
+                  <strong>{person.name}</strong> {' · '}
+                  {t('Directory department')} {person.directoryDepartment || t('Not provided')}
                 </div>
                 <label className="text-sm font-semibold">
-                  Verified team
+                  {t('Verified team')}
                   <select
                     className={input}
                     value={personTeam}
                     onChange={(e) => setPersonTeam(e.target.value)}
                   >
-                    <option value="">Choose team</option>
+                    <option value="">{t('Choose team')}</option>
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name}
@@ -408,13 +446,13 @@ export default function OrganisationWorkspace() {
                   </select>
                 </label>
                 <label className="text-sm font-semibold">
-                  Reports to
+                  {t('Reports to')}
                   <select
                     className={input}
                     value={personManager}
                     onChange={(e) => setPersonManager(e.target.value)}
                   >
-                    <option value="">Unknown / no manager</option>
+                    <option value="">{t('Unknown / no manager')}</option>
                     {people
                       .filter((p) => p.id !== person.id)
                       .map((p) => (
@@ -435,16 +473,17 @@ export default function OrganisationWorkspace() {
                             teamId: personTeam,
                             managerUserId: personManager || null,
                           }),
-                        'Employee reporting line verified by HR.'
+                        t('Employee reporting line verified by HR.')
                       )
                     }
                   >
-                    Save employee mapping
+                    {t('Save employee mapping')}
                   </button>
                 </div>
                 <p className="md:col-span-3 text-xs text-slate-500">
-                  Changes take effect now and are retained during subsequent directory syncs.
-                  Earlier work events keep their original historical team attribution.
+                  {t(
+                    'Changes take effect now and are retained during subsequent directory syncs. Earlier work events keep their original historical team attribution.'
+                  )}
                 </p>
               </div>
             )}
