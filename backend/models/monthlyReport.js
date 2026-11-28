@@ -45,9 +45,12 @@ const monthlyReportSchema = new mongoose.Schema(
       eligibleTeams: { type: Number, default: 0 },
       teamCoveragePct: { type: Number, default: 0 },
       weeklySnapshots: { type: Number, default: 0 },
-      minimumTeamSize: { type: Number, default: 8 },
+      calendarWeeks: Number,
+      messagingWeeks: Number,
+      minimumTeamSize: { type: Number, default: 2 },
     },
     actionOutcomes: {
+      managerReviewed: Number, managerImproved: Number, managerInsufficient: Number,
       measured: { type: Number, default: 0 },
       improved: { type: Number, default: 0 },
       active: { type: Number, default: 0 },
@@ -67,13 +70,13 @@ const monthlyReportSchema = new mongoose.Schema(
     orgHealth: {
       avgBDI: {
         type: Number,
-        required: true,
+        default: null,
         min: 0,
         max: 100,
       },
       bdiTrend: {
         type: String,
-        enum: ['improving', 'stable', 'deteriorating'],
+        enum: ['improving', 'stable', 'deteriorating', 'unavailable'],
         required: true,
       },
       trendStrength: {
@@ -90,11 +93,11 @@ const monthlyReportSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      avgMeetingHoursWeekly: { type: Number, default: 0 },
-      avgMeetingCount: { type: Number, default: 0 },
-      avgBackToBackBlocks: { type: Number, default: 0 },
-      avgAfterHoursPct: { type: Number, default: 0 },
-      avgRCI: { type: Number, default: 0 },
+      avgMeetingHoursWeekly: { type: Number, default: null },
+      avgMeetingCount: { type: Number, default: null },
+      avgBackToBackBlocks: { type: Number, default: null },
+      avgAfterHoursPct: { type: Number, default: null },
+      avgRCI: { type: Number, default: null },
     },
 
     // Persistent risks (≥3 weeks in Yellow/Red)

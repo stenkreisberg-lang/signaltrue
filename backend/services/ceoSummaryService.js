@@ -151,7 +151,7 @@ export async function generateCeoSummaryForOrg(orgId, options = {}) {
     },
 
     riskDirection: {
-      overall: report.orgHealth?.bdiTrend || 'stable',
+      overall: report.orgHealth?.bdiTrend === 'deteriorating' ? 'worsening' : (report.orgHealth?.bdiTrend || 'unavailable'),
       trendConfidence:
         highConfidenceCount >= 2 ? 'high' : sourceSignals.length > 0 ? 'medium' : 'low',
       explanation:

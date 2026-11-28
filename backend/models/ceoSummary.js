@@ -85,7 +85,7 @@ const ceoSummarySchema = new mongoose.Schema(
     riskDirection: {
       overall: {
         type: String,
-        enum: ['improving', 'stable', 'worsening'],
+        enum: ['improving', 'stable', 'worsening', 'unavailable'],
         required: true,
       },
       trendConfidence: {

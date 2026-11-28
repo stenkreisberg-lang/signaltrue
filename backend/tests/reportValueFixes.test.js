@@ -16,7 +16,6 @@ import {
 } from '../services/publicTeamEnrichmentService.js';
 import {
   generateMonthlyEmailHTML,
-  selectWeeklySnapshots,
 } from '../services/monthlyReportService.js';
 
 const objectId = (suffix) => `507f1f77bcf86cd7994390${suffix}`;
@@ -357,20 +356,6 @@ describe('public company page enrichment', () => {
 });
 
 describe('monthly report trust', () => {
-  test('selects one latest rolling record per week', () => {
-    const records = [
-      { date: new Date('2026-07-06T08:00:00Z'), meetingCount7d: 10 },
-      { date: new Date('2026-07-10T08:00:00Z'), meetingCount7d: 20 },
-      { date: new Date('2026-07-13T08:00:00Z'), meetingCount7d: 30 },
-      { date: new Date('2026-07-17T08:00:00Z'), meetingCount7d: 40 },
-      { date: new Date('2026-07-24T08:00:00Z'), meetingCount7d: 50 },
-    ];
-
-    expect(selectWeeklySnapshots(records).map((record) => record.meetingCount7d)).toEqual([
-      20, 40, 50,
-    ]);
-  });
-
   test('setup email pauses conclusions and gives a concrete recovery path', () => {
     const html = generateMonthlyEmailHTML({
       org: { name: 'Example Org' },

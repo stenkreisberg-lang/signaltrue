@@ -488,7 +488,7 @@ MONTHLY ORGANIZATIONAL HEALTH REVIEW
 Generate a strategic narrative and leadership decision framework. NO tactical recommendations.
 
 ORGANIZATIONAL HEALTH:
-- Average BDI: ${orgHealth.avgBDI.toFixed(1)}/100 (${orgHealth.bdiTrend})
+- Average BDI: ${Number.isFinite(orgHealth.avgBDI) ? orgHealth.avgBDI.toFixed(1) + '/100' : 'Unavailable'} (${orgHealth.bdiTrend})
 - Teams at Risk: ${orgHealth.teamsAtRisk} of ${orgHealth.zoneDistribution.stable + orgHealth.zoneDistribution.stretched + orgHealth.zoneDistribution.critical + orgHealth.zoneDistribution.recovery}
 - Zone Distribution:
   • Stable: ${orgHealth.zoneDistribution.stable}
